@@ -3,10 +3,9 @@ namespace WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class InputModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestExecutePerformActions()
     {
         TestWebSocketConnection connection = new();
@@ -23,17 +22,16 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
-        Task<PerformActionsCommandResult> task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        PerformActionsCommandResult result = task.Result;
+        Task<PerformActionsCommandResult> task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
+        PerformActionsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteReleaseActions()
     {
         TestWebSocketConnection connection = new();
@@ -50,17 +48,16 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
-        Task<ReleaseActionsCommandResult> task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        ReleaseActionsCommandResult result = task.Result;
+        Task<ReleaseActionsCommandResult> task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
+        ReleaseActionsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteSetFiles()
     {
         TestWebSocketConnection connection = new();
@@ -77,34 +74,32 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         SharedReference element = new("mySharedId");
-        Task<SetFilesCommandResult> task = module.SetFilesAsync(new SetFilesCommandParameters("myContextId", element));
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetFilesCommandResult result = task.Result;
+        Task<SetFilesCommandResult> task = module.SetFilesAsync(new SetFilesCommandParameters("myContextId", element), cancellationToken: TestContext.Current.CancellationToken);
+        SetFilesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveFileDialogOpenedEvent()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         ManualResetEvent syncEvent = new(false);
         module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.IsMultiple, Is.True);
-                Assert.That(e.Element, Is.Null);
-            }
+
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.True(e.IsMultiple);
+            Assert.Null(e.Element);
+
             syncEvent.Set();
         });
 
@@ -120,27 +115,26 @@ public class InputModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveFileDialogOpenedEventWithElementReference()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         ManualResetEvent syncEvent = new(false);
         module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.IsMultiple, Is.True);
-                Assert.That(e.Element, Is.Not.Null);
-                Assert.That(e.Element!.SharedId, Is.EqualTo("mySharedId"));
-            }
+
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.True(e.IsMultiple);
+            Assert.NotNull(e.Element);
+            Assert.Equal("mySharedId", e.Element.SharedId);
+
             syncEvent.Set();
         });
 
@@ -165,6 +159,6 @@ public class InputModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 }

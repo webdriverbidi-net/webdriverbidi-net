@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Integration;
+namespace WebDriverBiDi.Integration.Tests;
 
 using WebDriverBiDi.Client.Launchers;
 
@@ -31,7 +31,7 @@ public static class BrowserTestHelper
             string executablePath = GetBrowserExecutable(browser);
             if (string.IsNullOrEmpty(executablePath))
             {
-                Assert.Ignore($"Skipping {browser} test in CI - {GetExecutableEnvironmentVariable(browser)} not configured");
+                Assert.Skip($"Skipping {browser} test in CI - {GetExecutableEnvironmentVariable(browser)} not configured");
             }
         }
     }

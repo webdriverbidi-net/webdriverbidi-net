@@ -3,28 +3,27 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class RemoveUserContextCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         RemoveUserContextCommandParameters properties = new("myUserContext");
-        Assert.That(properties.MethodName, Is.EqualTo("browser.removeUserContext"));
+        Assert.Equal("browser.removeUserContext", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         RemoveUserContextCommandParameters properties = new("myUserContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("userContext"));
-            Assert.That(serialized["userContext"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("userContext"));
+        JToken? userContext = serialized["userContext"];
+        Assert.NotNull(userContext);
+        Assert.Equal(JTokenType.String, userContext.Type);
+        Assert.Equal("myUserContext", userContext.Value<string>());
     }
 }

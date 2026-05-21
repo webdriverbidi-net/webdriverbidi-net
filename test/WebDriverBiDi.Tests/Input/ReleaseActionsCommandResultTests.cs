@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Input;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ReleaseActionsCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         ReleaseActionsCommandResult? result = JsonSerializer.Deserialize<ReleaseActionsCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         ReleaseActionsCommandResult? result = JsonSerializer.Deserialize<ReleaseActionsCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ReleaseActionsCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

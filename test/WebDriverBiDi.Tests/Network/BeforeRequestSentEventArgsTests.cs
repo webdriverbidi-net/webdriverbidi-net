@@ -2,7 +2,6 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class BeforeRequestSentEventArgsTests
 {
     private readonly string requestDataJson = """
@@ -34,7 +33,7 @@ public class BeforeRequestSentEventArgsTests
                                               }
                                               """;
 
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow;
@@ -51,15 +50,13 @@ public class BeforeRequestSentEventArgsTests
                            }
                            """;
         BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
-            Assert.That(eventArgs.Initiator, Is.Null);
-        }
+        Assert.NotNull(eventArgs);
+
+        // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
+        Assert.Null(eventArgs.Initiator);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithOptionalValues()
     {
         DateTime now = DateTime.UtcNow;
@@ -79,17 +76,15 @@ public class BeforeRequestSentEventArgsTests
                            }
                            """;
         BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
-            // Also proper deserialization of the Initiator object is handled in InitiatorTests.
-            Assert.That(eventArgs.Initiator, Is.Not.Null);
-            Assert.That(eventArgs.Initiator!.Type, Is.EqualTo(InitiatorType.Parser));
-        }
+        Assert.NotNull(eventArgs);
+
+        // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
+        // Also proper deserialization of the Initiator object is handled in InitiatorTests.
+        Assert.NotNull(eventArgs.Initiator);
+        Assert.Equal(InitiatorType.Parser, eventArgs.Initiator.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow;
@@ -106,12 +101,12 @@ public class BeforeRequestSentEventArgsTests
                            }
                            """;
         BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         BeforeRequestSentEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidInitiatorTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -128,6 +123,6 @@ public class BeforeRequestSentEventArgsTests
                             "initiator": []
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson));
     }
 }

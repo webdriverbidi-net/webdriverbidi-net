@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Emulation;
 
 using TestUtilities;
 
-[TestFixture]
 public class EmulationModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestSetGeolocationOverrideCommandWithCoordinates()
     {
         TestWebSocketConnection connection = new();
@@ -22,17 +21,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetGeolocationOverrideCommandResult> task = module.SetGeolocationOverrideAsync(new SetGeolocationOverrideCoordinatesCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetGeolocationOverrideCommandResult result = task.Result;
+        Task<SetGeolocationOverrideCommandResult> task = module.SetGeolocationOverrideAsync(new SetGeolocationOverrideCoordinatesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetGeolocationOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetLocaleOverrideCommandWithCoordinates()
     {
         TestWebSocketConnection connection = new();
@@ -49,17 +47,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetLocaleOverrideCommandResult> task = module.SetLocaleOverrideAsync(new SetLocaleOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetLocaleOverrideCommandResult result = task.Result;
+        Task<SetLocaleOverrideCommandResult> task = module.SetLocaleOverrideAsync(new SetLocaleOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetLocaleOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetForcedColorsModeThemeOverrideCommandWithCoordinates()
     {
         TestWebSocketConnection connection = new();
@@ -76,17 +73,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetForcedColorsModeThemeOverrideCommandResult> task = module.SetForcedColorsModeThemeOverrideAsync(new SetForcedColorsModeThemeOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetForcedColorsModeThemeOverrideCommandResult result = task.Result;
+        Task<SetForcedColorsModeThemeOverrideCommandResult> task = module.SetForcedColorsModeThemeOverrideAsync(new SetForcedColorsModeThemeOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetForcedColorsModeThemeOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetScreenOrientationOverrideCommand()
     {
         TestWebSocketConnection connection = new();
@@ -103,17 +99,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScreenOrientationOverrideCommandResult> task = module.SetScreenOrientationOverrideAsync(new SetScreenOrientationOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetScreenOrientationOverrideCommandResult result = task.Result;
+        Task<SetScreenOrientationOverrideCommandResult> task = module.SetScreenOrientationOverrideAsync(new SetScreenOrientationOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetScreenOrientationOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetScreenSettingsOverrideCommand()
     {
         TestWebSocketConnection connection = new();
@@ -130,17 +125,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScreenSettingsOverrideCommandResult> task = module.SetScreenSettingsOverrideAsync(new SetScreenSettingsOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetScreenSettingsOverrideCommandResult result = task.Result;
+        Task<SetScreenSettingsOverrideCommandResult> task = module.SetScreenSettingsOverrideAsync(new SetScreenSettingsOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetScreenSettingsOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetScriptingEnabledCommand()
     {
         TestWebSocketConnection connection = new();
@@ -157,17 +151,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScriptingEnabledCommandResult> task = module.SetScriptingEnabledAsync(new SetScriptingEnabledCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetScriptingEnabledCommandResult result = task.Result;
+        Task<SetScriptingEnabledCommandResult> task = module.SetScriptingEnabledAsync(new SetScriptingEnabledCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetScriptingEnabledCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetTimeZoneOverrideCommandWithCoordinates()
     {
         TestWebSocketConnection connection = new();
@@ -184,17 +177,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetTimeZoneOverrideCommandResult> task = module.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetTimeZoneOverrideCommandResult result = task.Result;
+        Task<SetTimeZoneOverrideCommandResult> task = module.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetTimeZoneOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetScrollbarTypeOverrideCommand()
     {
         TestWebSocketConnection connection = new();
@@ -211,17 +203,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScrollbarTypeOverrideCommandResult> task = module.SetScrollbarTypeOverrideAsync(new SetScrollbarTypeOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetScrollbarTypeOverrideCommandResult result = task.Result;
+        Task<SetScrollbarTypeOverrideCommandResult> task = module.SetScrollbarTypeOverrideAsync(new SetScrollbarTypeOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetScrollbarTypeOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetTouchOverrideCommandWithCoordinates()
     {
         TestWebSocketConnection connection = new();
@@ -238,17 +229,16 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetTouchOverrideCommandResult> task = module.SetTouchOverrideAsync(new SetTouchOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetTouchOverrideCommandResult result = task.Result;
+        Task<SetTouchOverrideCommandResult> task = module.SetTouchOverrideAsync(new SetTouchOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetTouchOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetNetworkConditionsCommandWithCoordinates()
     {
         TestWebSocketConnection connection = new();
@@ -265,20 +255,19 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
         Task<SetNetworkConditionsCommandResult> task = module.SetNetworkConditionsAsync(new SetNetworkConditionsCommandParameters()
         {
             NetworkConditions = new NetworkConditionsOffline()
-        });
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetNetworkConditionsCommandResult result = task.Result;
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        SetNetworkConditionsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetUserAgentOverrideCommand()
     {
         TestWebSocketConnection connection = new();
@@ -295,16 +284,15 @@ public class EmulationModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
         Task<SetUserAgentOverrideCommandResult> task = module.SetUserAgentOverrideAsync(new SetUserAgentOverrideCommandParameters()
         {
             UserAgent = "WebDriverBiDi.NET/1.0 (no platform)"
-        });
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetUserAgentOverrideCommandResult result = task.Result;
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        SetUserAgentOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 }

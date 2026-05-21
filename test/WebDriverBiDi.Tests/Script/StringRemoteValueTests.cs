@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class StringRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeStringRemoteValue()
     {
         string json = """
@@ -17,12 +16,12 @@ public class StringRemoteValueTests
 
         StringRemoteValue? result = JsonSerializer.Deserialize<StringRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.String));
-        Assert.That(result.Value, Is.EqualTo("my string value"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.String, result.Type);
+        Assert.Equal("my string value", result.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -34,15 +33,15 @@ public class StringRemoteValueTests
 
         StringRemoteValue? result = JsonSerializer.Deserialize<StringRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("string"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<string>());
-        Assert.That(argumentLocalValue.Value, Is.EqualTo("my string value"));
+        Assert.Equal("string", argumentLocalValue.Type);
+        Assert.IsType<string>(argumentLocalValue.Value);
+        Assert.Equal("my string value", argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanUseImplicitConversionToString()
     {
         string json = """
@@ -54,12 +53,12 @@ public class StringRemoteValueTests
 
         StringRemoteValue? result = JsonSerializer.Deserialize<StringRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         string stringValue = result;
-        Assert.That(stringValue, Is.EqualTo("my string value"));
+        Assert.Equal("my string value", stringValue);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingStringRemoteValueWithMissingValueThrows()
     {
         string json = """
@@ -68,10 +67,10 @@ public class StringRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<StringRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StringRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingStringRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -81,10 +80,10 @@ public class StringRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<StringRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StringRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingStringRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -94,10 +93,10 @@ public class StringRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<StringRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StringRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -108,9 +107,9 @@ public class StringRemoteValueTests
                       """;
 
         StringRemoteValue? result = JsonSerializer.Deserialize<StringRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         StringRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

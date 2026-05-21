@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Protocol;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ErrorReceivedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateErrorReceivedEventArgs()
     {
         string json = """
@@ -17,26 +16,25 @@ public class ErrorReceivedEventArgsTests
                         "stacktrace": "stack trace"
                       }
                       """;
-        ErrorResponseMessage? errorMessage = JsonSerializer.Deserialize<ErrorResponseMessage>(json)!;
+        ErrorResponseMessage? errorMessage = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.NotNull(errorMessage);
         ErrorReceivedEventArgs eventArgs = new(errorMessage.GetErrorResponseData());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.ErrorData, Is.Not.Null);
-            Assert.That(eventArgs.ErrorData.IsError, Is.True);
-            Assert.That(eventArgs.ErrorData.ErrorCode, Is.EqualTo(ErrorCode.UnsetErrorCode));
-            Assert.That(eventArgs.ErrorData.ErrorType, Is.EqualTo("my error code"));
-            Assert.That(eventArgs.ErrorData.ErrorMessage, Is.EqualTo("error message"));
-            Assert.That(eventArgs.ErrorData.StackTrace, Is.EqualTo("stack trace"));
-        }
+
+        Assert.NotNull(eventArgs.ErrorData);
+        Assert.True(eventArgs.ErrorData.IsError);
+        Assert.Equal(ErrorCode.UnsetErrorCode, eventArgs.ErrorData.ErrorCode);
+        Assert.Equal("my error code", eventArgs.ErrorData.ErrorType);
+        Assert.Equal("error message", eventArgs.ErrorData.ErrorMessage);
+        Assert.Equal("stack trace", eventArgs.ErrorData.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCreateErrorReceivedEventArgsWithNullErrorDataThrows()
     {
-        Assert.That(() => new ErrorReceivedEventArgs(null!), Throws.ArgumentNullException);
+        Assert.Throws<ArgumentNullException>(() => new ErrorReceivedEventArgs(null!));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -48,9 +46,10 @@ public class ErrorReceivedEventArgsTests
                         "stacktrace": "stack trace"
                       }
                       """;
-        ErrorResponseMessage? errorMessage = JsonSerializer.Deserialize<ErrorResponseMessage>(json)!;
+        ErrorResponseMessage? errorMessage = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.NotNull(errorMessage);
         ErrorReceivedEventArgs eventArgs = new(errorMessage.GetErrorResponseData());
         ErrorReceivedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 }

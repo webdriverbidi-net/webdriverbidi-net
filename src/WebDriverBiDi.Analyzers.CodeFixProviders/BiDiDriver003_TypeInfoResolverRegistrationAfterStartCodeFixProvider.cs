@@ -109,7 +109,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider
         }
 
         // Insert the register statement before StartAsync
-        StatementSyntax registerStatementCopy = trackedRegisterStatement.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+        StatementSyntax registerStatementCopy = trackedRegisterStatement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
         SyntaxNode newMethod = methodWithoutRegister.InsertNodesBefore(updatedStartAsyncStatement, new[] { registerStatementCopy });
 
         SyntaxNode newRoot = root.ReplaceNode(method, newMethod);

@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
 
-[TestFixture]
 public class GattConnectionAttemptedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -15,15 +14,13 @@ public class GattConnectionAttemptedEventArgsTests
                       }
                       """;
         GattConnectionAttemptedEventArgs? eventArgs = JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myAddress", eventArgs.Address);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -33,12 +30,12 @@ public class GattConnectionAttemptedEventArgsTests
                       }
                       """;
         GattConnectionAttemptedEventArgs? eventArgs = JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         GattConnectionAttemptedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = """
@@ -46,10 +43,10 @@ public class GattConnectionAttemptedEventArgsTests
                         "address": "myAddress"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = """
@@ -58,10 +55,10 @@ public class GattConnectionAttemptedEventArgsTests
                         "address": "myAddress"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingAddressThrows()
     {
         string json = """
@@ -69,10 +66,10 @@ public class GattConnectionAttemptedEventArgsTests
                         "context": "myContextId"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidAddressTypeThrows()
     {
         string json = """
@@ -81,6 +78,6 @@ public class GattConnectionAttemptedEventArgsTests
                         "address": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GattConnectionAttemptedEventArgs>(json));
     }
 }

@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
 
-[TestFixture]
 public class UserPromptHandlerResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeUserPromptHandlerResult()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -30,21 +29,19 @@ public class UserPromptHandlerResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         UserPromptHandlerResult? handlerResult = result.UnhandledPromptBehavior;
-        Assert.That(handlerResult, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handlerResult.Default, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handlerResult.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handlerResult.Confirm, Is.EqualTo(UserPromptHandlerType.Dismiss));
-            Assert.That(handlerResult.Prompt, Is.EqualTo(UserPromptHandlerType.Dismiss));
-            Assert.That(handlerResult.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Ignore));
-            Assert.That(handlerResult.File, Is.EqualTo(UserPromptHandlerType.Ignore));
-        }
+        Assert.NotNull(handlerResult);
+
+        Assert.Equal(UserPromptHandlerType.Accept, handlerResult.Default);
+        Assert.Equal(UserPromptHandlerType.Accept, handlerResult.Alert);
+        Assert.Equal(UserPromptHandlerType.Dismiss, handlerResult.Confirm);
+        Assert.Equal(UserPromptHandlerType.Dismiss, handlerResult.Prompt);
+        Assert.Equal(UserPromptHandlerType.Ignore, handlerResult.BeforeUnload);
+        Assert.Equal(UserPromptHandlerType.Ignore, handlerResult.File);
     }
 
-    [Test]
+    [Fact]
     public void TestUserPromptHandlerResultCopySemantics()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -69,10 +66,10 @@ public class UserPromptHandlerResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         UserPromptHandlerResult? handlerResult = result.UnhandledPromptBehavior;
-        Assert.That(handlerResult, Is.Not.Null);
+        Assert.NotNull(handlerResult);
         UserPromptHandlerResult copy = handlerResult with { };
-        Assert.That(copy, Is.EqualTo(handlerResult));
+        Assert.Equal(handlerResult, copy);
     }
 }

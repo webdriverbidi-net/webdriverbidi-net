@@ -2,18 +2,17 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class HeaderTests
 {
-    [Test]
+    [Fact]
     public void TestCanConstructHeader()
     {
         Header header = new("name", "value");
-        Assert.That(header.Name, Is.EqualTo("name"));
-        Assert.That(header.Value, Is.EqualTo(BytesValue.FromString("value")));
+        Assert.Equal("name", header.Name);
+        Assert.Equal(BytesValue.FromString("value"), header.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeHeader()
     {
         string json = """
@@ -26,16 +25,14 @@ public class HeaderTests
                       }
                       """;
         Header? header = JsonSerializer.Deserialize<Header>(json);
-        Assert.That(header, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(header.Name, Is.EqualTo("headerName"));
-            Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(header.Value.Value, Is.EqualTo("headerValue"));
-        }
+        Assert.NotNull(header);
+
+        Assert.Equal("headerName", header.Name);
+        Assert.Equal(BytesValueType.String, header.Value.Type);
+        Assert.Equal("headerValue", header.Value.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeHeaderWithBinaryValue()
     {
         byte[] byteArray = new byte[] { 0x41, 0x42, 0x43 };
@@ -50,16 +47,14 @@ public class HeaderTests
                       }
                       """;
         Header? header = JsonSerializer.Deserialize<Header>(json);
-        Assert.That(header, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(header.Name, Is.EqualTo("headerName"));
-            Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.Base64));
-            Assert.That(header.Value.Value, Is.EqualTo(base64Value));
-        }
+        Assert.NotNull(header);
+
+        Assert.Equal("headerName", header.Name);
+        Assert.Equal(BytesValueType.Base64, header.Value.Type);
+        Assert.Equal(base64Value, header.Value.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingNameThrows()
     {
         string json = """
@@ -70,10 +65,10 @@ public class HeaderTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Header>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name"));
+        Assert.Contains("missing required properties including: 'name", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingValueThrows()
     {
         string json = """
@@ -81,6 +76,6 @@ public class HeaderTests
                         "name": "headerName"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Header>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value"));
+        Assert.Contains("missing required properties including: 'value", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json)).Message);
     }
 }

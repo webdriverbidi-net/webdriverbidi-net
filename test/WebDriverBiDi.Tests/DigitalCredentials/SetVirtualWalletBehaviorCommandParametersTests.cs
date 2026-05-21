@@ -3,77 +3,76 @@ namespace WebDriverBiDi.DigitalCredentials;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetVirtualWalletBehaviorCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Respond);
-        Assert.That(properties.MethodName, Is.EqualTo("digitalCredentials.setVirtualWalletBehavior"));
+        Assert.Equal("digitalCredentials.setVirtualWalletBehavior", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForRespondAction()
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Respond);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("respond"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("respond", action.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForWaitAction()
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Wait);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("wait"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("wait", action.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForDeclineAction()
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Decline);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("decline"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("decline", action.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForClearAction()
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Clear);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("clear"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("clear", action.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithContext()
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Respond)
@@ -82,19 +81,22 @@ public class SetVirtualWalletBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("respond"));
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("respond", action.Value<string>());
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithProtocol()
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Respond)
@@ -103,20 +105,22 @@ public class SetVirtualWalletBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("respond"));
-            Assert.That(serialized, Contains.Key("protocol"));
-            Assert.That(serialized["protocol"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["protocol"]!.Value<string>(), Is.EqualTo("myProtocol"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("respond", action.Value<string>());
+
+        Assert.True(serialized.ContainsKey("protocol"));
+        JToken? protocol = serialized["protocol"];
+        Assert.NotNull(protocol);
+        Assert.Equal(JTokenType.String, protocol.Type);
+        Assert.Equal("myProtocol", protocol.Value<string>());
     }
 
-
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithResponse()
     {
         Dictionary<string, object?> response = new()
@@ -129,20 +133,25 @@ public class SetVirtualWalletBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("respond"));
-            Assert.That(serialized, Contains.Key("response"));
-            Assert.That(serialized["response"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? responseObject = serialized["response"] as JObject;
-            Assert.That(responseObject, Is.Not.Null);
-            Assert.That(responseObject, Has.Count.EqualTo(1));
-            Assert.That(responseObject, Contains.Key("name"));
-            Assert.That(responseObject!["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(responseObject!["name"]!.Value<string>(), Is.EqualTo("value"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("respond", action.Value<string>());
+
+        Assert.True(serialized.ContainsKey("response"));
+        JToken? responseToken = serialized["response"];
+        Assert.NotNull(responseToken);
+        Assert.Equal(JTokenType.Object, responseToken.Type);
+        JObject? responseObject = responseToken as JObject;
+        Assert.NotNull(responseObject);
+        Assert.Single(responseObject);
+        Assert.True(responseObject.ContainsKey("name"));
+        JToken? responseName = responseObject["name"];
+        Assert.NotNull(responseName);
+        Assert.Equal(JTokenType.String, responseName.Type);
+        Assert.Equal("value", responseName.Value<string>());
     }
 }

@@ -75,8 +75,16 @@ public class TestTransport : Transport
 
         if (this.ReturnCustomValue)
         {
-            Command returnedCommand = new Command(this.LastCommandId, commandParameters);
-            returnedCommand.SetResult(this.CustomReturnValue!);
+            Command returnedCommand = new(this.LastCommandId, commandParameters);
+            if (this.CustomReturnValue is null)
+            {
+                returnedCommand.SetResult(null!);
+            }
+            else
+            {
+                returnedCommand.SetResult(this.CustomReturnValue);
+            }
+
             return returnedCommand;
         }
 

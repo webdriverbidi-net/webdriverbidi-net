@@ -3,14 +3,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Integration;
+namespace WebDriverBiDi.Integration.Tests;
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using PinchHitter;
 
-[TestFixture]
-public class AotCompilationEnvironmentTests
+public class AotCompilationEnvironmentTests : IAsyncLifetime
 {
     // The AOT test application must be published as a native binary at test time.
     // We locate the project directory relative to the test assembly's base directory.
@@ -19,9 +18,7 @@ public class AotCompilationEnvironmentTests
 
     private static string publishDir = string.Empty;
     private static string executablePath = string.Empty;
-
-    [OneTimeSetUp]
-    public async Task PublishAotBinaryAsync()
+    public async ValueTask InitializeAsync()
     {
         // Publish to a dedicated directory to avoid conflicts with regular builds.
         // Use -p:TreatWarningsAsErrors=true to convert static AOT warnings (IL2026,
@@ -38,18 +35,19 @@ public class AotCompilationEnvironmentTests
             workingDirectory: SmokeTestProjectDir,
             timeoutSeconds: 300);
 
-        Assert.That(publishExit, Is.EqualTo(0), "dotnet publish of AotTestApplication failed.");
+        Assert.Equal(0, publishExit);
 
         string executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? "WebDriverBiDi.AotTestApplication.exe"
             : "WebDriverBiDi.AotTestApplication";
         executablePath = Path.Combine(publishDir, executableName);
 
-        Assert.That(File.Exists(executablePath), Is.True, $"Published AOT executable not found at: {executablePath}");
+        Assert.True(File.Exists(executablePath));
     }
 
-    [TestCase(TestBrowser.Firefox)]
-    [TestCase(TestBrowser.Chrome)]
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
     public async Task TestCanExecuteInAotCompilationEnvironment(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
@@ -69,8 +67,10 @@ public class AotCompilationEnvironmentTests
             workingDirectory: publishDir,
             timeoutSeconds: 120);
 
-        Assert.That(runExit, Is.Zero, $"AotTestApplication ({testUrl}) exited with non-zero exit code.");
+        Assert.Equal(0, runExit);
     }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     private static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory, int timeoutSeconds)
     {
@@ -94,16 +94,16 @@ public class AotCompilationEnvironmentTests
         string stdout = await stdoutTask;
         string stderr = await stderrTask;
 
-        TestContext.Out.WriteLine($"[{Path.GetFileName(fileName)}] stdout:\n{stdout}");
+        TestContext.Current.SendDiagnosticMessage($"[{Path.GetFileName(fileName)}] stdout:\n{stdout}");
         if (!string.IsNullOrWhiteSpace(stderr))
         {
-            TestContext.Error.WriteLine($"[{Path.GetFileName(fileName)}] stderr:\n{stderr}");
+            TestContext.Current.SendDiagnosticMessage($"[{Path.GetFileName(fileName)}] stderr:\n{stderr}");
         }
 
         if (!exited)
         {
             process.Kill(entireProcessTree: true);
-            Assert.Fail($"Process '{fileName}' timed out after {timeoutSeconds}s.");
+            throw new Xunit.Sdk.XunitException($"Process '{fileName}' timed out after {timeoutSeconds}s.");
         }
 
         return process.ExitCode;

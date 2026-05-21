@@ -3,28 +3,33 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SimulateAdvertisementScanEntryTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerialize()
     {
         SimulateAdvertisementScanEntry properties = new("08:08:08:08:08", -10.1, new ScanRecord());
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            // ScanRecord serialization is tested in its own set of tests,
-            // so its serialized structure need not be fully verified here.
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("08:08:08:08:08"));
-            Assert.That(serialized, Contains.Key("rssi"));
-            Assert.That(serialized["rssi"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["rssi"]!.Value<double>(), Is.EqualTo(-10.1));
-            Assert.That(serialized, Contains.Key("scanRecord"));
-            Assert.That(serialized["scanRecord"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        // ScanRecord serialization is tested in its own set of tests,
+        // so its serialized structure need not be fully verified here.
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("08:08:08:08:08", address.Value<string>());
+
+        Assert.True(serialized.ContainsKey("rssi"));
+        JToken? rssi = serialized["rssi"];
+        Assert.NotNull(rssi);
+        Assert.Equal(JTokenType.Float,rssi.Type);
+        Assert.Equal(-10.1, rssi.Value<double>());
+        
+        Assert.True(serialized.ContainsKey("scanRecord"));
+        JToken? scanRecord = serialized["scanRecord"];
+        Assert.NotNull(scanRecord);
+        Assert.Equal(JTokenType.Object, scanRecord.Type);
     }
 }

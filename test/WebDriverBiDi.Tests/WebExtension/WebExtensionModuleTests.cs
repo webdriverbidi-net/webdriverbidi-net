@@ -2,10 +2,9 @@ namespace WebDriverBiDi.WebExtension;
 
 using TestUtilities;
 
-[TestFixture]
 public class WebExtensionModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestInstallActivateCommand()
     {
         TestWebSocketConnection connection = new();
@@ -24,18 +23,17 @@ public class WebExtensionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         WebExtensionModule module = driver.WebExtension;
 
-        Task<InstallCommandResult> task = module.InstallAsync(new InstallCommandParameters(new ExtensionPath("myExtensionPath")));
-        task.Wait(TimeSpan.FromSeconds(1));
-        InstallCommandResult result = task.Result;
+        Task<InstallCommandResult> task = module.InstallAsync(new InstallCommandParameters(new ExtensionPath("myExtensionPath")), cancellationToken: TestContext.Current.CancellationToken);
+        InstallCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ExtensionId, Is.EqualTo("myExtensionId"));
+        Assert.NotNull(result);
+        Assert.Equal("myExtensionId", result.ExtensionId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestUninstallActivateCommand()
     {
         TestWebSocketConnection connection = new();
@@ -52,13 +50,12 @@ public class WebExtensionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         WebExtensionModule module = driver.WebExtension;
 
-        Task<UninstallCommandResult> task = module.UninstallAsync(new UninstallCommandParameters("myExtensionPath"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        UninstallCommandResult result = task.Result;
+        Task<UninstallCommandResult> task = module.UninstallAsync(new UninstallCommandParameters("myExtensionPath"), cancellationToken: TestContext.Current.CancellationToken);
+        UninstallCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 }

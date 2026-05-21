@@ -1,39 +1,34 @@
 namespace WebDriverBiDi.Protocol;
 
-[TestFixture]
 public class UnhandledErrorCollectionTests()
 {
-    [Test]
+    [Fact]
     public void TestDefaultPropertyValues()
     {
         UnhandledErrorCollection unhandledErrors = new();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.ProtocolErrorBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
-            Assert.That(unhandledErrors.UnexpectedErrorBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
-            Assert.That(unhandledErrors.UnknownMessageBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
-            Assert.That(unhandledErrors.EventHandlerExceptionBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate), Is.False);
-            Assert.That(() => unhandledErrors.Exceptions, Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("No unhandled errors."));
-        }
+
+        Assert.Equal(TransportErrorBehavior.Ignore, unhandledErrors.ProtocolErrorBehavior);
+        Assert.Equal(TransportErrorBehavior.Ignore, unhandledErrors.UnexpectedErrorBehavior);
+        Assert.Equal(TransportErrorBehavior.Ignore, unhandledErrors.UnknownMessageBehavior);
+        Assert.Equal(TransportErrorBehavior.Ignore, unhandledErrors.EventHandlerExceptionBehavior);
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
+        Assert.Equal("No unhandled errors.", Assert.ThrowsAny<InvalidOperationException>(() => unhandledErrors.Exceptions).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestAddingUnhandledErrorWithIgnoreDoesNotAddErrorToCollection()
     {
         UnhandledErrorCollection unhandledErrors = new();
         unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate), Is.False);
-        }
+
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
     }
 
-    [Test]
+    [Fact]
     public void TestAddingUnhandledErrorWithCollect()
     {
         UnhandledErrorCollection unhandledErrors = new()
@@ -41,15 +36,13 @@ public class UnhandledErrorCollectionTests()
             ProtocolErrorBehavior = TransportErrorBehavior.Collect
         };
         unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.True);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate), Is.False);
-        }
+
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
+        Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
     }
 
-    [Test]
+    [Fact]
     public void TestAddingUnhandledErrorWithTerminate()
     {
         UnhandledErrorCollection unhandledErrors = new()
@@ -57,16 +50,13 @@ public class UnhandledErrorCollectionTests()
             ProtocolErrorBehavior = TransportErrorBehavior.Terminate
         };
         unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate), Is.True);
-        }
+
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
     }
 
-
-    [Test]
+    [Fact]
     public void TestClearingUnhandledErrors()
     {
         UnhandledErrorCollection unhandledErrors = new()
@@ -74,22 +64,19 @@ public class UnhandledErrorCollectionTests()
             ProtocolErrorBehavior = TransportErrorBehavior.Collect
         };
         unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.True);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate), Is.False);
-        }
+
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
+        Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
+
         unhandledErrors.ClearUnhandledErrors();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate), Is.False);
-        }
+
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetExceptions()
     {
         UnhandledErrorCollection unhandledErrors = new()
@@ -97,11 +84,14 @@ public class UnhandledErrorCollectionTests()
             ProtocolErrorBehavior = TransportErrorBehavior.Collect
         };
         unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
-        Assert.That(unhandledErrors.Exceptions, Has.Count.EqualTo(1));
-        Assert.That(unhandledErrors.Exceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("new exception"));
+        Assert.Single(unhandledErrors.Exceptions);
+        Assert.IsType<WebDriverBiDiException>(unhandledErrors.Exceptions[0]);
+        WebDriverBiDiException? typedException = unhandledErrors.Exceptions[0] as WebDriverBiDiException;
+        Assert.NotNull(typedException);
+        Assert.Equal("new exception", typedException.Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCaptureErrorsForDifferentBehaviorTypes()
     {
         UnhandledErrorCollection unhandledErrors = new()
@@ -112,64 +102,70 @@ public class UnhandledErrorCollectionTests()
         unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("invalid protocol message"));
         unhandledErrors.AddUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiException("unexpected error"));
         unhandledErrors.AddUnhandledError(UnhandledErrorType.EventHandlerException, new WebDriverBiDiException("event handler"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore), Is.False);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.True);
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate), Is.True);
-            Assert.That(unhandledErrors.Exceptions, Has.Count.EqualTo(2));
-            Assert.That(unhandledErrors.Exceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("invalid protocol message"));
-            Assert.That(unhandledErrors.Exceptions[1], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("unexpected error"));
-        }
+
+        Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
+        Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
+        Assert.Equal(2, unhandledErrors.Exceptions.Count);
+
+        Assert.IsType<WebDriverBiDiException>(unhandledErrors.Exceptions[0]);
+        WebDriverBiDiException? exception0 = unhandledErrors.Exceptions[0] as WebDriverBiDiException;
+        Assert.NotNull(exception0);
+        Assert.Equal("invalid protocol message", exception0.Message);
+
+        Assert.IsType<WebDriverBiDiException>(unhandledErrors.Exceptions[1]);
+        WebDriverBiDiException? exception1 = unhandledErrors.Exceptions[1] as WebDriverBiDiException;
+        Assert.NotNull(exception1);
+        Assert.Equal("unexpected error", exception1.Message);
     }
 
-    [Test]
+    [Fact]
     public void TestSettingUnknownMessageBehaviorCollectsErrors()
     {
         UnhandledErrorCollection unhandledErrors = new()
         {
             UnknownMessageBehavior = TransportErrorBehavior.Collect
         };
-        Assert.That(unhandledErrors.UnknownMessageBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
+        Assert.Equal(TransportErrorBehavior.Collect, unhandledErrors.UnknownMessageBehavior);
         unhandledErrors.AddUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException("unknown message"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.True);
-            Assert.That(unhandledErrors.Exceptions, Has.Count.EqualTo(1));
-            Assert.That(unhandledErrors.Exceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("unknown message"));
-        }
+
+        Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.Single(unhandledErrors.Exceptions);
+        Assert.IsType<WebDriverBiDiException>(unhandledErrors.Exceptions[0]);
+        WebDriverBiDiException? unknownException = unhandledErrors.Exceptions[0] as WebDriverBiDiException;
+        Assert.NotNull(unknownException);
+        Assert.Equal("unknown message", unknownException.Message);
     }
 
-    [Test]
+    [Fact]
     public void TestSettingEventHandlerExceptionBehaviorCollectsErrors()
     {
         UnhandledErrorCollection unhandledErrors = new()
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect
         };
-        Assert.That(unhandledErrors.EventHandlerExceptionBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
+        Assert.Equal(TransportErrorBehavior.Collect, unhandledErrors.EventHandlerExceptionBehavior);
         unhandledErrors.AddUnhandledError(UnhandledErrorType.EventHandlerException, new WebDriverBiDiException("event handler exception"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.True);
-            Assert.That(unhandledErrors.Exceptions, Has.Count.EqualTo(1));
-            Assert.That(unhandledErrors.Exceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("event handler exception"));
-        }
+
+        Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
+        Assert.Single(unhandledErrors.Exceptions);
+        Assert.IsType<WebDriverBiDiException>(unhandledErrors.Exceptions[0]);
+        WebDriverBiDiException? handlerException = unhandledErrors.Exceptions[0] as WebDriverBiDiException;
+        Assert.NotNull(handlerException);
+        Assert.Equal("event handler exception", handlerException.Message);
     }
 
-    [Test]
+    [Fact]
     public void TestTryGetExceptionsReturnsFalseForIgnoreBehavior()
     {
         UnhandledErrorCollection unhandledErrors = new();
         bool result = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Ignore, out IList<Exception> exceptions);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Is.False);
-            Assert.That(exceptions, Is.Empty);
-        }
+
+        Assert.False(result);
+        Assert.Empty(exceptions);
     }
 
-    [Test]
+    [Fact]
     public void TestTryGetExceptionsReturnsFalseWhenNoMatchingErrors()
     {
         UnhandledErrorCollection unhandledErrors = new()
@@ -177,14 +173,12 @@ public class UnhandledErrorCollectionTests()
             ProtocolErrorBehavior = TransportErrorBehavior.Collect
         };
         bool result = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> exceptions);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Is.False);
-            Assert.That(exceptions, Is.Empty);
-        }
+
+        Assert.False(result);
+        Assert.Empty(exceptions);
     }
 
-    [Test]
+    [Fact]
     public void TestTryGetExceptionsReturnsMatchingExceptions()
     {
         UnhandledErrorCollection unhandledErrors = new()
@@ -197,14 +191,19 @@ public class UnhandledErrorCollectionTests()
 
         bool collectResult = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectExceptions);
         bool terminateResult = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminateExceptions);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(collectResult, Is.True);
-            Assert.That(collectExceptions, Has.Count.EqualTo(1));
-            Assert.That(collectExceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("collected error"));
-            Assert.That(terminateResult, Is.True);
-            Assert.That(terminateExceptions, Has.Count.EqualTo(1));
-            Assert.That(terminateExceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("terminal error"));
-        }
+
+        Assert.True(collectResult);
+        Assert.Single(collectExceptions);
+        Assert.IsType<WebDriverBiDiException>(collectExceptions[0]);
+        WebDriverBiDiException? collectedException = collectExceptions[0] as WebDriverBiDiException;
+        Assert.NotNull(collectedException);
+        Assert.Equal("collected error", collectedException.Message);
+
+        Assert.True(terminateResult);
+        Assert.Single(terminateExceptions);
+        Assert.IsType<WebDriverBiDiException>(terminateExceptions[0]);
+        WebDriverBiDiException? terminatedException = terminateExceptions[0] as WebDriverBiDiException;
+        Assert.NotNull(terminatedException);
+        Assert.Equal("terminal error", terminatedException.Message);
     }
 }

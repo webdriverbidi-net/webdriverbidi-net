@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class UndefinedRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeUndefinedRemoteValue()
     {
         string json = """
@@ -16,11 +15,11 @@ public class UndefinedRemoteValueTests
 
         UndefinedRemoteValue? result = JsonSerializer.Deserialize<UndefinedRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Undefined));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Undefined, result.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -31,14 +30,14 @@ public class UndefinedRemoteValueTests
 
         UndefinedRemoteValue? result = JsonSerializer.Deserialize<UndefinedRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("undefined"));
-        Assert.That(argumentLocalValue.Value, Is.Null);
+        Assert.Equal("undefined", argumentLocalValue.Type);
+        Assert.Null(argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingStringRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -47,10 +46,10 @@ public class UndefinedRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<UndefinedRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UndefinedRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -60,9 +59,9 @@ public class UndefinedRemoteValueTests
                       """;
 
         UndefinedRemoteValue? result = JsonSerializer.Deserialize<UndefinedRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         UndefinedRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

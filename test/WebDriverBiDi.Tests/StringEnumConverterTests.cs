@@ -1,70 +1,69 @@
 namespace WebDriverBiDi;
 
-[TestFixture]
 public class StringEnumValueConverterTests
 {
-    [Test]
+    [Fact]
     public void ShouldConvertEnumValue()
     {
         StringEnumValueConverter<BasicEnum> converter = new();
-        Assert.That(converter.GetString(BasicEnum.FirstValue), Is.EqualTo("firstvalue"));
+        Assert.Equal("firstvalue", converter.GetString(BasicEnum.FirstValue));
     }
 
-    [Test]
+    [Fact]
     public void ShouldConvertEnumValueWithCustomSerializedValue()
     {
         StringEnumValueConverter<BasicEnum> converter = new();
-        Assert.That(converter.GetString(BasicEnum.SecondValue), Is.EqualTo("second-value"));
+        Assert.Equal("second-value", converter.GetString(BasicEnum.SecondValue));
     }
 
-    [Test]
+    [Fact]
     public void ShouldConvertStringToBasicValue()
     {
         StringEnumValueConverter<BasicEnum> converter = new();
-        Assert.That(converter.GetValue("firstvalue"), Is.EqualTo(BasicEnum.FirstValue));
+        Assert.Equal(BasicEnum.FirstValue, converter.GetValue("firstvalue"));
     }
 
-    [Test]
+    [Fact]
     public void ShouldConvertStringToCustomValue()
     {
         StringEnumValueConverter<BasicEnum> converter = new();
-        Assert.That(converter.GetValue("second-value"), Is.EqualTo(BasicEnum.SecondValue));
+        Assert.Equal(BasicEnum.SecondValue, converter.GetValue("second-value"));
     }
 
-    [Test]
+    [Fact]
     public void ShouldConvertInvalidStringValueWhenDefaultAttributeSet()
     {
         StringEnumValueConverter<EnumWithDefault> converter = new();
         EnumWithDefault value = converter.GetValue("invalid");
-        Assert.That(value, Is.EqualTo(EnumWithDefault.DefaultValue));
+        Assert.Equal(EnumWithDefault.DefaultValue, value);
     }
 
-    [Test]
+    [Fact]
     public void ConvertInvalidStringValueThrows()
     {
         StringEnumValueConverter<BasicEnum> converter = new();
-        Assert.That(() => converter.GetValue("invalid"), Throws.InstanceOf<ArgumentException>());
+        Assert.ThrowsAny<ArgumentException>(() => converter.GetValue("invalid"));
     }
 
-    [Test]
+    [Fact]
     public void TryConvertInvalidStringValueReturnsFalseWithNoDefaultSpecified()
     {
         StringEnumValueConverter<BasicEnum> converter = new();
-        Assert.That(converter.TryGetValue("invalid", out _), Is.False);
+        Assert.False(converter.TryGetValue("invalid", out _));
     }
 
-    [Test]
+    [Fact]
     public void TryConvertInvalidStringValueReturnsFalseWithDefaultSpecified()
     {
         StringEnumValueConverter<EnumWithDefault> converter = new();
-        Assert.That(converter.TryGetValue("invalid", out _), Is.False);
+        Assert.False(converter.TryGetValue("invalid", out _));
     }
 
-    [Test]
+    [Fact]
     public void ConvertInvalidEnumValueThrows()
     {
         StringEnumValueConverter<FlagEnum> converter = new();
-        Assert.That(() => converter.GetString(FlagEnum.FirstValue | FlagEnum.SecondValue), Throws.InstanceOf<ArgumentException>());
+        Assert.ThrowsAny<ArgumentException>(() => converter.GetString(FlagEnum.FirstValue | FlagEnum.SecondValue));
     }
 
     private enum BasicEnum

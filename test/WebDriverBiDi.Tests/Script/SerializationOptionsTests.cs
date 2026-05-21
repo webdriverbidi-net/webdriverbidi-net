@@ -3,23 +3,20 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SerializationOptionsTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeOptions()
     {
         SerializationOptions options = new();
         string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Is.Empty);
-        }
+
+        Assert.Equal(JTokenType.Object, serialized.Type);
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeOptionsWithOptionalMaxDomDepth()
     {
         SerializationOptions options = new()
@@ -28,17 +25,17 @@ public class SerializationOptionsTests
         };
         string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("maxDomDepth"));
-            Assert.That(serialized["maxDomDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["maxDomDepth"]!.Value<long>, Is.EqualTo(1));
-        }
+
+        Assert.Equal(JTokenType.Object, serialized.Type);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("maxDomDepth"));
+        JToken? maxDomDepth = serialized["maxDomDepth"];
+        Assert.NotNull(maxDomDepth);
+        Assert.Equal(JTokenType.Integer, maxDomDepth.Type);
+        Assert.Equal(1L, maxDomDepth.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeOptionsWithOptionalInfiniteMaxDomDepth()
     {
         SerializationOptions options = new()
@@ -47,16 +44,16 @@ public class SerializationOptionsTests
         };
         string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("maxDomDepth"));
-            Assert.That(serialized["maxDomDepth"]!.Type, Is.EqualTo(JTokenType.Null));
-        }
+
+        Assert.Equal(JTokenType.Object, serialized.Type);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("maxDomDepth"));
+        JToken? maxDomDepth = serialized["maxDomDepth"];
+        Assert.NotNull(maxDomDepth);
+        Assert.Equal(JTokenType.Null, maxDomDepth.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeOptionsWithOptionalMaxObjectDepth()
     {
         SerializationOptions options = new()
@@ -65,17 +62,17 @@ public class SerializationOptionsTests
         };
         string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("maxObjectDepth"));
-            Assert.That(serialized["maxObjectDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["maxObjectDepth"]!.Value<long>, Is.EqualTo(1));
-        }
+
+        Assert.Equal(JTokenType.Object, serialized.Type);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("maxObjectDepth"));
+        JToken? maxObjectDepth = serialized["maxObjectDepth"];
+        Assert.NotNull(maxObjectDepth);
+        Assert.Equal(JTokenType.Integer, maxObjectDepth.Type);
+        Assert.Equal(1L, maxObjectDepth.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeOptionsWithOptionalIncludeShadowTree()
     {
         SerializationOptions options = new()
@@ -84,17 +81,17 @@ public class SerializationOptionsTests
         };
         string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("includeShadowTree"));
-            Assert.That(serialized["includeShadowTree"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["includeShadowTree"]!.Value<string>, Is.EqualTo("none"));
-        }
+
+        Assert.Equal(JTokenType.Object, serialized.Type);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("includeShadowTree"));
+        JToken? includeShadowTree = serialized["includeShadowTree"];
+        Assert.NotNull(includeShadowTree);
+        Assert.Equal(JTokenType.String, includeShadowTree.Type);
+        Assert.Equal("none", includeShadowTree.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeOptionsWithOptionalIncludeOpenShadowTree()
     {
         SerializationOptions options = new()
@@ -103,17 +100,17 @@ public class SerializationOptionsTests
         };
         string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("includeShadowTree"));
-            Assert.That(serialized["includeShadowTree"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["includeShadowTree"]!.Value<string>, Is.EqualTo("open"));
-        }
+
+        Assert.Equal(JTokenType.Object, serialized.Type);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("includeShadowTree"));
+        JToken? includeShadowTree = serialized["includeShadowTree"];
+        Assert.NotNull(includeShadowTree);
+        Assert.Equal(JTokenType.String, includeShadowTree.Type);
+        Assert.Equal("open", includeShadowTree.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeOptionsWithOptionalIncludeAllShadowTree()
     {
         SerializationOptions options = new()
@@ -122,13 +119,13 @@ public class SerializationOptionsTests
         };
         string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("includeShadowTree"));
-            Assert.That(serialized["includeShadowTree"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["includeShadowTree"]!.Value<string>, Is.EqualTo("all"));
-        }
+
+        Assert.Equal(JTokenType.Object, serialized.Type);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("includeShadowTree"));
+        JToken? includeShadowTree = serialized["includeShadowTree"];
+        Assert.NotNull(includeShadowTree);
+        Assert.Equal(JTokenType.String, includeShadowTree.Type);
+        Assert.Equal("all", includeShadowTree.Value<string>());
     }
 }

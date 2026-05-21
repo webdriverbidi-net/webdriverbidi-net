@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Session;
 
 using TestUtilities;
 
-[TestFixture]
 public class SessionModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestExecuteStatusCommand()
     {
         TestWebSocketConnection connection = new();
@@ -26,21 +25,18 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<StatusCommandResult> task = module.StatusAsync(new StatusCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        StatusCommandResult result = task.Result;
+        Task<StatusCommandResult> task = module.StatusAsync(new StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        StatusCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsReady, Is.True);
-            Assert.That(result.Message, Is.EqualTo("ready for connection"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.IsReady);
+        Assert.Equal("ready for connection", result.Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteStatusCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -61,21 +57,18 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<StatusCommandResult> task = module.StatusAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        StatusCommandResult result = task.Result;
+        Task<StatusCommandResult> task = module.StatusAsync(cancellationToken: TestContext.Current.CancellationToken);
+        StatusCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsReady, Is.True);
-            Assert.That(result.Message, Is.EqualTo("ready for connection"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.IsReady);
+        Assert.Equal("ready for connection", result.Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteSubscribeCommand()
     {
         TestWebSocketConnection connection = new();
@@ -95,18 +88,17 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         SubscribeCommandParameters subscribeParameters = new(["log.entryAdded"]);
-        Task<SubscribeCommandResult> task = module.SubscribeAsync(subscribeParameters);
-        task.Wait(TimeSpan.FromSeconds(1));
-        SubscribeCommandResult result = task.Result;
+        Task<SubscribeCommandResult> task = module.SubscribeAsync(subscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
+        SubscribeCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.SubscriptionId, Is.EqualTo("mySubscriptionId"));
+        Assert.NotNull(result);
+        Assert.Equal("mySubscriptionId", result.SubscriptionId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteUnsubscribeByAttributesCommand()
     {
         TestWebSocketConnection connection = new();
@@ -124,18 +116,17 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         UnsubscribeByAttributesCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.Events.Add("log.entryAdded");
-        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters);
-        task.Wait(TimeSpan.FromSeconds(1));
-        UnsubscribeCommandResult result = task.Result;
+        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
+        UnsubscribeCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteUnsubscribeBySubscriptionIdsCommand()
     {
         TestWebSocketConnection connection = new();
@@ -153,18 +144,17 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.SubscriptionIds.Add("mySubscriptionId");
-        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters);
-        task.Wait(TimeSpan.FromSeconds(1));
-        UnsubscribeCommandResult result = task.Result;
+        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
+        UnsubscribeCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteNewCommand()
     {
         TestWebSocketConnection connection = new();
@@ -196,33 +186,31 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         NewCommandParameters newCommandParameters = new();
-        Task<NewCommandResult> task = module.NewSessionAsync(newCommandParameters);
-        task.Wait(TimeSpan.FromSeconds(1));
-        NewCommandResult result = task.Result;
+        Task<NewCommandResult> task = module.NewSessionAsync(newCommandParameters, cancellationToken: TestContext.Current.CancellationToken);
+        NewCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.SessionId, Is.EqualTo("mySession"));
-            Assert.That(result.Capabilities.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.Capabilities.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.Capabilities.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.Capabilities.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Capabilities.AcceptInsecureCertificates, Is.True);
-            Assert.That(result.Capabilities.SetWindowRect, Is.True);
-            Assert.That(result.Capabilities.Proxy, Is.Not.Null);
-            Assert.That(result.Capabilities.AdditionalCapabilities, Has.Count.EqualTo(1));
-            Assert.That(result.Capabilities.AdditionalCapabilities, Contains.Key("additionalCapName"));
-            Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"], Is.Not.Null);
-            Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"], Is.TypeOf<string>());
-            Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"]!.ToString(), Is.EqualTo("additionalCapValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("mySession", result.SessionId);
+        Assert.Equal("greatBrowser", result.Capabilities.BrowserName);
+        Assert.Equal("101.5b", result.Capabilities.BrowserVersion);
+        Assert.Equal("otherOS", result.Capabilities.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.Capabilities.UserAgent);
+        Assert.True(result.Capabilities.AcceptInsecureCertificates);
+        Assert.True(result.Capabilities.SetWindowRect);
+        Assert.NotNull(result.Capabilities.Proxy);
+        Assert.Single(result.Capabilities.AdditionalCapabilities);
+        Assert.True(result.Capabilities.AdditionalCapabilities.ContainsKey("additionalCapName"));
+        object? additionalCapValue = result.Capabilities.AdditionalCapabilities["additionalCapName"];
+        Assert.NotNull(additionalCapValue);
+        Assert.IsType<string>(additionalCapValue);
+        Assert.Equal("additionalCapValue", additionalCapValue.ToString());
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteEndCommand()
     {
         TestWebSocketConnection connection = new();
@@ -240,16 +228,15 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         EndCommandParameters endParameters = new();
-        Task<EndCommandResult> task = module.EndAsync(endParameters);
-        task.Wait(TimeSpan.FromSeconds(1));
-        EndCommandResult result = task.Result;
-        Assert.That(result, Is.Not.Null);
+        Task<EndCommandResult> task = module.EndAsync(endParameters, cancellationToken: TestContext.Current.CancellationToken);
+        EndCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteEndCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -267,12 +254,11 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EndCommandResult> task = module.EndAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        EndCommandResult result = task.Result;
+        Task<EndCommandResult> task = module.EndAsync(cancellationToken: TestContext.Current.CancellationToken);
+        EndCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 }

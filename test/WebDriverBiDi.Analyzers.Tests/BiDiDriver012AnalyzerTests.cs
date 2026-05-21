@@ -7,7 +7,6 @@ namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -15,7 +14,7 @@ using Microsoft.CodeAnalysis.Testing;
 /// </summary>
 public class BiDiDriver012AnalyzerTests
 {
-    [Test]
+    [Fact]
     public async Task DisposeAsync_WithoutStopAsync_ReportsInfo()
     {
         string testCode = """
@@ -45,7 +44,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task DisposeAsync_WithStopAsync_NoDiagnostic()
     {
         string testCode = """
@@ -70,7 +69,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task DisposeAsync_WithStopAsyncInTryFinally_NoDiagnostic()
     {
         string testCode = """
@@ -101,7 +100,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task DisposeAsync_WithStopAsyncAfter_ReportsInfo()
     {
         string testCode = """
@@ -132,7 +131,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleDrivers_DisposeAsyncWithoutStopAsync_ReportsMultipleInfo()
     {
         string testCode = """
@@ -171,7 +170,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected1, expected2);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleDrivers_OneWithStopAsync_ReportsInfoForOtherDriver()
     {
         string testCode = """
@@ -205,7 +204,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task NonBiDiDriverDisposeAsync_NoDiagnostic()
     {
         string testCode = """
@@ -236,7 +235,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MethodWithoutBody_NoDiagnostic()
     {
         string testCode = """
@@ -255,7 +254,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task DisposeAsync_InConditional_WithoutStopAsync_ReportsInfo()
     {
         string testCode = """
@@ -289,7 +288,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task DisposeAsync_WithStopAsyncInSameConditional_NoDiagnostic()
     {
         string testCode = """
@@ -318,7 +317,7 @@ public class BiDiDriver012AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task DisposeAsync_StopAsyncOnDifferentDriver_ReportsInfo()
     {
         string testCode = """
@@ -350,5 +349,4 @@ public class BiDiDriver012AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
-
 }

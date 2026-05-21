@@ -3,10 +3,9 @@ namespace WebDriverBiDi.Script;
 using TestUtilities;
 using WebDriverBiDi.Protocol;
 
-[TestFixture]
 public class ScriptModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestExecuteCallFunctionCommand()
     {
         TestWebSocketConnection connection = new();
@@ -31,27 +30,24 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
-        task.Wait(TimeSpan.FromSeconds(1));
-        EvaluateResult result = task.Result;
+        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
+        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultSuccess>(result);
         EvaluateResultSuccess? successResult = result as EvaluateResultSuccess;
-        Assert.That(successResult, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
-            Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
-            Assert.That(successResult.Result, Is.Not.Null);
-            Assert.That(successResult.Result.Type, Is.EqualTo(RemoteValueType.String));
-            Assert.That(successResult.Result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
-        }
+        Assert.NotNull(successResult);
+
+        Assert.Equal("myRealmId", successResult.RealmId);
+        Assert.Equal(EvaluateResultType.Success, successResult.ResultType);
+        Assert.NotNull(successResult.Result);
+        Assert.Equal(RemoteValueType.String, successResult.Result.Type);
+        Assert.Equal("myStringValue", successResult.Result.ConvertTo<StringRemoteValue>().Value);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteCallFunctionCommandReturningError()
     {
         TestWebSocketConnection connection = new();
@@ -84,30 +80,27 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
-        task.Wait(TimeSpan.FromSeconds(1));
-        EvaluateResult result = task.Result;
+        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
+        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<EvaluateResultException>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultException>(result);
         EvaluateResultException? exceptionResult = result as EvaluateResultException;
-        Assert.That(exceptionResult, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealmId"));
-            Assert.That(exceptionResult.ResultType, Is.EqualTo(EvaluateResultType.Exception));
-            Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("error received from script"));
-            Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(2));
-            Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
-            Assert.That(exceptionResult.ExceptionDetails.StackTrace, Is.Not.Null);
-            Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Is.Empty);
-            Assert.That(exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
-        }
+        Assert.NotNull(exceptionResult);
+
+        Assert.Equal("myRealmId", exceptionResult.RealmId);
+        Assert.Equal(EvaluateResultType.Exception, exceptionResult.ResultType);
+        Assert.Equal("error received from script", exceptionResult.ExceptionDetails.Text);
+        Assert.Equal(2, exceptionResult.ExceptionDetails.LineNumber);
+        Assert.Equal(5, exceptionResult.ExceptionDetails.ColumnNumber);
+        Assert.NotNull(exceptionResult.ExceptionDetails.StackTrace);
+        Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
+        Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteEvaluateCommand()
     {
         TestWebSocketConnection connection = new();
@@ -132,27 +125,24 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
-        task.Wait(TimeSpan.FromSeconds(1));
-        EvaluateResult result = task.Result;
+        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
+        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultSuccess>(result);
         EvaluateResultSuccess? successResult = result as EvaluateResultSuccess;
-        Assert.That(successResult, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
-            Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
-            Assert.That(successResult.Result, Is.Not.Null);
-            Assert.That(successResult.Result.Type, Is.EqualTo(RemoteValueType.String));
-            Assert.That(successResult.Result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
-        }
+        Assert.NotNull(successResult);
+
+        Assert.Equal("myRealmId", successResult.RealmId);
+        Assert.Equal(EvaluateResultType.Success, successResult.ResultType);
+        Assert.NotNull(successResult.Result);
+        Assert.Equal(RemoteValueType.String, successResult.Result.Type);
+        Assert.Equal("myStringValue", successResult.Result.ConvertTo<StringRemoteValue>().Value);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteEvaluateCommandReturningError()
     {
         TestWebSocketConnection connection = new();
@@ -185,30 +175,27 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
-        task.Wait(TimeSpan.FromSeconds(1));
-        EvaluateResult result = task.Result;
+        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
+        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<EvaluateResultException>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultException>(result);
         EvaluateResultException? exceptionResult = result as EvaluateResultException;
-        Assert.That(exceptionResult, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealmId"));
-            Assert.That(exceptionResult.ResultType, Is.EqualTo(EvaluateResultType.Exception));
-            Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("error received from script"));
-            Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(2));
-            Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
-            Assert.That(exceptionResult.ExceptionDetails.StackTrace, Is.Not.Null);
-            Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Is.Empty);
-            Assert.That(exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
-        }
+        Assert.NotNull(exceptionResult);
+
+        Assert.Equal("myRealmId", exceptionResult.RealmId);
+        Assert.Equal(EvaluateResultType.Exception, exceptionResult.ResultType);
+        Assert.Equal("error received from script", exceptionResult.ExceptionDetails.Text);
+        Assert.Equal(2, exceptionResult.ExceptionDetails.LineNumber);
+        Assert.Equal(5, exceptionResult.ExceptionDetails.ColumnNumber);
+        Assert.NotNull(exceptionResult.ExceptionDetails.StackTrace);
+        Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
+        Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteGetRealmsCommand()
     {
         TestWebSocketConnection connection = new();
@@ -235,30 +222,26 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<GetRealmsCommandResult> task = module.GetRealmsAsync(new GetRealmsCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetRealmsCommandResult result = task.Result;
+        Task<GetRealmsCommandResult> task = module.GetRealmsAsync(new GetRealmsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        GetRealmsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Realms, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Realms[0].Type, Is.EqualTo(RealmType.Window));
-            Assert.That(result.Realms[0], Is.TypeOf<WindowRealmInfo>());
-        }
+        Assert.NotNull(result);
+        Assert.Single(result.Realms);
+
+        Assert.Equal(RealmType.Window, result.Realms[0].Type);
+        Assert.IsType<WindowRealmInfo>(result.Realms[0]);
+
         WindowRealmInfo info = result.Realms[0].As<WindowRealmInfo>();
-        Assert.That(info, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(info.RealmId, Is.EqualTo("myRealmId"));
-            Assert.That(info.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(info.BrowsingContext, Is.EqualTo("myContextId"));
-        }
+        Assert.NotNull(info);
+
+        Assert.Equal("myRealmId", info.RealmId);
+        Assert.Equal("myOrigin", info.Origin);
+        Assert.Equal("myContextId", info.BrowsingContext);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteGetRealmsCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -278,17 +261,16 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<GetRealmsCommandResult> task = module.GetRealmsAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetRealmsCommandResult result = task.Result;
+        Task<GetRealmsCommandResult> task = module.GetRealmsAsync(cancellationToken: TestContext.Current.CancellationToken);
+        GetRealmsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Realms, Has.Count.EqualTo(0));
+        Assert.NotNull(result);
+        Assert.Empty(result.Realms);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteDisownCommand()
     {
         TestWebSocketConnection connection = new();
@@ -306,34 +288,32 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<DisownCommandResult> task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
-        task.Wait(TimeSpan.FromSeconds(1));
-        DisownCommandResult result = task.Result;
+        Task<DisownCommandResult> task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }), cancellationToken: TestContext.Current.CancellationToken);
+        DisownCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<DisownCommandResult>());
+        Assert.NotNull(result);
+        Assert.IsType<DisownCommandResult>(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveRealmCreatedEvent()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         ManualResetEvent syncEvent = new(false);
         module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.RealmId, Is.EqualTo("myRealm"));
-                Assert.That(e.Origin, Is.EqualTo("myOrigin"));
-                Assert.That(e.Type, Is.EqualTo(RealmType.Window));
-                Assert.That(e.As<WindowRealmInfo>().BrowsingContext, Is.EqualTo("myContext"));
-            }
+
+            Assert.Equal("myRealm", e.RealmId);
+            Assert.Equal("myOrigin", e.Origin);
+            Assert.Equal(RealmType.Window, e.Type);
+            Assert.Equal("myContext", e.As<WindowRealmInfo>().BrowsingContext);
+
             syncEvent.Set();
             return Task.CompletedTask;
         });
@@ -352,26 +332,25 @@ public class ScriptModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveRealmCreatedEventForNonWindowRealm()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         ManualResetEvent syncEvent = new(false);
         module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.RealmId, Is.EqualTo("myRealm"));
-                Assert.That(e.Origin, Is.EqualTo("myOrigin"));
-                Assert.That(e.Type, Is.EqualTo(RealmType.Worker));
-            }
+
+            Assert.Equal("myRealm", e.RealmId);
+            Assert.Equal("myOrigin", e.Origin);
+            Assert.Equal(RealmType.Worker, e.Type);
+
             syncEvent.Set();
             return Task.CompletedTask;
         });
@@ -389,21 +368,21 @@ public class ScriptModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveRealmDestroyedEvent()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         ManualResetEvent syncEvent = new(false);
         module.OnRealmDestroyed.AddObserver((RealmDestroyedEventArgs e) =>
         {
-            Assert.That(e.RealmId, Is.EqualTo("myRealm"));
+            Assert.Equal("myRealm", e.RealmId);
             syncEvent.Set();
             return Task.CompletedTask;
         });
@@ -419,29 +398,28 @@ public class ScriptModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveMessageEvent()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         ManualResetEvent syncEvent = new(false);
         module.OnMessage.AddObserver((MessageEventArgs e) =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.ChannelId, Is.EqualTo("myChannel"));
-                Assert.That(e.Data, Is.Not.Null);
-                Assert.That(e.Data.Type, Is.EqualTo(RemoteValueType.String));
-                Assert.That(e.Data.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myChannelValue"));
-                Assert.That(e.Source, Is.Not.Null);
-                Assert.That(e.Source.RealmId, Is.EqualTo("myRealm"));
-            }
+
+            Assert.Equal("myChannel", e.ChannelId);
+            Assert.NotNull(e.Data);
+            Assert.Equal(RemoteValueType.String, e.Data.Type);
+            Assert.Equal("myChannelValue", e.Data.ConvertTo<StringRemoteValue>().Value);
+            Assert.NotNull(e.Source);
+            Assert.Equal("myRealm", e.Source.RealmId);
+
             syncEvent.Set();
             return Task.CompletedTask;
         });
@@ -464,10 +442,10 @@ public class ScriptModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanAddPreloadScript()
     {
         TestWebSocketConnection connection = new();
@@ -487,18 +465,17 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<AddPreloadScriptCommandResult> task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        AddPreloadScriptCommandResult result = task.Result;
+        Task<AddPreloadScriptCommandResult> task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"), cancellationToken: TestContext.Current.CancellationToken);
+        AddPreloadScriptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<AddPreloadScriptCommandResult>());
-        Assert.That(result.PreloadScriptId, Is.EqualTo("loadScriptId"));
+        Assert.NotNull(result);
+        Assert.IsType<AddPreloadScriptCommandResult>(result);
+        Assert.Equal("loadScriptId", result.PreloadScriptId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanRemovePreloadScript()
     {
         TestWebSocketConnection connection = new();
@@ -516,12 +493,11 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<RemovePreloadScriptCommandResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        RemovePreloadScriptCommandResult result = task.Result;
+        Task<RemovePreloadScriptCommandResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"), cancellationToken: TestContext.Current.CancellationToken);
+        RemovePreloadScriptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 }

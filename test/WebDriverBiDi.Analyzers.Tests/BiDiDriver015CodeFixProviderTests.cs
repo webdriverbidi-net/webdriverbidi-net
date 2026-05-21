@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver015 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver015CodeFixProviderTests
 {
     /// <summary>
     /// Tests that code fix replaces string literal with EventName property.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_ReplacesStringLiteralWithEventName()
     {
         string testCode = """
@@ -179,10 +177,10 @@ public class BiDiDriver015CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task StringLiteralWithNoObserver_NoDiagnostic()
     {
         // A string literal matching a known event name appears in SubscribeAsync,

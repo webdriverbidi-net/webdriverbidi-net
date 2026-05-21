@@ -3,26 +3,25 @@ namespace WebDriverBiDi.Storage;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class GetCookiesCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         GetCookiesCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("storage.getCookies"));
+        Assert.Equal("storage.getCookies", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         GetCookiesCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(0));
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithCookieFilter()
     {
         GetCookiesCommandParameters properties = new()
@@ -34,20 +33,23 @@ public class GetCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("filter"));
-            Assert.That(serialized["filter"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject filterObject = serialized["filter"]!.Value<JObject>()!;
-            Assert.That(filterObject, Has.Count.EqualTo(1));
-            Assert.That(filterObject, Contains.Key("name"));
-            Assert.That(filterObject["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(filterObject["name"]!.Value<string>(), Is.EqualTo("cookieName"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("filter"));
+        JToken? filterToken = serialized["filter"];
+        Assert.NotNull(filterToken);
+        Assert.Equal(JTokenType.Object, filterToken.Type);
+        JObject? filterObject = filterToken as JObject;
+        Assert.NotNull(filterObject);
+        Assert.Single(filterObject);
+        Assert.True(filterObject.ContainsKey("name"));
+        JToken? filterName = filterObject["name"];
+        Assert.NotNull(filterName);
+        Assert.Equal(JTokenType.String, filterName.Type);
+        Assert.Equal("cookieName", filterName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithBrowsingContextPartitionDescriptor()
     {
         GetCookiesCommandParameters properties = new()
@@ -56,23 +58,28 @@ public class GetCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("partition"));
-            Assert.That(serialized["partition"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject partitionObject = serialized["partition"]!.Value<JObject>()!;
-            Assert.That(partitionObject, Has.Count.EqualTo(2));
-            Assert.That(partitionObject, Contains.Key("type"));
-            Assert.That(partitionObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(partitionObject["type"]!.Value<string>(), Is.EqualTo("context"));
-            Assert.That(partitionObject, Contains.Key("context"));
-            Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("partition"));
+        JToken? partitionToken = serialized["partition"];
+        Assert.NotNull(partitionToken);
+        Assert.Equal(JTokenType.Object, partitionToken.Type);
+        JObject? partitionObject = partitionToken as JObject;
+        Assert.NotNull(partitionObject);
+        Assert.Equal(2, partitionObject.Count);
+        Assert.True(partitionObject.ContainsKey("type"));
+        JToken? partitionType = partitionObject["type"];
+        Assert.NotNull(partitionType);
+        Assert.Equal(JTokenType.String, partitionType.Type);
+        Assert.Equal("context", partitionType.Value<string>());
+        Assert.True(partitionObject.ContainsKey("context"));
+        JToken? partitionContext = partitionObject["context"];
+        Assert.NotNull(partitionContext);
+        Assert.Equal(JTokenType.String, partitionContext.Type);
+        Assert.Equal("myContext", partitionContext.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithStorageKeyPartitionDescriptor()
     {
         GetCookiesCommandParameters properties = new()
@@ -84,23 +91,28 @@ public class GetCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("partition"));
-            Assert.That(serialized["partition"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject partitionObject = serialized["partition"]!.Value<JObject>()!;
-            Assert.That(partitionObject, Has.Count.EqualTo(2));
-            Assert.That(partitionObject, Contains.Key("type"));
-            Assert.That(partitionObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(partitionObject["type"]!.Value<string>(), Is.EqualTo("storageKey"));
-            Assert.That(partitionObject, Contains.Key("userContext"));
-            Assert.That(partitionObject["userContext"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(partitionObject["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("partition"));
+        JToken? partitionToken = serialized["partition"];
+        Assert.NotNull(partitionToken);
+        Assert.Equal(JTokenType.Object, partitionToken.Type);
+        JObject? partitionObject = partitionToken as JObject;
+        Assert.NotNull(partitionObject);
+        Assert.Equal(2, partitionObject.Count);
+        Assert.True(partitionObject.ContainsKey("type"));
+        JToken? partitionType = partitionObject["type"];
+        Assert.NotNull(partitionType);
+        Assert.Equal(JTokenType.String, partitionType.Type);
+        Assert.Equal("storageKey", partitionType.Value<string>());
+        Assert.True(partitionObject.ContainsKey("userContext"));
+        JToken? userContext = partitionObject["userContext"];
+        Assert.NotNull(userContext);
+        Assert.Equal(JTokenType.String, userContext.Type);
+        Assert.Equal("myUserContext", userContext.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAllValues()
     {
         GetCookiesCommandParameters properties = new()
@@ -113,26 +125,37 @@ public class GetCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("filter"));
-            Assert.That(serialized["filter"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject filterObject = serialized["filter"]!.Value<JObject>()!;
-            Assert.That(filterObject, Has.Count.EqualTo(1));
-            Assert.That(filterObject, Contains.Key("name"));
-            Assert.That(filterObject["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(filterObject["name"]!.Value<string>(), Is.EqualTo("cookieName"));
-            Assert.That(serialized, Contains.Key("partition"));
-            Assert.That(serialized["partition"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject partitionObject = serialized["partition"]!.Value<JObject>()!;
-            Assert.That(partitionObject, Has.Count.EqualTo(2));
-            Assert.That(partitionObject, Contains.Key("type"));
-            Assert.That(partitionObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(partitionObject["type"]!.Value<string>(), Is.EqualTo("context"));
-            Assert.That(partitionObject, Contains.Key("context"));
-            Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("filter"));
+        JToken? filterToken = serialized["filter"];
+        Assert.NotNull(filterToken);
+        Assert.Equal(JTokenType.Object, filterToken.Type);
+        JObject? filterObject = filterToken as JObject;
+        Assert.NotNull(filterObject);
+        Assert.Single(filterObject);
+        Assert.True(filterObject.ContainsKey("name"));
+        JToken? filterName = filterObject["name"];
+        Assert.NotNull(filterName);
+        Assert.Equal(JTokenType.String, filterName.Type);
+        Assert.Equal("cookieName", filterName.Value<string>());
+
+        Assert.True(serialized.ContainsKey("partition"));
+        JToken? partitionToken = serialized["partition"];
+        Assert.NotNull(partitionToken);
+        Assert.Equal(JTokenType.Object, partitionToken.Type);
+        JObject? partitionObject = partitionToken as JObject;
+        Assert.NotNull(partitionObject);
+        Assert.Equal(2, partitionObject.Count);
+        Assert.True(partitionObject.ContainsKey("type"));
+        JToken? partitionType = partitionObject["type"];
+        Assert.NotNull(partitionType);
+        Assert.Equal(JTokenType.String, partitionType.Type);
+        Assert.Equal("context", partitionType.Value<string>());
+        Assert.True(partitionObject.ContainsKey("context"));
+        JToken? partitionContext = partitionObject["context"];
+        Assert.NotNull(partitionContext);
+        Assert.Equal(JTokenType.String, partitionContext.Type);
+        Assert.Equal("myContext", partitionContext.Value<string>());
     }
 }

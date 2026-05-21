@@ -3,32 +3,31 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class PrintCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         PrintCommandParameters properties = new("myContextId");
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.print"));
+        Assert.Equal("browsingContext.print", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         PrintCommandParameters properties = new("myContextId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithMargins()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -43,36 +42,49 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("margin"));
-            Assert.That(serialized["margin"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? margins = serialized["margin"] as JObject;
-        Assert.That(margins, Is.Not.Null);
-        Assert.That(margins, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(margins!, Contains.Key("right"));
-            Assert.That(margins!["right"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(margins["right"]!.Value<double>(), Is.EqualTo(2.54));
-            Assert.That(margins, Contains.Key("left"));
-            Assert.That(margins["left"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(margins["left"]!.Value<double>(), Is.EqualTo(2.54));
-            Assert.That(margins, Contains.Key("top"));
-            Assert.That(margins["top"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(margins["top"]!.Value<double>(), Is.EqualTo(2.54));
-            Assert.That(margins, Contains.Key("bottom"));
-            Assert.That(margins["bottom"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(margins["bottom"]!.Value<double>(), Is.EqualTo(2.54));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("margin"));
+        JToken? marginToken = serialized["margin"];
+        Assert.NotNull(marginToken);
+        Assert.Equal(JTokenType.Object, marginToken.Type);
+
+        JObject? margins = marginToken.Value<JObject>();
+        Assert.NotNull(margins);
+        Assert.Equal(4, margins.Count);
+
+        Assert.True(margins.ContainsKey("right"));
+        JToken? right = margins["right"];
+        Assert.NotNull(right);
+        Assert.Equal(JTokenType.Float, right.Type);
+        Assert.Equal(2.54, right.Value<double>());
+
+        Assert.True(margins.ContainsKey("left"));
+        JToken? left = margins["left"];
+        Assert.NotNull(left);
+        Assert.Equal(JTokenType.Float, left.Type);
+        Assert.Equal(2.54, left.Value<double>());
+
+        Assert.True(margins.ContainsKey("top"));
+        JToken? top = margins["top"];
+        Assert.NotNull(top);
+        Assert.Equal(JTokenType.Float, top.Type);
+        Assert.Equal(2.54, top.Value<double>());
+
+        Assert.True(margins.ContainsKey("bottom"));
+        JToken? bottom = margins["bottom"];
+        Assert.NotNull(bottom);
+        Assert.Equal(JTokenType.Float, bottom.Type);
+        Assert.Equal(2.54, bottom.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullMarginValues()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -87,34 +99,36 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("margin"));
-            Assert.That(serialized["margin"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? margins = serialized["margin"] as JObject;
-        Assert.That(margins, Is.Not.Null);
-        Assert.That(margins, Has.Count.EqualTo(0));
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("margin"));
+        JToken? marginToken = serialized["margin"];
+        Assert.NotNull(marginToken);
+        Assert.Equal(JTokenType.Object, marginToken.Type);
+
+        JObject? margins = marginToken.Value<JObject>();
+        Assert.NotNull(margins);
+        Assert.Empty(margins);
     }
 
-    [Test]
+    [Fact]
     public void TestSettingMarginsToInvalidValuesThrows()
     {
         PrintMarginParameters properties = new();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => properties.Top = -1, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be greater than or equal to zero"));
-            Assert.That(() => properties.Bottom = -1, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be greater than or equal to zero"));
-            Assert.That(() => properties.Left = -1, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be greater than or equal to zero"));
-            Assert.That(() => properties.Right = -1, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be greater than or equal to zero"));
-        }
+
+        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Top = -1).Message);
+        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Bottom = -1).Message);
+        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Left = -1).Message);
+        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Right = -1).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullPageSizeValues()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -127,32 +141,34 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("page"));
-            Assert.That(serialized["page"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? margins = serialized["page"] as JObject;
-        Assert.That(margins, Is.Not.Null);
-        Assert.That(margins, Has.Count.EqualTo(0));
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("page"));
+        JToken? pageToken = serialized["page"];
+        Assert.NotNull(pageToken);
+        Assert.Equal(JTokenType.Object, pageToken.Type);
+
+        JObject? margins = pageToken.Value<JObject>();
+        Assert.NotNull(margins);
+        Assert.Empty(margins);
     }
 
-    [Test]
+    [Fact]
     public void TestSettingPageSizeToInvalidValuesThrows()
     {
         PrintPageParameters properties = new();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => properties.Width = -1, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be greater than or equal to zero"));
-            Assert.That(() => properties.Height = -1, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be greater than or equal to zero"));
-        }
+
+        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Width = -1).Message);
+        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Height = -1).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullMargins()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -161,16 +177,16 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPageSize()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -183,30 +199,37 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("page"));
-            Assert.That(serialized["page"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? pageSize = serialized["page"] as JObject;
-        Assert.That(pageSize, Is.Not.Null);
-        Assert.That(pageSize, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(pageSize!, Contains.Key("width"));
-            Assert.That(pageSize!["width"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(pageSize["width"]!.Value<double>(), Is.EqualTo(24));
-            Assert.That(pageSize, Contains.Key("height"));
-            Assert.That(pageSize["height"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(pageSize["height"]!.Value<double>(), Is.EqualTo(29.7));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("page"));
+        JToken? pageToken = serialized["page"];
+        Assert.NotNull(pageToken);
+        Assert.Equal(JTokenType.Object, pageToken.Type);
+
+        JObject? pageSize = pageToken.Value<JObject>();
+        Assert.NotNull(pageSize);
+        Assert.Equal(2, pageSize.Count);
+
+        Assert.True(pageSize.ContainsKey("width"));
+        JToken? width = pageSize["width"];
+        Assert.NotNull(width);
+        Assert.Equal(JTokenType.Float, width.Type);
+        Assert.Equal(24, width.Value<double>());
+
+        Assert.True(pageSize.ContainsKey("height"));
+        JToken? height = pageSize["height"];
+        Assert.NotNull(height);
+        Assert.Equal(JTokenType.Float, height.Type);
+        Assert.Equal(29.7, height.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullPageSize()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -215,16 +238,16 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOrientation()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -233,19 +256,22 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("orientation"));
-            Assert.That(serialized["orientation"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["orientation"]!.Value<string>(), Is.EqualTo("landscape"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("orientation"));
+        JToken? orientation = serialized["orientation"];
+        Assert.NotNull(orientation);
+        Assert.Equal(JTokenType.String, orientation.Type);
+        Assert.Equal("landscape", orientation.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullOrientation()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -254,16 +280,16 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithBackground()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -272,19 +298,22 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("background"));
-            Assert.That(serialized["background"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["background"]!.Value<bool>(), Is.True);
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("background"));
+        JToken? background = serialized["background"];
+        Assert.NotNull(background);
+        Assert.Equal(JTokenType.Boolean, background.Type);
+        Assert.True(background.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullBackground()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -293,16 +322,16 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithScale()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -311,19 +340,22 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("scale"));
-            Assert.That(serialized["scale"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["scale"]!.Value<double>(), Is.EqualTo(1.5));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("scale"));
+        JToken? scale = serialized["scale"];
+        Assert.NotNull(scale);
+        Assert.Equal(JTokenType.Float, scale.Type);
+        Assert.Equal(1.5, scale.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullScale()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -332,29 +364,27 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestSettingScaleToInvalidValueThrows()
     {
         PrintCommandParameters properties = new("myContextId");
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => properties.Scale = -1, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be between 0.1 and 2.0"));
-            Assert.That(() => properties.Scale = 0.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be between 0.1 and 2.0"));
-            Assert.That(() => properties.Scale = 2.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be between 0.1 and 2.0"));
-            Assert.That(() => properties.Scale = 0, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Value must be between 0.1 and 2.0"));
-        }
+
+        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = -1).Message);
+        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = 0.01).Message);
+        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = 2.01).Message);
+        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = 0).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithShrinkToFit()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -363,19 +393,22 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("shrinkToFit"));
-            Assert.That(serialized["shrinkToFit"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["shrinkToFit"]!.Value<bool>(), Is.False);
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("shrinkToFit"));
+        JToken? shrinkToFit = serialized["shrinkToFit"];
+        Assert.NotNull(shrinkToFit);
+        Assert.Equal(JTokenType.Boolean, shrinkToFit.Type);
+        Assert.False(shrinkToFit.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNullShrinkToFit()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -384,16 +417,16 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPageRanges()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -406,44 +439,45 @@ public class PrintCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("pageRanges"));
-            Assert.That(serialized["pageRanges"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, serialized.Count);
 
-        JArray? pageRanges = serialized["pageRanges"] as JArray;
-        Assert.That(pageRanges, Is.Not.Null);
-        Assert.That(pageRanges, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(pageRanges![0].Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(pageRanges[0].Value<long>, Is.EqualTo(1));
-            Assert.That(pageRanges[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(pageRanges[1].Value<string>, Is.EqualTo("3-5"));
-        }
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("pageRanges"));
+        JToken? pageRangesToken = serialized["pageRanges"];
+        Assert.NotNull(pageRangesToken);
+        Assert.Equal(JTokenType.Array, pageRangesToken.Type);
+
+        JArray? pageRanges = pageRangesToken as JArray;
+        Assert.NotNull(pageRanges);
+        Assert.Equal(2, pageRanges.Count);
+
+        Assert.Equal(JTokenType.Integer, pageRanges[0].Type);
+        Assert.Equal(1L, pageRanges[0].Value<long>());
+        Assert.Equal(JTokenType.String, pageRanges[1].Type);
+        Assert.Equal("3-5", pageRanges[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNoPageRanges()
     {
         PrintCommandParameters properties = new("myContextId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestSerializeParametersWithInvalidPageRangesThrows()
     {
         PrintCommandParameters properties = new("myContextId")
@@ -455,6 +489,6 @@ public class PrintCommandParametersTests
                 true
             ]
         };
-        Assert.That(() => JsonSerializer.Serialize(properties), Throws.InstanceOf<ArgumentException>().With.Message.Contains("Page range must be a string or an integer value"));
+        Assert.Contains("Page range must be a string or an integer value", Assert.ThrowsAny<ArgumentException>(() => JsonSerializer.Serialize(properties)).Message);
     }
 }

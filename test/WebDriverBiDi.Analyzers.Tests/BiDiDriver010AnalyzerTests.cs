@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Testing;
 /// </summary>
 public class BiDiDriver010AnalyzerTests
 {
-    [Test]
+    [Fact]
     public async Task FireAndForgetModuleCommand_ReportsError()
     {
         string testCode = """
@@ -44,7 +44,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task AwaitedModuleCommand_NoDiagnostic()
     {
         string testCode = """
@@ -68,7 +68,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandAssignedToVariable_NoDiagnostic()
     {
         string testCode = """
@@ -93,7 +93,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandPassedAsArgument_NoDiagnostic()
     {
         string testCode = """
@@ -122,7 +122,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandReturned_NoDiagnostic()
     {
         string testCode = """
@@ -146,7 +146,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleFireAndForgetCommands_ReportsMultipleErrors()
     {
         string testCode = """
@@ -184,7 +184,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected1, expected2);
     }
 
-    [Test]
+    [Fact]
     public async Task FireAndForgetInExpressionStatement_ReportsError()
     {
         string testCode = """
@@ -214,7 +214,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task NonModuleMethod_NoDiagnostic()
     {
         string testCode = """
@@ -244,7 +244,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task NonGenericTaskReturningMethod_NoDiagnostic()
     {
         string testCode = """
@@ -268,7 +268,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandInConditional_FireAndForget_ReportsError()
     {
         string testCode = """
@@ -301,7 +301,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandInLoop_FireAndForget_ReportsError()
     {
         string testCode = """
@@ -334,7 +334,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandWithConfigureAwait_NoDiagnostic()
     {
         string testCode = """
@@ -358,7 +358,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandWithConfigureAwaitNotAwaited_ReportsError()
     {
         string testCode = """
@@ -388,7 +388,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandWithConversionAssigned_NoDiagnostic()
     {
         string testCode = """
@@ -413,7 +413,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandWithConversionPassedAsArgument_NoDiagnostic()
     {
         string testCode = """
@@ -442,7 +442,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandWithConversionAwaited_NoDiagnostic()
     {
         string testCode = """
@@ -467,7 +467,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandWithConversionReturned_NoDiagnostic()
     {
         string testCode = """
@@ -492,7 +492,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandContinueWithAwaited_NoDiagnostic()
     {
         string testCode = """
@@ -516,7 +516,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandContinueWithNotAwaited_ReportsError()
     {
         string testCode = """
@@ -546,7 +546,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandContinueWithAssigned_NoDiagnostic()
     {
         string testCode = """
@@ -570,7 +570,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandContinueWithReturned_NoDiagnostic()
     {
         string testCode = """
@@ -594,7 +594,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandContinueWithPassedAsArgument_NoDiagnostic()
     {
         string testCode = """
@@ -623,7 +623,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandContinueWithChainedNotAwaited_ReportsError()
     {
         string testCode = """
@@ -653,7 +653,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ClassNotEndingWithModule_NoDiagnostic()
     {
         string testCode = """
@@ -684,7 +684,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ClassEndingWithModuleButNoModuleBaseClass_NoDiagnostic()
     {
         string testCode = """
@@ -714,7 +714,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommandInVariableDeclarator_NoDiagnostic()
     {
         string testCode = """
@@ -739,7 +739,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task CustomModuleWithNonGenericTask_NoDiagnostic()
     {
         string testCode = """
@@ -770,7 +770,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task CustomModuleWithVoidMethod_NoDiagnostic()
     {
         string testCode = """
@@ -800,7 +800,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task CustomModuleWithNonAsyncMethod_NoDiagnostic()
     {
         string testCode = """
@@ -831,7 +831,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleWithInterfaceInheritance_FireAndForget_ReportsError()
     {
         string testCode = """
@@ -873,7 +873,7 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task DeepModuleInheritanceHierarchy_FireAndForget_ReportsError()
     {
         string testCode = """

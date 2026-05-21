@@ -3,83 +3,118 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SimulateDescriptorResponseCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Read, 0);
-        Assert.That(properties.MethodName, Is.EqualTo("bluetooth.simulateDescriptorResponse"));
+        Assert.Equal("bluetooth.simulateDescriptorResponse", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForDescriptorReadResponse()
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Read, 0);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(7));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-            Assert.That(serialized, Contains.Key("serviceUuid"));
-            Assert.That(serialized["serviceUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["serviceUuid"]!.Value<string>(), Is.EqualTo("myServiceUuid"));
-            Assert.That(serialized, Contains.Key("characteristicUuid"));
-            Assert.That(serialized["characteristicUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["characteristicUuid"]!.Value<string>(), Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(serialized, Contains.Key("descriptorUuid"));
-            Assert.That(serialized["descriptorUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["descriptorUuid"]!.Value<string>(), Is.EqualTo("myDescriptorUuid"));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("read"));
-            Assert.That(serialized, Contains.Key("code"));
-            Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-        }
+        Assert.Equal(7, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("myAddress", address.Value<string>());
+
+        Assert.True(serialized.ContainsKey("serviceUuid"));
+        JToken? serviceUuid = serialized["serviceUuid"];
+        Assert.NotNull(serviceUuid);
+        Assert.Equal(JTokenType.String, serviceUuid.Type);
+        Assert.Equal("myServiceUuid", serviceUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("characteristicUuid"));
+        JToken? characteristicUuid = serialized["characteristicUuid"];
+        Assert.NotNull(characteristicUuid);
+        Assert.Equal(JTokenType.String, characteristicUuid.Type);
+        Assert.Equal("myCharacteristicUuid", characteristicUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("descriptorUuid"));
+        JToken? descriptorUuid = serialized["descriptorUuid"];
+        Assert.NotNull(descriptorUuid);
+        Assert.Equal(JTokenType.String, descriptorUuid.Type);
+        Assert.Equal("myDescriptorUuid", descriptorUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("read", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("code"));
+        JToken? code = serialized["code"];
+        Assert.NotNull(code);
+        Assert.Equal(JTokenType.Integer, code.Type);
+        Assert.Equal(0U, code.Value<uint>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForDescriptorWriteResponse()
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Write, 0);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(7));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-            Assert.That(serialized, Contains.Key("serviceUuid"));
-            Assert.That(serialized["serviceUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["serviceUuid"]!.Value<string>(), Is.EqualTo("myServiceUuid"));
-            Assert.That(serialized, Contains.Key("characteristicUuid"));
-            Assert.That(serialized["characteristicUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["characteristicUuid"]!.Value<string>(), Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(serialized, Contains.Key("descriptorUuid"));
-            Assert.That(serialized["descriptorUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["descriptorUuid"]!.Value<string>(), Is.EqualTo("myDescriptorUuid"));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("write"));
-            Assert.That(serialized, Contains.Key("code"));
-            Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-        }
+        Assert.Equal(7, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("myAddress", address.Value<string>());
+
+        Assert.True(serialized.ContainsKey("serviceUuid"));
+        JToken? serviceUuid = serialized["serviceUuid"];
+        Assert.NotNull(serviceUuid);
+        Assert.Equal(JTokenType.String, serviceUuid.Type);
+        Assert.Equal("myServiceUuid", serviceUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("characteristicUuid"));
+        JToken? characteristicUuid = serialized["characteristicUuid"];
+        Assert.NotNull(characteristicUuid);
+        Assert.Equal(JTokenType.String, characteristicUuid.Type);
+        Assert.Equal("myCharacteristicUuid", characteristicUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("descriptorUuid"));
+        JToken? descriptorUuid = serialized["descriptorUuid"];
+        Assert.NotNull(descriptorUuid);
+        Assert.Equal(JTokenType.String, descriptorUuid.Type);
+        Assert.Equal("myDescriptorUuid", descriptorUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("write", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("code"));
+        JToken? code = serialized["code"];
+        Assert.NotNull(code);
+        Assert.Equal(JTokenType.Integer, code.Type);
+        Assert.Equal(0U, code.Value<uint>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForCharacteristicResponseWithEmptyData()
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Read, 0)
@@ -88,38 +123,61 @@ public class SimulateDescriptorResponseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(8));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-            Assert.That(serialized, Contains.Key("serviceUuid"));
-            Assert.That(serialized["serviceUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["serviceUuid"]!.Value<string>(), Is.EqualTo("myServiceUuid"));
-            Assert.That(serialized, Contains.Key("characteristicUuid"));
-            Assert.That(serialized["characteristicUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["characteristicUuid"]!.Value<string>(), Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("read"));
-            Assert.That(serialized, Contains.Key("code"));
-            Assert.That(serialized, Contains.Key("descriptorUuid"));
-            Assert.That(serialized["descriptorUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["descriptorUuid"]!.Value<string>(), Is.EqualTo("myDescriptorUuid"));
-            Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-            Assert.That(serialized, Contains.Key("data"));
-            Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? dataArray = serialized["data"] as JArray;
-            Assert.That(dataArray, Is.Empty);
-        }
+        Assert.Equal(8, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("myAddress", address.Value<string>());
+
+        Assert.True(serialized.ContainsKey("serviceUuid"));
+        JToken? serviceUuid = serialized["serviceUuid"];
+        Assert.NotNull(serviceUuid);
+        Assert.Equal(JTokenType.String, serviceUuid.Type);
+        Assert.Equal("myServiceUuid", serviceUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("characteristicUuid"));
+        JToken? characteristicUuid = serialized["characteristicUuid"];
+        Assert.NotNull(characteristicUuid);
+        Assert.Equal(JTokenType.String, characteristicUuid.Type);
+        Assert.Equal("myCharacteristicUuid", characteristicUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("descriptorUuid"));
+        JToken? descriptorUuid = serialized["descriptorUuid"];
+        Assert.NotNull(descriptorUuid);
+        Assert.Equal(JTokenType.String, descriptorUuid.Type);
+        Assert.Equal("myDescriptorUuid", descriptorUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("read", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("code"));
+        JToken? code = serialized["code"];
+        Assert.NotNull(code);
+        Assert.Equal(JTokenType.Integer, code.Type);
+        Assert.Equal(0U, code.Value<uint>());
+
+        Assert.True(serialized.ContainsKey("data"));
+        JToken? data = serialized["data"];
+        Assert.NotNull(data);
+        Assert.Equal(JTokenType.Array, data.Type);
+
+        JArray? dataArray = serialized["data"] as JArray;
+        Assert.NotNull(dataArray);
+        Assert.Empty(dataArray);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForCharacteristicResponseWithData()
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Read, 0)
@@ -128,38 +186,61 @@ public class SimulateDescriptorResponseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(8));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-            Assert.That(serialized, Contains.Key("serviceUuid"));
-            Assert.That(serialized["serviceUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["serviceUuid"]!.Value<string>(), Is.EqualTo("myServiceUuid"));
-            Assert.That(serialized, Contains.Key("characteristicUuid"));
-            Assert.That(serialized["characteristicUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["characteristicUuid"]!.Value<string>(), Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(serialized, Contains.Key("descriptorUuid"));
-            Assert.That(serialized["descriptorUuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["descriptorUuid"]!.Value<string>(), Is.EqualTo("myDescriptorUuid"));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("read"));
-            Assert.That(serialized, Contains.Key("code"));
-            Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-            Assert.That(serialized, Contains.Key("data"));
-            Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? dataArray = serialized["data"] as JArray;
-            Assert.That(dataArray, Has.Count.EqualTo(2));
-            Assert.That(dataArray![0].Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(dataArray[0].Value<uint>(), Is.EqualTo(123));
-            Assert.That(dataArray![1].Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(dataArray[1].Value<uint>(), Is.EqualTo(456));
-        }
+        Assert.Equal(8, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("myAddress", address.Value<string>());
+
+        Assert.True(serialized.ContainsKey("serviceUuid"));
+        JToken? serviceUuid = serialized["serviceUuid"];
+        Assert.NotNull(serviceUuid);
+        Assert.Equal(JTokenType.String, serviceUuid.Type);
+        Assert.Equal("myServiceUuid", serviceUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("characteristicUuid"));
+        JToken? characteristicUuid = serialized["characteristicUuid"];
+        Assert.NotNull(characteristicUuid);
+        Assert.Equal(JTokenType.String, characteristicUuid.Type);
+        Assert.Equal("myCharacteristicUuid", characteristicUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("descriptorUuid"));
+        JToken? descriptorUuid = serialized["descriptorUuid"];
+        Assert.NotNull(descriptorUuid);
+        Assert.Equal(JTokenType.String, descriptorUuid.Type);
+        Assert.Equal("myDescriptorUuid", descriptorUuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("read", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("code"));
+        JToken? code = serialized["code"];
+        Assert.NotNull(code);
+        Assert.Equal(JTokenType.Integer, code.Type);
+        Assert.Equal(0U, code.Value<uint>());
+
+        Assert.True(serialized.ContainsKey("data"));
+        JToken? data = serialized["data"];
+        Assert.NotNull(data);
+        Assert.Equal(JTokenType.Array, data.Type);
+
+        JArray? dataArray = serialized["data"] as JArray;
+        Assert.NotNull(dataArray);
+        Assert.Equal(2, dataArray.Count);
+        Assert.Equal(JTokenType.Integer, dataArray[0].Type);
+        Assert.Equal(123U, dataArray[0].Value<uint>());
+        Assert.Equal(JTokenType.Integer, dataArray[1].Type);
+        Assert.Equal(456U, dataArray[1].Value<uint>());
     }
 }

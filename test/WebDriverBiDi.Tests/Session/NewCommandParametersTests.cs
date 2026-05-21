@@ -3,27 +3,28 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class NewCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         NewCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("session.new"));
+        Assert.Equal("session.new", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         NewCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Contains.Key("capabilities"));
-        Assert.That(serialized["capabilities"], Is.Empty);
+        Assert.True(serialized.ContainsKey("capabilities"));
+        JObject? capabilities = serialized["capabilities"] as JObject;
+        Assert.NotNull(capabilities);
+        Assert.Empty(capabilities);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithAlwaysMatch()
     {
         NewCommandParameters properties = new()
@@ -35,24 +36,27 @@ public class NewCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("capabilities"));
+        Assert.Single(serialized);
 
-            Assert.That(serialized["capabilities"], Contains.Key("alwaysMatch"));
-            Assert.That(serialized["capabilities"]!["alwaysMatch"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? alwaysMatch = serialized["capabilities"]["alwaysMatch"] as JObject;
-        Assert.That(alwaysMatch, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(alwaysMatch!, Contains.Key("browserName"));
-            Assert.That(alwaysMatch!["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
-        }
+        Assert.True(serialized.ContainsKey("capabilities"));
+        JObject? capabilities = serialized["capabilities"] as JObject;
+        Assert.NotNull(capabilities);
+        Assert.True(capabilities.ContainsKey("alwaysMatch"));
+        JToken? alwaysMatchToken = capabilities["alwaysMatch"];
+        Assert.NotNull(alwaysMatchToken);
+        Assert.Equal(JTokenType.Object, alwaysMatchToken.Type);
+
+        JObject? alwaysMatch = alwaysMatchToken as JObject;
+        Assert.NotNull(alwaysMatch);
+        Assert.Single(alwaysMatch);
+
+        Assert.True(alwaysMatch.ContainsKey("browserName"));
+        JToken? browserName = alwaysMatch["browserName"];
+        Assert.NotNull(browserName);
+        Assert.Equal("greatBrowser", browserName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithFirstMatch()
     {
         NewCommandParameters properties = new()
@@ -64,24 +68,27 @@ public class NewCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("capabilities"));
-            Assert.That(serialized["capabilities"], Contains.Key("firstMatch"));
-            Assert.That(serialized["capabilities"]!["firstMatch"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
-        JArray? firstMatch = serialized["capabilities"]["firstMatch"] as JArray;
-        Assert.That(firstMatch, Is.Not.Null);
-        Assert.That(firstMatch, Has.Count.EqualTo(1));
-        Assert.That(firstMatch![0].Type, Is.EqualTo(JTokenType.Object));
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("capabilities"));
+        JObject? capabilities = serialized["capabilities"] as JObject;
+        Assert.NotNull(capabilities);
+        Assert.True(capabilities.ContainsKey("firstMatch"));
+        JToken? firstMatchToken = capabilities["firstMatch"];
+        Assert.NotNull(firstMatchToken);
+        Assert.Equal(JTokenType.Array, firstMatchToken.Type);
+
+        JArray? firstMatch = firstMatchToken as JArray;
+        Assert.NotNull(firstMatch);
+        Assert.Single(firstMatch);
+        Assert.Equal(JTokenType.Object, firstMatch[0].Type);
 
         JObject? firstMatchElement = firstMatch[0] as JObject;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(firstMatchElement, Has.Count.EqualTo(1));
-            Assert.That(firstMatchElement!, Contains.Key("browserName"));
-            Assert.That(firstMatchElement!["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
-        }
+        Assert.NotNull(firstMatchElement);
+        Assert.Single(firstMatchElement);
+        Assert.True(firstMatchElement.ContainsKey("browserName"));
+        JToken? browserName = firstMatchElement["browserName"];
+        Assert.NotNull(browserName);
+        Assert.Equal("greatBrowser", browserName.Value<string>());
     }
 }

@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class AddDataCollectorCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,11 +13,11 @@ public class AddDataCollectorCommandResultTests
                       }
                       """;
         AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.CollectorId, Is.EqualTo("myCollectorId"));
+        Assert.NotNull(result);
+        Assert.Equal("myCollectorId", result.CollectorId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,19 +26,19 @@ public class AddDataCollectorCommandResultTests
                       }
                       """;
         AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         AddDataCollectorCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = """
@@ -47,6 +46,6 @@ public class AddDataCollectorCommandResultTests
                         "collector": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json));
     }
 }

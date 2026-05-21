@@ -4,40 +4,50 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class LocateNodesCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"));
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.locateNodes"));
+        Assert.Equal("browsingContext.locateNodes", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("locator"));
-            Assert.That(serialized["locator"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["locator"]!, Contains.Key("type"));
-            Assert.That(serialized["locator"]!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["type"]!.Value<string>, Is.EqualTo("css"));
-            Assert.That(serialized["locator"]!, Contains.Key("value"));
-            Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("locator"));
+        JToken? locatorToken = serialized["locator"];
+        Assert.NotNull(locatorToken);
+        Assert.Equal(JTokenType.Object, locatorToken.Type);
+        JObject? locator = locatorToken.Value<JObject>();
+        Assert.NotNull(locator);
+
+        Assert.True(locator.ContainsKey("type"));
+        JToken? locatorType = locator["type"];
+        Assert.NotNull(locatorType);
+        Assert.Equal(JTokenType.String, locatorType.Type);
+        Assert.Equal("css", locatorType.Value<string>());
+
+        Assert.True(locator.ContainsKey("value"));
+        JToken? locatorValue = locator["value"];
+        Assert.NotNull(locatorValue);
+        Assert.Equal(JTokenType.String, locatorValue.Type);
+        Assert.Equal(".selector", locatorValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithMaxNodeCount()
     {
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"))
@@ -46,27 +56,41 @@ public class LocateNodesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("locator"));
-            Assert.That(serialized["locator"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["locator"]!, Contains.Key("type"));
-            Assert.That(serialized["locator"]!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["type"]!.Value<string>, Is.EqualTo("css"));
-            Assert.That(serialized["locator"]!, Contains.Key("value"));
-            Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-            Assert.That(serialized, Contains.Key("maxNodeCount"));
-            Assert.That(serialized["maxNodeCount"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["maxNodeCount"]!.Value<ulong>(), Is.EqualTo(10));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("locator"));
+        JToken? locatorToken = serialized["locator"];
+        Assert.NotNull(locatorToken);
+        Assert.Equal(JTokenType.Object, locatorToken.Type);
+        JObject? locator = locatorToken.Value<JObject>();
+        Assert.NotNull(locator);
+
+        Assert.True(locator.ContainsKey("type"));
+        JToken? locatorType = locator["type"];
+        Assert.NotNull(locatorType);
+        Assert.Equal(JTokenType.String, locatorType.Type);
+        Assert.Equal("css", locatorType.Value<string>());
+
+        Assert.True(locator.ContainsKey("value"));
+        JToken? locatorValue = locator["value"];
+        Assert.NotNull(locatorValue);
+        Assert.Equal(JTokenType.String, locatorValue.Type);
+        Assert.Equal(".selector", locatorValue.Value<string>());
+
+        Assert.True(serialized.ContainsKey("maxNodeCount"));
+        JToken? maxNodeCount = serialized["maxNodeCount"];
+        Assert.NotNull(maxNodeCount);
+        Assert.Equal(JTokenType.Integer, maxNodeCount.Type);
+        Assert.Equal(10UL, maxNodeCount.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithSerializationOptions()
     {
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"))
@@ -80,63 +104,106 @@ public class LocateNodesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("locator"));
-            Assert.That(serialized["locator"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["locator"]!, Contains.Key("type"));
-            Assert.That(serialized["locator"]!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["type"]!.Value<string>, Is.EqualTo("css"));
-            Assert.That(serialized["locator"]!, Contains.Key("value"));
-            Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-            Assert.That(serialized, Contains.Key("serializationOptions"));
-            Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject serializationOptions = (serialized["serializationOptions"]! as JObject)!;
-            Assert.That(serializationOptions, Has.Count.EqualTo(3));
-            Assert.That(serializationOptions, Contains.Key("includeShadowTree"));
-            Assert.That(serializationOptions["includeShadowTree"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serializationOptions["includeShadowTree"]!.Value<string>, Is.EqualTo("all"));
-            Assert.That(serializationOptions, Contains.Key("maxDomDepth"));
-            Assert.That(serializationOptions["maxDomDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serializationOptions["maxDomDepth"]!.Value<ulong>, Is.EqualTo(10));
-            Assert.That(serializationOptions, Contains.Key("maxObjectDepth"));
-            Assert.That(serializationOptions["maxObjectDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serializationOptions["maxObjectDepth"]!.Value<ulong>, Is.EqualTo(0));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("locator"));
+        JToken? locatorToken = serialized["locator"];
+        Assert.NotNull(locatorToken);
+        Assert.Equal(JTokenType.Object, locatorToken.Type);
+        JObject? locator = locatorToken.Value<JObject>();
+        Assert.NotNull(locator);
+
+        Assert.True(locator.ContainsKey("type"));
+        JToken? locatorType = locator["type"];
+        Assert.NotNull(locatorType);
+        Assert.Equal(JTokenType.String, locatorType.Type);
+        Assert.Equal("css", locatorType.Value<string>());
+
+        Assert.True(locator.ContainsKey("value"));
+        JToken? locatorValue = locator["value"];
+        Assert.NotNull(locatorValue);
+        Assert.Equal(JTokenType.String, locatorValue.Type);
+        Assert.Equal(".selector", locatorValue.Value<string>());
+
+        Assert.True(serialized.ContainsKey("serializationOptions"));
+        JToken? serializationOptionsToken = serialized["serializationOptions"];
+        Assert.NotNull(serializationOptionsToken);
+        Assert.Equal(JTokenType.Object, serializationOptionsToken.Type);
+        JObject? serializationOptions = serializationOptionsToken.Value<JObject>();
+        Assert.NotNull(serializationOptions);
+        Assert.Equal(3, serializationOptions.Count);
+
+        Assert.True(serializationOptions.ContainsKey("includeShadowTree"));
+        JToken? includeShadowTree = serializationOptions["includeShadowTree"];
+        Assert.NotNull(includeShadowTree);
+        Assert.Equal(JTokenType.String, includeShadowTree.Type);
+        Assert.Equal("all", includeShadowTree.Value<string>());
+
+        Assert.True(serializationOptions.ContainsKey("maxDomDepth"));
+        JToken? maxDomDepth = serializationOptions["maxDomDepth"];
+        Assert.NotNull(maxDomDepth);
+        Assert.Equal(JTokenType.Integer, maxDomDepth.Type);
+        Assert.Equal(10UL, maxDomDepth.Value<ulong>());
+
+        Assert.True(serializationOptions.ContainsKey("maxObjectDepth"));
+        JToken? maxObjectDepth = serializationOptions["maxObjectDepth"];
+        Assert.NotNull(maxObjectDepth);
+        Assert.Equal(JTokenType.Integer, maxObjectDepth.Type);
+        Assert.Equal(0UL, maxObjectDepth.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithStartNode()
     {
         string nodeJson = @"{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
-        RemoteValue nodeValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!;
+        RemoteValue? nodeValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson);
+        Assert.NotNull(nodeValue);
+        NodeRemoteValue? nodeRemoteValue = nodeValue as NodeRemoteValue;
+        Assert.NotNull(nodeRemoteValue);
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"));
-        properties.StartNodes.Add(((NodeRemoteValue)nodeValue).ToSharedReference());
+        properties.StartNodes.Add(nodeRemoteValue.ToSharedReference());
 
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("locator"));
-            Assert.That(serialized["locator"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["locator"]!, Contains.Key("type"));
-            Assert.That(serialized["locator"]!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["type"]!.Value<string>, Is.EqualTo("css"));
-            Assert.That(serialized["locator"]!, Contains.Key("value"));
-            Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-            Assert.That(serialized, Contains.Key("startNodes"));
-            Assert.That(serialized["startNodes"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["startNodes"]! as JArray, Has.Count.EqualTo(1));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("locator"));
+        JToken? locatorToken = serialized["locator"];
+        Assert.NotNull(locatorToken);
+        Assert.Equal(JTokenType.Object, locatorToken.Type);
+        JObject? locator = locatorToken.Value<JObject>();
+        Assert.NotNull(locator);
+
+        Assert.True(locator.ContainsKey("type"));
+        JToken? locatorType = locator["type"];
+        Assert.NotNull(locatorType);
+        Assert.Equal(JTokenType.String, locatorType.Type);
+        Assert.Equal("css", locatorType.Value<string>());
+
+        Assert.True(locator.ContainsKey("value"));
+        JToken? locatorValue = locator["value"];
+        Assert.NotNull(locatorValue);
+        Assert.Equal(JTokenType.String, locatorValue.Type);
+        Assert.Equal(".selector", locatorValue.Value<string>());
+
+        Assert.True(serialized.ContainsKey("startNodes"));
+        JToken? startNodesToken = serialized["startNodes"];
+        Assert.NotNull(startNodesToken);
+        Assert.Equal(JTokenType.Array, startNodesToken.Type);
+        JArray? startNodes = startNodesToken as JArray;
+        Assert.NotNull(startNodes);
+        Assert.Single(startNodes);
     }
 }

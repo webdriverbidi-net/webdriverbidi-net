@@ -2,23 +2,22 @@ namespace WebDriverBiDi.DigitalCredentials;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SetVirtualWalletBehaviorCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SetVirtualWalletBehaviorCommandResult? result = JsonSerializer.Deserialize<SetVirtualWalletBehaviorCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SetVirtualWalletBehaviorCommandResult? result = JsonSerializer.Deserialize<SetVirtualWalletBehaviorCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SetVirtualWalletBehaviorCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

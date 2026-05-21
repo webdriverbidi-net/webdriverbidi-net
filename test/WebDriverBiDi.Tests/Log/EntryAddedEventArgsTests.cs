@@ -3,10 +3,9 @@ namespace WebDriverBiDi.Log;
 using System.Text.Json;
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class EntryAddedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNullText()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -22,21 +21,20 @@ public class EntryAddedEventArgsTests
                       }
                       """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
-        EntryAddedEventArgs eventArgs = new(entry!);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(eventArgs.Text, Is.Null);
-            Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            Assert.That(eventArgs.Type, Is.EqualTo("generic"));
-            Assert.That(eventArgs.Method, Is.Null);
-            Assert.That(eventArgs.Arguments, Is.Null);
-            Assert.That(eventArgs.StackTrace, Is.Null);
-        }
+        Assert.NotNull(entry);
+        EntryAddedEventArgs eventArgs = new(entry);
+
+        Assert.Equal("realmId", eventArgs.Source.RealmId);
+        Assert.Null(eventArgs.Text);
+        Assert.Equal(LogLevel.Debug, eventArgs.Level);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
+        Assert.Equal("generic", eventArgs.Type);
+        Assert.Null(eventArgs.Method);
+        Assert.Null(eventArgs.Arguments);
+        Assert.Null(eventArgs.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeConsoleLogEntry()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -45,7 +43,7 @@ public class EntryAddedEventArgsTests
                         "type": "console",
                         "level": "debug",
                         "source": {
-                          "realm": "realmId" 
+                          "realm": "realmId"
                         },
                         "text": "my log message",
                         "timestamp": {{epochTimestamp}},
@@ -57,22 +55,21 @@ public class EntryAddedEventArgsTests
                       }
                       """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
-        Assert.That(entry, Is.Not.Null);
+        Assert.NotNull(entry);
         EntryAddedEventArgs eventArgs = new(entry);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(eventArgs.Text, Is.EqualTo("my log message"));
-            Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            Assert.That(eventArgs.Type, Is.EqualTo("console"));
-            Assert.That(eventArgs.Method, Is.EqualTo("myMethod"));
-            Assert.That(eventArgs.Arguments, Is.Empty);
-            Assert.That(eventArgs.StackTrace, Is.Not.Null);
-        }
+
+        Assert.Equal("realmId", eventArgs.Source.RealmId);
+        Assert.Equal("my log message", eventArgs.Text);
+        Assert.Equal(LogLevel.Debug, eventArgs.Level);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
+        Assert.Equal("console", eventArgs.Type);
+        Assert.Equal("myMethod", eventArgs.Method);
+        Assert.NotNull(eventArgs.Arguments);
+        Assert.Empty(eventArgs.Arguments);
+        Assert.NotNull(eventArgs.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeConsoleLogEntryWithArgs()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -89,7 +86,7 @@ public class EntryAddedEventArgsTests
                         "args": [
                           {
                             "type": "string",
-                            "value": "argValue" 
+                            "value": "argValue"
                           }
                         ], "stackTrace": {
                           "callFrames": []
@@ -97,24 +94,23 @@ public class EntryAddedEventArgsTests
                       }
                       """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
-        Assert.That(entry, Is.Not.Null);
+        Assert.NotNull(entry);
         EntryAddedEventArgs eventArgs = new(entry);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(eventArgs.Text, Is.EqualTo("my log message"));
-            Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            Assert.That(eventArgs.Type, Is.EqualTo("console"));
-            Assert.That(eventArgs.Method, Is.EqualTo("myMethod"));
-            Assert.That(eventArgs.Arguments, Has.Count.EqualTo(1));
-            Assert.That(eventArgs.Arguments![0].Type, Is.EqualTo(RemoteValueType.String));
-            Assert.That(eventArgs.Arguments![0].ConvertTo<StringRemoteValue>().Value, Is.EqualTo("argValue"));
-            Assert.That(eventArgs.StackTrace, Is.Not.Null);
-        }
+
+        Assert.Equal("realmId", eventArgs.Source.RealmId);
+        Assert.Equal("my log message", eventArgs.Text);
+        Assert.Equal(LogLevel.Debug, eventArgs.Level);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
+        Assert.Equal("console", eventArgs.Type);
+        Assert.Equal("myMethod", eventArgs.Method);
+        Assert.NotNull(eventArgs.Arguments);
+        Assert.Single(eventArgs.Arguments);
+        Assert.Equal(RemoteValueType.String, eventArgs.Arguments[0].Type);
+        Assert.Equal("argValue", eventArgs.Arguments[0].ConvertTo<StringRemoteValue>().Value);
+        Assert.NotNull(eventArgs.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -130,9 +126,9 @@ public class EntryAddedEventArgsTests
                       }
                       """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
-        EntryAddedEventArgs eventArgs = new(entry!);
-        Assert.That(entry, Is.Not.Null);
+        Assert.NotNull(entry);
+        EntryAddedEventArgs eventArgs = new(entry);
         EntryAddedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 }

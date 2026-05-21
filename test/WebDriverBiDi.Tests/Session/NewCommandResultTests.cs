@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
 
-[TestFixture]
 public class NewCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -27,28 +26,26 @@ public class NewCommandResultTests
                       }
                       """;
         NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.SessionId, Is.EqualTo("mySession"));
-            Assert.That(result.Capabilities.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.Capabilities.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.Capabilities.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.Capabilities.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Capabilities.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.Capabilities.Proxy, Is.Not.Null);
-            ProxyConfigurationResult proxyResult = result.Capabilities.Proxy!;
-            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.Manual));
-            Assert.That(proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>().HttpProxy, Is.EqualTo("http.proxy"));
-            Assert.That(result.Capabilities.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.Capabilities.AdditionalCapabilities, Has.Count.EqualTo(1));
-            Assert.That(result.Capabilities.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.Not.Null);
-            Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("mySession", result.SessionId);
+        Assert.Equal("greatBrowser", result.Capabilities.BrowserName);
+        Assert.Equal("101.5b", result.Capabilities.BrowserVersion);
+        Assert.Equal("otherOS", result.Capabilities.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.Capabilities.UserAgent);
+        Assert.True(result.Capabilities.AcceptInsecureCertificates);
+        Assert.NotNull(result.Capabilities.Proxy);
+        ProxyConfigurationResult proxyResult = result.Capabilities.Proxy;
+        Assert.Equal(ProxyType.Manual, proxyResult.ProxyType);
+        Assert.Equal("http.proxy", proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>().HttpProxy);
+        Assert.True(result.Capabilities.SetWindowRect);
+        Assert.Single(result.Capabilities.AdditionalCapabilities);
+        Assert.True(result.Capabilities.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.NotNull(result.Capabilities.AdditionalCapabilities["capName"]);
+        Assert.Equal("capValue", result.Capabilities.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -70,12 +67,12 @@ public class NewCommandResultTests
                       }
                       """;
         NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         NewCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingSessionIdThrows()
     {
         string json = """
@@ -95,10 +92,10 @@ public class NewCommandResultTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NewCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingCapabilitiesThrows()
     {
         string json = """
@@ -106,6 +103,6 @@ public class NewCommandResultTests
                         "sessionId": "mySession"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NewCommandResult>(json));
     }
 }

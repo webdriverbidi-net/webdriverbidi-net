@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RequestDevicePromptUpdatedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -16,16 +15,14 @@ public class RequestDevicePromptUpdatedEventArgsTests
                       }
                       """;
         RequestDevicePromptUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Prompt, Is.EqualTo("myPromptId"));
-            Assert.That(eventArgs.Devices, Has.Count.EqualTo(0));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myPromptId", eventArgs.Prompt);
+        Assert.Empty(eventArgs.Devices);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithDevices()
     {
         string json = """
@@ -41,18 +38,16 @@ public class RequestDevicePromptUpdatedEventArgsTests
                       }
                       """;
         RequestDevicePromptUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Prompt, Is.EqualTo("myPromptId"));
-            Assert.That(eventArgs.Devices, Has.Count.EqualTo(1));
-            Assert.That(eventArgs.Devices[0].DeviceId, Is.EqualTo("myDeviceId"));
-            Assert.That(eventArgs.Devices[0].DeviceName, Is.EqualTo("myDeviceName"));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myPromptId", eventArgs.Prompt);
+        Assert.Single(eventArgs.Devices);
+        Assert.Equal("myDeviceId", eventArgs.Devices[0].DeviceId);
+        Assert.Equal("myDeviceName", eventArgs.Devices[0].DeviceName);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -63,12 +58,12 @@ public class RequestDevicePromptUpdatedEventArgsTests
                       }
                       """;
         RequestDevicePromptUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         RequestDevicePromptUpdatedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = """
@@ -77,10 +72,10 @@ public class RequestDevicePromptUpdatedEventArgsTests
                         "devices": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = """
@@ -90,10 +85,10 @@ public class RequestDevicePromptUpdatedEventArgsTests
                         "devices": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingPromptThrows()
     {
         string json = """
@@ -102,10 +97,10 @@ public class RequestDevicePromptUpdatedEventArgsTests
                         "devices": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidPromptTypeThrows()
     {
         string json = """
@@ -115,10 +110,10 @@ public class RequestDevicePromptUpdatedEventArgsTests
                         "devices": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDevicesThrows()
     {
         string json = """
@@ -127,10 +122,10 @@ public class RequestDevicePromptUpdatedEventArgsTests
                         "prompt": "myPromptId"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidDevicesTypeThrows()
     {
         string json = """
@@ -140,6 +135,6 @@ public class RequestDevicePromptUpdatedEventArgsTests
                         "devices": "someDevice"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json));
     }
 }

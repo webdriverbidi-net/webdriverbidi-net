@@ -3,22 +3,21 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class GetClientWindowsCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         GetClientWindowsCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("browser.getClientWindows"));
+        Assert.Equal("browser.getClientWindows", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         GetClientWindowsCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 }

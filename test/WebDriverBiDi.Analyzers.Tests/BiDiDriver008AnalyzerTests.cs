@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver008 analyzer that detects unsafe EvaluateResult casts.
 /// </summary>
-[TestFixture]
 public class BiDiDriver008AnalyzerTests
 {
     /// <summary>
     /// Tests that direct cast to EvaluateResultSuccess reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EvaluateResult_DirectCast_ReportsWarning()
     {
         string test = """
@@ -77,14 +75,14 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that 'as' cast to EvaluateResultSuccess reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EvaluateResult_AsCast_ReportsWarning()
     {
         string test = """
@@ -144,14 +142,14 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that pattern matching with 'is' does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EvaluateResult_PatternMatching_NoDiagnostic()
     {
         string test = """
@@ -205,14 +203,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that direct cast to EvaluateResultException reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EvaluateResult_CastToException_ReportsWarning()
     {
         string test = """
@@ -269,14 +267,14 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that cast inside try-catch does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EvaluateResult_CastInTryCatch_NoDiagnostic()
     {
         string test = """
@@ -335,14 +333,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that casts to non-EvaluateResult derived types do not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task Cast_ToNonEvaluateResultDerivedType_NoDiagnostic()
     {
         string test = """
@@ -394,14 +392,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that casts from non-EvaluateResult types do not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task Cast_FromNonEvaluateResultType_NoDiagnostic()
     {
         string test = """
@@ -453,14 +451,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that cast inside local function statements are detected.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task Cast_InsideLocalFunction_NoDiagnostic()
     {
         string test = """
@@ -525,14 +523,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that 'as' cast with null check is still flagged as warning to encourage pattern matching.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AsCast_WithNullCheck_StillReportsWarning()
     {
         string test = """
@@ -596,14 +594,14 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-invocation member access is not analyzed for casts.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonCast_NoDiagnostic()
     {
         string test = """
@@ -652,14 +650,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that direct cast with variable declaration triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task DirectCast_WithVariableDeclaration_ReportsWarning()
     {
         string testCode = """
@@ -719,14 +717,14 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that 'as' cast with variable declaration triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AsCast_WithVariableDeclaration_ReportsWarning()
     {
         string testCode = """
@@ -789,14 +787,14 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that cast to EvaluateResultException triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task DirectCast_ToException_ReportsWarning()
     {
         string testCode = """
@@ -856,14 +854,14 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that cast with multiple dependent statements triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task DirectCast_WithMultipleDependentStatements_ReportsWarning()
     {
         string testCode = """
@@ -927,28 +925,27 @@ public class BiDiDriver008AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
 
     /// <summary>
     /// Tests SupportedDiagnostics property.
     /// </summary>
-    [Test]
+    [Fact]
     public void SupportedDiagnostics_ContainsBIDI008()
     {
         BiDiDriver008_UnsafeEvaluateResultCastAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.That(diagnostics, Has.Length.EqualTo(1));
-        Assert.That(diagnostics[0].Id, Is.EqualTo(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId));
+        Assert.Single(diagnostics);
+        Assert.Equal(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, diagnostics[0].Id);
     }
 
     /// <summary>
     /// Tests that cast with unresolved target type is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task DirectCast_UnresolvedTargetType_NoDiagnostic()
     {
         string test = """
@@ -985,14 +982,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that cast from unresolved expression type is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task DirectCast_UnresolvedExpressionType_NoDiagnostic()
     {
         string test = """
@@ -1024,14 +1021,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that 'as' cast with unresolved target type is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AsCast_UnresolvedTargetType_NoDiagnostic()
     {
         string test = """
@@ -1068,14 +1065,14 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that 'as' cast from unresolved expression type is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AsCast_UnresolvedExpressionType_NoDiagnostic()
     {
         string test = """
@@ -1107,33 +1104,32 @@ public class BiDiDriver008AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests GetFixAllProvider property.
     /// </summary>
-    [Test]
+    [Fact]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
         BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider provider = new();
         Microsoft.CodeAnalysis.CodeFixes.FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
-        Assert.That(fixAllProvider, Is.Not.Null);
-        Assert.That(fixAllProvider, Is.EqualTo(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer));
+        Assert.NotNull(fixAllProvider);
+        Assert.Equal(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer, fixAllProvider);
     }
 
     /// <summary>
     /// Tests FixableDiagnosticIds property.
     /// </summary>
-    [Test]
+    [Fact]
     public void FixableDiagnosticIds_ContainsBIDI008()
     {
         BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider provider = new();
         System.Collections.Immutable.ImmutableArray<string> ids = provider.FixableDiagnosticIds;
 
-        Assert.That(ids, Has.Length.EqualTo(1));
-        Assert.That(ids[0], Is.EqualTo(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId));
+        Assert.Single(ids);
+        Assert.Equal(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, ids[0]);
     }
-
 }

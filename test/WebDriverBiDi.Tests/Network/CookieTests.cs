@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class CookieTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeCookie()
     {
         string json = """
@@ -24,25 +23,23 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
-            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(cookie.Path, Is.EqualTo("/cookiePath"));
-            Assert.That(cookie.Secure, Is.False);
-            Assert.That(cookie.HttpOnly, Is.False);
-            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
-            Assert.That(cookie.Size, Is.EqualTo(100));
-            Assert.That(cookie.Expires, Is.Null);
-            Assert.That(cookie.EpochExpires, Is.Null);
-            Assert.That(cookie.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(cookie);
+
+        Assert.Equal("cookieName", cookie.Name);
+        Assert.Equal(BytesValueType.String, cookie.Value.Type);
+        Assert.Equal("cookieValue", cookie.Value.Value);
+        Assert.Equal("cookieDomain", cookie.Domain);
+        Assert.Equal("/cookiePath", cookie.Path);
+        Assert.False(cookie.Secure);
+        Assert.False(cookie.HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Strict, cookie.SameSite);
+        Assert.Equal(100, cookie.Size);
+        Assert.Null(cookie.Expires);
+        Assert.Null(cookie.EpochExpires);
+        Assert.Empty(cookie.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCookieWithSameSiteLax()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
@@ -64,25 +61,23 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
-            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(cookie.Path, Is.EqualTo("/cookiePath"));
-            Assert.That(cookie.Secure, Is.False);
-            Assert.That(cookie.HttpOnly, Is.False);
-            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
-            Assert.That(cookie.Size, Is.EqualTo(100));
-            Assert.That(cookie.Expires, Is.Null);
-            Assert.That(cookie.EpochExpires, Is.Null);
-            Assert.That(cookie.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(cookie);
+
+        Assert.Equal("cookieName", cookie.Name);
+        Assert.Equal(BytesValueType.String, cookie.Value.Type);
+        Assert.Equal("cookieValue", cookie.Value.Value);
+        Assert.Equal("cookieDomain", cookie.Domain);
+        Assert.Equal("/cookiePath", cookie.Path);
+        Assert.False(cookie.Secure);
+        Assert.False(cookie.HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Lax, cookie.SameSite);
+        Assert.Equal(100, cookie.Size);
+        Assert.Null(cookie.Expires);
+        Assert.Null(cookie.EpochExpires);
+        Assert.Empty(cookie.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCookieWithSameSiteNone()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
@@ -104,25 +99,23 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
-            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(cookie.Path, Is.EqualTo("/cookiePath"));
-            Assert.That(cookie.Secure, Is.False);
-            Assert.That(cookie.HttpOnly, Is.False);
-            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.None));
-            Assert.That(cookie.Size, Is.EqualTo(100));
-            Assert.That(cookie.Expires, Is.Null);
-            Assert.That(cookie.EpochExpires, Is.Null);
-            Assert.That(cookie.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(cookie);
+
+        Assert.Equal("cookieName", cookie.Name);
+        Assert.Equal(BytesValueType.String, cookie.Value.Type);
+        Assert.Equal("cookieValue", cookie.Value.Value);
+        Assert.Equal("cookieDomain", cookie.Domain);
+        Assert.Equal("/cookiePath", cookie.Path);
+        Assert.False(cookie.Secure);
+        Assert.False(cookie.HttpOnly);
+        Assert.Equal(CookieSameSiteValue.None, cookie.SameSite);
+        Assert.Equal(100, cookie.Size);
+        Assert.Null(cookie.Expires);
+        Assert.Null(cookie.EpochExpires);
+        Assert.Empty(cookie.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCookieWithBinaryValue()
     {
         byte[] byteArray = new byte[] { 0x41, 0x42, 0x43 };
@@ -143,25 +136,23 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
-            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.Base64));
-            Assert.That(cookie.Value.Value, Is.EqualTo(base64Value));
-            Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(cookie.Path, Is.EqualTo("/cookiePath"));
-            Assert.That(cookie.Secure, Is.False);
-            Assert.That(cookie.HttpOnly, Is.False);
-            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
-            Assert.That(cookie.Size, Is.EqualTo(100));
-            Assert.That(cookie.Expires, Is.Null);
-            Assert.That(cookie.EpochExpires, Is.Null);
-            Assert.That(cookie.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(cookie);
+
+        Assert.Equal("cookieName", cookie.Name);
+        Assert.Equal(BytesValueType.Base64, cookie.Value.Type);
+        Assert.Equal(base64Value, cookie.Value.Value);
+        Assert.Equal("cookieDomain", cookie.Domain);
+        Assert.Equal("/cookiePath", cookie.Path);
+        Assert.False(cookie.Secure);
+        Assert.False(cookie.HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Lax, cookie.SameSite);
+        Assert.Equal(100, cookie.Size);
+        Assert.Null(cookie.Expires);
+        Assert.Null(cookie.EpochExpires);
+        Assert.Empty(cookie.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCookieWithExpiration()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
@@ -184,25 +175,23 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
-            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(cookie.Path, Is.EqualTo("/cookiePath"));
-            Assert.That(cookie.Secure, Is.False);
-            Assert.That(cookie.HttpOnly, Is.False);
-            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
-            Assert.That(cookie.Size, Is.EqualTo(100));
-            Assert.That(cookie.Expires, Is.EqualTo(expireTime));
-            Assert.That(cookie.EpochExpires, Is.EqualTo(milliseconds));
-            Assert.That(cookie.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(cookie);
+
+        Assert.Equal("cookieName", cookie.Name);
+        Assert.Equal(BytesValueType.String, cookie.Value.Type);
+        Assert.Equal("cookieValue", cookie.Value.Value);
+        Assert.Equal("cookieDomain", cookie.Domain);
+        Assert.Equal("/cookiePath", cookie.Path);
+        Assert.False(cookie.Secure);
+        Assert.False(cookie.HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Lax, cookie.SameSite);
+        Assert.Equal(100, cookie.Size);
+        Assert.Equal(expireTime, cookie.Expires);
+        Assert.Equal(milliseconds, cookie.EpochExpires);
+        Assert.Empty(cookie.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCookieWithAdditionalData()
     {
         string json = """
@@ -222,28 +211,28 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
-            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(cookie.Path, Is.EqualTo("/cookiePath"));
-            Assert.That(cookie.Secure, Is.False);
-            Assert.That(cookie.HttpOnly, Is.False);
-            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
-            Assert.That(cookie.Size, Is.EqualTo(100));
-            Assert.That(cookie.Expires, Is.Null);
-            Assert.That(cookie.EpochExpires, Is.Null);
-            Assert.That(cookie.AdditionalData, Has.Count.EqualTo(1));
-            Assert.That(cookie.AdditionalData, Contains.Key("extraData"));
-            Assert.That(cookie.AdditionalData["extraData"]!.GetType, Is.EqualTo(typeof(string)));
-            Assert.That(cookie.AdditionalData["extraData"]!, Is.EqualTo("myExtraData"));
-        }
+        Assert.NotNull(cookie);
+
+        Assert.Equal("cookieName", cookie.Name);
+        Assert.Equal(BytesValueType.String, cookie.Value.Type);
+        Assert.Equal("cookieValue", cookie.Value.Value);
+        Assert.Equal("cookieDomain", cookie.Domain);
+        Assert.Equal("/cookiePath", cookie.Path);
+        Assert.False(cookie.Secure);
+        Assert.False(cookie.HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Strict, cookie.SameSite);
+        Assert.Equal(100, cookie.Size);
+        Assert.Null(cookie.Expires);
+        Assert.Null(cookie.EpochExpires);
+        Assert.Single(cookie.AdditionalData);
+        Assert.True(cookie.AdditionalData.ContainsKey("extraData"));
+        object? extraData = cookie.AdditionalData["extraData"];
+        Assert.NotNull(extraData);
+        Assert.Equal(typeof(string), extraData.GetType());
+        Assert.Equal("myExtraData", extraData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertDeserializeCookieToSetCookieHeader()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
@@ -266,24 +255,22 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
+        Assert.NotNull(cookie);
         SetCookieHeader header = cookie.ToSetCookieHeader();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(header.Name, Is.EqualTo("cookieName"));
-            Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(header.Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(header.Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(header.Path, Is.EqualTo("/cookiePath"));
-            Assert.That(header.Secure, Is.False);
-            Assert.That(header.HttpOnly, Is.False);
-            Assert.That(header.SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
-            Assert.That(header.Expires, Is.EqualTo(expireTime));
-            Assert.That(header.MaxAge, Is.Null);
-        }
+
+        Assert.Equal("cookieName", header.Name);
+        Assert.Equal(BytesValueType.String, header.Value.Type);
+        Assert.Equal("cookieValue", header.Value.Value);
+        Assert.Equal("cookieDomain", header.Domain);
+        Assert.Equal("/cookiePath", header.Path);
+        Assert.False(header.Secure);
+        Assert.False(header.HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Lax, header.SameSite);
+        Assert.Equal(expireTime, header.Expires);
+        Assert.Null(header.MaxAge);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -302,12 +289,12 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
+        Assert.NotNull(cookie);
         Cookie copy = cookie with { };
-        Assert.That(copy, Is.EqualTo(cookie));
+        Assert.Equal(cookie, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCookieWithNullExpiryDoesNotSetExpires()
     {
         string json = """
@@ -327,15 +314,13 @@ public class CookieTests
                       }
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
-        Assert.That(cookie, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(cookie.EpochExpires, Is.Null);
-            Assert.That(cookie.Expires, Is.Null);
-        }
+        Assert.NotNull(cookie);
+
+        Assert.Null(cookie.EpochExpires);
+        Assert.Null(cookie.Expires);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingNameThrows()
     {
         string json = """
@@ -352,10 +337,10 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name'"));
+        Assert.Contains("missing required properties including: 'name'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingValueThrows()
     {
         string json = """
@@ -369,10 +354,10 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value'"));
+        Assert.Contains("missing required properties including: 'value'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingDomainThrows()
     {
         string json = """
@@ -389,10 +374,10 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'domain'"));
+        Assert.Contains("missing required properties including: 'domain'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingPathThrows()
     {
         string json = """
@@ -409,10 +394,10 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'path'"));
+        Assert.Contains("missing required properties including: 'path'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingSecureThrows()
     {
         string json = """
@@ -429,10 +414,10 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'secure'"));
+        Assert.Contains("missing required properties including: 'secure'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingHttpOnlyThrows()
     {
         string json = """
@@ -449,10 +434,10 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'httpOnly'"));
+        Assert.Contains("missing required properties including: 'httpOnly'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingSameSiteThrows()
     {
         string json = """
@@ -469,10 +454,10 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'sameSite'"));
+        Assert.Contains("missing required properties including: 'sameSite'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingSizeThrows()
     {
         string json = """
@@ -489,10 +474,10 @@ public class CookieTests
                         "sameSite": "lax"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'size'"));
+        Assert.Contains("missing required properties including: 'size'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidSameSiteValueThrows()
     {
         string json = """
@@ -510,6 +495,6 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.Contains("value 'invalid' is not valid for enum type", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
     }
 }

@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver014 analyzer that detects parameterless constructor usage when a Reset property is available.
 /// </summary>
-[TestFixture]
 public class BiDiDriver014AnalyzerTests
 {
     /// <summary>
     /// Tests that parameterless constructor without property assignment reports a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ParameterlessConstructor_WithoutPropertyAssignment_ReportsDiagnostic()
     {
         string test = """
@@ -102,14 +100,14 @@ public class BiDiDriver014AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that parameterless constructor with property assignment does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ParameterlessConstructor_WithPropertyAssignment_NoDiagnostic()
     {
         string test = """
@@ -187,14 +185,14 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that using the Reset property directly does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task UsingResetProperty_NoDiagnostic()
     {
         string test = """
@@ -271,14 +269,14 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-CommandParameters types are not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonCommandParametersType_NoDiagnostic()
     {
         string test = """
@@ -312,14 +310,14 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that CommandParameters without a Reset property do not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CommandParametersWithoutResetProperty_NoDiagnostic()
     {
         string test = """
@@ -392,14 +390,14 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple variables are tracked independently.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MultipleVariables_IndependentTracking()
     {
         string test = """
@@ -484,14 +482,14 @@ public class BiDiDriver014AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that setting any property suppresses the diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ParameterlessConstructor_WithContextsPropertyAssignment_NoDiagnostic()
     {
         string test = """
@@ -569,14 +567,14 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that object initializer syntax is handled correctly (should not report diagnostic).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ParameterlessConstructor_WithObjectInitializer_NoDiagnostic()
     {
         string test = """
@@ -656,14 +654,14 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that variable without initializer is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task VariableWithoutInitializer_NoDiagnostic()
     {
         string test = """
@@ -736,15 +734,14 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
 
     /// <summary>
     /// Tests that an inline parameterless constructor used directly as a method argument reports a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task InlineParameterlessConstructor_AsMethodArgument_ReportsDiagnostic()
     {
         string test = """
@@ -824,14 +821,14 @@ public class BiDiDriver014AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that an inline constructor with an object initializer does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task InlineConstructor_WithObjectInitializer_AsMethodArgument_NoDiagnostic()
     {
         string test = """
@@ -906,7 +903,7 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -915,7 +912,7 @@ public class BiDiDriver014AnalyzerTests
     /// command-level Reset property.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ParameterlessConstructor_WithListPropertyAndResetProperty_ReportsDiagnostic()
     {
         string test = """
@@ -995,7 +992,7 @@ public class BiDiDriver014AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -1004,7 +1001,7 @@ public class BiDiDriver014AnalyzerTests
     /// the previous false positive that occurred when only .Add() was available.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ParameterlessConstructor_WithListPropertyAssignedViaObjectInitializer_NoDiagnostic()
     {
         string test = """
@@ -1082,6 +1079,6 @@ public class BiDiDriver014AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -3,35 +3,37 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ContinueWithAuthCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         ContinueWithAuthCommandParameters properties = new("requestId");
-        Assert.That(properties.MethodName, Is.EqualTo("network.continueWithAuth"));
+        Assert.Equal("network.continueWithAuth", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         ContinueWithAuthCommandParameters properties = new("requestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("requestId"));
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("default"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("requestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("default", action.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithCancelAction()
     {
         ContinueWithAuthCommandParameters properties = new("requestId")
@@ -40,19 +42,22 @@ public class ContinueWithAuthCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("requestId"));
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("cancel"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("requestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("cancel", action.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithProvideCredentialsAction()
     {
         ContinueWithAuthCommandParameters properties = new("requestId")
@@ -61,32 +66,45 @@ public class ContinueWithAuthCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(3));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("requestId"));
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("provideCredentials"));
-            Assert.That(serialized, Contains.Key("credentials"));
-            Assert.That(serialized["credentials"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject credentialsObject = (JObject)serialized["credentials"]!;
-            Assert.That(credentialsObject, Has.Count.EqualTo(3));
-            Assert.That(credentialsObject, Contains.Key("type"));
-            Assert.That(credentialsObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(credentialsObject["type"]!.Value<string>(), Is.EqualTo("password"));
-            Assert.That(credentialsObject, Contains.Key("username"));
-            Assert.That(credentialsObject["username"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(credentialsObject["username"]!.Value<string>(), Is.Empty);
-            Assert.That(credentialsObject, Contains.Key("password"));
-            Assert.That(credentialsObject["password"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(credentialsObject["password"]!.Value<string>(), Is.Empty);
-        }
+
+        Assert.Equal(3, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("requestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("provideCredentials", action.Value<string>());
+
+        Assert.True(serialized.ContainsKey("credentials"));
+        JToken? credentialsToken = serialized["credentials"];
+        Assert.NotNull(credentialsToken);
+        Assert.Equal(JTokenType.Object, credentialsToken.Type);
+        JObject? credentialsObject = credentialsToken as JObject;
+        Assert.NotNull(credentialsObject);
+        Assert.Equal(3, credentialsObject.Count);
+        Assert.True(credentialsObject.ContainsKey("type"));
+        JToken? credType = credentialsObject["type"];
+        Assert.NotNull(credType);
+        Assert.Equal(JTokenType.String, credType.Type);
+        Assert.Equal("password", credType.Value<string>());
+        Assert.True(credentialsObject.ContainsKey("username"));
+        JToken? username = credentialsObject["username"];
+        Assert.NotNull(username);
+        Assert.Equal(JTokenType.String, username.Type);
+        Assert.Equal(string.Empty, username.Value<string>());
+        Assert.True(credentialsObject.ContainsKey("password"));
+        JToken? password = credentialsObject["password"];
+        Assert.NotNull(password);
+        Assert.Equal(JTokenType.String, password.Type);
+        Assert.Equal(string.Empty, password.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithProvideCredentialsActionAndCredentials()
     {
         ContinueWithAuthCommandParameters properties = new("requestId")
@@ -96,28 +114,41 @@ public class ContinueWithAuthCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(3));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("requestId"));
-            Assert.That(serialized, Contains.Key("action"));
-            Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("provideCredentials"));
-            Assert.That(serialized, Contains.Key("credentials"));
-            Assert.That(serialized["credentials"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject credentialsObject = (JObject)serialized["credentials"]!;
-            Assert.That(credentialsObject, Has.Count.EqualTo(3));
-            Assert.That(credentialsObject, Contains.Key("type"));
-            Assert.That(credentialsObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(credentialsObject["type"]!.Value<string>(), Is.EqualTo("password"));
-            Assert.That(credentialsObject, Contains.Key("username"));
-            Assert.That(credentialsObject["username"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(credentialsObject["username"]!.Value<string>(), Is.EqualTo("myUserName"));
-            Assert.That(credentialsObject, Contains.Key("password"));
-            Assert.That(credentialsObject["password"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(credentialsObject["password"]!.Value<string>(), Is.EqualTo("myPassword"));
-        }
+
+        Assert.Equal(3, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("requestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("action"));
+        JToken? action = serialized["action"];
+        Assert.NotNull(action);
+        Assert.Equal(JTokenType.String, action.Type);
+        Assert.Equal("provideCredentials", action.Value<string>());
+
+        Assert.True(serialized.ContainsKey("credentials"));
+        JToken? credentialsToken = serialized["credentials"];
+        Assert.NotNull(credentialsToken);
+        Assert.Equal(JTokenType.Object, credentialsToken.Type);
+        JObject? credentialsObject = credentialsToken as JObject;
+        Assert.NotNull(credentialsObject);
+        Assert.Equal(3, credentialsObject.Count);
+        Assert.True(credentialsObject.ContainsKey("type"));
+        JToken? credType = credentialsObject["type"];
+        Assert.NotNull(credType);
+        Assert.Equal(JTokenType.String, credType.Type);
+        Assert.Equal("password", credType.Value<string>());
+        Assert.True(credentialsObject.ContainsKey("username"));
+        JToken? username = credentialsObject["username"];
+        Assert.NotNull(username);
+        Assert.Equal(JTokenType.String, username.Type);
+        Assert.Equal("myUserName", username.Value<string>());
+        Assert.True(credentialsObject.ContainsKey("password"));
+        JToken? password = credentialsObject["password"];
+        Assert.NotNull(password);
+        Assert.Equal(JTokenType.String, password.Type);
+        Assert.Equal("myPassword", password.Value<string>());
     }
 }

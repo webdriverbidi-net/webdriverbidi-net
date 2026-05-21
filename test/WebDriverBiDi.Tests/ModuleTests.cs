@@ -3,10 +3,9 @@ namespace WebDriverBiDi;
 using TestUtilities;
 using WebDriverBiDi.Protocol;
 
-[TestFixture]
 public class ModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestEventWithInvalidEventArgsThrows()
     {
         TestWebSocketConnection connection = new();
@@ -35,7 +34,7 @@ public class ModuleTests
             syncEvent.Set();
         });
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -47,15 +46,13 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(10000));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(driverLog, Has.Count.EqualTo(1));
-            Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing event JSON"));
-            Assert.That(unknownMessage, Is.Not.Empty);
-        }
+
+        Assert.Single(driverLog);
+        Assert.Contains("Unexpected error parsing event JSON", driverLog[0]);
+        Assert.NotEmpty(unknownMessage);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanRemoveEventHandler()
     {
         TestWebSocketConnection connection = new();
@@ -69,7 +66,7 @@ public class ModuleTests
             syncEvent.Set();
         });
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -81,16 +78,16 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(50));
-        Assert.That(eventSet, Is.True);
+        Assert.True(eventSet);
 
         handler.Unobserve();
         syncEvent.Reset();
         await connection.RaiseDataReceivedEventAsync(eventJson);
         eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(50));
-        Assert.That(eventSet, Is.False);
+        Assert.False(eventSet);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanExecuteEventHandlersAsynchronously()
     {
         TestWebSocketConnection connection = new();
@@ -108,7 +105,7 @@ public class ModuleTests
             syncEvent.Set();
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -120,12 +117,13 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-        Assert.That(eventSet, Is.True);
-        await eventTask!;
-        Assert.That(eventTask!.IsCompletedSuccessfully, Is.True);
+        Assert.True(eventSet);
+        Assert.NotNull(eventTask);
+        await eventTask;
+        Assert.True(eventTask.IsCompletedSuccessfully);
     }
 
-    [Test]
+    [Fact]
     public async Task TestAsyncExceptionInModuleEventHandlerCanCollect()
     {
         TestWebSocketConnection connection = new();
@@ -150,7 +148,7 @@ public class ModuleTests
             }
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -161,13 +159,16 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
-        Assert.That(errorPropagated, Is.True, "The transport should collect the late async handler failure before shutdown.");
-        Assert.That(async () => await driver.StopAsync(), Throws.InstanceOf<AggregateException>().With.InnerException.InstanceOf<WebDriverBiDiException>().And.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Async module handler exception"));
+        Assert.True(errorPropagated);
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.IsType<WebDriverBiDiException>(exception.InnerException);
+        Assert.Contains("Normal shutdown", exception.Message);
+        Assert.Contains("Async module handler exception", exception.InnerException.Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestAsyncExceptionInModuleEventHandlerCapturedByCheckpointDoesNotCollect()
     {
         TestWebSocketConnection connection = new();
@@ -186,7 +187,7 @@ public class ModuleTests
 
         observer.StartCapturingTasks();
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -198,13 +199,13 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
-        Assert.That(tasks, Has.Length.EqualTo(1));
-        Assert.That(async () => await Task.WhenAll(tasks), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Async module handler exception"));
-        Assert.That(async () => await driver.StopAsync(), Throws.Nothing);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), cancellationToken: TestContext.Current.CancellationToken);
+        _ = Assert.Single(tasks);
+        Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
+        await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task TestAsyncAggregateExceptionInModuleEventHandlerCanCollect()
     {
         TestWebSocketConnection connection = new();
@@ -238,7 +239,7 @@ public class ModuleTests
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -249,23 +250,21 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
-        Assert.That(errorPropagated, Is.True, "The transport should collect the late async aggregate handler failure before shutdown.");
+        Assert.True(errorPropagated);
 
-        AggregateException exception = Assert.ThrowsAsync<AggregateException>(async () => await driver.StopAsync())!;
-        Assert.That(exception.InnerException, Is.InstanceOf<AggregateException>());
+        AggregateException exception = await Assert.ThrowsAsync<AggregateException>(async () => await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.IsType<AggregateException>(exception.InnerException);
 
-        AggregateException innerAggregateException = (AggregateException)exception.InnerException!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(innerAggregateException.InnerExceptions, Has.Count.EqualTo(2));
-            Assert.That(innerAggregateException.InnerExceptions, Has.One.InstanceOf<InvalidOperationException>().With.Message.EqualTo("First aggregate failure"));
-            Assert.That(innerAggregateException.InnerExceptions, Has.One.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Second aggregate failure"));
-        }
+        AggregateException innerAggregateException = (AggregateException)exception.InnerException;
+
+        Assert.Equal(2, innerAggregateException.InnerExceptions.Count);
+        Assert.Single(innerAggregateException.InnerExceptions.OfType<InvalidOperationException>(), e => e.Message == "First aggregate failure");
+        Assert.Single(innerAggregateException.InnerExceptions.OfType<WebDriverBiDiException>(), e => e.Message == "Second aggregate failure");
     }
 
-    [Test]
+    [Fact]
     public async Task TestAsyncExceptionInModuleEventHandlerCanTerminate()
     {
         TestWebSocketConnection connection = new();
@@ -290,7 +289,7 @@ public class ModuleTests
             }
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -301,13 +300,16 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
-        Assert.That(errorPropagated, Is.True, "The transport should collect the late async handler failure before shutdown.");
-        Assert.That(async () => await driver.Session.StatusAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Unhandled exception in user event handler").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Async module handler exception"));
+        Assert.True(errorPropagated);
+        WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.Session.StatusAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Contains("Unhandled exception in user event handler", exception.Message);
+        Assert.IsType<WebDriverBiDiException>(exception.InnerException);
+        Assert.Contains("Async module handler exception", exception.InnerException.Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestAsyncExceptionInModuleEventHandlerCapturedByCheckpointDoesNotTerminate()
     {
         TestWebSocketConnection connection = new();
@@ -326,7 +328,7 @@ public class ModuleTests
 
         observer.StartCapturingTasks();
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -338,13 +340,13 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
-        Assert.That(tasks, Has.Length.EqualTo(1));
-        Assert.That(async () => await Task.WhenAll(tasks), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Async module handler exception"));
-        Assert.That(async () => await driver.StopAsync(), Throws.Nothing);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), cancellationToken: TestContext.Current.CancellationToken);
+        _ = Assert.Single(tasks);
+        Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
+        await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task TestAsyncAggregateExceptionInModuleEventHandlerCanTerminate()
     {
         TestWebSocketConnection connection = new();
@@ -378,7 +380,7 @@ public class ModuleTests
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -389,45 +391,43 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
-        Assert.That(errorPropagated, Is.True, "The transport should collect the late async aggregate handler failure before shutdown.");
+        Assert.True(errorPropagated);
 
-        WebDriverBiDiException exception = Assert.ThrowsAsync<WebDriverBiDiException>(async () => await driver.Session.StatusAsync())!;
-        Assert.That(exception.InnerException, Is.InstanceOf<AggregateException>());
+        WebDriverBiDiException exception = await Assert.ThrowsAsync<WebDriverBiDiException>(async () => await driver.Session.StatusAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.IsType<AggregateException>(exception.InnerException);
 
-        AggregateException innerAggregateException = (AggregateException)exception.InnerException!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(innerAggregateException.InnerExceptions, Has.Count.EqualTo(2));
-            Assert.That(innerAggregateException.InnerExceptions, Has.One.InstanceOf<InvalidOperationException>().With.Message.EqualTo("First aggregate failure"));
-            Assert.That(innerAggregateException.InnerExceptions, Has.One.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Second aggregate failure"));
-        }
+        AggregateException innerAggregateException = (AggregateException)exception.InnerException;
+
+        Assert.Equal(2, innerAggregateException.InnerExceptions.Count);
+        Assert.Single(innerAggregateException.InnerExceptions.OfType<InvalidOperationException>(), e => e.Message == "First aggregate failure");
+        Assert.Single(innerAggregateException.InnerExceptions.OfType<WebDriverBiDiException>(), e => e.Message == "Second aggregate failure");
     }
 
-    [Test]
-    public void TestCanGetMaxObserverCount()
+    [Fact]
+    public async Task TestCanGetMaxObserverCount()
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
-        Assert.That(module.OnEventInvoked.MaxObserverCount, Is.EqualTo(0));
+        Assert.Equal(0u, module.OnEventInvoked.MaxObserverCount);
     }
 
-    [Test]
-    public void TestSubclassCanGetAccessDriver()
+    [Fact]
+    public async Task TestSubclassCanGetAccessDriver()
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
-        Assert.That(module.ModuleName, Is.EqualTo("protocol"));
-        Assert.That(module.HostingDriver, Is.EqualTo(driver));
+        Assert.Equal("protocol", module.ModuleName);
+        Assert.Equal(driver, module.HostingDriver);
     }
 
-    [Test]
-    public void TestExceedingMaxObserverCountThrows()
+    [Fact]
+    public async Task TestExceedingMaxObserverCountThrows()
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
@@ -438,18 +438,18 @@ public class ModuleTests
         {
         });
 
-        Assert.That(() => module.OnEventInvoked.AddObserver((e) => { }), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.ThrowsAny<WebDriverBiDiException>(() => module.OnEventInvoked.AddObserver((e) => { }));
     }
 
-    [Test]
-    public void TestModuleWithNonReporterDriverDoesNotSetErrorReporter()
+    [Fact]
+    public async Task TestModuleWithNonReporterDriverDoesNotSetErrorReporter()
     {
         NonReporterDriver driver = new();
         TestProtocolModule module = new(driver);
 
         // Verify the module was constructed without throwing; observer error reporting
         // is silently skipped when the driver does not implement IEventObserverErrorReporter.
-        Assert.That(module.OnEventInvoked.CurrentObserverCount, Is.EqualTo(0));
+        Assert.Equal(0, module.OnEventInvoked.CurrentObserverCount);
     }
 
     private sealed class NonReporterDriver : IBiDiCommandExecutor

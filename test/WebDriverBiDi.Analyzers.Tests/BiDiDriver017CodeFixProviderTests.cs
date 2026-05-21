@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver017 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver017CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix correctly applies ??= to the receiver.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_WrapsReceiverWithNullCoalescing()
     {
         string testCode = """
@@ -155,10 +153,10 @@ public class BiDiDriver017CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task NullableListOnUnrelatedType_NoDiagnostic()
     {
         // A nullable List<?>.Add() call on a class that does not inherit from

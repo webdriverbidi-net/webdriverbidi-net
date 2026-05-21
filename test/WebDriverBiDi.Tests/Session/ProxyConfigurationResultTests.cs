@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ProxyConfigurationResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeManualProxyConfigurationResult()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -31,24 +30,23 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<ManualProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<ManualProxyConfigurationResult>(proxyResult);
         ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.Manual));
-            Assert.That(proxyConfig.HttpProxy, Is.EqualTo("http.proxy"));
-            Assert.That(proxyConfig.SslProxy, Is.EqualTo("ssl.proxy"));
-            Assert.That(proxyConfig.SocksProxy, Is.EqualTo("socks.proxy"));
-            Assert.That(proxyConfig.SocksVersion, Is.EqualTo(5));
-            Assert.That(proxyConfig.NoProxyAddresses, Has.Count.EqualTo(1));
-            Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        }
+
+        Assert.Equal(ProxyType.Manual, proxyConfig.ProxyType);
+        Assert.Equal("http.proxy", proxyConfig.HttpProxy);
+        Assert.Equal("ssl.proxy", proxyConfig.SslProxy);
+        Assert.Equal("socks.proxy", proxyConfig.SocksProxy);
+        Assert.Equal(5, proxyConfig.SocksVersion);
+        Assert.NotNull(proxyConfig.NoProxyAddresses);
+        Assert.Single(proxyConfig.NoProxyAddresses);
+        Assert.Empty(proxyConfig.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeManualProxyConfigurationResultWithNullNoProxyList()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -73,24 +71,22 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<ManualProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<ManualProxyConfigurationResult>(proxyResult);
         ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.Manual));
-            Assert.That(proxyConfig.HttpProxy, Is.EqualTo("http.proxy"));
-            Assert.That(proxyConfig.SslProxy, Is.EqualTo("ssl.proxy"));
-            Assert.That(proxyConfig.SocksProxy, Is.EqualTo("socks.proxy"));
-            Assert.That(proxyConfig.SocksVersion, Is.EqualTo(5));
-            Assert.That(proxyConfig.NoProxyAddresses, Is.Null);
-            Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        }
+
+        Assert.Equal(ProxyType.Manual, proxyConfig.ProxyType);
+        Assert.Equal("http.proxy", proxyConfig.HttpProxy);
+        Assert.Equal("ssl.proxy", proxyConfig.SslProxy);
+        Assert.Equal("socks.proxy", proxyConfig.SocksProxy);
+        Assert.Equal(5, proxyConfig.SocksVersion);
+        Assert.Null(proxyConfig.NoProxyAddresses);
+        Assert.Empty(proxyConfig.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestManualProxyConfigurationResultCopySemantics()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -116,16 +112,16 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<ManualProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<ManualProxyConfigurationResult>(proxyResult);
         ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
         ManualProxyConfigurationResult copy = proxyConfig with { };
-        Assert.That(copy, Is.EqualTo(proxyConfig));
+        Assert.Equal(proxyConfig, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeProxyAutoConfigProxyConfigurationResult()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -147,20 +143,18 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<PacProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<PacProxyConfigurationResult>(proxyResult);
         PacProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.ProxyAutoConfig));
-            Assert.That(proxyConfig.ProxyAutoConfigUrl, Is.EqualTo("proxy.autoconfig.url"));
-            Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        }
+
+        Assert.Equal(ProxyType.ProxyAutoConfig, proxyConfig.ProxyType);
+        Assert.Equal("proxy.autoconfig.url", proxyConfig.ProxyAutoConfigUrl);
+        Assert.Empty(proxyConfig.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeProxyAutoConfigProxyConfigurationResultCopySemantics()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -182,16 +176,16 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<PacProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<PacProxyConfigurationResult>(proxyResult);
         PacProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
         PacProxyConfigurationResult copy = proxyConfig with { };
-        Assert.That(copy, Is.EqualTo(proxyConfig));
+        Assert.Equal(proxyConfig, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeAutoDetectProxyConfigurationResult()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -212,19 +206,17 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<AutoDetectProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<AutoDetectProxyConfigurationResult>(proxyResult);
         AutoDetectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.AutoDetect));
-            Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        }
+
+        Assert.Equal(ProxyType.AutoDetect, proxyConfig.ProxyType);
+        Assert.Empty(proxyConfig.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestAutoDetectProxyConfigurationResultCopySemantics()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -245,16 +237,16 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<AutoDetectProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<AutoDetectProxyConfigurationResult>(proxyResult);
         AutoDetectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
         AutoDetectProxyConfigurationResult copy = proxyConfig with { };
-        Assert.That(copy, Is.EqualTo(proxyConfig));
+        Assert.Equal(proxyConfig, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeSystemProxyConfigurationResult()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -275,22 +267,20 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<SystemProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
         SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.System));
-            Assert.That(proxyConfig.AdditionalData, Is.Empty);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+
+        Assert.Equal(ProxyType.System, proxyConfig.ProxyType);
+        Assert.Empty(proxyConfig.AdditionalData);
+        Assert.True(result.SetWindowRect);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestSystemProxyConfigurationResultCopySemantics()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -311,16 +301,16 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<SystemProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
         SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
         SystemProxyConfigurationResult copy = proxyConfig with { };
-        Assert.That(copy, Is.EqualTo(proxyConfig));
+        Assert.Equal(proxyConfig, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeDirectProxyConfigurationResult()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -341,19 +331,17 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<DirectProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<DirectProxyConfigurationResult>(proxyResult);
         DirectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.Direct));
-            Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        }
+
+        Assert.Equal(ProxyType.Direct, proxyConfig.ProxyType);
+        Assert.Empty(proxyConfig.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestDirectProxyConfigurationResultCopySemantics()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -374,16 +362,16 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<DirectProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<DirectProxyConfigurationResult>(proxyResult);
         DirectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
         DirectProxyConfigurationResult copy = proxyConfig with { };
-        Assert.That(copy, Is.EqualTo(proxyConfig));
+        Assert.Equal(proxyConfig, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithProxyContainingAdditionalData()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -405,18 +393,16 @@ public class ProxyConfigurationResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? proxyResult = result.Proxy;
-        Assert.That(proxyResult, Is.Not.Null);
-        Assert.That(proxyResult, Is.InstanceOf<SystemProxyConfigurationResult>());
+        Assert.NotNull(proxyResult);
+        Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
         SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.System));
-            Assert.That(proxyConfig.AdditionalData, Has.Count.EqualTo(1));
-            Assert.That(proxyConfig.AdditionalData, Contains.Key("additionalName"));
-            Assert.That(proxyConfig.AdditionalData["additionalName"], Is.InstanceOf<string>());
-            Assert.That(proxyConfig.AdditionalData["additionalName"], Is.EqualTo("additionalValue"));
-        }
+
+        Assert.Equal(ProxyType.System, proxyConfig.ProxyType);
+        Assert.Single(proxyConfig.AdditionalData);
+        Assert.True(proxyConfig.AdditionalData.ContainsKey("additionalName"));
+        Assert.IsType<string>(proxyConfig.AdditionalData["additionalName"]);
+        Assert.Equal("additionalValue", proxyConfig.AdditionalData["additionalName"]);
     }
 }

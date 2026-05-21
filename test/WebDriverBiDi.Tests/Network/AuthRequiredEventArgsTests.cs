@@ -2,7 +2,6 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class AuthRequiredEventArgsTests
 {
     private readonly string requestDataJson = """
@@ -34,7 +33,7 @@ public class AuthRequiredEventArgsTests
                                               }
                                               """;
 
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow;
@@ -74,16 +73,14 @@ public class AuthRequiredEventArgsTests
                            }
                            """;
         AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
-            // Also proper deserialization of the ResponseData object is handled in InitiatorTests.
-            Assert.That(eventArgs.Response, Is.Not.Null);
-        }
+        Assert.NotNull(eventArgs);
+
+        // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
+        // Also proper deserialization of the ResponseData object is handled in InitiatorTests.
+        Assert.NotNull(eventArgs.Response);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow;
@@ -123,12 +120,12 @@ public class AuthRequiredEventArgsTests
                            }
                            """;
         AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         AuthRequiredEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingResponseThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -144,6 +141,6 @@ public class AuthRequiredEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson));
     }
 }

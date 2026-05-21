@@ -3,24 +3,23 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SharedReferenceTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeSharedReference()
     {
         SharedReference reference = new("mySharedId");
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
-        Assert.That(referenceObject, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(referenceObject, Contains.Key("sharedId"));
-            Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-        }
+        Assert.Single(referenceObject);
+
+        Assert.True(referenceObject.ContainsKey("sharedId"));
+        JToken? sharedId = referenceObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal("mySharedId", sharedId.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanEditSharedReferenceSharedId()
     {
         SharedReference reference = new("mySharedId")
@@ -29,15 +28,15 @@ public class SharedReferenceTests
         };
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
-        Assert.That(referenceObject, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(referenceObject, Contains.Key("sharedId"));
-            Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("myNewSharedId"));
-        }
+        Assert.Single(referenceObject);
+
+        Assert.True(referenceObject.ContainsKey("sharedId"));
+        JToken? sharedId = referenceObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal("myNewSharedId", sharedId.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeSharedReferenceWithHandle()
     {
         SharedReference reference = new("mySharedId")
@@ -46,54 +45,57 @@ public class SharedReferenceTests
         };
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
-        Assert.That(referenceObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(referenceObject, Contains.Key("sharedId"));
-            Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-            Assert.That(referenceObject, Contains.Key("handle"));
-            Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
-        }
+        Assert.Equal(2, referenceObject.Count);
+
+        Assert.True(referenceObject.ContainsKey("sharedId"));
+        JToken? sharedId = referenceObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal("mySharedId", sharedId.Value<string>());
+
+        Assert.True(referenceObject.ContainsKey("handle"));
+        JToken? handle = referenceObject["handle"];
+        Assert.NotNull(handle);
+        Assert.Equal("myHandle", handle.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestSharedReferenceCopySemantics()
     {
         SharedReference reference = new("mySharedId");
         SharedReference copy = reference with { };
-        Assert.That(copy, Is.EqualTo(reference));
+        Assert.Equal(reference, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestSharedReferenceSharedIdGetterReturnsValue()
     {
         SharedReference reference = new("mySharedId");
-        Assert.That(reference.SharedId, Is.EqualTo("mySharedId"));
+        Assert.Equal("mySharedId", reference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestSharedReferenceSharedIdSetterSetsValue()
     {
         SharedReference reference = new("mySharedId");
         reference.SharedId = "myNewSharedId";
-        Assert.That(reference.SharedId, Is.EqualTo("myNewSharedId"));
+        Assert.Equal("myNewSharedId", reference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestSettingSharedReferenceHandleToNullThrows()
     {
         SharedReference reference = new("mySharedId");
-        Assert.That(() => reference.SharedId = null!, Throws.InstanceOf<ArgumentNullException>());
+        Assert.ThrowsAny<ArgumentNullException>(() => reference.SharedId = null!);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingSharedReferenceThrowsWhenSharedIdIsMissing()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<SharedReference>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SharedReference>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingSharedReferenceThrowsWhenSharedIdIsInvalidType()
     {
         string json = """
@@ -101,24 +103,27 @@ public class SharedReferenceTests
                         "sharedId": 123
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<SharedReference>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SharedReference>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeSharedReferenceWithAdditionalProperties()
     {
         SharedReference reference = new("mySharedId");
         reference.AdditionalData["myPropertyName"] = "myValue";
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
-        Assert.That(referenceObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(referenceObject, Contains.Key("sharedId"));
-            Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-            Assert.That(referenceObject, Contains.Key("myPropertyName"));
-            Assert.That(referenceObject["myPropertyName"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(referenceObject["myPropertyName"]!.Value<string>(), Is.EqualTo("myValue"));
-        }
+        Assert.Equal(2, referenceObject.Count);
+
+        Assert.True(referenceObject.ContainsKey("sharedId"));
+        JToken? sharedId = referenceObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal("mySharedId", sharedId.Value<string>());
+
+        Assert.True(referenceObject.ContainsKey("myPropertyName"));
+        JToken? myPropertyName = referenceObject["myPropertyName"];
+        Assert.NotNull(myPropertyName);
+        Assert.Equal(JTokenType.String, myPropertyName.Type);
+        Assert.Equal("myValue", myPropertyName.Value<string>());
     }
 }

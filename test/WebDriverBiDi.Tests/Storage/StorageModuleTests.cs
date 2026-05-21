@@ -4,10 +4,9 @@ using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class StorageModuleTests()
 {
-    [Test]
+    [Fact]
     public async Task TestGetCookiesCommand()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
@@ -49,32 +48,29 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<GetCookiesCommandResult> task = module.GetCookiesAsync(new GetCookiesCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetCookiesCommandResult result = task.Result;
+        Task<GetCookiesCommandResult> task = module.GetCookiesAsync(new GetCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        GetCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Cookies, Has.Count.EqualTo(1));
-            Assert.That(result.Cookies[0].Name, Is.EqualTo("cookieName"));
-            Assert.That(result.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(result.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(result.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(result.Cookies[0].Path, Is.EqualTo("cookiePath"));
-            Assert.That(result.Cookies[0].Size, Is.EqualTo(123));
-            Assert.That(result.Cookies[0].Secure, Is.True);
-            Assert.That(result.Cookies[0].HttpOnly, Is.False);
-            Assert.That(result.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
-            Assert.That(result.Cookies[0].Expires, Is.EqualTo(expireTime));
-            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Single(result.Cookies);
+        Assert.Equal("cookieName", result.Cookies[0].Name);
+        Assert.Equal(BytesValueType.String, result.Cookies[0].Value.Type);
+        Assert.Equal("cookieValue", result.Cookies[0].Value.Value);
+        Assert.Equal("cookieDomain", result.Cookies[0].Domain);
+        Assert.Equal("cookiePath", result.Cookies[0].Path);
+        Assert.Equal(123, result.Cookies[0].Size);
+        Assert.True(result.Cookies[0].Secure);
+        Assert.False(result.Cookies[0].HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Lax, result.Cookies[0].SameSite);
+        Assert.Equal(expireTime, result.Cookies[0].Expires);
+        Assert.Equal("myUserContext", result.PartitionKey.UserContextId);
+        Assert.Equal("mySourceOrigin", result.PartitionKey.SourceOrigin);
     }
 
-    [Test]
+    [Fact]
     public async Task TestGetCookiesCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -95,17 +91,16 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<GetCookiesCommandResult> task = module.GetCookiesAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetCookiesCommandResult result = task.Result;
+        Task<GetCookiesCommandResult> task = module.GetCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+        GetCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Cookies, Has.Count.EqualTo(0));
+        Assert.NotNull(result);
+        Assert.Empty(result.Cookies);
     }
 
-    [Test]
+    [Fact]
     public async Task TestDeleteCookiesCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -125,16 +120,15 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        DeleteCookiesCommandResult result = task.Result;
+        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+        DeleteCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetCookieCommand()
     {
         TestWebSocketConnection connection = new();
@@ -157,21 +151,18 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<SetCookieCommandResult> task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")));
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetCookieCommandResult result = task.Result;
+        Task<SetCookieCommandResult> task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")), cancellationToken: TestContext.Current.CancellationToken);
+        SetCookieCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("myUserContext", result.PartitionKey.UserContextId);
+        Assert.Equal("mySourceOrigin", result.PartitionKey.SourceOrigin);
     }
 
-    [Test]
+    [Fact]
     public async Task TestDeleteCookiesCommand()
     {
         TestWebSocketConnection connection = new();
@@ -194,17 +185,14 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        DeleteCookiesCommandResult result = task.Result;
+        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        DeleteCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("myUserContext", result.PartitionKey.UserContextId);
+        Assert.Equal("mySourceOrigin", result.PartitionKey.SourceOrigin);
     }
 }

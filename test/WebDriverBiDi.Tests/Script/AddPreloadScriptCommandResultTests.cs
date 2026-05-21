@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class AddPreloadScriptCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeAddLoadScriptCommandResult()
     {
         string json = """
@@ -14,11 +13,11 @@ public class AddPreloadScriptCommandResultTests
                       }
                       """;
         AddPreloadScriptCommandResult? result = JsonSerializer.Deserialize<AddPreloadScriptCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.PreloadScriptId, Is.EqualTo("myLoadScript"));
+        Assert.NotNull(result);
+        Assert.Equal("myLoadScript", result.PreloadScriptId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,8 +26,8 @@ public class AddPreloadScriptCommandResultTests
                       }
                       """;
         AddPreloadScriptCommandResult? result = JsonSerializer.Deserialize<AddPreloadScriptCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         AddPreloadScriptCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

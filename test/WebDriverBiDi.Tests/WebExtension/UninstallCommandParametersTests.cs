@@ -3,28 +3,27 @@ namespace WebDriverBiDi.WebExtension;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class UninstallCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         UninstallCommandParameters properties = new("myExtensionId");
-        Assert.That(properties.MethodName, Is.EqualTo("webExtension.uninstall"));
+        Assert.Equal("webExtension.uninstall", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         UninstallCommandParameters properties = new("myExtensionId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("extension"));
-            Assert.That(serialized["extension"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["extension"]!.Value<string>(), Is.EqualTo("myExtensionId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("extension"));
+        JToken? extension = serialized["extension"];
+        Assert.NotNull(extension);
+        Assert.Equal(JTokenType.String, extension.Type);
+        Assert.Equal("myExtensionId", extension.Value<string>());
     }
 }

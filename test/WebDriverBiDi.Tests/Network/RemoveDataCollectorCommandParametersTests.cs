@@ -3,28 +3,27 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class RemoveDataCollectorCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         RemoveDataCollectorCommandParameters properties = new("myCollectorId");
-        Assert.That(properties.MethodName, Is.EqualTo("network.removeDataCollector"));
+        Assert.Equal("network.removeDataCollector", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         RemoveDataCollectorCommandParameters properties = new("myCollectorId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("collector"));
-            Assert.That(serialized["collector"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["collector"]!.Value<string>(), Is.EqualTo("myCollectorId"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("collector"));
+        JToken? collector = serialized["collector"];
+        Assert.NotNull(collector);
+        Assert.Equal(JTokenType.String, collector.Type);
+        Assert.Equal("myCollectorId", collector.Value<string>());
     }
 }

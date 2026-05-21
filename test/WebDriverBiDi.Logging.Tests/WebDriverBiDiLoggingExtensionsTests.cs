@@ -7,27 +7,26 @@ using Microsoft.Extensions.Logging;
 using WebDriverBiDi;
 using WebDriverBiDi.Logging.TestUtilities;
 
-[TestFixture]
-[NonParallelizable]
+[Collection("NonParallel")]
 public class WebDriverBiDiLoggingExtensionsTests
 {
-    [Test]
+    [Fact]
     public void AddWebDriverBiDi_WhenBuilderIsNull_ThrowsArgumentNullException()
     {
         ILoggingBuilder? builder = null;
 
-        Assert.That(() => builder!.AddWebDriverBiDi(), Throws.ArgumentNullException);
+        Assert.Throws<ArgumentNullException>(() => builder!.AddWebDriverBiDi());
     }
 
-    [Test]
+    [Fact]
     public void AddWebDriverBiDi_WithMinimumLevel_WhenBuilderIsNull_ThrowsArgumentNullException()
     {
         ILoggingBuilder? builder = null;
 
-        Assert.That(() => builder!.AddWebDriverBiDi(EventLevel.Verbose), Throws.ArgumentNullException);
+        Assert.Throws<ArgumentNullException>(() => builder!.AddWebDriverBiDi(EventLevel.Verbose));
     }
 
-    [Test]
+    [Fact]
     public void AddWebDriverBiDi_ReturnsBuilderForChaining()
     {
         ServiceCollection services = new();
@@ -35,10 +34,10 @@ public class WebDriverBiDiLoggingExtensionsTests
 
         ILoggingBuilder result = builder.AddWebDriverBiDi();
 
-        Assert.That(result, Is.SameAs(builder));
+        Assert.Same(builder, result);
     }
 
-    [Test]
+    [Fact]
     public void AddWebDriverBiDi_WithMinimumLevel_ReturnsBuilderForChaining()
     {
         ServiceCollection services = new();
@@ -46,10 +45,10 @@ public class WebDriverBiDiLoggingExtensionsTests
 
         ILoggingBuilder result = builder.AddWebDriverBiDi(EventLevel.Warning);
 
-        Assert.That(result, Is.SameAs(builder));
+        Assert.Same(builder, result);
     }
 
-    [Test]
+    [Fact]
     public void AddWebDriverBiDi_RegistersWebDriverBiDiEventSourceLogger()
     {
         ServiceCollection services = new();
@@ -57,11 +56,11 @@ public class WebDriverBiDiLoggingExtensionsTests
         using (ServiceProvider provider = services.BuildServiceProvider())
         {
             WebDriverBiDiEventSourceLogger? logger = provider.GetService<WebDriverBiDiEventSourceLogger>();
-            Assert.That(logger, Is.Not.Null);
+            Assert.NotNull(logger);
         }
     }
 
-    [Test]
+    [Fact]
     public void AddWebDriverBiDi_RegistersAsSingleton()
     {
         ServiceCollection services = new();
@@ -70,11 +69,11 @@ public class WebDriverBiDiLoggingExtensionsTests
         {
             WebDriverBiDiEventSourceLogger first = provider.GetRequiredService<WebDriverBiDiEventSourceLogger>();
             WebDriverBiDiEventSourceLogger second = provider.GetRequiredService<WebDriverBiDiEventSourceLogger>();
-            Assert.That(first, Is.SameAs(second));
+            Assert.Same(second, first);
         }
     }
 
-    [Test]
+    [Fact]
     public void AddWebDriverBiDi_WithMinimumLevel_RegistersLoggerWithCorrectLevel()
     {
         ServiceCollection services = new();
@@ -96,7 +95,7 @@ public class WebDriverBiDiLoggingExtensionsTests
         TestLogger.LogEntry entry = fakeLogger.Entries
             .Where(e => e.EventId.Name == "CommandTimeout")
             .Last();
-        Assert.That(entry.EventId.Name, Is.EqualTo("CommandTimeout"));
+        Assert.Equal("CommandTimeout", entry.EventId.Name);
     }
 
     /// <summary>

@@ -2,21 +2,20 @@ namespace WebDriverBiDi;
 
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class EventDataCollectorTests
 {
-    [Test]
+    [Fact]
     public async Task TestCanCaptureEventData()
     {
         TestEventSource testEventSource = new();
         await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         await testEventSource.RaiseTestEventAsync("myValue");
         IReadOnlyList<TestObservableEventArgs> eventArgsList = collector.GetCollectedEventData();
-        Assert.That(eventArgsList, Has.Count.EqualTo(1));
-        Assert.That(eventArgsList[0].EventValue, Is.EqualTo("myValue"));
+        Assert.Single(eventArgsList);
+        Assert.Equal("myValue", eventArgsList[0].EventValue);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanFilterCapturedEventData()
     {
         TestEventSource testEventSource = new();
@@ -24,12 +23,11 @@ public class EventDataCollectorTests
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
         IReadOnlyList<TestObservableEventArgs> eventArgsList = collector.GetCollectedEventData();
-        Assert.That(eventArgsList, Has.Count.EqualTo(1));
-        Assert.That(eventArgsList[0].EventValue, Is.EqualTo("myValue1"));
+        Assert.Single(eventArgsList);
+        Assert.Equal("myValue1", eventArgsList[0].EventValue);
     }
 
-
-    [Test]
+    [Fact]
     public async Task TestCanOnlyCaptureNewEventData()
     {
         TestEventSource testEventSource = new();
@@ -37,33 +35,30 @@ public class EventDataCollectorTests
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
         IReadOnlyList<TestObservableEventArgs> eventArgsList = collector.GetCollectedEventData();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgsList, Has.Count.EqualTo(2));
-            Assert.That(eventArgsList[0].EventValue, Is.EqualTo("myValue1"));
-            Assert.That(eventArgsList[1].EventValue, Is.EqualTo("myValue2"));
-        }
+
+        Assert.Equal(2, eventArgsList.Count);
+        Assert.Equal("myValue1", eventArgsList[0].EventValue);
+        Assert.Equal("myValue2", eventArgsList[1].EventValue);
+
         await testEventSource.RaiseTestEventAsync("myValue3");
         await testEventSource.RaiseTestEventAsync("myValue4");
         eventArgsList = collector.GetCollectedEventData();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgsList, Has.Count.EqualTo(2));
-            Assert.That(eventArgsList[0].EventValue, Is.EqualTo("myValue3"));
-            Assert.That(eventArgsList[1].EventValue, Is.EqualTo("myValue4"));
-        }
+
+        Assert.Equal(2, eventArgsList.Count);
+        Assert.Equal("myValue3", eventArgsList[0].EventValue);
+        Assert.Equal("myValue4", eventArgsList[1].EventValue);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReturnZeroEvents()
     {
         TestEventSource testEventSource = new();
         await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         IReadOnlyList<TestObservableEventArgs> eventArgsList = collector.GetCollectedEventData();
-        Assert.That(eventArgsList, Has.Count.Zero);
+        Assert.Empty(eventArgsList);
     }
 
-    [Test]
+    [Fact]
     public async Task TestDisposeAsyncRemovesCollector()
     {
         TestEventSource testEventSource = new();
@@ -71,61 +66,61 @@ public class EventDataCollectorTests
         EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         await testEventSource.RaiseTestEventAsync("myValue1");
         IReadOnlyList<TestObservableEventArgs> eventArgsList = disposingCollector.GetCollectedEventData();
-        Assert.That(eventArgsList, Has.Count.EqualTo(1));
+        Assert.Single(eventArgsList);
 
         await disposingCollector.DisposeAsync();
-        Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(1));
+        Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
 
-        Assert.That(async () => await testEventSource.RaiseTestEventAsync("myValue2"), Throws.Nothing);
-        Assert.That(collector.GetCollectedEventData(), Has.Count.EqualTo(2));
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        Assert.Equal(2, collector.GetCollectedEventData().Count);
     }
 
-    [Test]
+    [Fact]
     public async Task TestDisposeAfterDisposeAsyncDoesNotThrow()
     {
         TestEventSource testEventSource = new();
         EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         await collector.DisposeAsync();
-        Assert.That(() => collector.Dispose(), Throws.Nothing);
+        collector.Dispose();
     }
 
-    [Test]
+    [Fact]
     public async Task TestDoubleDisposeAsyncDoesNotThrow()
     {
         TestEventSource testEventSource = new();
         EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         await collector.DisposeAsync();
-        Assert.That(async () => await collector.DisposeAsync(), Throws.Nothing);
+        await collector.DisposeAsync();
     }
 
-    [Test]
+    [Fact]
     public async Task TestDisposeAsyncAfterDisposeDoesNotThrow()
     {
         TestEventSource testEventSource = new();
         EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         collector.Dispose();
-        Assert.That(async () => await collector.DisposeAsync(), Throws.Nothing);
+        await collector.DisposeAsync();
     }
 
-    [Test]
-    public void TestGettingCollectedDataAfterDisposeThrows()
+    [Fact]
+    public async Task TestGettingCollectedDataAfterDisposeThrows()
     {
         TestEventSource testEventSource = new();
         EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         collector.Dispose();
-        Assert.That(() => collector.GetCollectedEventData(), Throws.InstanceOf<ObjectDisposedException>());
+        Assert.ThrowsAny<ObjectDisposedException>(() => collector.GetCollectedEventData());
     }
 
-    [Test]
+    [Fact]
     public async Task TestGettingCollectedDataAfterDisposeAsyncThrows()
     {
         TestEventSource testEventSource = new();
         EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         await collector.DisposeAsync();
-        Assert.That(() => collector.GetCollectedEventData(), Throws.InstanceOf<ObjectDisposedException>());
+        Assert.ThrowsAny<ObjectDisposedException>(() => collector.GetCollectedEventData());
     }
 
-    [Test]
+    [Fact]
     public async Task TestConcurrentEnqueueAndDrainYieldsAllItems()
     {
         const int writerCount = 4;
@@ -152,7 +147,8 @@ public class EventDataCollectorTests
             // Final drain: picks up anything enqueued between the last loop
             // iteration and the writers completing.
             drained.AddRange(collector.GetCollectedEventData());
-        });
+        }
+        , TestContext.Current.CancellationToken);
 
         List<Task> writerTasks = [];
         for (int i = 0; i < writerCount; i++)
@@ -165,7 +161,8 @@ public class EventDataCollectorTests
                 {
                     await testEventSource.RaiseTestEventAsync($"w{writerId}-e{j}");
                 }
-            }));
+            },
+            TestContext.Current.CancellationToken));
         }
 
         // Cancel the reader only after all writers have finished — no new
@@ -174,26 +171,26 @@ public class EventDataCollectorTests
         readerCts.Cancel();
         await readerTask;
 
-        Assert.That(drained, Has.Count.EqualTo(totalEvents));
+        Assert.Equal(totalEvents, drained.Count);
     }
 
-    [Test]
+    [Fact]
     public async Task TestToStringReturnsDescription()
     {
         TestEventSource testEventSource = new();
         await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector(description: "My first data collector");
-        Assert.That(collector.ToString(), Is.EqualTo("My first data collector"));
+        Assert.Equal("My first data collector", collector.ToString());
     }
 
-    [Test]
+    [Fact]
     public async Task TestToStringReturnsDefaultDescription()
     {
         TestEventSource testEventSource = new();
         await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
-        Assert.That(collector.ToString(), Does.StartWith("EventDataCollector<TestObservableEventArgs> (id:"));
+        Assert.StartsWith("EventDataCollector<TestObservableEventArgs> (id:", collector.ToString());
     }
 
-    [Test]
+    [Fact]
     public async Task TestEventsYieldsBufferedItemsInOrder()
     {
         TestEventSource testEventSource = new();
@@ -211,16 +208,13 @@ public class EventDataCollectorTests
             }
         }
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(received, Has.Count.EqualTo(3));
-            Assert.That(received[0].EventValue, Is.EqualTo("value1"));
-            Assert.That(received[1].EventValue, Is.EqualTo("value2"));
-            Assert.That(received[2].EventValue, Is.EqualTo("value3"));
-        }
+        Assert.Equal(3, received.Count);
+        Assert.Equal("value1", received[0].EventValue);
+        Assert.Equal("value2", received[1].EventValue);
+        Assert.Equal("value3", received[2].EventValue);
     }
 
-    [Test]
+    [Fact]
     public async Task TestEventsRespectsFilter()
     {
         TestEventSource testEventSource = new();
@@ -234,11 +228,11 @@ public class EventDataCollectorTests
             break;
         }
 
-        Assert.That(received, Has.Count.EqualTo(1));
-        Assert.That(received[0].EventValue, Is.EqualTo("myValue1"));
+        Assert.Single(received);
+        Assert.Equal("myValue1", received[0].EventValue);
     }
 
-    [Test]
+    [Fact]
     public async Task TestEventsTerminatesAndDrainsBufferWhenCollectorDisposed()
     {
         TestEventSource testEventSource = new();
@@ -255,30 +249,27 @@ public class EventDataCollectorTests
             received.Add(args);
         }
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(received, Has.Count.EqualTo(2));
-            Assert.That(received[0].EventValue, Is.EqualTo("value1"));
-            Assert.That(received[1].EventValue, Is.EqualTo("value2"));
-        }
+        Assert.Equal(2, received.Count);
+        Assert.Equal("value1", received[0].EventValue);
+        Assert.Equal("value2", received[1].EventValue);
     }
 
-    [Test]
+    [Fact]
     public async Task TestEventsCancellationTokenCancelsIteration()
     {
         TestEventSource testEventSource = new();
         await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         using CancellationTokenSource cts = new();
         cts.Cancel();
-        Assert.That(async () =>
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
             await foreach (TestObservableEventArgs _ in collector.Events.WithCancellation(cts.Token))
             {
             }
-        }, Throws.InstanceOf<OperationCanceledException>());
+        });
     }
 
-    [Test]
+    [Fact]
     public async Task TestEventsAndGetCollectedEventDataShareBuffer()
     {
         TestEventSource testEventSource = new();
@@ -296,12 +287,10 @@ public class EventDataCollectorTests
 
         // GetCollectedEventData only sees the remaining item
         IReadOnlyList<TestObservableEventArgs> fromDrain = collector.GetCollectedEventData();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(fromEvents, Has.Count.EqualTo(1));
-            Assert.That(fromDrain, Has.Count.EqualTo(1));
-            Assert.That(fromEvents[0].EventValue, Is.EqualTo("value1"));
-            Assert.That(fromDrain[0].EventValue, Is.EqualTo("value2"));
-        }
+
+        Assert.Single(fromEvents);
+        Assert.Single(fromDrain);
+        Assert.Equal("value1", fromEvents[0].EventValue);
+        Assert.Equal("value2", fromDrain[0].EventValue);
     }
 }

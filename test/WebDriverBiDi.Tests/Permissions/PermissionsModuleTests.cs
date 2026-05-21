@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Permissions;
 
 using TestUtilities;
 
-[TestFixture]
 public class PermissionsModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestExecuteSetPermissionCommand()
     {
         TestWebSocketConnection connection = new();
@@ -22,13 +21,12 @@ public class PermissionsModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         PermissionsModule module = driver.Permissions;
 
-        Task<SetPermissionCommandResult> task = module.SetPermissionAsync(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetPermissionCommandResult result = task.Result;
+        Task<SetPermissionCommandResult> task = module.SetPermissionAsync(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"), cancellationToken: TestContext.Current.CancellationToken);
+        SetPermissionCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 }

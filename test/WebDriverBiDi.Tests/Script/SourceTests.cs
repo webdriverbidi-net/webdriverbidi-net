@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SourceTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,15 +13,13 @@ public class SourceTests
                       }
                       """;
         Source? source = JsonSerializer.Deserialize<Source>(json);
-        Assert.That(source, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(source.Context, Is.Null);
-        }
+        Assert.NotNull(source);
+
+        Assert.Equal("realmId", source.RealmId);
+        Assert.Null(source.Context);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -31,19 +28,19 @@ public class SourceTests
                       }
                       """;
         Source? source = JsonSerializer.Deserialize<Source>(json);
-        Assert.That(source, Is.Not.Null);
+        Assert.NotNull(source);
         Source copy = source with { };
-        Assert.That(copy, Is.EqualTo(source));
+        Assert.Equal(source, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingRealmThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<Source>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Source>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidRealmTypeThrows()
     {
         string json = """
@@ -51,10 +48,10 @@ public class SourceTests
                         "realm": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Source>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Source>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithOptionalContext()
     {
         string json = """
@@ -64,16 +61,14 @@ public class SourceTests
                       }
                       """;
         Source? source = JsonSerializer.Deserialize<Source>(json);
-        Assert.That(source, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(source.Context, Is.Not.Null);
-            Assert.That(source.Context, Is.EqualTo("contextId"));
-        }
+        Assert.NotNull(source);
+
+        Assert.Equal("realmId", source.RealmId);
+        Assert.NotNull(source.Context);
+        Assert.Equal("contextId", source.Context);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithOptionalUserContext()
     {
         string json = """
@@ -83,16 +78,14 @@ public class SourceTests
                       }
                       """;
         Source? source = JsonSerializer.Deserialize<Source>(json);
-        Assert.That(source, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(source.UserContext, Is.Not.Null);
-            Assert.That(source.UserContext, Is.EqualTo("userContextId"));
-        }
+        Assert.NotNull(source);
+
+        Assert.Equal("realmId", source.RealmId);
+        Assert.NotNull(source.UserContext);
+        Assert.Equal("userContextId", source.UserContext);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidFlagsTypeThrows()
     {
         string json = """
@@ -101,6 +94,6 @@ public class SourceTests
                         "context": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Source>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Source>(json));
     }
 }

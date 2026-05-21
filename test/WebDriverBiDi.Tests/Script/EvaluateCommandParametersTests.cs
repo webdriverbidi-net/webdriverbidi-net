@@ -3,35 +3,40 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class EvaluateCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true);
-        Assert.That(properties.MethodName, Is.EqualTo("script.evaluate"));
+        Assert.Equal("script.evaluate", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("expression"));
-            Assert.That(serialized["expression"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("target"));
-            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("awaitPromise"));
-            Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("expression"));
+        JToken? expression = serialized["expression"];
+        Assert.NotNull(expression);
+        Assert.Equal(JTokenType.String, expression.Type);
+
+        Assert.True(serialized.ContainsKey("target"));
+        JToken? target = serialized["target"];
+        Assert.NotNull(target);
+        Assert.Equal(JTokenType.Object, target.Type);
+
+        Assert.True(serialized.ContainsKey("awaitPromise"));
+        JToken? awaitPromise = serialized["awaitPromise"];
+        Assert.NotNull(awaitPromise);
+        Assert.Equal(JTokenType.Boolean, awaitPromise.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalValues()
     {
         EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true)
@@ -45,21 +50,36 @@ public class EvaluateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(6));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("expression"));
-            Assert.That(serialized["expression"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("target"));
-            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("awaitPromise"));
-            Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized, Contains.Key("resultOwnership"));
-            Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("serializationOptions"));
-            Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("userActivation"));
-            Assert.That(serialized["userActivation"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        }
+        Assert.Equal(6, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("expression"));
+        JToken? expression = serialized["expression"];
+        Assert.NotNull(expression);
+        Assert.Equal(JTokenType.String, expression.Type);
+
+        Assert.True(serialized.ContainsKey("target"));
+        JToken? target = serialized["target"];
+        Assert.NotNull(target);
+        Assert.Equal(JTokenType.Object, target.Type);
+
+        Assert.True(serialized.ContainsKey("awaitPromise"));
+        JToken? awaitPromise = serialized["awaitPromise"];
+        Assert.NotNull(awaitPromise);
+        Assert.Equal(JTokenType.Boolean, awaitPromise.Type);
+
+        Assert.True(serialized.ContainsKey("resultOwnership"));
+        JToken? resultOwnership = serialized["resultOwnership"];
+        Assert.NotNull(resultOwnership);
+        Assert.Equal(JTokenType.String, resultOwnership.Type);
+
+        Assert.True(serialized.ContainsKey("serializationOptions"));
+        JToken? serializationOptions = serialized["serializationOptions"];
+        Assert.NotNull(serializationOptions);
+        Assert.Equal(JTokenType.Object, serializationOptions.Type);
+
+        Assert.True(serialized.ContainsKey("userActivation"));
+        JToken? userActivation = serialized["userActivation"];
+        Assert.NotNull(userActivation);
+        Assert.Equal(JTokenType.Boolean, userActivation.Type);
     }
 }

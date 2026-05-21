@@ -1,22 +1,21 @@
 namespace WebDriverBiDi.Protocol;
 
-[TestFixture]
 public class ConnectionDataReceivedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateConnectionDataReceivedEventArgs()
     {
         ConnectionDataReceivedEventArgs eventArgs = new([1]);
-        Assert.That(eventArgs.Data, Has.Length.EqualTo(1));
-        Assert.That(eventArgs.Data[0], Is.EqualTo(1));
-        Assert.That(eventArgs.AdditionalData, Is.Empty);
+        Assert.Single(eventArgs.Data);
+        Assert.Equal(1, eventArgs.Data[0]);
+        Assert.Empty(eventArgs.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         ConnectionDataReceivedEventArgs eventArgs = new([1]);
         ConnectionDataReceivedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 }

@@ -3,19 +3,18 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ScanRecordTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerialize()
     {
         ScanRecord properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(0));
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithOptionalData()
     {
         ScanRecord properties = new()
@@ -27,26 +26,37 @@ public class ScanRecordTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            // BluetoothManufacturerData serialization is tested in its own set of tests,
-            // so its serialized structure need not be fully verified here.
-            Assert.That(serialized, Contains.Key("name"));
-            Assert.That(serialized["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["name"]!.Value<string>(), Is.EqualTo("myName"));
-            Assert.That(serialized, Contains.Key("uuids"));
-            Assert.That(serialized["uuids"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["uuids"]!.Value<JArray>(), Has.Count.EqualTo(1));
-            Assert.That(serialized["uuids"]![0]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["uuids"]![0]!.Value<string>(), Is.EqualTo("my-service-uuid"));
-            Assert.That(serialized, Contains.Key("appearance"));
-            Assert.That(serialized["appearance"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["appearance"]!.Value<uint>(), Is.EqualTo(123));
-            Assert.That(serialized, Contains.Key("manufacturerData"));
-            Assert.That(serialized["manufacturerData"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["manufacturerData"]!.Value<JArray>(), Has.Count.EqualTo(1));
-            Assert.That(serialized["manufacturerData"]![0]!.Type, Is.EqualTo(JTokenType.Object));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        // BluetoothManufacturerData serialization is tested in its own set of tests,
+        // so its serialized structure need not be fully verified here.
+        Assert.True(serialized.ContainsKey("name"));
+        JToken? name = serialized["name"];
+        Assert.NotNull(name);
+        Assert.Equal(JTokenType.String, name.Type);
+        Assert.Equal("myName", name.Value<string>());
+
+        Assert.True(serialized.ContainsKey("uuids"));
+        JToken? uuids = serialized["uuids"];
+        Assert.NotNull(uuids);
+        Assert.Equal(JTokenType.Array, uuids.Type);
+        JToken uuid = Assert.Single(uuids);
+
+        Assert.NotNull(uuid);
+        Assert.Equal(JTokenType.String, uuid.Type);
+        Assert.Equal("my-service-uuid", uuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("appearance"));
+        JToken? appearance = serialized["appearance"];
+        Assert.NotNull(appearance);
+        Assert.Equal(JTokenType.Integer, appearance.Type);
+        Assert.Equal(123u, appearance.Value<uint>());
+
+        Assert.True(serialized.ContainsKey("manufacturerData"));
+        JToken? manufacturerData = serialized["manufacturerData"];
+        Assert.NotNull(manufacturerData);
+        Assert.Equal(JTokenType.Array, manufacturerData.Type);
+        JToken manufacturerDataArray = Assert.Single(manufacturerData);
+        Assert.Equal(JTokenType.Object, manufacturerDataArray.Type);
     }
 }

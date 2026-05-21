@@ -7,22 +7,21 @@ using Microsoft.Extensions.Logging;
 using WebDriverBiDi;
 using WebDriverBiDi.Logging.TestUtilities;
 
-[TestFixture]
-[NonParallelizable]
+[Collection("NonParallel")]
 public class WebDriverBiDiEventSourceLoggerTests
 {
     private static TestLogger.LogEntry GetLastEntryForEvent(TestLogger logger, string eventName)
     {
-        return logger.Entries.Where(e => e.EventId.Name == eventName).Last();
+        return logger.Entries.Last(e => e.EventId.Name == eventName);
     }
 
-    [Test]
+    [Fact]
     public void Constructor_WhenLoggerIsNull_ThrowsArgumentNullException()
     {
-        Assert.That(() => new WebDriverBiDiEventSourceLogger(null!), Throws.ArgumentNullException);
+        Assert.Throws<ArgumentNullException>(() => new WebDriverBiDiEventSourceLogger(null!));
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_ForwardsInformationalEventToLogger()
     {
         TestLogger fakeLogger = new();
@@ -32,15 +31,15 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
-        Assert.That(entry.LogLevel, Is.EqualTo(LogLevel.Information));
-        Assert.That(entry.EventId.Id, Is.EqualTo(1));
-        Assert.That(entry.EventId.Name, Is.EqualTo("ConnectionOpening"));
-        Assert.That(entry.Message, Does.Contain("ConnectionOpening"));
-        Assert.That(entry.Message, Does.Contain("conn-123"));
-        Assert.That(entry.Message, Does.Contain("ws://localhost:9222"));
+        Assert.Equal(LogLevel.Information, entry.LogLevel);
+        Assert.Equal(1, entry.EventId.Id);
+        Assert.Equal("ConnectionOpening", entry.EventId.Name);
+        Assert.Contains("ConnectionOpening", entry.Message);
+        Assert.Contains("conn-123", entry.Message);
+        Assert.Contains("ws://localhost:9222", entry.Message);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_ForwardsVerboseEventAsDebugLevel()
     {
         TestLogger fakeLogger = new();
@@ -50,11 +49,11 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandSending");
-        Assert.That(entry.LogLevel, Is.EqualTo(LogLevel.Debug));
-        Assert.That(entry.EventId.Name, Is.EqualTo("CommandSending"));
+        Assert.Equal(LogLevel.Debug, entry.LogLevel);
+        Assert.Equal("CommandSending", entry.EventId.Name);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_ForwardsWarningEventAsWarningLevel()
     {
         TestLogger fakeLogger = new();
@@ -64,11 +63,11 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandTimeout");
-        Assert.That(entry.LogLevel, Is.EqualTo(LogLevel.Warning));
-        Assert.That(entry.EventId.Name, Is.EqualTo("CommandTimeout"));
+        Assert.Equal(LogLevel.Warning, entry.LogLevel);
+        Assert.Equal("CommandTimeout", entry.EventId.Name);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_ForwardsErrorEventAsErrorLevel()
     {
         TestLogger fakeLogger = new();
@@ -78,11 +77,11 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionError");
-        Assert.That(entry.LogLevel, Is.EqualTo(LogLevel.Error));
-        Assert.That(entry.EventId.Name, Is.EqualTo("ConnectionError"));
+        Assert.Equal(LogLevel.Error, entry.LogLevel);
+        Assert.Equal("ConnectionError", entry.EventId.Name);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_IncludesPayloadInState()
     {
         TestLogger fakeLogger = new();
@@ -92,17 +91,17 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
-        Assert.That(entry.State, Is.InstanceOf<Dictionary<string, object?>>());
+        Assert.IsType<Dictionary<string, object?>>(entry.State);
 
         Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
-        Assert.That(state["EventId"], Is.EqualTo(1));
-        Assert.That(state["EventName"], Is.EqualTo("ConnectionOpening"));
-        Assert.That(state["EventSource"], Is.EqualTo("WebDriverBiDi"));
-        Assert.That(state["connectionId"], Is.EqualTo("conn-456"));
-        Assert.That(state["url"], Is.EqualTo("ws://example.com"));
+        Assert.Equal(1, state["EventId"]);
+        Assert.Equal("ConnectionOpening", state["EventName"]);
+        Assert.Equal("WebDriverBiDi", state["EventSource"]);
+        Assert.Equal("conn-456", state["connectionId"]);
+        Assert.Equal("ws://example.com", state["url"]);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_FormatsMessageWithEventNameAndPayload()
     {
         TestLogger fakeLogger = new();
@@ -112,11 +111,11 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "TransportStopped");
-        Assert.That(entry.Message, Does.StartWith("TransportStopped"));
-        Assert.That(entry.Message, Does.Contain("Normal shutdown"));
+        Assert.StartsWith("TransportStopped", entry.Message);
+        Assert.Contains("Normal shutdown", entry.Message);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_RespectsMinimumLevel_WhenSetToWarning()
     {
         TestLogger fakeLogger = new();
@@ -128,10 +127,10 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandTimeout");
-        Assert.That(entry.EventId.Name, Is.EqualTo("CommandTimeout"));
+        Assert.Equal("CommandTimeout", entry.EventId.Name);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_RespectsMinimumLevel_WhenSetToInformational()
     {
         TestLogger fakeLogger = new();
@@ -142,10 +141,10 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
-        Assert.That(entry.EventId.Name, Is.EqualTo("ConnectionOpening"));
+        Assert.Equal("ConnectionOpening", entry.EventId.Name);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_HandlesEventWithMultiplePayloadProperties()
     {
         TestLogger fakeLogger = new();
@@ -156,34 +155,34 @@ public class WebDriverBiDiEventSourceLoggerTests
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandError");
         Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
-        Assert.That(state["commandId"], Is.EqualTo("1"));
-        Assert.That(state["method"], Is.EqualTo("session.status"));
-        Assert.That(state["errorType"], Is.EqualTo("invalid session id"));
-        Assert.That(state["errorMessage"], Is.EqualTo("Session not found"));
+        Assert.Equal("1", state["commandId"]);
+        Assert.Equal("session.status", state["method"]);
+        Assert.Equal("invalid session id", state["errorType"]);
+        Assert.Equal("Session not found", state["errorMessage"]);
     }
 
-    [Test]
+    [Fact]
     public void MapEventLevel_MapsCriticalToLogLevelCritical()
     {
         LogLevel result = InvokeMapEventLevel(EventLevel.Critical);
-        Assert.That(result, Is.EqualTo(LogLevel.Critical));
+        Assert.Equal(LogLevel.Critical, result);
     }
 
-    [Test]
+    [Fact]
     public void MapEventLevel_MapsLogAlwaysToLogLevelInformation()
     {
         LogLevel result = InvokeMapEventLevel(EventLevel.LogAlways);
-        Assert.That(result, Is.EqualTo(LogLevel.Information));
+        Assert.Equal(LogLevel.Information, result);
     }
 
-    [Test]
+    [Fact]
     public void MapEventLevel_MapsUnknownLevelToLogLevelTrace()
     {
         LogLevel result = InvokeMapEventLevel((EventLevel)99);
-        Assert.That(result, Is.EqualTo(LogLevel.Trace));
+        Assert.Equal(LogLevel.Trace, result);
     }
 
-    [Test]
+    [Fact]
     public void FormatMessage_ReturnsFallbackWhenEventNameMissing()
     {
         Dictionary<string, object?> state = new()
@@ -193,10 +192,10 @@ public class WebDriverBiDiEventSourceLoggerTests
         };
 
         string result = InvokeFormatMessage(state, null);
-        Assert.That(result, Is.EqualTo("WebDriverBiDi event"));
+        Assert.Equal("WebDriverBiDi event", result);
     }
 
-    [Test]
+    [Fact]
     public void FormatMessage_ReturnsFallbackWhenEventNameIsNotString()
     {
         Dictionary<string, object?> state = new()
@@ -207,10 +206,10 @@ public class WebDriverBiDiEventSourceLoggerTests
         };
 
         string result = InvokeFormatMessage(state, null);
-        Assert.That(result, Is.EqualTo("WebDriverBiDi event"));
+        Assert.Equal("WebDriverBiDi event", result);
     }
 
-    [Test]
+    [Fact]
     public void FormatMessage_SkipsNullPayloadValues()
     {
         Dictionary<string, object?> state = new()
@@ -223,9 +222,9 @@ public class WebDriverBiDiEventSourceLoggerTests
         };
 
         string result = InvokeFormatMessage(state, null);
-        Assert.That(result, Does.Contain("TestEvent"));
-        Assert.That(result, Does.Contain("Key1=value1"));
-        Assert.That(result, Does.Not.Contain("Key2"));
+        Assert.Contains("TestEvent", result);
+        Assert.Contains("Key1=value1", result);
+        Assert.DoesNotContain("Key2", result);
     }
 
     private static LogLevel InvokeMapEventLevel(EventLevel level)
@@ -244,7 +243,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         return (string)method.Invoke(null, new object?[] { state, exception })!;
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_IgnoresEventsFromNonWebDriverBiDiEventSource()
     {
         TestLogger fakeLogger = new();
@@ -256,18 +255,18 @@ public class WebDriverBiDiEventSourceLoggerTests
             TestEventSource.Log.EmitTestEvent();
         }
 
-        Assert.That(capturedArgs, Is.Not.Null);
-        Assert.That(capturedArgs!.EventSource.Name, Is.Not.EqualTo("WebDriverBiDi"));
+        Assert.NotNull(capturedArgs);
+        Assert.NotEqual("WebDriverBiDi", capturedArgs!.EventSource.Name);
 
         MethodInfo onEventWritten = typeof(WebDriverBiDiEventSourceLogger).GetMethod(
             "OnEventWritten",
             BindingFlags.Instance | BindingFlags.NonPublic)!;
         onEventWritten.Invoke(eventSourceLogger, new object[] { capturedArgs });
 
-        Assert.That(fakeLogger.Entries, Is.Empty);
+        Assert.Empty(fakeLogger.Entries);
     }
 
-    [Test]
+    [Fact]
     public void OnEventWritten_HandlesEventWithNullPayload()
     {
         TestLogger fakeLogger = new();
@@ -277,10 +276,10 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionClosed");
-        Assert.That(entry.State, Is.InstanceOf<Dictionary<string, object?>>());
+        Assert.IsType<Dictionary<string, object?>>(entry.State);
         Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
-        Assert.That(state["EventId"], Is.EqualTo(4));
-        Assert.That(state["EventName"], Is.EqualTo("ConnectionClosed"));
+        Assert.Equal(4, state["EventId"]);
+        Assert.Equal("ConnectionClosed", state["EventName"]);
     }
 
     [EventSource(Name = "TestWebDriverBiDiLogger")]
@@ -303,7 +302,6 @@ public class WebDriverBiDiEventSourceLoggerTests
 
         public void EmitTestEvent() => this.TestEvent();
     }
-
 
     private sealed class TestEventListenerForOtherSource : EventListener
     {

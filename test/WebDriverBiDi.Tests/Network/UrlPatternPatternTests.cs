@@ -3,25 +3,25 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class UrlPatternPatternTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeValue()
     {
         UrlPattern value = new UrlPatternPattern();
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pattern"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pattern", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeValueWithProtocol()
     {
         UrlPattern value = new UrlPatternPattern()
@@ -30,19 +30,23 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pattern"));
-            Assert.That(serialized, Contains.Key("protocol"));
-            Assert.That(serialized["protocol"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["protocol"]!.Value<string>(), Is.EqualTo("https"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pattern", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("protocol"));
+        JToken? protocol = serialized["protocol"];
+        Assert.NotNull(protocol);
+        Assert.Equal(JTokenType.String, protocol.Type);
+        Assert.Equal("https", protocol.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeValueWithHostName()
     {
         UrlPattern value = new UrlPatternPattern()
@@ -51,19 +55,23 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pattern"));
-            Assert.That(serialized, Contains.Key("hostname"));
-            Assert.That(serialized["hostname"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["hostname"]!.Value<string>(), Is.EqualTo("example.com"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pattern", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("hostname"));
+        JToken? hostname = serialized["hostname"];
+        Assert.NotNull(hostname);
+        Assert.Equal(JTokenType.String, hostname.Type);
+        Assert.Equal("example.com", hostname.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeValueWithPort()
     {
         UrlPattern value = new UrlPatternPattern()
@@ -72,19 +80,23 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pattern"));
-            Assert.That(serialized, Contains.Key("port"));
-            Assert.That(serialized["port"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["port"]!.Value<string>(), Is.EqualTo("2222"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pattern", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("port"));
+        JToken? port = serialized["port"];
+        Assert.NotNull(port);
+        Assert.Equal(JTokenType.String, port.Type);
+        Assert.Equal("2222", port.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeValueWithPathName()
     {
         UrlPattern value = new UrlPatternPattern()
@@ -93,19 +105,23 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pattern"));
-            Assert.That(serialized, Contains.Key("pathname"));
-            Assert.That(serialized["pathname"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["pathname"]!.Value<string>(), Is.EqualTo("/data/*"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pattern", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("pathname"));
+        JToken? pathname = serialized["pathname"];
+        Assert.NotNull(pathname);
+        Assert.Equal(JTokenType.String, pathname.Type);
+        Assert.Equal("/data/*", pathname.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeValueWithSearch()
     {
         UrlPattern value = new UrlPatternPattern()
@@ -114,15 +130,19 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pattern"));
-            Assert.That(serialized, Contains.Key("search"));
-            Assert.That(serialized["search"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["search"]!.Value<string>(), Is.EqualTo("?user=foo"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pattern", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("search"));
+        JToken? search = serialized["search"];
+        Assert.NotNull(search);
+        Assert.Equal(JTokenType.String, search.Type);
+        Assert.Equal("?user=foo", search.Value<string>());
     }
 }

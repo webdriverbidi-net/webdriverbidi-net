@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Input;
 
 using System.Text.Json;
 
-[TestFixture]
 public class FileDialogInfoTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithMultipleTrue()
     {
         string json = """
@@ -15,17 +14,15 @@ public class FileDialogInfoTests
                         }
                         """;
         FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs, Is.InstanceOf<FileDialogOpenedEventArgs>());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.IsMultiple, Is.True);
-            Assert.That(eventArgs.Element, Is.Null);
-        }
+        Assert.NotNull(eventArgs);
+        Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.True(eventArgs.IsMultiple);
+        Assert.Null(eventArgs.Element);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithMultipleFalse()
     {
         string json = """
@@ -35,17 +32,15 @@ public class FileDialogInfoTests
                         }
                         """;
         FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs, Is.InstanceOf<FileDialogOpenedEventArgs>());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.IsMultiple, Is.False);
-            Assert.That(eventArgs.Element, Is.Null);
-        }
+        Assert.NotNull(eventArgs);
+        Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.False(eventArgs.IsMultiple);
+        Assert.Null(eventArgs.Element);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithUserContext()
     {
         string json = """
@@ -56,18 +51,16 @@ public class FileDialogInfoTests
                         }
                         """;
         FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs, Is.InstanceOf<FileDialogOpenedEventArgs>());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.IsMultiple, Is.False);
-            Assert.That(eventArgs.Element, Is.Null);
-            Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
-        }
+        Assert.NotNull(eventArgs);
+        Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.False(eventArgs.IsMultiple);
+        Assert.Null(eventArgs.Element);
+        Assert.Equal("myUserContextId", eventArgs.UserContextId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithElementReference()
     {
         string json = """
@@ -80,18 +73,16 @@ public class FileDialogInfoTests
                     }
                     """;
         FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs, Is.InstanceOf<FileDialogOpenedEventArgs>());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.IsMultiple, Is.True);
-            Assert.That(eventArgs.Element, Is.Not.Null);
-            Assert.That(eventArgs.Element!.SharedId, Is.EqualTo("mySharedId"));
-        }
+        Assert.NotNull(eventArgs);
+        Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.True(eventArgs.IsMultiple);
+        Assert.NotNull(eventArgs.Element);
+        Assert.Equal("mySharedId", eventArgs.Element.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -101,13 +92,13 @@ public class FileDialogInfoTests
                         }
                         """;
         FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs, Is.InstanceOf<FileDialogOpenedEventArgs>());
+        Assert.NotNull(eventArgs);
+        Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
         FileDialogOpenedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = """
@@ -115,10 +106,10 @@ public class FileDialogInfoTests
                         "multiple": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = """
@@ -127,10 +118,10 @@ public class FileDialogInfoTests
                         "multiple": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingMMultipleThrows()
     {
         string json = """
@@ -138,10 +129,10 @@ public class FileDialogInfoTests
                         "context": "myContextId"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidMMultipleTypeThrows()
     {
         string json = """
@@ -150,10 +141,10 @@ public class FileDialogInfoTests
                         "multiple": "true"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidUserContextTypeThrows()
     {
         string json = """
@@ -163,10 +154,10 @@ public class FileDialogInfoTests
                         "userContext": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidElementTypeThrows()
     {
         string json = """
@@ -176,10 +167,10 @@ public class FileDialogInfoTests
                         "element": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithNonSharedReferenceThrows()
     {
         string json = """
@@ -196,6 +187,6 @@ public class FileDialogInfoTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
     }
 }

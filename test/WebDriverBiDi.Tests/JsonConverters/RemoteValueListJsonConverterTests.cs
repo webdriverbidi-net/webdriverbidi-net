@@ -3,10 +3,9 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Text.Json;
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class RemoteValueListJsonConverterTests
 {
-    [Test]
+    [Fact]
     public void TestDeserializingValidArray()
     {
         string json = """
@@ -29,36 +28,38 @@ public class RemoteValueListJsonConverterTests
 
         // Assertions that the elements of the list are deserialized correctly
         // are performed elsewhere.
-        Assert.That(result, Has.Count.EqualTo(3));
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingValidEmptyArray()
     {
         string json = "[]";
         RemoteValueList? result = JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } });
-        Assert.That(result, Has.Count.EqualTo(0));
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInvalidArrayThrows()
     {
         string json = "\"not-an-array\"";
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"JSON value could not be converted"));
+        Assert.Contains($"JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInvalidArrayElementThrows()
     {
         string json = "[\"not-a-remote-value\"]";
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"JSON for 'RemoteValue' must be an object"));
+        Assert.Contains($"JSON for 'RemoteValue' must be an object", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestSerializationThrows()
     {
         string json = "[]";
         RemoteValueList? result = JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } });
-        Assert.That(() => JsonSerializer.Serialize(result, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } }), Throws.InstanceOf<NotSupportedException>());
+        Assert.ThrowsAny<NotSupportedException>(() => JsonSerializer.Serialize(result, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } }));
     }
 }

@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class CollectionRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeCollectionRemoteValue()
     {
         string json = """
@@ -21,15 +20,15 @@ public class CollectionRemoteValueTests
         // that can be deserialized into a CollectionRemoteValue is tested in
         // RemoteValueTests. Likewise, validation of collection members is also tested
         // there.
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Array));
-        Assert.That(result.Value, Is.Not.Null);
-        Assert.That(result.Value, Is.Empty);
-        Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Array, result.Type);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value);
+        Assert.Null(result.Handle);
+        Assert.Null(result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCollectionRemoteValueWithValues()
     {
         string json = """
@@ -50,15 +49,15 @@ public class CollectionRemoteValueTests
         // that can be deserialized into a CollectionRemoteValue is tested in
         // RemoteValueTests. Likewise, validation of collection members is also tested
         // there.
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Array));
-        Assert.That(result.Value, Is.Not.Null);
-        Assert.That(result.Value, Has.Count.EqualTo(1));
-        Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Array, result.Type);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value);
+        Assert.Null(result.Handle);
+        Assert.Null(result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCollectionRemoteValueWithHandle()
     {
         string json = """
@@ -76,15 +75,15 @@ public class CollectionRemoteValueTests
         // that can be deserialized into a CollectionRemoteValue is tested in
         // RemoteValueTests. Likewise, validation of collection members is also tested
         // there.
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Array));
-        Assert.That(result.Value, Is.Not.Null);
-        Assert.That(result.Value, Is.Empty);
-        Assert.That(result.Handle, Is.EqualTo("myHandle"));
-        Assert.That(result.InternalId, Is.EqualTo("myInternalId"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Array, result.Type);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value);
+        Assert.Equal("myHandle", result.Handle);
+        Assert.Equal("myInternalId", result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCollectionRemoteValueWithNoValue()
     {
         string json = """
@@ -101,14 +100,14 @@ public class CollectionRemoteValueTests
         // that can be deserialized into a CollectionRemoteValue is tested in
         // RemoteValueTests. Likewise, validation of collection members is also tested
         // there.
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Array));
-        Assert.That(result.Value, Is.Null);
-        Assert.That(result.Handle, Is.EqualTo("myHandle"));
-        Assert.That(result.InternalId, Is.EqualTo("myInternalId"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Array, result.Type);
+        Assert.Null(result.Value);
+        Assert.Equal("myHandle", result.Handle);
+        Assert.Equal("myInternalId", result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertArrayToLocalValue()
     {
         string json = """
@@ -125,15 +124,15 @@ public class CollectionRemoteValueTests
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("array"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<IEnumerable<LocalValue>>());
-        Assert.That(argumentLocalValue.Value, Has.Count.EqualTo(1));
+        Assert.Equal("array", argumentLocalValue.Type);
+        Assert.IsType<IEnumerable<LocalValue>>(argumentLocalValue.Value, exactMatch: false);
+        Assert.Single((IEnumerable<LocalValue>)argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertSetToLocalValue()
     {
         string json = """
@@ -150,15 +149,15 @@ public class CollectionRemoteValueTests
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("set"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<IEnumerable<LocalValue>>());
-        Assert.That(argumentLocalValue.Value, Has.Count.EqualTo(1));
+        Assert.Equal("set", argumentLocalValue.Type);
+        Assert.IsType<IEnumerable<LocalValue>>(argumentLocalValue.Value, exactMatch: false);
+        Assert.Single((IEnumerable<LocalValue>)argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertHtmlCollectionToLocalValue()
     {
         string json = """
@@ -170,15 +169,15 @@ public class CollectionRemoteValueTests
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("array"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<IEnumerable<LocalValue>>());
-        Assert.That(argumentLocalValue.Value, Is.Empty);
+        Assert.Equal("array", argumentLocalValue.Type);
+        Assert.IsType<IEnumerable<LocalValue>>(argumentLocalValue.Value, exactMatch: false);
+        Assert.Empty((IEnumerable<LocalValue>)argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertNodeListToLocalValue()
     {
         string json = """
@@ -190,15 +189,15 @@ public class CollectionRemoteValueTests
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("array"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<IEnumerable<LocalValue>>());
-        Assert.That(argumentLocalValue.Value, Is.Empty);
+        Assert.Equal("array", argumentLocalValue.Type);
+        Assert.IsType<IEnumerable<LocalValue>>(argumentLocalValue.Value, exactMatch: false);
+        Assert.Empty((IEnumerable<LocalValue>)argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToRemoteObjectReference()
     {
         string json = """
@@ -211,13 +210,13 @@ public class CollectionRemoteValueTests
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RemoteObjectReference remoteObjectReference = result.ToRemoteObjectReference();
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingCollectionRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -227,10 +226,10 @@ public class CollectionRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<CollectionRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CollectionRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingCollectionRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -240,10 +239,10 @@ public class CollectionRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<CollectionRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CollectionRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToLocalValueWithNullValueThrows()
     {
         string json = """
@@ -254,11 +253,11 @@ public class CollectionRemoteValueTests
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToLocalValue(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToLocalValue());
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToRemoteObjectReferenceWithoutHandleThrows()
     {
         string json = """
@@ -270,11 +269,11 @@ public class CollectionRemoteValueTests
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToRemoteObjectReference());
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -285,9 +284,9 @@ public class CollectionRemoteValueTests
                       """;
 
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         CollectionRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

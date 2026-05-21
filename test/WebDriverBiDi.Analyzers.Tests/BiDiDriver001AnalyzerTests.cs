@@ -13,14 +13,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver001 analyzer that detects module registration after StartAsync().
 /// </summary>
-[TestFixture]
 public class BiDiDriver001AnalyzerTests
 {
     /// <summary>
     /// Tests that RegisterModule() called after StartAsync() reports a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterModule_AfterStartAsync_ReportsDiagnostic()
     {
         string test = """
@@ -88,14 +87,14 @@ public class BiDiDriver001AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that RegisterModule() called before StartAsync() does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterModule_BeforeStartAsync_NoDiagnostic()
     {
         string test = """
@@ -151,14 +150,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-BiDiDriver types are not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonBiDiDriverType_NoDiagnostic()
     {
         string test = """
@@ -192,14 +191,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that methods without body are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MethodWithoutBody_NoDiagnostic()
     {
         string test = """
@@ -241,14 +240,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple drivers in the same method are tracked independently.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MultipleDrivers_IndependentTracking()
     {
         string test = """
@@ -313,14 +312,14 @@ public class BiDiDriver001AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that variable declarations without initializers are handled.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task VariableWithoutInitializer_NoDiagnostic()
     {
         string test = """
@@ -367,14 +366,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that RegisterModule on non-tracked drivers doesn't report diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterModuleOnNonTrackedDriver_NoDiagnostic()
     {
         string test = """
@@ -428,14 +427,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that RegisterModule with no arguments still reports diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterModule_AfterStartAsync_WithNoArguments_ReportsDiagnostic()
     {
         string test = """
@@ -489,14 +488,14 @@ public class BiDiDriver001AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that direct invocation (without await) of StartAsync is tracked when called directly.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterModule_AfterDirectStartAsyncCall_ReportsDiagnostic()
     {
         string test = """
@@ -562,14 +561,14 @@ public class BiDiDriver001AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that chained member access expressions are handled correctly.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterModule_AfterStartAsync_ChainedMemberAccess_ReportsDiagnostic()
     {
         string test = """
@@ -642,14 +641,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-invocation expressions in expression statements are ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonInvocationExpressionStatement_NoDiagnostic()
     {
         string test = """
@@ -697,14 +696,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that invocations without member access syntax are ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task InvocationWithoutMemberAccess_NoDiagnostic()
     {
         string test = """
@@ -751,26 +750,26 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that GetFixAllProvider returns the correct provider.
     /// </summary>
-    [Test]
+    [Fact]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
         BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider provider = new BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider();
         FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
-        Assert.That(fixAllProvider, Is.EqualTo(WellKnownFixAllProviders.BatchFixer));
+        Assert.Equal(WellKnownFixAllProviders.BatchFixer, fixAllProvider);
     }
 
     /// <summary>
     /// Tests the analyzer detects multiple RegisterModule calls after StartAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MultipleRegisterModule_AfterStartAsync_ReportsBothDiagnostics()
     {
         string test = """
@@ -835,14 +834,14 @@ public class BiDiDriver001AnalyzerTests
         };
         testState.ExpectedDiagnostics.AddRange(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that StartAsync invocation without member access doesn't cause issues in code fix.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_StartAsyncWithoutMemberAccess_HandledGracefully()
     {
         string testCode = """
@@ -899,38 +898,38 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests FixableDiagnosticIds property.
     /// </summary>
-    [Test]
+    [Fact]
     public void FixableDiagnosticIds_ContainsBIDI001()
     {
         BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider provider = new BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider();
 
-        Assert.That(provider.FixableDiagnosticIds, Does.Contain(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId));
-        Assert.That(provider.FixableDiagnosticIds.Length, Is.EqualTo(1));
+        Assert.Contains(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, provider.FixableDiagnosticIds);
+        Assert.Single(provider.FixableDiagnosticIds);
     }
 
     /// <summary>
     /// Tests SupportedDiagnostics property of the analyzer.
     /// </summary>
-    [Test]
+    [Fact]
     public void SupportedDiagnostics_ContainsBIDI001()
     {
         BiDiDriver001_ModuleRegistrationAfterStartAnalyzer analyzer = new BiDiDriver001_ModuleRegistrationAfterStartAnalyzer();
 
-        Assert.That(analyzer.SupportedDiagnostics.Length, Is.EqualTo(1));
-        Assert.That(analyzer.SupportedDiagnostics[0].Id, Is.EqualTo(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId));
+        Assert.Single(analyzer.SupportedDiagnostics);
+        Assert.Equal(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, analyzer.SupportedDiagnostics[0].Id);
     }
 
     /// <summary>
     /// Tests that unresolved method calls are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task UnresolvedMethodCall_NoDiagnostic()
     {
         string test = """
@@ -983,14 +982,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that complex expressions are handled gracefully in GetDriverVariableName.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ComplexExpression_NoDiagnostic()
     {
         string test = """
@@ -1045,14 +1044,14 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that StartAsync called through a variable reference (not member access) is handled.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task StartAsyncThroughDelegate_NoDiagnostic()
     {
         string test = """
@@ -1107,7 +1106,6 @@ public class BiDiDriver001AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
 }

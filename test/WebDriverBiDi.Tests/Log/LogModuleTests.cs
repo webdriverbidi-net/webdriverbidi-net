@@ -2,29 +2,27 @@ namespace WebDriverBiDi.Log;
 
 using TestUtilities;
 
-[TestFixture]
 public class LogModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestCanReceiveEntryAddedEvent()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 
         ManualResetEvent syncEvent = new(false);
         module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.Type, Is.EqualTo("javascript"));
-                Assert.That(e.Text, Is.EqualTo("my log message"));
-                Assert.That(e.Method, Is.Null);
-                Assert.That(e.Arguments, Is.Null);
-                Assert.That(e.StackTrace, Is.Not.Null);
-                Assert.That(e.StackTrace!.CallFrames, Is.Empty);
-            }
+
+            Assert.Equal("javascript", e.Type);
+            Assert.Equal("my log message", e.Text);
+            Assert.Null(e.Method);
+            Assert.Null(e.Arguments);
+            Assert.NotNull(e.StackTrace);
+            Assert.Empty(e.StackTrace.CallFrames);
+
             syncEvent.Set();
         });
 
@@ -50,32 +48,31 @@ public class LogModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveEntryAddedEventForConsoleLogType()
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.Type, Is.EqualTo("console"));
-                Assert.That(e.Text, Is.EqualTo("my log message"));
-                Assert.That(e.Method, Is.Not.Null);
-                Assert.That(e.Arguments, Is.Not.Null);
-                Assert.That(e.Source, Is.Not.Null);
-                Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-                Assert.That(e.StackTrace, Is.Not.Null);
-                Assert.That(e.StackTrace!.CallFrames, Is.Empty);
-            }
+
+            Assert.Equal("console", e.Type);
+            Assert.Equal("my log message", e.Text);
+            Assert.NotNull(e.Method);
+            Assert.NotNull(e.Arguments);
+            Assert.NotNull(e.Source);
+            Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), e.Timestamp);
+            Assert.NotNull(e.StackTrace);
+            Assert.Empty(e.StackTrace.CallFrames);
+
             syncEvent.Set();
         });
 
@@ -102,6 +99,6 @@ public class LogModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(eventRaised, Is.True);
+        Assert.True(eventRaised);
     }
 }

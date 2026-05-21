@@ -2,23 +2,22 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class HandleUserPromptCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         HandleUserPromptCommandResult? result = JsonSerializer.Deserialize<HandleUserPromptCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         HandleUserPromptCommandResult? result = JsonSerializer.Deserialize<HandleUserPromptCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         HandleUserPromptCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

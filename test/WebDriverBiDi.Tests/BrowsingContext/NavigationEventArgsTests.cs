@@ -2,10 +2,9 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class NavigationEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -18,18 +17,16 @@ public class NavigationEventArgsTests
                       }
                       """;
         NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(epochTimestamp));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            Assert.That(eventArgs.NavigationId, Is.Null);
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("http://example.com", eventArgs.Url);
+        Assert.Equal((ulong)((ulong)(epochTimestamp)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
+        Assert.Null(eventArgs.NavigationId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNavigationId()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -42,16 +39,14 @@ public class NavigationEventArgsTests
                       }
                       """;
         NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("http://example.com", eventArgs.Url);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithUserContext()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -65,17 +60,15 @@ public class NavigationEventArgsTests
                       }
                       """;
         NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("http://example.com", eventArgs.Url);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal("myUserContextId", eventArgs.UserContextId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -88,13 +81,12 @@ public class NavigationEventArgsTests
                       }
                       """;
         NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         NavigationEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingContextValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -105,10 +97,10 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidContextValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -120,10 +112,10 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingUrlValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -134,10 +126,10 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidUrlValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -149,10 +141,10 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingTimestampValueThrows()
     {
         string json = $$"""
@@ -162,10 +154,10 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidTimestampValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -177,10 +169,10 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingNavigationValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -191,10 +183,10 @@ public class NavigationEventArgsTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidNavigationValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -206,6 +198,6 @@ public class NavigationEventArgsTests
                         "navigation": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
     }
 }

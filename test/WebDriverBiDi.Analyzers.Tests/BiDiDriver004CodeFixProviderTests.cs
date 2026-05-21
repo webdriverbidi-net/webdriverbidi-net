@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver004 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver004CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix adds CancellationToken.None.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NavigateAsync_CodeFixAddsCancellationTokenNone()
     {
         string testCode = """
@@ -125,14 +123,14 @@ public class BiDiDriver004CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that the code fix adds cancellationToken parameter.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NavigateAsync_CodeFixAddsCancellationTokenParameter()
     {
         string testCode = """
@@ -238,6 +236,6 @@ public class BiDiDriver004CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

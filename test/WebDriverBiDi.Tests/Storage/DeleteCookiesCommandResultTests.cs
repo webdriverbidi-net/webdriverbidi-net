@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Storage;
 
 using System.Text.Json;
 
-[TestFixture]
 public class DeleteCookiesCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -18,19 +17,17 @@ public class DeleteCookiesCommandResultTests
                       }
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.PartitionKey, Is.Not.Null);
-            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-            Assert.That(result.PartitionKey.AdditionalData, Has.Count.EqualTo(1));
-            Assert.That(result.PartitionKey.AdditionalData, Contains.Key("extraPropertyName"));
-            Assert.That(result.PartitionKey.AdditionalData["extraPropertyName"], Is.EqualTo("extraPropertyValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.NotNull(result.PartitionKey);
+        Assert.Equal("myUserContext", result.PartitionKey.UserContextId);
+        Assert.Equal("mySourceOrigin", result.PartitionKey.SourceOrigin);
+        Assert.Single(result.PartitionKey.AdditionalData);
+        Assert.True(result.PartitionKey.AdditionalData.ContainsKey("extraPropertyName"));
+        Assert.Equal("extraPropertyValue", result.PartitionKey.AdditionalData["extraPropertyName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -43,12 +40,12 @@ public class DeleteCookiesCommandResultTests
                       }
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         DeleteCookiesCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithMissingData()
     {
         string json = """
@@ -57,24 +54,22 @@ public class DeleteCookiesCommandResultTests
                       }
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.PartitionKey, Is.Not.Null);
-            Assert.That(result.PartitionKey.UserContextId, Is.Null);
-            Assert.That(result.PartitionKey.SourceOrigin, Is.Null);
-            Assert.That(result.PartitionKey.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.NotNull(result.PartitionKey);
+        Assert.Null(result.PartitionKey.UserContextId);
+        Assert.Null(result.PartitionKey.SourceOrigin);
+        Assert.Empty(result.PartitionKey.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializingWithMissingPartition()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidPartitionDataTypeThrows()
     {
         string json = """
@@ -82,6 +77,6 @@ public class DeleteCookiesCommandResultTests
                         "partitionKey": "invalidPartitionType"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json));
     }
 }

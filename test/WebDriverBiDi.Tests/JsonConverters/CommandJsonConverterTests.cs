@@ -5,10 +5,9 @@ using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class CommandJsonConverterTests
 {
-    [Test]
+    [Fact]
     public void TestReadThrowsNotImplementedException()
     {
         string json = """
@@ -18,23 +17,34 @@ public class CommandJsonConverterTests
                         "params": { "parameterName": "parameterValue" }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Command>(json), Throws.InstanceOf<NotImplementedException>());
+        Assert.ThrowsAny<NotImplementedException>(() => JsonSerializer.Deserialize<Command>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestWriteSerializesCommandWithIdMethodAndParams()
     {
         TestCommandParameters commandParams = new TestCommandParameters("module.command");
         Command command = new(1, commandParams);
         string json = JsonSerializer.Serialize(command);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized["id"]!.Value<long>(), Is.EqualTo(1));
-        Assert.That(serialized["method"]!.Value<string>(), Is.EqualTo("module.command"));
-        Assert.That(serialized["params"], Is.Not.Null);
-        Assert.That(serialized["params"]!["parameterName"]!.Value<string>(), Is.EqualTo("parameterValue"));
+
+        JToken? id = serialized["id"];
+        Assert.NotNull(id);
+        Assert.Equal(1L, id.Value<long>());
+
+        JToken? method = serialized["method"];
+        Assert.NotNull(method);
+        Assert.Equal("module.command", method.Value<string>());
+
+        Assert.NotNull(serialized["params"]);
+        JToken? paramsToken = serialized["params"];
+        Assert.NotNull(paramsToken);
+        JToken? parameterName = paramsToken["parameterName"];
+        Assert.NotNull(parameterName);
+        Assert.Equal("parameterValue", parameterName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestWriteIncludesAdditionalDataInOutput()
     {
         TestCommandParameters commandParams = new TestCommandParameters("module.command");
@@ -42,16 +52,18 @@ public class CommandJsonConverterTests
         Command command = new(1, commandParams);
         string json = JsonSerializer.Serialize(command);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Contains.Key("extraKey"));
-        Assert.That(serialized["extraKey"]!.Value<string>(), Is.EqualTo("extraValue"));
+        Assert.True(serialized.ContainsKey("extraKey"));
+        JToken? extraKey = serialized["extraKey"];
+        Assert.NotNull(extraKey);
+        Assert.Equal("extraValue", extraKey.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestWriteWithNullValueThrowsArgumentNullException()
     {
         CommandJsonConverter converter = new();
         using MemoryStream stream = new();
         using Utf8JsonWriter writer = new(stream);
-        Assert.That(() => converter.Write(writer, null!, new JsonSerializerOptions()), Throws.InstanceOf<ArgumentNullException>());
+        Assert.ThrowsAny<ArgumentNullException>(() => converter.Write(writer, null!, new JsonSerializerOptions()));
     }
 }

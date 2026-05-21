@@ -3,26 +3,25 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class GetRealmsCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         GetRealmsCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("script.getRealms"));
+        Assert.Equal("script.getRealms", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         GetRealmsCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalWindowRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -31,16 +30,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("window", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalWorkerRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -49,16 +48,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worker"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("worker", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalDedicatedWorkerRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -67,16 +66,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("dedicated-worker"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("dedicated-worker", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalServiceWorkerRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -85,16 +84,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("service-worker"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("service-worker", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalSharedWorkerRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -103,16 +102,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("shared-worker"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("shared-worker", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalWorkletRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -121,16 +120,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worklet"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("worklet", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalPaintWorkletRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -139,16 +138,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("paint-worklet"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("paint-worklet", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalAudioWorkletRealmTypeValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -157,16 +156,16 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("audio-worklet"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("audio-worklet", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalBrowsingContextValue()
     {
         GetRealmsCommandParameters properties = new()
@@ -175,12 +174,12 @@ public class GetRealmsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("contextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("contextId", context.Value<string>());
     }
 }

@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RealmDestroyedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,11 +13,11 @@ public class RealmDestroyedEventArgsTests
                       }
                       """;
         RealmDestroyedEventArgs? eventArgs = JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs.RealmId, Is.EqualTo("myRealmId"));
+        Assert.NotNull(eventArgs);
+        Assert.Equal("myRealmId", eventArgs.RealmId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,19 +26,19 @@ public class RealmDestroyedEventArgsTests
                       }
                       """;
         RealmDestroyedEventArgs? eventArgs = JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         RealmDestroyedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingRealmValueThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidRealmValueThrows()
     {
         string json = """
@@ -47,6 +46,6 @@ public class RealmDestroyedEventArgsTests
                         "realm": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json));
     }
 }

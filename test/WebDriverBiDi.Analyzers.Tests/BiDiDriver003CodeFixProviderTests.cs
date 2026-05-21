@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver003 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver003CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix moves RegisterTypeInfoResolver before StartAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterTypeInfoResolver_CodeFixMovesBeforeStartAsync()
     {
         string testCode = """
@@ -102,6 +100,6 @@ public class BiDiDriver003CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

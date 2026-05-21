@@ -126,7 +126,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
         }
 
         // Create a copy of the register statement to insert
-        StatementSyntax? registerStatementCopy = trackedRegisterStatement.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+        StatementSyntax? registerStatementCopy = trackedRegisterStatement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
 
         // Insert RegisterModule before StartAsync
         MethodDeclarationSyntax? newMethod = methodWithoutRegister.InsertNodesBefore(updatedStartAsyncStatement, new[] { registerStatementCopy });

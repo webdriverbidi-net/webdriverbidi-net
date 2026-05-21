@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SetTouchOverrideCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SetTouchOverrideCommandResult? result = JsonSerializer.Deserialize<SetTouchOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SetTouchOverrideCommandResult? result = JsonSerializer.Deserialize<SetTouchOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SetTouchOverrideCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

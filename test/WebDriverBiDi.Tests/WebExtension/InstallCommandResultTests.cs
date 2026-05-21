@@ -2,10 +2,9 @@ namespace WebDriverBiDi.WebExtension;
 
 using System.Text.Json;
 
-[TestFixture]
 public class InstallCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,11 +13,11 @@ public class InstallCommandResultTests
                       }
                       """;
         InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ExtensionId, Is.EqualTo("myExtensionId"));
+        Assert.NotNull(result);
+        Assert.Equal("myExtensionId", result.ExtensionId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,19 +26,19 @@ public class InstallCommandResultTests
                       }
                       """;
         InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         InstallCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingExtensionThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<InstallCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<InstallCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidExtensionTypeThrows()
     {
         string json = """
@@ -47,6 +46,6 @@ public class InstallCommandResultTests
                         "extension": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<InstallCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<InstallCommandResult>(json));
     }
 }

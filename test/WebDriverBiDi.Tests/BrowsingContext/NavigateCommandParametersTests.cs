@@ -3,35 +3,37 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class NavigateCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         NavigateCommandParameters properties = new("myContextId", "http://example.com");
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.navigate"));
+        Assert.Equal("browsingContext.navigate", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         NavigateCommandParameters properties = new("myContextId", "http://example.com");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("url"));
-            Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("url"));
+        JToken? url = serialized["url"];
+        Assert.NotNull(url);
+        Assert.Equal(JTokenType.String, url.Type);
+        Assert.Equal("http://example.com", url.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptWaitNone()
     {
         NavigateCommandParameters properties = new("myContextId", "http://example.com")
@@ -40,22 +42,28 @@ public class NavigateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("url"));
-            Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-            Assert.That(serialized, Contains.Key("wait"));
-            Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("none"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("url"));
+        JToken? url = serialized["url"];
+        Assert.NotNull(url);
+        Assert.Equal(JTokenType.String, url.Type);
+        Assert.Equal("http://example.com", url.Value<string>());
+
+        Assert.True(serialized.ContainsKey("wait"));
+        JToken? wait = serialized["wait"];
+        Assert.NotNull(wait);
+        Assert.Equal(JTokenType.String, wait.Type);
+        Assert.Equal("none", wait.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptWaitInteractive()
     {
         NavigateCommandParameters properties = new("myContextId", "http://example.com")
@@ -64,22 +72,28 @@ public class NavigateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("url"));
-            Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-            Assert.That(serialized, Contains.Key("wait"));
-            Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("interactive"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("url"));
+        JToken? url = serialized["url"];
+        Assert.NotNull(url);
+        Assert.Equal(JTokenType.String, url.Type);
+        Assert.Equal("http://example.com", url.Value<string>());
+
+        Assert.True(serialized.ContainsKey("wait"));
+        JToken? wait = serialized["wait"];
+        Assert.NotNull(wait);
+        Assert.Equal(JTokenType.String, wait.Type);
+        Assert.Equal("interactive", wait.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptWaitComplete()
     {
         NavigateCommandParameters properties = new("myContextId", "http://example.com")
@@ -88,18 +102,24 @@ public class NavigateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("url"));
-            Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-            Assert.That(serialized, Contains.Key("wait"));
-            Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("complete"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("url"));
+        JToken? url = serialized["url"];
+        Assert.NotNull(url);
+        Assert.Equal(JTokenType.String, url.Type);
+        Assert.Equal("http://example.com", url.Value<string>());
+
+        Assert.True(serialized.ContainsKey("wait"));
+        JToken? wait = serialized["wait"];
+        Assert.NotNull(wait);
+        Assert.Equal(JTokenType.String, wait.Type);
+        Assert.Equal("complete", wait.Value<string>());
     }
 }

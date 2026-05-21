@@ -3,67 +3,84 @@ namespace WebDriverBiDi.Permissions;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetPermissionsCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Granted, "https://example.com");
-        Assert.That(properties.MethodName, Is.EqualTo("permissions.setPermission"));
+        Assert.Equal("permissions.setPermission", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Granted, "https://example.com");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("descriptor"));
-            Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject descriptor = (JObject)serialized["descriptor"]!;
-            Assert.That(descriptor, Has.Count.EqualTo(1));
-            Assert.That(descriptor, Contains.Key("name"));
-            Assert.That(descriptor["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(descriptor["name"]!.Value<string>(), Is.EqualTo("myPermission"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("granted"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("descriptor"));
+        JToken? descriptorToken = serialized["descriptor"];
+        Assert.NotNull(descriptorToken);
+        Assert.Equal(JTokenType.Object, descriptorToken.Type);
+        JObject? descriptor = descriptorToken as JObject;
+        Assert.NotNull(descriptor);
+        Assert.Single(descriptor);
+        Assert.True(descriptor.ContainsKey("name"));
+        JToken? descriptorName = descriptor["name"];
+        Assert.NotNull(descriptorName);
+        Assert.Equal(JTokenType.String, descriptorName.Type);
+        Assert.Equal("myPermission", descriptorName.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("granted", state.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("https://example.com", origin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDescriptorConstructor()
     {
         SetPermissionCommandParameters properties = new(new PermissionDescriptor("myPermission"), PermissionState.Granted, "https://example.com");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("descriptor"));
-            Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject descriptor = (JObject)serialized["descriptor"]!;
-            Assert.That(descriptor, Has.Count.EqualTo(1));
-            Assert.That(descriptor, Contains.Key("name"));
-            Assert.That(descriptor["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(descriptor["name"]!.Value<string>(), Is.EqualTo("myPermission"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("granted"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("descriptor"));
+        JToken? descriptorToken = serialized["descriptor"];
+        Assert.NotNull(descriptorToken);
+        Assert.Equal(JTokenType.Object, descriptorToken.Type);
+        JObject? descriptor = descriptorToken as JObject;
+        Assert.NotNull(descriptor);
+        Assert.Single(descriptor);
+        Assert.True(descriptor.ContainsKey("name"));
+        JToken? descriptorName = descriptor["name"];
+        Assert.NotNull(descriptorName);
+        Assert.Equal(JTokenType.String, descriptorName.Type);
+        Assert.Equal("myPermission", descriptorName.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("granted", state.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("https://example.com", origin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithEmbeddedOrigin()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Granted, "https://example.com")
@@ -72,29 +89,41 @@ public class SetPermissionsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("descriptor"));
-            Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject descriptor = (JObject)serialized["descriptor"]!;
-            Assert.That(descriptor, Has.Count.EqualTo(1));
-            Assert.That(descriptor, Contains.Key("name"));
-            Assert.That(descriptor["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(descriptor["name"]!.Value<string>(), Is.EqualTo("myPermission"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("granted"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-            Assert.That(serialized, Contains.Key("embeddedOrigin"));
-            Assert.That(serialized["embeddedOrigin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["embeddedOrigin"]!.Value<string>(), Is.EqualTo("myEmbeddedOrigin"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("descriptor"));
+        JToken? descriptorToken = serialized["descriptor"];
+        Assert.NotNull(descriptorToken);
+        Assert.Equal(JTokenType.Object, descriptorToken.Type);
+        JObject? descriptor = descriptorToken as JObject;
+        Assert.NotNull(descriptor);
+        Assert.Single(descriptor);
+        Assert.True(descriptor.ContainsKey("name"));
+        JToken? descriptorName = descriptor["name"];
+        Assert.NotNull(descriptorName);
+        Assert.Equal(JTokenType.String, descriptorName.Type);
+        Assert.Equal("myPermission", descriptorName.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("granted", state.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("https://example.com", origin.Value<string>());
+
+        Assert.True(serialized.ContainsKey("embeddedOrigin"));
+        JToken? embeddedOrigin = serialized["embeddedOrigin"];
+        Assert.NotNull(embeddedOrigin);
+        Assert.Equal(JTokenType.String, embeddedOrigin.Type);
+        Assert.Equal("myEmbeddedOrigin", embeddedOrigin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithUserContext()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Granted, "https://example.com")
@@ -103,75 +132,105 @@ public class SetPermissionsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("descriptor"));
-            Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject descriptor = (JObject)serialized["descriptor"]!;
-            Assert.That(descriptor, Has.Count.EqualTo(1));
-            Assert.That(descriptor, Contains.Key("name"));
-            Assert.That(descriptor["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(descriptor["name"]!.Value<string>(), Is.EqualTo("myPermission"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("granted"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-            Assert.That(serialized, Contains.Key("userContext"));
-            Assert.That(serialized["userContext"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["userContext"]!.Value<string>(), Is.EqualTo("myContext"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("descriptor"));
+        JToken? descriptorToken = serialized["descriptor"];
+        Assert.NotNull(descriptorToken);
+        Assert.Equal(JTokenType.Object, descriptorToken.Type);
+        JObject? descriptor = descriptorToken as JObject;
+        Assert.NotNull(descriptor);
+        Assert.Single(descriptor);
+        Assert.True(descriptor.ContainsKey("name"));
+        JToken? descriptorName = descriptor["name"];
+        Assert.NotNull(descriptorName);
+        Assert.Equal(JTokenType.String, descriptorName.Type);
+        Assert.Equal("myPermission", descriptorName.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("granted", state.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("https://example.com", origin.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userContext"));
+        JToken? userContext = serialized["userContext"];
+        Assert.NotNull(userContext);
+        Assert.Equal(JTokenType.String, userContext.Type);
+        Assert.Equal("myContext", userContext.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPermissionDenied()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Denied, "https://example.com");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("descriptor"));
-            Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject descriptor = (JObject)serialized["descriptor"]!;
-            Assert.That(descriptor, Has.Count.EqualTo(1));
-            Assert.That(descriptor, Contains.Key("name"));
-            Assert.That(descriptor["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(descriptor["name"]!.Value<string>(), Is.EqualTo("myPermission"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("denied"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("descriptor"));
+        JToken? descriptorToken = serialized["descriptor"];
+        Assert.NotNull(descriptorToken);
+        Assert.Equal(JTokenType.Object, descriptorToken.Type);
+        JObject? descriptor = descriptorToken as JObject;
+        Assert.NotNull(descriptor);
+        Assert.Single(descriptor);
+        Assert.True(descriptor.ContainsKey("name"));
+        JToken? descriptorName = descriptor["name"];
+        Assert.NotNull(descriptorName);
+        Assert.Equal(JTokenType.String, descriptorName.Type);
+        Assert.Equal("myPermission", descriptorName.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("denied", state.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("https://example.com", origin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPermissionPrompt()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Prompt, "https://example.com");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("descriptor"));
-            Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject descriptor = (JObject)serialized["descriptor"]!;
-            Assert.That(descriptor, Has.Count.EqualTo(1));
-            Assert.That(descriptor, Contains.Key("name"));
-            Assert.That(descriptor["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(descriptor["name"]!.Value<string>(), Is.EqualTo("myPermission"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("prompt"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("descriptor"));
+        JToken? descriptorToken = serialized["descriptor"];
+        Assert.NotNull(descriptorToken);
+        Assert.Equal(JTokenType.Object, descriptorToken.Type);
+        JObject? descriptor = descriptorToken as JObject;
+        Assert.NotNull(descriptor);
+        Assert.Single(descriptor);
+        Assert.True(descriptor.ContainsKey("name"));
+        JToken? descriptorName = descriptor["name"];
+        Assert.NotNull(descriptorName);
+        Assert.Equal(JTokenType.String, descriptorName.Type);
+        Assert.Equal("myPermission", descriptorName.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("prompt", state.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("https://example.com", origin.Value<string>());
     }
 }

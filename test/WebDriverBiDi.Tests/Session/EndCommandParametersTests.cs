@@ -3,22 +3,21 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class EndCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         EndCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("session.end"));
+        Assert.Equal("session.end", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         EndCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 }

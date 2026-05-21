@@ -3,10 +3,9 @@ namespace WebDriverBiDi.Script;
 using System.Numerics;
 using System.Text.Json;
 
-[TestFixture]
 public class ITypeSafeRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeStringRemoteValue()
     {
         string json = """
@@ -16,16 +15,17 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<StringRemoteValue>());
+        Assert.IsType<StringRemoteValue>(remoteValue);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out StringRemoteValue? stringValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(stringValue, Is.Not.Null);
-        Assert.That(stringValue, Is.InstanceOf<ValueHoldingRemoteValue<string>>());
-        Assert.That(stringValue.Value, Is.EqualTo("myValue"));
-        Assert.That(stringValue.ValueObject, Is.EqualTo("myValue"));
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
+        Assert.IsType<ValueHoldingRemoteValue<string>>(stringValue, exactMatch: false);
+        Assert.Equal("myValue", stringValue.Value);
+        Assert.Equal("myValue", stringValue.ValueObject);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertStringRemoteValueToLocalValue()
     {
         string json = """
@@ -35,18 +35,19 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<StringRemoteValue>());
+        Assert.IsType<StringRemoteValue>(remoteValue);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out StringRemoteValue? stringValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(stringValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
         LocalValue localValue = stringValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue, exactMatch: false);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("string"));
-        Assert.That(argumentValue.Value, Is.EqualTo("myValue"));
+        Assert.Equal("string", argumentValue.Type);
+        Assert.Equal("myValue", argumentValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeDoubleRemoteValue()
     {
         string json = """
@@ -56,15 +57,16 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NumberRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? doubleValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(doubleValue, Is.Not.Null);
-        Assert.That(doubleValue, Is.InstanceOf<ValueHoldingRemoteValue<double>>());
-        Assert.That(doubleValue.Value, Is.EqualTo(3.14));
+        Assert.True(conversionResult);
+        Assert.NotNull(doubleValue);
+        Assert.IsType<ValueHoldingRemoteValue<double>>(doubleValue, exactMatch: false);
+        Assert.Equal(3.14, doubleValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestStringRemoteValueCopySemantics()
     {
         string json = """
@@ -74,15 +76,16 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<StringRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<StringRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out StringRemoteValue? stringValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(stringValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
         StringRemoteValue copy = stringValue with { };
-        Assert.That(copy, Is.EqualTo(stringValue));
+        Assert.Equal(stringValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertDoubleRemoteValueToLocalValue()
     {
         string json = """
@@ -92,18 +95,19 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NumberRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? doubleValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(doubleValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(doubleValue);
         LocalValue localValue = doubleValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("number"));
-        Assert.That(argumentValue.Value, Is.EqualTo(3.14));
+        Assert.Equal("number", argumentValue.Type);
+        Assert.Equal(3.14, argumentValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestDoubleRemoteValueCopySemantics()
     {
         string json = """
@@ -113,15 +117,16 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NumberRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? doubleValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(doubleValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(doubleValue);
         NumberRemoteValue copy = doubleValue with { };
-        Assert.That(copy, Is.EqualTo(doubleValue));
+        Assert.Equal(doubleValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeLongRemoteValue()
     {
         string json = """
@@ -131,14 +136,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NumberRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? longValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(longValue, Is.Not.Null);
-        Assert.That(longValue.Value, Is.EqualTo(123));
+        Assert.True(conversionResult);
+        Assert.NotNull(longValue);
+        Assert.Equal(123, longValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertLongRemoteValueToLocalValue()
     {
         string json = """
@@ -148,18 +154,19 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NumberRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? longValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(longValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(longValue);
         LocalValue localValue = longValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("number"));
-        Assert.That(argumentValue.Value, Is.EqualTo(123));
+        Assert.Equal("number", argumentValue.Type);
+        Assert.Equal(123.0, argumentValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestLongRemoteValueCopySemantics()
     {
         string json = """
@@ -169,15 +176,16 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NumberRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? longValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(longValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(longValue);
         NumberRemoteValue copy = longValue with { };
-        Assert.That(copy, Is.EqualTo(longValue));
+        Assert.Equal(longValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeBooleanRemoteValue()
     {
         string json = """
@@ -187,14 +195,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<BooleanRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<BooleanRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out BooleanRemoteValue? booleanValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(booleanValue, Is.Not.Null);
-        Assert.That(booleanValue.Value, Is.True);
+        Assert.True(conversionResult);
+        Assert.NotNull(booleanValue);
+        Assert.True(booleanValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertBooleanRemoteValueToLocalValue()
     {
         string json = """
@@ -204,18 +213,19 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<BooleanRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<BooleanRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out BooleanRemoteValue? booleanValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(booleanValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(booleanValue);
         LocalValue localValue = booleanValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("boolean"));
-        Assert.That(argumentValue.Value, Is.EqualTo(true));
+        Assert.Equal("boolean", argumentValue.Type);
+        Assert.Equal(true, argumentValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestBooleanRemoteValueCopySemantics()
     {
         string json = """
@@ -225,15 +235,16 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<BooleanRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<BooleanRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out BooleanRemoteValue? booleanValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(booleanValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(booleanValue);
         BooleanRemoteValue copy = booleanValue with { };
-        Assert.That(copy, Is.EqualTo(booleanValue));
+        Assert.Equal(booleanValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeBigIntRemoteValue()
     {
         string json = """
@@ -243,14 +254,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<BigIntegerRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<BigIntegerRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out BigIntegerRemoteValue? bigIntegerValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(bigIntegerValue, Is.Not.Null);
-        Assert.That(bigIntegerValue.Value, Is.EqualTo(new BigInteger(123)));
+        Assert.True(conversionResult);
+        Assert.NotNull(bigIntegerValue);
+        Assert.Equal(new BigInteger(123), bigIntegerValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertBigIntRemoteValueToLocalValue()
     {
         string json = """
@@ -260,18 +272,19 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<BigIntegerRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<BigIntegerRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out BigIntegerRemoteValue? bigIntegerValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(bigIntegerValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(bigIntegerValue);
         LocalValue localValue = bigIntegerValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("bigint"));
-        Assert.That(argumentValue.Value, Is.EqualTo(new BigInteger(123)));
+        Assert.Equal("bigint", argumentValue.Type);
+        Assert.Equal(new BigInteger(123), argumentValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestBigIntRemoteValueCopySemantics()
     {
         string json = """
@@ -281,15 +294,16 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<BigIntegerRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<BigIntegerRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out BigIntegerRemoteValue? bigIntegerValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(bigIntegerValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(bigIntegerValue);
         BigIntegerRemoteValue copy = bigIntegerValue with { };
-        Assert.That(copy, Is.EqualTo(bigIntegerValue));
+        Assert.Equal(bigIntegerValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeDateRemoteValue()
     {
         string json = """
@@ -299,14 +313,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<DateRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<DateRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out DateRemoteValue? dateValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(dateValue, Is.Not.Null);
-        Assert.That(dateValue.Value, Is.EqualTo(DateTime.Parse("2020-07-19T23:47:26.056Z").ToUniversalTime()));
+        Assert.True(conversionResult);
+        Assert.NotNull(dateValue);
+        Assert.Equal(DateTime.Parse("2020-07-19T23:47:26.056Z").ToUniversalTime(), dateValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertDateRemoteValueToLocalValue()
     {
         string json = """
@@ -316,18 +331,19 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<DateRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<DateRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out DateRemoteValue? dateValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(dateValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(dateValue);
         LocalValue localValue = dateValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("date"));
-        Assert.That(argumentValue.Value, Is.EqualTo(DateTime.Parse("2020-07-19T23:47:26.056Z").ToUniversalTime()));
+        Assert.Equal("date", argumentValue.Type);
+        Assert.Equal(DateTime.Parse("2020-07-19T23:47:26.056Z").ToUniversalTime(), argumentValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestDateRemoteValueCopySemantics()
     {
         string json = """
@@ -337,20 +353,21 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<DateRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<DateRemoteValue>(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out DateRemoteValue? dateValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(dateValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(dateValue);
         DateRemoteValue copy = dateValue with { };
-        Assert.That(copy, Is.EqualTo(dateValue));
+        Assert.Equal(dateValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeRegularExpressionRemoteValue()
     {
         LocalValue regexLocalValue = LocalValue.RegExp("myPattern", "gi");
         LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
-        Assert.That(primitiveValue.Value, Is.Not.Null);
+        Assert.NotNull(primitiveValue.Value);
         RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
 
         string json = """
@@ -363,19 +380,19 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out RegExpRemoteValue? regexRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(regexRemoteValue, Is.Not.Null);
-        Assert.That(regexRemoteValue.Value, Is.EqualTo(expectedRegexValue));
+        Assert.True(conversionResult);
+        Assert.NotNull(regexRemoteValue);
+        Assert.Equal(expectedRegexValue, regexRemoteValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertRegularExpressionRemoteValueToLocalValue()
     {
         LocalValue regexLocalValue = LocalValue.RegExp("myPattern", "gi");
         LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
-        Assert.That(primitiveValue.Value, Is.Not.Null);
+        Assert.NotNull(primitiveValue.Value);
         RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
 
         string json = """
@@ -388,18 +405,18 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out RegExpRemoteValue? regexRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(regexRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(regexRemoteValue);
         LocalValue localValue = regexRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("regexp"));
-        Assert.That(argumentValue.Value, Is.EqualTo(expectedRegexValue));
+        Assert.Equal("regexp", argumentValue.Type);
+        Assert.Equal(expectedRegexValue, argumentValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestRegularExpressionRemoteValueCopySemantics()
     {
         string json = """
@@ -412,15 +429,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out RegExpRemoteValue? regexRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(regexRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(regexRemoteValue);
         RegExpRemoteValue copy = regexRemoteValue with { };
-        Assert.That(copy, Is.EqualTo(regexRemoteValue));
+        Assert.Equal(regexRemoteValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeNodeRemoteValue()
     {
         string json = """
@@ -434,18 +451,18 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NodeRemoteValue? nodeRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(nodeRemoteValue, Is.Not.Null);
-        Assert.That(nodeRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(nodeRemoteValue);
+        Assert.NotNull(nodeRemoteValue.Value);
         NodeProperties nodeProperties = nodeRemoteValue.Value;
-        Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
-        Assert.That(nodeProperties.NodeValue, Is.EqualTo(string.Empty));
-        Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
+        Assert.Equal(1u, nodeProperties.NodeType);
+        Assert.Equal(string.Empty, nodeProperties.NodeValue);
+        Assert.Equal(0u, nodeProperties.ChildNodeCount);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertNodeRemoteValueToLocalValue()
     {
         string json = """
@@ -460,17 +477,17 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NodeRemoteValue? nodeRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(nodeRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(nodeRemoteValue);
         LocalValue localValue = nodeRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<SharedReference>());
+        Assert.IsType<SharedReference>(localValue);
         SharedReference sharedReference = (SharedReference)localValue;
-        Assert.That(sharedReference.SharedId, Is.EqualTo("mySharedId"));
+        Assert.Equal("mySharedId", sharedReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestNodeRemoteValueCopySemantics()
     {
         string json = """
@@ -484,15 +501,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NodeRemoteValue? nodeRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(nodeRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(nodeRemoteValue);
         NodeRemoteValue copy = nodeRemoteValue with { };
-        Assert.That(copy, Is.EqualTo(nodeRemoteValue));
+        Assert.Equal(nodeRemoteValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeArrayRemoteValue()
     {
         string json = """
@@ -515,29 +532,32 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out CollectionRemoteValue? listRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(listRemoteValue, Is.Not.Null);
-        Assert.That(listRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(listRemoteValue);
+        Assert.NotNull(listRemoteValue.Value);
         RemoteValueList arrayValue = listRemoteValue.Value;
-        Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            conversionResult = arrayValue[0].TryConvertTo(out StringRemoteValue? stringValue);
-            Assert.That(conversionResult, Is.True);
-            Assert.That(stringValue!.Value, Is.EqualTo("stringValue"));
-            conversionResult = arrayValue[1].TryConvertTo(out NumberRemoteValue? longValue);
-            Assert.That(conversionResult, Is.True);
-            Assert.That(longValue!.Value, Is.EqualTo(123));
-            conversionResult = arrayValue[2].TryConvertTo(out BooleanRemoteValue? booleanValue);
-            Assert.That(conversionResult, Is.True);
-            Assert.That(booleanValue!.Value, Is.EqualTo(true));
-        }
+        Assert.NotNull(arrayValue);
+        Assert.Equal(3, arrayValue.Count);
+
+        conversionResult = arrayValue[0].TryConvertTo(out StringRemoteValue? stringValue);
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
+        Assert.Equal("stringValue", stringValue.Value);
+
+        conversionResult = arrayValue[1].TryConvertTo(out NumberRemoteValue? longValue);
+        Assert.True(conversionResult);
+        Assert.NotNull(longValue);
+        Assert.Equal(123, longValue.Value);
+
+        conversionResult = arrayValue[2].TryConvertTo(out BooleanRemoteValue? booleanValue);
+        Assert.True(conversionResult);
+        Assert.NotNull(booleanValue);
+        Assert.True(booleanValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertArrayRemoteValueToLocalValue()
     {
         string json = """
@@ -560,20 +580,21 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out CollectionRemoteValue? listRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(listRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(listRemoteValue);
         LocalValue localValue = listRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("array"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<List<LocalValue>>());
+        Assert.Equal("array", argumentValue.Type);
+        Assert.IsType<List<LocalValue>>(argumentValue.Value);
+        Assert.NotNull(argumentValue.Value);
         List<LocalValue> localValueList = (List<LocalValue>)argumentValue.Value;
-        Assert.That(localValueList, Has.Count.EqualTo(3));
+        Assert.Equal(3, localValueList.Count);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeSetRemoteValue()
     {
         string json = """
@@ -596,32 +617,32 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out CollectionRemoteValue? listRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(listRemoteValue, Is.Not.Null);
-        Assert.That(listRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(listRemoteValue);
+        Assert.NotNull(listRemoteValue.Value);
         RemoteValueList arrayValue = listRemoteValue.Value;
-        Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue, Has.Count.EqualTo(3));
+        Assert.NotNull(arrayValue);
+        Assert.Equal(3, arrayValue.Count);
 
         conversionResult = arrayValue[0].TryConvertTo(out StringRemoteValue? stringValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(stringValue, Is.Not.Null);
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
+        Assert.Equal("stringValue", stringValue.Value);
 
         conversionResult = arrayValue[1].TryConvertTo(out NumberRemoteValue? longValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(longValue, Is.Not.Null);
-        Assert.That(longValue.Value, Is.EqualTo(123));
+        Assert.True(conversionResult);
+        Assert.NotNull(longValue);
+        Assert.Equal(123, longValue.Value);
 
         conversionResult = arrayValue[2].TryConvertTo(out BooleanRemoteValue? booleanValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(booleanValue, Is.Not.Null);
-        Assert.That(booleanValue.Value, Is.EqualTo(true));
+        Assert.True(conversionResult);
+        Assert.NotNull(booleanValue);
+        Assert.True(booleanValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertSetRemoteValueToLocalValue()
     {
         string json = """
@@ -644,20 +665,21 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out CollectionRemoteValue? listRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(listRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(listRemoteValue);
         LocalValue localValue = listRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("set"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<List<LocalValue>>());
+        Assert.Equal("set", argumentValue.Type);
+        Assert.IsType<List<LocalValue>>(argumentValue.Value);
+        Assert.NotNull(argumentValue.Value);
         List<LocalValue> localValueList = (List<LocalValue>)argumentValue.Value;
-        Assert.That(localValueList, Has.Count.EqualTo(3));
+        Assert.Equal(3, localValueList.Count);
     }
 
-    [Test]
+    [Fact]
     public void TestListRemoteValueCopySemantics()
     {
         string json = """
@@ -680,15 +702,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out CollectionRemoteValue? listRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(listRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(listRemoteValue);
         CollectionRemoteValue copy = listRemoteValue with { };
-        Assert.That(copy, Is.EqualTo(listRemoteValue));
+        Assert.Equal(listRemoteValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeMapRemoteValue()
     {
         string json = """
@@ -720,33 +742,33 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
-        Assert.That(mapRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
+        Assert.NotNull(mapRemoteValue.Value);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
 
         RemoteValue stringPropertyValue = dictionaryValue["stringProperty"];
         conversionResult = stringPropertyValue.TryConvertTo(out StringRemoteValue? stringValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(stringValue, Is.Not.Null);
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
+        Assert.Equal("stringValue", stringValue.Value);
 
         RemoteValue longPropertyValue = dictionaryValue["numberProperty"];
         conversionResult = longPropertyValue.TryConvertTo(out NumberRemoteValue? longValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(longValue, Is.Not.Null);
-        Assert.That(longValue.Value, Is.EqualTo(123));
+        Assert.True(conversionResult);
+        Assert.NotNull(longValue);
+        Assert.Equal(123, longValue.Value);
 
         RemoteValue booleanPropertyValue = dictionaryValue["booleanProperty"];
         conversionResult = booleanPropertyValue.TryConvertTo(out BooleanRemoteValue? booleanValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(booleanValue, Is.Not.Null);
-        Assert.That(booleanValue.Value, Is.EqualTo(true));
+        Assert.True(conversionResult);
+        Assert.NotNull(booleanValue);
+        Assert.True(booleanValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeMapRemoteValueWithObjectKeys()
     {
         string json = """
@@ -767,25 +789,25 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
-        Assert.That(mapRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
+        Assert.NotNull(mapRemoteValue.Value);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+        Assert.Single(dictionaryValue);
         object keyValueObject = dictionaryValue.ElementAt(0).Key;
-        Assert.That(keyValueObject, Is.InstanceOf<ObjectReferenceRemoteValue>());
+        Assert.IsType<ObjectReferenceRemoteValue>(keyValueObject);
         ObjectReferenceRemoteValue key = (ObjectReferenceRemoteValue)keyValueObject;
-        Assert.That(key.Type, Is.EqualTo(RemoteValueType.Symbol));
-        Assert.That(key.Handle, Is.EqualTo("mySymbol"));
+        Assert.Equal(RemoteValueType.Symbol, key.Type);
+        Assert.Equal("mySymbol", key.Handle);
         RemoteValue value = dictionaryValue[key];
-        Assert.That(value, Is.InstanceOf<StringRemoteValue>());
+        Assert.IsType<StringRemoteValue>(value);
         StringRemoteValue stringValue = (StringRemoteValue)value;
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.Equal("stringValue", stringValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeMapRemoteValueWithMixedKeys()
     {
         string json = """
@@ -813,31 +835,31 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
-        Assert.That(mapRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
+        Assert.NotNull(mapRemoteValue.Value);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
 
         RemoteValue stringPropertyValue = dictionaryValue["stringProperty"];
         conversionResult = stringPropertyValue.TryConvertTo(out StringRemoteValue? stringValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(stringValue, Is.Not.Null);
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
+        Assert.Equal("stringValue", stringValue.Value);
 
         object keyValueObject = dictionaryValue.ElementAt(1).Key;
-        Assert.That(keyValueObject, Is.InstanceOf<ObjectReferenceRemoteValue>());
+        Assert.IsType<ObjectReferenceRemoteValue>(keyValueObject);
         ObjectReferenceRemoteValue key = (ObjectReferenceRemoteValue)keyValueObject;
-        Assert.That(key.Type, Is.EqualTo(RemoteValueType.Symbol));
-        Assert.That(key.Handle, Is.EqualTo("mySymbol"));
+        Assert.Equal(RemoteValueType.Symbol, key.Type);
+        Assert.Equal("mySymbol", key.Handle);
         RemoteValue value = dictionaryValue[key];
-        Assert.That(value, Is.InstanceOf<StringRemoteValue>());
+        Assert.IsType<StringRemoteValue>(value);
         StringRemoteValue symbolStringValue = (StringRemoteValue)value;
-        Assert.That(symbolStringValue.Value, Is.EqualTo("symbolValue"));
+        Assert.Equal("symbolValue", symbolStringValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertMapRemoteValueToLocalValue()
     {
         string json = """
@@ -869,30 +891,31 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
         LocalValue localValue = mapRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("map"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<Dictionary<object, LocalValue>>());
+        Assert.Equal("map", argumentValue.Type);
+        Assert.NotNull(argumentValue.Value);
+        Assert.IsType<Dictionary<object, LocalValue>>(argumentValue.Value);
         Dictionary<object, LocalValue> dictionaryValue = (Dictionary<object, LocalValue>)argumentValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(3));
-        Assert.That(dictionaryValue, Contains.Key("stringProperty"));
-        Assert.That(dictionaryValue["stringProperty"], Is.InstanceOf<LocalArgumentValue>());
-        Assert.That(((LocalArgumentValue)dictionaryValue["stringProperty"]).Type, Is.EqualTo("string"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["stringProperty"]).Value, Is.EqualTo("stringValue"));
-        Assert.That(dictionaryValue, Contains.Key("numberProperty"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["numberProperty"]).Type, Is.EqualTo("number"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["numberProperty"]).Value, Is.EqualTo(123));
-        Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["booleanProperty"]).Type, Is.EqualTo("boolean"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["booleanProperty"]).Value, Is.EqualTo(true));
+        Assert.Equal(3, dictionaryValue.Count);
+        Assert.True(dictionaryValue.ContainsKey("stringProperty"));
+        Assert.IsType<LocalArgumentValue>(dictionaryValue["stringProperty"]);
+        Assert.Equal("string", ((LocalArgumentValue)dictionaryValue["stringProperty"]).Type);
+        Assert.Equal("stringValue", ((LocalArgumentValue)dictionaryValue["stringProperty"]).Value);
+        Assert.True(dictionaryValue.ContainsKey("numberProperty"));
+        Assert.Equal("number", ((LocalArgumentValue)dictionaryValue["numberProperty"]).Type);
+        Assert.Equal(123.0, ((LocalArgumentValue)dictionaryValue["numberProperty"]).Value);
+        Assert.True(dictionaryValue.ContainsKey("booleanProperty"));
+        Assert.Equal("boolean", ((LocalArgumentValue)dictionaryValue["booleanProperty"]).Type);
+        Assert.Equal(true, ((LocalArgumentValue)dictionaryValue["booleanProperty"]).Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertMapRemoteValueWithObjectKeysToLocalValue()
     {
         string json = """
@@ -913,29 +936,30 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
         LocalValue localValue = mapRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("map"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<Dictionary<object, LocalValue>>());
+        Assert.Equal("map", argumentValue.Type);
+        Assert.NotNull(argumentValue.Value);
+        Assert.IsType<Dictionary<object, LocalValue>>(argumentValue.Value);
         Dictionary<object, LocalValue> dictionaryValue = (Dictionary<object, LocalValue>)argumentValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+        Assert.Single(dictionaryValue);
         object key = dictionaryValue.ElementAt(0).Key;
-        Assert.That(key, Is.InstanceOf<RemoteObjectReference>());
+        Assert.IsType<RemoteObjectReference>(key);
         RemoteObjectReference keyReference = (RemoteObjectReference)key;
-        Assert.That(keyReference.Handle, Is.EqualTo("mySymbol"));
+        Assert.Equal("mySymbol", keyReference.Handle);
         LocalValue value = dictionaryValue[key];
-        Assert.That(value, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(value);
         LocalArgumentValue stringValue = (LocalArgumentValue)value;
-        Assert.That(stringValue.Type, Is.EqualTo("string"));
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.Equal("string", stringValue.Type);
+        Assert.Equal("stringValue", stringValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertMapRemoteValueWithMixedKeysToLocalValue()
     {
         string json = """
@@ -963,37 +987,38 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
         LocalValue localValue = mapRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("map"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<Dictionary<object, LocalValue>>());
+        Assert.Equal("map", argumentValue.Type);
+        Assert.NotNull(argumentValue.Value);
+        Assert.IsType<Dictionary<object, LocalValue>>(argumentValue.Value);
         Dictionary<object, LocalValue> dictionaryValue = (Dictionary<object, LocalValue>)argumentValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(2));
+        Assert.Equal(2, dictionaryValue.Count);
         object key1 = dictionaryValue.ElementAt(0).Key;
-        Assert.That(key1, Is.InstanceOf<string>());
-        Assert.That((string)key1, Is.EqualTo("stringProperty"));
+        Assert.IsType<string>(key1);
+        Assert.Equal("stringProperty", (string)key1);
         LocalValue value1 = dictionaryValue[key1];
-        Assert.That(value1, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(value1);
         LocalArgumentValue stringValue = (LocalArgumentValue)value1;
-        Assert.That(stringValue.Type, Is.EqualTo("string"));
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.Equal("string", stringValue.Type);
+        Assert.Equal("stringValue", stringValue.Value);
         object key2 = dictionaryValue.ElementAt(1).Key;
-        Assert.That(key2, Is.InstanceOf<RemoteObjectReference>());
+        Assert.IsType<RemoteObjectReference>(key2);
         RemoteObjectReference keyReference = (RemoteObjectReference)key2;
-        Assert.That(keyReference.Handle, Is.EqualTo("mySymbol"));
+        Assert.Equal("mySymbol", keyReference.Handle);
         LocalValue value2 = dictionaryValue[key2];
-        Assert.That(value2, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(value2);
         LocalArgumentValue symbolValue = (LocalArgumentValue)value2;
-        Assert.That(symbolValue.Type, Is.EqualTo("string"));
-        Assert.That(symbolValue.Value, Is.EqualTo("symbolValue"));
+        Assert.Equal("string", symbolValue.Type);
+        Assert.Equal("symbolValue", symbolValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeObjectRemoteValue()
     {
         string json = """
@@ -1025,34 +1050,34 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
-        Assert.That(mapRemoteValue.Value, Is.Not.Null);
-        Assert.That(mapRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
+        Assert.NotNull(mapRemoteValue.Value);
+        Assert.NotNull(mapRemoteValue.Value);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
 
         RemoteValue stringPropertyValue = dictionaryValue["stringProperty"];
         conversionResult = stringPropertyValue.TryConvertTo(out StringRemoteValue? stringValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(stringValue, Is.Not.Null);
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.True(conversionResult);
+        Assert.NotNull(stringValue);
+        Assert.Equal("stringValue", stringValue.Value);
 
         RemoteValue longPropertyValue = dictionaryValue["numberProperty"];
         conversionResult = longPropertyValue.TryConvertTo(out NumberRemoteValue? longValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(longValue, Is.Not.Null);
-        Assert.That(longValue.Value, Is.EqualTo(123));
+        Assert.True(conversionResult);
+        Assert.NotNull(longValue);
+        Assert.Equal(123, longValue.Value);
 
         RemoteValue booleanPropertyValue = dictionaryValue["booleanProperty"];
         conversionResult = booleanPropertyValue.TryConvertTo(out BooleanRemoteValue? booleanValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(booleanValue, Is.Not.Null);
-        Assert.That(booleanValue.Value, Is.EqualTo(true));
+        Assert.True(conversionResult);
+        Assert.NotNull(booleanValue);
+        Assert.True(booleanValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeObjectRemoteValueWithObjectKeys()
     {
         string json = """
@@ -1073,25 +1098,25 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
-        Assert.That(mapRemoteValue.Value, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
+        Assert.NotNull(mapRemoteValue.Value);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+        Assert.Single(dictionaryValue);
         object keyValueObject = dictionaryValue.ElementAt(0).Key;
-        Assert.That(keyValueObject, Is.InstanceOf<ObjectReferenceRemoteValue>());
+        Assert.IsType<ObjectReferenceRemoteValue>(keyValueObject);
         ObjectReferenceRemoteValue key = (ObjectReferenceRemoteValue)keyValueObject;
-        Assert.That(key.Type, Is.EqualTo(RemoteValueType.Symbol));
-        Assert.That(key.Handle, Is.EqualTo("mySymbol"));
+        Assert.Equal(RemoteValueType.Symbol, key.Type);
+        Assert.Equal("mySymbol", key.Handle);
         RemoteValue value = dictionaryValue[key];
-        Assert.That(value, Is.InstanceOf<StringRemoteValue>());
+        Assert.IsType<StringRemoteValue>(value);
         StringRemoteValue stringValue = (StringRemoteValue)value;
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.Equal("stringValue", stringValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertObjectRemoteValueToLocalValue()
     {
         string json = """
@@ -1123,30 +1148,31 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
         LocalValue localValue = mapRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("object"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<Dictionary<object, LocalValue>>());
+        Assert.Equal("object", argumentValue.Type);
+        Assert.NotNull(argumentValue.Value);
+        Assert.IsType<Dictionary<object, LocalValue>>(argumentValue.Value);
         Dictionary<object, LocalValue> dictionaryValue = (Dictionary<object, LocalValue>)argumentValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(3));
-        Assert.That(dictionaryValue, Contains.Key("stringProperty"));
-        Assert.That(dictionaryValue["stringProperty"], Is.InstanceOf<LocalArgumentValue>());
-        Assert.That(((LocalArgumentValue)dictionaryValue["stringProperty"]).Type, Is.EqualTo("string"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["stringProperty"]).Value, Is.EqualTo("stringValue"));
-        Assert.That(dictionaryValue, Contains.Key("numberProperty"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["numberProperty"]).Type, Is.EqualTo("number"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["numberProperty"]).Value, Is.EqualTo(123));
-        Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["booleanProperty"]).Type, Is.EqualTo("boolean"));
-        Assert.That(((LocalArgumentValue)dictionaryValue["booleanProperty"]).Value, Is.EqualTo(true));
+        Assert.Equal(3, dictionaryValue.Count);
+        Assert.True(dictionaryValue.ContainsKey("stringProperty"));
+        Assert.IsType<LocalArgumentValue>(dictionaryValue["stringProperty"]);
+        Assert.Equal("string", ((LocalArgumentValue)dictionaryValue["stringProperty"]).Type);
+        Assert.Equal("stringValue", ((LocalArgumentValue)dictionaryValue["stringProperty"]).Value);
+        Assert.True(dictionaryValue.ContainsKey("numberProperty"));
+        Assert.Equal("number", ((LocalArgumentValue)dictionaryValue["numberProperty"]).Type);
+        Assert.Equal(123.0, ((LocalArgumentValue)dictionaryValue["numberProperty"]).Value);
+        Assert.True(dictionaryValue.ContainsKey("booleanProperty"));
+        Assert.Equal("boolean", ((LocalArgumentValue)dictionaryValue["booleanProperty"]).Type);
+        Assert.Equal(true, ((LocalArgumentValue)dictionaryValue["booleanProperty"]).Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertObjectRemoteValueWithObjectKeysToLocalValue()
     {
         string json = """
@@ -1167,29 +1193,30 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
         LocalValue localValue = mapRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("object"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<Dictionary<object, LocalValue>>());
+        Assert.Equal("object", argumentValue.Type);
+        Assert.NotNull(argumentValue.Value);
+        Assert.IsType<Dictionary<object, LocalValue>>(argumentValue.Value);
         Dictionary<object, LocalValue> dictionaryValue = (Dictionary<object, LocalValue>)argumentValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+        Assert.Single(dictionaryValue);
         object key = dictionaryValue.ElementAt(0).Key;
-        Assert.That(key, Is.InstanceOf<RemoteObjectReference>());
+        Assert.IsType<RemoteObjectReference>(key);
         RemoteObjectReference keyReference = (RemoteObjectReference)key;
-        Assert.That(keyReference.Handle, Is.EqualTo("mySymbol"));
+        Assert.Equal("mySymbol", keyReference.Handle);
         LocalValue value = dictionaryValue[key];
-        Assert.That(value, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(value);
         LocalArgumentValue stringValue = (LocalArgumentValue)value;
-        Assert.That(stringValue.Type, Is.EqualTo("string"));
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.Equal("string", stringValue.Type);
+        Assert.Equal("stringValue", stringValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertObjectRemoteValueWithMixedKeysToLocalValue()
     {
         string json = """
@@ -1217,37 +1244,38 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
         LocalValue localValue = mapRemoteValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("object"));
-        Assert.That(argumentValue.Value, Is.InstanceOf<Dictionary<object, LocalValue>>());
+        Assert.Equal("object", argumentValue.Type);
+        Assert.NotNull(argumentValue.Value);
+        Assert.IsType<Dictionary<object, LocalValue>>(argumentValue.Value);
         Dictionary<object, LocalValue> dictionaryValue = (Dictionary<object, LocalValue>)argumentValue.Value;
-        Assert.That(dictionaryValue, Has.Count.EqualTo(2));
+        Assert.Equal(2, dictionaryValue.Count);
         object key1 = dictionaryValue.ElementAt(0).Key;
-        Assert.That(key1, Is.InstanceOf<string>());
-        Assert.That((string)key1, Is.EqualTo("stringProperty"));
+        Assert.IsType<string>(key1);
+        Assert.Equal("stringProperty", (string)key1);
         LocalValue value1 = dictionaryValue[key1];
-        Assert.That(value1, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(value1);
         LocalArgumentValue stringValue = (LocalArgumentValue)value1;
-        Assert.That(stringValue.Type, Is.EqualTo("string"));
-        Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
+        Assert.Equal("string", stringValue.Type);
+        Assert.Equal("stringValue", stringValue.Value);
         object key2 = dictionaryValue.ElementAt(1).Key;
-        Assert.That(key2, Is.InstanceOf<RemoteObjectReference>());
+        Assert.IsType<RemoteObjectReference>(key2);
         RemoteObjectReference keyReference = (RemoteObjectReference)key2;
-        Assert.That(keyReference.Handle, Is.EqualTo("mySymbol"));
+        Assert.Equal("mySymbol", keyReference.Handle);
         LocalValue value2 = dictionaryValue[key2];
-        Assert.That(value2, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(value2);
         LocalArgumentValue symbolValue = (LocalArgumentValue)value2;
-        Assert.That(symbolValue.Type, Is.EqualTo("string"));
-        Assert.That(symbolValue.Value, Is.EqualTo("symbolValue"));
+        Assert.Equal("string", symbolValue.Type);
+        Assert.Equal("symbolValue", symbolValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestKeyValuePairRemoteValueCopySemantics()
     {
         string json = """
@@ -1279,15 +1307,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(mapRemoteValue);
         KeyValuePairCollectionRemoteValue copy = mapRemoteValue with { };
-        Assert.That(copy, Is.EqualTo(mapRemoteValue));
+        Assert.Equal(mapRemoteValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWindowProxyRemoteValue()
     {
         string json = """
@@ -1301,16 +1329,16 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out WindowProxyRemoteValue? windowProxyValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(windowProxyValue, Is.Not.Null);
-        Assert.That(windowProxyValue.Value.Context, Is.EqualTo("myContext"));
-        Assert.That(windowProxyValue.Handle, Is.EqualTo("myHandle"));
-        Assert.That(windowProxyValue.InternalId, Is.EqualTo("123"));
+        Assert.True(conversionResult);
+        Assert.NotNull(windowProxyValue);
+        Assert.Equal("myContext", windowProxyValue.Value.Context);
+        Assert.Equal("myHandle", windowProxyValue.Handle);
+        Assert.Equal("123", windowProxyValue.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertWindowProxyRemoteValueToLocalValue()
     {
         string json = """
@@ -1324,17 +1352,17 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out WindowProxyRemoteValue? windowProxyValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(windowProxyValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(windowProxyValue);
         LocalValue localValue = windowProxyValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<RemoteObjectReference>());
+        Assert.IsType<RemoteObjectReference>(localValue);
         RemoteObjectReference argumentValue = (RemoteObjectReference)localValue;
-        Assert.That(argumentValue.Handle, Is.EqualTo("myHandle"));
+        Assert.Equal("myHandle", argumentValue.Handle);
     }
 
-    [Test]
+    [Fact]
     public void TestWindowProxyRemoteValueCopySemantics()
     {
         string json = """
@@ -1348,15 +1376,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out WindowProxyRemoteValue? windowProxyValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(windowProxyValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(windowProxyValue);
         WindowProxyRemoteValue copy = windowProxyValue with { };
-        Assert.That(copy, Is.EqualTo(windowProxyValue));
+        Assert.Equal(windowProxyValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeNullRemoteValue()
     {
         string json = """
@@ -1365,13 +1393,13 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NullRemoteValue? nullValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(nullValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(nullValue);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertNullRemoteValueToLocalValue()
     {
         string json = """
@@ -1380,17 +1408,17 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NullRemoteValue? nullValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(nullValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(nullValue);
         LocalValue localValue = nullValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("null"));
+        Assert.Equal("null", argumentValue.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestNullRemoteValueCopySemantics()
     {
         string json = """
@@ -1399,15 +1427,15 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out NullRemoteValue? nullValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(nullValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(nullValue);
         NullRemoteValue copy = nullValue with { };
-        Assert.That(copy, Is.EqualTo(nullValue));
+        Assert.Equal(nullValue, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeUndefinedRemoteValue()
     {
         string json = """
@@ -1416,13 +1444,13 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out UndefinedRemoteValue? undefinedValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(undefinedValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(undefinedValue);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertUndefinedRemoteValueToLocalValue()
     {
         string json = """
@@ -1431,17 +1459,17 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out UndefinedRemoteValue? undefinedValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(undefinedValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(undefinedValue);
         LocalValue localValue = undefinedValue.ToLocalValue();
-        Assert.That(localValue, Is.InstanceOf<LocalArgumentValue>());
+        Assert.IsType<LocalArgumentValue>(localValue);
         LocalArgumentValue argumentValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentValue.Type, Is.EqualTo("undefined"));
+        Assert.Equal("undefined", argumentValue.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestUndefinedRemoteValueCopySemantics()
     {
         string json = """
@@ -1450,11 +1478,11 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
+        Assert.NotNull(remoteValue);
         bool conversionResult = remoteValue.TryConvertTo(out UndefinedRemoteValue? undefinedValue);
-        Assert.That(conversionResult, Is.True);
-        Assert.That(undefinedValue, Is.Not.Null);
+        Assert.True(conversionResult);
+        Assert.NotNull(undefinedValue);
         UndefinedRemoteValue copy = undefinedValue with { };
-        Assert.That(copy, Is.EqualTo(undefinedValue));
+        Assert.Equal(undefinedValue, copy);
     }
 }

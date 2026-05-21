@@ -1,12 +1,10 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
-using WebDriverBiDi.Script;
 
-[TestFixture]
 public class LocateNodesCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -25,12 +23,12 @@ public class LocateNodesCommandResultTests
                       }
                       """;
         LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Nodes, Has.Count.EqualTo(1));
-        Assert.That(result.Nodes[0].SharedId, Is.EqualTo("mySharedId"));
+        Assert.NotNull(result);
+        Assert.Single(result.Nodes);
+        Assert.Equal("mySharedId", result.Nodes[0].SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithEmptyResult()
     {
         string json = """
@@ -39,11 +37,11 @@ public class LocateNodesCommandResultTests
                       }
                       """;
         LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Nodes, Has.Count.EqualTo(0));
+        Assert.NotNull(result);
+        Assert.Empty(result.Nodes);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -62,19 +60,19 @@ public class LocateNodesCommandResultTests
                       }
                       """;
         LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocateNodesCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = """
@@ -82,6 +80,6 @@ public class LocateNodesCommandResultTests
                         "nodes": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json));
     }
 }

@@ -2,75 +2,74 @@ namespace WebDriverBiDi.JsonConverters;
 
 using System.Text.Json;
 
-[TestFixture]
 public class NumberJsonConverterTests
 {
-    [Test]
+    [Fact]
     public void TestDeserializingValidFloatingPointNumber()
     {
         string json = "3.14159";
         double? result = JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } });
-        Assert.That(result, Is.EqualTo(3.14159));
+        Assert.Equal(3.14159, result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInteger()
     {
         string json = "12345";
         double result = JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } });
-        Assert.That(result, Is.EqualTo(12345));
+        Assert.Equal(12345, result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInfinity()
     {
         string json = "\"Infinity\"";
         double result = JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } });
-        Assert.That(result, Is.EqualTo(double.PositiveInfinity));
+        Assert.Equal(double.PositiveInfinity, result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNegativeInfinity()
     {
         string json = "\"-Infinity\"";
         double result = JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } });
-        Assert.That(result, Is.EqualTo(double.NegativeInfinity));
+        Assert.Equal(double.NegativeInfinity, result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNaN()
     {
         string json = "\"NaN\"";
         double result = JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } });
-        Assert.That(result, Is.EqualTo(double.NaN));
+        Assert.Equal(double.NaN, result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNegativeZero()
     {
         string json = "\"-0\"";
         double result = JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } });
-        Assert.That(result, Is.EqualTo(-0.0));
+        Assert.Equal(-0.0, result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInvalidStringThrows()
     {
         string json = "\"not-a-number\"";
-        Assert.That(() => JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.EqualTo($"Invalid value 'not-a-number' for 'value' property of number"));
+        Assert.Equal($"Invalid value 'not-a-number' for 'value' property of number", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInvalidDataTypeThrows()
     {
         string json = "false";
-        Assert.That(() => JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"Unexpected token parsing number."));
+        Assert.Contains($"Unexpected token parsing number.", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<double>(json, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestSerializationThrows()
     {
         double value = 3.14159;
-        Assert.That(() => JsonSerializer.Serialize(value, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } }), Throws.InstanceOf<NotSupportedException>());
+        Assert.ThrowsAny<NotSupportedException>(() => JsonSerializer.Serialize(value, new JsonSerializerOptions { Converters = { new NumberJsonConverter() } }));
     }
 }

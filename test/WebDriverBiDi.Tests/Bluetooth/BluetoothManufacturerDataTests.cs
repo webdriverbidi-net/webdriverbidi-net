@@ -3,44 +3,51 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class BluetoothManufacturerDataTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerialize()
     {
         BluetoothManufacturerData properties = new(123, "myData");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("key"));
-            Assert.That(serialized["key"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["key"]!.Value<uint>(), Is.EqualTo(123));
-            Assert.That(serialized, Contains.Key("data"));
-            Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["data"]!.Value<string>(), Is.EqualTo("myData"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("key"));
+        JToken? key = serialized["key"];
+        Assert.NotNull(key);
+        Assert.Equal(JTokenType.Integer, key.Type);
+        Assert.Equal(123u, key.Value<uint>());
+
+        Assert.True(serialized.ContainsKey("data"));
+        JToken? data = serialized["data"];
+        Assert.NotNull(data);
+        Assert.Equal(JTokenType.String, data.Type);
+        Assert.Equal("myData", data.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanUpdatePropertiesAfterInstantiation()
     {
-        BluetoothManufacturerData properties = new(123, "myData");
-        properties.Key = 456;
-        properties.Data = "myUpdatedData";
+        BluetoothManufacturerData properties = new(123, "myData")
+        {
+            Key = 456,
+            Data = "myUpdatedData"
+        };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("key"));
-            Assert.That(serialized["key"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["key"]!.Value<uint>(), Is.EqualTo(456));
-            Assert.That(serialized, Contains.Key("data"));
-            Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["data"]!.Value<string>(), Is.EqualTo("myUpdatedData"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("key"));
+        JToken? key = serialized["key"];
+        Assert.NotNull(key);
+        Assert.Equal(JTokenType.Integer, key.Type);
+        Assert.Equal(456u, key.Value<uint>());
+
+        Assert.True(serialized.ContainsKey("data"));
+        JToken? data = serialized["data"];
+        Assert.NotNull(data);
+        Assert.Equal(JTokenType.String, data.Type);
+        Assert.Equal("myUpdatedData", data.Value<string>());
     }
 }

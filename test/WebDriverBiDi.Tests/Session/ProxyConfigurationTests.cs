@@ -3,10 +3,9 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ProxyConfigurationTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeWithHttpProxy()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
@@ -15,19 +14,22 @@ public class ProxyConfigurationTests
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(serialized, Contains.Key("httpProxy"));
-            Assert.That(serialized["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["httpProxy"]!.Value<string>(), Is.EqualTo("http.proxy"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("httpProxy"));
+        JToken? httpProxy = serialized["httpProxy"];
+        Assert.NotNull(httpProxy);
+        Assert.Equal(JTokenType.String, httpProxy.Type);
+        Assert.Equal("http.proxy", httpProxy.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithSslProxy()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
@@ -36,19 +38,22 @@ public class ProxyConfigurationTests
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(serialized, Contains.Key("sslProxy"));
-            Assert.That(serialized["sslProxy"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["sslProxy"]!.Value<string>(), Is.EqualTo("ssl.proxy"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("sslProxy"));
+        JToken? sslProxy = serialized["sslProxy"];
+        Assert.NotNull(sslProxy);
+        Assert.Equal(JTokenType.String, sslProxy.Type);
+        Assert.Equal("ssl.proxy", sslProxy.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithSocksProxy()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
@@ -57,19 +62,22 @@ public class ProxyConfigurationTests
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(serialized, Contains.Key("socksProxy"));
-            Assert.That(serialized["socksProxy"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["socksProxy"]!.Value<string>(), Is.EqualTo("socks.proxy"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("socksProxy"));
+        JToken? socksProxy = serialized["socksProxy"];
+        Assert.NotNull(socksProxy);
+        Assert.Equal(JTokenType.String, socksProxy.Type);
+        Assert.Equal("socks.proxy", socksProxy.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithSocksVersion()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
@@ -78,19 +86,22 @@ public class ProxyConfigurationTests
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(serialized, Contains.Key("socksVersion"));
-            Assert.That(serialized["socksVersion"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["socksVersion"]!.Value<long>(), Is.EqualTo(4));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("socksVersion"));
+        JToken? socksVersion = serialized["socksVersion"];
+        Assert.NotNull(socksVersion);
+        Assert.Equal(JTokenType.Integer, socksVersion.Type);
+        Assert.Equal(4L, socksVersion.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithNoProxyAddresses()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
@@ -99,25 +110,28 @@ public class ProxyConfigurationTests
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(serialized, Contains.Key("noProxy"));
-            Assert.That(serialized["noProxy"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
-        JArray? noProxyArray = serialized["noProxy"] as JArray;
-        Assert.That(noProxyArray, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(noProxyArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(noProxyArray![0].Value<string>(), Is.EqualTo("no.proxy.address"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("noProxy"));
+        JToken? noProxyToken = serialized["noProxy"];
+        Assert.NotNull(noProxyToken);
+        Assert.Equal(JTokenType.Array, noProxyToken.Type);
+
+        JArray? noProxyArray = noProxyToken as JArray;
+        Assert.NotNull(noProxyArray);
+        Assert.Single(noProxyArray);
+
+        Assert.Equal(JTokenType.String, noProxyArray[0].Type);
+        Assert.Equal("no.proxy.address", noProxyArray[0].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithEmptyNoProxyAddresses()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
@@ -126,117 +140,128 @@ public class ProxyConfigurationTests
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(serialized, Contains.Key("noProxy"));
-            Assert.That(serialized["noProxy"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
-        JArray? noProxyArray = serialized["noProxy"] as JArray;
-        Assert.That(noProxyArray, Is.Empty);
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("noProxy"));
+        JToken? noProxyToken = serialized["noProxy"];
+        Assert.NotNull(noProxyToken);
+        Assert.Equal(JTokenType.Array, noProxyToken.Type);
+
+        JArray? noProxyArray = noProxyToken as JArray;
+        Assert.NotNull(noProxyArray);
+        Assert.Empty(noProxyArray);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithProxyTypeDirect()
     {
         ProxyConfiguration proxy = new DirectProxyConfiguration();
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("direct"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("direct", proxyType.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithProxyTypeManual()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration();
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithProxyTypeSystem()
     {
         ProxyConfiguration proxy = new SystemProxyConfiguration();
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("system"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("system", proxyType.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithProxyTypeAutoDetect()
     {
         ProxyConfiguration proxy = new AutoDetectProxyConfiguration();
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("autodetect"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("autodetect", proxyType.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithProxyTypeProxyAutoconfig()
     {
         ProxyConfiguration proxy = new PacProxyConfiguration("proxy.autoconfig.url");
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("pac"));
-            Assert.That(serialized, Contains.Key("proxyAutoconfigUrl"));
-            Assert.That(serialized["proxyAutoconfigUrl"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyAutoconfigUrl"]!.Value<string>(), Is.EqualTo("proxy.autoconfig.url"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("pac", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("proxyAutoconfigUrl"));
+        JToken? proxyAutoconfigUrl = serialized["proxyAutoconfigUrl"];
+        Assert.NotNull(proxyAutoconfigUrl);
+        Assert.Equal(JTokenType.String, proxyAutoconfigUrl.Type);
+        Assert.Equal("proxy.autoconfig.url", proxyAutoconfigUrl.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithAdditionalData()
     {
         ProxyConfiguration proxy = new DirectProxyConfiguration();
         proxy.AdditionalData["additionalName"] = "additionalValue";
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("direct"));
-            Assert.That(serialized, Contains.Key("additionalName"));
-            Assert.That(serialized["additionalName"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["additionalName"]!.Value<string>(), Is.EqualTo("additionalValue"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("proxyType"));
+        JToken? proxyType = serialized["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("direct", proxyType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("additionalName"));
+        JToken? additionalName = serialized["additionalName"];
+        Assert.NotNull(additionalName);
+        Assert.Equal(JTokenType.String, additionalName.Type);
+        Assert.Equal("additionalValue", additionalName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithProxyTypeManual()
     {
         string json = """
@@ -245,20 +270,18 @@ public class ProxyConfigurationTests
                       }
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
-        Assert.That(deserialized, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.Manual));
-            Assert.That(deserialized, Is.InstanceOf<ManualProxyConfiguration>());
-            ManualProxyConfiguration deserializedResult = (ManualProxyConfiguration)deserialized;
-            Assert.That(deserializedResult.HttpProxy, Is.Null);
-            Assert.That(deserializedResult.SslProxy, Is.Null);
-            Assert.That(deserializedResult.SocksProxy, Is.Null);
-            Assert.That(deserializedResult.SocksVersion, Is.Null);
-        }
+        Assert.NotNull(deserialized);
+
+        Assert.Equal(ProxyType.Manual, deserialized.ProxyType);
+        Assert.IsType<ManualProxyConfiguration>(deserialized);
+        ManualProxyConfiguration deserializedResult = (ManualProxyConfiguration)deserialized;
+        Assert.Null(deserializedResult.HttpProxy);
+        Assert.Null(deserializedResult.SslProxy);
+        Assert.Null(deserializedResult.SocksProxy);
+        Assert.Null(deserializedResult.SocksVersion);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithProxyTypeSystem()
     {
         string json = """
@@ -267,15 +290,13 @@ public class ProxyConfigurationTests
                       }
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
-        Assert.That(deserialized, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.System));
-            Assert.That(deserialized, Is.InstanceOf<SystemProxyConfiguration>());
-        }
+        Assert.NotNull(deserialized);
+
+        Assert.Equal(ProxyType.System, deserialized.ProxyType);
+        Assert.IsType<SystemProxyConfiguration>(deserialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithProxyTypeAutoDetect()
     {
         string json = """
@@ -284,15 +305,13 @@ public class ProxyConfigurationTests
                       }
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
-        Assert.That(deserialized, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.AutoDetect));
-            Assert.That(deserialized, Is.InstanceOf<AutoDetectProxyConfiguration>());
-        }
+        Assert.NotNull(deserialized);
+
+        Assert.Equal(ProxyType.AutoDetect, deserialized.ProxyType);
+        Assert.IsType<AutoDetectProxyConfiguration>(deserialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithProxyTypeProxyAutoconfig()
     {
         string json = """
@@ -302,17 +321,15 @@ public class ProxyConfigurationTests
                       }
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
-        Assert.That(deserialized, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.ProxyAutoConfig));
-            Assert.That(deserialized, Is.InstanceOf<PacProxyConfiguration>());
-            PacProxyConfiguration deserializedResult = (PacProxyConfiguration)deserialized;
-            Assert.That(deserializedResult.ProxyAutoConfigUrl, Is.EqualTo("proxy.autoconfig.url"));
-        }
+        Assert.NotNull(deserialized);
+
+        Assert.Equal(ProxyType.ProxyAutoConfig, deserialized.ProxyType);
+        Assert.IsType<PacProxyConfiguration>(deserialized);
+        PacProxyConfiguration deserializedResult = (PacProxyConfiguration)deserialized;
+        Assert.Equal("proxy.autoconfig.url", deserializedResult.ProxyAutoConfigUrl);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithProxyTypeDirect()
     {
         string json = """
@@ -321,15 +338,13 @@ public class ProxyConfigurationTests
                       }
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
-        Assert.That(deserialized, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.Direct));
-            Assert.That(deserialized, Is.InstanceOf<DirectProxyConfiguration>());
-        }
+        Assert.NotNull(deserialized);
+
+        Assert.Equal(ProxyType.Direct, deserialized.ProxyType);
+        Assert.IsType<DirectProxyConfiguration>(deserialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithAdditionalData()
     {
         string json = """
@@ -339,23 +354,21 @@ public class ProxyConfigurationTests
                       }
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
-        Assert.That(deserialized, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.Direct));
-            Assert.That(deserialized, Is.InstanceOf<DirectProxyConfiguration>());
-            Assert.That(deserialized.AdditionalData, Has.Count.EqualTo(1));
-        }
+        Assert.NotNull(deserialized);
+
+        Assert.Equal(ProxyType.Direct, deserialized.ProxyType);
+        Assert.IsType<DirectProxyConfiguration>(deserialized);
+        Assert.Single(deserialized.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithNonObjectJsonThrows()
     {
         string json = @"""proxyType""";
-        Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must be an object"));
+        Assert.Contains("must be an object", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ProxyConfiguration>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithProxyTypeProxyAutoconfigWithMissingUrlThrows()
     {
         string json = """
@@ -363,10 +376,10 @@ public class ProxyConfigurationTests
                         "proxyType": "pac"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("proxyAutoconfigUrl"));
+        Assert.Contains("proxyAutoconfigUrl", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ProxyConfiguration>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidProxyTypeThrows()
     {
         string json = """
@@ -374,10 +387,10 @@ public class ProxyConfigurationTests
                         "proxyType": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'ProxyConfiguration' proxyType property contains unknown value 'invalid'"));
+        Assert.Contains("JSON for 'ProxyConfiguration' proxyType property contains unknown value 'invalid'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ProxyConfiguration>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithNonStringProxyTypeThrows()
     {
         string json = """
@@ -385,6 +398,6 @@ public class ProxyConfigurationTests
                         "proxyType": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must be a string"));
+        Assert.Contains("must be a string", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ProxyConfiguration>(json)).Message);
     }
 }

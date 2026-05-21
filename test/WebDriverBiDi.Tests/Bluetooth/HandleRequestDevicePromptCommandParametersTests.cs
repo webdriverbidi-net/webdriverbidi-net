@@ -3,139 +3,172 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class HandleRequestDevicePromptCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         HandleRequestDevicePromptCommandParameters acceptParameters = new HandleRequestDevicePromptAcceptCommandParameters("myContext", "myPrompt", "myDevice");
-        Assert.That(acceptParameters.MethodName, Is.EqualTo("bluetooth.handleRequestDevicePrompt"));
+        Assert.Equal("bluetooth.handleRequestDevicePrompt", acceptParameters.MethodName);
         HandleRequestDevicePromptCommandParameters cancelParameters = new HandleRequestDevicePromptCancelCommandParameters("myContext", "myPrompt");
-        Assert.That(cancelParameters.MethodName, Is.EqualTo("bluetooth.handleRequestDevicePrompt"));
+        Assert.Equal("bluetooth.handleRequestDevicePrompt", cancelParameters.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAcceptParameters()
     {
         HandleRequestDevicePromptCommandParameters properties = new HandleRequestDevicePromptAcceptCommandParameters("myContext", "myPrompt", "myDevice");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("prompt"));
-            Assert.That(serialized["prompt"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["prompt"]!.Value<string>(), Is.EqualTo("myPrompt"));
-            Assert.That(serialized, Contains.Key("accept"));
-            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["accept"]!.Value<bool>(), Is.True);
-            Assert.That(serialized, Contains.Key("device"));
-            Assert.That(serialized["device"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["device"]!.Value<string>(), Is.EqualTo("myDevice"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("prompt"));
+        JToken? prompt = serialized["prompt"];
+        Assert.NotNull(prompt);
+        Assert.Equal(JTokenType.String, prompt.Type);
+        Assert.Equal("myPrompt", prompt.Value<string>());
+
+        Assert.True(serialized.ContainsKey("accept"));
+        JToken? accept = serialized["accept"];
+        Assert.NotNull(accept);
+        Assert.Equal(JTokenType.Boolean, accept.Type);
+        Assert.True(accept.Value<bool>());
+
+        Assert.True(serialized.ContainsKey("device"));
+        JToken? device = serialized["device"];
+        Assert.NotNull(device);
+        Assert.Equal(JTokenType.String, device.Type);
+        Assert.Equal("myDevice", device.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanModifyPropertiesInAcceptParameters()
     {
-        HandleRequestDevicePromptAcceptCommandParameters properties = new("myContext", "myPrompt", "myDevice");
-        properties.BrowsingContextId = "myOtherContext";
-        properties.PromptId = "myOtherPrompt";
-        properties.DeviceId = "myOtherDevice";
+        HandleRequestDevicePromptAcceptCommandParameters properties = new("myContext", "myPrompt", "myDevice")
+        {
+            BrowsingContextId = "myOtherContext",
+            PromptId = "myOtherPrompt",
+            DeviceId = "myOtherDevice"
+        };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myOtherContext"));
-            Assert.That(serialized, Contains.Key("prompt"));
-            Assert.That(serialized["prompt"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["prompt"]!.Value<string>(), Is.EqualTo("myOtherPrompt"));
-            Assert.That(serialized, Contains.Key("accept"));
-            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["accept"]!.Value<bool>(), Is.True);
-            Assert.That(serialized, Contains.Key("device"));
-            Assert.That(serialized["device"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["device"]!.Value<string>(), Is.EqualTo("myOtherDevice"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myOtherContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("prompt"));
+        JToken? prompt = serialized["prompt"];
+        Assert.NotNull(prompt);
+        Assert.Equal(JTokenType.String, prompt.Type);
+        Assert.Equal("myOtherPrompt", prompt.Value<string>());
+
+        Assert.True(serialized.ContainsKey("accept"));
+        JToken? accept = serialized["accept"];
+        Assert.NotNull(accept);
+        Assert.Equal(JTokenType.Boolean, accept.Type);
+        Assert.True(accept.Value<bool>());
+
+        Assert.True(serialized.ContainsKey("device"));
+        JToken? device = serialized["device"];
+        Assert.NotNull(device);
+        Assert.Equal(JTokenType.String, device.Type);
+        Assert.Equal("myOtherDevice", device.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeCancelParameters()
     {
         HandleRequestDevicePromptCommandParameters properties = new HandleRequestDevicePromptCancelCommandParameters("myContext", "myPrompt");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("prompt"));
-            Assert.That(serialized["prompt"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["prompt"]!.Value<string>(), Is.EqualTo("myPrompt"));
-            Assert.That(serialized, Contains.Key("accept"));
-            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["accept"]!.Value<bool>(), Is.False);
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("prompt"));
+        JToken? prompt = serialized["prompt"];
+        Assert.NotNull(prompt);
+        Assert.Equal(JTokenType.String, prompt.Type);
+        Assert.Equal("myPrompt", prompt.Value<string>());
+
+        Assert.True(serialized.ContainsKey("accept"));
+        JToken? accept = serialized["accept"];
+        Assert.NotNull(accept);
+        Assert.Equal(JTokenType.Boolean, accept.Type);
+        Assert.False(accept.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanModifyPropertiesInCancelParameters()
     {
-        HandleRequestDevicePromptCancelCommandParameters properties = new("myContext", "myPrompt");
-        properties.BrowsingContextId = "myOtherContext";
-        properties.PromptId = "myOtherPrompt";
+        HandleRequestDevicePromptCancelCommandParameters properties = new("myContext", "myPrompt")
+        {
+            BrowsingContextId = "myOtherContext",
+            PromptId = "myOtherPrompt"
+        };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myOtherContext"));
-            Assert.That(serialized, Contains.Key("prompt"));
-            Assert.That(serialized["prompt"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["prompt"]!.Value<string>(), Is.EqualTo("myOtherPrompt"));
-            Assert.That(serialized, Contains.Key("accept"));
-            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["accept"]!.Value<bool>(), Is.False);
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myOtherContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("prompt"));
+        JToken? prompt = serialized["prompt"];
+        Assert.NotNull(prompt);
+        Assert.Equal(JTokenType.String, prompt.Type);
+        Assert.Equal("myOtherPrompt", prompt.Value<string>());
+
+        Assert.True(serialized.ContainsKey("accept"));
+        JToken? accept = serialized["accept"];
+        Assert.NotNull(accept);
+        Assert.Equal(JTokenType.Boolean, accept.Type);
+        Assert.False(accept.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestAcceptParametersDeviceIdGetterReturnsValue()
     {
         HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", "myDevice");
-        Assert.That(parameters.DeviceId, Is.EqualTo("myDevice"));
+        Assert.Equal("myDevice", parameters.DeviceId);
     }
 
-    [Test]
+    [Fact]
     public void TestAcceptParametersDeviceIdSetterSetsValue()
     {
         HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", "myDevice");
         parameters.DeviceId = "myNewDevice";
-        Assert.That(parameters.DeviceId, Is.EqualTo("myNewDevice"));
+        Assert.Equal("myNewDevice", parameters.DeviceId);
     }
 
-    [Test]
+    [Fact]
     public void TestAcceptParametersThrowsWhenGettingDeviceIdWhenNull()
     {
         HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", null!);
-        Assert.That(() => _ = parameters.DeviceId, Throws.InvalidOperationException.With.Message.EqualTo("DeviceId cannot be null"));
+        Assert.Equal("DeviceId cannot be null", Assert.ThrowsAny<InvalidOperationException>(() => _ = parameters.DeviceId).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestAcceptParametersThrowsWhenSettingDeviceIdToNull()
     {
         HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", "myDevice");
-        Assert.That(() => parameters.DeviceId = null!, Throws.ArgumentNullException);
+        Assert.Throws<ArgumentNullException>(() => parameters.DeviceId = null!);
     }
 }

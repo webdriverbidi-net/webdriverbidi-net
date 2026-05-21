@@ -2,64 +2,55 @@ namespace WebDriverBiDi;
 
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class EventInfoTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateEventArgsFromEventInfo()
     {
         EventInfo<TestEventArgs> eventInfo = new(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
         TestEventArgs eventArgs = eventInfo.ToEventArgs<TestEventArgs>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.ParamName, Is.EqualTo("paramValue"));
-            Assert.That(eventArgs.AdditionalData, Has.Count.EqualTo(0));
-            Assert.That(eventArgs with { }, Is.EqualTo(eventArgs));
-        }
+
+        Assert.Equal("paramValue", eventArgs.ParamName);
+        Assert.Empty(eventArgs.AdditionalData);
+        Assert.Equal(eventArgs, eventArgs with { });
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToInvalidTypeThrows()
     {
         EventInfo<TestInvalidEventData> eventInfo = new(new TestInvalidEventData(), ReceivedDataDictionary.EmptyDictionary);
-        Assert.That(() => eventInfo.ToEventArgs<TestParameterizedEventArgs>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Could not produce an EventArgs of type"));
+        Assert.Contains("Could not produce an EventArgs of type", Assert.ThrowsAny<WebDriverBiDiException>(() => eventInfo.ToEventArgs<TestParameterizedEventArgs>()).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCreateEventArgsFromFactoryWithSameType()
     {
         EventInfo<TestEventArgs> eventInfo = new(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
         TestEventArgs eventArgs = eventInfo.ToEventArgs(data => data);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.ParamName, Is.EqualTo("paramValue"));
-            Assert.That(eventArgs.AdditionalData, Has.Count.EqualTo(0));
-        }
+
+        Assert.Equal("paramValue", eventArgs.ParamName);
+        Assert.Empty(eventArgs.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCreateEventArgsFromFactoryWithDifferentType()
     {
         EventInfo<TestValidEventData> eventInfo = new(new TestValidEventData("eventName"), ReceivedDataDictionary.EmptyDictionary);
         TestParameterizedEventArgs eventArgs = eventInfo.ToEventArgs(data => new TestParameterizedEventArgs(data));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.EventName, Is.EqualTo("eventName"));
-            Assert.That(eventArgs.AdditionalData, Has.Count.EqualTo(0));
-        }
+
+        Assert.Equal("eventName", eventArgs.EventName);
+        Assert.Empty(eventArgs.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestFactoryOverloadSetsAdditionalData()
     {
         Dictionary<string, object?> additionalDataValues = new() { ["extra"] = "value" };
         ReceivedDataDictionary additionalData = new(additionalDataValues);
         EventInfo<TestEventArgs> eventInfo = new(new TestEventArgs(), additionalData);
         TestEventArgs eventArgs = eventInfo.ToEventArgs(data => data);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.AdditionalData, Has.Count.EqualTo(1));
-            Assert.That(eventArgs.AdditionalData["extra"], Is.EqualTo("value"));
-        }
+
+        Assert.Single(eventArgs.AdditionalData);
+        Assert.Equal("value", eventArgs.AdditionalData["extra"]);
     }
 }

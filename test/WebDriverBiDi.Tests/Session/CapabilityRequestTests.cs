@@ -3,19 +3,18 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class CapabilityRequestTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerialize()
     {
         CapabilityRequest capabilities = new();
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Is.Empty);
+        Assert.Empty(result);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithBrowserName()
     {
         CapabilityRequest capabilities = new()
@@ -24,16 +23,16 @@ public class CapabilityRequestTests
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("browserName"));
-            Assert.That(result["browserName"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(result["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("browserName"));
+        JToken? browserName = result["browserName"];
+        Assert.NotNull(browserName);
+        Assert.Equal(JTokenType.String, browserName.Type);
+        Assert.Equal("greatBrowser", browserName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithBrowserVersion()
     {
         CapabilityRequest capabilities = new()
@@ -42,16 +41,16 @@ public class CapabilityRequestTests
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("browserVersion"));
-            Assert.That(result["browserVersion"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(result["browserVersion"]!.Value<string>(), Is.EqualTo("101.5b"));
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("browserVersion"));
+        JToken? browserVersion = result["browserVersion"];
+        Assert.NotNull(browserVersion);
+        Assert.Equal(JTokenType.String, browserVersion.Type);
+        Assert.Equal("101.5b", browserVersion.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithPlatformName()
     {
         CapabilityRequest capabilities = new()
@@ -60,16 +59,16 @@ public class CapabilityRequestTests
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("platformName"));
-            Assert.That(result["platformName"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(result["platformName"]!.Value<string>(), Is.EqualTo("oddOS"));
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("platformName"));
+        JToken? platformName = result["platformName"];
+        Assert.NotNull(platformName);
+        Assert.Equal(JTokenType.String, platformName.Type);
+        Assert.Equal("oddOS", platformName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithAcceptInsecureCertificatesTrue()
     {
         CapabilityRequest capabilities = new()
@@ -78,16 +77,16 @@ public class CapabilityRequestTests
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("acceptInsecureCerts"));
-            Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.True);
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("acceptInsecureCerts"));
+        JToken? acceptInsecureCerts = result["acceptInsecureCerts"];
+        Assert.NotNull(acceptInsecureCerts);
+        Assert.Equal(JTokenType.Boolean, acceptInsecureCerts.Type);
+        Assert.True(acceptInsecureCerts.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithAcceptInsecureCertificatesFalse()
     {
         CapabilityRequest capabilities = new()
@@ -96,16 +95,16 @@ public class CapabilityRequestTests
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("acceptInsecureCerts"));
-            Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.False);
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("acceptInsecureCerts"));
+        JToken? acceptInsecureCerts = result["acceptInsecureCerts"];
+        Assert.NotNull(acceptInsecureCerts);
+        Assert.Equal(JTokenType.Boolean, acceptInsecureCerts.Type);
+        Assert.False(acceptInsecureCerts.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithUnhandledPromptBehavior()
     {
         CapabilityRequest capabilities = new()
@@ -117,23 +116,25 @@ public class CapabilityRequestTests
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("unhandledPromptBehavior"));
-            Assert.That(result["unhandledPromptBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? proxyObject = result["unhandledPromptBehavior"] as JObject;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyObject, Has.Count.EqualTo(1));
-            Assert.That(proxyObject, Contains.Key("alert"));
-            Assert.That(proxyObject!["alert"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(proxyObject["alert"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("unhandledPromptBehavior"));
+        JToken? unhandledPromptBehaviorToken = result["unhandledPromptBehavior"];
+        Assert.NotNull(unhandledPromptBehaviorToken);
+        Assert.Equal(JTokenType.Object, unhandledPromptBehaviorToken.Type);
+
+        JObject? proxyObject = unhandledPromptBehaviorToken as JObject;
+        Assert.NotNull(proxyObject);
+        Assert.Single(proxyObject);
+
+        Assert.True(proxyObject.ContainsKey("alert"));
+        JToken? alert = proxyObject["alert"];
+        Assert.NotNull(alert);
+        Assert.Equal(JTokenType.String, alert.Type);
+        Assert.Equal("accept", alert.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithProxy()
     {
         CapabilityRequest capabilities = new()
@@ -142,61 +143,68 @@ public class CapabilityRequestTests
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("proxy"));
-            Assert.That(result["proxy"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? proxyObject = result["proxy"] as JObject;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(proxyObject, Has.Count.EqualTo(2));
-            Assert.That(proxyObject, Contains.Key("proxyType"));
-            Assert.That(proxyObject!["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(proxyObject["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(proxyObject!, Contains.Key("httpProxy"));
-            Assert.That(proxyObject!["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(proxyObject["httpProxy"]!.Value<string>(), Is.EqualTo("http.proxy"));
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("proxy"));
+        JToken? proxyToken = result["proxy"];
+        Assert.NotNull(proxyToken);
+        Assert.Equal(JTokenType.Object, proxyToken.Type);
+
+        JObject? proxyObject = proxyToken as JObject;
+        Assert.NotNull(proxyObject);
+        Assert.Equal(2, proxyObject.Count);
+
+        Assert.True(proxyObject.ContainsKey("proxyType"));
+        JToken? proxyType = proxyObject["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal(JTokenType.String, proxyType.Type);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(proxyObject.ContainsKey("httpProxy"));
+        JToken? httpProxy = proxyObject["httpProxy"];
+        Assert.NotNull(httpProxy);
+        Assert.Equal(JTokenType.String, httpProxy.Type);
+        Assert.Equal("http.proxy", httpProxy.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithAdditionalCapabilities()
     {
         CapabilityRequest capabilities = new();
         capabilities.AdditionalCapabilities["capName"] = "capValue";
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("capName"));
-            Assert.That(result["capName"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(result["capName"]!.Value<string>(), Is.EqualTo("capValue"));
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("capName"));
+        JToken? capName = result["capName"];
+        Assert.NotNull(capName);
+        Assert.Equal(JTokenType.String, capName.Type);
+        Assert.Equal("capValue", capName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithAdditionalCapabilitiesObject()
     {
         CapabilityRequest capabilities = new();
         capabilities.AdditionalCapabilities["additional"] = new Dictionary<string, object?>() { { "capName", "capValue" } };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Contains.Key("additional"));
-            Assert.That(result["additional"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? additionalObject = result["additional"] as JObject;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(additionalObject, Has.Count.EqualTo(1));
-            Assert.That(additionalObject!, Contains.Key("capName"));
-            Assert.That(additionalObject!["capName"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(additionalObject!["capName"]!.Value<string>(), Is.EqualTo("capValue"));
-        }
+        Assert.Single(result);
+
+        Assert.True(result.ContainsKey("additional"));
+        JToken? additionalToken = result["additional"];
+        Assert.NotNull(additionalToken);
+        Assert.Equal(JTokenType.Object, additionalToken.Type);
+
+        JObject? additionalObject = additionalToken as JObject;
+        Assert.NotNull(additionalObject);
+        Assert.Single(additionalObject);
+
+        Assert.True(additionalObject.ContainsKey("capName"));
+        JToken? capName = additionalObject["capName"];
+        Assert.NotNull(capName);
+        Assert.Equal(JTokenType.String, capName.Type);
+        Assert.Equal("capValue", capName.Value<string>());
     }
 }

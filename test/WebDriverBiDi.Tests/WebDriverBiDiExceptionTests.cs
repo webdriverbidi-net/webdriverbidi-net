@@ -1,39 +1,32 @@
 namespace WebDriverBiDi;
 
-[TestFixture]
 public class WebDriverBiDiExceptionTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateWithNoArguments()
     {
         WebDriverBiDiException exception = new();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exception.Message, Is.Not.Null);
-            Assert.That(exception.InnerException, Is.Null);
-        }
+
+        Assert.NotNull(exception.Message);
+        Assert.Null(exception.InnerException);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCreate()
     {
         WebDriverBiDiException exception = new("Test exception message");
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exception.Message, Is.EqualTo("Test exception message"));
-            Assert.That(exception.InnerException, Is.Null);
-        }
+
+        Assert.Equal("Test exception message", exception.Message);
+        Assert.Null(exception.InnerException);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCreateWithInnerException()
     {
         InvalidOperationException innerException = new("inner exception message");
         WebDriverBiDiException exception = new("Test exception message", innerException);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exception.Message, Is.EqualTo("Test exception message"));
-            Assert.That(exception.InnerException, Is.SameAs(innerException));
-        }
+
+        Assert.Equal("Test exception message", exception.Message);
+        Assert.Same(innerException, exception.InnerException);
     }
 }

@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SetScreenOrientationOverrideCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SetScreenOrientationOverrideCommandResult? result = JsonSerializer.Deserialize<SetScreenOrientationOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SetScreenOrientationOverrideCommandResult? result = JsonSerializer.Deserialize<SetScreenOrientationOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SetScreenOrientationOverrideCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

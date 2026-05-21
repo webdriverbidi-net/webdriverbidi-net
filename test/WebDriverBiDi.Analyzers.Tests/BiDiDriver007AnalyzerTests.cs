@@ -12,14 +12,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver007 analyzer that detects blocking operations in event handlers.
 /// </summary>
-[TestFixture]
 public class BiDiDriver007AnalyzerTests
 {
     /// <summary>
     /// Tests that blocking operations in event handlers report a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithThreadSleep_ReportsWarning()
     {
         string test = """
@@ -91,14 +90,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that Task.Wait in event handlers reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithTaskWait_ReportsWarning()
     {
         string test = """
@@ -170,14 +169,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that .Result property access in event handlers reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithTaskResult_ReportsWarning()
     {
         string test = """
@@ -249,14 +248,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that handlers with RunHandlerAsynchronously option do not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithRunHandlerAsynchronouslyOption_NoDiagnostic()
     {
         string test = """
@@ -323,14 +322,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that GetAwaiter().GetResult() pattern reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithGetAwaiterGetResult_ReportsWarning()
     {
         string test = """
@@ -402,14 +401,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-AddObserver invocations are not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonAddObserverInvocation_NoDiagnostic()
     {
         string test = """
@@ -469,14 +468,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that method returning non-EventObserver is not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MethodReturningNonEventObserver_NoDiagnostic()
     {
         string test = """
@@ -531,14 +530,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that parenthesized lambda expressions are analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ParenthesizedLambda_WithBlockingOperation_ReportsWarning()
     {
         string test = """
@@ -610,14 +609,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple blocking operations report multiple warnings.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithMultipleBlockingOperations_ReportsMultipleWarnings()
     {
         string test = """
@@ -697,14 +696,14 @@ public class BiDiDriver007AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected1);
         testState.ExpectedDiagnostics.Add(expected2);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that named methods with blocking operations report a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NamedMethod_WithThreadSleep_ReportsWarning()
     {
         string test = """
@@ -779,14 +778,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that named methods with Task.Wait report a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NamedMethod_WithTaskWait_ReportsWarning()
     {
         string test = """
@@ -860,14 +859,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that named methods with Task.Result report a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NamedMethod_WithTaskResult_ReportsWarning()
     {
         string test = """
@@ -941,14 +940,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that named methods with no blocking operations do not report a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NamedMethod_WithNoBlockingOperations_NoDiagnostic()
     {
         string test = """
@@ -1020,14 +1019,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that member access method references with blocking operations report a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MemberAccessMethodReference_WithBlockingOperation_ReportsWarning()
     {
         string test = """
@@ -1102,53 +1101,53 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests SupportedDiagnostics property.
     /// </summary>
-    [Test]
+    [Fact]
     public void SupportedDiagnostics_ContainsBIDI007()
     {
         BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.That(diagnostics, Has.Length.EqualTo(1));
-        Assert.That(diagnostics[0].Id, Is.EqualTo(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId));
+        Assert.Single(diagnostics);
+        Assert.Equal(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, diagnostics[0].Id);
     }
 
     /// <summary>
     /// Tests GetFixAllProvider property.
     /// </summary>
-    [Test]
+    [Fact]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
         BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider provider = new();
         Microsoft.CodeAnalysis.CodeFixes.FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
-        Assert.That(fixAllProvider, Is.Not.Null);
-        Assert.That(fixAllProvider, Is.EqualTo(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer));
+        Assert.NotNull(fixAllProvider);
+        Assert.Equal(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer, fixAllProvider);
     }
 
     /// <summary>
     /// Tests FixableDiagnosticIds property.
     /// </summary>
-    [Test]
+    [Fact]
     public void FixableDiagnosticIds_ContainsBIDI007()
     {
         BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider provider = new();
         System.Collections.Immutable.ImmutableArray<string> ids = provider.FixableDiagnosticIds;
 
-        Assert.That(ids, Has.Length.EqualTo(1));
-        Assert.That(ids[0], Is.EqualTo(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId));
+        Assert.Single(ids);
+        Assert.Equal(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, ids[0]);
     }
 
     /// <summary>
     /// Tests that AddObserver invoked via delegate is not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_ViaDelegate_NoDiagnostic()
     {
         string test = """
@@ -1209,14 +1208,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with unresolved method symbol is not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_UnresolvedMethod_NoDiagnostic()
     {
         string test = """
@@ -1276,14 +1275,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with no arguments is not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_NoArguments_NoDiagnostic()
     {
         string test = """
@@ -1339,14 +1338,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that handler with expression body method is analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ExpressionBodyMethod_WithBlockingOperation_ReportsWarning()
     {
         string test = """
@@ -1421,14 +1420,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that local function with blocking operation reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task LocalFunction_WithBlockingOperation_ReportsWarning()
     {
         string test = """
@@ -1503,14 +1502,14 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that invocations with unresolved method symbols in handler body are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task HandlerBody_WithUnresolvedMethodInvocation_NoDiagnostic()
     {
         string test = """
@@ -1576,14 +1575,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that simple lambda expression without block body is handled.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SimpleLambdaExpression_WithoutBlockBody_NoDiagnostic()
     {
         string test = """
@@ -1645,14 +1644,14 @@ public class BiDiDriver007AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that expression with Task.Result in simple expression body is detected.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SimpleLambda_WithExpressionBodyTaskResult_ReportsWarning()
     {
         string test = """
@@ -1720,8 +1719,7 @@ public class BiDiDriver007AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }
-
 

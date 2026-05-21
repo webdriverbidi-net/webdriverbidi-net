@@ -3,77 +3,100 @@ namespace WebDriverBiDi.Input;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class WheelSourceActionsTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         WheelSourceActions properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("id"));
-            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("wheel"));
-            Assert.That(serialized, Contains.Key("actions"));
-            Assert.That(serialized["actions"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["actions"]!.Value<JArray>(), Is.Empty);
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("id"));
+        JToken? id = serialized["id"];
+        Assert.NotNull(id);
+        Assert.Equal(JTokenType.String, id.Type);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("wheel", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("actions"));
+        JToken? actionsToken = serialized["actions"];
+        Assert.NotNull(actionsToken);
+        Assert.Equal(JTokenType.Array, actionsToken.Type);
+        JArray? actionsArray = actionsToken.Value<JArray>();
+        Assert.NotNull(actionsArray);
+        Assert.Empty(actionsArray);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithActions()
     {
         WheelSourceActions properties = new();
         properties.Actions.Add(new WheelScrollAction());
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("id"));
-            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"], Is.Not.Null);
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("wheel"));
-            Assert.That(serialized["actions"], Is.Not.Null);
-            Assert.That(serialized, Contains.Key("actions"));
-            Assert.That(serialized["actions"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["actions"]!.Value<JArray>(), Has.Count.EqualTo(1));
-            Assert.That(serialized["actions"]![0], Is.Not.Null);
-            Assert.That(serialized["actions"]![0]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? action = serialized["actions"]![0]!.Value<JObject>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(action, Is.Not.Null);
-            Assert.That(action, Has.Count.EqualTo(5));
-            Assert.That(action, Contains.Key("type"));
-            Assert.That(action!["type"], Is.Not.Null);
-            Assert.That(action!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(action!["type"]!.Value<string>(), Is.EqualTo("scroll"));
-            Assert.That(action, Contains.Key("x"));
-            Assert.That(action!["x"], Is.Not.Null);
-            Assert.That(action!["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(action!["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(action, Contains.Key("y"));
-            Assert.That(action!["y"], Is.Not.Null);
-            Assert.That(action!["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(action!["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(action, Contains.Key("deltaX"));
-            Assert.That(action!["deltaX"], Is.Not.Null);
-            Assert.That(action!["deltaX"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(action!["deltaX"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(action, Contains.Key("deltaY"));
-            Assert.That(action!["deltaY"], Is.Not.Null);
-            Assert.That(action!["deltaY"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(action!["deltaY"]!.Value<long>(), Is.EqualTo(0));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("id"));
+        JToken? id = serialized["id"];
+        Assert.NotNull(id);
+        Assert.Equal(JTokenType.String, id.Type);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("wheel", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("actions"));
+        JToken? actionsToken = serialized["actions"];
+        Assert.NotNull(actionsToken);
+        Assert.Equal(JTokenType.Array, actionsToken.Type);
+        JArray? actionsArray = actionsToken.Value<JArray>();
+        Assert.NotNull(actionsArray);
+        Assert.Single(actionsArray);
+
+        JToken? actionToken = actionsArray[0];
+        Assert.NotNull(actionToken);
+        Assert.Equal(JTokenType.Object, actionToken.Type);
+
+        JObject? action = actionToken.Value<JObject>();
+        Assert.NotNull(action);
+        Assert.Equal(5, action.Count);
+
+        Assert.True(action.ContainsKey("type"));
+        JToken? actionType = action["type"];
+        Assert.NotNull(actionType);
+        Assert.Equal(JTokenType.String, actionType.Type);
+        Assert.Equal("scroll", actionType.Value<string>());
+
+        Assert.True(action.ContainsKey("x"));
+        JToken? x = action["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0, x.Value<long>());
+
+        Assert.True(action.ContainsKey("y"));
+        JToken? y = action["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(action.ContainsKey("deltaX"));
+        JToken? deltaX = action["deltaX"];
+        Assert.NotNull(deltaX);
+        Assert.Equal(JTokenType.Integer, deltaX.Type);
+        Assert.Equal(0L, deltaX.Value<long>());
+
+        Assert.True(action.ContainsKey("deltaY"));
+        JToken? deltaY = action["deltaY"];
+        Assert.NotNull(deltaY);
+        Assert.Equal(JTokenType.Integer, deltaY.Type);
+        Assert.Equal(0, deltaY.Value<long>());
     }
 }

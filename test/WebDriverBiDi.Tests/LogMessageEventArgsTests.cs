@@ -1,25 +1,24 @@
 namespace WebDriverBiDi;
 
-[TestFixture]
 public class LogMessageEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateConnectionDataReceivedEventArgs()
     {
         DateTime testTime = DateTime.Now;
         LogMessageEventArgs eventArgs = new("log message", WebDriverBiDiLogLevel.Info, "test component");
-        Assert.That(eventArgs.Message, Is.EqualTo("log message"));
-        Assert.That(eventArgs.Level, Is.EqualTo(WebDriverBiDiLogLevel.Info));
-        Assert.That(eventArgs.ComponentName, Is.EqualTo("test component"));
-        Assert.That(eventArgs.Timestamp, Is.GreaterThanOrEqualTo(testTime));
-        Assert.That(eventArgs.AdditionalData, Is.Empty);
+        Assert.Equal("log message", eventArgs.Message);
+        Assert.Equal(WebDriverBiDiLogLevel.Info, eventArgs.Level);
+        Assert.Equal("test component", eventArgs.ComponentName);
+        Assert.True(eventArgs.Timestamp >= testTime);
+        Assert.Empty(eventArgs.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         LogMessageEventArgs eventArgs = new("log message", WebDriverBiDiLogLevel.Info, "test component");
         LogMessageEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 }

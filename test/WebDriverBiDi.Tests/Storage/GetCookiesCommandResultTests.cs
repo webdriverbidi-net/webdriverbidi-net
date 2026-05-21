@@ -4,10 +4,9 @@ using System.Text.Json;
 
 using WebDriverBiDi.Network;
 
-[TestFixture]
 public class GetCookiesCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
@@ -39,31 +38,29 @@ public class GetCookiesCommandResultTests
                       }
                       """;
         GetCookiesCommandResult? result = JsonSerializer.Deserialize<GetCookiesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Cookies, Is.Not.Null);
-            Assert.That(result.Cookies, Has.Count.EqualTo(1));
-            Assert.That(result.Cookies[0].Name, Is.EqualTo("cookieName"));
-            Assert.That(result.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(result.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(result.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(result.Cookies[0].Path, Is.EqualTo("cookiePath"));
-            Assert.That(result.Cookies[0].Size, Is.EqualTo(123));
-            Assert.That(result.Cookies[0].HttpOnly, Is.False);
-            Assert.That(result.Cookies[0].Secure, Is.True);
-            Assert.That(result.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
-            Assert.That(result.Cookies[0].Expires, Is.EqualTo(expireTime));
-            Assert.That(result.PartitionKey, Is.Not.Null);
-            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-            Assert.That(result.PartitionKey.AdditionalData, Has.Count.EqualTo(1));
-            Assert.That(result.PartitionKey.AdditionalData, Contains.Key("extraPropertyName"));
-            Assert.That(result.PartitionKey.AdditionalData["extraPropertyName"], Is.EqualTo("extraPropertyValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.NotNull(result.Cookies);
+        Assert.Single(result.Cookies);
+        Assert.Equal("cookieName", result.Cookies[0].Name);
+        Assert.Equal(BytesValueType.String, result.Cookies[0].Value.Type);
+        Assert.Equal("cookieValue", result.Cookies[0].Value.Value);
+        Assert.Equal("cookieDomain", result.Cookies[0].Domain);
+        Assert.Equal("cookiePath", result.Cookies[0].Path);
+        Assert.Equal(123, result.Cookies[0].Size);
+        Assert.False(result.Cookies[0].HttpOnly);
+        Assert.True(result.Cookies[0].Secure);
+        Assert.Equal(CookieSameSiteValue.Lax, result.Cookies[0].SameSite);
+        Assert.Equal(expireTime, result.Cookies[0].Expires);
+        Assert.NotNull(result.PartitionKey);
+        Assert.Equal("myUserContext", result.PartitionKey.UserContextId);
+        Assert.Equal("mySourceOrigin", result.PartitionKey.SourceOrigin);
+        Assert.Single(result.PartitionKey.AdditionalData);
+        Assert.True(result.PartitionKey.AdditionalData.ContainsKey("extraPropertyName"));
+        Assert.Equal("extraPropertyValue", result.PartitionKey.AdditionalData["extraPropertyName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNoCookieData()
     {
         string json = """
@@ -73,19 +70,17 @@ public class GetCookiesCommandResultTests
                       }
                       """;
         GetCookiesCommandResult? result = JsonSerializer.Deserialize<GetCookiesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Cookies, Is.Not.Null);
-            Assert.That(result.Cookies, Is.Empty);
-            Assert.That(result.PartitionKey, Is.Not.Null);
-            Assert.That(result.PartitionKey.UserContextId, Is.Null);
-            Assert.That(result.PartitionKey.SourceOrigin, Is.Null);
-            Assert.That(result.PartitionKey.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.NotNull(result.Cookies);
+        Assert.Empty(result.Cookies);
+        Assert.NotNull(result.PartitionKey);
+        Assert.Null(result.PartitionKey.UserContextId);
+        Assert.Null(result.PartitionKey.SourceOrigin);
+        Assert.Empty(result.PartitionKey.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
@@ -117,12 +112,12 @@ public class GetCookiesCommandResultTests
                       }
                       """;
         GetCookiesCommandResult? result = JsonSerializer.Deserialize<GetCookiesCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         GetCookiesCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingCookiesThrows()
     {
         string json = """
@@ -130,10 +125,10 @@ public class GetCookiesCommandResultTests
                         "partitionKey": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidCookiesDataTypeThrows()
     {
         string json = """
@@ -141,10 +136,10 @@ public class GetCookiesCommandResultTests
                         "cookies": "invalidCookieArrayType", "partitionKey": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingPartitionThrows()
     {
         string json = """
@@ -152,10 +147,10 @@ public class GetCookiesCommandResultTests
                         "cookies": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidPartitionDataTypeThrows()
     {
         string json = """
@@ -163,6 +158,6 @@ public class GetCookiesCommandResultTests
                         "cookies": [], "partitionKey": "invalidPartitionType"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json));
     }
 }

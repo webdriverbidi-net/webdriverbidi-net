@@ -12,10 +12,9 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver021 analyzer.
 /// </summary>
-[TestFixture]
 public class BiDiDriver021AnalyzerTests
 {
-    [Test]
+    [Fact]
     public async Task StartCapturing_NeverRead_ReportsWarning()
     {
         string testCode = """
@@ -45,7 +44,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task StartCapturing_FollowedByWaitForAsync_NoDiagnostic()
     {
         string testCode = """
@@ -72,7 +71,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task StartCapturing_FollowedByWaitForCapturedTasksAsync_NoDiagnostic()
     {
         string testCode = """
@@ -99,7 +98,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task StartCapturing_FollowedByGetCapturedTasks_NoDiagnostic()
     {
         string testCode = """
@@ -125,7 +124,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task StartCapturing_ThenStopCapturing_NeverRead_ReportsWarning()
     {
         string testCode = """
@@ -156,7 +155,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task StartCapturing_Twice_SecondNeverRead_ReportsOnlySecond()
     {
         // First session is satisfied; second is not.
@@ -191,7 +190,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task NoStartCapturing_NoDiagnostic()
     {
         string testCode = """
@@ -215,7 +214,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleObservers_OnlyOneUnread_ReportsOneWarning()
     {
         string testCode = """
@@ -250,7 +249,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ObserverPassedAsParameter_NoDiagnostic()
     {
         // Parameter-passed observers are not tracked.
@@ -273,7 +272,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MethodWithoutBody_NoDiagnostic()
     {
         string testCode = """
@@ -293,7 +292,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task StartCapturing_ReadInNestedBlock_NoDiagnostic()
     {
         // The read is inside an if-block but the analyzer sees it within the same method body.
@@ -324,7 +323,7 @@ public class BiDiDriver021AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task TwoSessionsBothRead_NoDiagnostic()
     {
         string testCode = """

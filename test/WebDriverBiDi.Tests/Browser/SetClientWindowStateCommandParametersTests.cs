@@ -3,35 +3,37 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetClientWindowStateCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetClientWindowStateCommandParameters properties = new("myWindowId");
-        Assert.That(properties.MethodName, Is.EqualTo("browser.setClientWindowState"));
+        Assert.Equal("browser.setClientWindowState", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetClientWindowStateCommandParameters properties = new("myWindowId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientWindow"));
-            Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["clientWindow"]!.Value<string>(), Is.EqualTo("myWindowId"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("normal"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("clientWindow"));
+        JToken? clientWindow = serialized["clientWindow"];
+        Assert.NotNull(clientWindow);
+        Assert.Equal(JTokenType.String, clientWindow.Type);
+        Assert.Equal("myWindowId", clientWindow.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("normal", state.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithSpecifiedSizeAndLocation()
     {
         SetClientWindowStateCommandParameters properties = new("myWindowId")
@@ -43,31 +45,46 @@ public class SetClientWindowStateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(6));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientWindow"));
-            Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["clientWindow"]!.Value<string>(), Is.EqualTo("myWindowId"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("normal"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<ulong>(), Is.EqualTo(100));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<ulong>(), Is.EqualTo(200));
-            Assert.That(serialized, Contains.Key("width"));
-            Assert.That(serialized["width"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["width"]!.Value<ulong>(), Is.EqualTo(300));
-            Assert.That(serialized, Contains.Key("height"));
-            Assert.That(serialized["height"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["height"]!.Value<ulong>(), Is.EqualTo(400));
-        }
+        Assert.Equal(6, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("clientWindow"));
+        JToken? clientWindow = serialized["clientWindow"];
+        Assert.NotNull(clientWindow);
+        Assert.Equal(JTokenType.String, clientWindow.Type);
+        Assert.Equal("myWindowId", clientWindow.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("normal", state.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(100UL, x.Value<ulong>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(200UL, y.Value<ulong>());
+
+        Assert.True(serialized.ContainsKey("width"));
+        JToken? width = serialized["width"];
+        Assert.NotNull(width);
+        Assert.Equal(JTokenType.Integer, width.Type);
+        Assert.Equal(300UL, width.Value<ulong>());
+
+        Assert.True(serialized.ContainsKey("height"));
+        JToken? height = serialized["height"];
+        Assert.NotNull(height);
+        Assert.Equal(JTokenType.Integer, height.Type);
+        Assert.Equal(400UL, height.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithMaximizedState()
     {
         SetClientWindowStateCommandParameters properties = new("myWindowId")
@@ -80,19 +97,22 @@ public class SetClientWindowStateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientWindow"));
-            Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["clientWindow"]!.Value<string>(), Is.EqualTo("myWindowId"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("maximized"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("clientWindow"));
+        JToken? clientWindow = serialized["clientWindow"];
+        Assert.NotNull(clientWindow);
+        Assert.Equal(JTokenType.String, clientWindow.Type);
+        Assert.Equal("myWindowId", clientWindow.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("maximized", state.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithMinimizedState()
     {
         SetClientWindowStateCommandParameters properties = new("myWindowId")
@@ -105,19 +125,22 @@ public class SetClientWindowStateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientWindow"));
-            Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["clientWindow"]!.Value<string>(), Is.EqualTo("myWindowId"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("minimized"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("clientWindow"));
+        JToken? clientWindow = serialized["clientWindow"];
+        Assert.NotNull(clientWindow);
+        Assert.Equal(JTokenType.String, clientWindow.Type);
+        Assert.Equal("myWindowId", clientWindow.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("minimized", state.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithFullscreenState()
     {
         SetClientWindowStateCommandParameters properties = new("myWindowId")
@@ -130,15 +153,18 @@ public class SetClientWindowStateCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientWindow"));
-            Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["clientWindow"]!.Value<string>(), Is.EqualTo("myWindowId"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("fullscreen"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("clientWindow"));
+        JToken? clientWindow = serialized["clientWindow"];
+        Assert.NotNull(clientWindow);
+        Assert.Equal(JTokenType.String, clientWindow.Type);
+        Assert.Equal("myWindowId", clientWindow.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("fullscreen", state.Value<string>());
     }
 }

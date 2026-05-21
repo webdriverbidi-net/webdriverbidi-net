@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ExceptionDetailsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -23,18 +22,16 @@ public class ExceptionDetailsTests
                       }
                       """;
         ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json);
-        Assert.That(exceptionDetails, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exceptionDetails.Text, Is.EqualTo("exception message"));
-            Assert.That(exceptionDetails.LineNumber, Is.EqualTo(1));
-            Assert.That(exceptionDetails.ColumnNumber, Is.EqualTo(5));
-            Assert.That(exceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myException"));
-            Assert.That(exceptionDetails.StackTrace.CallFrames, Is.Empty);
-        }
+        Assert.NotNull(exceptionDetails);
+
+        Assert.Equal("exception message", exceptionDetails.Text);
+        Assert.Equal(1, exceptionDetails.LineNumber);
+        Assert.Equal(5, exceptionDetails.ColumnNumber);
+        Assert.Equal("myException", exceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
+        Assert.Empty(exceptionDetails.StackTrace.CallFrames);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -52,12 +49,12 @@ public class ExceptionDetailsTests
                       }
                       """;
         ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json);
-        Assert.That(exceptionDetails, Is.Not.Null);
+        Assert.NotNull(exceptionDetails);
         ExceptionDetails copy = exceptionDetails with { };
-        Assert.That(copy, Is.EqualTo(exceptionDetails));
+        Assert.Equal(exceptionDetails, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingTextThrows()
     {
         string json = """
@@ -73,10 +70,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidTextTypeThrows()
     {
         string json = """
@@ -93,10 +90,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingLineNumberThrows()
     {
         string json = """
@@ -112,10 +109,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidLineNumberTypeThrows()
     {
         string json = """
@@ -132,10 +129,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingColumnNumberThrows()
     {
         string json = """
@@ -151,10 +148,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidColumnNumberTypeThrows()
     {
         string json = """
@@ -171,10 +168,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingExceptionThrows()
     {
         string json = """
@@ -187,10 +184,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidExceptionTypeThrows()
     {
         string json = """
@@ -204,10 +201,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingStackTraceThrows()
     {
         string json = """
@@ -221,10 +218,10 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidStackTraceTypeThrows()
     {
         string json = """
@@ -239,6 +236,6 @@ public class ExceptionDetailsTests
                         "stackTrace": "stacktrace"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ExceptionDetails>(json));
     }
 }

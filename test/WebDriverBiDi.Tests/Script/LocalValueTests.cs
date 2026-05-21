@@ -3,330 +3,379 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class LocalValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeUndefined()
     {
         LocalValue value = LocalValue.Undefined;
-        Assert.That(value, Is.InstanceOf<LocalArgumentValue>());
-        Assert.That(((LocalArgumentValue)value).Value, Is.Null);
+        Assert.IsType<LocalArgumentValue>(value);
+        Assert.Null(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(1));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("undefined"));
-        }
+
+        Assert.Single(parsed);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("undefined", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeNull()
     {
         LocalValue value = LocalValue.Null;
-        Assert.That(((LocalArgumentValue)value).Value, Is.Null);
+        Assert.Null(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("null"));
-        }
+        Assert.Single(parsed);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("null", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeString()
     {
         LocalValue value = LocalValue.String("hello");
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("hello"));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("string", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.String, parsedValue.Type);
+        Assert.Equal("hello", parsedValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInteger()
     {
         LocalValue value = LocalValue.Number(123);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Integer, parsedValue.Type);
+        Assert.Equal(123L, parsedValue.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeLong()
     {
         LocalValue value = LocalValue.Number(123L);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Integer, parsedValue.Type);
+        Assert.Equal(123L, parsedValue.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeDecimal()
     {
         LocalValue value = LocalValue.Number(123.23m);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(123.23));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Float, parsedValue.Type);
+        Assert.Equal(123.23, parsedValue.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeDouble()
     {
         LocalValue value = LocalValue.Number(3.14);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(3.14));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Float, parsedValue.Type);
+        Assert.Equal(3.14, parsedValue.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeNaN()
     {
         LocalValue value = LocalValue.NaN;
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("NaN"));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.String, parsedValue.Type);
+        Assert.Equal("NaN", parsedValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInfinity()
     {
         LocalValue value = LocalValue.Infinity;
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("Infinity"));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.String, parsedValue.Type);
+        Assert.Equal("Infinity", parsedValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeNegativeInfinity()
     {
         LocalValue value = LocalValue.NegativeInfinity;
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-Infinity"));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.String, parsedValue.Type);
+        Assert.Equal("-Infinity", parsedValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeNegativeZero()
     {
         LocalValue value = LocalValue.NegativeZero;
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-0"));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.String, parsedValue.Type);
+        Assert.Equal("-0", parsedValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeZero()
     {
         LocalValue value = LocalValue.Number(0.0);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(0.0));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("number", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Integer, parsedValue.Type);
+        Assert.Equal(0.0, parsedValue.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeBoolean()
     {
         LocalValue value = LocalValue.Boolean(true);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("boolean"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(parsed["value"]!.Value<bool>(), Is.EqualTo(true));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("boolean", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Boolean, parsedValue.Type);
+        Assert.True(parsedValue.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeBigInt()
     {
         LocalValue value = LocalValue.BigInt(123);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("bigint"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("123"));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("bigint", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.String, parsedValue.Type);
+        Assert.Equal("123", parsedValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeDate()
     {
         DateTime actualValue = DateTime.Now;
         string expectedValue = actualValue.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         LocalValue value = LocalValue.Date(actualValue);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("date"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Date));
-            Assert.That(parsed["value"]!.Value<DateTime>().ToString("yyyy-MM-ddTHH:mm:ss.fffZ"), Is.EqualTo(expectedValue));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("date", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Date, parsedValue.Type);
+        Assert.Equal(expectedValue, parsedValue.Value<DateTime>().ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeRegularExpression()
     {
         LocalValue value = LocalValue.RegExp("pattern.*");
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("regexp", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Object, parsedValue.Type);
+
         JObject? valueObject = parsed["value"] as JObject;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(valueObject!, Has.Count.EqualTo(1));
-            Assert.That(valueObject!, Contains.Key("pattern"));
-            Assert.That(valueObject!["pattern"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
-        }
+        Assert.NotNull(valueObject);
+        Assert.Single(valueObject);
+        Assert.True(valueObject.ContainsKey("pattern"));
+        JToken? pattern = valueObject["pattern"];
+        Assert.NotNull(pattern);
+        Assert.Equal(JTokenType.String, pattern.Type);
+        Assert.Equal("pattern.*", pattern.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeRegularExpressionWithFlags()
     {
         LocalValue value = LocalValue.RegExp("pattern.*", "gi");
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("regexp", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Object, parsedValue.Type);
+
         JObject? valueObject = parsed["value"] as JObject;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(valueObject!, Has.Count.EqualTo(2));
-            Assert.That(valueObject!, Contains.Key("pattern"));
-            Assert.That(valueObject!["pattern"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
-            Assert.That(valueObject, Contains.Key("flags"));
-            Assert.That(valueObject["flags"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(valueObject["flags"]!.Value<string>(), Is.EqualTo("gi"));
-        }
+        Assert.NotNull(valueObject);
+        Assert.Equal(2, valueObject.Count);
+        Assert.True(valueObject.ContainsKey("pattern"));
+        JToken? pattern = valueObject["pattern"];
+        Assert.NotNull(pattern);
+        Assert.Equal(JTokenType.String, pattern.Type);
+        Assert.Equal("pattern.*", pattern.Value<string>());
+
+        Assert.True(valueObject.ContainsKey("flags"));
+        JToken? flags = valueObject["flags"];
+        Assert.NotNull(flags);
+        Assert.Equal(JTokenType.String, flags.Type);
+        Assert.Equal("gi", flags.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeArray()
     {
         List<LocalValue> arrayList =
@@ -337,74 +386,89 @@ public class LocalValueTests
             LocalValue.Boolean(true)
         ];
         LocalValue value = LocalValue.Array(arrayList);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("array"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("array", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
+
         JArray? valueObject = parsed["value"] as JArray;
-        Assert.That(valueObject, Is.Not.Null);
-        Assert.That(valueObject, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(valueObject![0].Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? itemObject = valueObject![0] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(itemObject, Contains.Key("value"));
-            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
+        Assert.NotNull(valueObject);
+        Assert.Equal(4, valueObject.Count);
 
-            Assert.That(valueObject[1].Type, Is.EqualTo(JTokenType.Object));
-        }
+        Assert.Equal(JTokenType.Object, valueObject[0].Type);
+
+        JObject? itemObject = valueObject[0] as JObject;
+        Assert.NotNull(itemObject);
+        Assert.Equal(2, itemObject.Count);
+
+        Assert.True(itemObject.ContainsKey("type"));
+        JToken? itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("string", itemType.Value<string>());
+
+        Assert.True(itemObject.ContainsKey("value"));
+        JToken? itemValue = itemObject["value"];
+        Assert.NotNull(itemValue);
+        Assert.Equal(JTokenType.String, itemValue.Type);
+        Assert.Equal("hello", itemValue.Value<string>());
+
+        Assert.Equal(JTokenType.Object, valueObject[1].Type);
+
         itemObject = valueObject[1] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(itemObject, Contains.Key("value"));
-            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
+        Assert.NotNull(itemObject);
+        Assert.Equal(2, itemObject.Count);
 
-            Assert.That(valueObject[2].Type, Is.EqualTo(JTokenType.Object));
-        }
+        Assert.True(itemObject.ContainsKey("type"));
+        itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("number", itemType.Value<string>());
+
+        Assert.True(itemObject.ContainsKey("value"));
+        itemValue = itemObject["value"];
+        Assert.NotNull(itemValue);
+        Assert.Equal(JTokenType.Integer, itemValue.Type);
+        Assert.Equal(123L, itemValue.Value<long>());
+
+        Assert.Equal(JTokenType.Object, valueObject[2].Type);
+
         itemObject = valueObject[2] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("null"));
+        Assert.NotNull(itemObject);
+        Assert.Single(itemObject);
 
-            Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
-        }
+        Assert.True(itemObject.ContainsKey("type"));
+        itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("null", itemType.Value<string>());
+
+        Assert.Equal(JTokenType.Object, valueObject[3].Type);
+
         itemObject = valueObject[3] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("boolean"));
-            Assert.That(itemObject, Contains.Key("value"));
-            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
-        }
+        Assert.NotNull(itemObject);
+        Assert.Equal(2, itemObject.Count);
+
+        Assert.True(itemObject.ContainsKey("type"));
+        itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("boolean", itemType.Value<string>());
+
+        Assert.True(itemObject.ContainsKey("value"));
+        itemValue = itemObject["value"];
+        Assert.NotNull(itemValue);
+        Assert.Equal(JTokenType.Boolean, itemValue.Type);
+        Assert.True(itemValue.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeSet()
     {
         List<LocalValue> arrayList =
@@ -415,72 +479,85 @@ public class LocalValueTests
             LocalValue.Boolean(true)
         ];
         LocalValue value = LocalValue.Set(arrayList);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("set"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("set", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
+
         JArray? valueObject = parsed["value"] as JArray;
-        Assert.That(valueObject, Is.Not.Null);
-        Assert.That(valueObject, Has.Count.EqualTo(4));
+        Assert.NotNull(valueObject);
+        Assert.Equal(4, valueObject.Count);
 
-        Assert.That(valueObject![0].Type, Is.EqualTo(JTokenType.Object));
+        Assert.Equal(JTokenType.Object, valueObject[0].Type);
         JObject? itemObject = valueObject[0] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(itemObject, Contains.Key("value"));
-            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
-        }
+        Assert.NotNull(itemObject);
+        Assert.Equal(2, itemObject.Count);
 
-        Assert.That(valueObject[1].Type, Is.EqualTo(JTokenType.Object));
+        Assert.True(itemObject.ContainsKey("type"));
+        JToken? itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("string", itemType.Value<string>());
+
+        Assert.True(itemObject.ContainsKey("value"));
+        JToken? itemValue = itemObject["value"];
+        Assert.NotNull(itemValue);
+        Assert.Equal(JTokenType.String, itemValue.Type);
+        Assert.Equal("hello", itemValue.Value<string>());
+
+        Assert.Equal(JTokenType.Object, valueObject[1].Type);
         itemObject = valueObject[1] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(itemObject, Contains.Key("value"));
-            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
-        }
+        Assert.NotNull(itemObject);
+        Assert.Equal(2, itemObject.Count);
 
-        Assert.That(valueObject[2].Type, Is.EqualTo(JTokenType.Object));
+        Assert.True(itemObject.ContainsKey("type"));
+        itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("number", itemType.Value<string>());
+
+        Assert.True(itemObject.ContainsKey("value"));
+        itemValue = itemObject["value"];
+        Assert.NotNull(itemValue);
+        Assert.Equal(JTokenType.Integer, itemValue.Type);
+        Assert.Equal(123L, itemValue.Value<long>());
+
+        Assert.Equal(JTokenType.Object, valueObject[2].Type);
         itemObject = valueObject[2] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("null"));
-        }
+        Assert.NotNull(itemObject);
+        Assert.Single(itemObject);
 
-        Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
+        Assert.True(itemObject.ContainsKey("type"));
+        itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("null", itemType.Value<string>());
+
+        Assert.Equal(JTokenType.Object, valueObject[3].Type);
         itemObject = valueObject[3] as JObject;
-        Assert.That(itemObject, Is.Not.Null);
-        Assert.That(itemObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(itemObject!, Contains.Key("type"));
-            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("boolean"));
-            Assert.That(itemObject, Contains.Key("value"));
-            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
-        }
+        Assert.NotNull(itemObject);
+        Assert.Equal(2, itemObject.Count);
+
+        Assert.True(itemObject.ContainsKey("type"));
+        itemType = itemObject["type"];
+        Assert.NotNull(itemType);
+        Assert.Equal("boolean", itemType.Value<string>());
+
+        Assert.True(itemObject.ContainsKey("value"));
+        itemValue = itemObject["value"];
+        Assert.NotNull(itemValue);
+        Assert.Equal(JTokenType.Boolean, itemValue.Type);
+        Assert.True(itemValue.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeMap()
     {
         Dictionary<string, LocalValue> dictionary = new()
@@ -492,43 +569,45 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Map(dictionary);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("map", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray, Is.Not.Null);
-        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        Assert.NotNull(valueArray);
+        Assert.Equal(dictionary.Count, valueArray.Count);
         List<string> foundStrings = [];
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.Equal(JTokenType.Array, valueArray[i].Type);
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray, Is.Not.Null);
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(itemArray, Has.Count.EqualTo(2));
-                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.String));
-            }
-            foundStrings.Add(itemArray![0].Value<string>() ?? "");
-            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            Assert.NotNull(itemArray);
+
+            Assert.Equal(2, itemArray.Count);
+            Assert.Equal(JTokenType.String, itemArray[0].Type);
+
+            foundStrings.Add(itemArray[0].Value<string>() ?? "");
+            Assert.Equal(JTokenType.Object, itemArray[1].Type);
         }
 
-        Assert.That(foundStrings, Is.EquivalentTo(dictionary.Keys));
+        Assert.Equivalent(dictionary.Keys, foundStrings);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeObject()
     {
         Dictionary<string, LocalValue> dictionary = new()
@@ -540,43 +619,45 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Object(dictionary);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("object", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray, Is.Not.Null);
-        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        Assert.NotNull(valueArray);
+        Assert.Equal(dictionary.Count, valueArray.Count);
         List<string> foundStrings = [];
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.Equal(JTokenType.Array, valueArray[i].Type);
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray, Is.Not.Null);
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(itemArray!, Has.Count.EqualTo(2));
-                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.String));
-            }
-            foundStrings.Add(itemArray![0].Value<string>() ?? "");
-            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            Assert.NotNull(itemArray);
+
+            Assert.Equal(2, itemArray.Count);
+            Assert.Equal(JTokenType.String, itemArray[0].Type);
+
+            foundStrings.Add(itemArray[0].Value<string>() ?? "");
+            Assert.Equal(JTokenType.Object, itemArray[1].Type);
         }
 
-        Assert.That(foundStrings, Is.EquivalentTo(dictionary.Keys));
+        Assert.Equivalent(dictionary.Keys, foundStrings);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeMapWithLocalValueAsKeys()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -590,39 +671,40 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Map(dictionary);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("map", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray, Is.Not.Null);
-        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        Assert.NotNull(valueArray);
+        Assert.Equal(dictionary.Count, valueArray.Count);
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.Equal(JTokenType.Array, valueArray[i].Type);
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray, Is.Not.Null);
-            Assert.That(itemArray, Has.Count.EqualTo(2));
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object));
-                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
-            }
+            Assert.NotNull(itemArray);
+            Assert.Equal(2, itemArray.Count);
+
+            Assert.Equal(JTokenType.Object, itemArray[0].Type);
+            Assert.Equal(JTokenType.Object, itemArray[1].Type);
         }
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeObjectWithLocalValueAsKeys()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -636,39 +718,40 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Object(dictionary);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("object", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray, Is.Not.Null);
-        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        Assert.NotNull(valueArray);
+        Assert.Equal(dictionary.Count, valueArray.Count);
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.Equal(JTokenType.Array, valueArray[i].Type);
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray, Is.Not.Null);
-            Assert.That(itemArray, Has.Count.EqualTo(2));
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object));
-                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
-            }
+            Assert.NotNull(itemArray);
+            Assert.Equal(2, itemArray.Count);
+
+            Assert.Equal(JTokenType.Object, itemArray[0].Type);
+            Assert.Equal(JTokenType.Object, itemArray[1].Type);
         }
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeMapWithMixedValuesAsKeys()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -682,39 +765,40 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Map(dictionary);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("map", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray, Is.Not.Null);
-        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        Assert.NotNull(valueArray);
+        Assert.Equal(dictionary.Count, valueArray.Count);
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.Equal(JTokenType.Array, valueArray[i].Type);
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray, Is.Not.Null);
-            Assert.That(itemArray, Has.Count.EqualTo(2));
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object).Or.EqualTo(JTokenType.String));
-                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
-            }
+            Assert.NotNull(itemArray);
+            Assert.Equal(2, itemArray.Count);
+
+            Assert.True(itemArray[0].Type == JTokenType.Object || itemArray[0].Type == JTokenType.String);
+            Assert.Equal(JTokenType.Object, itemArray[1].Type);
         }
     }
 
-    [Test]
+    [Fact]
     public void TestCreatingMapWithInvalidKeyTypeThrows()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -724,10 +808,10 @@ public class LocalValueTests
             { 1, LocalValue.String("hello") },
         };
 
-        Assert.That(() => LocalValue.Map(dictionary), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.ThrowsAny<WebDriverBiDiException>(() => LocalValue.Map(dictionary));
     }
 
-    [Test]
+    [Fact]
     public void TestSerializingMapWithInvalidKeyTypeThrows()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -735,11 +819,11 @@ public class LocalValueTests
         Dictionary<object, LocalValue> dictionary = [];
         LocalValue value = LocalValue.Map(dictionary);
         dictionary[1] = LocalValue.String("hello");
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
-        Assert.That(() => JsonSerializer.Serialize(value), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(((LocalArgumentValue)value).Value);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => JsonSerializer.Serialize(value));
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeObjectWithMixedValuesAsKeys()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -753,39 +837,40 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Object(dictionary);
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
-        }
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("object", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Array, parsedValue.Type);
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray, Is.Not.Null);
-        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        Assert.NotNull(valueArray);
+        Assert.Equal(dictionary.Count, valueArray.Count);
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.Equal(JTokenType.Array, valueArray[i].Type);
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray, Is.Not.Null);
-            Assert.That(itemArray, Has.Count.EqualTo(2));
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object).Or.EqualTo(JTokenType.String));
-                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
-            }
+            Assert.NotNull(itemArray);
+            Assert.Equal(2, itemArray.Count);
+
+            Assert.True(itemArray[0].Type == JTokenType.Object || itemArray[0].Type == JTokenType.String);
+            Assert.Equal(JTokenType.Object, itemArray[1].Type);
         }
     }
 
-    [Test]
+    [Fact]
     public void TestCreatingObjectWithInvalidKeyTypeThrows()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -795,10 +880,10 @@ public class LocalValueTests
             { 1, LocalValue.String("hello") },
         };
 
-        Assert.That(() => LocalValue.Object(dictionary), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.ThrowsAny<WebDriverBiDiException>(() => LocalValue.Object(dictionary));
     }
 
-    [Test]
+    [Fact]
     public void TestSerializingObjectWithInvalidKeyTypeThrows()
     {
         // N.B., this is an edge case, and we are doing no further validation
@@ -806,16 +891,16 @@ public class LocalValueTests
         Dictionary<object, LocalValue> dictionary = [];
         LocalValue value = LocalValue.Object(dictionary);
         dictionary[1] = LocalValue.String("hello");
-        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
-        Assert.That(() => JsonSerializer.Serialize(value), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(((LocalArgumentValue)value).Value);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => JsonSerializer.Serialize(value));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         LocalValue value = LocalValue.Undefined;
-        Assert.That(((LocalArgumentValue)value).Value, Is.Null);
+        Assert.Null(((LocalArgumentValue)value).Value);
         LocalValue copy = value with { };
-        Assert.That(copy, Is.EqualTo(value));
+        Assert.Equal(value, copy);
     }
 }

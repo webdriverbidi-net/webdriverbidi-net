@@ -2,10 +2,9 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class CreateCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,11 +13,11 @@ public class CreateCommandResultTests
                       }
                       """;
         CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.BrowsingContextId, Is.EqualTo("myContextId"));
+        Assert.NotNull(result);
+        Assert.Equal("myContextId", result.BrowsingContextId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithUserContext()
     {
         string json = """
@@ -28,12 +27,12 @@ public class CreateCommandResultTests
                       }
                       """;
         CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(result.UserContextId, Is.EqualTo("myUserContextId"));
+        Assert.NotNull(result);
+        Assert.Equal("myContextId", result.BrowsingContextId);
+        Assert.Equal("myUserContextId", result.UserContextId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -42,19 +41,19 @@ public class CreateCommandResultTests
                       }
                       """;
         CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         CreateCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = """
@@ -62,6 +61,6 @@ public class CreateCommandResultTests
                         "context": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateCommandResult>(json));
     }
 }

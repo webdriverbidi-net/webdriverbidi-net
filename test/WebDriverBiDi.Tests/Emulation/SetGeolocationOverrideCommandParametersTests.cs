@@ -3,35 +3,32 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetGeolocationOverrideCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
-        Assert.That(properties.MethodName, Is.EqualTo("emulation.setGeolocationOverride"));
+        Assert.Equal("emulation.setGeolocationOverride", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetResetParameters()
     {
         SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
-        Assert.That(properties, Is.Not.Null);
-        Assert.That(properties, Is.InstanceOf<SetGeolocationOverrideCommandParameters>());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(((SetGeolocationOverrideCoordinatesCommandParameters)properties).Coordinates, Is.Null);
-            Assert.That(properties.Contexts, Is.Null);
-            Assert.That(properties.UserContexts, Is.Null);
-        }
+        Assert.NotNull(properties);
+        Assert.IsType<SetGeolocationOverrideCommandParameters>(properties, exactMatch: false);
+
+        Assert.Null(((SetGeolocationOverrideCoordinatesCommandParameters)properties).Coordinates);
+        Assert.Null(properties.Contexts);
+        Assert.Null(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
         SetGeolocationOverrideCommandParameters firstInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
         SetGeolocationOverrideCommandParameters secondInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
-        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+        Assert.NotSame(secondInstance, firstInstance);
     }
 }

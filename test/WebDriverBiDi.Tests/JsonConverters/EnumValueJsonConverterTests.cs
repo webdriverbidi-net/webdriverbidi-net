@@ -3,60 +3,59 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-[TestFixture]
 public class EnumValueJsonConverterTests
 {
-    [Test]
+    [Fact]
     public void ShouldSerializeValue()
     {
         string json = JsonSerializer.Serialize(BasicEnum.FirstValue);
-        Assert.That(json, Is.EqualTo("\"firstvalue\""));
+        Assert.Equal("\"firstvalue\"", json);
     }
 
-    [Test]
+    [Fact]
     public void ShouldSerializeValueWithCustomSerializedValue()
     {
         string json = JsonSerializer.Serialize(BasicEnum.SecondValue);
-        Assert.That(json, Is.EqualTo("\"second-value\""));
+        Assert.Equal("\"second-value\"", json);
     }
 
-    [Test]
+    [Fact]
     public void ShouldDeserializeBasicValue()
     {
         BasicEnum? value = JsonSerializer.Deserialize<BasicEnum>("\"firstvalue\"");
-        Assert.That(value, Is.EqualTo(BasicEnum.FirstValue));
+        Assert.Equal(BasicEnum.FirstValue, value);
     }
 
-    [Test]
+    [Fact]
     public void ShouldDeserializeCustomValue()
     {
         BasicEnum? value = JsonSerializer.Deserialize<BasicEnum>("\"second-value\"");
-        Assert.That(value, Is.EqualTo(BasicEnum.SecondValue));
+        Assert.Equal(BasicEnum.SecondValue, value);
     }
 
-    [Test]
+    [Fact]
     public void ShouldDeserializeInvalidValueWhenAttributeSet()
     {
         EnumWithDefault? value = JsonSerializer.Deserialize<EnumWithDefault>("\"invalid\"");
-        Assert.That(value, Is.EqualTo(EnumWithDefault.DefaultValue));
+        Assert.Equal(EnumWithDefault.DefaultValue, value);
     }
 
-    [Test]
+    [Fact]
     public void DeserializeNonStringValueThrows()
     {
-        Assert.That(() => JsonSerializer.Deserialize<BasicEnum>("1"), Throws.InstanceOf<JsonException>().With.Message.EqualTo($"Deserialization error reading enumerated string value"));
+        Assert.Equal($"Deserialization error reading enumerated string value", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BasicEnum>("1")).Message);
     }
 
-    [Test]
+    [Fact]
     public void DeserializeInvalidValueThrows()
     {
-        Assert.That(() => JsonSerializer.Deserialize<BasicEnum>("\"invalid\""), Throws.InstanceOf<JsonException>().With.Message.EqualTo($"Deserialization error: value 'invalid' is not valid for enum type BasicEnum"));
+        Assert.Equal($"Deserialization error: value 'invalid' is not valid for enum type BasicEnum", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BasicEnum>("\"invalid\"")).Message);
     }
 
-    [Test]
+    [Fact]
     public void SerializeInvalidValueThrows()
     {
-        Assert.That(() => JsonSerializer.Serialize(FlagEnum.FirstValue | FlagEnum.SecondValue), Throws.InstanceOf<JsonException>().With.Message.StartsWith("Serialization error: value"));
+        Assert.StartsWith("Serialization error: value", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Serialize(FlagEnum.FirstValue | FlagEnum.SecondValue)).Message);
     }
 
     [JsonConverter(typeof(EnumValueJsonConverter<BasicEnum>))]

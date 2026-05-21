@@ -3,26 +3,25 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetViewportCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetViewportCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.setViewport"));
+        Assert.Equal("browsingContext.setViewport", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetViewportCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithBrowsingContext()
     {
         SetViewportCommandParameters properties = new()
@@ -31,16 +30,16 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithViewport()
     {
         SetViewportCommandParameters properties = new()
@@ -53,24 +52,30 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("viewport"));
-            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? viewportObject = serialized["viewport"]!.Value<JObject>();
-            Assert.That(viewportObject, Is.Not.Null);
-            Assert.That(viewportObject, Has.Count.EqualTo(2));
-            Assert.That(viewportObject, Contains.Key("width"));
-            Assert.That(viewportObject!["width"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(viewportObject!["width"]!.Value<ulong>(), Is.EqualTo(1280));
-            Assert.That(viewportObject, Contains.Key("height"));
-            Assert.That(viewportObject!["height"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(viewportObject!["height"]!.Value<ulong>(), Is.EqualTo(1024));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("viewport"));
+        JToken? viewportToken = serialized["viewport"];
+        Assert.NotNull(viewportToken);
+        Assert.Equal(JTokenType.Object, viewportToken.Type);
+        JObject? viewportObject = viewportToken.Value<JObject>();
+        Assert.NotNull(viewportObject);
+        Assert.Equal(2, viewportObject.Count);
+
+        Assert.True(viewportObject.ContainsKey("width"));
+        JToken? viewportWidth = viewportObject["width"];
+        Assert.NotNull(viewportWidth);
+        Assert.Equal(JTokenType.Integer, viewportWidth.Type);
+        Assert.Equal(1280UL, viewportWidth.Value<ulong>());
+
+        Assert.True(viewportObject.ContainsKey("height"));
+        JToken? viewportHeight = viewportObject["height"];
+        Assert.NotNull(viewportHeight);
+        Assert.Equal(JTokenType.Integer, viewportHeight.Type);
+        Assert.Equal(1024UL, viewportHeight.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDefaultViewport()
     {
         SetViewportCommandParameters properties = new()
@@ -79,24 +84,30 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("viewport"));
-            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? viewportObject = serialized["viewport"]!.Value<JObject>();
-            Assert.That(viewportObject, Is.Not.Null);
-            Assert.That(viewportObject, Has.Count.EqualTo(2));
-            Assert.That(viewportObject, Contains.Key("width"));
-            Assert.That(viewportObject!["width"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(viewportObject!["width"]!.Value<ulong>(), Is.EqualTo(0));
-            Assert.That(viewportObject, Contains.Key("height"));
-            Assert.That(viewportObject!["height"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(viewportObject!["height"]!.Value<ulong>(), Is.EqualTo(0));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("viewport"));
+        JToken? viewportToken = serialized["viewport"];
+        Assert.NotNull(viewportToken);
+        Assert.Equal(JTokenType.Object, viewportToken.Type);
+        JObject? viewportObject = viewportToken.Value<JObject>();
+        Assert.NotNull(viewportObject);
+        Assert.Equal(2, viewportObject.Count);
+
+        Assert.True(viewportObject.ContainsKey("width"));
+        JToken? viewportWidth = viewportObject["width"];
+        Assert.NotNull(viewportWidth);
+        Assert.Equal(JTokenType.Integer, viewportWidth.Type);
+        Assert.Equal(0U, viewportWidth.Value<ulong>());
+
+        Assert.True(viewportObject.ContainsKey("height"));
+        JToken? viewportHeight = viewportObject["height"];
+        Assert.NotNull(viewportHeight);
+        Assert.Equal(JTokenType.Integer, viewportHeight.Type);
+        Assert.Equal(0U, viewportHeight.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithViewportReset()
     {
         SetViewportCommandParameters properties = new()
@@ -105,15 +116,15 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("viewport"));
-            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Null));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("viewport"));
+        JToken? viewport = serialized["viewport"];
+        Assert.NotNull(viewport);
+        Assert.Equal(JTokenType.Null, viewport.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDevicePixelRatio()
     {
         SetViewportCommandParameters properties = new()
@@ -122,16 +133,16 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("devicePixelRatio"));
-            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["devicePixelRatio"]!.Value<double>(), Is.EqualTo(1.5));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("devicePixelRatio"));
+        JToken? devicePixelRatio = serialized["devicePixelRatio"];
+        Assert.NotNull(devicePixelRatio);
+        Assert.Equal(JTokenType.Float, devicePixelRatio.Type);
+        Assert.Equal(1.5, devicePixelRatio.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithResetDevicePixelRatio()
     {
         SetViewportCommandParameters properties = new()
@@ -140,15 +151,15 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("devicePixelRatio"));
-            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Null));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("devicePixelRatio"));
+        JToken? devicePixelRatio = serialized["devicePixelRatio"];
+        Assert.NotNull(devicePixelRatio);
+        Assert.Equal(JTokenType.Null, devicePixelRatio.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithUserContexts()
     {
         SetViewportCommandParameters properties = new()
@@ -157,16 +168,16 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized.ContainsKey("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
-            Assert.That(userContextsArray, Is.Not.Null);
-            Assert.That(userContextsArray, Has.Count.EqualTo(1));
-            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray![0].Value<string>(), Is.EqualTo("myUserContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContextsToken = serialized["userContexts"];
+        Assert.NotNull(userContextsToken);
+        Assert.Equal(JTokenType.Array, userContextsToken.Type);
+        JArray? userContextsArray = userContextsToken.Value<JArray>();
+        Assert.NotNull(userContextsArray);
+        Assert.Single(userContextsArray);
+        Assert.Equal(JTokenType.String, userContextsArray[0].Type);
+        Assert.Equal("myUserContextId", userContextsArray[0].Value<string>());
     }
 }

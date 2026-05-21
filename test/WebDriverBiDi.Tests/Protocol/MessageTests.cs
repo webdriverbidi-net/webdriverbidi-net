@@ -3,10 +3,9 @@ namespace WebDriverBiDi.Protocol;
 using System.Text.Json;
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class MessageTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeCommandResponseMessage()
     {
         string json = """
@@ -19,17 +18,15 @@ public class MessageTests
                       }
                       """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Type, Is.EqualTo("success"));
-            Assert.That(result.Result, Is.InstanceOf<TestCommandResult>());
-            Assert.That(((TestCommandResult)result.Result).Value, Is.EqualTo("response value"));
-            Assert.That(result.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("success", result.Type);
+        Assert.IsType<TestCommandResult>(result.Result);
+        Assert.Equal("response value", ((TestCommandResult)result.Result).Value);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeEventMessage()
     {
         string json = """
@@ -42,18 +39,16 @@ public class MessageTests
                       }
                       """;
         EventMessage<TestEventArgs>? result = JsonSerializer.Deserialize<EventMessage<TestEventArgs>>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Type, Is.EqualTo("event"));
-            Assert.That(result.EventData, Is.InstanceOf<TestEventArgs>());
-            Assert.That(result.EventName, Is.EqualTo("protocol.event"));
-            Assert.That(((TestEventArgs)result.EventData!).ParamName, Is.EqualTo("paramValue"));
-            Assert.That(result.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("event", result.Type);
+        Assert.IsType<TestEventArgs>(result.EventData);
+        Assert.Equal("protocol.event", result.EventName);
+        Assert.Equal("paramValue", ((TestEventArgs)result.EventData).ParamName);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCommandErrorMessage()
     {
         string json = """
@@ -65,20 +60,18 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Type, Is.EqualTo("error"));
-            Assert.That(result.CommandId, Is.EqualTo(1));
-            Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
-            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
-            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
-            Assert.That(result.AdditionalData, Is.Empty);
-            Assert.That(result.StackTrace, Is.Null);
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("error", result.Type);
+        Assert.Equal(1, result.CommandId);
+        Assert.Equal("unknown error", result.ErrorType);
+        Assert.Equal(ErrorCode.UnknownError, result.ErrorCode);
+        Assert.Equal("This is a test error message", result.ErrorMessage);
+        Assert.Empty(result.AdditionalData);
+        Assert.Null(result.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeCommandErrorMessageWithUnknownErrorCode()
     {
         string json = """
@@ -90,20 +83,18 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Type, Is.EqualTo("error"));
-            Assert.That(result.CommandId, Is.EqualTo(1));
-            Assert.That(result.ErrorType, Is.EqualTo("invalid error code"));
-            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnsetErrorCode));
-            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
-            Assert.That(result.AdditionalData, Is.Empty);
-            Assert.That(result.StackTrace, Is.Null);
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("error", result.Type);
+        Assert.Equal(1, result.CommandId);
+        Assert.Equal("invalid error code", result.ErrorType);
+        Assert.Equal(ErrorCode.UnsetErrorCode, result.ErrorCode);
+        Assert.Equal("This is a test error message", result.ErrorMessage);
+        Assert.Empty(result.AdditionalData);
+        Assert.Null(result.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeNonCommandErrorMessage()
     {
         string json = """
@@ -115,19 +106,17 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Type, Is.EqualTo("error"));
-            Assert.That(result.CommandId, Is.Null);
-            Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
-            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
-            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
-            Assert.That(result.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("error", result.Type);
+        Assert.Null(result.CommandId);
+        Assert.Equal("unknown error", result.ErrorType);
+        Assert.Equal(ErrorCode.UnknownError, result.ErrorCode);
+        Assert.Equal("This is a test error message", result.ErrorMessage);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeErrorMessageWithStackTrace()
     {
         string json = """
@@ -140,20 +129,18 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Type, Is.EqualTo("error"));
-            Assert.That(result.CommandId, Is.EqualTo(1));
-            Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
-            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
-            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
-            Assert.That(result.AdditionalData, Is.Empty);
-            Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("error", result.Type);
+        Assert.Equal(1, result.CommandId);
+        Assert.Equal("unknown error", result.ErrorType);
+        Assert.Equal(ErrorCode.UnknownError, result.ErrorCode);
+        Assert.Equal("This is a test error message", result.ErrorMessage);
+        Assert.Empty(result.AdditionalData);
+        Assert.Equal("full stack trace", result.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetErrorResultFromMessage()
     {
         string json = """
@@ -166,20 +153,18 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(messageResult, Is.Not.Null);
+        Assert.NotNull(messageResult);
         ErrorResult result = messageResult.GetErrorResponseData();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsError, Is.True);
-            Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
-            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
-            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
-            Assert.That(result.AdditionalData, Is.Empty);
-            Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
-        }
+
+        Assert.True(result.IsError);
+        Assert.Equal("unknown error", result.ErrorType);
+        Assert.Equal(ErrorCode.UnknownError, result.ErrorCode);
+        Assert.Equal("This is a test error message", result.ErrorMessage);
+        Assert.Empty(result.AdditionalData);
+        Assert.Equal("full stack trace", result.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeMessageWithAdditionalData()
     {
         string json = """
@@ -193,24 +178,22 @@ public class MessageTests
                       }
                       """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Type, Is.EqualTo("success"));
-            Assert.That(result.Result, Is.InstanceOf<TestCommandResult>());
-            Assert.That(((TestCommandResult)result.Result).Value, Is.EqualTo("response value"));
-            Assert.That(result.AdditionalData, Has.Count.EqualTo(1));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("success", result.Type);
+        Assert.IsType<TestCommandResult>(result.Result);
+        Assert.Equal("response value", ((TestCommandResult)result.Result).Value);
+        Assert.Single(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCommandResponseMessageThrowsWhenResultIsNull()
     {
         CommandResponseMessage<TestCommandResult> message = new();
-        Assert.That(() => _ = message.Result, Throws.InvalidOperationException.With.Message.EqualTo("Result cannot be null"));
+        Assert.Equal("Result cannot be null", Assert.ThrowsAny<InvalidOperationException>(() => _ = message.Result).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestAdditionalDataReturnsCachedInstanceOnRepeatedAccess()
     {
         string json = """
@@ -224,13 +207,13 @@ public class MessageTests
                       }
                       """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ReceivedDataDictionary first = result.AdditionalData;
         ReceivedDataDictionary second = result.AdditionalData;
-        Assert.That(first, Is.SameAs(second));
+        Assert.Same(second, first);
     }
 
-    [Test]
+    [Fact]
     public void TestErrorCodeReturnsCachedValueOnRepeatedAccess()
     {
         string json = """
@@ -242,10 +225,10 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ErrorCode first = result.ErrorCode;
         ErrorCode second = result.ErrorCode;
-        Assert.That(first, Is.EqualTo(ErrorCode.UnknownError));
-        Assert.That(second, Is.EqualTo(first));
+        Assert.Equal(ErrorCode.UnknownError, first);
+        Assert.Equal(first, second);
     }
 }

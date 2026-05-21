@@ -3,76 +3,78 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class AddInterceptCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         AddInterceptCommandParameters properties = new(InterceptPhase.BeforeRequestSent);
-        Assert.That(properties.MethodName, Is.EqualTo("network.addIntercept"));
+        Assert.Equal("network.addIntercept", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         AddInterceptCommandParameters properties = new(InterceptPhase.BeforeRequestSent);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("phases"));
-            Assert.That(serialized["phases"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray interceptArray = (JArray)serialized["phases"]!;
-            Assert.That(interceptArray, Has.Count.EqualTo(1));
-            Assert.That(interceptArray[0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(interceptArray[0].Value<string>(), Is.EqualTo("beforeRequestSent"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("phases"));
+        JToken? phasesToken = serialized["phases"];
+        Assert.NotNull(phasesToken);
+        Assert.Equal(JTokenType.Array, phasesToken.Type);
+        JArray? interceptArray = phasesToken as JArray;
+        Assert.NotNull(interceptArray);
+        Assert.Single(interceptArray);
+        Assert.Equal(JTokenType.String, interceptArray[0].Type);
+        Assert.Equal("beforeRequestSent", interceptArray[0].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanConstructWithMultiplePhases()
     {
         AddInterceptCommandParameters properties = new(InterceptPhase.BeforeRequestSent, InterceptPhase.ResponseStarted);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("phases"));
-            Assert.That(serialized["phases"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray interceptArray = (JArray)serialized["phases"]!;
-            Assert.That(interceptArray, Has.Count.EqualTo(2));
-            Assert.That(interceptArray[0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(interceptArray[0].Value<string>(), Is.EqualTo("beforeRequestSent"));
-            Assert.That(interceptArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(interceptArray[1].Value<string>(), Is.EqualTo("responseStarted"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("phases"));
+        JToken? phasesToken = serialized["phases"];
+        Assert.NotNull(phasesToken);
+        Assert.Equal(JTokenType.Array, phasesToken.Type);
+        JArray? interceptArray = phasesToken as JArray;
+        Assert.NotNull(interceptArray);
+        Assert.Equal(2, interceptArray.Count);
+        Assert.Equal(JTokenType.String, interceptArray[0].Type);
+        Assert.Equal("beforeRequestSent", interceptArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, interceptArray[1].Type);
+        Assert.Equal("responseStarted", interceptArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestDuplicatePhaseArgumentOnlySerializesOnce()
     {
         AddInterceptCommandParameters properties = new(InterceptPhase.BeforeRequestSent, InterceptPhase.BeforeRequestSent);
         properties.Phases.Add(InterceptPhase.AuthRequired);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("phases"));
-            Assert.That(serialized["phases"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray phases = (JArray)serialized["phases"]!;
-            Assert.That(phases, Has.Count.EqualTo(2));
-            Assert.That(phases[0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(phases[0].Value<string>(), Is.EqualTo("beforeRequestSent"));
-            Assert.That(phases[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(phases[1].Value<string>(), Is.EqualTo("authRequired"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("phases"));
+        JToken? phasesToken = serialized["phases"];
+        Assert.NotNull(phasesToken);
+        Assert.Equal(JTokenType.Array, phasesToken.Type);
+        JArray? phases = phasesToken as JArray;
+        Assert.NotNull(phases);
+        Assert.Equal(2, phases.Count);
+        Assert.Equal(JTokenType.String, phases[0].Type);
+        Assert.Equal("beforeRequestSent", phases[0].Value<string>());
+        Assert.Equal(JTokenType.String, phases[1].Type);
+        Assert.Equal("authRequired", phases[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAllProperties()
     {
         AddInterceptCommandParameters properties = new(InterceptPhase.BeforeRequestSent)
@@ -82,39 +84,53 @@ public class AddInterceptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(3));
-            Assert.That(serialized, Contains.Key("phases"));
-            Assert.That(serialized["phases"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray phases = (JArray)serialized["phases"]!;
-            Assert.That(phases, Has.Count.EqualTo(1));
-            Assert.That(phases[0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(phases[0].Value<string>(), Is.EqualTo("beforeRequestSent"));
-            Assert.That(serialized, Contains.Key("contexts"));
-            JArray contexts = (JArray)serialized["contexts"]!;
-            Assert.That(contexts, Has.Count.EqualTo(1));
-            Assert.That(contexts[0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contexts[0].Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("urlPatterns"));
-            Assert.That(serialized["urlPatterns"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray patterns = (JArray)serialized["urlPatterns"]!;
-            Assert.That(patterns, Has.Count.EqualTo(1));
-            Assert.That(patterns[0].Type, Is.EqualTo(JTokenType.Object));
-            JObject urlPatternObject = (JObject)patterns[0];
-            Assert.That(urlPatternObject, Has.Count.EqualTo(2));
-            Assert.That(urlPatternObject, Contains.Key("type"));
-            Assert.That(urlPatternObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(urlPatternObject["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(urlPatternObject, Contains.Key("pattern"));
-            Assert.That(urlPatternObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(urlPatternObject["pattern"]!.Value<string>(), Is.EqualTo("https://example.com/*"));
-        }
+
+        Assert.Equal(3, serialized.Count);
+        Assert.True(serialized.ContainsKey("phases"));
+        JToken? phasesToken = serialized["phases"];
+        Assert.NotNull(phasesToken);
+        Assert.Equal(JTokenType.Array, phasesToken.Type);
+        JArray? phases = phasesToken as JArray;
+        Assert.NotNull(phases);
+        Assert.Single(phases);
+        Assert.Equal(JTokenType.String, phases[0].Type);
+        Assert.Equal("beforeRequestSent", phases[0].Value<string>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        JArray? contexts = contextsToken as JArray;
+        Assert.NotNull(contexts);
+        Assert.Single(contexts);
+        Assert.Equal(JTokenType.String, contexts[0].Type);
+        Assert.Equal("myContext", contexts[0].Value<string>());
+
+        Assert.True(serialized.ContainsKey("urlPatterns"));
+        JToken? urlPatternsToken = serialized["urlPatterns"];
+        Assert.NotNull(urlPatternsToken);
+        Assert.Equal(JTokenType.Array, urlPatternsToken.Type);
+        JArray? patterns = urlPatternsToken as JArray;
+        Assert.NotNull(patterns);
+        Assert.Single(patterns);
+        Assert.Equal(JTokenType.Object, patterns[0].Type);
+        JObject? urlPatternObject = patterns[0] as JObject;
+        Assert.NotNull(urlPatternObject);
+        Assert.Equal(2, urlPatternObject.Count);
+        Assert.True(urlPatternObject.ContainsKey("type"));
+        JToken? patternType = urlPatternObject["type"];
+        Assert.NotNull(patternType);
+        Assert.Equal(JTokenType.String, patternType.Type);
+        Assert.Equal("string", patternType.Value<string>());
+        Assert.True(urlPatternObject.ContainsKey("pattern"));
+        JToken? pattern = urlPatternObject["pattern"];
+        Assert.NotNull(pattern);
+        Assert.Equal(JTokenType.String, pattern.Type);
+        Assert.Equal("https://example.com/*", pattern.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestOmittingPhaseInConstructorThrows()
     {
-        Assert.That(() => new AddInterceptCommandParameters(), Throws.InstanceOf<ArgumentException>().With.Message.StartsWith("You must supply at least one phase for the intercept"));
+        Assert.StartsWith("You must supply at least one phase for the intercept", Assert.ThrowsAny<ArgumentException>(() => new AddInterceptCommandParameters()).Message);
     }
 }

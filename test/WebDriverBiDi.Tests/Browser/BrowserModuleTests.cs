@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Browser;
 
 using TestUtilities;
 
-[TestFixture]
 public class BrowserModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestExecuteCloseCommand()
     {
         TestWebSocketConnection connection = new();
@@ -22,17 +21,16 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        CloseCommandResult result = task.Result;
+        Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        CloseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteCloseCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -49,17 +47,16 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CloseCommandResult> task = module.CloseAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        CloseCommandResult result = task.Result;
+        Task<CloseCommandResult> task = module.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+        CloseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteCreateUserContextCommand()
     {
         TestWebSocketConnection connection = new();
@@ -78,18 +75,17 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(new CreateUserContextCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        CreateUserContextCommandResult result = task.Result;
+        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(new CreateUserContextCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        CreateUserContextCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.UserContextId, Is.EqualTo("myUserContextId"));
+        Assert.NotNull(result);
+        Assert.Equal("myUserContextId", result.UserContextId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteCreateUserContextCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -108,18 +104,17 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        CreateUserContextCommandResult result = task.Result;
+        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(cancellationToken: TestContext.Current.CancellationToken);
+        CreateUserContextCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.UserContextId, Is.EqualTo("myUserContextId"));
+        Assert.NotNull(result);
+        Assert.Equal("myUserContextId", result.UserContextId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteGetClientWindowsCommand()
     {
         TestWebSocketConnection connection = new();
@@ -157,35 +152,32 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(new GetClientWindowsCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetClientWindowsCommandResult result = task.Result;
+        Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(new GetClientWindowsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        GetClientWindowsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.ClientWindows, Has.Count.EqualTo(2));
-            Assert.That(result.ClientWindows[0].ClientWindowId, Is.EqualTo("myClientWindow"));
-            Assert.That(result.ClientWindows[0].IsActive, Is.True);
-            Assert.That(result.ClientWindows[0].State, Is.EqualTo(ClientWindowState.Normal));
-            Assert.That(result.ClientWindows[0].X, Is.EqualTo(100));
-            Assert.That(result.ClientWindows[0].Y, Is.EqualTo(200));
-            Assert.That(result.ClientWindows[0].Width, Is.EqualTo(640));
-            Assert.That(result.ClientWindows[0].Height, Is.EqualTo(480));
-            Assert.That(result.ClientWindows[1].ClientWindowId, Is.EqualTo("yourClientWindow"));
-            Assert.That(result.ClientWindows[1].IsActive, Is.False);
-            Assert.That(result.ClientWindows[1].State, Is.EqualTo(ClientWindowState.Normal));
-            Assert.That(result.ClientWindows[1].X, Is.EqualTo(50));
-            Assert.That(result.ClientWindows[1].Y, Is.EqualTo(75));
-            Assert.That(result.ClientWindows[1].Width, Is.EqualTo(960));
-            Assert.That(result.ClientWindows[1].Height, Is.EqualTo(720));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal(2, result.ClientWindows.Count);
+        Assert.Equal("myClientWindow", result.ClientWindows[0].ClientWindowId);
+        Assert.True(result.ClientWindows[0].IsActive);
+        Assert.Equal(ClientWindowState.Normal, result.ClientWindows[0].State);
+        Assert.Equal(100u, result.ClientWindows[0].X);
+        Assert.Equal(200u, result.ClientWindows[0].Y);
+        Assert.Equal(640u, result.ClientWindows[0].Width);
+        Assert.Equal(480u, result.ClientWindows[0].Height);
+        Assert.Equal("yourClientWindow", result.ClientWindows[1].ClientWindowId);
+        Assert.False(result.ClientWindows[1].IsActive);
+        Assert.Equal(ClientWindowState.Normal, result.ClientWindows[1].State);
+        Assert.Equal(50u, result.ClientWindows[1].X);
+        Assert.Equal(75u, result.ClientWindows[1].Y);
+        Assert.Equal(960u, result.ClientWindows[1].Width);
+        Assert.Equal(720u, result.ClientWindows[1].Height);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteGetClientWindowsCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -223,35 +215,32 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetClientWindowsCommandResult result = task.Result;
+        Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(cancellationToken: TestContext.Current.CancellationToken);
+        GetClientWindowsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.ClientWindows, Has.Count.EqualTo(2));
-            Assert.That(result.ClientWindows[0].ClientWindowId, Is.EqualTo("myClientWindow"));
-            Assert.That(result.ClientWindows[0].IsActive, Is.True);
-            Assert.That(result.ClientWindows[0].State, Is.EqualTo(ClientWindowState.Normal));
-            Assert.That(result.ClientWindows[0].X, Is.EqualTo(100));
-            Assert.That(result.ClientWindows[0].Y, Is.EqualTo(200));
-            Assert.That(result.ClientWindows[0].Width, Is.EqualTo(640));
-            Assert.That(result.ClientWindows[0].Height, Is.EqualTo(480));
-            Assert.That(result.ClientWindows[1].ClientWindowId, Is.EqualTo("yourClientWindow"));
-            Assert.That(result.ClientWindows[1].IsActive, Is.False);
-            Assert.That(result.ClientWindows[1].State, Is.EqualTo(ClientWindowState.Normal));
-            Assert.That(result.ClientWindows[1].X, Is.EqualTo(50));
-            Assert.That(result.ClientWindows[1].Y, Is.EqualTo(75));
-            Assert.That(result.ClientWindows[1].Width, Is.EqualTo(960));
-            Assert.That(result.ClientWindows[1].Height, Is.EqualTo(720));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal(2, result.ClientWindows.Count);
+        Assert.Equal("myClientWindow", result.ClientWindows[0].ClientWindowId);
+        Assert.True(result.ClientWindows[0].IsActive);
+        Assert.Equal(ClientWindowState.Normal, result.ClientWindows[0].State);
+        Assert.Equal(100u, result.ClientWindows[0].X);
+        Assert.Equal(200u, result.ClientWindows[0].Y);
+        Assert.Equal(640u, result.ClientWindows[0].Width);
+        Assert.Equal(480u, result.ClientWindows[0].Height);
+        Assert.Equal("yourClientWindow", result.ClientWindows[1].ClientWindowId);
+        Assert.False(result.ClientWindows[1].IsActive);
+        Assert.Equal(ClientWindowState.Normal, result.ClientWindows[1].State);
+        Assert.Equal(50u, result.ClientWindows[1].X);
+        Assert.Equal(75u, result.ClientWindows[1].Y);
+        Assert.Equal(960u, result.ClientWindows[1].Width);
+        Assert.Equal(720u, result.ClientWindows[1].Height);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteGetUserContextsCommand()
     {
         TestWebSocketConnection connection = new();
@@ -277,24 +266,20 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(new GetUserContextsCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetUserContextsCommandResult result = task.Result;
+        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        GetUserContextsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.UserContexts, Has.Count.EqualTo(2));
-            Assert.That(result.UserContexts[0].UserContextId, Is.EqualTo("default"));
-            Assert.That(result.UserContexts[1].UserContextId, Is.EqualTo("myUserContextId"));
-        }
+        Assert.NotNull(result);
 
+        Assert.Equal(2, result.UserContexts.Count);
+        Assert.Equal("default", result.UserContexts[0].UserContextId);
+        Assert.Equal("myUserContextId", result.UserContexts[1].UserContextId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteGetUserContextsCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
@@ -320,23 +305,20 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetUserContextsCommandResult result = task.Result;
+        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(cancellationToken: TestContext.Current.CancellationToken);
+        GetUserContextsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.UserContexts, Has.Count.EqualTo(2));
-            Assert.That(result.UserContexts[0].UserContextId, Is.EqualTo("default"));
-            Assert.That(result.UserContexts[1].UserContextId, Is.EqualTo("myUserContextId"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal(2, result.UserContexts.Count);
+        Assert.Equal("default", result.UserContexts[0].UserContextId);
+        Assert.Equal("myUserContextId", result.UserContexts[1].UserContextId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteRemoveUserContextCommand()
     {
         TestWebSocketConnection connection = new();
@@ -353,17 +335,16 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<RemoveUserContextCommandResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        RemoveUserContextCommandResult result = task.Result;
+        Task<RemoveUserContextCommandResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"), cancellationToken: TestContext.Current.CancellationToken);
+        RemoveUserContextCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteSetClientWindowStateCommand()
     {
         TestWebSocketConnection connection = new();
@@ -388,7 +369,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<SetClientWindowStateCommandResult> task = module.SetClientWindowStateAsync(new SetClientWindowStateCommandParameters("myClientWindow")
@@ -398,24 +379,21 @@ public class BrowserModuleTests
             Y = 200,
             Width = 640,
             Height = 480
-        });
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetClientWindowStateCommandResult result = task.Result;
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        SetClientWindowStateCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.ClientWindowId, Is.EqualTo("myClientWindow"));
-            Assert.That(result.IsActive, Is.True);
-            Assert.That(result.State, Is.EqualTo(ClientWindowState.Normal));
-            Assert.That(result.X, Is.EqualTo(100));
-            Assert.That(result.Y, Is.EqualTo(200));
-            Assert.That(result.Width, Is.EqualTo(640));
-            Assert.That(result.Height, Is.EqualTo(480));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("myClientWindow", result.ClientWindowId);
+        Assert.True(result.IsActive);
+        Assert.Equal(ClientWindowState.Normal, result.State);
+        Assert.Equal(100u, result.X);
+        Assert.Equal(200u, result.Y);
+        Assert.Equal(640u, result.Width);
+        Assert.Equal(480u, result.Height);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSetDownloadBehaviorCommand()
     {
         TestWebSocketConnection connection = new();
@@ -432,13 +410,12 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<SetDownloadBehaviorCommandResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetDownloadBehaviorCommandResult result = task.Result;
+        Task<SetDownloadBehaviorCommandResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetDownloadBehaviorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 }

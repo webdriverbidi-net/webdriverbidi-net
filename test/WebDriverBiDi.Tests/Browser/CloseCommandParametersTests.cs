@@ -3,22 +3,21 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class CloseCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         CloseCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("browser.close"));
+        Assert.Equal("browser.close", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         CloseCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 }

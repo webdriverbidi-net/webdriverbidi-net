@@ -3,32 +3,31 @@ namespace WebDriverBiDi.UserAgentClientHints;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetClientHintsOverrideCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetClientHintsOverrideCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("userAgentClientHints.setClientHintsOverride"));
+        Assert.Equal("userAgentClientHints.setClientHintsOverride", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetClientHintsOverrideCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientHints"));
-            Assert.That(serialized["clientHints"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["clientHints"]!.Value<JObject?>, Is.Null);
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("clientHints"));
+        JToken? clientHints = serialized["clientHints"];
+        Assert.NotNull(clientHints);
+        Assert.Equal(JTokenType.Null, clientHints.Type);
+        Assert.Null(clientHints.Value<JObject?>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithClientHints()
     {
         SetClientHintsOverrideCommandParameters properties = new()
@@ -40,20 +39,22 @@ public class SetClientHintsOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientHints"));
-            Assert.That(serialized["clientHints"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? clientHintsObject = serialized["clientHints"]!.Value<JObject>();
-            Assert.That(clientHintsObject, Is.Not.Null);
-            Assert.That(clientHintsObject, Has.Count.EqualTo(1));
-            Assert.That(clientHintsObject, Contains.Key("platform"));
-            Assert.That(clientHintsObject!["platform"]!.Value<string>(), Is.EqualTo("myPlatform"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("clientHints"));
+        JToken? clientHintsToken = serialized["clientHints"];
+        Assert.NotNull(clientHintsToken);
+        Assert.Equal(JTokenType.Object, clientHintsToken.Type);
+        JObject? clientHintsObject = clientHintsToken as JObject;
+        Assert.NotNull(clientHintsObject);
+        Assert.Single(clientHintsObject);
+        Assert.True(clientHintsObject.ContainsKey("platform"));
+        JToken? platform = clientHintsObject["platform"];
+        Assert.NotNull(platform);
+        Assert.Equal("myPlatform", platform.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithContexts()
     {
         SetClientHintsOverrideCommandParameters properties = new()
@@ -66,24 +67,28 @@ public class SetClientHintsOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientHints"));
-            Assert.That(serialized["clientHints"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["clientHints"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
-            Assert.That(contextsArray, Has.Count.EqualTo(2));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
-            Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("clientHints"));
+        JToken? clientHints = serialized["clientHints"];
+        Assert.NotNull(clientHints);
+        Assert.Equal(JTokenType.Null, clientHints.Type);
+        Assert.Null(clientHints.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        Assert.Equal(JTokenType.Array, contextsToken.Type);
+        JArray? contextsArray = contextsToken as JArray;
+        Assert.NotNull(contextsArray);
+        Assert.Equal(2, contextsArray.Count);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("context1", contextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, contextsArray[1].Type);
+        Assert.Equal("context2", contextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithUserContexts()
     {
         SetClientHintsOverrideCommandParameters properties = new()
@@ -96,41 +101,43 @@ public class SetClientHintsOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("clientHints"));
-            Assert.That(serialized["clientHints"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["clientHints"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
-            Assert.That(userContextsArray, Has.Count.EqualTo(2));
-            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
-            Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("clientHints"));
+        JToken? clientHints = serialized["clientHints"];
+        Assert.NotNull(clientHints);
+        Assert.Equal(JTokenType.Null, clientHints.Type);
+        Assert.Null(clientHints.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContextsToken = serialized["userContexts"];
+        Assert.NotNull(userContextsToken);
+        Assert.Equal(JTokenType.Array, userContextsToken.Type);
+        JArray? userContextsArray = userContextsToken as JArray;
+        Assert.NotNull(userContextsArray);
+        Assert.Equal(2, userContextsArray.Count);
+        Assert.Equal(JTokenType.String, userContextsArray[0].Type);
+        Assert.Equal("userContext1", userContextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, userContextsArray[1].Type);
+        Assert.Equal("userContext2", userContextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetResetParameters()
     {
         SetClientHintsOverrideCommandParameters properties = SetClientHintsOverrideCommandParameters.ResetClientHintsOverride;
-        Assert.That(properties, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.ClientHints, Is.Null);
-            Assert.That(properties.Contexts, Is.Null);
-            Assert.That(properties.UserContexts, Is.Null);
-        }
+        Assert.NotNull(properties);
+
+        Assert.Null(properties.ClientHints);
+        Assert.Null(properties.Contexts);
+        Assert.Null(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
         SetClientHintsOverrideCommandParameters firstInstance = SetClientHintsOverrideCommandParameters.ResetClientHintsOverride;
         SetClientHintsOverrideCommandParameters secondInstance = SetClientHintsOverrideCommandParameters.ResetClientHintsOverride;
-        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+        Assert.NotSame(secondInstance, firstInstance);
     }
 }

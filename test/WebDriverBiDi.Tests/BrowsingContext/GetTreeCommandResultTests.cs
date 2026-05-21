@@ -2,10 +2,9 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class GetTreeCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -23,11 +22,11 @@ public class GetTreeCommandResultTests
                       }
                       """;
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ContextTree, Has.Count.EqualTo(1));
+        Assert.NotNull(result);
+        Assert.Single(result.ContextTree);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNoContexts()
     {
         string json = """
@@ -36,11 +35,11 @@ public class GetTreeCommandResultTests
                       }
                       """;
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ContextTree, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.ContextTree);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -58,19 +57,19 @@ public class GetTreeCommandResultTests
                       }
                       """;
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         GetTreeCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextsThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextsTypeThrows()
     {
         string json = """
@@ -78,10 +77,10 @@ public class GetTreeCommandResultTests
                         "contexts": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextValueTypeThrows()
     {
         string json = """
@@ -89,6 +88,6 @@ public class GetTreeCommandResultTests
                         "contexts": [ "invalid" ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json));
     }
 }

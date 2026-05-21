@@ -3,32 +3,31 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ReloadCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         ReloadCommandParameters properties = new("myContextId");
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.reload"));
+        Assert.Equal("browsingContext.reload", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         ReloadCommandParameters properties = new("myContextId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithIgnoreCacheTrue()
     {
         ReloadCommandParameters properties = new("myContextId")
@@ -37,19 +36,22 @@ public class ReloadCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("ignoreCache"));
-            Assert.That(serialized["ignoreCache"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["ignoreCache"]!.Value<bool>(), Is.EqualTo(true));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("ignoreCache"));
+        JToken? ignoreCache = serialized["ignoreCache"];
+        Assert.NotNull(ignoreCache);
+        Assert.Equal(JTokenType.Boolean, ignoreCache.Type);
+        Assert.True(ignoreCache.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithIgnoreCacheFalse()
     {
         ReloadCommandParameters properties = new("myContextId")
@@ -58,19 +60,22 @@ public class ReloadCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("ignoreCache"));
-            Assert.That(serialized["ignoreCache"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["ignoreCache"]!.Value<bool>(), Is.EqualTo(false));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("ignoreCache"));
+        JToken? ignoreCache = serialized["ignoreCache"];
+        Assert.NotNull(ignoreCache);
+        Assert.Equal(JTokenType.Boolean, ignoreCache.Type);
+        Assert.False(ignoreCache.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptWaitNone()
     {
         ReloadCommandParameters properties = new("myContextId")
@@ -79,19 +84,22 @@ public class ReloadCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("wait"));
-            Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("none"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("wait"));
+        JToken? wait = serialized["wait"];
+        Assert.NotNull(wait);
+        Assert.Equal(JTokenType.String, wait.Type);
+        Assert.Equal("none", wait.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptWaitInteractive()
     {
         ReloadCommandParameters properties = new("myContextId")
@@ -100,19 +108,22 @@ public class ReloadCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("wait"));
-            Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("interactive"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("wait"));
+        JToken? wait = serialized["wait"];
+        Assert.NotNull(wait);
+        Assert.Equal(JTokenType.String, wait.Type);
+        Assert.Equal("interactive", wait.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptWaitComplete()
     {
         ReloadCommandParameters properties = new("myContextId")
@@ -121,15 +132,18 @@ public class ReloadCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("wait"));
-            Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("complete"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("wait"));
+        JToken? wait = serialized["wait"];
+        Assert.NotNull(wait);
+        Assert.Equal(JTokenType.String, wait.Type);
+        Assert.Equal("complete", wait.Value<string>());
     }
 }

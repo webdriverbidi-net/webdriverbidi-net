@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RequestDataTests
 {
-    [Test]
+    [Fact]
     public void CanDeserializeRequestData()
     {
         string json = """
@@ -37,36 +36,34 @@ public class RequestDataTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request.Url, Is.EqualTo("requestUrl"));
-            Assert.That(request.Method, Is.EqualTo("get"));
-            Assert.That(request.Headers, Is.Empty);
-            Assert.That(request.Cookies, Is.Empty);
-            Assert.That(request.Destination, Is.EqualTo("document"));
-            Assert.That(request.InitiatorType, Is.EqualTo("other"));
-            Assert.That(request.HeadersSize, Is.EqualTo(0));
-            Assert.That(request.BodySize, Is.EqualTo(0));
-            Assert.That(request.Timings, Is.Not.Null);
-            Assert.That(request.Timings.TimeOrigin, Is.EqualTo(1));
-            Assert.That(request.Timings.RequestTime, Is.EqualTo(2));
-            Assert.That(request.Timings.RedirectStart, Is.EqualTo(3));
-            Assert.That(request.Timings.RedirectEnd, Is.EqualTo(4));
-            Assert.That(request.Timings.FetchStart, Is.EqualTo(5));
-            Assert.That(request.Timings.DnsStart, Is.EqualTo(6));
-            Assert.That(request.Timings.DnsEnd, Is.EqualTo(7));
-            Assert.That(request.Timings.ConnectStart, Is.EqualTo(8));
-            Assert.That(request.Timings.ConnectEnd, Is.EqualTo(9));
-            Assert.That(request.Timings.TlsStart, Is.EqualTo(10));
-            Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
-            Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
-            Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }
+        Assert.NotNull(request);
+
+        Assert.Equal("myRequestId", request.RequestId);
+        Assert.Equal("requestUrl", request.Url);
+        Assert.Equal("get", request.Method);
+        Assert.Empty(request.Headers);
+        Assert.Empty(request.Cookies);
+        Assert.Equal("document", request.Destination);
+        Assert.Equal("other", request.InitiatorType);
+        Assert.Equal(0u, request.HeadersSize);
+        Assert.Equal(0u, request.BodySize);
+        Assert.NotNull(request.Timings);
+        Assert.Equal(1, request.Timings.TimeOrigin);
+        Assert.Equal(2, request.Timings.RequestTime);
+        Assert.Equal(3, request.Timings.RedirectStart);
+        Assert.Equal(4, request.Timings.RedirectEnd);
+        Assert.Equal(5, request.Timings.FetchStart);
+        Assert.Equal(6, request.Timings.DnsStart);
+        Assert.Equal(7, request.Timings.DnsEnd);
+        Assert.Equal(8, request.Timings.ConnectStart);
+        Assert.Equal(9, request.Timings.ConnectEnd);
+        Assert.Equal(10, request.Timings.TlsStart);
+        Assert.Equal(11, request.Timings.RequestStart);
+        Assert.Equal(12, request.Timings.ResponseStart);
+        Assert.Equal(13, request.Timings.ResponseEnd);
     }
 
-    [Test]
+    [Fact]
     public void CanDeserializeRequestDataWithHeaders()
     {
         string json = """
@@ -106,39 +103,37 @@ public class RequestDataTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request.Url, Is.EqualTo("requestUrl"));
-            Assert.That(request.Method, Is.EqualTo("get"));
-            Assert.That(request.Headers, Has.Count.EqualTo(1));
-            Assert.That(request.Headers[0].Name, Is.EqualTo("headerName"));
-            Assert.That(request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-            Assert.That(request.Cookies, Is.Empty);
-            Assert.That(request.Destination, Is.EqualTo("document"));
-            Assert.That(request.InitiatorType, Is.EqualTo("other"));
-            Assert.That(request.HeadersSize, Is.EqualTo(0));
-            Assert.That(request.BodySize, Is.EqualTo(0));
-            Assert.That(request.Timings, Is.Not.Null);
-            Assert.That(request.Timings.TimeOrigin, Is.EqualTo(1));
-            Assert.That(request.Timings.RequestTime, Is.EqualTo(2));
-            Assert.That(request.Timings.RedirectStart, Is.EqualTo(3));
-            Assert.That(request.Timings.RedirectEnd, Is.EqualTo(4));
-            Assert.That(request.Timings.FetchStart, Is.EqualTo(5));
-            Assert.That(request.Timings.DnsStart, Is.EqualTo(6));
-            Assert.That(request.Timings.DnsEnd, Is.EqualTo(7));
-            Assert.That(request.Timings.ConnectStart, Is.EqualTo(8));
-            Assert.That(request.Timings.ConnectEnd, Is.EqualTo(9));
-            Assert.That(request.Timings.TlsStart, Is.EqualTo(10));
-            Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
-            Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
-            Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }
+        Assert.NotNull(request);
+
+        Assert.Equal("myRequestId", request.RequestId);
+        Assert.Equal("requestUrl", request.Url);
+        Assert.Equal("get", request.Method);
+        Assert.Single(request.Headers);
+        Assert.Equal("headerName", request.Headers[0].Name);
+        Assert.Equal(BytesValueType.String, request.Headers[0].Value.Type);
+        Assert.Equal("headerValue", request.Headers[0].Value.Value);
+        Assert.Empty(request.Cookies);
+        Assert.Equal("document", request.Destination);
+        Assert.Equal("other", request.InitiatorType);
+        Assert.Equal(0u, request.HeadersSize);
+        Assert.Equal(0u, request.BodySize);
+        Assert.NotNull(request.Timings);
+        Assert.Equal(1, request.Timings.TimeOrigin);
+        Assert.Equal(2, request.Timings.RequestTime);
+        Assert.Equal(3, request.Timings.RedirectStart);
+        Assert.Equal(4, request.Timings.RedirectEnd);
+        Assert.Equal(5, request.Timings.FetchStart);
+        Assert.Equal(6, request.Timings.DnsStart);
+        Assert.Equal(7, request.Timings.DnsEnd);
+        Assert.Equal(8, request.Timings.ConnectStart);
+        Assert.Equal(9, request.Timings.ConnectEnd);
+        Assert.Equal(10, request.Timings.TlsStart);
+        Assert.Equal(11, request.Timings.RequestStart);
+        Assert.Equal(12, request.Timings.ResponseStart);
+        Assert.Equal(13, request.Timings.ResponseEnd);
     }
 
-    [Test]
+    [Fact]
     public void CanDeserializeRequestDataWithCookies()
     {
         string json = """
@@ -184,47 +179,45 @@ public class RequestDataTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request.Url, Is.EqualTo("requestUrl"));
-            Assert.That(request.Method, Is.EqualTo("get"));
-            Assert.That(request.Headers, Is.Empty);
-            Assert.That(request.Cookies, Has.Count.EqualTo(1));
-            Assert.That(request.Cookies[0].Name, Is.EqualTo("cookieName"));
-            Assert.That(request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-            Assert.That(request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-            Assert.That(request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
-            Assert.That(request.Cookies[0].Secure, Is.True);
-            Assert.That(request.Cookies[0].HttpOnly, Is.True);
-            Assert.That(request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
-            Assert.That(request.Cookies[0].Size, Is.EqualTo(100));
-            Assert.That(request.Cookies[0].Expires, Is.Null);
-            Assert.That(request.Cookies[0].EpochExpires, Is.Null);
-            Assert.That(request.Destination, Is.EqualTo("document"));
-            Assert.That(request.InitiatorType, Is.EqualTo("other"));
-            Assert.That(request.HeadersSize, Is.EqualTo(0));
-            Assert.That(request.BodySize, Is.EqualTo(0));
-            Assert.That(request.Timings, Is.Not.Null);
-            Assert.That(request.Timings.TimeOrigin, Is.EqualTo(1));
-            Assert.That(request.Timings.RequestTime, Is.EqualTo(2));
-            Assert.That(request.Timings.RedirectStart, Is.EqualTo(3));
-            Assert.That(request.Timings.RedirectEnd, Is.EqualTo(4));
-            Assert.That(request.Timings.FetchStart, Is.EqualTo(5));
-            Assert.That(request.Timings.DnsStart, Is.EqualTo(6));
-            Assert.That(request.Timings.DnsEnd, Is.EqualTo(7));
-            Assert.That(request.Timings.ConnectStart, Is.EqualTo(8));
-            Assert.That(request.Timings.ConnectEnd, Is.EqualTo(9));
-            Assert.That(request.Timings.TlsStart, Is.EqualTo(10));
-            Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
-            Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
-            Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }
+        Assert.NotNull(request);
+
+        Assert.Equal("myRequestId", request.RequestId);
+        Assert.Equal("requestUrl", request.Url);
+        Assert.Equal("get", request.Method);
+        Assert.Empty(request.Headers);
+        Assert.Single(request.Cookies);
+        Assert.Equal("cookieName", request.Cookies[0].Name);
+        Assert.Equal(BytesValueType.String, request.Cookies[0].Value.Type);
+        Assert.Equal("cookieValue", request.Cookies[0].Value.Value);
+        Assert.Equal("cookieDomain", request.Cookies[0].Domain);
+        Assert.Equal("/cookiePath", request.Cookies[0].Path);
+        Assert.True(request.Cookies[0].Secure);
+        Assert.True(request.Cookies[0].HttpOnly);
+        Assert.Equal(CookieSameSiteValue.Lax, request.Cookies[0].SameSite);
+        Assert.Equal(100, request.Cookies[0].Size);
+        Assert.Null(request.Cookies[0].Expires);
+        Assert.Null(request.Cookies[0].EpochExpires);
+        Assert.Equal("document", request.Destination);
+        Assert.Equal("other", request.InitiatorType);
+        Assert.Equal(0u, request.HeadersSize);
+        Assert.Equal(0u, request.BodySize);
+        Assert.NotNull(request.Timings);
+        Assert.Equal(1, request.Timings.TimeOrigin);
+        Assert.Equal(2, request.Timings.RequestTime);
+        Assert.Equal(3, request.Timings.RedirectStart);
+        Assert.Equal(4, request.Timings.RedirectEnd);
+        Assert.Equal(5, request.Timings.FetchStart);
+        Assert.Equal(6, request.Timings.DnsStart);
+        Assert.Equal(7, request.Timings.DnsEnd);
+        Assert.Equal(8, request.Timings.ConnectStart);
+        Assert.Equal(9, request.Timings.ConnectEnd);
+        Assert.Equal(10, request.Timings.TlsStart);
+        Assert.Equal(11, request.Timings.RequestStart);
+        Assert.Equal(12, request.Timings.ResponseStart);
+        Assert.Equal(13, request.Timings.ResponseEnd);
     }
 
-    [Test]
+    [Fact]
     public void CanDeserializeRequestDataWithNullBodySize()
     {
         string json = """
@@ -256,36 +249,34 @@ public class RequestDataTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request.Url, Is.EqualTo("requestUrl"));
-            Assert.That(request.Method, Is.EqualTo("get"));
-            Assert.That(request.Headers, Is.Empty);
-            Assert.That(request.Cookies, Is.Empty);
-            Assert.That(request.Destination, Is.EqualTo("document"));
-            Assert.That(request.InitiatorType, Is.EqualTo("other"));
-            Assert.That(request.HeadersSize, Is.EqualTo(0));
-            Assert.That(request.BodySize, Is.Null);
-            Assert.That(request.Timings, Is.Not.Null);
-            Assert.That(request.Timings.TimeOrigin, Is.EqualTo(1));
-            Assert.That(request.Timings.RequestTime, Is.EqualTo(2));
-            Assert.That(request.Timings.RedirectStart, Is.EqualTo(3));
-            Assert.That(request.Timings.RedirectEnd, Is.EqualTo(4));
-            Assert.That(request.Timings.FetchStart, Is.EqualTo(5));
-            Assert.That(request.Timings.DnsStart, Is.EqualTo(6));
-            Assert.That(request.Timings.DnsEnd, Is.EqualTo(7));
-            Assert.That(request.Timings.ConnectStart, Is.EqualTo(8));
-            Assert.That(request.Timings.ConnectEnd, Is.EqualTo(9));
-            Assert.That(request.Timings.TlsStart, Is.EqualTo(10));
-            Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
-            Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
-            Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }
+        Assert.NotNull(request);
+
+        Assert.Equal("myRequestId", request.RequestId);
+        Assert.Equal("requestUrl", request.Url);
+        Assert.Equal("get", request.Method);
+        Assert.Empty(request.Headers);
+        Assert.Empty(request.Cookies);
+        Assert.Equal("document", request.Destination);
+        Assert.Equal("other", request.InitiatorType);
+        Assert.Equal(0u, request.HeadersSize);
+        Assert.Null(request.BodySize);
+        Assert.NotNull(request.Timings);
+        Assert.Equal(1, request.Timings.TimeOrigin);
+        Assert.Equal(2, request.Timings.RequestTime);
+        Assert.Equal(3, request.Timings.RedirectStart);
+        Assert.Equal(4, request.Timings.RedirectEnd);
+        Assert.Equal(5, request.Timings.FetchStart);
+        Assert.Equal(6, request.Timings.DnsStart);
+        Assert.Equal(7, request.Timings.DnsEnd);
+        Assert.Equal(8, request.Timings.ConnectStart);
+        Assert.Equal(9, request.Timings.ConnectEnd);
+        Assert.Equal(10, request.Timings.TlsStart);
+        Assert.Equal(11, request.Timings.RequestStart);
+        Assert.Equal(12, request.Timings.ResponseStart);
+        Assert.Equal(13, request.Timings.ResponseEnd);
     }
 
-    [Test]
+    [Fact]
     public void CanDeserializeRequestDataWithNullInitiatorType()
     {
         string json = """
@@ -317,36 +308,34 @@ public class RequestDataTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request.Url, Is.EqualTo("requestUrl"));
-            Assert.That(request.Method, Is.EqualTo("get"));
-            Assert.That(request.Headers, Is.Empty);
-            Assert.That(request.Cookies, Is.Empty);
-            Assert.That(request.Destination, Is.EqualTo("document"));
-            Assert.That(request.InitiatorType, Is.Null);
-            Assert.That(request.HeadersSize, Is.EqualTo(0));
-            Assert.That(request.BodySize, Is.EqualTo(0));
-            Assert.That(request.Timings, Is.Not.Null);
-            Assert.That(request.Timings.TimeOrigin, Is.EqualTo(1));
-            Assert.That(request.Timings.RequestTime, Is.EqualTo(2));
-            Assert.That(request.Timings.RedirectStart, Is.EqualTo(3));
-            Assert.That(request.Timings.RedirectEnd, Is.EqualTo(4));
-            Assert.That(request.Timings.FetchStart, Is.EqualTo(5));
-            Assert.That(request.Timings.DnsStart, Is.EqualTo(6));
-            Assert.That(request.Timings.DnsEnd, Is.EqualTo(7));
-            Assert.That(request.Timings.ConnectStart, Is.EqualTo(8));
-            Assert.That(request.Timings.ConnectEnd, Is.EqualTo(9));
-            Assert.That(request.Timings.TlsStart, Is.EqualTo(10));
-            Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
-            Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
-            Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }
+        Assert.NotNull(request);
+
+        Assert.Equal("myRequestId", request.RequestId);
+        Assert.Equal("requestUrl", request.Url);
+        Assert.Equal("get", request.Method);
+        Assert.Empty(request.Headers);
+        Assert.Empty(request.Cookies);
+        Assert.Equal("document", request.Destination);
+        Assert.Null(request.InitiatorType);
+        Assert.Equal(0u, request.HeadersSize);
+        Assert.Equal(0u, request.BodySize);
+        Assert.NotNull(request.Timings);
+        Assert.Equal(1, request.Timings.TimeOrigin);
+        Assert.Equal(2, request.Timings.RequestTime);
+        Assert.Equal(3, request.Timings.RedirectStart);
+        Assert.Equal(4, request.Timings.RedirectEnd);
+        Assert.Equal(5, request.Timings.FetchStart);
+        Assert.Equal(6, request.Timings.DnsStart);
+        Assert.Equal(7, request.Timings.DnsEnd);
+        Assert.Equal(8, request.Timings.ConnectStart);
+        Assert.Equal(9, request.Timings.ConnectEnd);
+        Assert.Equal(10, request.Timings.TlsStart);
+        Assert.Equal(11, request.Timings.RequestStart);
+        Assert.Equal(12, request.Timings.ResponseStart);
+        Assert.Equal(13, request.Timings.ResponseEnd);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -378,12 +367,12 @@ public class RequestDataTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
+        Assert.NotNull(request);
         RequestData copy = request with { };
-        Assert.That(copy, Is.EqualTo(request));
+        Assert.Equal(request, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingRequestIdThrows()
     {
         string json = """
@@ -413,10 +402,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'request"));
+        Assert.Contains("missing required properties including: 'request", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingUrlThrows()
     {
         string json = """
@@ -446,10 +435,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'url"));
+        Assert.Contains("missing required properties including: 'url", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingMethodThrows()
     {
         string json = """
@@ -479,10 +468,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'method"));
+        Assert.Contains("missing required properties including: 'method", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingHeadersThrows()
     {
         string json = """
@@ -512,10 +501,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headers"));
+        Assert.Contains("missing required properties including: 'headers", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingCookiesThrows()
     {
         string json = """
@@ -545,10 +534,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'cookies"));
+        Assert.Contains("missing required properties including: 'cookies", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingHeadersSizeThrows()
     {
         string json = """
@@ -578,10 +567,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headersSize"));
+        Assert.Contains("missing required properties including: 'headersSize", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingBodySizeThrows()
     {
         string json = """
@@ -611,10 +600,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'bodySize"));
+        Assert.Contains("missing required properties including: 'bodySize", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingDestinationThrows()
     {
         string json = """
@@ -644,10 +633,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'destination"));
+        Assert.Contains("missing required properties including: 'destination", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingInitiatorTypeThrows()
     {
         string json = """
@@ -677,10 +666,10 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'initiatorType"));
+        Assert.Contains("missing required properties including: 'initiatorType", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingTimingsThrows()
     {
         string json = """
@@ -696,6 +685,6 @@ public class RequestDataTests
                         "bodySize": 0
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'timings"));
+        Assert.Contains("missing required properties including: 'timings", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
 }

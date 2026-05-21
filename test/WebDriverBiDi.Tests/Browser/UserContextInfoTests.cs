@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Browser;
 
 using System.Text.Json;
 
-[TestFixture]
 public class UserContextInfoTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,11 +13,11 @@ public class UserContextInfoTests
                       }
                       """;
         UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.UserContextId, Is.EqualTo("default"));
+        Assert.NotNull(result);
+        Assert.Equal("default", result.UserContextId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,22 +26,22 @@ public class UserContextInfoTests
                       }
                       """;
         UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         UserContextInfo copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingUserContextThrows()
     {
         string json = """
                       {
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserContextInfo>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserContextInfo>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithIncorrectUserContextTypeThrows()
     {
         string json = """
@@ -50,6 +49,6 @@ public class UserContextInfoTests
                         "userContext": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserContextInfo>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserContextInfo>(json));
     }
 }

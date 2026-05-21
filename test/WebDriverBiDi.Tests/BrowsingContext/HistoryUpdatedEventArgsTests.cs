@@ -2,10 +2,9 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class HistoryUpdatedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow;
@@ -19,17 +18,15 @@ public class HistoryUpdatedEventArgsTests
                       }
                       """;
         HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("http://example.com", eventArgs.Url);
+        Assert.Equal((ulong)((ulong)(milliseconds)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithUserContext()
     {
         DateTime now = DateTime.UtcNow;
@@ -44,18 +41,16 @@ public class HistoryUpdatedEventArgsTests
                       }
                       """;
         HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("http://example.com", eventArgs.Url);
+        Assert.Equal((ulong)((ulong)(milliseconds)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal("myUserContextId", eventArgs.UserContextId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow;
@@ -69,12 +64,12 @@ public class HistoryUpdatedEventArgsTests
                       }
                       """;
         HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         HistoryUpdatedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingContextValueThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -86,10 +81,10 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidContextValueThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -102,10 +97,10 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingUrlValueThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -117,10 +112,10 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidUrlValueThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -133,10 +128,10 @@ public class HistoryUpdatedEventArgsTests
                           "timestamp": {{milliseconds}}
                         }
                         """;
-        Assert.That(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingTimestampValueThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -148,10 +143,10 @@ public class HistoryUpdatedEventArgsTests
                         "url": "http://example.com"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidTimestampValueThrows()
     {
         string json = """
@@ -161,7 +156,6 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
     }
-
 }

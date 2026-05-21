@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ResponseDataTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeResponseData()
     {
         string json = """
@@ -26,26 +25,24 @@ public class ResponseDataTests
                       }
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json);
-        Assert.That(response, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(response.Url, Is.EqualTo("requestUrl"));
-            Assert.That(response.Protocol, Is.EqualTo("http"));
-            Assert.That(response.Status, Is.EqualTo(200));
-            Assert.That(response.StatusText, Is.EqualTo("OK"));
-            Assert.That(response.FromCache, Is.False);
-            Assert.That(response.Headers, Is.Empty);
-            Assert.That(response.MimeType, Is.EqualTo("text/html"));
-            Assert.That(response.BytesReceived, Is.EqualTo(400));
-            Assert.That(response.HeadersSize, Is.EqualTo(100));
-            Assert.That(response.BodySize, Is.EqualTo(300));
-            Assert.That(response.Content, Is.Not.Null);
-            Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenges, Is.Null);
-        }
+        Assert.NotNull(response);
+
+        Assert.Equal("requestUrl", response.Url);
+        Assert.Equal("http", response.Protocol);
+        Assert.Equal(200u, response.Status);
+        Assert.Equal("OK", response.StatusText);
+        Assert.False(response.FromCache);
+        Assert.Empty(response.Headers);
+        Assert.Equal("text/html", response.MimeType);
+        Assert.Equal(400u, response.BytesReceived);
+        Assert.Equal(100u, response.HeadersSize);
+        Assert.Equal(300u, response.BodySize);
+        Assert.NotNull(response.Content);
+        Assert.Equal(300u, response.Content.Size);
+        Assert.Null(response.AuthChallenges);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeResponseDataWithHeaders()
     {
         string json = """
@@ -74,29 +71,27 @@ public class ResponseDataTests
                       }
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json);
-        Assert.That(response, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(response.Url, Is.EqualTo("requestUrl"));
-            Assert.That(response.Protocol, Is.EqualTo("http"));
-            Assert.That(response.Status, Is.EqualTo(200));
-            Assert.That(response.StatusText, Is.EqualTo("OK"));
-            Assert.That(response.FromCache, Is.False);
-            Assert.That(response.Headers, Has.Count.EqualTo(1));
-            Assert.That(response.Headers[0].Name, Is.EqualTo("headerName"));
-            Assert.That(response.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(response.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-            Assert.That(response.MimeType, Is.EqualTo("text/html"));
-            Assert.That(response.BytesReceived, Is.EqualTo(400));
-            Assert.That(response.HeadersSize, Is.EqualTo(100));
-            Assert.That(response.BodySize, Is.EqualTo(300));
-            Assert.That(response.Content, Is.Not.Null);
-            Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenges, Is.Null);
-        }
+        Assert.NotNull(response);
+
+        Assert.Equal("requestUrl", response.Url);
+        Assert.Equal("http", response.Protocol);
+        Assert.Equal(200u, response.Status);
+        Assert.Equal("OK", response.StatusText);
+        Assert.False(response.FromCache);
+        Assert.Single(response.Headers);
+        Assert.Equal("headerName", response.Headers[0].Name);
+        Assert.Equal(BytesValueType.String, response.Headers[0].Value.Type);
+        Assert.Equal("headerValue", response.Headers[0].Value.Value);
+        Assert.Equal("text/html", response.MimeType);
+        Assert.Equal(400u, response.BytesReceived);
+        Assert.Equal(100u, response.HeadersSize);
+        Assert.Equal(300u, response.BodySize);
+        Assert.NotNull(response.Content);
+        Assert.Equal(300u, response.Content.Size);
+        Assert.Null(response.AuthChallenges);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeResponseDataWithNullHeadersSize()
     {
         string json = """
@@ -117,26 +112,24 @@ public class ResponseDataTests
                       }
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json);
-        Assert.That(response, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(response.Url, Is.EqualTo("requestUrl"));
-            Assert.That(response.Protocol, Is.EqualTo("http"));
-            Assert.That(response.Status, Is.EqualTo(200));
-            Assert.That(response.StatusText, Is.EqualTo("OK"));
-            Assert.That(response.FromCache, Is.False);
-            Assert.That(response.Headers, Is.Empty);
-            Assert.That(response.MimeType, Is.EqualTo("text/html"));
-            Assert.That(response.BytesReceived, Is.EqualTo(400));
-            Assert.That(response.HeadersSize, Is.Null);
-            Assert.That(response.BodySize, Is.EqualTo(300));
-            Assert.That(response.Content, Is.Not.Null);
-            Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenges, Is.Null);
-        }
+        Assert.NotNull(response);
+
+        Assert.Equal("requestUrl", response.Url);
+        Assert.Equal("http", response.Protocol);
+        Assert.Equal(200u, response.Status);
+        Assert.Equal("OK", response.StatusText);
+        Assert.False(response.FromCache);
+        Assert.Empty(response.Headers);
+        Assert.Equal("text/html", response.MimeType);
+        Assert.Equal(400u, response.BytesReceived);
+        Assert.Null(response.HeadersSize);
+        Assert.Equal(300u, response.BodySize);
+        Assert.NotNull(response.Content);
+        Assert.Equal(300u, response.Content.Size);
+        Assert.Null(response.AuthChallenges);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeResponseDataWithNullBodySize()
     {
         string json = """
@@ -157,25 +150,23 @@ public class ResponseDataTests
                       }
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json);
-        Assert.That(response, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(response.Url, Is.EqualTo("requestUrl"));
-            Assert.That(response.Protocol, Is.EqualTo("http"));
-            Assert.That(response.Status, Is.EqualTo(200));
-            Assert.That(response.StatusText, Is.EqualTo("OK"));
-            Assert.That(response.FromCache, Is.False);
-            Assert.That(response.Headers, Is.Empty);
-            Assert.That(response.MimeType, Is.EqualTo("text/html"));
-            Assert.That(response.BytesReceived, Is.EqualTo(400));
-            Assert.That(response.HeadersSize, Is.EqualTo(100));
-            Assert.That(response.BodySize, Is.Null);
-            Assert.That(response.Content, Is.Not.Null);
-            Assert.That(response.Content.Size, Is.EqualTo(300));
-        }
+        Assert.NotNull(response);
+
+        Assert.Equal("requestUrl", response.Url);
+        Assert.Equal("http", response.Protocol);
+        Assert.Equal(200u, response.Status);
+        Assert.Equal("OK", response.StatusText);
+        Assert.False(response.FromCache);
+        Assert.Empty(response.Headers);
+        Assert.Equal("text/html", response.MimeType);
+        Assert.Equal(400u, response.BytesReceived);
+        Assert.Equal(100u, response.HeadersSize);
+        Assert.Null(response.BodySize);
+        Assert.NotNull(response.Content);
+        Assert.Equal(300u, response.Content.Size);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeResponseDataWithAuthChallenges()
     {
         string json = """
@@ -202,29 +193,27 @@ public class ResponseDataTests
                       }
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json);
-        Assert.That(response, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(response.Url, Is.EqualTo("requestUrl"));
-            Assert.That(response.Protocol, Is.EqualTo("http"));
-            Assert.That(response.Status, Is.EqualTo(200));
-            Assert.That(response.StatusText, Is.EqualTo("OK"));
-            Assert.That(response.FromCache, Is.False);
-            Assert.That(response.Headers, Is.Empty);
-            Assert.That(response.MimeType, Is.EqualTo("text/html"));
-            Assert.That(response.BytesReceived, Is.EqualTo(400));
-            Assert.That(response.HeadersSize, Is.EqualTo(100));
-            Assert.That(response.BodySize, Is.EqualTo(300));
-            Assert.That(response.Content, Is.Not.Null);
-            Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenges, Is.Not.Null);
-            Assert.That(response.AuthChallenges, Has.Count.EqualTo(1));
-            Assert.That(response.AuthChallenges![0].Scheme, Is.EqualTo("basic"));
-            Assert.That(response.AuthChallenges[0]!.Realm, Is.EqualTo("example.com"));
-        }
+        Assert.NotNull(response);
+
+        Assert.Equal("requestUrl", response.Url);
+        Assert.Equal("http", response.Protocol);
+        Assert.Equal(200u, response.Status);
+        Assert.Equal("OK", response.StatusText);
+        Assert.False(response.FromCache);
+        Assert.Empty(response.Headers);
+        Assert.Equal("text/html", response.MimeType);
+        Assert.Equal(400u, response.BytesReceived);
+        Assert.Equal(100u, response.HeadersSize);
+        Assert.Equal(300u, response.BodySize);
+        Assert.NotNull(response.Content);
+        Assert.Equal(300u, response.Content.Size);
+        Assert.NotNull(response.AuthChallenges);
+        Assert.Single(response.AuthChallenges);
+        Assert.Equal("basic", response.AuthChallenges[0].Scheme);
+        Assert.Equal("example.com", response.AuthChallenges[0].Realm);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -245,12 +234,12 @@ public class ResponseDataTests
                       }
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json);
-        Assert.That(response, Is.Not.Null);
+        Assert.NotNull(response);
         ResponseData copy = response with { };
-        Assert.That(copy, Is.EqualTo(response));
+        Assert.Equal(response, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingUrlThrows()
     {
         string json = """
@@ -269,10 +258,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'url"));
+        Assert.Contains("missing required properties including: 'url", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingProtocolThrows()
     {
         string json = """
@@ -291,10 +280,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'protocol"));
+        Assert.Contains("missing required properties including: 'protocol", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingStatusThrows()
     {
         string json = """
@@ -313,10 +302,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'status"));
+        Assert.Contains("missing required properties including: 'status", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingStatusTextThrows()
     {
         string json = """
@@ -335,10 +324,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'statusText"));
+        Assert.Contains("missing required properties including: 'statusText", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingFromCacheThrows()
     {
         string json = """
@@ -357,10 +346,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'fromCache"));
+        Assert.Contains("missing required properties including: 'fromCache", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingHeadersThrows()
     {
         string json = """
@@ -379,10 +368,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headers"));
+        Assert.Contains("missing required properties including: 'headers", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingMimeTypeThrows()
     {
         string json = """
@@ -401,10 +390,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'mimeType"));
+        Assert.Contains("missing required properties including: 'mimeType", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingBytesReceivedThrows()
     {
         string json = """
@@ -423,10 +412,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'bytesReceived"));
+        Assert.Contains("missing required properties including: 'bytesReceived", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingHeadersSizeThrows()
     {
         string json = """
@@ -445,10 +434,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headersSize"));
+        Assert.Contains("missing required properties including: 'headersSize", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingBodySizeThrows()
     {
         string json = """
@@ -467,10 +456,10 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'bodySize"));
+        Assert.Contains("missing required properties including: 'bodySize", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingContentThrows()
     {
         string json = """
@@ -487,10 +476,10 @@ public class ResponseDataTests
                         "bodySize": 300
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'content"));
+        Assert.Contains("missing required properties including: 'content", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidAuthChallengesTypeThrows()
     {
         string json = """
@@ -514,10 +503,12 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON value could not be converted").And.Message.Contains("authChallenges"));
+        JsonException exception = Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json));
+        Assert.Contains("JSON value could not be converted", exception.Message);
+        Assert.Contains("authChallenges", exception.Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidHeadersTypeThrows()
     {
         string json = """
@@ -537,6 +528,8 @@ public class ResponseDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON value could not be converted").And.Message.Contains("headers"));
+        JsonException exception = Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json));
+        Assert.Contains("JSON value could not be converted", exception.Message);
+        Assert.Contains("headers", exception.Message);
     }
 }

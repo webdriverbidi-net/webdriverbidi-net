@@ -16,14 +16,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver005 analyzer that detects missing Session.SubscribeAsync calls.
 /// </summary>
-[TestFixture]
 public class BiDiDriver005AnalyzerTests
 {
     /// <summary>
     /// Tests that AddObserver without SubscribeAsync reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithoutSubscribeAsync_ReportsWarning()
     {
         string test = """
@@ -95,14 +94,14 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with SubscribeAsync does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithSubscribeAsync_NoDiagnostic()
     {
         string test = """
@@ -183,14 +182,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver on driver internal events does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_OnDriverInternalEvent_NoDiagnostic()
     {
         string test = """
@@ -247,14 +246,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple AddObserver calls without SubscribeAsync report warnings.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MultipleAddObserver_WithoutSubscribeAsync_ReportsMultipleWarnings()
     {
         string test = """
@@ -340,14 +339,14 @@ public class BiDiDriver005AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected1);
         testState.ExpectedDiagnostics.Add(expected2);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that methods without body are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MethodWithoutBody_NoDiagnostic()
     {
         string test = """
@@ -410,14 +409,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver on non-module property does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_OnNonModuleProperty_NoDiagnostic()
     {
         string test = """
@@ -471,14 +470,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver on non-ObservableEvent does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_OnNonObservableEvent_NoDiagnostic()
     {
         string test = """
@@ -527,14 +526,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver on non-BiDiDriver variable does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_OnNonDriverVariable_NoDiagnostic()
     {
         string test = """
@@ -593,14 +592,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with wrong event name in SubscribeAsync reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithWrongEventNameInSubscribe_ReportsWarning()
     {
         string test = """
@@ -687,14 +686,14 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple events with partial subscription reports warnings for unsubscribed events.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MultipleAddObserver_WithPartialSubscribe_ReportsWarningForUnsubscribed()
     {
         string test = """
@@ -794,14 +793,14 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with array creation syntax in SubscribeAsync works correctly.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithArrayCreationSyntax_NoDiagnostic()
     {
         string test = """
@@ -883,14 +882,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with C# 12 collection expression syntax in SubscribeAsync does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithCollectionExpressionSyntax_NoDiagnostic()
     {
         string test = """
@@ -972,14 +971,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with C# 12 collection expression syntax and a wrong event name reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithCollectionExpressionSyntax_WrongEvent_ReportsWarning()
     {
         string test = """
@@ -1066,7 +1065,7 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -1074,7 +1073,7 @@ public class BiDiDriver005AnalyzerTests
     /// (i.e., referenced as a compiled assembly rather than defined in source).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithoutSubscribeAsync_MetadataBacked_ReportsWarning()
     {
         string test = """
@@ -1105,14 +1104,14 @@ public class BiDiDriver005AnalyzerTests
         testState.TestState.AdditionalReferences.Add(await CreateFakeLibMetadataReference());
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that BIDI005 does not fire when SubscribeAsync uses .EventName property access instead of a string literal.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithSubscribeAsync_EventNamePropertyAccess_NoDiagnostic()
     {
         string test = """
@@ -1193,14 +1192,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that BIDI005 does not fire when SubscribeAsync uses .EventName property access, with metadata-backed types.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithSubscribeAsync_EventNamePropertyAccess_MetadataBacked_NoDiagnostic()
     {
         string test = """
@@ -1227,14 +1226,14 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.TestState.AdditionalReferences.Add(await CreateFakeLibMetadataReference());
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that BIDI005 does not fire when SubscribeAsync is present, with metadata-backed types.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithSubscribeAsync_MetadataBacked_NoDiagnostic()
     {
         string test = """
@@ -1261,27 +1260,27 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.TestState.AdditionalReferences.Add(await CreateFakeLibMetadataReference());
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests SupportedDiagnostics property.
     /// </summary>
-    [Test]
+    [Fact]
     public void SupportedDiagnostics_ContainsBIDI005()
     {
         BiDiDriver005_MissingEventSubscriptionAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.That(diagnostics, Has.Length.EqualTo(1));
-        Assert.That(diagnostics[0].Id, Is.EqualTo(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId));
+        Assert.Single(diagnostics);
+        Assert.Equal(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, diagnostics[0].Id);
     }
 
     /// <summary>
     /// Tests that AddObserver called via non-member-access invocation is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_ViaDelegate_NoDiagnostic()
     {
         string test = """
@@ -1328,14 +1327,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that unresolved AddObserver method is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_UnresolvedMethod_NoDiagnostic()
     {
         string test = """
@@ -1396,14 +1395,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver on expression with null type is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_OnNullTypeExpression_NoDiagnostic()
     {
         string test = """
@@ -1452,14 +1451,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver on ObservableEvent without ObservableEventNameAttribute is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_WithoutObservableEventNameAttribute_NoDiagnostic()
     {
         string test = """
@@ -1518,14 +1517,14 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that SubscribeAsync called via non-member-access invocation is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SubscribeAsync_ViaDelegate_NoDiagnostic()
     {
         string test = """
@@ -1613,14 +1612,14 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that unresolved SubscribeAsync method is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SubscribeAsync_UnresolvedMethod_StillReportsWarning()
     {
         string test = """
@@ -1698,14 +1697,14 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver on a field (not property) is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_OnField_NoDiagnostic()
     {
         string test = """
@@ -1772,7 +1771,7 @@ public class BiDiDriver005AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -1780,7 +1779,7 @@ public class BiDiDriver005AnalyzerTests
     /// The analyzer reports a warning because it cannot resolve the event name from a local variable's EventName property.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SubscribeAsync_WithLocalVariableEventName_ReportsWarning()
     {
         string test = """
@@ -1868,7 +1867,7 @@ public class BiDiDriver005AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>

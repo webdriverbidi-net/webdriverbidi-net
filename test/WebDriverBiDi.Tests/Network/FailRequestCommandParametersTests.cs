@@ -3,28 +3,27 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class FailRequestCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         FailRequestCommandParameters properties = new("requestId");
-        Assert.That(properties.MethodName, Is.EqualTo("network.failRequest"));
+        Assert.Equal("network.failRequest", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         FailRequestCommandParameters properties = new("requestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("requestId"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("requestId", request.Value<string>());
     }
 }

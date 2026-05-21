@@ -4,48 +4,54 @@ using System.Text;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-
-[TestFixture]
 public class BytesValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeStringValue()
     {
         BytesValue value = BytesValue.FromString("this is my string");
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(serialized, Contains.Key("value"));
-            Assert.That(serialized["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["value"]!.Value<string>(), Is.EqualTo("this is my string"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("string", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("value"));
+        JToken? valueToken = serialized["value"];
+        Assert.NotNull(valueToken);
+        Assert.Equal(JTokenType.String, valueToken.Type);
+        Assert.Equal("this is my string", valueToken.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeBase64Value()
     {
         string base64String = Convert.ToBase64String(Encoding.UTF8.GetBytes("this is my string"));
         BytesValue value = BytesValue.FromBase64String(base64String);
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("base64"));
-            Assert.That(serialized, Contains.Key("value"));
-            Assert.That(serialized["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["value"]!.Value<string>(), Is.EqualTo(base64String));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("base64", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("value"));
+        JToken? valueToken = serialized["value"];
+        Assert.NotNull(valueToken);
+        Assert.Equal(JTokenType.String, valueToken.Type);
+        Assert.Equal(base64String, valueToken.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeBase64ValueFromByteArray()
     {
         byte[] byteArray = Encoding.UTF8.GetBytes("this is my string");
@@ -53,19 +59,23 @@ public class BytesValueTests
         BytesValue value = BytesValue.FromByteArray(byteArray);
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("base64"));
-            Assert.That(serialized, Contains.Key("value"));
-            Assert.That(serialized["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["value"]!.Value<string>(), Is.EqualTo(base64String));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("base64", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("value"));
+        JToken? valueToken = serialized["value"];
+        Assert.NotNull(valueToken);
+        Assert.Equal(JTokenType.String, valueToken.Type);
+        Assert.Equal(base64String, valueToken.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeStringValue()
     {
         string stringValue = "this is my string";
@@ -77,16 +87,14 @@ public class BytesValueTests
                       }
                       """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
-        Assert.That(value, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(value.Value, Is.EqualTo("this is my string"));
-            Assert.That(value.ValueAsByteArray, Is.EqualTo(valueArray));
-        }
+        Assert.NotNull(value);
+
+        Assert.Equal(BytesValueType.String, value.Type);
+        Assert.Equal("this is my string", value.Value);
+        Assert.Equal(valueArray, value.ValueAsByteArray);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeBase64Value()
     {
         // Disable spell checking only for the base64-encoded value.
@@ -100,19 +108,17 @@ public class BytesValueTests
                       }
                       """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
-        Assert.That(value, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(value.Type, Is.EqualTo(BytesValueType.Base64));
+        Assert.NotNull(value);
 
-            // Disable spell checking only for the base64-encoded value.
-            // cspell: disable-next
-            Assert.That(value.Value, Is.EqualTo("dGhpcyBpcyBteSBzdHJpbmc="));
-            Assert.That(value.ValueAsByteArray, Is.EqualTo(valueArray));
-        }
+        Assert.Equal(BytesValueType.Base64, value.Type);
+
+        // Disable spell checking only for the base64-encoded value.
+        // cspell: disable-next
+        Assert.Equal("dGhpcyBpcyBteSBzdHJpbmc=", value.Value);
+        Assert.Equal(valueArray, value.ValueAsByteArray);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string stringValue = "this is my string";
@@ -124,12 +130,12 @@ public class BytesValueTests
                       }
                       """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
-        Assert.That(value, Is.Not.Null);
+        Assert.NotNull(value);
         BytesValue copy = value with { };
-        Assert.That(copy, Is.EqualTo(value));
+        Assert.Equal(value, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingTypeThrows()
     {
         string json = """
@@ -137,10 +143,10 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidTypeValueThrows()
     {
         string json = $$"""
@@ -149,10 +155,10 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidTypeThrows()
     {
         string json = $$"""
@@ -161,10 +167,10 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingValueThrows()
     {
         string json = $$"""
@@ -172,10 +178,10 @@ public class BytesValueTests
                         "type": "string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidValueThrows()
     {
         string json = $$"""
@@ -184,6 +190,6 @@ public class BytesValueTests
                         "value": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
     }
 }

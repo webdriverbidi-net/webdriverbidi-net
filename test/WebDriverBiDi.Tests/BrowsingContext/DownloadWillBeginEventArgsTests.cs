@@ -2,10 +2,9 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class DownloadWillBeginEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -20,20 +19,18 @@ public class DownloadWillBeginEventArgsTests
                       }
                       """;
         DownloadWillBeginEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(epochTimestamp));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.DownloadId, Is.EqualTo("myDownloadId"));
-            Assert.That(eventArgs.SuggestedFileName, Is.EqualTo("myFile.file"));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("http://example.com", eventArgs.Url);
+        Assert.Equal((ulong)((ulong)(epochTimestamp)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal("myDownloadId", eventArgs.DownloadId);
+        Assert.Equal("myFile.file", eventArgs.SuggestedFileName);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -48,12 +45,12 @@ public class DownloadWillBeginEventArgsTests
                       }
                       """;
         DownloadWillBeginEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         DownloadWillBeginEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingSuggestedFileNameValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -66,10 +63,10 @@ public class DownloadWillBeginEventArgsTests
                         "navigation": "myNavigationId"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidSuggestedFileNameValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -83,10 +80,10 @@ public class DownloadWillBeginEventArgsTests
                         "suggestedFileName": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingDownloadIdValueThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -99,10 +96,10 @@ public class DownloadWillBeginEventArgsTests
                         "suggestedFileName": "myFile.file"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidDownloadIdThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -116,6 +113,6 @@ public class DownloadWillBeginEventArgsTests
                         "suggestedFileName": "myFile.file"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json));
     }
 }

@@ -3,35 +3,37 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class GetDataCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         GetDataCommandParameters properties = new("myRequestId");
-        Assert.That(properties.MethodName, Is.EqualTo("network.getData"));
+        Assert.Equal("network.getData", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         GetDataCommandParameters properties = new("myRequestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("dataType"));
-            Assert.That(serialized["dataType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["dataType"]!.Value<string>(), Is.EqualTo("response"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("dataType"));
+        JToken? dataType = serialized["dataType"];
+        Assert.NotNull(dataType);
+        Assert.Equal(JTokenType.String, dataType.Type);
+        Assert.Equal("response", dataType.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithCollectorId()
     {
         GetDataCommandParameters properties = new("myRequestId")
@@ -40,22 +42,28 @@ public class GetDataCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(3));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("dataType"));
-            Assert.That(serialized["dataType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["dataType"]!.Value<string>(), Is.EqualTo("response"));
-            Assert.That(serialized, Contains.Key("collector"));
-            Assert.That(serialized["collector"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["collector"]!.Value<string>(), Is.EqualTo("myCollectorId"));
-        }
+
+        Assert.Equal(3, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("dataType"));
+        JToken? dataType = serialized["dataType"];
+        Assert.NotNull(dataType);
+        Assert.Equal(JTokenType.String, dataType.Type);
+        Assert.Equal("response", dataType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("collector"));
+        JToken? collector = serialized["collector"];
+        Assert.NotNull(collector);
+        Assert.Equal(JTokenType.String, collector.Type);
+        Assert.Equal("myCollectorId", collector.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDisownDataTrue()
     {
         GetDataCommandParameters properties = new("myRequestId")
@@ -65,25 +73,34 @@ public class GetDataCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(4));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("dataType"));
-            Assert.That(serialized["dataType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["dataType"]!.Value<string>(), Is.EqualTo("response"));
-            Assert.That(serialized, Contains.Key("collector"));
-            Assert.That(serialized["collector"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["collector"]!.Value<string>(), Is.EqualTo("myCollectorId"));
-            Assert.That(serialized, Contains.Key("disown"));
-            Assert.That(serialized["disown"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["disown"]!.Value<bool>(), Is.True);
-        }
+
+        Assert.Equal(4, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("dataType"));
+        JToken? dataType = serialized["dataType"];
+        Assert.NotNull(dataType);
+        Assert.Equal(JTokenType.String, dataType.Type);
+        Assert.Equal("response", dataType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("collector"));
+        JToken? collector = serialized["collector"];
+        Assert.NotNull(collector);
+        Assert.Equal(JTokenType.String, collector.Type);
+        Assert.Equal("myCollectorId", collector.Value<string>());
+
+        Assert.True(serialized.ContainsKey("disown"));
+        JToken? disown = serialized["disown"];
+        Assert.NotNull(disown);
+        Assert.Equal(JTokenType.Boolean, disown.Type);
+        Assert.True(disown.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDisownDataFalse()
     {
         GetDataCommandParameters properties = new("myRequestId")
@@ -93,21 +110,30 @@ public class GetDataCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(4));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("dataType"));
-            Assert.That(serialized["dataType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["dataType"]!.Value<string>(), Is.EqualTo("response"));
-            Assert.That(serialized, Contains.Key("collector"));
-            Assert.That(serialized["collector"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["collector"]!.Value<string>(), Is.EqualTo("myCollectorId"));
-            Assert.That(serialized, Contains.Key("disown"));
-            Assert.That(serialized["disown"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["disown"]!.Value<bool>(), Is.False);
-        }
+
+        Assert.Equal(4, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("dataType"));
+        JToken? dataType = serialized["dataType"];
+        Assert.NotNull(dataType);
+        Assert.Equal(JTokenType.String, dataType.Type);
+        Assert.Equal("response", dataType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("collector"));
+        JToken? collector = serialized["collector"];
+        Assert.NotNull(collector);
+        Assert.Equal(JTokenType.String, collector.Type);
+        Assert.Equal("myCollectorId", collector.Value<string>());
+
+        Assert.True(serialized.ContainsKey("disown"));
+        JToken? disown = serialized["disown"];
+        Assert.NotNull(disown);
+        Assert.Equal(JTokenType.Boolean, disown.Type);
+        Assert.False(disown.Value<bool>());
     }
 }

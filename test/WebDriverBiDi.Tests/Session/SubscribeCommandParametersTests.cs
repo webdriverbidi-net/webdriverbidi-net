@@ -3,164 +3,159 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SubscribeCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SubscribeCommandParameters properties = new(["my.event"]);
-        Assert.That(properties.MethodName, Is.EqualTo("session.subscribe"));
+        Assert.Equal("session.subscribe", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCannotInitializeWithEmptyEventList()
     {
         Assert.Throws<ArgumentException>(() => new SubscribeCommandParameters(Array.Empty<string>()));
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithASingleEvent()
     {
         SubscribeCommandParameters properties = new("some.event");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("events"));
+        JToken? eventsToken = serialized["events"];
+        Assert.NotNull(eventsToken);
+        Assert.Equal(JTokenType.Array, eventsToken.Type);
+        Assert.Single(eventsToken);
+        Assert.Equal("some.event", eventsToken[0]!.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithEvents()
     {
         SubscribeCommandParameters properties = new(["some.event"]);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("events"));
+        JToken? eventsToken = serialized["events"];
+        Assert.NotNull(eventsToken);
+        Assert.Equal(JTokenType.Array, eventsToken.Type);
+        Assert.Single(eventsToken);
+        Assert.Equal("some.event", eventsToken[0]!.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithBrowsingContextData()
     {
         SubscribeCommandParameters properties = new(["some.event"]);
         properties.Contexts.Add("myContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["contexts"]![0]!.Value<string>(), Is.EqualTo("myContext"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("events"));
+        JToken? eventsToken = serialized["events"];
+        Assert.NotNull(eventsToken);
+        Assert.Equal(JTokenType.Array, eventsToken.Type);
+        Assert.Single(eventsToken);
+        Assert.Equal("some.event", eventsToken[0]!.Value<string>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        Assert.Equal(JTokenType.Array, contextsToken.Type);
+        Assert.Single(contextsToken);
+        Assert.Equal("myContext", contextsToken[0]!.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithUserContextData()
     {
         SubscribeCommandParameters properties = new(["some.event"]);
         properties.UserContexts.Add("myUserContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["userContexts"]![0]!.Value<string>(), Is.EqualTo("myUserContext"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("events"));
+        JToken? eventsToken = serialized["events"];
+        Assert.NotNull(eventsToken);
+        Assert.Equal(JTokenType.Array, eventsToken.Type);
+        Assert.Single(eventsToken);
+        Assert.Equal("some.event", eventsToken[0]!.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContextsToken = serialized["userContexts"];
+        Assert.NotNull(userContextsToken);
+        Assert.Equal(JTokenType.Array, userContextsToken.Type);
+        Assert.Single(userContextsToken);
+        Assert.Equal("myUserContext", userContextsToken[0]!.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestInitializeUsingConstructor()
     {
         SubscribeCommandParameters properties = new(["someEvent"], ["someContext"], ["someUserContext"]);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.Events, Has.Count.EqualTo(1));
-            Assert.That(properties.Events, Contains.Item("someEvent"));
-            Assert.That(properties.Contexts, Has.Count.EqualTo(1));
-            Assert.That(properties.Contexts, Contains.Item("someContext"));
-            Assert.That(properties.UserContexts, Has.Count.EqualTo(1));
-            Assert.That(properties.UserContexts, Contains.Item("someUserContext"));
-        }
+
+        Assert.Single(properties.Events);
+        Assert.Contains("someEvent", properties.Events);
+        Assert.Single(properties.Contexts);
+        Assert.Contains("someContext", properties.Contexts);
+        Assert.Single(properties.UserContexts);
+        Assert.Contains("someUserContext", properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestInitializeUsingConstructorForBrowsingContexts()
     {
         SubscribeCommandParameters properties = new(["someEvent"], ["someContext"]);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.Events, Has.Count.EqualTo(1));
-            Assert.That(properties.Events, Contains.Item("someEvent"));
-            Assert.That(properties.Contexts, Has.Count.EqualTo(1));
-            Assert.That(properties.Contexts, Contains.Item("someContext"));
-            Assert.That(properties.UserContexts, Is.Empty);
-        }
+
+        Assert.Single(properties.Events);
+        Assert.Contains("someEvent", properties.Events);
+        Assert.Single(properties.Contexts);
+        Assert.Contains("someContext", properties.Contexts);
+        Assert.Empty(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestInitializeUsingConstructorForBrowsingContextsWithEmptyUserContextList()
     {
         SubscribeCommandParameters properties = new(["someEvent"], ["someContext"], []);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.Events, Has.Count.EqualTo(1));
-            Assert.That(properties.Events, Contains.Item("someEvent"));
-            Assert.That(properties.Contexts, Has.Count.EqualTo(1));
-            Assert.That(properties.Contexts, Contains.Item("someContext"));
-            Assert.That(properties.UserContexts, Is.Empty);
-        }
+
+        Assert.Single(properties.Events);
+        Assert.Contains("someEvent", properties.Events);
+        Assert.Single(properties.Contexts);
+        Assert.Contains("someContext", properties.Contexts);
+        Assert.Empty(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestInitializeUsingConstructorForUserContexts()
     {
         SubscribeCommandParameters properties = new(["someEvent"], null, ["someUserContext"]);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.Events, Has.Count.EqualTo(1));
-            Assert.That(properties.Events, Contains.Item("someEvent"));
-            Assert.That(properties.Contexts, Is.Empty);
-            Assert.That(properties.UserContexts, Has.Count.EqualTo(1));
-            Assert.That(properties.UserContexts, Contains.Item("someUserContext"));
-        }
+
+        Assert.Single(properties.Events);
+        Assert.Contains("someEvent", properties.Events);
+        Assert.Empty(properties.Contexts);
+        Assert.Single(properties.UserContexts);
+        Assert.Contains("someUserContext", properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestInitializeUsingConstructorForUserContextsWithEmptyBrowsingContextList()
     {
         SubscribeCommandParameters properties = new(["someEvent"], [], ["someUserContext"]);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.Events, Has.Count.EqualTo(1));
-            Assert.That(properties.Events, Contains.Item("someEvent"));
-            Assert.That(properties.Contexts, Is.Empty);
-            Assert.That(properties.UserContexts, Has.Count.EqualTo(1));
-            Assert.That(properties.UserContexts, Contains.Item("someUserContext"));
-        }
+
+        Assert.Single(properties.Events);
+        Assert.Contains("someEvent", properties.Events);
+        Assert.Empty(properties.Contexts);
+        Assert.Single(properties.UserContexts);
+        Assert.Contains("someUserContext", properties.UserContexts);
     }
 }

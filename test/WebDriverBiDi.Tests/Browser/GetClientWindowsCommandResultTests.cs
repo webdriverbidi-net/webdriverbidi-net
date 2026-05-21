@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Browser;
 
 using System.Text.Json;
 
-[TestFixture]
 public class GetClientWindowsCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -24,21 +23,19 @@ public class GetClientWindowsCommandResultTests
                       }
                       """;
         GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.ClientWindows, Has.Count.EqualTo(1));
-            Assert.That(result.ClientWindows[0].ClientWindowId, Is.EqualTo("myClientWindow"));
-            Assert.That(result.ClientWindows[0].State, Is.EqualTo(ClientWindowState.Normal));
-            Assert.That(result.ClientWindows[0].IsActive, Is.True);
-            Assert.That(result.ClientWindows[0].X, Is.EqualTo(100));
-            Assert.That(result.ClientWindows[0].Y, Is.EqualTo(200));
-            Assert.That(result.ClientWindows[0].Width, Is.EqualTo(300));
-            Assert.That(result.ClientWindows[0].Height, Is.EqualTo(400));
-        }
+        Assert.NotNull(result);
+
+        Assert.Single(result.ClientWindows);
+        Assert.Equal("myClientWindow", result.ClientWindows[0].ClientWindowId);
+        Assert.Equal(ClientWindowState.Normal, result.ClientWindows[0].State);
+        Assert.True(result.ClientWindows[0].IsActive);
+        Assert.Equal(100u, result.ClientWindows[0].X);
+        Assert.Equal(200u, result.ClientWindows[0].Y);
+        Assert.Equal(300u, result.ClientWindows[0].Width);
+        Assert.Equal(400u, result.ClientWindows[0].Height);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -57,12 +54,12 @@ public class GetClientWindowsCommandResultTests
                       }
                       """;
         GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         GetClientWindowsCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithEmptyList()
     {
         string json = """
@@ -71,7 +68,7 @@ public class GetClientWindowsCommandResultTests
                       }
                       """;
         GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ClientWindows, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.ClientWindows);
     }
 }

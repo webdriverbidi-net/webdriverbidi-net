@@ -2,7 +2,6 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class BaseNetworkEventArgsTests
 {
     private readonly string requestDataJson = """
@@ -34,7 +33,7 @@ public class BaseNetworkEventArgsTests
                                               }
                                               """;
 
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow;
@@ -51,23 +50,21 @@ public class BaseNetworkEventArgsTests
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.False);
-            Assert.That(eventArgs.Intercepts, Is.Null);
-        }
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal(milliseconds, eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.False(eventArgs.IsBlocked);
+        Assert.Null(eventArgs.Intercepts);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithIntercepts()
     {
         DateTime now = DateTime.UtcNow;
@@ -85,25 +82,23 @@ public class BaseNetworkEventArgsTests
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.True);
-            Assert.That(eventArgs.Intercepts, Is.Not.Null);
-            Assert.That(eventArgs.Intercepts, Has.Count.EqualTo(1));
-            Assert.That(eventArgs.Intercepts![0], Is.EqualTo("myInterceptId"));
-        }
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal((ulong)((ulong)(milliseconds)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.True(eventArgs.IsBlocked);
+        Assert.NotNull(eventArgs.Intercepts);
+        Assert.Single(eventArgs.Intercepts);
+        Assert.Equal("myInterceptId", eventArgs.Intercepts[0]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNullContextId()
     {
         DateTime now = DateTime.UtcNow;
@@ -120,23 +115,21 @@ public class BaseNetworkEventArgsTests
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.Null);
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.False);
-            Assert.That(eventArgs.Intercepts, Is.Null);
-        }
+        Assert.Null(eventArgs.BrowsingContextId);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal((ulong)((ulong)(milliseconds)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.False(eventArgs.IsBlocked);
+        Assert.Null(eventArgs.Intercepts);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow;
@@ -153,12 +146,12 @@ public class BaseNetworkEventArgsTests
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         BaseNetworkEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextIdThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -173,10 +166,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextIdTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -192,10 +185,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNullNavigationId()
     {
         DateTime now = DateTime.UtcNow;
@@ -212,23 +205,21 @@ public class BaseNetworkEventArgsTests
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.NavigationId, Is.Null);
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.False);
-            Assert.That(eventArgs.Intercepts, Is.Null);
-        }
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Null(eventArgs.NavigationId);
+        Assert.Equal((ulong)((ulong)(milliseconds)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.False(eventArgs.IsBlocked);
+        Assert.Null(eventArgs.Intercepts);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingNavigationIdThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -243,10 +234,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidNavigationIdTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -262,10 +253,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingIsBlockedThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -280,10 +271,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidIsBlockedTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -299,10 +290,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingRedirectCountThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -317,10 +308,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidRedirectCountTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -336,10 +327,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingTimestampThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -354,10 +345,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidTimestampTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -373,10 +364,10 @@ public class BaseNetworkEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingRequestDataThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -391,10 +382,10 @@ public class BaseNetworkEventArgsTests
                              "timestamp": {{milliseconds}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidRequestDataTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -410,6 +401,6 @@ public class BaseNetworkEventArgsTests
                              "request": "requestData"
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson));
     }
 }

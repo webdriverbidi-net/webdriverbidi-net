@@ -1,65 +1,64 @@
 namespace WebDriverBiDi.Network;
 
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetCacheBehaviorCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetCacheBehaviorCommandParameters properties = new(CacheBehavior.Default);
-        Assert.That(properties.MethodName, Is.EqualTo("network.setCacheBehavior"));
+        Assert.Equal("network.setCacheBehavior", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetCacheBehaviorCommandParameters properties = new(CacheBehavior.Default);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("cacheBehavior"));
-            Assert.That(serialized["cacheBehavior"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["cacheBehavior"]!.Value<string>(), Is.EqualTo("default"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("cacheBehavior"));
+        JToken? cacheBehavior = serialized["cacheBehavior"];
+        Assert.NotNull(cacheBehavior);
+        Assert.Equal(JTokenType.String, cacheBehavior.Type);
+        Assert.Equal("default", cacheBehavior.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithBypass()
     {
         SetCacheBehaviorCommandParameters properties = new(CacheBehavior.Bypass);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("cacheBehavior"));
-            Assert.That(serialized["cacheBehavior"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["cacheBehavior"]!.Value<string>(), Is.EqualTo("bypass"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("cacheBehavior"));
+        JToken? cacheBehavior = serialized["cacheBehavior"];
+        Assert.NotNull(cacheBehavior);
+        Assert.Equal(JTokenType.String, cacheBehavior.Type);
+        Assert.Equal("bypass", cacheBehavior.Value<string>());
     }
 
+    [Fact]
     public void TestCanSetCacheBehaviorViaProperty()
     {
         SetCacheBehaviorCommandParameters properties = new(CacheBehavior.Default);
         properties.CacheBehavior = CacheBehavior.Bypass;
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("cacheBehavior"));
-            Assert.That(serialized["cacheBehavior"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["cacheBehavior"]!.Value<string>(), Is.EqualTo("bypass"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("cacheBehavior"));
+        JToken? cacheBehavior = serialized["cacheBehavior"];
+        Assert.NotNull(cacheBehavior);
+        Assert.Equal(JTokenType.String, cacheBehavior.Type);
+        Assert.Equal("bypass", cacheBehavior.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithContexts()
     {
         SetCacheBehaviorCommandParameters properties = new(CacheBehavior.Default)
@@ -68,18 +67,22 @@ public class SetCacheBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("cacheBehavior"));
-            Assert.That(serialized["cacheBehavior"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["cacheBehavior"]!.Value<string>(), Is.EqualTo("default"));
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray contextsObject = (JArray)serialized["contexts"]!;
-            Assert.That(contextsObject, Has.Count.EqualTo(1));
-            Assert.That(contextsObject[0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsObject[0].Value<string>(), Is.EqualTo("myContext"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("cacheBehavior"));
+        JToken? cacheBehavior = serialized["cacheBehavior"];
+        Assert.NotNull(cacheBehavior);
+        Assert.Equal(JTokenType.String, cacheBehavior.Type);
+        Assert.Equal("default", cacheBehavior.Value<string>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        Assert.Equal(JTokenType.Array, contextsToken.Type);
+        JArray? contextsObject = contextsToken as JArray;
+        Assert.NotNull(contextsObject);
+        Assert.Single(contextsObject);
+        Assert.Equal(JTokenType.String, contextsObject[0].Type);
+        Assert.Equal("myContext", contextsObject[0].Value<string>());
     }
 }

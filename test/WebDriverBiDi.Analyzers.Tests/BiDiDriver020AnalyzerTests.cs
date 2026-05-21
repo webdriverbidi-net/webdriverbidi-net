@@ -12,10 +12,9 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver020 analyzer.
 /// </summary>
-[TestFixture]
 public class BiDiDriver020AnalyzerTests
 {
-    [Test]
+    [Fact]
     public async Task WaitForAsync_WithoutStartCapturing_ReportsError()
     {
         string testCode = """
@@ -47,7 +46,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForCapturedTasksAsync_WithoutStartCapturing_ReportsError()
     {
         string testCode = """
@@ -79,7 +78,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForAsync_AfterStartCapturing_NoDiagnostic()
     {
         string testCode = """
@@ -106,7 +105,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForCapturedTasksAsync_AfterStartCapturing_NoDiagnostic()
     {
         string testCode = """
@@ -133,7 +132,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForAsync_AfterStopCapturing_ReportsError()
     {
         // StartCapturing then StopCapturing leaves no active session.
@@ -168,7 +167,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForAsync_AfterStopAndRestart_NoDiagnostic()
     {
         string testCode = """
@@ -197,7 +196,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleObservers_OnlyOneWithoutStartCapturing_ReportsOneError()
     {
         string testCode = """
@@ -232,7 +231,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ObserverPassedAsParameter_NoDiagnostic()
     {
         // Parameter-passed observers are not tracked; we can't know their capture state.
@@ -257,7 +256,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MethodWithoutBody_NoDiagnostic()
     {
         string testCode = """
@@ -277,7 +276,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task GetCapturedTasks_WithoutStartCapturing_NoDiagnostic()
     {
         // GetCapturedTasks is synchronous and returns empty when no session is active — not an error.
@@ -303,7 +302,7 @@ public class BiDiDriver020AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task BothWaitMethods_WithoutStartCapturing_ReportsTwoErrors()
     {
         string testCode = """

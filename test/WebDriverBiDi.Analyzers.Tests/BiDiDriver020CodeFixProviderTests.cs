@@ -13,10 +13,9 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver020 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver020CodeFixProviderTests
 {
-    [Test]
+    [Fact]
     public async Task WaitForAsync_WithoutStartCapturing_InsertsStartCapturing()
     {
         string testCode = """
@@ -75,10 +74,10 @@ public class BiDiDriver020CodeFixProviderTests
         testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForCapturedTasksAsync_WithoutStartCapturing_InsertsStartCapturing()
     {
         string testCode = """
@@ -137,10 +136,10 @@ public class BiDiDriver020CodeFixProviderTests
         testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForAsync_AfterStopCapturing_InsertsStartCapturingBeforeWait()
     {
         string testCode = """
@@ -205,6 +204,6 @@ public class BiDiDriver020CodeFixProviderTests
         testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

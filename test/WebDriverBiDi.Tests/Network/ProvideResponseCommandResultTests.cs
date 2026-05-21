@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ProvideResponseCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         ProvideResponseCommandResult? result = JsonSerializer.Deserialize<ProvideResponseCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         ProvideResponseCommandResult? result = JsonSerializer.Deserialize<ProvideResponseCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProvideResponseCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

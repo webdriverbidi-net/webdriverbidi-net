@@ -3,26 +3,25 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class GetTreeCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         GetTreeCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.getTree"));
+        Assert.Equal("browsingContext.getTree", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         GetTreeCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithMaxDepth()
     {
         GetTreeCommandParameters properties = new()
@@ -31,17 +30,16 @@ public class GetTreeCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("maxDepth"));
-            Assert.That(serialized["maxDepth"], Is.Not.Null);
-            Assert.That(serialized["maxDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["maxDepth"]!.Value<long>(), Is.EqualTo(2));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("maxDepth"));
+        JToken? maxDepth = serialized["maxDepth"];
+        Assert.NotNull(maxDepth);
+        Assert.Equal(JTokenType.Integer, maxDepth.Type);
+        Assert.Equal(2L, maxDepth.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithRoot()
     {
         GetTreeCommandParameters properties = new()
@@ -50,13 +48,12 @@ public class GetTreeCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("root"));
-            Assert.That(serialized["root"], Is.Not.Null);
-            Assert.That(serialized["root"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["root"]!.Value<string>(), Is.EqualTo("rootBrowsingContext"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("root"));
+        JToken? root = serialized["root"];
+        Assert.NotNull(root);
+        Assert.Equal(JTokenType.String, root.Type);
+        Assert.Equal("rootBrowsingContext", root.Value<string>());
     }
 }

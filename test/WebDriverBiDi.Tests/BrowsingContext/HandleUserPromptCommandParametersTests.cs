@@ -3,32 +3,31 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class HandleUserPromptCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         HandleUserPromptCommandParameters properties = new("myContextId");
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.handleUserPrompt"));
+        Assert.Equal("browsingContext.handleUserPrompt", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         HandleUserPromptCommandParameters properties = new("myContextId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptTrue()
     {
         HandleUserPromptCommandParameters properties = new("myContextId")
@@ -37,19 +36,22 @@ public class HandleUserPromptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("accept"));
-            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(true));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("accept"));
+        JToken? accept = serialized["accept"];
+        Assert.NotNull(accept);
+        Assert.Equal(JTokenType.Boolean, accept.Type);
+        Assert.True(accept.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptFalse()
     {
         HandleUserPromptCommandParameters properties = new("myContextId")
@@ -58,19 +60,22 @@ public class HandleUserPromptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("accept"));
-            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(false));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("accept"));
+        JToken? accept = serialized["accept"];
+        Assert.NotNull(accept);
+        Assert.Equal(JTokenType.Boolean, accept.Type);
+        Assert.False(accept.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithUserText()
     {
         HandleUserPromptCommandParameters properties = new("myContextId")
@@ -79,15 +84,18 @@ public class HandleUserPromptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("userText"));
-            Assert.That(serialized["userText"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["userText"]!.Value<string>(), Is.EqualTo("myUserText"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userText"));
+        JToken? userText = serialized["userText"];
+        Assert.NotNull(userText);
+        Assert.Equal(JTokenType.String, userText.Type);
+        Assert.Equal("myUserText", userText.Value<string>());
     }
 }

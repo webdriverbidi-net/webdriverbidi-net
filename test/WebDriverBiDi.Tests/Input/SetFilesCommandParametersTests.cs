@@ -4,45 +4,52 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class SetFilesCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SharedReference element = new("mySharedId");
         SetFilesCommandParameters properties = new("myContextId", element);
-        Assert.That(properties.MethodName, Is.EqualTo("input.setFiles"));
+        Assert.Equal("input.setFiles", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SharedReference element = new("mySharedId");
         SetFilesCommandParameters properties = new("myContextId", element);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("element"));
-            Assert.That(serialized["element"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["element"]!.Value<JObject>(), Is.Not.Null);
-            JObject elementObject = serialized["element"]!.Value<JObject>()!;
-            Assert.That(elementObject, Has.Count.EqualTo(1));
-            Assert.That(elementObject, Contains.Key("sharedId"));
-            Assert.That(elementObject["sharedId"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(elementObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-            Assert.That(serialized, Contains.Key("files"));
-            Assert.That(serialized["files"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["files"]!, Is.Empty);
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("element"));
+        JToken? elementToken = serialized["element"];
+        Assert.NotNull(elementToken);
+        Assert.Equal(JTokenType.Object, elementToken.Type);
+        JObject? elementObject = elementToken.Value<JObject>();
+        Assert.NotNull(elementObject);
+        Assert.Single(elementObject);
+        Assert.True(elementObject.ContainsKey("sharedId"));
+        JToken? sharedId = elementObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal(JTokenType.String, sharedId.Type);
+        Assert.Equal("mySharedId", sharedId.Value<string>());
+
+        Assert.True(serialized.ContainsKey("files"));
+        JToken? filesToken = serialized["files"];
+        Assert.NotNull(filesToken);
+        Assert.Equal(JTokenType.Array, filesToken.Type);
+        Assert.Empty(filesToken);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithFileList()
     {
         SharedReference element = new("mySharedId");
@@ -51,29 +58,37 @@ public class SetFilesCommandParametersTests
         properties.Files.Add("path/to/file2.txt");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("element"));
-            Assert.That(serialized["element"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["element"]!.Value<JObject>(), Is.Not.Null);
-            JObject elementObject = serialized["element"]!.Value<JObject>()!;
-            Assert.That(elementObject, Has.Count.EqualTo(1));
-            Assert.That(elementObject, Contains.Key("sharedId"));
-            Assert.That(elementObject["sharedId"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(elementObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-            Assert.That(serialized, Contains.Key("files"));
-            Assert.That(serialized["files"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["files"]!.Value<JArray>(), Is.Not.Null);
-            JArray filesArray = serialized["files"]!.Value<JArray>()!;
-            Assert.That(filesArray, Has.Count.EqualTo(2));
-            Assert.That(filesArray[0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(filesArray[0].Value<string>(), Is.EqualTo("path/to/file1.txt"));
-            Assert.That(filesArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(filesArray[1].Value<string>(), Is.EqualTo("path/to/file2.txt"));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("element"));
+        JToken? elementToken = serialized["element"];
+        Assert.NotNull(elementToken);
+        Assert.Equal(JTokenType.Object, elementToken.Type);
+        JObject? elementObject = elementToken.Value<JObject>();
+        Assert.NotNull(elementObject);
+        Assert.Single(elementObject);
+        Assert.True(elementObject.ContainsKey("sharedId"));
+        JToken? sharedId = elementObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal(JTokenType.String, sharedId.Type);
+        Assert.Equal("mySharedId", sharedId.Value<string>());
+
+        Assert.True(serialized.ContainsKey("files"));
+        JToken? filesToken = serialized["files"];
+        Assert.NotNull(filesToken);
+        Assert.Equal(JTokenType.Array, filesToken.Type);
+        JArray? filesArray = filesToken.Value<JArray>();
+        Assert.NotNull(filesArray);
+        Assert.Equal(2, filesArray.Count);
+        Assert.Equal(JTokenType.String, filesArray[0].Type);
+        Assert.Equal("path/to/file1.txt", filesArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, filesArray[1].Type);
+        Assert.Equal("path/to/file2.txt", filesArray[1].Value<string>());
     }
 }

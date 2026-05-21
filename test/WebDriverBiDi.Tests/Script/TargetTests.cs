@@ -3,77 +3,71 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class TargetTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeRealmTarget()
     {
         string json = @"{ ""realm"": ""myRealm"" }";
         Target? target = JsonSerializer.Deserialize<Target>(json);
-        Assert.That(target, Is.Not.Null);
-        Assert.That(target, Is.InstanceOf<RealmTarget>());
-        RealmTarget realmTarget = (RealmTarget)target!;
-        Assert.That(realmTarget.RealmId, Is.EqualTo("myRealm"));
+        Assert.NotNull(target);
+        Assert.IsType<RealmTarget>(target);
+        RealmTarget realmTarget = (RealmTarget)target;
+        Assert.Equal("myRealm", realmTarget.RealmId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeContextTarget()
     {
         string json = @"{ ""context"": ""myContext"" }";
         Target? target = JsonSerializer.Deserialize<Target>(json);
-        Assert.That(target, Is.Not.Null);
-        Assert.That(target, Is.InstanceOf<ContextTarget>());
-        ContextTarget contextTarget = (ContextTarget)target!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
-            Assert.That(contextTarget.Sandbox, Is.Null);
-        }
+        Assert.NotNull(target);
+        Assert.IsType<ContextTarget>(target);
+        ContextTarget contextTarget = (ContextTarget)target;
+
+        Assert.Equal("myContext", contextTarget.BrowsingContextId);
+        Assert.Null(contextTarget.Sandbox);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeContextTargetWithSandbox()
     {
         string json = @"{ ""context"": ""myContext"", ""sandbox"": ""mySandbox"" }";
         Target? target = JsonSerializer.Deserialize<Target>(json);
-        Assert.That(target, Is.Not.Null);
-        Assert.That(target, Is.InstanceOf<ContextTarget>());
-        ContextTarget contextTarget = (ContextTarget)target!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
-            Assert.That(contextTarget.Sandbox, Is.EqualTo("mySandbox"));
-        }
+        Assert.NotNull(target);
+        Assert.IsType<ContextTarget>(target);
+        ContextTarget contextTarget = (ContextTarget)target;
+
+        Assert.Equal("myContext", contextTarget.BrowsingContextId);
+        Assert.Equal("mySandbox", contextTarget.Sandbox);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializationOfInvalidJsonThrows()
     {
         string json = @"{ ""invalid"": ""invalidValue"" }";
-        Assert.That(() => JsonSerializer.Deserialize<ContextTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'context"));
-        Assert.That(() => JsonSerializer.Deserialize<RealmTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'realm"));
-        Assert.That(() => JsonSerializer.Deserialize<Target>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'Target' must contain one of the following properties: context, realm"));
-        Assert.That(() => JsonSerializer.Deserialize<Target>(@"[ ""invalid target"" ]"), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'Target' must be an object"));
+        Assert.Contains("missing required properties including: 'context", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ContextTarget>(json)).Message);
+        Assert.Contains("missing required properties including: 'realm", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmTarget>(json)).Message);
+        Assert.Contains("JSON for 'Target' must contain one of the following properties: context, realm", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Target>(json)).Message);
+        Assert.Contains("JSON for 'Target' must be an object", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Target>(@"[ ""invalid target"" ]")).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeRealmTarget()
     {
         Target target = new RealmTarget("myRealm");
         string json = JsonSerializer.Serialize(target);
         JObject deserialized = JObject.Parse(json);
-        Assert.That(deserialized, Has.Count.EqualTo(1));
-        Assert.That(deserialized, Contains.Key("realm"));
-        JToken realmValue = deserialized.GetValue("realm")!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmValue.Type, Is.EqualTo(JTokenType.String));
-            Assert.That((string?)realmValue, Is.EqualTo("myRealm"));
-        }
+        Assert.Single(deserialized);
+        Assert.True(deserialized.ContainsKey("realm"));
+        JToken? realmValue = deserialized.GetValue("realm");
+        Assert.NotNull(realmValue);
+
+        Assert.Equal(JTokenType.String, realmValue.Type);
+        Assert.Equal("myRealm", (string?)realmValue);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeContextTarget()
     {
         Target target = new ContextTarget("myContext")
@@ -82,35 +76,34 @@ public class TargetTests
         };
         string json = JsonSerializer.Serialize(target);
         JObject deserialized = JObject.Parse(json);
-        Assert.That(deserialized, Has.Count.EqualTo(2));
-        Assert.That(deserialized, Contains.Key("context"));
-        JToken contextValue = deserialized.GetValue("context")!;
-        JToken sandboxValue = deserialized.GetValue("sandbox")!;
+        Assert.Equal(2, deserialized.Count);
+        Assert.True(deserialized.ContainsKey("context"));
+        JToken? contextValue = deserialized.GetValue("context");
+        Assert.NotNull(contextValue);
+        JToken? sandboxValue = deserialized.GetValue("sandbox");
+        Assert.NotNull(sandboxValue);
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
-            Assert.That((string?)contextValue, Is.EqualTo("myContext"));
-            Assert.That(sandboxValue.Type, Is.EqualTo(JTokenType.String));
-            Assert.That((string?)sandboxValue, Is.EqualTo("mySandbox"));
-        }
+        Assert.Equal(JTokenType.String, contextValue.Type);
+        Assert.Equal("myContext", (string?)contextValue);
+        Assert.Equal(JTokenType.String, sandboxValue.Type);
+        Assert.Equal("mySandbox", (string?)sandboxValue);
     }
 
-    [Test]
+    [Fact]
     public void TestContextTargetCopySemantics()
     {
         Target target = new ContextTarget("myContext");
         Target copy = target with { };
-        Assert.That(copy, Is.InstanceOf<ContextTarget>());
-        Assert.That(copy, Is.EqualTo(target));
+        Assert.IsType<ContextTarget>(copy);
+        Assert.Equal(target, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestRealmTargetCopySemantics()
     {
         Target target = new RealmTarget("myContext");
         Target copy = target with { };
-        Assert.That(copy, Is.InstanceOf<RealmTarget>());
-        Assert.That(copy, Is.EqualTo(target));
+        Assert.IsType<RealmTarget>(copy);
+        Assert.Equal(target, copy);
     }
 }

@@ -5,10 +5,9 @@ using Newtonsoft.Json.Linq;
 
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class ElementOriginTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeOrigin()
     {
         string nodeJson = """
@@ -22,29 +21,33 @@ public class ElementOriginTests
                           }
                           """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson);
-        Assert.That(remoteValue, Is.Not.Null);
-        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NodeRemoteValue>(remoteValue);
         SharedReference node = ((NodeRemoteValue)remoteValue).ToSharedReference();
         ElementOrigin origin = new(node);
         string json = JsonSerializer.Serialize(origin);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("element"));
-            Assert.That(serialized, Contains.Key("element"));
-            Assert.That(serialized["element"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject? serializedElementReference = serialized["element"]!.Value<JObject>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serializedElementReference, Is.Not.Null);
-            Assert.That(serializedElementReference, Has.Count.EqualTo(1));
-            Assert.That(serializedElementReference, Contains.Key("sharedId"));
-            Assert.That(serializedElementReference!["sharedId"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serializedElementReference["sharedId"]!.Value<string>(), Is.EqualTo("testSharedId"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("element", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("element"));
+        JToken? elementToken = serialized["element"];
+        Assert.NotNull(elementToken);
+        Assert.Equal(JTokenType.Object, elementToken.Type);
+
+        JObject? serializedElementReference = elementToken.Value<JObject>();
+        Assert.NotNull(serializedElementReference);
+        Assert.Single(serializedElementReference);
+        Assert.True(serializedElementReference.ContainsKey("sharedId"));
+
+        JToken? sharedId = serializedElementReference["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal(JTokenType.String, sharedId.Type);
+        Assert.Equal("testSharedId", sharedId.Value<string>());
     }
 }

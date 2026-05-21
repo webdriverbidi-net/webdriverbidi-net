@@ -2,23 +2,22 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class TraverseHistoryCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         TraverseHistoryCommandResult? result = JsonSerializer.Deserialize<TraverseHistoryCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         TraverseHistoryCommandResult? result = JsonSerializer.Deserialize<TraverseHistoryCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         TraverseHistoryCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }
