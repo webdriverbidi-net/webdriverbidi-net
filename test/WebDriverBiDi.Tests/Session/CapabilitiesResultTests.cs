@@ -708,6 +708,101 @@ public class CapabilitiesResultTests
     }
 
     [Test]
+    public void TestProxyReturnsCachedInstanceOnRepeatedAccess()
+    {
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "proxy": {
+                          "proxyType": "direct"
+                        }
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.That(result, Is.Not.Null);
+        ProxyConfigurationResult? first = result.Proxy;
+        ProxyConfigurationResult? second = result.Proxy;
+        Assert.That(first, Is.Not.Null);
+        Assert.That(second, Is.SameAs(first));
+    }
+
+    [Test]
+    public void TestAdditionalCapabilitiesReturnsCachedInstanceOnRepeatedAccess()
+    {
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.That(result, Is.Not.Null);
+        ReceivedDataDictionary first = result.AdditionalCapabilities;
+        ReceivedDataDictionary second = result.AdditionalCapabilities;
+        Assert.That(first, Is.SameAs(second));
+    }
+
+    [Test]
+    public void TestUnhandledPromptBehaviorReturnsCachedInstanceOnRepeatedAccess()
+    {
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "unhandledPromptBehavior": {
+                          "default": "accept"
+                        }
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.That(result, Is.Not.Null);
+        UserPromptHandlerResult? first = result.UnhandledPromptBehavior;
+        UserPromptHandlerResult? second = result.UnhandledPromptBehavior;
+        Assert.That(first, Is.Not.Null);
+        Assert.That(second, Is.SameAs(first));
+    }
+
+    [Test]
+    public void TestProxyReturnsCachedInstanceForEachProxyType()
+    {
+        string[] proxyJsonValues = [ "\"proxyType\": \"direct\"", "\"proxyType\": \"system\"", "\"proxyType\": \"autodetect\"", "\"proxyType\": \"pac\", \"proxyAutoconfigUrl\": \"http://proxy.example\"", "\"proxyType\": \"manual\", \"httpProxy\": \"http.proxy\"" ];
+        foreach (string proxyJson in proxyJsonValues)
+        {
+            string json = $$"""
+                          {
+                            "browserName": "greatBrowser",
+                            "browserVersion": "101.5b",
+                            "platformName": "otherOS",
+                            "userAgent": "WebDriverBidi.NET/1.0",
+                            "acceptInsecureCerts": true,
+                            "setWindowRect": true,
+                            "proxy": { {{proxyJson}} }
+                          }
+                          """;
+            CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+            Assert.That(result, Is.Not.Null);
+            ProxyConfigurationResult? first = result.Proxy;
+            ProxyConfigurationResult? second = result.Proxy;
+            Assert.That(first, Is.Not.Null);
+            Assert.That(second, Is.SameAs(first));
+        }
+    }
+
+    [Test]
     public void TestDeserializingWithInvalidWebSocketUrlTypeThrows()
     {
         string json = """

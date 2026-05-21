@@ -159,4 +159,24 @@ public class PendingCommandCollectionTests
         Assert.That(async () => await collection.AddPendingCommandAsync(testCommand, cts.Token), Throws.InstanceOf<OperationCanceledException>());
         Assert.That(collection.PendingCommandCount, Is.EqualTo(0));
     }
+
+    [Test]
+    public void TestDisposeFinalizerPathDoesNotThrow()
+    {
+        ExposedDisposeCollection collection = new();
+        Assert.That(() => collection.DisposeUnmanaged(), Throws.Nothing);
+    }
+
+    [Test]
+    public void TestDisposeFinalizerPathAfterManagedDisposeDoesNotThrow()
+    {
+        ExposedDisposeCollection collection = new();
+        collection.Dispose();
+        Assert.That(() => collection.DisposeUnmanaged(), Throws.Nothing);
+    }
+
+    private sealed class ExposedDisposeCollection : PendingCommandCollection
+    {
+        public void DisposeUnmanaged() => this.Dispose(false);
+    }
 }

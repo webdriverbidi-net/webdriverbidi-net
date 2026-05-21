@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.JsonConverters;
 
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json.Linq;
@@ -78,6 +79,20 @@ public class SentinelNullJsonConverterTests
     {
         string json = """{ "double": 3 }""";
         Assert.That(() => JsonSerializer.Deserialize<TestClass>(json), Throws.InstanceOf<NotSupportedException>());
+    }
+
+    [Test]
+    public void TestWriteWithNullValueWritesNothing()
+    {
+        SentinelNullJsonConverter<Viewport, ViewportSentinelChecker> converter = new();
+        using MemoryStream stream = new();
+        using Utf8JsonWriter writer = new(stream);
+        writer.WriteStartObject();
+        converter.Write(writer, null!, JsonSerializerOptions.Default);
+        writer.WriteEndObject();
+        writer.Flush();
+        string json = Encoding.UTF8.GetString(stream.ToArray());
+        Assert.That(json, Is.EqualTo("{}"));
     }
 
     private class TestClass

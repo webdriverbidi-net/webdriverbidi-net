@@ -209,4 +209,43 @@ public class MessageTests
         CommandResponseMessage<TestCommandResult> message = new();
         Assert.That(() => _ = message.Result, Throws.InvalidOperationException.With.Message.EqualTo("Result cannot be null"));
     }
+
+    [Test]
+    public void TestAdditionalDataReturnsCachedInstanceOnRepeatedAccess()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        },
+                        "additionalProperty": "additional value"
+                      }
+                      """;
+        CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
+        Assert.That(result, Is.Not.Null);
+        ReceivedDataDictionary first = result.AdditionalData;
+        ReceivedDataDictionary second = result.AdditionalData;
+        Assert.That(first, Is.SameAs(second));
+    }
+
+    [Test]
+    public void TestErrorCodeReturnsCachedValueOnRepeatedAccess()
+    {
+        string json = """
+                      {
+                        "type": "error",
+                        "id": 1,
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
+        ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.That(result, Is.Not.Null);
+        ErrorCode first = result.ErrorCode;
+        ErrorCode second = result.ErrorCode;
+        Assert.That(first, Is.EqualTo(ErrorCode.UnknownError));
+        Assert.That(second, Is.EqualTo(first));
+    }
 }
