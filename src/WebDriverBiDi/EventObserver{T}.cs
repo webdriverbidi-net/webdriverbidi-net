@@ -386,6 +386,28 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <exception cref="ArgumentException">Thrown when <paramref name="count"/> is zero.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+    /// <remarks>
+    /// <para>
+    /// A <see langword="false"/> return can arise from two distinct timeout conditions:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>
+    /// Fewer than <paramref name="count"/> events arrived before the timeout expired (the capture
+    /// phase timed out). The capture session remains active; subsequent handler invocations continue
+    /// to be buffered.
+    /// </description></item>
+    /// <item><description>
+    /// All <paramref name="count"/> events arrived but one or more handlers had not finished executing
+    /// before the remaining timeout budget was exhausted (the completion phase timed out). The capture
+    /// session is automatically ended in this case.
+    /// </description></item>
+    /// </list>
+    /// <para>
+    /// If you need to distinguish between these two conditions, use
+    /// <see cref="WaitForCapturedTasksAsync"/> to obtain the handler tasks and then await
+    /// <see cref="Task.WhenAll(Task[])"/> with your own timeout handling.
+    /// </para>
+    /// </remarks>
     /// <example>
     /// <code>
     /// EventObserver&lt;BeforeRequestSentEventArgs&gt; observer = driver.Network.OnBeforeRequestSent.AddObserver(
