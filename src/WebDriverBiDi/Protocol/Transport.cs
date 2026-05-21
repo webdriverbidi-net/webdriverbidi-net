@@ -41,11 +41,11 @@ using WebDriverBiDi.JsonConverters;
 /// </para>
 /// <para>
 /// <strong>Monitoring Queue Behavior:</strong>
-/// There is currently no built-in mechanism to monitor queue depth. If you suspect message backlog issues,
-/// consider:
+/// Use <see cref="IncomingQueueDepth"/> to monitor the number of messages buffered in the queue.
+/// A persistently growing value indicates that event handlers are not keeping up with the incoming
+/// message rate. If you suspect message backlog issues, consider:
 /// <list type="bullet">
 /// <item><description>Using <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> for all event handlers that perform I/O or take more than a few milliseconds</description></item>
-/// <item><description>Monitoring memory usage of your process during high-traffic operations</description></item>
 /// <item><description>Reducing the frequency of subscribed events if not all are needed</description></item>
 /// <item><description>Implementing throttling or filtering logic in your event handlers</description></item>
 /// </list>
