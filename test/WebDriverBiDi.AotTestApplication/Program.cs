@@ -5,7 +5,6 @@
 
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Client;
 using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
@@ -19,14 +18,14 @@ BrowserLauncher launcher;
 switch (browser)
 {
     case "firefox":
-        launcher = BrowserLauncher.Configure(Browser.Firefox)
+        launcher = BrowserLauncher.Configure(BrowserKind.Firefox)
             .WithReleaseChannel(BrowserReleaseChannel.Alpha)
             .AtAutomaticallyDownloadedLocation()
             .WithHeadlessOption()
             .Build();
         break;
     case "chrome":
-        launcher = BrowserLauncher.Configure(Browser.Chrome)
+        launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Alpha)
             .AtAutomaticallyDownloadedLocation()
             .WithHeadlessOption()

@@ -53,7 +53,7 @@ public class DriverLocator
     /// <param name="browser">The browser for which to locate the driver.</param>
     /// <returns>The path to the driver executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
-    public static Task<string?> FindDriverAsync(Browser browser)
+    public static Task<string?> FindDriverAsync(BrowserKind browser)
     {
         return FindDriverAsync(browser, BrowserReleaseChannel.Stable);
     }
@@ -65,7 +65,7 @@ public class DriverLocator
     /// <param name="channel">The release channel of the driver.</param>
     /// <returns>The path to the driver executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
-    public static Task<string?> FindDriverAsync(Browser browser, BrowserReleaseChannel channel)
+    public static Task<string?> FindDriverAsync(BrowserKind browser, BrowserReleaseChannel channel)
     {
         return FindDriverAsync(browser, channel, BrowserVersion.Latest);
     }
@@ -78,7 +78,7 @@ public class DriverLocator
     /// <param name="version">The version of the driver to locate (typically matches browser version).</param>
     /// <returns>The path to the driver executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
-    public static Task<string?> FindDriverAsync(Browser browser, BrowserReleaseChannel channel, BrowserVersion version)
+    public static Task<string?> FindDriverAsync(BrowserKind browser, BrowserReleaseChannel channel, BrowserVersion version)
     {
         return FindDriverAsync(browser, channel, version, FileLocationBehavior.AutoLocateAndDownload);
     }
@@ -96,7 +96,7 @@ public class DriverLocator
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
     public static async Task<string?> FindDriverAsync(
-        Browser browser,
+        BrowserKind browser,
         BrowserReleaseChannel channel,
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
@@ -105,12 +105,12 @@ public class DriverLocator
     {
         BrowserLocatorSettings settings = browser switch
         {
-            Browser.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath),
-            Browser.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath),
-            Browser.Edge => throw new NotImplementedException(
+            BrowserKind.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath),
+            BrowserKind.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath),
+            BrowserKind.Edge => throw new NotImplementedException(
                 "Microsoft Edge driver support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Edge support is planned for a future release."),
-            Browser.Safari => throw new NotImplementedException(
+            BrowserKind.Safari => throw new NotImplementedException(
                 "Apple Safari driver support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Safari support is planned for a future release pending maturity of Safari's BiDi implementation."),
             _ => throw new ArgumentException($"Unknown browser: {browser}", nameof(browser)),

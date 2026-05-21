@@ -12,7 +12,7 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public class BrowserLauncherBuilder
 {
-    private readonly Browser browser;
+    private readonly BrowserKind browser;
     private BrowserReleaseChannel channel = BrowserReleaseChannel.Stable;
     private BrowserVersion version = BrowserVersion.Latest;
     private FileLocationBehavior locationBehavior = FileLocationBehavior.AutoLocateAndDownload;
@@ -30,7 +30,7 @@ public class BrowserLauncherBuilder
     /// Initializes a new instance of the <see cref="BrowserLauncherBuilder"/> class for the specified browser.
     /// </summary>
     /// <param name="browser">The browser to launch.</param>
-    internal BrowserLauncherBuilder(Browser browser)
+    internal BrowserLauncherBuilder(BrowserKind browser)
     {
         this.browser = browser;
     }
@@ -255,12 +255,12 @@ public class BrowserLauncherBuilder
 
         BrowserLauncher launcher = this.browser switch
         {
-            Browser.Chrome => this.CreateChromeLauncher(),
-            Browser.Firefox => this.CreateFirefoxLauncher(),
-            Browser.Edge => throw new NotImplementedException(
+            BrowserKind.Chrome => this.CreateChromeLauncher(),
+            BrowserKind.Firefox => this.CreateFirefoxLauncher(),
+            BrowserKind.Edge => throw new NotImplementedException(
                 "Microsoft Edge browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Edge support is planned for a future release."),
-            Browser.Safari => throw new NotImplementedException(
+            BrowserKind.Safari => throw new NotImplementedException(
                 "Apple Safari browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Safari support is planned for a future release pending maturity of Safari's BiDi implementation."),
             _ => throw new WebDriverBiDiException($"Unknown browser type: {this.browser}"),
@@ -324,7 +324,7 @@ public class BrowserLauncherBuilder
         // Validate pipe connection requirements
         if (this.connectionType == ConnectionType.Pipes)
         {
-            if (this.browser != Browser.Chrome)
+            if (this.browser != BrowserKind.Chrome)
             {
                 throw new BrowserLauncherConfigurationException($"Pipe connections are only supported for Chrome browser, not {this.browser}.");
             }

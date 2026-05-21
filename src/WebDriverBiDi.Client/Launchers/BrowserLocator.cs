@@ -108,7 +108,7 @@ public class BrowserLocator
     /// <param name="browser">The browser to locate.</param>
     /// <returns>The path to the browser executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
-    public static Task<string> FindBrowserAsync(Browser browser)
+    public static Task<string> FindBrowserAsync(BrowserKind browser)
     {
         return FindBrowserAsync(browser, BrowserReleaseChannel.Stable);
     }
@@ -120,7 +120,7 @@ public class BrowserLocator
     /// <param name="channel">The release channel of the browser.</param>
     /// <returns>The path to the browser executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
-    public static Task<string> FindBrowserAsync(Browser browser, BrowserReleaseChannel channel)
+    public static Task<string> FindBrowserAsync(BrowserKind browser, BrowserReleaseChannel channel)
     {
         return FindBrowserAsync(browser, channel, BrowserVersion.Latest);
     }
@@ -133,7 +133,7 @@ public class BrowserLocator
     /// <param name="version">The version of the browser to locate.</param>
     /// <returns>The path to the browser executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
-    public static Task<string> FindBrowserAsync(Browser browser, BrowserReleaseChannel channel, BrowserVersion version)
+    public static Task<string> FindBrowserAsync(BrowserKind browser, BrowserReleaseChannel channel, BrowserVersion version)
     {
         return FindBrowserAsync(browser, channel, version, FileLocationBehavior.AutoLocateAndDownload);
     }
@@ -151,7 +151,7 @@ public class BrowserLocator
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
     public static async Task<string> FindBrowserAsync(
-        Browser browser,
+        BrowserKind browser,
         BrowserReleaseChannel channel,
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
@@ -160,12 +160,12 @@ public class BrowserLocator
     {
         BrowserLocatorSettings settings = browser switch
         {
-            Browser.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath),
-            Browser.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath),
-            Browser.Edge => throw new NotImplementedException(
+            BrowserKind.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath),
+            BrowserKind.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath),
+            BrowserKind.Edge => throw new NotImplementedException(
                 "Microsoft Edge browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Edge support is planned for a future release."),
-            Browser.Safari => throw new NotImplementedException(
+            BrowserKind.Safari => throw new NotImplementedException(
                 "Apple Safari browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Safari support is planned for a future release pending maturity of Safari's BiDi implementation."),
             _ => throw new ArgumentException($"Unknown browser: {browser}", nameof(browser)),

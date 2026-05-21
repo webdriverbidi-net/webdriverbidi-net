@@ -1,4 +1,4 @@
-// <copyright file="Browser.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="BrowserKind.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Client.Launchers;
 /// <summary>
 /// Specifies the browser to launch for WebDriver BiDi automation.
 /// </summary>
-public enum Browser
+public enum BrowserKind
 {
     /// <summary>
     /// Google Chrome browser. Fully supported with direct launch, driver-based launch, and remote grid connections.

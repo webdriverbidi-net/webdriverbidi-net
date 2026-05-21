@@ -85,22 +85,8 @@ public class ElementStateInspector
     /// <exception cref="WebDriverBiDiException">Thrown when an error occurs during the execution of the wait, including exceeding the timeout.</exception>
     public async Task WaitForInteractionReadyAsync(string contextId, SharedReference element, InteractionType interactionType, TimeSpan timeout)
     {
-        string waitFunctionDefinition = $"(e, interactionType, timeout) => window.{this.inspectorObjectName}.waitForInteractionReady(e, interactionType, timeout)";
-        ContextTarget contextTarget = new(contextId)
-        {
-            Sandbox = this.sandboxName,
-        };
-        CallFunctionCommandParameters waitFunctionParams = new(waitFunctionDefinition, contextTarget, true);
-        waitFunctionParams.Arguments.Add(element);
-        waitFunctionParams.Arguments.Add(LocalValue.String(interactionType.ToString().ToLowerInvariant()));
-        waitFunctionParams.Arguments.Add(LocalValue.Number(timeout.TotalMilliseconds));
-        EvaluateResult waitScriptResult = await this.driver.Script.CallFunctionAsync(waitFunctionParams);
-        if (waitScriptResult.ResultType == EvaluateResultType.Exception)
-        {
-            // If the "waitForInteractionReady" script times out or experiences an
-            // unexpected error, throw an exception
-            throw new WebDriverBiDiException(((EvaluateResultException)waitScriptResult).ExceptionDetails.Text);
-        }
+        Task timeoutTask = Task.Delay(timeout);
+        await this.WaitForInteractionReadyAsync(contextId, element, interactionType, timeoutTask).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -159,5 +145,41 @@ public class ElementStateInspector
         // We know this is not an exception, so we can safely cast to ElementResultSuccess.
         EvaluateResultSuccess visibilityScriptResultSuccess = (EvaluateResultSuccess)visibilityScriptResult;
         return !visibilityScriptResultSuccess.Result.ConvertTo<BooleanRemoteValue>().Value;
+    }
+
+    /// <summary>
+    /// Waits for an element to be ready for interaction ready up to a timeout.
+    /// </summary>
+    /// <param name="contextId">The ID of the browsing context containing the element.</param>
+    /// <param name="element">The <see cref="SharedReference"/> representing the element to wait to be ready for interaction.</param>
+    /// <param name="interactionType">A <see cref="InteractionType"/> value representing the type of interaction for which we are waiting to be ready to perform..</param>
+    /// <param name="timeoutTask">A <see cref="Task"/> representing the timeout for this operation.</param>
+    /// <returns>A <see cref="Task"/> object containing information about the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when an error occurs during the execution of the wait, including exceeding the timeout.</exception>
+    internal async Task WaitForInteractionReadyAsync(string contextId, SharedReference element, InteractionType interactionType, Task timeoutTask)
+    {
+        string waitFunctionDefinition = $"(e, interactionType, timeout) => window.{this.inspectorObjectName}.waitForInteractionReady(e, interactionType, timeout)";
+        ContextTarget contextTarget = new(contextId)
+        {
+            Sandbox = this.sandboxName,
+        };
+        CallFunctionCommandParameters waitFunctionParams = new(waitFunctionDefinition, contextTarget, true);
+        waitFunctionParams.Arguments.Add(element);
+        waitFunctionParams.Arguments.Add(LocalValue.String(interactionType.ToString().ToLowerInvariant()));
+        waitFunctionParams.Arguments.Add(LocalValue.Number(int.MaxValue));
+        Task<EvaluateResult> waitTask = this.driver.Script.CallFunctionAsync(waitFunctionParams);
+        Task completedTask = await Task.WhenAny(waitTask, timeoutTask).ConfigureAwait(false);
+        if (completedTask == timeoutTask)
+        {
+            throw new WebDriverBiDiTimeoutException("Timed out waiting for element to be ready for interaction");
+        }
+
+        EvaluateResult waitScriptResult = await waitTask.ConfigureAwait(false);
+        if (waitScriptResult.ResultType == EvaluateResultType.Exception)
+        {
+            // If the "waitForInteractionReady" script times out or experiences an
+            // unexpected error, throw an exception
+            throw new WebDriverBiDiException(((EvaluateResultException)waitScriptResult).ExceptionDetails.Text);
+        }
     }
 }
