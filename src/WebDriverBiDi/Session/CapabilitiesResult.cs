@@ -125,19 +125,19 @@ public record CapabilitiesResult
                 switch (this.SerializableProxy.ProxyType)
                 {
                     case ProxyType.Direct:
-                        field ??= new DirectProxyConfigurationResult((DirectProxyConfiguration)this.SerializableProxy);
+                        field = new DirectProxyConfigurationResult((DirectProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.System:
-                        field ??= new SystemProxyConfigurationResult((SystemProxyConfiguration)this.SerializableProxy);
+                        field = new SystemProxyConfigurationResult((SystemProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.AutoDetect:
-                        field ??= new AutoDetectProxyConfigurationResult((AutoDetectProxyConfiguration)this.SerializableProxy);
+                        field = new AutoDetectProxyConfigurationResult((AutoDetectProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.ProxyAutoConfig:
-                        field ??= new PacProxyConfigurationResult((PacProxyConfiguration)this.SerializableProxy);
+                        field = new PacProxyConfigurationResult((PacProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.Manual:
-                        field ??= new ManualProxyConfigurationResult((ManualProxyConfiguration)this.SerializableProxy);
+                        field = new ManualProxyConfigurationResult((ManualProxyConfiguration)this.SerializableProxy);
                         break;
                 }
             }

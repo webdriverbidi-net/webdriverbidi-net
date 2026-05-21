@@ -308,6 +308,34 @@ public class CookieTests
     }
 
     [Test]
+    public void TestCookieWithNullExpiryDoesNotSetExpires()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "strict",
+                        "size": 100,
+                        "expiry": null
+                      }
+                      """;
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Assert.That(cookie, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(cookie.EpochExpires, Is.Null);
+            Assert.That(cookie.Expires, Is.Null);
+        }
+    }
+
+    [Test]
     public void TestDeserializeWithMissingNameThrows()
     {
         string json = """

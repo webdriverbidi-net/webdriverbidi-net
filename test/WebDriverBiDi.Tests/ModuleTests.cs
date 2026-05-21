@@ -440,4 +440,41 @@ public class ModuleTests
 
         Assert.That(() => module.OnEventInvoked.AddObserver((e) => { }), Throws.InstanceOf<WebDriverBiDiException>());
     }
+
+    [Test]
+    public void TestModuleWithNonReporterDriverDoesNotSetErrorReporter()
+    {
+        NonReporterDriver driver = new();
+        TestProtocolModule module = new(driver);
+
+        // Verify the module was constructed without throwing; observer error reporting
+        // is silently skipped when the driver does not implement IEventObserverErrorReporter.
+        Assert.That(module.OnEventInvoked.CurrentObserverCount, Is.EqualTo(0));
+    }
+
+    private sealed class NonReporterDriver : IBiDiCommandExecutor
+    {
+        private readonly List<string> registeredEvents = [];
+
+        public TimeSpan DefaultCommandTimeout => TimeSpan.FromSeconds(30);
+
+        public bool IsStarted => false;
+
+        public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+            where T : CommandResult => throw new NotImplementedException();
+
+        public Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+            where T : CommandResult => throw new NotImplementedException();
+
+        public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+        {
+            this.registeredEvents.Add(eventName);
+        }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
 }
