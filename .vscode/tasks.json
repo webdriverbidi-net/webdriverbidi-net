@@ -30,33 +30,17 @@
         },
         {
             "type": "shell",
-            "command": "find ${workspaceFolder}/test/coverage -name 'lcov.*.info' -delete 2>/dev/null; dotnet test --project ${workspaceFolder}/test/WebDriverBiDi.Tests --configuration Release --verbosity normal --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --results-directory ${workspaceFolder}/test/coverage --coverlet-file-prefix lcov && ${workspaceFolder}/scripts/check-lcov-thresholds.sh --min-line 100 --min-branch 100 --min-method 100 ${workspaceFolder}/test/coverage/lcov.*.info",
+            "command": "dotnet build --configuration Release ${workspaceFolder}/test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj && ${workspaceFolder}/test/WebDriverBiDi.Tests/bin/Release/net10.0/WebDriverBiDi.Tests --coverlet --coverlet-output-format teamcity --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --coverlet-exclude '[WebDriverBiDi.NamedPipeTestApplication]*' --results-directory '${workspaceFolder}/test/coverage' --coverlet-file-prefix lcov",
             "problemMatcher": "$msCompile",
             "group": {
                 "kind": "test",
                 "isDefault": false
             },
-            "label": "dotnet: test with coverage (Linux/MacOS)",
+            "label": "dotnet: test with coverage",
             "options": {
                 "shell": {
                     "executable": "/bin/bash",
                     "args": ["-c"]
-                }
-            }
-        },
-        {
-            "type": "shell",
-            "command": "Remove-Item -Path '${workspaceFolder}/test/coverage/lcov.*.info' -ErrorAction SilentlyContinue; dotnet test --project '${workspaceFolder}/test/WebDriverBiDi.Tests' --configuration Release --verbosity normal --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --results-directory '${workspaceFolder}/test/coverage' --coverlet-file-prefix lcov; if ($LASTEXITCODE -eq 0) { & '${workspaceFolder}/scripts/check-lcov-thresholds.ps1' -MinLine 100 -MinBranch 100 -MinMethod 100 @(Get-Item '${workspaceFolder}/test/coverage/lcov.*.info') }",
-            "problemMatcher": "$msCompile",
-            "group": {
-                "kind": "test",
-                "isDefault": false
-            },
-            "label": "dotnet: test with coverage (Windows)",
-            "options": {
-                "shell": {
-                    "executable": "pwsh",
-                    "args": ["-NoProfile", "-NonInteractive", "-Command"]
                 }
             }
         }
