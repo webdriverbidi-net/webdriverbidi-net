@@ -1296,21 +1296,6 @@ public class BiDiDriverTests
     public async Task TestExecuteCommandAsyncWithZeroTimeoutDoesNotThrowArgumentOutOfRangeException()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
-        {
-            // force a delay in responding to ensure that the timeout is actually being applied
-            await Task.Yield();
-            string eventJson = """
-                               {
-                                 "type": "success",
-                                 "id": 1,
-                                 "result": {
-                                   "value": "command result value"
-                                 }
-                               }
-                               """;
-            await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
         TestTransport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);

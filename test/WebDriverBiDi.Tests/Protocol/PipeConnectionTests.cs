@@ -148,9 +148,15 @@ public class PipeConnectionTests
     public async Task TestCanLogMessages()
     {
         List<string> receivedData = [];
+        TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         connection.OnLogMessage.AddObserver(e => receivedData.Add(e.Message));
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            remoteDisconnectedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
 
         testPipeServer.Responses.Add("Acknowledged!");
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
@@ -159,9 +165,10 @@ public class PipeConnectionTests
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
 
-        // StopAsync awaits the background receive task, ensuring all log messages
-        // produced by the receive loop (including "Pipe closed by remote end" and
-        // "Ending pipe receive loop") are written before we assert.
+        // Wait for the receive loop to exit gracefully via EOF before calling StopAsync.
+        // This ensures "Pipe closed by remote end" and "Ending pipe receive loop" are
+        // logged before StopAsync's cancellation token can preempt the ReadAsync.
+        await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(8, receivedData.Count);
