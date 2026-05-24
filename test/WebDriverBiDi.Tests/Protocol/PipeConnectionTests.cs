@@ -35,20 +35,25 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanReceiveData()
     {
+        TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeServer testPipeServer = new();
         testPipeServer.Responses.Add("Acknowledged!");
 
         List<string> receivedData = [];
         PipeConnection connection = new(testPipeServer);
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data)));
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            remoteDisconnectedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
 
-        // StopAsync awaits the background receive task, ensuring all data produced
-        // by the receive loop is written before we assert.
+        await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(receivedData);
@@ -58,20 +63,25 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestReceivedDataTerminatedWithNullCharacter()
     {
+        TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeServer testPipeServer = new();
         testPipeServer.Responses.Add("Acknowledged!\\0More data");
 
         List<string> receivedData = [];
         PipeConnection connection = new(testPipeServer);
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data)));
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            remoteDisconnectedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
 
-        // StopAsync awaits the background receive task, ensuring all log messages
-        // produced by the receive loop are written before we assert.
+        await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(receivedData);
