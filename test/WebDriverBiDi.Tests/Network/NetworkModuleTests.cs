@@ -472,7 +472,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnAuthRequired.AddObserver((AuthRequiredEventArgs e) =>
+        module.OnAuthRequired.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
@@ -550,7 +550,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
+        module.OnBeforeRequestSent.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
@@ -618,7 +618,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnFetchError.AddObserver((FetchErrorEventArgs e) =>
+        module.OnFetchError.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
@@ -683,7 +683,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnResponseStarted.AddObserver((ResponseStartedEventArgs e) =>
+        module.OnResponseStarted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
@@ -761,7 +761,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
+        module.OnResponseCompleted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);

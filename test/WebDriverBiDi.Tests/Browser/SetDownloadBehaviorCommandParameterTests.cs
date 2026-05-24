@@ -47,7 +47,7 @@ public class SetDownloadBehaviorCommandParametersTests
         Assert.NotNull(userContexts);
         Assert.Equal(JTokenType.Array, userContexts.Type);
         JArray? contextsArray = serialized["userContexts"] as JArray;
-        
+
         Assert.NotNull(contextsArray);
         Assert.Single(contextsArray);
         Assert.Equal(JTokenType.String, contextsArray[0].Type);

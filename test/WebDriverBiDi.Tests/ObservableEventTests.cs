@@ -8,7 +8,7 @@ public class ObservableEventTests
     public async Task TestCanAddHandler()
     {
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((e) => { });
+        testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
     }
 
@@ -25,7 +25,7 @@ public class ObservableEventTests
     {
         string? observedValue = null;
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => observedValue = e.EventValue);
         await testEventSource.RaiseTestEventAsync("myValue1");
         Assert.NotNull(observedValue);
         Assert.Equal("myValue1", observedValue);
@@ -41,19 +41,19 @@ public class ObservableEventTests
         TestEventSource testEventSource = new(1);
         Assert.Equal(1u, testEventSource.TestObservableEvent.MaxObserverCount);
         Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
-        WebDriverBiDiException exception = Assert.ThrowsAny<WebDriverBiDiException>(() => testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }));
+        WebDriverBiDiException exception = Assert.ThrowsAny<WebDriverBiDiException>(() => testEventSource.TestObservableEvent.AddObserver(e => { }));
         Assert.Equal("This observable event only allows 1 observer.", exception.Message);
 
         testEventSource = new(2);
         Assert.Equal(2u, testEventSource.TestObservableEvent.MaxObserverCount);
         Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.Equal(2, testEventSource.TestObservableEvent.CurrentObserverCount);
-        exception = Assert.ThrowsAny<WebDriverBiDiException>(() => testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }));
+        exception = Assert.ThrowsAny<WebDriverBiDiException>(() => testEventSource.TestObservableEvent.AddObserver(e => { }));
         Assert.Equal("This observable event only allows 2 observers.", exception.Message);
     }
 
@@ -83,11 +83,11 @@ public class ObservableEventTests
         TestEventSource testEventSource = new(2);
         Assert.Equal(2u, testEventSource.TestObservableEvent.MaxObserverCount);
         Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
         testEventSource.TestObservableEvent.AddDataCollector();
         Assert.Equal(2, testEventSource.TestObservableEvent.CurrentObserverCount);
-        WebDriverBiDiException exception = Assert.ThrowsAny<WebDriverBiDiException>(() => testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }));
+        WebDriverBiDiException exception = Assert.ThrowsAny<WebDriverBiDiException>(() => testEventSource.TestObservableEvent.AddObserver(e => { }));
         Assert.Equal("This observable event only allows 2 observers.", exception.Message);
         Assert.Equal("This observable event only allows 2 observers.", Assert.ThrowsAny<WebDriverBiDiException>(() => testEventSource.TestObservableEvent.AddDataCollector()).Message);
     }
@@ -96,7 +96,7 @@ public class ObservableEventTests
     public async Task TestToStringReturnsDescriptionForEventObserver()
     {
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }, ObservableEventHandlerOptions.RunHandlerSynchronously, "My first handler");
+        testEventSource.TestObservableEvent.AddObserver(e => { }, ObservableEventHandlerOptions.RunHandlerSynchronously, "My first handler");
         string eventSourceString = testEventSource.TestObservableEvent.ToString();
         Assert.Equal("ObservableEvent<TestObservableEventArgs> with observers:\n    My first handler", eventSourceString);
     }
@@ -105,7 +105,7 @@ public class ObservableEventTests
     public async Task TestToStringReturnsDefaultDescriptionForEventObserver()
     {
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        testEventSource.TestObservableEvent.AddObserver(e => { });
         string eventSourceString = testEventSource.TestObservableEvent.ToString();
         Assert.StartsWith("ObservableEvent<TestObservableEventArgs> with observers:\n    EventObserver<TestObservableEventArgs> (id:", eventSourceString);
     }
@@ -140,8 +140,8 @@ public class ObservableEventTests
     {
         string? observedValue = null;
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => throw new InvalidOperationException("observer failure"));
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver(e => throw new InvalidOperationException("observer failure"));
+        testEventSource.TestObservableEvent.AddObserver(e => observedValue = e.EventValue);
 
         Assert.Equal("observer failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await testEventSource.RaiseTestEventAsync("myValue"))).Message);
         Assert.Equal("myValue", observedValue);
@@ -151,8 +151,8 @@ public class ObservableEventTests
     public async Task TestMultipleThrowingObserversProduceAggregateException()
     {
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => throw new InvalidOperationException("first failure"));
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => throw new ArgumentException("second failure"));
+        testEventSource.TestObservableEvent.AddObserver(e => throw new InvalidOperationException("first failure"));
+        testEventSource.TestObservableEvent.AddObserver(e => throw new ArgumentException("second failure"));
 
         AggregateException? caught = null;
         try
@@ -178,11 +178,11 @@ public class ObservableEventTests
     {
         string? observedValue = null;
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) =>
+        testEventSource.TestObservableEvent.AddObserver(e =>
         {
             return Task.FromException(new InvalidOperationException("async observer failure"));
         });
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver(e => observedValue = e.EventValue);
 
         Assert.Equal("async observer failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await testEventSource.RaiseTestEventAsync("myValue"))).Message);
         Assert.Equal("myValue", observedValue);
@@ -194,8 +194,8 @@ public class ObservableEventTests
         string? firstValue = null;
         string? secondValue = null;
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => firstValue = e.EventValue);
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => secondValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver(e => firstValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver(e => secondValue = e.EventValue);
 
         await testEventSource.RaiseTestEventAsync("myValue");
 
@@ -209,7 +209,7 @@ public class ObservableEventTests
         int capturedEventDataCount = 0;
         TestEventSource testEventSource = new();
         EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => capturedEventDataCount = collector.GetCollectedEventData().Count);
+        testEventSource.TestObservableEvent.AddObserver(e => capturedEventDataCount = collector.GetCollectedEventData().Count);
         await testEventSource.RaiseTestEventAsync("myValue1");
         Assert.Equal(1, capturedEventDataCount);
     }

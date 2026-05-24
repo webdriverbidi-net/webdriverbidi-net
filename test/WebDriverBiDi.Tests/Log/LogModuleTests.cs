@@ -59,7 +59,7 @@ public class LogModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
+        module.OnEntryAdded.AddObserver(e =>
         {
             Assert.Equal("console", e.Type);
             Assert.Equal("my log message", e.Text);

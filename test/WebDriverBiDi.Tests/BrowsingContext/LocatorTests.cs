@@ -528,7 +528,7 @@ public class LocatorTests
         Assert.True(parsed.ContainsKey("value"));
         JToken? valueProperty = parsed["value"];
         Assert.NotNull(valueProperty);
- 
+
         JObject? contextValue = valueProperty as JObject;
         Assert.NotNull(contextValue);
         Assert.Single(contextValue);

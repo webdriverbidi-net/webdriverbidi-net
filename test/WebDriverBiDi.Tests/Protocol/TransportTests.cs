@@ -70,20 +70,21 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "success",
-                            "id": 1,
-                            "result": {
-                              "value": "response value"
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                              "type": "success",
+                              "id": 1,
+                              "result": {
+                                "value": "response value"
+                              }
                             }
-                          }
-                          """;
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+                            """;
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
@@ -107,21 +108,22 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "success",
-                            "id": 1,
-                            "result": {
-                              "value": "response value" 
-                            },
-                            "extraDataName": "extraDataValue"
-                          }
-                          """;
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                              "type": "success",
+                              "id": 1,
+                              "result": {
+                                "value": "response value" 
+                              },
+                              "extraDataName": "extraDataValue"
+                            }
+                            """;
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
@@ -148,19 +150,20 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "error",
-                            "id": 1,
-                            "error": "unknown command",
-                            "message": "This is a test error message"
-                          }
-                          """;
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                              "type": "error",
+                              "id": 1,
+                              "error": "unknown command",
+                              "message": "This is a test error message"
+                            }
+                            """;
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
@@ -188,21 +191,22 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "success",
-                            "id": 1, 
-                            "noResult": {
-                              "invalid": "unknown command",
-                              "message": "This is a test error message"
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                              "type": "success",
+                              "id": 1, 
+                              "noResult": {
+                                "invalid": "unknown command",
+                                "message": "This is a test error message"
+                              }
                             }
-                          }
-                          """;
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+                            """;
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250), TestContext.Current.CancellationToken);
         Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
         Assert.Contains("Response did not contain properly formed JSON for response type", command.ThrownException.Message);
@@ -288,7 +292,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(e =>
         {
             receivedName = e.EventName;
             receivedData = e.EventData;
@@ -324,7 +328,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        transport.OnErrorEventReceived.AddObserver(e =>
         {
             receivedData = e.ErrorData;
             taskCompletionSource.TrySetResult();
@@ -359,13 +363,13 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             receivedData = e.Message;
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        transport.OnErrorEventReceived.AddObserver(e =>
         {
             return Task.CompletedTask;
         });
@@ -386,7 +390,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -406,7 +410,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             taskCompletionSource.TrySetResult();
@@ -417,20 +421,21 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "success",
-                            "id": 1,
-                            "result": {
-                              "value": "response value"
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                                "type": "success",
+                                "id": 1,
+                                "result": {
+                                "value": "response value"
+                                }
                             }
-                          }
-                          """;
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+                            """;
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
@@ -456,7 +461,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.ComponentName == Transport.LoggerComponentName)
             {
@@ -490,7 +495,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -519,7 +524,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -547,7 +552,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -576,7 +581,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -605,7 +610,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -634,13 +639,13 @@ public class TransportTests
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             unknownMessageTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -678,13 +683,13 @@ public class TransportTests
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             unknownMessageTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -722,13 +727,13 @@ public class TransportTests
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             unknownMessageTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -765,7 +770,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -791,7 +796,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -820,7 +825,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             taskCompletionSource.TrySetResult();
@@ -852,13 +857,13 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             unknownMessageTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -899,13 +904,13 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         transport.RegisterInvalidEventMessageType("protocol.event", typeof(object));
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
             unknownMessageTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -1118,7 +1123,7 @@ public class TransportTests
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(e =>
         {
             receivedName = e.EventName;
             receivedData = e.EventData;
@@ -1193,7 +1198,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("This is an unexpected exception");
@@ -1230,7 +1235,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(e =>
         {
             try
             {
@@ -1281,7 +1286,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(e =>
         {
             try
             {
@@ -1324,7 +1329,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver(async (EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(async e =>
         {
             try
             {
@@ -1368,7 +1373,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver(async (EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(async e =>
         {
             try
             {
@@ -1413,7 +1418,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(e =>
         {
             return Task.FromException(new WebDriverBiDiException("This is an unexpected exception"));
         });
@@ -1460,20 +1465,21 @@ public class TransportTests
         string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "success",
-                            "id": 1,
-                            "result": {
-                              "value": "response value"
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                                "type": "success",
+                                "id": 1,
+                                "result": {
+                                "value": "response value"
+                                }
                             }
-                          }
-                          """;
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+                            """;
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
         Assert.Equal(1, transport.LastTestCommandId);
     }
@@ -1713,12 +1719,12 @@ public class TransportTests
             ShutdownTimeout = TimeSpan.FromMilliseconds(250),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver(e =>
         {
             handlerStartedTaskCompletionSource.TrySetResult();
             return new TaskCompletionSource<bool>().Task;
         });
-        transport.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -1754,7 +1760,7 @@ public class TransportTests
         {
             ShutdownTimeout = TimeSpan.FromSeconds(5),
         };
-        transport.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -1841,7 +1847,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -1867,7 +1873,7 @@ public class TransportTests
         {
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -1890,11 +1896,7 @@ public class TransportTests
                                 }
                               }
                               """;
-        _ = Task.Run(async () =>
-        {
-            await connection.RaiseDataReceivedEventAsync(responseJson);
-        },
-        TestContext.Current.CancellationToken);
+        _ = Task.Run(async () => await connection.RaiseDataReceivedEventAsync(responseJson), TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
@@ -1920,7 +1922,7 @@ public class TransportTests
         {
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Level == WebDriverBiDiLogLevel.Error)
             {
@@ -2072,7 +2074,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -2195,7 +2197,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -2280,7 +2282,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        transport.OnErrorEventReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Error handler exception");
@@ -2309,7 +2311,7 @@ public class TransportTests
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
-        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        transport.OnErrorEventReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Error handler exception");
@@ -2339,7 +2341,7 @@ public class TransportTests
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
-        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        transport.OnErrorEventReceived.AddObserver(e =>
             throw new WebDriverBiDiException("Error handler exception"));
         string json = """
                       {
@@ -2368,7 +2370,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Unknown message handler exception");
@@ -2394,7 +2396,7 @@ public class TransportTests
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Unknown message handler exception");
@@ -2423,7 +2425,7 @@ public class TransportTests
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
-        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Unknown message handler exception");

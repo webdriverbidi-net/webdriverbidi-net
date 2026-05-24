@@ -14,13 +14,13 @@ public class ModuleTests
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
-        module.OnEventInvoked.AddObserver((TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver(e =>
         {
         });
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<string> driverLog = [];
-        transport.OnLogMessage.AddObserver((e) =>
+        transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Level >= WebDriverBiDiLogLevel.Error)
             {
@@ -29,7 +29,7 @@ public class ModuleTests
         });
 
         string unknownMessage = string.Empty;
-        transport.OnUnknownMessageReceived.AddObserver((e) =>
+        transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessage = e.Message;
             taskCompletionSource.TrySetResult();
@@ -63,7 +63,7 @@ public class ModuleTests
 
         // Use a ManualResetEventSlim because we want to reset the event.
         ManualResetEventSlim syncEvent = new(false);
-        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver((TestEventArgs e) =>
+        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver(e =>
         {
             syncEvent.Set();
         });
@@ -98,7 +98,7 @@ public class ModuleTests
         TestProtocolModule module = new(driver);
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver((TestEventArgs e) =>
+        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -129,7 +129,7 @@ public class ModuleTests
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        module.OnEventInvoked.AddObserver(async (TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver(async e =>
         {
             try
             {
@@ -173,7 +173,7 @@ public class ModuleTests
         };
         TestProtocolModule module = new(driver);
 
-        EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async (TestEventArgs e) =>
+        EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async e =>
         {
             await Task.Yield();
             throw new WebDriverBiDiException("Async module handler exception");
@@ -211,24 +211,25 @@ public class ModuleTests
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        module.OnEventInvoked.AddObserver((TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver(e =>
         {
             TaskCompletionSource firstTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TaskCompletionSource secondTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Run(async () =>
-            {
-                try
+            _ = Task.Run(
+                async () =>
                 {
-                    await Task.Yield();
-                    firstTaskCompletionSource.SetException(new InvalidOperationException("First aggregate failure"));
-                    secondTaskCompletionSource.SetException(new WebDriverBiDiException("Second aggregate failure"));
-                }
-                finally
-                {
-                    handlerCompleted.TrySetResult(true);
-                }
-            });
+                    try
+                    {
+                        await Task.Yield();
+                        firstTaskCompletionSource.SetException(new InvalidOperationException("First aggregate failure"));
+                        secondTaskCompletionSource.SetException(new WebDriverBiDiException("Second aggregate failure"));
+                    }
+                    finally
+                    {
+                        handlerCompleted.TrySetResult(true);
+                    }
+                });
 
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -270,7 +271,7 @@ public class ModuleTests
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        module.OnEventInvoked.AddObserver(async (TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver(async e =>
         {
             try
             {
@@ -314,7 +315,7 @@ public class ModuleTests
         };
         TestProtocolModule module = new(driver);
 
-        EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async (TestEventArgs e) =>
+        EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async e =>
         {
             await Task.Yield();
             throw new WebDriverBiDiException("Async module handler exception");
@@ -352,24 +353,25 @@ public class ModuleTests
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        module.OnEventInvoked.AddObserver((TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver(e =>
         {
             TaskCompletionSource firstTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TaskCompletionSource secondTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Run(async () =>
-            {
-                try
+            _ = Task.Run(
+                async () =>
                 {
-                    await Task.Yield();
-                    firstTaskCompletionSource.SetException(new InvalidOperationException("First aggregate failure"));
-                    secondTaskCompletionSource.SetException(new WebDriverBiDiException("Second aggregate failure"));
-                }
-                finally
-                {
-                    handlerCompleted.TrySetResult(true);
-                }
-            });
+                    try
+                    {
+                        await Task.Yield();
+                        firstTaskCompletionSource.SetException(new InvalidOperationException("First aggregate failure"));
+                        secondTaskCompletionSource.SetException(new WebDriverBiDiException("Second aggregate failure"));
+                    }
+                    finally
+                    {
+                        handlerCompleted.TrySetResult(true);
+                    }
+                });
 
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -428,11 +430,11 @@ public class ModuleTests
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver, 1);
 
-        module.OnEventInvoked.AddObserver((TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver(e =>
         {
         });
 
-        Assert.ThrowsAny<WebDriverBiDiException>(() => module.OnEventInvoked.AddObserver((e) => { }));
+        Assert.ThrowsAny<WebDriverBiDiException>(() => module.OnEventInvoked.AddObserver(e => { }));
     }
 
     [Fact]

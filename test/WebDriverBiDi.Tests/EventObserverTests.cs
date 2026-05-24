@@ -12,7 +12,7 @@ public class EventObserverTests
     {
         string? observedValue = null;
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver(e => observedValue = e.EventValue);
         await testEventSource.RaiseTestEventAsync("myValue");
         Assert.NotNull(observedValue);
         Assert.Equal("myValue", observedValue);
@@ -22,7 +22,7 @@ public class EventObserverTests
     public async Task TestDisposeAfterDisposeAsyncDoesNotThrow()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         await observer.DisposeAsync();
         observer.Dispose();
     }
@@ -31,7 +31,7 @@ public class EventObserverTests
     public async Task TestDoubleDisposeAsyncDoesNotThrow()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         await observer.DisposeAsync();
         await observer.DisposeAsync();
     }
@@ -40,7 +40,7 @@ public class EventObserverTests
     public async Task TestDisposeAsyncAfterDisposeDoesNotThrow()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.Dispose();
         await observer.DisposeAsync();
     }
@@ -49,7 +49,7 @@ public class EventObserverTests
     public async Task TestIsCapturingReturnsFalseWhenNotCapturing()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.False(observer.IsCapturing);
     }
 
@@ -57,7 +57,7 @@ public class EventObserverTests
     public async Task TestIsCapturingReturnsTrueWhenCapturing()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         Assert.True(observer.IsCapturing);
         observer.StopCapturingTasks();
@@ -67,7 +67,7 @@ public class EventObserverTests
     public async Task TestStartCapturingWithActiveCaptureThrows()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         Assert.Contains("already has an active capture session", Assert.ThrowsAny<WebDriverBiDiException>(() => observer.StartCapturingTasks()).Message);
         observer.StopCapturingTasks();
@@ -77,7 +77,7 @@ public class EventObserverTests
     public async Task TestStopCapturingWithoutStartCapturingIsNoOp()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StopCapturingTasks();
         Assert.False(observer.IsCapturing);
     }
@@ -86,7 +86,7 @@ public class EventObserverTests
     public async Task TestCallingStopCapturingRepeatedlyDoesNotThrow()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         observer.StopCapturingTasks();
         observer.StopCapturingTasks();
@@ -96,7 +96,7 @@ public class EventObserverTests
     public async Task TestWaitForCapturedTasksAsyncCountZeroThrows()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         Assert.Contains("must be greater than 0", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await observer.WaitForCapturedTasksAsync(0, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken))).Message);
         observer.StopCapturingTasks();
@@ -106,7 +106,7 @@ public class EventObserverTests
     public async Task TestWaitForCapturedTasksAsyncWithoutStartCapturingThrows()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.Contains("No capture session is active", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken))).Message);
     }
 
@@ -114,7 +114,7 @@ public class EventObserverTests
     public async Task TestWaitForCapturedTasksAsync()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
@@ -129,7 +129,7 @@ public class EventObserverTests
         TimeSpan timeout = TimeSpan.FromSeconds(1);
         FakeTimeProvider fakeTimeProvider = new();
         TestEventSource testEventSource = new(fakeTimeProvider);
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
 
@@ -149,7 +149,7 @@ public class EventObserverTests
     {
         CancellationTokenSource cancellationTokenSource = new();
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         Task waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
@@ -163,7 +163,7 @@ public class EventObserverTests
     public async Task TestGetCapturedTasksWithWithoutStartCaptureReturnsEmptyArray()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         Task[] tasks = observer.GetCapturedTasks();
         Assert.Empty(tasks);
     }
@@ -172,7 +172,7 @@ public class EventObserverTests
     public async Task TestGetCapturedTasksWithActiveCaptureAndNoTasksReturnsEmptyArray()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         Task[] tasks = observer.GetCapturedTasks();
         Assert.Empty(tasks);
@@ -183,7 +183,7 @@ public class EventObserverTests
     public async Task TestGetCapturedTasksWithActiveCaptureReturnsPendingTasks()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
@@ -196,7 +196,7 @@ public class EventObserverTests
     public async Task TestWaitForCapturedTasksCompleteAsync()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
@@ -211,7 +211,7 @@ public class EventObserverTests
         TimeSpan timeout = TimeSpan.FromSeconds(1);
         FakeTimeProvider fakeTimeProvider = new();
         TestEventSource testEventSource = new(fakeTimeProvider);
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
 
@@ -229,7 +229,7 @@ public class EventObserverTests
     {
         CancellationTokenSource cancellationTokenSource = new();
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         Task waitTask = observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
@@ -246,7 +246,7 @@ public class EventObserverTests
         CancellationTokenSource cancellationTokenSource = new();
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async (TestObservableEventArgs e) =>
+            async e =>
             {
                 countdownEvent.Signal();
                 await Task.Delay(TimeSpan.FromSeconds(2));
@@ -275,7 +275,7 @@ public class EventObserverTests
         TimeSpan timeout = TimeSpan.FromSeconds(1);
         FakeTimeProvider fakeTimeProvider = new();
         TestEventSource testEventSource = new(fakeTimeProvider);
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
 
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
@@ -334,7 +334,7 @@ public class EventObserverTests
             AutoAdvanceAmount = timeout + TimeSpan.FromMilliseconds(1)
         };
         TestEventSource testEventSource = new(fakeTimeProvider);
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
 
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
@@ -371,7 +371,7 @@ public class EventObserverTests
     public async Task TestDisposeWithActiveCaptureDoesNotThrow()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         Assert.True(observer.IsCapturing);
         observer.Dispose();
@@ -382,7 +382,7 @@ public class EventObserverTests
     public async Task TestDisposeAsyncWithActiveCaptureDoesNotThrow()
     {
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         observer.StartCapturingTasks();
         Assert.True(observer.IsCapturing);
         await observer.DisposeAsync();
@@ -594,7 +594,7 @@ public class EventObserverTests
             TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-                async (TestObservableEventArgs e) =>
+                async e =>
                 {
                     if (e.EventValue == "raced")
                     {
@@ -898,7 +898,7 @@ public class EventObserverTests
             TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TestEventSource testEventSource = new();
             testEventSource.TestObservableEvent.AddObserver(
-                async (TestObservableEventArgs e) =>
+                async e =>
                 {
                     await Task.Yield();
                     taskCompletionSource.TrySetResult();
@@ -1080,27 +1080,29 @@ public class EventObserverTests
         List<Task> workers = [];
         for (int i = 0; i < registrationWorkers; i++)
         {
-            workers.Add(Task.Run(() =>
-            {
-                for (int j = 0; j < addRemoveIterationsPerWorker; j++)
+            workers.Add(Task.Run(
+                () =>
                 {
-                    EventObserver<TestObservableEventArgs> transient = observable.AddObserver(_ => { });
-                    transient.Unobserve();
-                }
-            },
-            TestContext.Current.CancellationToken));
+                    for (int j = 0; j < addRemoveIterationsPerWorker; j++)
+                    {
+                        EventObserver<TestObservableEventArgs> transient = observable.AddObserver(_ => { });
+                        transient.Unobserve();
+                    }
+                },
+                TestContext.Current.CancellationToken));
         }
 
         for (int i = 0; i < notificationWorkers; i++)
         {
-            workers.Add(Task.Run(async () =>
-            {
-                for (int j = 0; j < raisesPerWorker; j++)
+            workers.Add(Task.Run(
+                async () =>
                 {
-                    await testEventSource.RaiseTestEventAsync("stress");
-                }
-            },
-            TestContext.Current.CancellationToken));
+                    for (int j = 0; j < raisesPerWorker; j++)
+                    {
+                        await testEventSource.RaiseTestEventAsync("stress");
+                    }
+                },
+                TestContext.Current.CancellationToken));
         }
 
         await Task.WhenAll(workers);
@@ -1193,7 +1195,7 @@ public class EventObserverTests
     public async Task TestToStringReturnsDescription()
     {
         TestEventSource testEventSource = new();
-        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { }, ObservableEventHandlerOptions.RunHandlerSynchronously, "My first handler");
+        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { }, ObservableEventHandlerOptions.RunHandlerSynchronously, "My first handler");
         Assert.Equal("My first handler", observer.ToString());
     }
 
@@ -1201,7 +1203,7 @@ public class EventObserverTests
     public async Task TestToStringReturnsDefaultDescription()
     {
         TestEventSource testEventSource = new();
-        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.StartsWith("EventObserver<TestObservableEventArgs> (id:", observer.ToString());
     }
 
@@ -1209,7 +1211,7 @@ public class EventObserverTests
     public async Task TestCompareToNullReturnsPositive()
     {
         TestEventSource testEventSource = new();
-        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.True(observer.CompareTo(null) > 0);
     }
 }

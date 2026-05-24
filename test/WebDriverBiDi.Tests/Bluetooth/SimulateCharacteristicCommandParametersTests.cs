@@ -112,19 +112,19 @@ public class SimulateCharacteristicCommandParametersTests
         Assert.NotNull(address);
         Assert.Equal(JTokenType.String, address.Type);
         Assert.Equal("myAddress", address.Value<string>());
-        
+
         Assert.True(serialized.ContainsKey("serviceUuid"));
         JToken? serviceUuid = serialized["serviceUuid"];
         Assert.NotNull(serviceUuid);
         Assert.Equal(JTokenType.String, serviceUuid.Type);
         Assert.Equal("myServiceUuid", serviceUuid.Value<string>());
-        
+
         Assert.True(serialized.ContainsKey("characteristicUuid"));
         JToken? characteristicUuid = serialized["characteristicUuid"];
         Assert.NotNull(characteristicUuid);
         Assert.Equal(JTokenType.String, characteristicUuid.Type);
         Assert.Equal("myCharacteristicUuid", characteristicUuid.Value<string>());
-        
+
         Assert.True(serialized.ContainsKey("characteristicProperties"));
         JToken? characteristicProperties = serialized["characteristicProperties"];
         Assert.NotNull(characteristicProperties);
@@ -133,7 +133,7 @@ public class SimulateCharacteristicCommandParametersTests
         JObject? characteristicPropertiesObject = characteristicProperties.Value<JObject>();
         Assert.NotNull(characteristicPropertiesObject);
         Assert.Empty(characteristicPropertiesObject);
-        
+
         Assert.True(serialized.ContainsKey("type"));
         JToken? type = serialized["type"];
         Assert.NotNull(type);
@@ -166,7 +166,7 @@ public class SimulateCharacteristicCommandParametersTests
         Assert.NotNull(address);
         Assert.Equal(JTokenType.String, address.Type);
         Assert.Equal("myAddress", address.Value<string>());
-        
+
         Assert.True(serialized.ContainsKey("serviceUuid"));
         JToken? serviceUuid = serialized["serviceUuid"];
         Assert.NotNull(serviceUuid);

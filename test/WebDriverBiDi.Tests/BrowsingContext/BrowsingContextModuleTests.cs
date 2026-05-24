@@ -429,7 +429,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnContextCreated.AddObserver((BrowsingContextEventArgs e) =>
+        module.OnContextCreated.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("default", e.UserContextId);
@@ -468,7 +468,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnContextDestroyed.AddObserver((BrowsingContextEventArgs e) =>
+        module.OnContextDestroyed.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -506,7 +506,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDomContentLoaded.AddObserver((NavigationEventArgs e) =>
+        module.OnDomContentLoaded.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -543,7 +543,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) =>
+        module.OnDownloadWillBegin.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -584,7 +584,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
+        module.OnDownloadEnd.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -627,7 +627,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnFragmentNavigated.AddObserver((NavigationEventArgs e) =>
+        module.OnFragmentNavigated.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -664,7 +664,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnLoad.AddObserver((NavigationEventArgs e) =>
+        module.OnLoad.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -701,7 +701,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationAborted.AddObserver((NavigationEventArgs e) =>
+        module.OnNavigationAborted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -738,7 +738,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
+        module.OnNavigationCommitted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -775,7 +775,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationFailed.AddObserver((NavigationEventArgs e) =>
+        module.OnNavigationFailed.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -812,7 +812,7 @@ public class BrowsingContextModuleTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationStarted.AddObserver((NavigationEventArgs e) =>
+        module.OnNavigationStarted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -848,7 +848,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) =>
+        module.OnHistoryUpdated.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
@@ -880,7 +880,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnUserPromptClosed.AddObserver((UserPromptClosedEventArgs e) =>
+        module.OnUserPromptClosed.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.True(e.IsAccepted);
@@ -913,7 +913,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) =>
+        module.OnUserPromptOpened.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal(UserPromptType.Confirm, e.PromptType);

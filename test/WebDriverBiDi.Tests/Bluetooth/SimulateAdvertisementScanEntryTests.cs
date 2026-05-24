@@ -24,9 +24,9 @@ public class SimulateAdvertisementScanEntryTests
         Assert.True(serialized.ContainsKey("rssi"));
         JToken? rssi = serialized["rssi"];
         Assert.NotNull(rssi);
-        Assert.Equal(JTokenType.Float,rssi.Type);
+        Assert.Equal(JTokenType.Float, rssi.Type);
         Assert.Equal(-10.1, rssi.Value<double>());
-        
+
         Assert.True(serialized.ContainsKey("scanRecord"));
         JToken? scanRecord = serialized["scanRecord"];
         Assert.NotNull(scanRecord);

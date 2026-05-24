@@ -136,33 +136,36 @@ public class EventDataCollectorTests
         List<TestObservableEventArgs> drained = [];
 
         // Single reader drains concurrently with all writers.
-        Task readerTask = Task.Run(() =>
-        {
-            startBarrier.SignalAndWait();
-            while (!readerCts.IsCancellationRequested)
+        Task readerTask = Task.Run(
+            () =>
             {
-                drained.AddRange(collector.GetCollectedEventData());
-            }
+                startBarrier.SignalAndWait();
+                while (!readerCts.IsCancellationRequested)
+                {
+                    drained.AddRange(collector.GetCollectedEventData());
+                }
 
-            // Final drain: picks up anything enqueued between the last loop
-            // iteration and the writers completing.
-            drained.AddRange(collector.GetCollectedEventData());
-        }
-        , TestContext.Current.CancellationToken);
+                // Final drain: picks up anything enqueued between the last loop
+                // iteration and the writers completing.
+                drained.AddRange(collector.GetCollectedEventData());
+            },
+            TestContext.Current.CancellationToken);
 
         List<Task> writerTasks = [];
         for (int i = 0; i < writerCount; i++)
         {
             int writerId = i;
-            writerTasks.Add(Task.Run(async () =>
-            {
-                startBarrier.SignalAndWait();
-                for (int j = 0; j < eventsPerWriter; j++)
+            writerTasks.Add(Task.Run(
+                async () =>
                 {
-                    await testEventSource.RaiseTestEventAsync($"w{writerId}-e{j}");
-                }
-            },
-            TestContext.Current.CancellationToken));
+                    startBarrier.SignalAndWait();
+                    for (int j = 0; j < eventsPerWriter; j++)
+                    {
+                        await testEventSource.RaiseTestEventAsync($"w{writerId}-e{j}");
+                    }
+                },
+                TestContext.Current.CancellationToken)
+            );
         }
 
         // Cancel the reader only after all writers have finished — no new

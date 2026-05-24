@@ -158,7 +158,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         List<LogMessageEventArgs> allLogs = [];
         WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             allLogs.Add(e);
             return Task.CompletedTask;
@@ -188,7 +188,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         List<LogMessageEventArgs> logValues = [];
         WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             if (e.Level >= WebDriverBiDiLogLevel.Info)
             {
@@ -269,7 +269,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
     {
         List<string> connectionLog = [];
         WebSocketConnection connection = new();
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -317,7 +317,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> connectionLog = [];
         WebSocketConnection connection = new();
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -357,13 +357,13 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
+        connection.OnConnectionError.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
         List<string> connectionLog = [];
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -417,7 +417,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
 
         List<string> connectionLog = [];
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -449,7 +449,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> connectionLog = [];
         WebSocketConnection connection = new();
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -483,7 +483,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -493,7 +493,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        this.clientDisconnectedObserver = server.OnClientDisconnected.AddObserver((e) =>
+        this.clientDisconnectedObserver = server.OnClientDisconnected.AddObserver(e =>
         {
             if (e.ConnectionId == registeredConnectionId)
             {
@@ -530,7 +530,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -557,7 +557,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
+        connection.OnConnectionError.AddObserver(e =>
         {
             receivedErrorArgs = e;
             taskCompletionSource.TrySetResult();
@@ -738,7 +738,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.Zero,
         };
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -858,7 +858,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
-        connection.OnLogMessage.AddObserver((e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -1030,7 +1030,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
         ConnectionDisconnectedEventArgs? receivedEventArgs = null;
-        connection.OnRemoteDisconnected.AddObserver((ConnectionDisconnectedEventArgs e) =>
+        connection.OnRemoteDisconnected.AddObserver(e =>
         {
             receivedEventArgs = e with { };
             taskCompletionSource.TrySetResult();
@@ -1056,7 +1056,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> connectionLog = [];
         WebSocketConnection connection = new();
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;

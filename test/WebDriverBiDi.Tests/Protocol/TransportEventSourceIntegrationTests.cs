@@ -83,21 +83,22 @@ public class TransportEventSourceIntegrationTests
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate response
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "success",
-                            "id": 1,
-                            "result": {
-                              "value": "response value"
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                                "type": "success",
+                                "id": 1,
+                                "result": {
+                                "value": "response value"
+                                }
                             }
-                          }
-                          """;
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+                            """;
+                await Task.Delay(TimeSpan.FromMilliseconds(10));
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
 
@@ -136,20 +137,21 @@ public class TransportEventSourceIntegrationTests
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate error response
-        _ = Task.Run(async () =>
-        {
-            string json = """
-                          {
-                            "type": "error",
-                            "id": 1,
-                            "error": "invalid session id",
-                            "message": "Session not found"
-                          }
-                          """;
-            await Task.Yield();
-            await connection.RaiseDataReceivedEventAsync(json);
-        },
-        TestContext.Current.CancellationToken);
+        _ = Task.Run(
+            async () =>
+            {
+                string json = """
+                            {
+                                "type": "error",
+                                "id": 1,
+                                "error": "invalid session id",
+                                "message": "Session not found"
+                            }
+                            """;
+                await Task.Yield();
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
 

@@ -125,7 +125,7 @@ public class InputModuleTests
         InputModule module = driver.Input;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) =>
+        module.OnFileDialogOpened.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.True(e.IsMultiple);

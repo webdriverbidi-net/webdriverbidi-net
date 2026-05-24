@@ -286,7 +286,7 @@ public class PipeConnectionTests
         List<LogMessageEventArgs> logs = [];
         TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer);
-        connection.OnLogMessage.AddObserver((e) =>
+        connection.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
