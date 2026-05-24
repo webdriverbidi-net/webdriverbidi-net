@@ -315,8 +315,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 // subsequent handler invocations are not queued into it.
                 if (collected.Count == count)
                 {
+                    int readerCount = 0;
                     lock (this.captureLock)
                     {
+                        readerCount = this.waitingReaderCount;
+
                         // Only close if it is still the same channel we started with
                         // (StopCapturingTasks might have already closed it).
                         // Note: We are using ReferenceEquals here, though the equality
@@ -335,7 +338,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                     // through the normal error pipeline instead of being silently swallowed.
                     // Only do this when we are the sole active reader: if another WaitForCapturedTasksAsync
                     // caller is queued behind the semaphore, those tasks are legitimately theirs to consume.
-                    if (this.waitingReaderCount == 1)
+                    if (readerCount == 1)
                     {
                         string eventName = this.observableEvent.EventName;
                         while (channel.Reader.TryRead(out Task? racedTask))
