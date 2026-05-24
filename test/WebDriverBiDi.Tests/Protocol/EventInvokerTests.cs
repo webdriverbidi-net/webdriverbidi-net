@@ -154,17 +154,17 @@ public class EventInvokerTests
     {
         bool delegateCompleted = false;
         TaskCompletionSource delegateGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        using ManualResetEventSlim delegateReachedGate = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         async Task action(EventInfo<TestEventArgs> info)
         {
-            delegateReachedGate.Set();
+            taskCompletionSource.TrySetResult();
             await delegateGate.Task;
             delegateCompleted = true;
         }
 
         EventInvoker<TestEventArgs> invoker = new(action);
         Task invocationTask = invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
-        delegateReachedGate.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.False(delegateCompleted);
 

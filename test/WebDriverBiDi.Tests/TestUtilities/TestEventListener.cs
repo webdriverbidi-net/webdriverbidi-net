@@ -7,6 +7,7 @@ using System.Diagnostics.Tracing;
 /// </summary>
 public class TestEventListener : EventListener
 {
+    private readonly object eventListObject = new();
     private readonly List<EventWrittenEventArgs> events = new();
 
     protected override void OnEventSourceCreated(EventSource eventSource)
@@ -21,7 +22,7 @@ public class TestEventListener : EventListener
     {
         if (eventData.EventSource.Name == "WebDriverBiDi")
         {
-            lock (this.events)
+            lock (this.eventListObject)
             {
                 this.events.Add(eventData);
             }
@@ -37,14 +38,14 @@ public class TestEventListener : EventListener
     {
         DateTime timeoutTime = DateTime.Now.Add(timeout);
         List<EventWrittenEventArgs> foundEvents;
-        lock (this.events)
+        lock (this.eventListObject)
         {
             foundEvents = this.events.Where(e => eventNames.Contains(e.EventName)).ToList();
         }
 
         while (timeout > TimeSpan.Zero && foundEvents.Count == 0 && DateTime.Now <= timeoutTime)
         {
-            lock (this.events)
+            lock (this.eventListObject)
             {
                 foundEvents = this.events.Where(e => eventNames.Contains(e.EventName)).ToList();
             }
@@ -55,7 +56,7 @@ public class TestEventListener : EventListener
 
     public void ClearEvents()
     {
-        lock (this.events)
+        lock (this.eventListObject)
         {
             this.events.Clear();
         }

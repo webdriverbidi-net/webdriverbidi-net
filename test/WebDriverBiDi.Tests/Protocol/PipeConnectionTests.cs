@@ -22,8 +22,8 @@ public class PipeConnectionTests
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
 
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
         bool dataSendSuccess = testPipeServer.WaitForDataSent(TimeSpan.FromSeconds(1));
         testPipeServer.Stop();
         Assert.True(dataSendSuccess);
@@ -43,9 +43,13 @@ public class PipeConnectionTests
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data)));
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
+
+        // StopAsync awaits the background receive task, ensuring all data produced
+        // by the receive loop is written before we assert.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(receivedData);
         Assert.Equal("Acknowledged!", receivedData[0]);
@@ -62,9 +66,13 @@ public class PipeConnectionTests
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data)));
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
+
+        // StopAsync awaits the background receive task, ensuring all log messages
+        // produced by the receive loop are written before we assert.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(receivedData);
         Assert.Equal("Acknowledged!", receivedData[0]);
@@ -74,7 +82,7 @@ public class PipeConnectionTests
     public async Task TestStartingWithoutSettingExternalProcessThrows()
     {
         PipeConnection connection = new(new TestPipeServer());
-        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(() => connection.StartAsync("pipe", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(() => connection.StartAsync("pipe", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -83,8 +91,8 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StartAsync("pipe", cancellationToken: TestContext.Current.CancellationToken));
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StartAsync("pipe", TestContext.Current.CancellationToken));
         testPipeServer.Stop();
     }
 
@@ -94,7 +102,7 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         Assert.True(connection.IsActive);
         testPipeServer.Stop();
         Assert.False(connection.IsActive);
@@ -106,8 +114,8 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
         testPipeServer.Stop();
     }
@@ -116,7 +124,7 @@ public class PipeConnectionTests
     public async Task TestCanStopWithoutStarting()
     {
         PipeConnection connection = new(new TestPipeServer());
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
     }
 
@@ -124,8 +132,8 @@ public class PipeConnectionTests
     public async Task TestCanStopRepeatedly()
     {
         PipeConnection connection = new(new TestPipeServer());
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
     }
 
@@ -133,7 +141,7 @@ public class PipeConnectionTests
     public async Task TestSendDataWithoutStartingThrows()
     {
         PipeConnection connection = new(new TestPipeServer());
-        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync([1, 2, 3], cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync([1, 2, 3], TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -147,11 +155,16 @@ public class PipeConnectionTests
         testPipeServer.Responses.Add("Acknowledged!");
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
 
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
 
-        Assert.Equal(6, receivedData.Count);
+        // StopAsync awaits the background receive task, ensuring all log messages
+        // produced by the receive loop (including "Pipe closed by remote end" and
+        // "Ending pipe receive loop") are written before we assert.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(8, receivedData.Count);
         Assert.Equivalent(new string[]
         {
             "Starting pipe connection: pipe://local",
@@ -160,6 +173,8 @@ public class PipeConnectionTests
             "RECV <<< Acknowledged!",
             "Pipe closed by remote end",
             "Ending pipe receive loop",
+            "Closing pipe connection",
+            "Pipe connection closed",
         }, receivedData);
     }
 
@@ -174,17 +189,17 @@ public class PipeConnectionTests
             DataTimeout = TimeSpan.FromMilliseconds(20),
         };
 
-        ManualResetEventSlim syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         connection.DataSendStarting += (sender, e) =>
         {
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         _ = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
-        syncEvent.Wait(cancellationToken: TestContext.Current.CancellationToken);
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), cancellationToken: TestContext.Current.CancellationToken));
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken));
         testPipeServer.Stop();
     }
 
@@ -209,7 +224,7 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.DisposeAsync();
         testPipeServer.Stop();
         await connection.DisposeAsync();
@@ -230,8 +245,8 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         testPipeServer.Stop();
         await connection.DisposeAsync();
     }
@@ -242,7 +257,7 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.DisposeAsync();
         Assert.False(connection.IsActive);
         testPipeServer.Stop();
@@ -261,7 +276,7 @@ public class PipeConnectionTests
         });
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         connection.ThrowOnStop = true;
         await connection.DisposeAsync();
         testPipeServer.Stop();
@@ -279,10 +294,10 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
-        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
         testPipeServer.WaitForDataSent(TimeSpan.FromSeconds(1));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         testPipeServer.Stop();
         await connection.DisposeAsync();
     }
@@ -302,9 +317,9 @@ public class PipeConnectionTests
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
 
-        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), cancellationToken: TestContext.Current.CancellationToken));
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Equal("The pipe connection was closed before the send could be completed", exception.Message);
 
         testPipeServer.Stop();
@@ -329,11 +344,11 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.DisposeAsync();
         testPipeServer.Stop();
 
-        Assert.Contains("pipes have been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("pipes have been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -342,10 +357,10 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         testPipeServer.Stop();
 
-        Assert.Contains("External process has already exited or been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("External process has already exited or been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -357,7 +372,7 @@ public class PipeConnectionTests
         UnstartedProcessPipeProvider provider = new();
         PipeConnection connection = new(provider);
 
-        Assert.Contains("External process has already exited or been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("External process has already exited or been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -373,7 +388,7 @@ public class PipeConnectionTests
         realServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         try
         {
-            await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+            await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
             Assert.True(connection.IsActive);
 
             wrapper.ReturnNull = true;
@@ -398,9 +413,9 @@ public class PipeConnectionTests
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
 
-        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), cancellationToken: TestContext.Current.CancellationToken));
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Contains("An error occurred while sending data", exception.Message);
         Assert.IsType<IOException>(exception.InnerException);
 
@@ -418,9 +433,9 @@ public class PipeConnectionTests
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
 
-        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), cancellationToken: TestContext.Current.CancellationToken));
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Contains("An error occurred while sending data", exception.Message);
         Assert.IsType<ObjectDisposedException>(exception.InnerException);
 
@@ -433,7 +448,7 @@ public class PipeConnectionTests
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.DisposeAsync();
 
         // After disposal, pipes are null, so handles should return empty string
@@ -448,7 +463,7 @@ public class PipeConnectionTests
     public async Task TestReceiveDataRaisesErrorEventOnIOException()
     {
         ConnectionErrorEventArgs? receivedErrorArgs = null;
-        ManualResetEventSlim errorReceivedEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeServer testPipeServer = new();
 
         TestPipeConnection connection = new(testPipeServer)
@@ -458,18 +473,17 @@ public class PipeConnectionTests
         connection.OnConnectionError.AddObserver(e =>
         {
             receivedErrorArgs = e;
-            errorReceivedEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
 
         // Wait for error event (TestPipeConnection returns fake data on first read, then throws on second)
-        bool errorReceived = errorReceivedEvent.Wait(TimeSpan.FromSeconds(3), cancellationToken: TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
 
-        Assert.True(errorReceived);
         Assert.NotNull(receivedErrorArgs);
         Assert.IsType<IOException>(receivedErrorArgs.Exception);
     }
@@ -478,7 +492,7 @@ public class PipeConnectionTests
     public async Task TestReceiveDataRaisesErrorEventOnObjectDisposedException()
     {
         ConnectionErrorEventArgs? receivedErrorArgs = null;
-        ManualResetEventSlim errorReceivedEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeServer testPipeServer = new();
 
         TestPipeConnection connection = new(testPipeServer)
@@ -488,18 +502,17 @@ public class PipeConnectionTests
         connection.OnConnectionError.AddObserver(e =>
         {
             receivedErrorArgs = e;
-            errorReceivedEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-        await connection.StartAsync("pipe://local", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
 
         // Wait for error event (TestPipeConnection returns fake data on first read, then throws on second)
-        bool errorReceived = errorReceivedEvent.Wait(TimeSpan.FromSeconds(3), cancellationToken: TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         testPipeServer.Stop();
 
-        Assert.True(errorReceived);
         Assert.NotNull(receivedErrorArgs);
         Assert.IsType<ObjectDisposedException>(receivedErrorArgs.Exception);
     }

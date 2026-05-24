@@ -305,16 +305,15 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnRealmCreated.AddObserver(e =>
         {
-
             Assert.Equal("myRealm", e.RealmId);
             Assert.Equal("myOrigin", e.Origin);
             Assert.Equal(RealmType.Window, e.Type);
             Assert.Equal("myContext", e.As<WindowRealmInfo>().BrowsingContext);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
@@ -331,8 +330,7 @@ public class ScriptModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -343,15 +341,14 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnRealmCreated.AddObserver(e =>
         {
-
             Assert.Equal("myRealm", e.RealmId);
             Assert.Equal("myOrigin", e.Origin);
             Assert.Equal(RealmType.Worker, e.Type);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
@@ -367,8 +364,7 @@ public class ScriptModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -379,11 +375,11 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnRealmDestroyed.AddObserver((RealmDestroyedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnRealmDestroyed.AddObserver(e =>
         {
             Assert.Equal("myRealm", e.RealmId);
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
@@ -397,8 +393,7 @@ public class ScriptModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -409,10 +404,9 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnMessage.AddObserver((MessageEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnMessage.AddObserver(e =>
         {
-
             Assert.Equal("myChannel", e.ChannelId);
             Assert.NotNull(e.Data);
             Assert.Equal(RemoteValueType.String, e.Data.Type);
@@ -420,7 +414,7 @@ public class ScriptModuleTests
             Assert.NotNull(e.Source);
             Assert.Equal("myRealm", e.Source.RealmId);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
@@ -441,8 +435,7 @@ public class ScriptModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]

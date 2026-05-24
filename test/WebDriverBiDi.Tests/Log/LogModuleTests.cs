@@ -9,13 +9,12 @@ public class LogModuleTests
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnEntryAdded.AddObserver(e =>
         {
-
             Assert.Equal("javascript", e.Type);
             Assert.Equal("my log message", e.Text);
             Assert.Null(e.Method);
@@ -23,7 +22,7 @@ public class LogModuleTests
             Assert.NotNull(e.StackTrace);
             Assert.Empty(e.StackTrace.CallFrames);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -47,8 +46,7 @@ public class LogModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -56,14 +54,13 @@ public class LogModuleTests
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
-
             Assert.Equal("console", e.Type);
             Assert.Equal("my log message", e.Text);
             Assert.NotNull(e.Method);
@@ -73,7 +70,7 @@ public class LogModuleTests
             Assert.NotNull(e.StackTrace);
             Assert.Empty(e.StackTrace.CallFrames);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -98,7 +95,6 @@ public class LogModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 }

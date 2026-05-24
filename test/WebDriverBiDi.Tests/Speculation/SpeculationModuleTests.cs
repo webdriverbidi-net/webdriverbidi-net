@@ -9,18 +9,16 @@ public class SpeculationModuleTests
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         SpeculationModule module = driver.Speculation;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnPrefetchStatusUpdated.AddObserver((PrefetchStatusUpdatedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnPrefetchStatusUpdated.AddObserver(e =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com/index.html", e.Url);
             Assert.Equal(PreloadingStatus.Pending, e.Status);
-
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = """
@@ -35,7 +33,6 @@ public class SpeculationModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 }

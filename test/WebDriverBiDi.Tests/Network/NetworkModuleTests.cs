@@ -100,7 +100,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         AddInterceptCommandParameters commandParameters = new(InterceptPhase.BeforeRequestSent)
@@ -134,7 +134,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         AddDataCollectorCommandParameters commandParameters = new(1024 * 1024);
@@ -163,7 +163,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<ContinueRequestCommandResult> task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -190,7 +190,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<ContinueResponseCommandResult> task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -217,7 +217,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<ContinueWithAuthCommandResult> task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
@@ -248,7 +248,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId");
@@ -276,7 +276,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<FailRequestCommandResult> task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -308,7 +308,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         GetDataCommandParameters commandParameters = new("myRequestId");
@@ -338,7 +338,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<ProvideResponseCommandResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -393,7 +393,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<RemoveInterceptCommandResult> task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -420,7 +420,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters(CacheBehavior.Default), cancellationToken: TestContext.Current.CancellationToken);
@@ -447,7 +447,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         SetExtraHeadersCommandParameters commandParameters = new();
@@ -468,13 +468,12 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnAuthRequired.AddObserver((AuthRequiredEventArgs e) =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
             Assert.Equal(0u, e.RedirectCount);
@@ -516,7 +515,7 @@ public class NetworkModuleTests
             Assert.Equal(300u, e.Response.BodySize);
             Assert.Equal(300u, e.Response.Content.Size);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -535,8 +534,7 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -548,13 +546,12 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
             Assert.Equal(0u, e.RedirectCount);
@@ -584,7 +581,7 @@ public class NetworkModuleTests
             Assert.NotNull(e.Initiator);
             Assert.Equal(InitiatorType.Parser, e.Initiator.Type);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -605,8 +602,7 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -618,13 +614,12 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnFetchError.AddObserver((FetchErrorEventArgs e) =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
             Assert.Equal(0u, e.RedirectCount);
@@ -653,7 +648,7 @@ public class NetworkModuleTests
             Assert.NotNull(e.Request.Timings);
             Assert.Equal("An error occurred", e.ErrorText);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -672,8 +667,7 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -685,13 +679,12 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnResponseStarted.AddObserver((ResponseStartedEventArgs e) =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
             Assert.Equal(0u, e.RedirectCount);
@@ -733,7 +726,7 @@ public class NetworkModuleTests
             Assert.Equal(300u, e.Response.BodySize);
             Assert.Equal(300u, e.Response.Content.Size);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -752,8 +745,7 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -765,13 +757,12 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myNavigationId", e.NavigationId);
             Assert.Equal(0u, e.RedirectCount);
@@ -813,7 +804,7 @@ public class NetworkModuleTests
             Assert.Equal(300u, e.Response.BodySize);
             Assert.Equal(300u, e.Response.Content.Size);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -832,7 +823,6 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 }

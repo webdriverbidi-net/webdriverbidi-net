@@ -98,7 +98,7 @@ public class EventObserverTests
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
         observer.StartCapturingTasks();
-        Assert.Contains("must be greater than 0", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await observer.WaitForCapturedTasksAsync(0, TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("must be greater than 0", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await observer.WaitForCapturedTasksAsync(0, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken))).Message);
         observer.StopCapturingTasks();
     }
 
@@ -107,7 +107,7 @@ public class EventObserverTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        Assert.Contains("No capture session is active", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("No capture session is active", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class EventObserverTests
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.Equal(2, tasks.Length);
         observer.StopCapturingTasks();
     }
@@ -135,7 +135,7 @@ public class EventObserverTests
 
         // WaitForCapturedTasksAsync is now suspended at WaitToReadAsync with 1 of 2 tasks
         // collected and its CTS timer registered with fakeTimeProvider.
-        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(2, timeout, cancellationToken: TestContext.Current.CancellationToken);
+        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(2, timeout, TestContext.Current.CancellationToken);
         fakeTimeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
         Task[] tasks = await waitTask;
 
@@ -200,7 +200,7 @@ public class EventObserverTests
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
-        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken);
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.True(fulfilled);
         observer.StopCapturingTasks();
     }
@@ -215,7 +215,7 @@ public class EventObserverTests
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
 
-        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout, cancellationToken: TestContext.Current.CancellationToken);
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout, TestContext.Current.CancellationToken);
         fakeTimeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
         bool fulfilled = await waitTask;
 
@@ -258,7 +258,7 @@ public class EventObserverTests
         await testEventSource.RaiseTestEventAsync("myValue2");
 
         // Ensure both handlers have started before cancelling.
-        countdownEvent.Wait(cancellationToken: TestContext.Current.CancellationToken);
+        countdownEvent.Wait(TestContext.Current.CancellationToken);
 
         Task waitTask = observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
         cancellationTokenSource.Cancel();
@@ -284,7 +284,7 @@ public class EventObserverTests
         // Advancing the fake clock fires its CTS, causing it to time out and return the 1 task it
         // collected. tasksToWait.Length (1) != count (2), so WaitForCapturedTasksCompleteAsync
         // returns false via the final line without entering the remainingTime branch.
-        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout, cancellationToken: TestContext.Current.CancellationToken);
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout, TestContext.Current.CancellationToken);
         fakeTimeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
         bool fulfilled = await waitTask;
 
@@ -311,9 +311,9 @@ public class EventObserverTests
 
         // Ensure both handlers have started before waiting, so capture completes
         // immediately and the remaining timeout is spent waiting for slow execution.
-        countdownEvent.Wait(cancellationToken: TestContext.Current.CancellationToken);
+        countdownEvent.Wait(TestContext.Current.CancellationToken);
 
-        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken);
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.False(fulfilled);
 
         // Capture session is auto-closed once count tasks are collected.
@@ -340,7 +340,7 @@ public class EventObserverTests
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
 
-        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, timeout, cancellationToken: TestContext.Current.CancellationToken);
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, timeout, TestContext.Current.CancellationToken);
 
         Assert.False(fulfilled);
         Assert.False(observer.IsCapturing);
@@ -363,7 +363,7 @@ public class EventObserverTests
         {
         }
 
-        Assert.Equal("capture failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(100), cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Equal("capture failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken))).Message);
         observer.StopCapturingTasks();
     }
 
@@ -409,19 +409,19 @@ public class EventObserverTests
     {
         bool handlerCompleted = false;
         TaskCompletionSource handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        using ManualResetEventSlim handlerReachedGate = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             async (e) =>
             {
-                handlerReachedGate.Set();
+                taskCompletionSource.TrySetResult();
                 await handlerGate.Task;
                 handlerCompleted = true;
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue");
-        handlerReachedGate.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Task[] tasks = observer.GetCapturedTasks();
         _ = Assert.Single(tasks);
         Assert.False(tasks[0].IsCompleted);
@@ -443,13 +443,13 @@ public class EventObserverTests
         TaskScheduler.UnobservedTaskException += handler;
         try
         {
-            using ManualResetEventSlim handlerFaulted = new(false);
+            TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TestEventSource testEventSource = new();
             EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
                 async (e) =>
                 {
                     await Task.Yield();
-                    handlerFaulted.Set();
+                    taskCompletionSource.TrySetResult();
                     throw new InvalidOperationException("async capture failure");
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -461,7 +461,7 @@ public class EventObserverTests
             _ = Assert.Single(tasks);
 
             // Wait for the handler to fault before triggering GC.
-            handlerFaulted.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+            await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
@@ -500,8 +500,8 @@ public class EventObserverTests
         observer.StartCapturingTasks();
 
         // Start both waiters before any events are raised.
-        Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
-        Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // Raise 6 events so both waiters can be satisfied.
         for (int i = 0; i < 6; i++)
@@ -532,7 +532,7 @@ public class EventObserverTests
 
         // Raise only 1 event, then start a waiter that needs 3.
         await testEventSource.RaiseTestEventAsync("value1");
-        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10), cancellationToken: TestContext.Current.CancellationToken);
+        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
         // Stop the capture session from another thread — waiter should unblock.
         observer.StopCapturingTasks();
@@ -560,7 +560,7 @@ public class EventObserverTests
 
         // WaitForAsync(2) will collect both tasks and then try to auto-close.
         // StopCapturing() races with that auto-close from the calling thread.
-        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         observer.StopCapturingTasks();
 
         Task[] tasks = await waitTask;
@@ -589,24 +589,24 @@ public class EventObserverTests
         {
             TestEventSource testEventSource = new();
 
-            using ManualResetEventSlim handlerStarted = new(false);
-            using ManualResetEventSlim allowFault = new(false);
-            using ManualResetEventSlim handlerFaulted = new(false);
+            TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource allowFaultTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
                 async (TestObservableEventArgs e) =>
                 {
                     if (e.EventValue == "raced")
                     {
-                        handlerStarted.Set();
+                        handlerStartedTaskCompletionSource.TrySetResult();
                         try
                         {
-                            await Task.Run(() => allowFault.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken));
+                            await allowFaultTaskCompletionSource.Task;
                             throw new InvalidOperationException("raced task fault");
                         }
                         finally
                         {
-                            handlerFaulted.Set();
+                            handlerFaultedTaskCompletionSource.TrySetResult();
                         }
                     }
                 },
@@ -619,15 +619,15 @@ public class EventObserverTests
 
             // Raise the raced event — its task will be in-flight when the channel closes.
             await testEventSource.RaiseTestEventAsync("raced");
-            handlerStarted.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+            await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             // WaitForAsync collects 1 task, auto-closes the channel, and drains the raced task.
-            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             _ = Assert.Single(tasks);
 
             // Let the raced handler fault and wait for it to complete before triggering GC.
-            allowFault.Set();
-            handlerFaulted.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+            allowFaultTaskCompletionSource.TrySetResult();
+            await handlerFaultedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
@@ -684,7 +684,7 @@ public class EventObserverTests
             }
 
             // WaitForAsync collects 1 task, auto-closes, and drains the already-faulted raced task.
-            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             _ = Assert.Single(tasks);
 
             // Force garbage collection to trigger UnobservedTaskException
@@ -723,9 +723,9 @@ public class EventObserverTests
 
         // Start each waiter and yield once to advance it to its first await point,
         // guaranteeing waitingReaderCount == 2 before any events enter the channel.
-        Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await Task.Delay(TimeSpan.Zero, TestContext.Current.CancellationToken);
-        Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await Task.Delay(TimeSpan.Zero, TestContext.Current.CancellationToken);
 
         // Raise 4 events — enough for both waiters.
@@ -760,7 +760,7 @@ public class EventObserverTests
             await testEventSource.RaiseTestEventAsync($"value{i}");
         }
 
-        Task[] firstBatch = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        Task[] firstBatch = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // Raise further events — these must not be captured because the channel is closed.
         for (int i = 3; i < 6; i++)
@@ -895,13 +895,13 @@ public class EventObserverTests
         TaskScheduler.UnobservedTaskException += UnobservedHandler;
         try
         {
-            using ManualResetEventSlim handlerFaulted = new(false);
+            TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TestEventSource testEventSource = new();
             testEventSource.TestObservableEvent.AddObserver(
                 async (TestObservableEventArgs e) =>
                 {
                     await Task.Yield();
-                    handlerFaulted.Set();
+                    taskCompletionSource.TrySetResult();
                     throw new InvalidOperationException("async fire-and-forget failure");
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -909,7 +909,7 @@ public class EventObserverTests
             await testEventSource.RaiseTestEventAsync("myValue");
 
             // Wait for the handler to fault before triggering GC.
-            handlerFaulted.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+            await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
@@ -929,38 +929,38 @@ public class EventObserverTests
     public async Task TestHandlerRunAsynchronouslyWithAsyncSuccessCompletesWithoutError()
     {
         bool handlerCompleted = false;
-        using ManualResetEventSlim handlerReachedAsync = new(false);
-        using ManualResetEventSlim handlerFinished = new(false);
+        TaskCompletionSource handlerReachedAsyncTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handlerFinishedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestEventSource testEventSource = new();
         testEventSource.TestObservableEvent.AddObserver(
             async _ =>
             {
-                handlerReachedAsync.Set();
+                handlerReachedAsyncTaskCompletionSource.TrySetResult();
                 await Task.Yield();
                 handlerCompleted = true;
-                handlerFinished.Set();
+                handlerFinishedTaskCompletionSource.TrySetResult();
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         await testEventSource.RaiseTestEventAsync("myValue");
 
-        // handlerReachedAsync is set before the first real await, so the handler
-        // has started but has not yet set handlerCompleted.
-        handlerReachedAsync.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        // handlerReachedAsyncTaskCompletionSource is set before the first real await, so the
+        // handler has started but has not yet set handlerCompleted.
+        await handlerReachedAsyncTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.False(handlerCompleted);
 
-        handlerFinished.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        await handlerFinishedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.True(handlerCompleted);
     }
 
     [Fact]
     public async Task TestAsyncHandlerRaisesIncrementThenDecrementEventSourceEvent()
     {
-        using ManualResetEventSlim release = new(initialState: false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestEventListener listener = new();
         TestEventSource testEventSource = new();
         testEventSource.TestObservableEvent.AddObserver(
-            async _ => await Task.Run(() => release.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken)),
+            async _ => await taskCompletionSource.Task,
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         await testEventSource.RaiseTestEventAsync("myValue");
@@ -976,7 +976,7 @@ public class EventObserverTests
         int? incrementPayload = incrementEvents[0].Payload is [int c] ? c : null;
         Assert.NotNull(incrementPayload);
 
-        release.Set();
+        taskCompletionSource.TrySetResult();
 
         // Wait for the decrement event to land.
         for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count < 2; i++)
@@ -1121,22 +1121,22 @@ public class EventObserverTests
     public async Task TestAsyncFaultAfterHandlerReturnInvokesErrorReporter()
     {
         EventObserverErrorInfo? reportedErrorInfo = null;
-        using ManualResetEventSlim reporterInvoked = new(false);
+        TaskCompletionSource reporterInvokedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestEventSource testEventSource = new();
         testEventSource.SetObserverErrorReporter(errorInfo =>
         {
             reportedErrorInfo = errorInfo with { };
-            reporterInvoked.Set();
+            reporterInvokedTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
-        using ManualResetEventSlim handlerFaulted = new(false);
+        TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             async _ =>
             {
                 await Task.Yield();
-                handlerFaulted.Set();
+                handlerFaultedTaskCompletionSource.TrySetResult();
                 throw new InvalidOperationException("async reporter test failure");
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously,
@@ -1144,8 +1144,8 @@ public class EventObserverTests
 
         await testEventSource.RaiseTestEventAsync("value");
 
-        handlerFaulted.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
-        reporterInvoked.Wait(TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
+        await handlerFaultedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await reporterInvokedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.NotNull(reportedErrorInfo);
         Assert.Equal("testModule.testEvent", reportedErrorInfo.ObservableEventName);

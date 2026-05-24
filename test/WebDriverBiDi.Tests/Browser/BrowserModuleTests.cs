@@ -21,7 +21,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
@@ -47,7 +47,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<CloseCommandResult> task = module.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -75,7 +75,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(new CreateUserContextCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
@@ -104,7 +104,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -152,7 +152,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(new GetClientWindowsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
@@ -215,7 +215,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -266,7 +266,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
@@ -305,7 +305,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -335,7 +335,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<RemoveUserContextCommandResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -369,7 +369,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<SetClientWindowStateCommandResult> task = module.SetClientWindowStateAsync(new SetClientWindowStateCommandParameters("myClientWindow")
@@ -410,7 +410,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
         Task<SetDownloadBehaviorCommandResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);

@@ -25,7 +25,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<StatusCommandResult> task = module.StatusAsync(new StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
         StatusCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
@@ -57,7 +57,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<StatusCommandResult> task = module.StatusAsync(cancellationToken: TestContext.Current.CancellationToken);
         StatusCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
@@ -88,7 +88,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         SubscribeCommandParameters subscribeParameters = new(["log.entryAdded"]);
         Task<SubscribeCommandResult> task = module.SubscribeAsync(subscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
@@ -116,7 +116,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         UnsubscribeByAttributesCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.Events.Add("log.entryAdded");
@@ -144,7 +144,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.SubscriptionIds.Add("mySubscriptionId");
@@ -186,7 +186,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         NewCommandParameters newCommandParameters = new();
         Task<NewCommandResult> task = module.NewSessionAsync(newCommandParameters, cancellationToken: TestContext.Current.CancellationToken);
@@ -228,7 +228,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         EndCommandParameters endParameters = new();
         Task<EndCommandResult> task = module.EndAsync(endParameters, cancellationToken: TestContext.Current.CancellationToken);
@@ -254,7 +254,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<EndCommandResult> task = module.EndAsync(cancellationToken: TestContext.Current.CancellationToken);
         EndCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);

@@ -48,7 +48,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<GetCookiesCommandResult> task = module.GetCookiesAsync(new GetCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
         GetCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
@@ -91,7 +91,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<GetCookiesCommandResult> task = module.GetCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
         GetCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
@@ -120,7 +120,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
         DeleteCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
@@ -151,7 +151,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<SetCookieCommandResult> task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")), cancellationToken: TestContext.Current.CancellationToken);
         SetCookieCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
@@ -185,7 +185,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
         DeleteCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);

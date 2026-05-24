@@ -70,7 +70,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         {
             StartupTimeout = TimeSpan.FromMilliseconds(50)
         };
-        Assert.Contains($"{0.05} seconds", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync($"ws://localhost:{port}", cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains($"{0.05} seconds", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync($"ws://localhost:{port}", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -80,15 +80,15 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
-        await connection.SendDataAsync("Hello world"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("Hello world"u8.ToArray(), TestContext.Current.CancellationToken);
         string dataReceivedByServer = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.Equal("Hello world", dataReceivedByServer);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
@@ -106,7 +106,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.Equal("Hello back"u8.ToArray(), dataReceivedByConnection);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
@@ -126,7 +126,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.Equal(Encoding.UTF8.GetBytes(data), dataReceivedByConnection);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
@@ -146,7 +146,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.Equal(Encoding.UTF8.GetBytes(data), dataReceivedByConnection);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -163,15 +163,15 @@ public class WebSocketConnectionTests : IAsyncDisposable
             allLogs.Add(e);
             return Task.CompletedTask;
         });
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
-        await connection.SendDataAsync("Hello world"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("Hello world"u8.ToArray(), TestContext.Current.CancellationToken);
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
         await server.SendWebSocketDataAsync(registeredConnectionId, "Hello back");
         this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(4));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Contains(allLogs,
             e => e.Message.StartsWith("SEND >>> ") && e.Level == WebDriverBiDiLogLevel.Debug);
@@ -197,15 +197,15 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
             return Task.CompletedTask;
         });
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
-        await connection.SendDataAsync("Hello world"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("Hello world"u8.ToArray(), TestContext.Current.CancellationToken);
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "Hello back");
         this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(4));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         List<string> messages = [];
         foreach (LogMessageEventArgs logValue in logValues)
@@ -231,10 +231,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
         WebSocketConnection connection = new();
         Assert.False(connection.IsActive);
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.True(connection.IsActive);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
     }
 
@@ -248,10 +248,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
         WebSocketConnection connection = new();
         Assert.Equal(string.Empty, connection.ConnectionString);
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync(serverWebSocketUrl, cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync(serverWebSocketUrl, TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.Equal(serverWebSocketUrl, connection.ConnectionString);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal(string.Empty, connection.ConnectionString);
     }
 
@@ -260,7 +260,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
     {
         WebSocketConnection connection = new();
         Assert.False(connection.IsActive);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
     }
 
@@ -274,7 +274,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
         });
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         List<string> expectedLogEntries =
         [
@@ -297,7 +297,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
         Assert.False(connection.IsActive);
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.True(connection.IsActive);
 
@@ -305,7 +305,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // task to enter a waiting state after receiving the first message.
         await server.SendWebSocketDataAsync(registeredConnectionId, "Hello back");
         byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
     }
 
@@ -323,10 +323,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
             return Task.CompletedTask;
         });
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         // First call: socket Open -> CloseClientWebSocketAsync -> "Client state is Closed"
         // Second call: socket Closed -> early-exit -> "Client state is Closed"
@@ -351,7 +351,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             "Client state is Aborted"
         ];
 
-        ManualResetEvent clientDetectedErrorEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -359,7 +359,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
         connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
         {
-            clientDetectedErrorEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
         List<string> connectionLog = [];
@@ -368,17 +368,16 @@ public class WebSocketConnectionTests : IAsyncDisposable
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
         });
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await server.StopAsync();
 
         // Wait for the client's receive loop to detect the abrupt close (WebSocketException)
         // before calling StopAsync. This ensures client.State is Aborted when StopAsync runs,
         // so we take the early-exit path and avoid calling CloseOutputAsync on an Aborted socket.
-        bool clientDetectedError = clientDetectedErrorEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.True(clientDetectedError);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equivalent(expectedLogEntries, connectionLog);
     }
 
@@ -424,11 +423,11 @@ public class WebSocketConnectionTests : IAsyncDisposable
             return Task.CompletedTask;
         });
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
 
         // Receive loop is blocked in ReceiveHandler; client.State is still Open.
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Equivalent(expectedLogEntries, connectionLog);
     }
@@ -456,9 +455,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
             return Task.CompletedTask;
         });
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equivalent(expectedLogEntries, connectionLog);
     }
 
@@ -491,22 +490,22 @@ public class WebSocketConnectionTests : IAsyncDisposable
         });
 
         IReadOnlyList<string> serverLog = server.Log;
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        ManualResetEvent disconnectEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         this.clientDisconnectedObserver = server.OnClientDisconnected.AddObserver((e) =>
         {
             if (e.ConnectionId == registeredConnectionId)
             {
-                disconnectEvent.Set();
+                taskCompletionSource.TrySetResult();
             }
         });
 
         // Server initiated disconnection requires waiting for the
         // close websocket message to be received by the client.
         await server.DisconnectAsync(registeredConnectionId);
-        disconnectEvent.WaitOne(TimeSpan.FromSeconds(1));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equivalent(expectedLogEntries, connectionLog);
     }
 
@@ -538,10 +537,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
         });
 
         IReadOnlyList<string> serverLog = server.Log;
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equivalent(expectedLogEntries, connectionLog);
     }
 
@@ -552,7 +551,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await server.StartAsync();
 
         ConnectionErrorEventArgs? receivedErrorArgs = null;
-        ManualResetEventSlim errorReceivedEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -561,17 +560,16 @@ public class WebSocketConnectionTests : IAsyncDisposable
         connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
         {
             receivedErrorArgs = e;
-            errorReceivedEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         server.IgnoreCloseConnectionRequest(this.connectionId, true);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
-        bool errorReceived = errorReceivedEvent.Wait(TimeSpan.FromSeconds(3), cancellationToken: TestContext.Current.CancellationToken);
-        Assert.True(errorReceived);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.NotNull(receivedErrorArgs);
         Assert.IsType<WebSocketException>(receivedErrorArgs.Exception);
     }
@@ -589,32 +587,32 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         ServerEventObserver<ServerDataReceivedEventArgs> observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
-        await connection.SendDataAsync("First connection hello"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("First connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         observer.Unobserve();
         Assert.Equal("First connection hello", serverReceivedData);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "First connection acknowledged");
         byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("First connection acknowledged"u8.ToArray(), receivedData);
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
-        await connection.SendDataAsync("Second connection hello"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("Second connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         observer.Unobserve();
         Assert.Equal("Second connection hello", serverReceivedData);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Second connection acknowledged"u8.ToArray(), receivedData);
     }
 
@@ -631,11 +629,11 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         ServerEventObserver<ServerDataReceivedEventArgs> observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
-        await connection.SendDataAsync("First connection hello"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("First connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         observer.Unobserve();
         Assert.Equal("First connection hello", serverReceivedData);
@@ -643,21 +641,21 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await server.SendWebSocketDataAsync(registeredConnectionId, "First connection acknowledged");
         byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("First connection acknowledged"u8.ToArray(), receivedData);
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
-        await connection.SendDataAsync("Second connection hello"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("Second connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         observer.Unobserve();
         Assert.Equal("Second connection hello", serverReceivedData);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Second connection acknowledged"u8.ToArray(), receivedData);
     }
 
@@ -672,23 +670,23 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        Assert.StartsWith($"The WebSocket is already connected to ws://localhost:{server.Port}", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.StartsWith($"The WebSocket is already connected to ws://localhost:{server.Port}", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
     public async Task TestStartAsyncThrowsForInvalidUrl()
     {
         WebSocketConnection connection = new();
-        Assert.Contains("not a valid absolute URI", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await connection.StartAsync("not-a-valid-url", cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("not a valid absolute URI", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await connection.StartAsync("not-a-valid-url", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
     public async Task TestStartAsyncThrowsForNonWebSocketUrl()
     {
         WebSocketConnection connection = new();
-        Assert.Contains("The URI scheme must be 'ws' or 'wss'; received 'http'", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await connection.StartAsync("http://localhost:8080", cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("The URI scheme must be 'ws' or 'wss'; received 'http'", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await connection.StartAsync("http://localhost:8080", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -714,7 +712,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         // We expect this to fail with a timeout, but it verifies that the connection
         // attempts to connect to the correct URL and that the URL is accepted as valid.
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync($"wss://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync($"wss://localhost:{server.Port}", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -725,7 +723,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        Assert.StartsWith($"The WebSocket has not been initialized", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync("This send should fail"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.StartsWith($"The WebSocket has not been initialized", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync("This send should fail"u8.ToArray(), TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -746,10 +744,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
             return Task.CompletedTask;
         });
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         // With ShutdownTimeout=Zero, CloseClientWebSocketAsync may throw OperationCanceledException
         // before logging "Client state is X". At minimum we get "Closing connection".
@@ -771,19 +769,19 @@ public class WebSocketConnectionTests : IAsyncDisposable
             DataSendDelay = TimeSpan.FromMilliseconds(100),
             DataTimeout = TimeSpan.FromMilliseconds(20),
         };
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
 
-        ManualResetEventSlim syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         connection.DataSendStarting += (sender, e) =>
         {
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         };
 
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        _ = Task.Run(() => connection.SendDataAsync("first data"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
-        syncEvent.Wait(cancellationToken: TestContext.Current.CancellationToken);
-        Assert.Equal("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync("second data"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken))).Message);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        _ = Task.Run(() => connection.SendDataAsync("first data"u8.ToArray(), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync("second data"u8.ToArray(), TestContext.Current.CancellationToken))).Message);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -809,7 +807,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.DisposeAsync();
         await connection.DisposeAsync();
@@ -832,9 +830,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         await connection.DisposeAsync();
     }
 
@@ -846,7 +844,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.DisposeAsync();
         Assert.False(connection.IsActive);
@@ -865,7 +863,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             logs.Add(e);
             return Task.CompletedTask;
         });
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.ThrowOnStop = true;
         connection.BypassStop = false;
@@ -885,14 +883,14 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
-        await connection.SendDataAsync("Hello world"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken);
+        await connection.SendDataAsync("Hello world"u8.ToArray(), TestContext.Current.CancellationToken);
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
 
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
         await connection.DisposeAsync();
     }
 
@@ -902,7 +900,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
-        ManualResetEventSlim closeReturned = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new()
         {
             BypassStart = false,
@@ -920,15 +918,15 @@ public class WebSocketConnectionTests : IAsyncDisposable
                 return await Task.FromResult(new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true));
             }
 
-            closeReturned.Set();
+            taskCompletionSource.TrySetResult();
             await Task.Delay(Timeout.Infinite, token);
             throw new OperationCanceledException(token);
         };
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        closeReturned.Wait(TimeSpan.FromSeconds(3), cancellationToken: TestContext.Current.CancellationToken);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -937,7 +935,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
-        ManualResetEventSlim exceptionThrown = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new()
         {
             BypassStart = false,
@@ -950,14 +948,14 @@ public class WebSocketConnectionTests : IAsyncDisposable
                 return Task.FromResult(new WebSocketReceiveResult(10, WebSocketMessageType.Text, endOfMessage: false));
             }
 
-            exceptionThrown.Set();
+            taskCompletionSource.TrySetResult();
             throw new OperationCanceledException();
         };
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        exceptionThrown.Wait(TimeSpan.FromSeconds(3), cancellationToken: TestContext.Current.CancellationToken);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -972,10 +970,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
                 return count <= 1;
             },
         };
-        await connection.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;
 
-        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("data"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken));
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("data"u8.ToArray(), TestContext.Current.CancellationToken));
         Assert.Equal("The WebSocket connection was closed before the send could be completed", exception.Message);
     }
 
@@ -987,10 +985,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
             IsActiveOverride = () => true,
             SendWebSocketDataOverride = _ => throw new WebSocketException("Simulated WebSocket failure"),
         };
-        await connection.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;
 
-        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("data"u8.ToArray(), cancellationToken: TestContext.Current.CancellationToken));
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("data"u8.ToArray(), TestContext.Current.CancellationToken));
         Assert.Contains("Simulated WebSocket failure", exception.Message);
         Assert.IsType<WebSocketException>(exception.InnerException);
     }
@@ -1025,7 +1023,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
-        ManualResetEventSlim remoteDisconnectedEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -1035,20 +1033,19 @@ public class WebSocketConnectionTests : IAsyncDisposable
         connection.OnRemoteDisconnected.AddObserver((ConnectionDisconnectedEventArgs e) =>
         {
             receivedEventArgs = e with { };
-            remoteDisconnectedEvent.Set();
+            taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.clientDisconnectedObserver = server.OnClientDisconnected.AddObserver(_ => { });
 
         await server.DisconnectAsync(registeredConnectionId);
 
-        bool disconnected = remoteDisconnectedEvent.Wait(TimeSpan.FromSeconds(3), cancellationToken: TestContext.Current.CancellationToken);
-        Assert.True(disconnected);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.NotNull(receivedEventArgs);
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -1066,9 +1063,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
         });
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
-        await connection.StartAsync($"ws://localhost:{server.Port}", cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        await connection.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Contains(connectionLog, s => s.StartsWith("Opening connection to URL "));
         Assert.Contains("Connection opened", connectionLog);

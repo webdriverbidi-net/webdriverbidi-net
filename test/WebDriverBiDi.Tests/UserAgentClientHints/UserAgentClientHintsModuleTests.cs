@@ -21,7 +21,7 @@ public class UserAgentClientHintsModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         UserAgentClientHintsModule module = driver.UserAgentClientHints;
 
         Task<SetClientHintsOverrideCommandResult> task = module.SetClientHintsOverrideAsync(new SetClientHintsOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);

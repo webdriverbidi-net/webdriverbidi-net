@@ -418,12 +418,13 @@ public class WebDriverBiDiEventSourceTests
     /// </summary>
     private class TestEventListener : EventListener
     {
+        private readonly object eventLockObject = new();
         private readonly EventLevel minimumLevel;
 
         public TestEventListener(EventLevel minimumLevel = EventLevel.Verbose)
         {
             this.minimumLevel = minimumLevel;
-            this.Events = new List<EventWrittenEventArgs>();
+            this.Events = [];
         }
 
         public List<EventWrittenEventArgs> Events { get; }
@@ -440,7 +441,10 @@ public class WebDriverBiDiEventSourceTests
         {
             if (eventData.EventSource.Name == "WebDriverBiDi")
             {
-                this.Events.Add(eventData);
+                lock (this.eventLockObject)
+                {
+                    this.Events.Add(eventData);
+                }
             }
         }
     }

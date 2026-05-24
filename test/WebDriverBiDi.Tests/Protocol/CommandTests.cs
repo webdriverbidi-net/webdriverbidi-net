@@ -96,7 +96,7 @@ public class CommandTests
         Assert.Null(command.ThrownException);
         TestCommandResult result = new();
         command.SetResult(result);
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
         hasResult = command.TryGetResult(out commandResult);
         Assert.True(hasResult);
         Assert.NotNull(commandResult);
@@ -130,7 +130,7 @@ public class CommandTests
         Assert.Null(commandResult);
         Assert.Null(command.ThrownException);
         command.SetException(new WebDriverBiDiException("test exception"));
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
         hasResult = command.TryGetResult(out commandResult);
         Assert.False(hasResult);
         Assert.Null(commandResult);
@@ -167,7 +167,7 @@ public class CommandTests
         Assert.Null(command.ThrownException);
         Assert.False(command.IsCanceled);
         command.Cancel();
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
         hasResult = command.TryGetResult(out commandResult);
         Assert.False(hasResult);
         Assert.Null(commandResult);
@@ -183,7 +183,7 @@ public class CommandTests
         Command command = new(1, commandParams);
 
         command.SetException(new WebDriverBiDiException("custom fault message"));
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
         Assert.False(hasResult);
@@ -200,7 +200,7 @@ public class CommandTests
         TestCommandParameters commandParams = new TestCommandParameters("module.command");
         Command command = new(1, commandParams);
 
-        bool completed = await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        bool completed = await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
 
         Assert.False(completed);
@@ -219,7 +219,7 @@ public class CommandTests
 
         TestCommandResult firstResult = new();
         command.SetResult(firstResult);
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 
         command.SetResult(new TestCommandResult());
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
@@ -236,7 +236,7 @@ public class CommandTests
 
         TestCommandResult result = new();
         command.SetResult(result);
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 
         command.SetException(new WebDriverBiDiException("late exception"));
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
@@ -254,7 +254,7 @@ public class CommandTests
 
         TestCommandResult result = new();
         command.SetResult(result);
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 
         command.Cancel();
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
@@ -271,7 +271,7 @@ public class CommandTests
         Command command = new(1, commandParams);
 
         command.Cancel();
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 
         command.SetResult(new TestCommandResult());
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
@@ -288,7 +288,7 @@ public class CommandTests
         Command command = new(1, commandParams);
 
         command.Cancel();
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 
         command.SetException(new WebDriverBiDiException("late exception"));
         Assert.Null(command.ThrownException);

@@ -18,7 +18,7 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("ConnectionOpening", "ConnectionOpened", "TransportStarted");
         Assert.Equal(3, events.Count);
@@ -35,7 +35,7 @@ public class TransportEventSourceIntegrationTests
 
         Assert.Equal("TransportStarted", events[2].EventName);
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -46,10 +46,10 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("ConnectionClosing", "ConnectionClosed", "TransportStopped");
         Assert.Equal(3, events.Count);
@@ -76,11 +76,11 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
         TestCommandParameters commandParameters = new("session.status");
-        Command command = await transport.SendCommandAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
+        Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate response
         _ = Task.Run(async () =>
@@ -99,7 +99,7 @@ public class TransportEventSourceIntegrationTests
         },
         TestContext.Current.CancellationToken);
 
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CommandSending", "PendingCommandCount", "CommandCompleted");
         Assert.True(events.Count >= 2); // At least CommandSending and CommandCompleted
@@ -118,7 +118,7 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("session.status", completedPayload[1]);
         Assert.IsType<long>(completedPayload[2]); // elapsed time
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -129,11 +129,11 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
         TestCommandParameters commandParameters = new("session.status");
-        Command command = await transport.SendCommandAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
+        Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate error response
         _ = Task.Run(async () =>
@@ -151,7 +151,7 @@ public class TransportEventSourceIntegrationTests
         },
         TestContext.Current.CancellationToken);
 
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), cancellationToken: TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CommandError");
         Assert.Single(events);
@@ -166,7 +166,7 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("invalid session id", errorPayload[3]);
         Assert.Equal("Session not found", errorPayload[4]);
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -180,11 +180,11 @@ public class TransportEventSourceIntegrationTests
         };
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents();
 
         TestCommandParameters commandParameters = new("session.status");
-        Assert.Contains("Simulated send failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await transport.SendCommandAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("Simulated send failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken))).Message);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CommandSending", "CommandSendFailed", "PendingCommandCount", "CommandCompleted", "CommandError");
         EventWrittenEventArgs sendingEvent = events.First(e => e.EventName == "CommandSending");
@@ -211,7 +211,7 @@ public class TransportEventSourceIntegrationTests
         Assert.DoesNotContain(events, e => e.EventName == "CommandCompleted");
         Assert.DoesNotContain(events, e => e.EventName == "CommandError");
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -219,25 +219,24 @@ public class TransportEventSourceIntegrationTests
     public async Task TestTransportEmitsCommandSendFailedEventWhenSendIsCanceled()
     {
         TestEventListener listener = new();
-        ManualResetEventSlim sendStarted = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using CancellationTokenSource cancellationTokenSource = new();
         TestWebSocketConnection connection = new()
         {
             SendWebSocketDataOverride = async _ =>
             {
-                sendStarted.Set();
+                taskCompletionSource.TrySetResult();
                 await Task.Delay(Timeout.InfiniteTimeSpan, cancellationTokenSource.Token);
             },
         };
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents();
 
         TestCommandParameters commandParameters = new("session.status");
         Task<Command> sendTask = transport.SendCommandAsync(commandParameters, cancellationTokenSource.Token);
-        bool sendDidStart = sendStarted.Wait(TimeSpan.FromSeconds(1), cancellationToken: TestContext.Current.CancellationToken);
-        Assert.True(sendDidStart);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellationTokenSource.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await sendTask);
@@ -261,7 +260,7 @@ public class TransportEventSourceIntegrationTests
         Assert.DoesNotContain(events, e => e.EventName == "CommandCompleted");
         Assert.DoesNotContain(events, e => e.EventName == "CommandError");
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -293,7 +292,7 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
         // Simulate unknown message
@@ -310,7 +309,7 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("unknown", unknownPayload[0]);
         Assert.IsType<int>(unknownPayload[1]); // message length
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -321,7 +320,7 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
         // Simulate unknown message with null type to test null-coalescing branch
@@ -338,7 +337,7 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("unknown", unknownPayload[0]); // Should fall back to "unknown"
         Assert.IsType<int>(unknownPayload[1]); // message length
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -350,7 +349,7 @@ public class TransportEventSourceIntegrationTests
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("test.event");
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
         // Simulate malformed event (missing required property)
@@ -374,7 +373,7 @@ public class TransportEventSourceIntegrationTests
         Assert.NotEmpty((string)protocolPayload[0]!); // error message
         Assert.NotEmpty((string)protocolPayload[1]!); // message snippet
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 
@@ -409,7 +408,7 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
         // Simulate connection error
@@ -433,8 +432,8 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.ClearEvents();
 
         // Connection error after disconnect: fast-path guard returns early (no lock acquisition).
@@ -458,11 +457,11 @@ public class TransportEventSourceIntegrationTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
-        await transport.ConnectAsync("ws://localhost:9222", cancellationToken: TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
 
         TestCommandParameters commandParameters = new("session.status");
-        _ = await transport.SendCommandAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
+        _ = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("PendingCommandCount");
         Assert.True(events.Count >= 1);
@@ -472,7 +471,7 @@ public class TransportEventSourceIntegrationTests
         Assert.NotNull(countPayload);
         Assert.IsType<int>(countPayload[0]);
 
-        await transport.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
 }

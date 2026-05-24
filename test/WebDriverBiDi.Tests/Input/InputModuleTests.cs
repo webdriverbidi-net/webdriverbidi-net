@@ -22,7 +22,7 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         Task<PerformActionsCommandResult> task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -48,7 +48,7 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         Task<ReleaseActionsCommandResult> task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -74,7 +74,7 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         SharedReference element = new("mySharedId");
@@ -89,18 +89,17 @@ public class InputModuleTests
     {
         TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnFileDialogOpened.AddObserver(e =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.True(e.IsMultiple);
             Assert.Null(e.Element);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -114,8 +113,7 @@ public class InputModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -126,16 +124,15 @@ public class InputModuleTests
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) =>
         {
-
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.True(e.IsMultiple);
             Assert.NotNull(e.Element);
             Assert.Equal("mySharedId", e.Element.SharedId);
 
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -158,7 +155,6 @@ public class InputModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.True(eventRaised);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 }

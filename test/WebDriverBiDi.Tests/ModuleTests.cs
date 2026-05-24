@@ -3,6 +3,7 @@ namespace WebDriverBiDi;
 using TestUtilities;
 using WebDriverBiDi.Protocol;
 
+[Collection("EventSourceTests")]
 public class ModuleTests
 {
     [Fact]
@@ -17,7 +18,7 @@ public class ModuleTests
         {
         });
 
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<string> driverLog = [];
         transport.OnLogMessage.AddObserver((e) =>
         {
@@ -31,10 +32,10 @@ public class ModuleTests
         transport.OnUnknownMessageReceived.AddObserver((e) =>
         {
             unknownMessage = e.Message;
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         });
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -45,7 +46,7 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        syncEvent.WaitOne(TimeSpan.FromMilliseconds(10000));
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Single(driverLog);
         Assert.Contains("Unexpected error parsing event JSON", driverLog[0]);
@@ -60,13 +61,14 @@ public class ModuleTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
-        ManualResetEvent syncEvent = new(false);
+        // Use a ManualResetEventSlim because we want to reset the event.
+        ManualResetEventSlim syncEvent = new(false);
         EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver((TestEventArgs e) =>
         {
             syncEvent.Set();
         });
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -77,13 +79,13 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(50));
+        bool eventSet = syncEvent.Wait(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
         Assert.True(eventSet);
 
         handler.Unobserve();
         syncEvent.Reset();
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(50));
+        eventSet = syncEvent.Wait(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
         Assert.False(eventSet);
     }
 
@@ -95,17 +97,13 @@ public class ModuleTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
-        Task? eventTask = null;
-        ManualResetEvent syncEvent = new(false);
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver((TestEventArgs e) =>
         {
-            TaskCompletionSource taskCompletionSource = new();
-            eventTask = taskCompletionSource.Task;
-            taskCompletionSource.SetResult();
-            syncEvent.Set();
+            taskCompletionSource.TrySetResult();
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -116,11 +114,7 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-        Assert.True(eventSet);
-        Assert.NotNull(eventTask);
-        await eventTask;
-        Assert.True(eventTask.IsCompletedSuccessfully);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -148,7 +142,7 @@ public class ModuleTests
             }
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -162,7 +156,7 @@ public class ModuleTests
         await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
         Assert.True(errorPropagated);
-        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken));
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
         Assert.IsType<WebDriverBiDiException>(exception.InnerException);
         Assert.Contains("Normal shutdown", exception.Message);
         Assert.Contains("Async module handler exception", exception.InnerException.Message);
@@ -187,7 +181,7 @@ public class ModuleTests
 
         observer.StartCapturingTasks();
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -199,10 +193,10 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), cancellationToken: TestContext.Current.CancellationToken);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         _ = Assert.Single(tasks);
         Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
-        await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -239,7 +233,7 @@ public class ModuleTests
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -254,7 +248,7 @@ public class ModuleTests
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
         Assert.True(errorPropagated);
 
-        AggregateException exception = await Assert.ThrowsAsync<AggregateException>(async () => await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken));
+        AggregateException exception = await Assert.ThrowsAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
         Assert.IsType<AggregateException>(exception.InnerException);
 
         AggregateException innerAggregateException = (AggregateException)exception.InnerException;
@@ -289,7 +283,7 @@ public class ModuleTests
             }
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -328,7 +322,7 @@ public class ModuleTests
 
         observer.StartCapturingTasks();
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -340,10 +334,10 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), cancellationToken: TestContext.Current.CancellationToken);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         _ = Assert.Single(tasks);
         Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
-        await driver.StopAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -380,7 +374,7 @@ public class ModuleTests
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
