@@ -503,22 +503,44 @@ public class EventObserverTests
     {
         // Two concurrent callers each asking for 3 tasks should receive unique,
         // non-interleaved batches — one gets tasks 1-3, the other gets tasks 4-6.
+        //
+        // Determinism guarantee: same technique as
+        // TestWaitForCapturedTasksAsyncDoesNotRemovePendingTasksWhenConcurrentWaiterIsActive.
+        // Prime with one event so waiter1 is inside its read loop (holding the semaphore,
+        // waiting for its 2nd and 3rd tasks). waiter2 must then have already incremented
+        // waitingReaderCount before we raise the remaining events. Raise 5 more: waiter1
+        // collects 2 (completing its batch of 3), waiter2 collects 3.
+        TaskCompletionSource firstTaskConsumedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int taskCount = 0;
         TestEventSource testEventSource = new();
 
         // Local function typed as Task so the Func<T,Task> overload is chosen rather than
         // Action<T>. An Action<T> wrapper always returns Task.CompletedTask (a singleton), which
         // would collapse all tasks in the HashSet to a count of 1. Task.FromResult(Guid.NewGuid())
         // creates a distinct Task<Guid> object on every invocation.
-        static Task DistinctTaskHandler(TestObservableEventArgs _) => Task.FromResult(Guid.NewGuid());
+        Task DistinctTaskHandler(TestObservableEventArgs _)
+        {
+            if (Interlocked.Increment(ref taskCount) == 1)
+            {
+                firstTaskConsumedTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.FromResult(Guid.NewGuid());
+        }
+
         await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(DistinctTaskHandler);
         observer.StartCapturingTasks();
 
-        // Start both waiters before any events are raised.
+        // Start waiter1, raise one priming event so it is inside its read loop
+        // waiting for tasks 2 and 3, then start waiter2.
         Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await testEventSource.RaiseTestEventAsync("prime");
+        await firstTaskConsumedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // Raise 6 events so both waiters can be satisfied.
-        for (int i = 0; i < 6; i++)
+        // Raise 5 more events: waiter1 gets 2 (completing its batch of 3),
+        // waiter2 gets 3 (its full batch).
+        for (int i = 0; i < 5; i++)
         {
             await testEventSource.RaiseTestEventAsync($"value{i}");
         }
