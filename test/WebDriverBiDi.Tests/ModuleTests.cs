@@ -11,7 +11,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
         module.OnEventInvoked.AddObserver((TestEventArgs e) =>
@@ -58,7 +58,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
         // Use a ManualResetEventSlim because we want to reset the event.
@@ -94,7 +94,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -122,7 +122,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
@@ -167,7 +167,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
@@ -204,7 +204,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
@@ -263,7 +263,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
@@ -308,7 +308,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
@@ -345,7 +345,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
@@ -404,7 +404,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
         Assert.Equal(0u, module.OnEventInvoked.MaxObserverCount);
     }
@@ -414,7 +414,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
         Assert.Equal("protocol", module.ModuleName);
         Assert.Equal(driver, module.HostingDriver);
@@ -425,7 +425,7 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver, 1);
 
         module.OnEventInvoked.AddObserver((TestEventArgs e) =>

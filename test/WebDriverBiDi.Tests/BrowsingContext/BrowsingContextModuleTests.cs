@@ -20,7 +20,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -48,7 +48,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -75,7 +75,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -103,7 +103,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -141,7 +141,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -174,7 +174,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -201,7 +201,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -239,7 +239,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -268,7 +268,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -299,7 +299,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -329,7 +329,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -358,7 +358,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -384,7 +384,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -410,7 +410,7 @@ public class BrowsingContextModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -424,7 +424,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveContextCreatedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -463,7 +463,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveContextDestroyedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -500,7 +500,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveDomContentLoadedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -537,7 +537,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveDownloadWillBeginEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -578,7 +578,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveDownloadEndEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -621,7 +621,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveFragmentNavigatedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -658,7 +658,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveLoadEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -695,7 +695,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveNavigationAbortedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -732,7 +732,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveNavigationCommittedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -769,7 +769,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveNavigationFailedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -806,7 +806,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveNavigationStartedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -843,7 +843,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveHistoryUpdatedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -875,7 +875,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveUserPromptClosedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 
@@ -908,7 +908,7 @@ public class BrowsingContextModuleTests
     public async Task TestCanReceiveUserPromptOpenedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowsingContextModule module = driver.BrowsingContext;
 

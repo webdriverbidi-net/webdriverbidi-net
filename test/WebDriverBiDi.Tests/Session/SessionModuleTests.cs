@@ -23,7 +23,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -55,7 +55,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -86,7 +86,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -114,7 +114,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -142,7 +142,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -184,7 +184,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -226,7 +226,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -252,7 +252,7 @@ public class SessionModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 

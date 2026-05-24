@@ -8,7 +8,7 @@ public class LogModuleTests
     public async Task TestCanReceiveEntryAddedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 
@@ -53,7 +53,7 @@ public class LogModuleTests
     public async Task TestCanReceiveEntryAddedEventForConsoleLogType()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 

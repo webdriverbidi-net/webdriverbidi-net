@@ -28,7 +28,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -78,7 +78,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -123,7 +123,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -173,7 +173,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -220,7 +220,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -259,7 +259,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -286,7 +286,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -301,7 +301,7 @@ public class ScriptModuleTests
     public async Task TestCanReceiveRealmCreatedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -337,7 +337,7 @@ public class ScriptModuleTests
     public async Task TestCanReceiveRealmCreatedEventForNonWindowRealm()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -371,7 +371,7 @@ public class ScriptModuleTests
     public async Task TestCanReceiveRealmDestroyedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -400,7 +400,7 @@ public class ScriptModuleTests
     public async Task TestCanReceiveMessageEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -456,7 +456,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -484,7 +484,7 @@ public class ScriptModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 

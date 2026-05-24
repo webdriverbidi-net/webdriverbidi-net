@@ -20,7 +20,7 @@ public class DigitalCredentialsModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         DigitalCredentialsModule module = driver.DigitalCredentials;
 
