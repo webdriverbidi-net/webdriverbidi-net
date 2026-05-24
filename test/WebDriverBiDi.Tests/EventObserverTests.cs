@@ -242,13 +242,17 @@ public class EventObserverTests
     [Fact]
     public async Task TestWaitForCapturedTasksCompleteAsyncCanBeCancelledWaitingForTaskCompletion()
     {
-        CountdownEvent countdownEvent = new(2);
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
         CancellationTokenSource cancellationTokenSource = new();
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             async e =>
             {
-                countdownEvent.Signal();
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    bothStartedTaskCompletionSource.TrySetResult();
+                }
                 await Task.Delay(TimeSpan.FromSeconds(2));
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -258,7 +262,7 @@ public class EventObserverTests
         await testEventSource.RaiseTestEventAsync("myValue2");
 
         // Ensure both handlers have started before cancelling.
-        countdownEvent.Wait(TestContext.Current.CancellationToken);
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Task waitTask = observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
         cancellationTokenSource.Cancel();
@@ -295,12 +299,16 @@ public class EventObserverTests
     [Fact]
     public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenExecutionTimesOut()
     {
-        CountdownEvent countdownEvent = new(2);
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async (e) =>
+            async e =>
             {
-                countdownEvent.Signal();
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    bothStartedTaskCompletionSource.TrySetResult();
+                }
                 await Task.Delay(TimeSpan.FromSeconds(5));
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -311,7 +319,7 @@ public class EventObserverTests
 
         // Ensure both handlers have started before waiting, so capture completes
         // immediately and the remaining timeout is spent waiting for slow execution.
-        countdownEvent.Wait(TestContext.Current.CancellationToken);
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.False(fulfilled);
@@ -446,11 +454,17 @@ public class EventObserverTests
             TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TestEventSource testEventSource = new();
             EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-                async (e) =>
+                async e =>
                 {
                     await Task.Yield();
-                    taskCompletionSource.TrySetResult();
-                    throw new InvalidOperationException("async capture failure");
+                    try
+                    {
+                        throw new InvalidOperationException("async capture failure");
+                    }
+                    finally
+                    {
+                        taskCompletionSource.TrySetResult();
+                    }
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
@@ -708,28 +722,40 @@ public class EventObserverTests
         // the first to finish must NOT drain the channel — those tasks belong to the
         // second waiter.
         //
-        // Determinism guarantee: WaitForCapturedTasksAsync increments waitingReaderCount
-        // synchronously under captureLock before its first await point
-        // (captureReadSemaphore.WaitAsync). Awaiting Task.Delay(0) after starting each
-        // waiter drives each task's synchronous preamble to completion on the thread pool,
-        // ensuring both have incremented waitingReaderCount before any events are raised.
-        // waiter1 then blocks inside WaitToReadAsync on the empty channel (it holds the
-        // semaphore); waiter2 blocks on captureReadSemaphore.WaitAsync. Both are registered
-        // as active readers when the events arrive.
+        // Determinism guarantee: both waiters need to have incremented waitingReaderCount
+        // before the final events are raised. We achieve this by priming with one event
+        // before starting waiter2. By the time waiter1 has consumed the first primed task
+        // (observable via firstTaskConsumedTaskCompletionSource), it holds the semaphore
+        // and is blocking inside WaitToReadAsync waiting for its second task. waiter2 must
+        // therefore have already completed its synchronous preamble (incrementing
+        // waitingReaderCount) and be blocked on captureReadSemaphore.WaitAsync. Both are
+        // registered as active readers before the remaining events are raised.
+        TaskCompletionSource firstTaskConsumedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int taskCount = 0;
         TestEventSource testEventSource = new();
-        static Task DistinctTaskHandler(TestObservableEventArgs _) => Task.FromResult(Guid.NewGuid());
+        Task DistinctTaskHandler(TestObservableEventArgs _)
+        {
+            if (Interlocked.Increment(ref taskCount) == 1)
+            {
+                firstTaskConsumedTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.FromResult(Guid.NewGuid());
+        }
+
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(DistinctTaskHandler);
         observer.StartCapturingTasks();
 
-        // Start each waiter and yield once to advance it to its first await point,
-        // guaranteeing waitingReaderCount == 2 before any events enter the channel.
+        // Start waiter1, raise one priming event so it is inside its read loop
+        // waiting for a second task, then start waiter2.
         Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await Task.Delay(TimeSpan.Zero, TestContext.Current.CancellationToken);
+        await testEventSource.RaiseTestEventAsync("prime");
+        await firstTaskConsumedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await Task.Delay(TimeSpan.Zero, TestContext.Current.CancellationToken);
 
-        // Raise 4 events — enough for both waiters.
-        for (int i = 0; i < 4; i++)
+        // Raise 3 more events: waiter1 gets 1 (to complete its batch of 2),
+        // waiter2 gets 2 (its full batch).
+        for (int i = 0; i < 3; i++)
         {
             await testEventSource.RaiseTestEventAsync($"value{i}");
         }

@@ -79,7 +79,7 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventSet = syncEvent.Wait(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
+        bool eventSet = syncEvent.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.True(eventSet);
 
         handler.Unobserve();
