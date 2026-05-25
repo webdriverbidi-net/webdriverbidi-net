@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class AuthChallengeTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeAuthChallenge()
     {
         string json = """
@@ -15,15 +14,13 @@ public class AuthChallengeTests
                       }
                       """;
         AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json);
-        Assert.That(challenge, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(challenge.Scheme, Is.EqualTo("basic"));
-            Assert.That(challenge.Realm, Is.EqualTo("example.com"));
-        }
+        Assert.NotNull(challenge);
+
+        Assert.Equal("basic", challenge.Scheme);
+        Assert.Equal("example.com", challenge.Realm);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -33,12 +30,12 @@ public class AuthChallengeTests
                       }
                       """;
         AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json);
-        Assert.That(challenge, Is.Not.Null);
+        Assert.NotNull(challenge);
         AuthChallenge copy = challenge with { };
-        Assert.That(copy, Is.EqualTo(challenge));
+        Assert.Equal(challenge, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingSchemeThrows()
     {
         string json = """
@@ -46,10 +43,10 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidSchemeTypeThrows()
     {
         string json = """
@@ -58,10 +55,10 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingRealmThrows()
     {
         string json = """
@@ -69,10 +66,10 @@ public class AuthChallengeTests
                         "scheme": "basic"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidRealmTypeThrows()
     {
         string json = """
@@ -81,6 +78,6 @@ public class AuthChallengeTests
                         "realm": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
     }
 }

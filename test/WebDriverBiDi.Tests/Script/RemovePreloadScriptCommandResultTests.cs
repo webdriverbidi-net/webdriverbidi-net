@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RemovePreloadScriptCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         RemovePreloadScriptCommandResult? result = JsonSerializer.Deserialize<RemovePreloadScriptCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         RemovePreloadScriptCommandResult? result = JsonSerializer.Deserialize<RemovePreloadScriptCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RemovePreloadScriptCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

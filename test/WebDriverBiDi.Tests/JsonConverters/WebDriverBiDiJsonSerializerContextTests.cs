@@ -6,10 +6,9 @@ using System.Text.Json.Serialization;
 using TestUtilities;
 using WebDriverBiDi.Protocol;
 
-[TestFixture]
 public class WebDriverBiDiJsonSerializerContextTests
 {
-    [Test]
+    [Fact]
     public void TestAllCommandParametersAreIncludedInSerializationContext()
     {
         // Get all types registered with the custom JsonSerializerContext
@@ -35,10 +34,10 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.That(missingTypes, Is.Empty, FormatMissingMessage("CommandParameters", missingTypes));
+        Assert.Empty(missingTypes);
     }
 
-    [Test]
+    [Fact]
     public void TestAllCommandResultsHaveResponseMessageInSerializationContext()
     {
         // Get all types registered with the custom JsonSerializerContext.
@@ -80,10 +79,10 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.That(missingTypes, Is.Empty, FormatMissingMessage("CommandResponseMessage<T>", missingTypes));
+        Assert.Empty(missingTypes);
     }
 
-    [Test]
+    [Fact]
     public void TestAllEventMessagesAreIncludedInSerializationContext()
     {
         // Get all types registered with the custom JsonSerializerContext.
@@ -101,9 +100,10 @@ public class WebDriverBiDiJsonSerializerContextTests
         _ = new BiDiDriver(TimeSpan.FromSeconds(1), transport);
 
         FieldInfo? field = transport.GetType().GetField("eventMessageTypes", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.That(field, Is.Not.Null, "Could not find eventMessageTypes field on Transport");
+        Assert.NotNull(field);
 
-        ConcurrentDictionary<string, Type> eventMessageTypes = (ConcurrentDictionary<string, Type>)field!.GetValue(transport)!;
+        ConcurrentDictionary<string, Type>? eventMessageTypes = field.GetValue(transport) as ConcurrentDictionary<string, Type>;
+        Assert.NotNull(eventMessageTypes);
 
         // Add any of the EventMessage<T> types that are not in the list of types registered with
         // the custom JsonSerializerContext to the list of missing types. 
@@ -117,10 +117,10 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.That(missingTypes, Is.Empty, FormatMissingMessage("EventMessage<T>", missingTypes));
+        Assert.Empty(missingTypes);
     }
 
-    [Test]
+    [Fact]
     public void TestAllSerializableEnumsAreIncludedInSerializationContext()
     {
         // Get all types registered with the custom JsonSerializerContext.
@@ -145,10 +145,10 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.That(missingTypes, Is.Empty, FormatMissingMessage("Enum", missingTypes));
+        Assert.Empty(missingTypes);
     }
 
-    [Test]
+    [Fact]
     public void TestAllTypesWithCustomConvertersAreIncludedInSerializationContext()
     {
         // Get all types registered with the custom JsonSerializerContext.
@@ -174,10 +174,10 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.That(missingTypes, Is.Empty, FormatMissingMessage("[JsonConverter]", missingTypes));
+        Assert.Empty(missingTypes);
     }
 
-    [Test]
+    [Fact]
     public void TestAllDerivedTypesAreIncludedInSerializationContext()
     {
         // Get all types registered with the custom JsonSerializerContext.
@@ -207,10 +207,10 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.That(missingTypes, Is.Empty, FormatMissingMessage("[JsonDerivedType]", missingTypes));
+        Assert.Empty(missingTypes);
     }
 
-    [Test]
+    [Fact]
     public void TestAllReferencedPropertyTypesAreIncludedInSerializationContext()
     {
         // Get all types registered with the custom JsonSerializerContext.
@@ -264,7 +264,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.That(missingTypes, Is.Empty, FormatMissingMessage("PropertyType", missingTypes));
+        Assert.Empty(missingTypes);
     }
 
     private static HashSet<Type> GetRegisteredSerializableTypes()
@@ -279,7 +279,11 @@ public class WebDriverBiDiJsonSerializerContextTests
         {
             if (customAttributeDataObject.AttributeType == typeof(JsonSerializableAttribute))
             {
-                set.Add((Type)customAttributeDataObject.ConstructorArguments[0].Value!);
+                Type? registeredType = customAttributeDataObject.ConstructorArguments[0].Value as Type;
+                if (registeredType is not null)
+                {
+                    set.Add(registeredType);
+                }
             }
         }
 
@@ -294,7 +298,12 @@ public class WebDriverBiDiJsonSerializerContextTests
         {
             if (customAttributeDataObject.AttributeType == typeof(JsonSerializableAttribute))
             {
-                Type registeredType = (Type)customAttributeDataObject.ConstructorArguments[0].Value!;
+                Type? registeredType = customAttributeDataObject.ConstructorArguments[0].Value as Type;
+                if (registeredType is null)
+                {
+                    continue;
+                }
+
                 coveredTypes.Add(registeredType);
                 if (registeredType.IsGenericType)
                 {
@@ -400,7 +409,12 @@ public class WebDriverBiDiJsonSerializerContextTests
 
         if (underlying.IsArray)
         {
-            CollectLibraryTypes(underlying.GetElementType()!, result);
+            Type? elementType = underlying.GetElementType();
+            if (elementType is not null)
+            {
+                CollectLibraryTypes(elementType, result);
+            }
+
             return;
         }
 

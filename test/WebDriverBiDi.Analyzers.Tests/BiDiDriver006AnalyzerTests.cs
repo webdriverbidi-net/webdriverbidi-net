@@ -12,14 +12,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver006 analyzer that detects undisposed EventObservers.
 /// </summary>
-[TestFixture]
 public class BiDiDriver006AnalyzerTests
 {
     /// <summary>
     /// Tests that EventObserver without disposal reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithoutDisposal_ReportsWarning()
     {
         string test = """
@@ -80,14 +79,14 @@ public class BiDiDriver006AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that EventObserver with using statement does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithUsingStatement_NoDiagnostic()
     {
         string test = """
@@ -143,14 +142,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that EventObserver with explicit Unobserve call does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithUnobserveCall_NoDiagnostic()
     {
         string test = """
@@ -207,14 +206,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that EventObserver with Dispose call does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithDisposeCall_NoDiagnostic()
     {
         string test = """
@@ -271,14 +270,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that EventObserver with DisposeAsync call does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithDisposeAsyncCall_NoDiagnostic()
     {
         string test = """
@@ -336,14 +335,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that EventObserver with traditional using statement does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithTraditionalUsingStatement_NoDiagnostic()
     {
         string test = """
@@ -401,14 +400,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that methods without body or expression body are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MethodWithoutBodyOrExpressionBody_NoDiagnostic()
     {
         string test = """
@@ -459,14 +458,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-AddObserver invocations are ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonAddObserverInvocation_NoDiagnostic()
     {
         string test = """
@@ -521,27 +520,27 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests SupportedDiagnostics property.
     /// </summary>
-    [Test]
+    [Fact]
     public void SupportedDiagnostics_ContainsBIDI006()
     {
         BiDiDriver006_ObserverDisposalAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.That(diagnostics, Has.Length.EqualTo(1));
-        Assert.That(diagnostics[0].Id, Is.EqualTo(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId));
+        Assert.Single(diagnostics);
+        Assert.Equal(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, diagnostics[0].Id);
     }
 
     /// <summary>
     /// Tests that AddObserver call without member access expression is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_ViaDelegate_NoDiagnostic()
     {
         string test = """
@@ -596,14 +595,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with unresolved method symbol is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_UnresolvedMethod_NoDiagnostic()
     {
         string test = """
@@ -657,14 +656,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver returning non-generic type is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_ReturningNonGenericType_NoDiagnostic()
     {
         string test = """
@@ -718,14 +717,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that disposal call on complex member access is recognized.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_DisposedViaComplexMemberAccess_NoDiagnostic()
     {
         string test = """
@@ -788,14 +787,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple undisposed observers report multiple warnings.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MultipleUndisposedObservers_ReportsMultipleWarnings()
     {
         string test = """
@@ -867,40 +866,40 @@ public class BiDiDriver006AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected1);
         testState.ExpectedDiagnostics.Add(expected2);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests GetFixAllProvider property.
     /// </summary>
-    [Test]
+    [Fact]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
         BiDiDriver006_ObserverDisposalCodeFixProvider provider = new();
         Microsoft.CodeAnalysis.CodeFixes.FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
-        Assert.That(fixAllProvider, Is.Not.Null);
-        Assert.That(fixAllProvider, Is.EqualTo(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer));
+        Assert.NotNull(fixAllProvider);
+        Assert.Equal(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer, fixAllProvider);
     }
 
     /// <summary>
     /// Tests FixableDiagnosticIds property.
     /// </summary>
-    [Test]
+    [Fact]
     public void FixableDiagnosticIds_ContainsBIDI006()
     {
         BiDiDriver006_ObserverDisposalCodeFixProvider provider = new();
         System.Collections.Immutable.ImmutableArray<string> ids = provider.FixableDiagnosticIds;
 
-        Assert.That(ids, Has.Length.EqualTo(1));
-        Assert.That(ids[0], Is.EqualTo(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId));
+        Assert.Single(ids);
+        Assert.Equal(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, ids[0]);
     }
 
     /// <summary>
     /// Tests that invocation without member access in disposal detection is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_DisposalViaDelegate_StillReportsWarning()
     {
         string test = """
@@ -962,14 +961,14 @@ public class BiDiDriver006AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that await DisposeAsync with variable intermediate step IS detected (not a limitation).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithIntermediateAwaitDisposeAsync_NoDiagnostic()
     {
         string test = """
@@ -1028,14 +1027,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that traditional using statement with explicit variable declaration is recognized.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_WithTraditionalUsingExplicitVariable_NoDiagnostic()
     {
         string test = """
@@ -1094,14 +1093,14 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver returning wrong generic type name is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_ReturningWrongGenericTypeName_NoDiagnostic()
     {
         string test = """
@@ -1155,10 +1154,10 @@ public class BiDiDriver006AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task EventObserver_WithNonDisposalMethodCall_ReportsWarning()
     {
         // Exercises the path in HasDisposalCall where expressionName == variableName
@@ -1226,7 +1225,7 @@ public class BiDiDriver006AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }
 

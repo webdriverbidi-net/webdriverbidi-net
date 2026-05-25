@@ -3,32 +3,31 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class CloseCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         CloseCommandParameters properties = new("myContextId");
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.close"));
+        Assert.Equal("browsingContext.close", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         CloseCommandParameters properties = new("myContextId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPromptUnloadTrue()
     {
         CloseCommandParameters properties = new("myContextId")
@@ -37,19 +36,22 @@ public class CloseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("promptUnload"));
-            Assert.That(serialized["promptUnload"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["promptUnload"]!.Value<bool>(), Is.True);
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("promptUnload"));
+        JToken? promptUnload = serialized["promptUnload"];
+        Assert.NotNull(promptUnload);
+        Assert.Equal(JTokenType.Boolean, promptUnload.Type);
+        Assert.True(promptUnload.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPromptUnloadFalse()
     {
         CloseCommandParameters properties = new("myContextId")
@@ -58,15 +60,18 @@ public class CloseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("promptUnload"));
-            Assert.That(serialized["promptUnload"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["promptUnload"]!.Value<bool>(), Is.False);
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("promptUnload"));
+        JToken? promptUnload = serialized["promptUnload"];
+        Assert.NotNull(promptUnload);
+        Assert.Equal(JTokenType.Boolean, promptUnload.Type);
+        Assert.False(promptUnload.Value<bool>());
     }
 }

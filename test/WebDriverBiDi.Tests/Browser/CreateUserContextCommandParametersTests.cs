@@ -4,26 +4,25 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Session;
 
-[TestFixture]
 public class CreateUserContextCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         CreateUserContextCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("browser.createUserContext"));
+        Assert.Equal("browser.createUserContext", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         CreateUserContextCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptInsecureCertsTrue()
     {
         CreateUserContextCommandParameters properties = new()
@@ -32,16 +31,16 @@ public class CreateUserContextCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("acceptInsecureCerts"));
-            Assert.That(serialized["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["acceptInsecureCerts"]!.Value<bool>(), Is.True);
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("acceptInsecureCerts"));
+        JToken? acceptInsecureCerts = serialized["acceptInsecureCerts"];
+        Assert.NotNull(acceptInsecureCerts);
+        Assert.Equal(JTokenType.Boolean, acceptInsecureCerts.Type);
+        Assert.True(acceptInsecureCerts.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAcceptInsecureCertsFalse()
     {
         CreateUserContextCommandParameters properties = new()
@@ -50,16 +49,16 @@ public class CreateUserContextCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("acceptInsecureCerts"));
-            Assert.That(serialized["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["acceptInsecureCerts"]!.Value<bool>(), Is.False);
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("acceptInsecureCerts"));
+        JToken? acceptInsecureCerts = serialized["acceptInsecureCerts"];
+        Assert.NotNull(acceptInsecureCerts);
+        Assert.Equal(JTokenType.Boolean, acceptInsecureCerts.Type);
+        Assert.False(acceptInsecureCerts.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithProxy()
     {
         CreateUserContextCommandParameters properties = new()
@@ -71,22 +70,28 @@ public class CreateUserContextCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("proxy"));
-            Assert.That(serialized["proxy"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? proxyObject = serialized["proxy"] as JObject;
-            Assert.That(proxyObject, Is.Not.Null);
-            Assert.That(proxyObject, Has.Count.EqualTo(2));
-            Assert.That(proxyObject, Contains.Key("proxyType"));
-            Assert.That(proxyObject!["proxyType"]!.Value<string>()!, Is.EqualTo("manual"));
-            Assert.That(proxyObject, Contains.Key("httpProxy"));
-            Assert.That(proxyObject!["httpProxy"]!.Value<string>(), Is.EqualTo("example-proxy.com"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("proxy"));
+        JToken? proxyToken = serialized["proxy"];
+        Assert.NotNull(proxyToken);
+        Assert.Equal(JTokenType.Object, proxyToken.Type);
+        JObject? proxyObject = proxyToken as JObject;
+        Assert.NotNull(proxyObject);
+        Assert.Equal(2, proxyObject.Count);
+
+        Assert.True(proxyObject.ContainsKey("proxyType"));
+        JToken? proxyType = proxyObject["proxyType"];
+        Assert.NotNull(proxyType);
+        Assert.Equal("manual", proxyType.Value<string>());
+
+        Assert.True(proxyObject.ContainsKey("httpProxy"));
+        JToken? httpProxy = proxyObject["httpProxy"];
+        Assert.NotNull(httpProxy);
+        Assert.Equal("example-proxy.com", httpProxy.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithUnhandledPromptBehavior()
     {
         CreateUserContextCommandParameters properties = new()
@@ -98,16 +103,19 @@ public class CreateUserContextCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("unhandledPromptBehavior"));
-            Assert.That(serialized["unhandledPromptBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? promptHandlerObject = serialized["unhandledPromptBehavior"] as JObject;
-            Assert.That(promptHandlerObject, Is.Not.Null);
-            Assert.That(promptHandlerObject, Has.Count.EqualTo(1));
-            Assert.That(promptHandlerObject, Contains.Key("default"));
-            Assert.That(promptHandlerObject!["default"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("unhandledPromptBehavior"));
+        JToken? promptHandlerToken = serialized["unhandledPromptBehavior"];
+        Assert.NotNull(promptHandlerToken);
+        Assert.Equal(JTokenType.Object, promptHandlerToken.Type);
+        JObject? promptHandlerObject = promptHandlerToken as JObject;
+        Assert.NotNull(promptHandlerObject);
+        Assert.Single(promptHandlerObject);
+
+        Assert.True(promptHandlerObject.ContainsKey("default"));
+        JToken? defaultHandler = promptHandlerObject["default"];
+        Assert.NotNull(defaultHandler);
+        Assert.Equal("accept", defaultHandler.Value<string>());
     }
 }

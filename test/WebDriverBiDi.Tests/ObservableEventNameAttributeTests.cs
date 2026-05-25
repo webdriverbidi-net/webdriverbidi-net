@@ -1,12 +1,11 @@
 namespace WebDriverBiDi;
 
-[TestFixture]
 public class ObservableEventNameAttributeTests
 {
-    [Test]
+    [Fact]
     public void TestCanGetEventName()
     {
         ObservableEventNameAttribute attribute = new("test event name");
-        Assert.That(attribute.EventName, Is.EqualTo("test event name"));
+        Assert.Equal("test event name", attribute.EventName);
     }
 }

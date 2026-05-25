@@ -5,31 +5,36 @@ using Newtonsoft.Json.Linq;
 
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class PointerMoveActionTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         PointerMoveAction properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithIntegerPosition()
     {
         PointerMoveAction properties = new()
@@ -39,22 +44,28 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(2));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(3));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(2L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(3L, y.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithFractionalPosition()
     {
         PointerMoveAction properties = new()
@@ -64,22 +75,28 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["x"]!.Value<decimal>(), Is.EqualTo(2.1));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["y"]!.Value<decimal>(), Is.EqualTo(3.4));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(2.1m, x.Value<decimal>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(3.4m, y.Value<decimal>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalDuration()
     {
         PointerMoveAction properties = new()
@@ -88,25 +105,34 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("duration"));
-            Assert.That(serialized["duration"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["duration"]!.Value<long>(), Is.EqualTo(1));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("duration"));
+        JToken? duration = serialized["duration"];
+        Assert.NotNull(duration);
+        Assert.Equal(JTokenType.Integer, duration.Type);
+        Assert.Equal(1L, duration.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalViewportOrigin()
     {
         PointerMoveAction properties = new()
@@ -115,25 +141,34 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("viewport"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("viewport", origin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalPointerOrigin()
     {
         PointerMoveAction properties = new()
@@ -142,25 +177,34 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("pointer"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("pointer", origin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalElementOrigin()
     {
         string nodeJson = """
@@ -168,14 +212,14 @@ public class PointerMoveActionTests
                             "type": "node",
                             "value": {
                               "nodeType": 1,
-                              "childNodeCount": 0 
+                              "childNodeCount": 0
                             },
                             "sharedId": "testSharedId"
                           }
                           """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson);
-        Assert.That(remoteValue, Is.Not.Null);
-        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        Assert.NotNull(remoteValue);
+        Assert.IsType<NodeRemoteValue>(remoteValue);
         SharedReference node = ((NodeRemoteValue)remoteValue).ToSharedReference();
         PointerMoveAction properties = new()
         {
@@ -183,39 +227,56 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
-        JObject originObject = (JObject)serialized["origin"]!;
-        Assert.That(originObject, Has.Count.EqualTo(2));
-        Assert.That(originObject, Contains.Key("type"));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(originObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(originObject["type"]!.Value<string>(), Is.EqualTo("element"));
-            Assert.That(originObject, Contains.Key("element"));
-            Assert.That(originObject["element"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject elementObject = (JObject)originObject["element"]!;
-            Assert.That(elementObject, Has.Count.EqualTo(1));
-            Assert.That(elementObject, Contains.Key("sharedId"));
-            Assert.That(elementObject["sharedId"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(elementObject["sharedId"]!.Value<string>(), Is.EqualTo("testSharedId"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? originToken = serialized["origin"];
+        Assert.NotNull(originToken);
+        Assert.Equal(JTokenType.Object, originToken.Type);
+
+        JObject originObject = (JObject)originToken;
+        Assert.Equal(2, originObject.Count);
+        Assert.True(originObject.ContainsKey("type"));
+
+        JToken? originType = originObject["type"];
+        Assert.NotNull(originType);
+        Assert.Equal(JTokenType.String, originType.Type);
+        Assert.Equal("element", originType.Value<string>());
+
+        Assert.True(originObject.ContainsKey("element"));
+        JToken? elementToken = originObject["element"];
+        Assert.NotNull(elementToken);
+        Assert.Equal(JTokenType.Object, elementToken.Type);
+
+        JObject elementObject = (JObject)elementToken;
+        Assert.Single(elementObject);
+        Assert.True(elementObject.ContainsKey("sharedId"));
+
+        JToken? sharedId = elementObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal(JTokenType.String, sharedId.Type);
+        Assert.Equal("testSharedId", sharedId.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalWidthAndHeight()
     {
         PointerMoveAction properties = new()
@@ -225,28 +286,40 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(5));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("width"));
-            Assert.That(serialized["width"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["width"]!.Value<long>(), Is.EqualTo(1));
-            Assert.That(serialized, Contains.Key("height"));
-            Assert.That(serialized["height"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["height"]!.Value<long>(), Is.EqualTo(1));
-        }
+        Assert.Equal(5, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("width"));
+        JToken? width = serialized["width"];
+        Assert.NotNull(width);
+        Assert.Equal(JTokenType.Integer, width.Type);
+        Assert.Equal(1L, width.Value<long>());
+
+        Assert.True(serialized.ContainsKey("height"));
+        JToken? height = serialized["height"];
+        Assert.NotNull(height);
+        Assert.Equal(JTokenType.Integer, height.Type);
+        Assert.Equal(1L, height.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalPressureProperties()
     {
         PointerMoveAction properties = new()
@@ -256,28 +329,40 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(5));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("pressure"));
-            Assert.That(serialized["pressure"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["pressure"]!.Value<double>(), Is.EqualTo(1));
-            Assert.That(serialized, Contains.Key("tangentialPressure"));
-            Assert.That(serialized["tangentialPressure"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["tangentialPressure"]!.Value<double>(), Is.EqualTo(1));
-        }
+        Assert.Equal(5, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("pressure"));
+        JToken? pressure = serialized["pressure"];
+        Assert.NotNull(pressure);
+        Assert.Equal(JTokenType.Float, pressure.Type);
+        Assert.Equal(1, pressure.Value<double>());
+
+        Assert.True(serialized.ContainsKey("tangentialPressure"));
+        JToken? tangentialPressure = serialized["tangentialPressure"];
+        Assert.NotNull(tangentialPressure);
+        Assert.Equal(JTokenType.Float, tangentialPressure.Type);
+        Assert.Equal(1, tangentialPressure.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalTwistProperty()
     {
         PointerMoveAction properties = new()
@@ -286,32 +371,41 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("twist"));
-            Assert.That(serialized["twist"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["twist"]!.Value<ulong>(), Is.EqualTo(1));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("twist"));
+        JToken? twist = serialized["twist"];
+        Assert.NotNull(twist);
+        Assert.Equal(JTokenType.Integer, twist.Type);
+        Assert.Equal(1UL, twist.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestSettingTwistPropertyToInvalidValueThrows()
     {
         PointerMoveAction properties = new();
-        Assert.That(() => properties.Twist = 360, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Twist value must be between 0 and 359"));
+        Assert.Contains("Twist value must be between 0 and 359", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Twist = 360).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalAngleProperties()
     {
         PointerMoveAction properties = new()
@@ -321,37 +415,47 @@ public class PointerMoveActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(5));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
-            Assert.That(serialized, Contains.Key("x"));
-            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("y"));
-            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("altitudeAngle"));
-            Assert.That(serialized["altitudeAngle"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["altitudeAngle"]!.Value<double>(), Is.EqualTo(1));
-            Assert.That(serialized, Contains.Key("azimuthAngle"));
-            Assert.That(serialized["azimuthAngle"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["azimuthAngle"]!.Value<double>(), Is.EqualTo(1));
-        }
+        Assert.Equal(5, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerMove", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("x"));
+        JToken? x = serialized["x"];
+        Assert.NotNull(x);
+        Assert.Equal(JTokenType.Integer, x.Type);
+        Assert.Equal(0L, x.Value<long>());
+
+        Assert.True(serialized.ContainsKey("y"));
+        JToken? y = serialized["y"];
+        Assert.NotNull(y);
+        Assert.Equal(JTokenType.Integer, y.Type);
+        Assert.Equal(0L, y.Value<long>());
+
+        Assert.True(serialized.ContainsKey("altitudeAngle"));
+        JToken? altitudeAngle = serialized["altitudeAngle"];
+        Assert.NotNull(altitudeAngle);
+        Assert.Equal(JTokenType.Float, altitudeAngle.Type);
+        Assert.Equal(1, altitudeAngle.Value<double>());
+
+        Assert.True(serialized.ContainsKey("azimuthAngle"));
+        JToken? azimuthAngle = serialized["azimuthAngle"];
+        Assert.NotNull(azimuthAngle);
+        Assert.Equal(JTokenType.Float, azimuthAngle.Type);
+        Assert.Equal(1, azimuthAngle.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestSettingAnglePropertiesToInvalidValueThrows()
     {
         PointerDownAction properties = new(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => properties.AltitudeAngle = -0.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
-            Assert.That(() => properties.AltitudeAngle = 1.58, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
-            Assert.That(() => properties.AzimuthAngle = -0.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
-            Assert.That(() => properties.AzimuthAngle = 6.29, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
-        }
+
+        Assert.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AltitudeAngle = -0.01).Message);
+        Assert.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AltitudeAngle = 1.58).Message);
+        Assert.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AzimuthAngle = -0.01).Message);
+        Assert.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AzimuthAngle = 6.29).Message);
     }
 }

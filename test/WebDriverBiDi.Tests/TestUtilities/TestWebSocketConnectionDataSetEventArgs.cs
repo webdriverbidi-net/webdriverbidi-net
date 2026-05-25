@@ -12,12 +12,14 @@ public class TestWebSocketConnectionDataSentEventArgs : EventArgs
         if (dataSent is not null)
         {
             JObject jsonObject = JObject.Parse(dataSent);
-            this.sentCommandId = jsonObject["id"]!.Value<long>();
-            this.sentCommandName = jsonObject["method"]!.Value<string>();
+            JToken? id = jsonObject["id"];
+            JToken? method = jsonObject["method"];
+            this.sentCommandId = id?.Value<long>();
+            this.sentCommandName = method?.Value<string>();
         }
     }
 
-    public long SentCommandId => this.sentCommandId!.Value;
+    public long SentCommandId => this.sentCommandId ?? -1;
 
     public string? SentCommandName => this.sentCommandName;
 }

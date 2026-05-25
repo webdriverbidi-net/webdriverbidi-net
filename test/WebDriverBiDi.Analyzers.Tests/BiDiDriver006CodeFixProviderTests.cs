@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver006 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver006CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix adds using declaration.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventObserver_CodeFixAddsUsingDeclaration()
     {
         string testCode = """
@@ -127,10 +125,10 @@ public class BiDiDriver006CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task ObserverDeclaredAsField_NoDiagnostic()
     {
         // BIDI006 only watches local variable declarations; field-level declarations

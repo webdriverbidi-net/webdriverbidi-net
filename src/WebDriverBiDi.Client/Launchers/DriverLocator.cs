@@ -128,8 +128,6 @@ public class DriverLocator
             : null;
 
         string? driverPath = await locator.LocateDriverAsync(cacheInfo).ConfigureAwait(false);
-        cacheInfo?.Save();
-
         return driverPath;
     }
 
@@ -176,20 +174,27 @@ public class DriverLocator
             throw new InvalidOperationException("Cache should have been loaded for AutoLocateAndDownload behavior.");
         }
 
-        DriverDownloadInfo driverDownloadInfo = await this.settings.GetMatchingDriverDownloadInfo().ConfigureAwait(false);
-        Cache.InstalledDriverInfo driverInfo = await this.GetInstalledDriverInfoFromCacheAsync(cacheInfo, driverDownloadInfo).ConfigureAwait(false);
-        string driverCacheDirectory = Path.Combine(this.CacheDirectory, "drivers", driverDownloadInfo.DriverName, driverDownloadInfo.Version);
-        string executablePath = Path.Combine(driverCacheDirectory, this.settings.DriverExecutableName);
-
-        string cacheLogMessage = $"Using cached {driverDownloadInfo.DriverName}.";
-        if (!File.Exists(executablePath))
+        FileLock fileLock = new(Path.Combine(this.CacheDirectory, $".lock-{this.settings.BrowserName}-Driver-{this.settings.Channel}"));
+        using IDisposable lockHandle = await fileLock.AcquireAsync().ConfigureAwait(false);
         {
-            await this.DownloadAndExtractDriverAsync(driverInfo, driverCacheDirectory, executablePath).ConfigureAwait(false);
-            cacheLogMessage = $"{driverDownloadInfo.DriverName} ready at: {executablePath}";
-        }
+            // Reload the cache in case the requested browser version was loaded while acquiring the lock
+            cacheInfo = Cache.Load(this.CacheDirectory);
+            DriverDownloadInfo driverDownloadInfo = await this.settings.GetMatchingDriverDownloadInfo().ConfigureAwait(false);
+            Cache.InstalledDriverInfo driverInfo = await this.GetInstalledDriverInfoFromCacheAsync(cacheInfo, driverDownloadInfo).ConfigureAwait(false);
+            string driverCacheDirectory = Path.Combine(this.CacheDirectory, "drivers", driverDownloadInfo.DriverName, driverDownloadInfo.Version);
+            string executablePath = Path.Combine(driverCacheDirectory, this.settings.DriverExecutableName);
 
-        await this.LogAsync(cacheLogMessage, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-        return executablePath;
+            string cacheLogMessage = $"Using cached {driverDownloadInfo.DriverName}.";
+            if (!File.Exists(executablePath))
+            {
+                await this.DownloadAndExtractDriverAsync(driverInfo, driverCacheDirectory, executablePath).ConfigureAwait(false);
+                cacheLogMessage = $"{driverDownloadInfo.DriverName} ready at: {executablePath}";
+            }
+
+            await this.LogAsync(cacheLogMessage, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            cacheInfo.Save();
+            return executablePath;
+        }
     }
 
     /// <summary>

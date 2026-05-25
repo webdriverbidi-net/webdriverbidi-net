@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SetScrollbarTypeOverrideCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SetScrollbarTypeOverrideCommandResult? result = JsonSerializer.Deserialize<SetScrollbarTypeOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SetScrollbarTypeOverrideCommandResult? result = JsonSerializer.Deserialize<SetScrollbarTypeOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SetScrollbarTypeOverrideCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

@@ -3,31 +3,33 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SimulateGattDisconnectionCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SimulateGattDisconnectionCommandParameters properties = new("myContext", "myAddress");
-        Assert.That(properties.MethodName, Is.EqualTo("bluetooth.simulateGattDisconnection"));
+        Assert.Equal("bluetooth.simulateGattDisconnection", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SimulateGattDisconnectionCommandParameters properties = new("myContext", "myAddress");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("myAddress", address.Value<string>());
     }
 }

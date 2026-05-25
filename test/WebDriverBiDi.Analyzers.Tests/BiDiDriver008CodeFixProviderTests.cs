@@ -6,14 +6,12 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver008 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver008CodeFixProviderTests
 {
     /// <summary>
@@ -21,7 +19,7 @@ public class BiDiDriver008CodeFixProviderTests
     /// Note: Full output validation disabled due to formatter line ending issues.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFixProvider_RegisteredForDirectCast()
     {
         string testCode = """
@@ -64,7 +62,7 @@ public class BiDiDriver008CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -72,7 +70,7 @@ public class BiDiDriver008CodeFixProviderTests
     /// Note: Full output validation disabled due to formatter line ending issues.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFixProvider_RegisteredForAsCast()
     {
         string testCode = """
@@ -118,14 +116,14 @@ public class BiDiDriver008CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests code fix for direct cast with variable declaration.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_DirectCast_AppliesPatternMatching()
     {
         string testCode = """
@@ -209,14 +207,14 @@ public class BiDiDriver008CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests code fix for 'as' cast with variable declaration.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_AsCast_AppliesPatternMatching()
     {
         string testCode = """
@@ -314,10 +312,10 @@ public class BiDiDriver008CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task CodeFix_DirectCast_WithTrailingStatement_PreservesTrailingStatements()
     {
         // Exercises the i > declarationIndex + dependentStatements.Count branch in
@@ -405,10 +403,10 @@ public class BiDiDriver008CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task CodeFix_AsCast_WithTrailingStatement_PreservesTrailingStatements()
     {
         // Exercises the i > declarationIndex + dependentStatements.Count branch in
@@ -510,10 +508,10 @@ public class BiDiDriver008CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task CodeFix_InlineCast_WrapsInIfStatement()
     {
         // Exercises the inline-cast path in ConvertCastToPatternMatchingAsync:
@@ -598,6 +596,6 @@ public class BiDiDriver008CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -3,47 +3,52 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class DisownCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         DisownCommandParameters properties = new(new RealmTarget("myRealm"));
-        Assert.That(properties.MethodName, Is.EqualTo("script.disown"));
+        Assert.Equal("script.disown", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         DisownCommandParameters properties = new(new RealmTarget("myRealm"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("target"));
-            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("handles"));
-            Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["handles"]!.Count, Is.EqualTo(0));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("target"));
+        JToken? target = serialized["target"];
+        Assert.NotNull(target);
+        Assert.Equal(JTokenType.Object, target.Type);
+
+        Assert.True(serialized.ContainsKey("handles"));
+        JToken? handles = serialized["handles"];
+        Assert.NotNull(handles);
+        Assert.Equal(JTokenType.Array, handles.Type);
+        Assert.Empty(handles);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithHandles()
     {
         DisownCommandParameters properties = new(new RealmTarget("myRealm"), "myHandle");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("target"));
-            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("handles"));
-            Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["handles"]!.Count, Is.EqualTo(1));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("target"));
+        JToken? target = serialized["target"];
+        Assert.NotNull(target);
+        Assert.Equal(JTokenType.Object, target.Type);
+
+        Assert.True(serialized.ContainsKey("handles"));
+        JToken? handles = serialized["handles"];
+        Assert.NotNull(handles);
+        Assert.Equal(JTokenType.Array, handles.Type);
+        Assert.Single(handles);
     }
 }

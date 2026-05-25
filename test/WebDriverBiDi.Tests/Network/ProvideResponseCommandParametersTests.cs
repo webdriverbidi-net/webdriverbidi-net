@@ -3,32 +3,31 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ProvideResponseCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         ProvideResponseCommandParameters properties = new("myRequestId");
-        Assert.That(properties.MethodName, Is.EqualTo("network.provideResponse"));
+        Assert.Equal("network.provideResponse", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         ProvideResponseCommandParameters properties = new("myRequestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithBody()
     {
         ProvideResponseCommandParameters properties = new("myRequestId")
@@ -37,26 +36,34 @@ public class ProvideResponseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("body"));
-            Assert.That(serialized["body"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject bodyObject = (JObject)serialized["body"]!;
-            Assert.That(bodyObject, Has.Count.EqualTo(2));
-            Assert.That(bodyObject, Contains.Key("type"));
-            Assert.That(bodyObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(bodyObject["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(bodyObject, Contains.Key("value"));
-            Assert.That(bodyObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(bodyObject["value"]!.Value<string>(), Is.EqualTo("test body"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("body"));
+        JToken? bodyToken = serialized["body"];
+        Assert.NotNull(bodyToken);
+        Assert.Equal(JTokenType.Object, bodyToken.Type);
+        JObject? bodyObject = bodyToken as JObject;
+        Assert.NotNull(bodyObject);
+        Assert.Equal(2, bodyObject.Count);
+        Assert.True(bodyObject.ContainsKey("type"));
+        JToken? bodyType = bodyObject["type"];
+        Assert.NotNull(bodyType);
+        Assert.Equal(JTokenType.String, bodyType.Type);
+        Assert.Equal("string", bodyType.Value<string>());
+        Assert.True(bodyObject.ContainsKey("value"));
+        JToken? bodyValue = bodyObject["value"];
+        Assert.NotNull(bodyValue);
+        Assert.Equal(JTokenType.String, bodyValue.Type);
+        Assert.Equal("test body", bodyValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithCookies()
     {
         ProvideResponseCommandParameters properties = new("myRequestId")
@@ -65,36 +72,50 @@ public class ProvideResponseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("cookies"));
-            Assert.That(serialized["cookies"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray cookieHeaderArray = (JArray)serialized["cookies"]!;
-            Assert.That(cookieHeaderArray, Has.Count.EqualTo(1));
-            Assert.That(cookieHeaderArray[0].Type, Is.EqualTo(JTokenType.Object));
-            JObject cookieHeaderObject = (JObject)cookieHeaderArray[0];
-            Assert.That(cookieHeaderObject, Has.Count.EqualTo(2));
-            Assert.That(cookieHeaderObject, Contains.Key("name"));
-            Assert.That(cookieHeaderObject["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(cookieHeaderObject["name"]!.Value<string>(), Is.EqualTo("cookieName"));
-            Assert.That(cookieHeaderObject, Contains.Key("value"));
-            Assert.That(cookieHeaderObject["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject cookieValueObject = (JObject)cookieHeaderObject["value"]!;
-            Assert.That(cookieValueObject, Has.Count.EqualTo(2));
-            Assert.That(cookieValueObject, Contains.Key("type"));
-            Assert.That(cookieValueObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(cookieValueObject["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(cookieValueObject, Contains.Key("value"));
-            Assert.That(cookieValueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(cookieValueObject["value"]!.Value<string>(), Is.EqualTo("cookieValue"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("cookies"));
+        JToken? cookiesToken = serialized["cookies"];
+        Assert.NotNull(cookiesToken);
+        Assert.Equal(JTokenType.Array, cookiesToken.Type);
+        JArray? cookieHeaderArray = cookiesToken as JArray;
+        Assert.NotNull(cookieHeaderArray);
+        Assert.Single(cookieHeaderArray);
+        Assert.Equal(JTokenType.Object, cookieHeaderArray[0].Type);
+        JObject? cookieHeaderObject = cookieHeaderArray[0] as JObject;
+        Assert.NotNull(cookieHeaderObject);
+        Assert.Equal(2, cookieHeaderObject.Count);
+        Assert.True(cookieHeaderObject.ContainsKey("name"));
+        JToken? cookieName = cookieHeaderObject["name"];
+        Assert.NotNull(cookieName);
+        Assert.Equal(JTokenType.String, cookieName.Type);
+        Assert.Equal("cookieName", cookieName.Value<string>());
+        Assert.True(cookieHeaderObject.ContainsKey("value"));
+        JToken? cookieValueToken = cookieHeaderObject["value"];
+        Assert.NotNull(cookieValueToken);
+        Assert.Equal(JTokenType.Object, cookieValueToken.Type);
+        JObject? cookieValueObject = cookieValueToken as JObject;
+        Assert.NotNull(cookieValueObject);
+        Assert.Equal(2, cookieValueObject.Count);
+        Assert.True(cookieValueObject.ContainsKey("type"));
+        JToken? cookieValueType = cookieValueObject["type"];
+        Assert.NotNull(cookieValueType);
+        Assert.Equal(JTokenType.String, cookieValueType.Type);
+        Assert.Equal("string", cookieValueType.Value<string>());
+        Assert.True(cookieValueObject.ContainsKey("value"));
+        JToken? cookieValueValue = cookieValueObject["value"];
+        Assert.NotNull(cookieValueValue);
+        Assert.Equal(JTokenType.String, cookieValueValue.Type);
+        Assert.Equal("cookieValue", cookieValueValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithHeaders()
     {
         ProvideResponseCommandParameters properties = new("myRequestId")
@@ -103,36 +124,50 @@ public class ProvideResponseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("headers"));
-            Assert.That(serialized["headers"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray headerArray = (JArray)serialized["headers"]!;
-            Assert.That(headerArray, Has.Count.EqualTo(1));
-            Assert.That(headerArray[0].Type, Is.EqualTo(JTokenType.Object));
-            JObject headerObject = (JObject)headerArray[0];
-            Assert.That(headerObject, Has.Count.EqualTo(2));
-            Assert.That(headerObject, Contains.Key("name"));
-            Assert.That(headerObject["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(headerObject["name"]!.Value<string>(), Is.EqualTo("headerName"));
-            Assert.That(headerObject, Contains.Key("value"));
-            Assert.That(headerObject["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject headerValueObject = (JObject)headerObject["value"]!;
-            Assert.That(headerValueObject, Has.Count.EqualTo(2));
-            Assert.That(headerValueObject, Contains.Key("type"));
-            Assert.That(headerValueObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(headerValueObject["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(headerValueObject, Contains.Key("value"));
-            Assert.That(headerValueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(headerValueObject["value"]!.Value<string>(), Is.EqualTo("headerValue"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("headers"));
+        JToken? headersToken = serialized["headers"];
+        Assert.NotNull(headersToken);
+        Assert.Equal(JTokenType.Array, headersToken.Type);
+        JArray? headerArray = headersToken as JArray;
+        Assert.NotNull(headerArray);
+        Assert.Single(headerArray);
+        Assert.Equal(JTokenType.Object, headerArray[0].Type);
+        JObject? headerObject = headerArray[0] as JObject;
+        Assert.NotNull(headerObject);
+        Assert.Equal(2, headerObject.Count);
+        Assert.True(headerObject.ContainsKey("name"));
+        JToken? headerName = headerObject["name"];
+        Assert.NotNull(headerName);
+        Assert.Equal(JTokenType.String, headerName.Type);
+        Assert.Equal("headerName", headerName.Value<string>());
+        Assert.True(headerObject.ContainsKey("value"));
+        JToken? headerValueToken = headerObject["value"];
+        Assert.NotNull(headerValueToken);
+        Assert.Equal(JTokenType.Object, headerValueToken.Type);
+        JObject? headerValueObject = headerValueToken as JObject;
+        Assert.NotNull(headerValueObject);
+        Assert.Equal(2, headerValueObject.Count);
+        Assert.True(headerValueObject.ContainsKey("type"));
+        JToken? headerValueType = headerValueObject["type"];
+        Assert.NotNull(headerValueType);
+        Assert.Equal(JTokenType.String, headerValueType.Type);
+        Assert.Equal("string", headerValueType.Value<string>());
+        Assert.True(headerValueObject.ContainsKey("value"));
+        JToken? headerValueValue = headerValueObject["value"];
+        Assert.NotNull(headerValueValue);
+        Assert.Equal(JTokenType.String, headerValueValue.Type);
+        Assert.Equal("headerValue", headerValueValue.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithReasonPhrase()
     {
         ProvideResponseCommandParameters properties = new("myRequestId")
@@ -141,19 +176,22 @@ public class ProvideResponseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("reasonPhrase"));
-            Assert.That(serialized["reasonPhrase"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["reasonPhrase"]!.Value<string>(), Is.EqualTo("Not Found"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("reasonPhrase"));
+        JToken? reasonPhrase = serialized["reasonPhrase"];
+        Assert.NotNull(reasonPhrase);
+        Assert.Equal(JTokenType.String, reasonPhrase.Type);
+        Assert.Equal("Not Found", reasonPhrase.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithStatusCode()
     {
         ProvideResponseCommandParameters properties = new("myRequestId")
@@ -162,15 +200,18 @@ public class ProvideResponseCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("request"));
-            Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-            Assert.That(serialized, Contains.Key("statusCode"));
-            Assert.That(serialized["statusCode"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["statusCode"]!.Value<ulong>(), Is.EqualTo(404));
-        }
+
+        Assert.Equal(2, serialized.Count);
+        Assert.True(serialized.ContainsKey("request"));
+        JToken? request = serialized["request"];
+        Assert.NotNull(request);
+        Assert.Equal(JTokenType.String, request.Type);
+        Assert.Equal("myRequestId", request.Value<string>());
+
+        Assert.True(serialized.ContainsKey("statusCode"));
+        JToken? statusCode = serialized["statusCode"];
+        Assert.NotNull(statusCode);
+        Assert.Equal(JTokenType.Integer, statusCode.Type);
+        Assert.Equal(404UL, statusCode.Value<ulong>());
     }
 }

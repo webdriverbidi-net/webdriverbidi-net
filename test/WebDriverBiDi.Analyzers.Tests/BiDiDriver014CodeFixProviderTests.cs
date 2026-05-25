@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver014 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver014CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix replaces parameterless constructor with Reset property.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_ReplacesParameterlessConstructorWithResetProperty()
     {
         string testCode = """
@@ -171,14 +169,14 @@ public class BiDiDriver014CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that the code fix works with multiple variables and only fixes the flagged one.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_WithMultipleVariables_FixesOnlyFlaggedOne()
     {
         string testCode = """
@@ -335,6 +333,6 @@ public class BiDiDriver014CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

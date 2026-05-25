@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class EvaluateResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeScriptEvaluateResultSuccess()
     {
         string json = """
@@ -19,18 +18,16 @@ public class EvaluateResultTests
                       }
                       """;
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<EvaluateResultSuccess>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultSuccess>(result);
         EvaluateResultSuccess successResult = (EvaluateResultSuccess)result;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(successResult.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(successResult.Result.Type, Is.EqualTo(RemoteValueType.String));
-            Assert.That(successResult.Result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myResult"));
-        }
+
+        Assert.Equal("myRealm", successResult.RealmId);
+        Assert.Equal(RemoteValueType.String, successResult.Result.Type);
+        Assert.Equal("myResult", successResult.Result.ConvertTo<StringRemoteValue>().Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeScriptEvaluateResultException()
     {
         string json = """
@@ -52,21 +49,19 @@ public class EvaluateResultTests
                       }
                       """;
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<EvaluateResultException>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultException>(result);
         EvaluateResultException exceptionResult = (EvaluateResultException)result;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("exception thrown"));
-            Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(1));
-            Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
-            Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Has.Count.EqualTo(0));
-            Assert.That(exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("exception value"));
-        }
+
+        Assert.Equal("myRealm", exceptionResult.RealmId);
+        Assert.Equal("exception thrown", exceptionResult.ExceptionDetails.Text);
+        Assert.Equal(1, exceptionResult.ExceptionDetails.LineNumber);
+        Assert.Equal(5, exceptionResult.ExceptionDetails.ColumnNumber);
+        Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
+        Assert.Equal("exception value", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
     }
 
-    [Test]
+    [Fact]
     public void TestEvaluateResultSuccessCopySemantics()
     {
         string json = """
@@ -80,14 +75,14 @@ public class EvaluateResultTests
                       }
                       """;
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<EvaluateResultSuccess>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultSuccess>(result);
         EvaluateResultSuccess successResult = (EvaluateResultSuccess)result;
         EvaluateResultSuccess copy = successResult with { };
-        Assert.That(copy, Is.EqualTo(successResult));
+        Assert.Equal(successResult, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestEvaluateResultExceptionCopySemantics()
     {
         string json = """
@@ -109,14 +104,14 @@ public class EvaluateResultTests
                       }
                       """;
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<EvaluateResultException>());
+        Assert.NotNull(result);
+        Assert.IsType<EvaluateResultException>(result);
         EvaluateResultException exceptionResult = (EvaluateResultException)result;
         EvaluateResultException copy = exceptionResult with { };
-        Assert.That(copy, Is.EqualTo(exceptionResult));
+        Assert.Equal(exceptionResult, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeScriptEvaluateResultWithInvalidTypePropertyValueThrows()
     {
         string json = """
@@ -126,10 +121,10 @@ public class EvaluateResultTests
                        "noWoman": "noCry"
                      }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'EvaluateResult' type property contains unknown value 'invalid'"));
+        Assert.Contains("JSON for 'EvaluateResult' type property contains unknown value 'invalid'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeScriptEvaluateResultWithMissingTypePropertyThrows()
     {
         string json = """
@@ -138,10 +133,10 @@ public class EvaluateResultTests
                        "noWoman": "noCry"
                      }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'EvaluateResult' must contain a 'type' property"));
+        Assert.Contains("JSON for 'EvaluateResult' must contain a 'type' property", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeScriptEvaluateResultWithInvalidTypePropertyObjectThrows()
     {
         string json = """
@@ -153,10 +148,10 @@ public class EvaluateResultTests
                        "noWoman": "noCry"
                      }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON 'type' property must be a string"));
+        Assert.Contains("JSON 'type' property must be a string", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeScriptEvaluateResultWithMissingRealmValueThrows()
     {
         string json = """
@@ -168,10 +163,10 @@ public class EvaluateResultTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeScriptEvaluateResultWithInvalidRealmValueTypeThrows()
     {
         string json = """
@@ -186,13 +181,13 @@ public class EvaluateResultTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeScriptResultWithNonObjectThrows()
     {
         string json = @"[ ""invalid script result"" ]";
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json));
     }
 }

@@ -12,14 +12,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver022 analyzer.
 /// </summary>
-[TestFixture]
 public class BiDiDriver022AnalyzerTests
 {
     // -----------------------------------------------------------------------
     // Positive cases — should report BIDI022
     // -----------------------------------------------------------------------
 
-    [Test]
+    [Fact]
     public async Task IndexerAssignment_OnCommandParametersAdditionalData_ReportsWarning()
     {
         string testCode = """
@@ -47,7 +46,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task AddMethod_OnCommandParametersAdditionalData_ReportsWarning()
     {
         string testCode = """
@@ -75,7 +74,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task TryAddMethod_OnCommandParametersAdditionalData_ReportsWarning()
     {
         string testCode = """
@@ -103,7 +102,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task IndexerAssignment_OnStoragePartialCookieAdditionalData_ReportsWarning()
     {
         // Verifies that the analyzer also fires for non-CommandParameters types that expose
@@ -138,7 +137,7 @@ public class BiDiDriver022AnalyzerTests
     // Negative cases — should produce no diagnostic
     // -----------------------------------------------------------------------
 
-    [Test]
+    [Fact]
     public async Task ReadingAdditionalDataByKey_NoDiagnostic()
     {
         // Reading back a value that was already written should not fire again.
@@ -169,7 +168,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task RemoveMethod_OnCommandParametersAdditionalData_NoDiagnostic()
     {
         // Remove does not add a new value, so no AOT risk is introduced.
@@ -192,7 +191,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ClearMethod_OnCommandParametersAdditionalData_NoDiagnostic()
     {
         // Clear removes values; it does not introduce new non-AOT-safe objects.
@@ -215,7 +214,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task IteratingAdditionalData_NoDiagnostic()
     {
         string testCode = """
@@ -241,7 +240,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task CountProperty_NoDiagnostic()
     {
         string testCode = """
@@ -263,7 +262,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ContainsKey_NoDiagnostic()
     {
         string testCode = """
@@ -285,7 +284,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task IndexerAssignment_OnUnrelatedDictionary_NoDiagnostic()
     {
         // A locally-declared Dictionary<string, object?> that is not an AdditionalData property should not fire.
@@ -308,7 +307,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task AddMethod_OnUnrelatedDictionary_NoDiagnostic()
     {
         string testCode = """
@@ -330,7 +329,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task IndexerAssignment_OnPropertyNamed_OtherThanAdditionalData_NoDiagnostic()
     {
         // A property named "Data" (not "AdditionalData") with the same type should NOT fire.
@@ -359,7 +358,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task IndexerAssignment_OnAdditionalDataWithWrongValueType_NoDiagnostic()
     {
         // An "AdditionalData" property that returns Dictionary<string, string> (not object?)
@@ -389,7 +388,7 @@ public class BiDiDriver022AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task IndexerAssignment_ViaParenthesizedExpression_ReportsWarning()
     {
         // Accessing AdditionalData via a parenthesized expression exercises the

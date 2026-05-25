@@ -3,50 +3,43 @@ namespace WebDriverBiDi;
 using System.Text.Json;
 using WebDriverBiDi.Protocol;
 
-[TestFixture]
 public class WebDriverBiDiConnectionExceptionTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateWithNoArguments()
     {
         WebDriverBiDiConnectionException exception = new();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exception.Message, Is.Not.Null);
-            Assert.That(exception.InnerException, Is.Null);
-        }
+
+        Assert.NotNull(exception.Message);
+        Assert.Null(exception.InnerException);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCreate()
     {
         WebDriverBiDiConnectionException exception = new("Test exception message");
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exception.Message, Is.EqualTo("Test exception message"));
-            Assert.That(exception.InnerException, Is.Null);
-        }
+
+        Assert.Equal("Test exception message", exception.Message);
+        Assert.Null(exception.InnerException);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCreateWithInnerException()
     {
         ErrorResult errorResult = CreateErrorResult("unknown command", "This is a test error message", null);
         InvalidOperationException innerException = new("inner exception message");
         WebDriverBiDiConnectionException exception = new("Test exception message", innerException);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(exception.Message, Is.EqualTo("Test exception message"));
-            Assert.That(exception.InnerException, Is.SameAs(innerException));
-        }
+
+        Assert.Equal("Test exception message", exception.Message);
+        Assert.Same(innerException, exception.InnerException);
     }
 
-    [Test]
+    [Fact]
     public void TestIsWebDriverBiDiException()
     {
         ErrorResult errorResult = CreateErrorResult("no such frame", "Frame not found", null);
         WebDriverBiDiConnectionException exception = new("Test exception message");
-        Assert.That(exception, Is.InstanceOf<WebDriverBiDiException>());
+        Assert.IsType<WebDriverBiDiException>(exception, exactMatch: false);
     }
 
     private static ErrorResult CreateErrorResult(string errorType, string errorMessage, string? stackTrace)
@@ -62,7 +55,8 @@ public class WebDriverBiDiConnectionExceptionTests
                           "message": "{{errorMessage}}"{{stackTraceProperty}}
                         }
                         """;
-        ErrorResponseMessage messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json)!;
+        ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.NotNull(messageResult);
         return messageResult.GetErrorResponseData();
     }
 }

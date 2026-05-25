@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ReadOnlyHeaderTests
 {
-    [Test]
+    [Fact]
     public void CanDeserializeHeader()
     {
         string json = """
@@ -45,17 +44,15 @@ public class ReadOnlyHeaderTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
+        Assert.NotNull(request);
         ReadOnlyHeader header = request.Headers[0];
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(header.Name, Is.EqualTo("headerName"));
-            Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
-            Assert.That(header.Value.Value, Is.EqualTo("headerValue"));
-        }
+
+        Assert.Equal("headerName", header.Name);
+        Assert.Equal(BytesValueType.String, header.Value.Type);
+        Assert.Equal("headerValue", header.Value.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -95,9 +92,9 @@ public class ReadOnlyHeaderTests
                       }
                       """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
-        Assert.That(request, Is.Not.Null);
+        Assert.NotNull(request);
         ReadOnlyHeader header = request.Headers[0];
         ReadOnlyHeader copy = header with { };
-        Assert.That(copy, Is.EqualTo(header));
+        Assert.Equal(header, copy);
     }
 }

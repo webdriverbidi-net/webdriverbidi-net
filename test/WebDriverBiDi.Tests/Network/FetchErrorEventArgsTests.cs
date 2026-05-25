@@ -2,7 +2,6 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class FetchErrorEventArgsTests
 {
     private readonly string requestDataJson = """
@@ -34,7 +33,7 @@ public class FetchErrorEventArgsTests
                                               }
                                               """;
 
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow;
@@ -52,24 +51,22 @@ public class FetchErrorEventArgsTests
                            }
                            """;
         FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
-            Assert.That(eventArgs.ErrorText, Is.EqualTo("My error"));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.False);
-            Assert.That(eventArgs.Intercepts, Is.Null);
-        }
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal(milliseconds, eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+        Assert.Equal("My error", eventArgs.ErrorText);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.False(eventArgs.IsBlocked);
+        Assert.Null(eventArgs.Intercepts);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithIntercepts()
     {
         DateTime now = DateTime.UtcNow;
@@ -88,26 +85,24 @@ public class FetchErrorEventArgsTests
                            }
                            """;
         FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.True);
-            Assert.That(eventArgs.Intercepts, Is.Not.Null);
-            Assert.That(eventArgs.Intercepts, Has.Count.EqualTo(1));
-            Assert.That(eventArgs.Intercepts![0], Is.EqualTo("myInterceptId"));
-            Assert.That(eventArgs.ErrorText, Is.EqualTo("My error"));
-        }
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal((ulong)((ulong)(milliseconds)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.True(eventArgs.IsBlocked);
+        Assert.NotNull(eventArgs.Intercepts);
+        Assert.Single(eventArgs.Intercepts);
+        Assert.Equal("myInterceptId", eventArgs.Intercepts[0]);
+        Assert.Equal("My error", eventArgs.ErrorText);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNullContextId()
     {
         DateTime now = DateTime.UtcNow;
@@ -125,24 +120,22 @@ public class FetchErrorEventArgsTests
                            }
                            """;
         FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.Null);
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.False);
-            Assert.That(eventArgs.Intercepts, Is.Null);
-            Assert.That(eventArgs.ErrorText, Is.EqualTo("My error"));
-        }
+        Assert.Null(eventArgs.BrowsingContextId);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal((ulong)((ulong)(milliseconds)), eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.False(eventArgs.IsBlocked);
+        Assert.Null(eventArgs.Intercepts);
+        Assert.Equal("My error", eventArgs.ErrorText);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow;
@@ -160,12 +153,12 @@ public class FetchErrorEventArgsTests
                            }
                            """;
         FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         FetchErrorEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextIdThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -181,10 +174,10 @@ public class FetchErrorEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidErrorTextTypeThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -201,6 +194,6 @@ public class FetchErrorEventArgsTests
                              "errorText": {}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson));
     }
 }

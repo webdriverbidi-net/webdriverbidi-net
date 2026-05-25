@@ -25,6 +25,7 @@ _ = Task.Run(() =>
 byte[] buffer = new byte[16 * 1024]; // 16 KB buffer
 
 using MemoryStream memoryStream = new();
+
 _ = Task.Run(async () =>
 {
     while (!cancellationSource.IsCancellationRequested)

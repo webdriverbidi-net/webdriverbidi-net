@@ -71,16 +71,17 @@ public class TestPipeServer : IPipeServerProcessProvider
     public bool WaitForDataSent(TimeSpan timeout)
     {
         Task timeoutTask = Task.Delay(timeout);
-        Task peekTask = Task.Run(async () =>
-        {
-            if (this.ServerProcess is not null)
+        Task peekTask = Task.Run(
+            async () =>
             {
-                while (this.ServerProcess.StandardOutput.Peek() < 0)
+                if (this.ServerProcess is not null)
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(50));
+                    while (this.ServerProcess.StandardOutput.Peek() < 0)
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(50));
+                    }
                 }
-            }
-        });
+            });
         int completedTaskIndex = Task.WaitAny(peekTask, timeoutTask);
         return completedTaskIndex == 0;
     }

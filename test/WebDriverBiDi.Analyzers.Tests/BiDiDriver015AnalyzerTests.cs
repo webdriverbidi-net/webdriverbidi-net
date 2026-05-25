@@ -16,14 +16,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver015 analyzer that detects string literals instead of ObservableEvent.EventName.
 /// </summary>
-[TestFixture]
 public class BiDiDriver015AnalyzerTests
 {
     /// <summary>
     /// Tests that string literal in SubscribeAsync reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task StringLiteral_InSubscribeAsync_ReportsWarning()
     {
         string test = """
@@ -109,14 +108,14 @@ public class BiDiDriver015AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that using EventName property does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventNameProperty_InSubscribeAsync_NoDiagnostic()
     {
         string test = """
@@ -197,14 +196,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple string literals are all detected.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MultipleStringLiterals_InSubscribeAsync_ReportsMultipleWarnings()
     {
         string test = """
@@ -304,14 +303,14 @@ public class BiDiDriver015AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected1);
         testState.ExpectedDiagnostics.Add(expected2);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that string literal for unknown event does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task StringLiteral_ForUnknownEvent_NoDiagnostic()
     {
         string test = """
@@ -392,14 +391,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that mixed usage (EventName and string literals) works correctly.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MixedUsage_EventNameAndStringLiteral_ReportsOnlyStringLiteral()
     {
         string test = """
@@ -494,15 +493,14 @@ public class BiDiDriver015AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
 
     /// <summary>
     /// Tests that methods without driver variable are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NoDriverVariable_NoDiagnostic()
     {
         string test = """
@@ -553,14 +551,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a string literal in a C# 12 collection expression in SubscribeAsync reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task StringLiteral_InCollectionExpression_ReportsWarning()
     {
         string test = """
@@ -646,14 +644,14 @@ public class BiDiDriver015AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that using EventName property in a C# 12 collection expression does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventNameProperty_InCollectionExpression_NoDiagnostic()
     {
         string test = """
@@ -734,7 +732,7 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -742,7 +740,7 @@ public class BiDiDriver015AnalyzerTests
     /// (i.e., referenced as a compiled assembly rather than defined in source).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task StringLiteral_InSubscribeAsync_MetadataBacked_ReportsWarning()
     {
         string test = """
@@ -775,14 +773,14 @@ public class BiDiDriver015AnalyzerTests
         testState.TestState.AdditionalReferences.Add(await CreateFakeLibMetadataReference());
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that BIDI015 does not fire when EventName property is used, with metadata-backed types.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventNameProperty_InSubscribeAsync_MetadataBacked_NoDiagnostic()
     {
         string test = """
@@ -810,14 +808,14 @@ public class BiDiDriver015AnalyzerTests
         };
         testState.TestState.AdditionalReferences.Add(await CreateFakeLibMetadataReference());
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that explicit array creation syntax (new string[] { }) reports a warning.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task StringLiteral_InExplicitArrayCreation_ReportsWarning()
     {
         string test = """
@@ -903,14 +901,14 @@ public class BiDiDriver015AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that SubscribeAsync with no arguments does not crash the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SubscribeAsync_WithNoArguments_NoDiagnostic()
     {
         string test = """
@@ -956,14 +954,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that SubscribeAsync with a variable instead of object creation does not crash the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SubscribeAsync_WithVariableArgument_NoDiagnostic()
     {
         string test = """
@@ -1015,14 +1013,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that SubscribeCommandParameters with no arguments does not crash the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task SubscribeCommandParameters_WithNoArguments_NoDiagnostic()
     {
         string test = """
@@ -1073,14 +1071,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-method invocations are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonMethodInvocation_NoDiagnostic()
     {
         string test = """
@@ -1126,14 +1124,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that expression-bodied methods are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ExpressionBodiedMethod_NoDiagnostic()
     {
         string test = """
@@ -1180,14 +1178,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-literal expressions in event arrays are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonLiteralExpressionInArray_NoDiagnostic()
     {
         string test = """
@@ -1239,14 +1237,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that numeric literals in event arrays are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NumericLiteralInArray_NoDiagnostic()
     {
         string test = """
@@ -1297,14 +1295,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that driver variables without initializers are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task DriverVariableWithoutInitializer_NoDiagnostic()
     {
         string test = """
@@ -1386,14 +1384,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-driver types are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonDriverType_NoDiagnostic()
     {
         string test = """
@@ -1437,14 +1435,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that invocations without member access (e.g., local function calls) are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task LocalFunctionInvocation_NoDiagnostic()
     {
         string test = """
@@ -1497,14 +1495,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that invocations where method symbol cannot be determined are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task InvocationWithUnresolvedMethod_NoDiagnostic()
     {
         string test = """
@@ -1556,14 +1554,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that const string expressions (non-literal) in arrays are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ConstStringExpression_NoDiagnostic()
     {
         string test = """
@@ -1616,14 +1614,14 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that interpolated strings in arrays are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task InterpolatedStringInArray_NoDiagnostic()
     {
         string test = """
@@ -1704,7 +1702,7 @@ public class BiDiDriver015AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>

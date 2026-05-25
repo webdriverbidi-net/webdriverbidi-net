@@ -3,32 +3,31 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetGeolocationOverrideCoordinatesCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetGeolocationOverrideCoordinatesCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("emulation.setGeolocationOverride"));
+        Assert.Equal("emulation.setGeolocationOverride", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetGeolocationOverrideCoordinatesCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("coordinates"));
-            Assert.That(serialized["coordinates"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["coordinates"]!.Value<JObject?>, Is.Null);
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("coordinates"));
+        JToken? coordinates = serialized["coordinates"];
+        Assert.NotNull(coordinates);
+        Assert.Equal(JTokenType.Null, coordinates.Type);
+        Assert.Null(coordinates.Value<JObject?>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithCoordinates()
     {
         SetGeolocationOverrideCoordinatesCommandParameters properties = new()
@@ -37,23 +36,30 @@ public class SetGeolocationOverrideCoordinatesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("coordinates"));
-            Assert.That(serialized["coordinates"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? coordinatesObject = serialized["coordinates"] as JObject;
-            Assert.That(coordinatesObject, Has.Count.EqualTo(2));
-            Assert.That(coordinatesObject, Contains.Key("longitude"));
-            Assert.That(coordinatesObject!["longitude"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(coordinatesObject!["longitude"]!.Value<double>, Is.EqualTo(123.45));
-            Assert.That(coordinatesObject, Contains.Key("latitude"));
-            Assert.That(coordinatesObject!["latitude"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(coordinatesObject!["latitude"]!.Value<double>, Is.EqualTo(-67.89));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("coordinates"));
+        JToken? coordinatesToken = serialized["coordinates"];
+        Assert.NotNull(coordinatesToken);
+        Assert.Equal(JTokenType.Object, coordinatesToken.Type);
+        JObject? coordinatesObject = coordinatesToken as JObject;
+        Assert.NotNull(coordinatesObject);
+        Assert.Equal(2, coordinatesObject.Count);
+
+        Assert.True(coordinatesObject.ContainsKey("longitude"));
+        JToken? longitude = coordinatesObject["longitude"];
+        Assert.NotNull(longitude);
+        Assert.Equal(JTokenType.Float, longitude.Type);
+        Assert.Equal(123.45, longitude.Value<double>());
+
+        Assert.True(coordinatesObject.ContainsKey("latitude"));
+        JToken? latitude = coordinatesObject["latitude"];
+        Assert.NotNull(latitude);
+        Assert.Equal(JTokenType.Float, latitude.Type);
+        Assert.Equal(-67.89, latitude.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithContexts()
     {
         SetGeolocationOverrideCoordinatesCommandParameters properties = new()
@@ -66,24 +72,28 @@ public class SetGeolocationOverrideCoordinatesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("coordinates"));
-            Assert.That(serialized["coordinates"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["coordinates"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
-            Assert.That(contextsArray, Has.Count.EqualTo(2));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
-            Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("coordinates"));
+        JToken? coordinates = serialized["coordinates"];
+        Assert.NotNull(coordinates);
+        Assert.Equal(JTokenType.Null, coordinates.Type);
+        Assert.Null(coordinates.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        Assert.Equal(JTokenType.Array, contextsToken.Type);
+        JArray? contextsArray = contextsToken.Value<JArray>();
+        Assert.NotNull(contextsArray);
+        Assert.Equal(2, contextsArray.Count);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("context1", contextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, contextsArray[1].Type);
+        Assert.Equal("context2", contextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithUserContexts()
     {
         SetGeolocationOverrideCoordinatesCommandParameters properties = new()
@@ -96,20 +106,24 @@ public class SetGeolocationOverrideCoordinatesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("coordinates"));
-            Assert.That(serialized["coordinates"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["coordinates"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
-            Assert.That(userContextsArray, Has.Count.EqualTo(2));
-            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
-            Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("coordinates"));
+        JToken? coordinates = serialized["coordinates"];
+        Assert.NotNull(coordinates);
+        Assert.Equal(JTokenType.Null, coordinates.Type);
+        Assert.Null(coordinates.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContextsToken = serialized["userContexts"];
+        Assert.NotNull(userContextsToken);
+        Assert.Equal(JTokenType.Array, userContextsToken.Type);
+        JArray? userContextsArray = userContextsToken.Value<JArray>();
+        Assert.NotNull(userContextsArray);
+        Assert.Equal(2, userContextsArray.Count);
+        Assert.Equal(JTokenType.String, userContextsArray[0].Type);
+        Assert.Equal("userContext1", userContextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, userContextsArray[1].Type);
+        Assert.Equal("userContext2", userContextsArray[1].Value<string>());
     }
 }

@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Browser;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RemoveUserContextCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         RemoveUserContextCommandResult? result = JsonSerializer.Deserialize<RemoveUserContextCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         RemoveUserContextCommandResult? result = JsonSerializer.Deserialize<RemoveUserContextCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RemoveUserContextCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

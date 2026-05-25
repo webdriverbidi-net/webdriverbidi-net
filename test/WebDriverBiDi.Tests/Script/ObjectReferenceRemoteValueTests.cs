@@ -4,7 +4,7 @@ using System.Text.Json;
 
 public class ObjectReferenceRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeObjectReferenceRemoteValue()
     {
         string json = """
@@ -20,13 +20,13 @@ public class ObjectReferenceRemoteValueTests
         // Note: Testing of the multiple types (symbol, function, promise, etc.)
         // that can be deserialized into a ObjectReferenceremoteValue is tested in
         // RemoteValueTests.
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Symbol));
-        Assert.That(result.Handle, Is.EqualTo("myHandle"));
-        Assert.That(result.InternalId, Is.EqualTo("myInternalId"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Symbol, result.Type);
+        Assert.Equal("myHandle", result.Handle);
+        Assert.Equal("myInternalId", result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeObjectReferenceRemoteValueWithMissingHandle()
     {
         string json = """
@@ -38,13 +38,13 @@ public class ObjectReferenceRemoteValueTests
 
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Symbol));
-        Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.EqualTo("myInternalId"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Symbol, result.Type);
+        Assert.Null(result.Handle);
+        Assert.Equal("myInternalId", result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeObjectReferenceRemoteValueWithMissingInternalId()
     {
         string json = """
@@ -56,13 +56,13 @@ public class ObjectReferenceRemoteValueTests
 
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Symbol));
-        Assert.That(result.Handle, Is.EqualTo("myHandle"));
-        Assert.That(result.InternalId, Is.Null);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Symbol, result.Type);
+        Assert.Equal("myHandle", result.Handle);
+        Assert.Null(result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -74,14 +74,14 @@ public class ObjectReferenceRemoteValueTests
 
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         RemoteObjectReference remoteObjectReference = (RemoteObjectReference)localValue;
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToRemoteObjectReference()
     {
         string json = """
@@ -94,13 +94,13 @@ public class ObjectReferenceRemoteValueTests
 
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RemoteObjectReference remoteObjectReference = result.ToRemoteObjectReference();
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidHandleTypeThrows()
     {
         string json = """
@@ -110,10 +110,10 @@ public class ObjectReferenceRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidInternalIdTypeThrows()
     {
         string json = """
@@ -124,10 +124,10 @@ public class ObjectReferenceRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -137,10 +137,10 @@ public class ObjectReferenceRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToLocalValueWithoutHandleThrows()
     {
         string json = """
@@ -151,11 +151,11 @@ public class ObjectReferenceRemoteValueTests
 
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToLocalValue(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToLocalValue());
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToRemoteObjectReferenceWithoutHandleThrows()
     {
         string json = """
@@ -166,11 +166,11 @@ public class ObjectReferenceRemoteValueTests
 
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToRemoteObjectReference());
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -181,9 +181,9 @@ public class ObjectReferenceRemoteValueTests
                       """;
 
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ObjectReferenceRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

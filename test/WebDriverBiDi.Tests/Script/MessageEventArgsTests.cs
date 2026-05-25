@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class MessageEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -21,17 +20,15 @@ public class MessageEventArgsTests
                       }
                       """;
         MessageEventArgs? eventArgs = JsonSerializer.Deserialize<MessageEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.ChannelId, Is.EqualTo("myChannel"));
-            Assert.That(eventArgs.Data.Type, Is.EqualTo(RemoteValueType.String));
-            Assert.That(eventArgs.Data.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myChannelValue"));
-            Assert.That(eventArgs.Source.RealmId, Is.EqualTo("myRealm"));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myChannel", eventArgs.ChannelId);
+        Assert.Equal(RemoteValueType.String, eventArgs.Data.Type);
+        Assert.Equal("myChannelValue", eventArgs.Data.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("myRealm", eventArgs.Source.RealmId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -47,12 +44,12 @@ public class MessageEventArgsTests
                       }
                       """;
         MessageEventArgs? eventArgs = JsonSerializer.Deserialize<MessageEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         MessageEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingChannelValueThrows()
     {
         string json = """
@@ -66,10 +63,10 @@ public class MessageEventArgsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<MessageEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<MessageEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidChannelValueThrows()
     {
         string json = """
@@ -84,10 +81,10 @@ public class MessageEventArgsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<MessageEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<MessageEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingDataValueThrows()
     {
         string json = """
@@ -98,10 +95,10 @@ public class MessageEventArgsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<MessageEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<MessageEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidDataValueThrows()
     {
         string json = """
@@ -113,10 +110,10 @@ public class MessageEventArgsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<MessageEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<MessageEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingSourceValueThrows()
     {
         string json = """
@@ -128,10 +125,10 @@ public class MessageEventArgsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<MessageEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<MessageEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidSourceValueThrows()
     {
         string json = """
@@ -144,6 +141,6 @@ public class MessageEventArgsTests
                         "source": ""
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<MessageEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<MessageEventArgs>(json));
     }
 }

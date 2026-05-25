@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class AddInterceptCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,11 +13,11 @@ public class AddInterceptCommandResultTests
                       }
                       """;
         AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.InterceptId, Is.EqualTo("myInterceptId"));
+        Assert.NotNull(result);
+        Assert.Equal("myInterceptId", result.InterceptId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,19 +26,19 @@ public class AddInterceptCommandResultTests
                       }
                       """;
         AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         AddInterceptCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = """
@@ -47,6 +46,6 @@ public class AddInterceptCommandResultTests
                         "intercept": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json));
     }
 }

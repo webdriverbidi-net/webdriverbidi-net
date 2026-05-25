@@ -2,10 +2,9 @@ namespace WebDriverBiDi.UserAgentClientHints;
 
 using TestUtilities;
 
-[TestFixture]
 public class UserAgentClientHintsModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestSetClientHintsOverrideCommand()
     {
         TestWebSocketConnection connection = new();
@@ -21,14 +20,13 @@ public class UserAgentClientHintsModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         UserAgentClientHintsModule module = driver.UserAgentClientHints;
 
-        Task<SetClientHintsOverrideCommandResult> task = module.SetClientHintsOverrideAsync(new SetClientHintsOverrideCommandParameters());
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetClientHintsOverrideCommandResult result = task.Result;
+        Task<SetClientHintsOverrideCommandResult> task = module.SetClientHintsOverrideAsync(new SetClientHintsOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        SetClientHintsOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 }

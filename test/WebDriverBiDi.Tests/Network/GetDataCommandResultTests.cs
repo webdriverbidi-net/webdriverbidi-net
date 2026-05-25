@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class GetDataCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -17,12 +16,12 @@ public class GetDataCommandResultTests
                       }
                       """;
         GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Bytes.Type, Is.EqualTo(BytesValueType.String));
-        Assert.That(result.Bytes.Value, Is.EqualTo("myNetworkData"));
+        Assert.NotNull(result);
+        Assert.Equal(BytesValueType.String, result.Bytes.Type);
+        Assert.Equal("myNetworkData", result.Bytes.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -34,19 +33,19 @@ public class GetDataCommandResultTests
                       }
                       """;
         GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         GetDataCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<GetDataCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetDataCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = """
@@ -54,6 +53,6 @@ public class GetDataCommandResultTests
                         "bytes": "invalidValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<GetDataCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetDataCommandResult>(json));
     }
 }

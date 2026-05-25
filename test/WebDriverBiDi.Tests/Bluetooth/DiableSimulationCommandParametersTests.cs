@@ -4,28 +4,27 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class DisableSimulationCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         DisableSimulationCommandParameters properties = new("myContext");
-        Assert.That(properties.MethodName, Is.EqualTo("bluetooth.disableSimulation"));
+        Assert.Equal("bluetooth.disableSimulation", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         DisableSimulationCommandParameters properties = new("myContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
     }
 }

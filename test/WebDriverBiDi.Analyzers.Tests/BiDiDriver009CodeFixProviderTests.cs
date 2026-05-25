@@ -13,10 +13,9 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver009 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver009CodeFixProviderTests
 {
-    [Test]
+    [Fact]
     public async Task ExecuteCommandAsync_CodeFixMovesAfterStartAsync()
     {
         string testCode = """
@@ -72,10 +71,10 @@ public class BiDiDriver009CodeFixProviderTests
         testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommand_CodeFixMovesAfterStartAsync()
     {
         string testCode = """
@@ -131,10 +130,10 @@ public class BiDiDriver009CodeFixProviderTests
         testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task CommandBeforeStart_WithStatementAfterStart_CodeFixInsertsCorrectly()
     {
         string testCode = """
@@ -194,6 +193,6 @@ public class BiDiDriver009CodeFixProviderTests
         testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

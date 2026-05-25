@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class WindowProxyRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeWindowProxyRemoteValue()
     {
         string json = """
@@ -19,14 +18,14 @@ public class WindowProxyRemoteValueTests
 
         WindowProxyRemoteValue? result = JsonSerializer.Deserialize<WindowProxyRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Window));
-        Assert.That(result.Value.Context, Is.EqualTo("myContextid"));
-        Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Window, result.Type);
+        Assert.Equal("myContextid", result.Value.Context);
+        Assert.Null(result.Handle);
+        Assert.Null(result.InternalId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWindowProxyRemoteValueWithHandle()
     {
         string json = """
@@ -42,15 +41,14 @@ public class WindowProxyRemoteValueTests
 
         WindowProxyRemoteValue? result = JsonSerializer.Deserialize<WindowProxyRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Window));
-        Assert.That(result.Value.Context, Is.EqualTo("myContextid"));
-        Assert.That(result.Handle, Is.EqualTo("myHandle"));
-        Assert.That(result.InternalId, Is.EqualTo("myInternalId"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Window, result.Type);
+        Assert.Equal("myContextid", result.Value.Context);
+        Assert.Equal("myHandle", result.Handle);
+        Assert.Equal("myInternalId", result.InternalId);
     }
 
-
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -66,14 +64,14 @@ public class WindowProxyRemoteValueTests
 
         WindowProxyRemoteValue? result = JsonSerializer.Deserialize<WindowProxyRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         RemoteObjectReference remoteObjectReference = (RemoteObjectReference)localValue;
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToRemoteObjectReference()
     {
         string json = """
@@ -89,13 +87,13 @@ public class WindowProxyRemoteValueTests
 
         WindowProxyRemoteValue? result = JsonSerializer.Deserialize<WindowProxyRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RemoteObjectReference remoteObjectReference = result.ToRemoteObjectReference();
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowProxyRemoteValueWithMissingValueThrows()
     {
         string json = """
@@ -104,10 +102,10 @@ public class WindowProxyRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowProxyRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -117,10 +115,10 @@ public class WindowProxyRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowProxyRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -132,10 +130,10 @@ public class WindowProxyRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowProxyRemoteValueWithInvalidHandleTypeThrows()
     {
         string json = """
@@ -149,10 +147,10 @@ public class WindowProxyRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowProxyRemoteValueWithInvalidInternalIdTypeThrows()
     {
         string json = """
@@ -166,10 +164,10 @@ public class WindowProxyRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<WindowProxyRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToRemoteObjectReferenceWithoutHandleThrows()
     {
         string json = """
@@ -183,11 +181,11 @@ public class WindowProxyRemoteValueTests
 
         WindowProxyRemoteValue? result = JsonSerializer.Deserialize<WindowProxyRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToRemoteObjectReference());
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -200,9 +198,9 @@ public class WindowProxyRemoteValueTests
                       """;
 
         WindowProxyRemoteValue? result = JsonSerializer.Deserialize<WindowProxyRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         WindowProxyRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

@@ -1,1 +1,3 @@
-global using NUnit.Framework;
+global using Xunit;
+
+[assembly: CollectionBehavior(MaxParallelThreads = -1)]

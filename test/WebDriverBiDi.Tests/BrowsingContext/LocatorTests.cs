@@ -3,79 +3,87 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class LocatorTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeUsingBaseType()
     {
         Locator locator = new CssLocator("locator");
-        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        Assert.NotEmpty(JsonSerializer.Serialize(locator));
         locator = new XPathLocator("//locator");
-        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        Assert.NotEmpty(JsonSerializer.Serialize(locator));
         locator = new InnerTextLocator("locator text");
-        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        Assert.NotEmpty(JsonSerializer.Serialize(locator));
         locator = new AccessibilityLocator();
-        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        Assert.NotEmpty(JsonSerializer.Serialize(locator));
         locator = new ContextLocator("myContext");
-        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        Assert.NotEmpty(JsonSerializer.Serialize(locator));
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeCssLocator()
     {
         CssLocator value = new(".selector");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("css"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo(".selector"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("css", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal(".selector", valueProperty.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeXPathLocator()
     {
         XPathLocator value = new("//selector");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("xpath"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("//selector"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("xpath", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("//selector", valueProperty.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInnerTextLocator()
     {
         InnerTextLocator value = new("text to locate");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("innerText"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("innerText", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("text to locate", valueProperty.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInnerTextLocatorWithMaxDepthZero()
     {
         InnerTextLocator value = new("text to locate")
@@ -84,22 +92,28 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(3));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("innerText"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-            Assert.That(parsed, Contains.Key("maxDepth"));
-            Assert.That(parsed["maxDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(parsed["maxDepth"]!.Value<ulong>(), Is.EqualTo(0));
-        }
+
+        Assert.Equal(3, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("innerText", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("text to locate", valueProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("maxDepth"));
+        JToken? maxDepthProperty = parsed["maxDepth"];
+        Assert.NotNull(maxDepthProperty);
+        Assert.Equal(JTokenType.Integer, maxDepthProperty.Type);
+        Assert.Equal(0UL, maxDepthProperty.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInnerTextLocatorWithMaxDepthNonZero()
     {
         InnerTextLocator value = new("text to locate")
@@ -108,22 +122,28 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(3));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("innerText"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-            Assert.That(parsed, Contains.Key("maxDepth"));
-            Assert.That(parsed["maxDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(parsed["maxDepth"]!.Value<ulong>(), Is.EqualTo(10));
-        }
+
+        Assert.Equal(3, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("innerText", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("text to locate", valueProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("maxDepth"));
+        JToken? maxDepthProperty = parsed["maxDepth"];
+        Assert.NotNull(maxDepthProperty);
+        Assert.Equal(JTokenType.Integer, maxDepthProperty.Type);
+        Assert.Equal(10UL, maxDepthProperty.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInnerTextLocatorWithIgnoreCaseTrue()
     {
         InnerTextLocator value = new("text to locate")
@@ -132,22 +152,28 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(3));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("innerText"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-            Assert.That(parsed, Contains.Key("ignoreCase"));
-            Assert.That(parsed["ignoreCase"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(parsed["ignoreCase"]!.Value<bool>(), Is.True);
-        }
+
+        Assert.Equal(3, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("innerText", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("text to locate", valueProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("ignoreCase"));
+        JToken? ignoreCaseProperty = parsed["ignoreCase"];
+        Assert.NotNull(ignoreCaseProperty);
+        Assert.Equal(JTokenType.Boolean, ignoreCaseProperty.Type);
+        Assert.True(ignoreCaseProperty.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInnerTextLocatorWithIgnoreCaseFalse()
     {
         InnerTextLocator value = new("text to locate")
@@ -156,22 +182,28 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(3));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("innerText"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-            Assert.That(parsed, Contains.Key("ignoreCase"));
-            Assert.That(parsed["ignoreCase"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(parsed["ignoreCase"]!.Value<bool>(), Is.False);
-        }
+
+        Assert.Equal(3, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("innerText", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("text to locate", valueProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("ignoreCase"));
+        JToken? ignoreCaseProperty = parsed["ignoreCase"];
+        Assert.NotNull(ignoreCaseProperty);
+        Assert.Equal(JTokenType.Boolean, ignoreCaseProperty.Type);
+        Assert.False(ignoreCaseProperty.Value<bool>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInnerTextLocatorWithMatchTypeFull()
     {
         InnerTextLocator value = new("text to locate")
@@ -180,22 +212,28 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(3));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("innerText"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-            Assert.That(parsed, Contains.Key("matchType"));
-            Assert.That(parsed["matchType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["matchType"]!.Value<string>(), Is.EqualTo("full"));
-        }
+
+        Assert.Equal(3, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("innerText", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("text to locate", valueProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("matchType"));
+        JToken? matchTypeProperty = parsed["matchType"];
+        Assert.NotNull(matchTypeProperty);
+        Assert.Equal(JTokenType.String, matchTypeProperty.Type);
+        Assert.Equal("full", matchTypeProperty.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeInnerTextLocatorWithMatchTypePartial()
     {
         InnerTextLocator value = new("text to locate")
@@ -204,47 +242,56 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(3));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("innerText"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-            Assert.That(parsed, Contains.Key("matchType"));
-            Assert.That(parsed["matchType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["matchType"]!.Value<string>(), Is.EqualTo("partial"));
-        }
+
+        Assert.Equal(3, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("innerText", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.String, valueProperty.Type);
+        Assert.Equal("text to locate", valueProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("matchType"));
+        JToken? matchTypeProperty = parsed["matchType"];
+        Assert.NotNull(matchTypeProperty);
+        Assert.Equal(JTokenType.String, matchTypeProperty.Type);
+        Assert.Equal("partial", matchTypeProperty.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAccessibilityLocator()
     {
         AccessibilityLocator value = new();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(value.Name, Is.Null);
-            Assert.That(value.Role, Is.Null);
-        }
+
+        Assert.Null(value.Name);
+        Assert.Null(value.Role);
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("accessibility"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? accessibilityValue = parsed["value"] as JObject;
-            Assert.That(accessibilityValue!, Is.Empty);
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("accessibility", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.Object, valueProperty.Type);
+
+        JObject? accessibilityValue = valueProperty as JObject;
+        Assert.NotNull(accessibilityValue);
+        Assert.Empty(accessibilityValue);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAccessibilityWithNameAndRole()
     {
         AccessibilityLocator value = new()
@@ -252,99 +299,117 @@ public class LocatorTests
             Name = "accessibleName",
             Role = "accessibleRole"
         };
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(value.Name, Is.EqualTo("accessibleName"));
-            Assert.That(value.Role, Is.EqualTo("accessibleRole"));
-        }
+
+        Assert.Equal("accessibleName", value.Name);
+        Assert.Equal("accessibleRole", value.Role);
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("accessibility"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? accessibilityValue = parsed["value"] as JObject;
-            Assert.That(accessibilityValue, Is.Not.Null);
-            Assert.That(accessibilityValue!, Has.Count.EqualTo(2));
-            Assert.That(accessibilityValue, Contains.Key("name"));
-            Assert.That(accessibilityValue!["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(accessibilityValue!["name"]!.Value<string>(), Is.EqualTo("accessibleName"));
-            Assert.That(accessibilityValue, Contains.Key("role"));
-            Assert.That(accessibilityValue!["role"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(accessibilityValue!["role"]!.Value<string>(), Is.EqualTo("accessibleRole"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("accessibility", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.Object, valueProperty.Type);
+
+        JObject? accessibilityValue = valueProperty as JObject;
+        Assert.NotNull(accessibilityValue);
+        Assert.Equal(2, accessibilityValue.Count);
+
+        Assert.True(accessibilityValue.ContainsKey("name"));
+        JToken? accessibilityName = accessibilityValue["name"];
+        Assert.NotNull(accessibilityName);
+        Assert.Equal(JTokenType.String, accessibilityName.Type);
+        Assert.Equal("accessibleName", accessibilityName.Value<string>());
+
+        Assert.True(accessibilityValue.ContainsKey("role"));
+        JToken? accessibilityRole = accessibilityValue["role"];
+        Assert.NotNull(accessibilityRole);
+        Assert.Equal(JTokenType.String, accessibilityRole.Type);
+        Assert.Equal("accessibleRole", accessibilityRole.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAccessibilityWithName()
     {
         AccessibilityLocator value = new()
         {
             Name = "accessibleName"
         };
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(value.Name, Is.EqualTo("accessibleName"));
-            Assert.That(value.Role, Is.Null);
-        }
+
+        Assert.Equal("accessibleName", value.Name);
+        Assert.Null(value.Role);
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("accessibility"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? accessibilityValue = parsed["value"] as JObject;
-            Assert.That(accessibilityValue, Is.Not.Null);
-            Assert.That(accessibilityValue!, Has.Count.EqualTo(1));
-            Assert.That(accessibilityValue, Contains.Key("name"));
-            Assert.That(accessibilityValue!["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(accessibilityValue!["name"]!.Value<string>(), Is.EqualTo("accessibleName"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("accessibility", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.Object, valueProperty.Type);
+
+        JObject? accessibilityValue = valueProperty as JObject;
+        Assert.NotNull(accessibilityValue);
+        Assert.Single(accessibilityValue);
+
+        Assert.True(accessibilityValue.ContainsKey("name"));
+        JToken? accessibilityName = accessibilityValue["name"];
+        Assert.NotNull(accessibilityName);
+        Assert.Equal(JTokenType.String, accessibilityName.Type);
+        Assert.Equal("accessibleName", accessibilityName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAccessibilityWithRole()
     {
         AccessibilityLocator value = new()
         {
             Role = "accessibleRole"
         };
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(value.Name, Is.Null);
-            Assert.That(value.Role, Is.EqualTo("accessibleRole"));
-        }
+
+        Assert.Null(value.Name);
+        Assert.Equal("accessibleRole", value.Role);
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("accessibility"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? accessibilityValue = parsed["value"] as JObject;
-            Assert.That(accessibilityValue, Is.Not.Null);
-            Assert.That(accessibilityValue!, Has.Count.EqualTo(1));
-            Assert.That(accessibilityValue, Contains.Key("role"));
-            Assert.That(accessibilityValue!["role"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(accessibilityValue!["role"]!.Value<string>(), Is.EqualTo("accessibleRole"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("accessibility", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.Object, valueProperty.Type);
+
+        JObject? accessibilityValue = valueProperty as JObject;
+        Assert.NotNull(accessibilityValue);
+        Assert.Single(accessibilityValue);
+
+        Assert.True(accessibilityValue.ContainsKey("role"));
+        JToken? accessibilityRole = accessibilityValue["role"];
+        Assert.NotNull(accessibilityRole);
+        Assert.Equal(JTokenType.String, accessibilityRole.Type);
+        Assert.Equal("accessibleRole", accessibilityRole.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAccessibilityWithRemovingName()
     {
         AccessibilityLocator value = new()
@@ -355,24 +420,31 @@ public class LocatorTests
         value.Name = null;
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("accessibility"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? accessibilityValue = parsed["value"] as JObject;
-            Assert.That(accessibilityValue, Is.Not.Null);
-            Assert.That(accessibilityValue!, Has.Count.EqualTo(1));
-            Assert.That(accessibilityValue, Contains.Key("role"));
-            Assert.That(accessibilityValue!["role"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(accessibilityValue!["role"]!.Value<string>(), Is.EqualTo("accessibleRole"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("accessibility", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.Object, valueProperty.Type);
+
+        JObject? accessibilityValue = valueProperty as JObject;
+        Assert.NotNull(accessibilityValue);
+        Assert.Single(accessibilityValue);
+
+        Assert.True(accessibilityValue.ContainsKey("role"));
+        JToken? accessibilityRole = accessibilityValue["role"];
+        Assert.NotNull(accessibilityRole);
+        Assert.Equal(JTokenType.String, accessibilityRole.Type);
+        Assert.Equal("accessibleRole", accessibilityRole.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAccessibilityWithRemovingRole()
     {
         AccessibilityLocator value = new()
@@ -383,24 +455,31 @@ public class LocatorTests
         value.Role = null;
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("accessibility"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? accessibilityValue = parsed["value"] as JObject;
-            Assert.That(accessibilityValue, Is.Not.Null);
-            Assert.That(accessibilityValue!, Has.Count.EqualTo(1));
-            Assert.That(accessibilityValue, Contains.Key("name"));
-            Assert.That(accessibilityValue!["name"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(accessibilityValue!["name"]!.Value<string>(), Is.EqualTo("accessibleName"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("accessibility", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.Object, valueProperty.Type);
+
+        JObject? accessibilityValue = valueProperty as JObject;
+        Assert.NotNull(accessibilityValue);
+        Assert.Single(accessibilityValue);
+
+        Assert.True(accessibilityValue.ContainsKey("name"));
+        JToken? accessibilityName = accessibilityValue["name"];
+        Assert.NotNull(accessibilityName);
+        Assert.Equal(JTokenType.String, accessibilityName.Type);
+        Assert.Equal("accessibleName", accessibilityName.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeAccessibilityWithRemovingNameAndRole()
     {
         AccessibilityLocator value = new()
@@ -412,41 +491,52 @@ public class LocatorTests
         value.Role = null;
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("accessibility"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? accessibilityValue = parsed["value"] as JObject;
-            Assert.That(accessibilityValue, Is.Empty);
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("accessibility", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+        Assert.Equal(JTokenType.Object, valueProperty.Type);
+
+        JObject? accessibilityValue = valueProperty as JObject;
+        Assert.NotNull(accessibilityValue);
+        Assert.Empty(accessibilityValue);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeContextLocator()
     {
         ContextLocator value = new("myContext");
-        Assert.That(value.BrowsingContextId, Is.EqualTo("myContext"));
+        Assert.Equal("myContext", value.BrowsingContextId);
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("context"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? contextValue = parsed["value"] as JObject;
-            Assert.That(contextValue, Is.Not.Null);
-            Assert.That(contextValue, Has.Count.EqualTo(1));
-            Assert.That(contextValue, Contains.Key("context"));
-            Assert.That(contextValue!["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextValue!["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? typeProperty = parsed["type"];
+        Assert.NotNull(typeProperty);
+        Assert.Equal(JTokenType.String, typeProperty.Type);
+        Assert.Equal("context", typeProperty.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueProperty = parsed["value"];
+        Assert.NotNull(valueProperty);
+
+        JObject? contextValue = valueProperty as JObject;
+        Assert.NotNull(contextValue);
+        Assert.Single(contextValue);
+        Assert.True(contextValue.ContainsKey("context"));
+
+        JToken? context = contextValue["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
     }
 }

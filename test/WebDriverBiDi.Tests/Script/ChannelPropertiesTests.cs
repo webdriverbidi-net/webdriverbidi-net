@@ -3,24 +3,23 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ChannelPropertiesTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeChannelProperties()
     {
         ChannelProperties properties = new("myChannel");
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(1));
-            Assert.That(parsed, Contains.Key("channel"));
-            Assert.That(parsed["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-        }
+
+        Assert.Single(parsed);
+        Assert.True(parsed.ContainsKey("channel"));
+        JToken? channel = parsed["channel"];
+        Assert.NotNull(channel);
+        Assert.Equal("myChannel", channel.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeChannelPropertiesWithOptionalOwnership()
     {
         ChannelProperties properties = new("myChannel")
@@ -29,19 +28,22 @@ public class ChannelPropertiesTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("channel"));
-            Assert.That(parsed["channel"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-            Assert.That(parsed, Contains.Key("ownership"));
-            Assert.That(parsed["ownership"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["ownership"]!.Value<string>(), Is.EqualTo("root"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("channel"));
+        JToken? channel = parsed["channel"];
+        Assert.NotNull(channel);
+        Assert.Equal(JTokenType.String, channel.Type);
+        Assert.Equal("myChannel", channel.Value<string>());
+
+        Assert.True(parsed.ContainsKey("ownership"));
+        JToken? ownership = parsed["ownership"];
+        Assert.NotNull(ownership);
+        Assert.Equal(JTokenType.String, ownership.Type);
+        Assert.Equal("root", ownership.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeChannelPropertiesWithOptionalSerializationOptions()
     {
         // Note that SerializationOptions serialization is tested elsewhere.
@@ -51,15 +53,20 @@ public class ChannelPropertiesTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("channel"));
-            Assert.That(parsed["channel"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-            Assert.That(parsed, Contains.Key("serializationOptions"));
-            Assert.That(parsed["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(parsed["serializationOptions"]!.Value<JObject>(), Is.Empty);
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("channel"));
+        JToken? channel = parsed["channel"];
+        Assert.NotNull(channel);
+        Assert.Equal(JTokenType.String, channel.Type);
+        Assert.Equal("myChannel", channel.Value<string>());
+
+        Assert.True(parsed.ContainsKey("serializationOptions"));
+        JToken? serializationOptionsToken = parsed["serializationOptions"];
+        Assert.NotNull(serializationOptionsToken);
+        Assert.Equal(JTokenType.Object, serializationOptionsToken.Type);
+        JObject? serializationOptions = serializationOptionsToken.Value<JObject>();
+        Assert.NotNull(serializationOptions);
+        Assert.Empty(serializationOptions);
     }
 }

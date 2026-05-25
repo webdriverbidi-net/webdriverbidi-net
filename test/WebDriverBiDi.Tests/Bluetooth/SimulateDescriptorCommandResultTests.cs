@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SimulateDescriptorCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SimulateDescriptorCommandResult? result = JsonSerializer.Deserialize<SimulateDescriptorCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SimulateDescriptorCommandResult? result = JsonSerializer.Deserialize<SimulateDescriptorCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SimulateDescriptorCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

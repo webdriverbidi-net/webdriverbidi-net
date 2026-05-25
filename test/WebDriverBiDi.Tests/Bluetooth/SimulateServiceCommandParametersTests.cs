@@ -3,61 +3,78 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SimulateServiceCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SimulateServiceCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", SimulateServiceType.Add);
-        Assert.That(properties.MethodName, Is.EqualTo("bluetooth.simulateService"));
+        Assert.Equal("bluetooth.simulateService", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForAddingService()
     {
         SimulateServiceCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", SimulateServiceType.Add);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-            Assert.That(serialized, Contains.Key("uuid"));
-            Assert.That(serialized["uuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["uuid"]!.Value<string>(), Is.EqualTo("myServiceUuid"));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("add"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("myAddress", address.Value<string>());
+
+        Assert.True(serialized.ContainsKey("uuid"));
+        JToken? uuid = serialized["uuid"];
+        Assert.NotNull(uuid);
+        Assert.Equal(JTokenType.String, uuid.Type);
+        Assert.Equal("myServiceUuid", uuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("add", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersForRemovingService()
     {
         SimulateServiceCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", SimulateServiceType.Remove);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("address"));
-            Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-            Assert.That(serialized, Contains.Key("uuid"));
-            Assert.That(serialized["uuid"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["uuid"]!.Value<string>(), Is.EqualTo("myServiceUuid"));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("remove"));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("address"));
+        JToken? address = serialized["address"];
+        Assert.NotNull(address);
+        Assert.Equal(JTokenType.String, address.Type);
+        Assert.Equal("myAddress", address.Value<string>());
+
+        Assert.True(serialized.ContainsKey("uuid"));
+        JToken? uuid = serialized["uuid"];
+        Assert.NotNull(uuid);
+        Assert.Equal(JTokenType.String, uuid.Type);
+        Assert.Equal("myServiceUuid", uuid.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("remove", type.Value<string>());
     }
 }

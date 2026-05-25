@@ -3,10 +3,9 @@ namespace WebDriverBiDi;
 using System.Text.Json;
 using WebDriverBiDi.Protocol;
 
-[TestFixture]
 public class ErrorResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateErrorResult()
     {
         // ErrorResult constructor is internal, so we will create it by
@@ -22,20 +21,18 @@ public class ErrorResultTests
                       }
                       """;
         ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(messageResult, Is.Not.Null);
+        Assert.NotNull(messageResult);
         ErrorResult result = messageResult.GetErrorResponseData();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsError, Is.True);
-            Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
-            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
-            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
-            Assert.That(result.AdditionalData, Is.Empty);
-            Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
-        }
+
+        Assert.True(result.IsError);
+        Assert.Equal("unknown error", result.ErrorType);
+        Assert.Equal(ErrorCode.UnknownError, result.ErrorCode);
+        Assert.Equal("This is a test error message", result.ErrorMessage);
+        Assert.Empty(result.AdditionalData);
+        Assert.Equal("full stack trace", result.StackTrace);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         // ErrorResult constructor is internal, so we will create it by
@@ -51,9 +48,9 @@ public class ErrorResultTests
                       }
                       """;
         ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
-        Assert.That(messageResult, Is.Not.Null);
+        Assert.NotNull(messageResult);
         ErrorResult result = messageResult.GetErrorResponseData();
         ErrorResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Speculation;
 
 using System.Text.Json;
 
-[TestFixture]
 public class PrefetchStatusUpdatedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithPendingStatus()
     {
         string json = """
@@ -16,16 +15,14 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
-            Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Pending));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("https://example.com/index.html", eventArgs.Url);
+        Assert.Equal(PreloadingStatus.Pending, eventArgs.Status);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithReadyStatus()
     {
         string json = """
@@ -36,16 +33,14 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
-            Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Ready));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("https://example.com/index.html", eventArgs.Url);
+        Assert.Equal(PreloadingStatus.Ready, eventArgs.Status);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithSuccessStatus()
     {
         string json = """
@@ -56,16 +51,14 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
-            Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Success));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("https://example.com/index.html", eventArgs.Url);
+        Assert.Equal(PreloadingStatus.Success, eventArgs.Status);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithFailureStatus()
     {
         string json = """
@@ -76,16 +69,14 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
-            Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Failure));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("https://example.com/index.html", eventArgs.Url);
+        Assert.Equal(PreloadingStatus.Failure, eventArgs.Status);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -96,12 +87,12 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         PrefetchStatusUpdatedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = """
@@ -110,10 +101,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": "pending"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = """
@@ -123,10 +114,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": "pending"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = """
@@ -135,10 +126,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": "pending"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidUrlTypeThrows()
     {
         string json = """
@@ -148,10 +139,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": "pending"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingStatusThrows()
     {
         string json = """
@@ -160,10 +151,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "url": "https://example.com/index.html"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidStatusTypeThrows()
     {
         string json = """
@@ -173,10 +164,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidStatusValueThrows()
     {
         string json = """
@@ -186,6 +177,6 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json));
     }
 }

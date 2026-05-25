@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ResponseContentTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeResponseContent()
     {
         string json = """
@@ -14,14 +13,12 @@ public class ResponseContentTests
                       }
                       """;
         ResponseContent? responseContent = JsonSerializer.Deserialize<ResponseContent>(json);
-        Assert.That(responseContent, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(responseContent.Size, Is.EqualTo(300));
-        }
+        Assert.NotNull(responseContent);
+
+        Assert.Equal(300u, responseContent.Size);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -30,15 +27,15 @@ public class ResponseContentTests
                       }
                       """;
         ResponseContent? responseContent = JsonSerializer.Deserialize<ResponseContent>(json);
-        Assert.That(responseContent, Is.Not.Null);
+        Assert.NotNull(responseContent);
         ResponseContent copy = responseContent with { };
-        Assert.That(copy, Is.EqualTo(responseContent));
+        Assert.Equal(responseContent, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingSizeThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<ResponseContent>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'size"));
+        Assert.Contains("missing required properties including: 'size", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseContent>(json)).Message);
     }
 }

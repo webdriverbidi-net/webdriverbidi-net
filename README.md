@@ -107,7 +107,7 @@ The project uses System.Text.Json for JSON serialization/deserialization in the 
 uses [Json.NET](https://www.newtonsoft.com/json) for some unit tests. It is believed that there is some
 value in testing serialization by deserializing with a different JSON serialization engine.
 
-The project uses [NUnit](https://nunit.org/) for its unit tests.
+The project uses [xUnit.net](https://xunit.net/) for its unit tests.
 
 For testing of browsing web pages and WebSocket traffic, this project uses the
 [PinchHitter](https://github.com/jimevans/PinchHitter) test server library.

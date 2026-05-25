@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class DateRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeDateRemoteValue()
     {
         DateTime expectedDate = new(2020, 7, 19, 23, 47, 19, 856, DateTimeKind.Utc);
@@ -18,12 +17,12 @@ public class DateRemoteValueTests
 
         DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Date));
-        Assert.That(result.Value, Is.EqualTo(expectedDate));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Date, result.Type);
+        Assert.Equal(expectedDate, result.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         DateTime expectedDate = new(2020, 7, 19, 23, 47, 19, 856, DateTimeKind.Utc);
@@ -36,15 +35,15 @@ public class DateRemoteValueTests
 
         DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("date"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<DateTime>());
-        Assert.That(argumentLocalValue.Value, Is.EqualTo(expectedDate));
+        Assert.Equal("date", argumentLocalValue.Type);
+        Assert.IsType<DateTime>(argumentLocalValue.Value);
+        Assert.Equal(expectedDate, argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToRemoteObjectReference()
     {
         string json = """
@@ -58,13 +57,13 @@ public class DateRemoteValueTests
 
         DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RemoteObjectReference remoteObjectReference = result.ToRemoteObjectReference();
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanUseImplicitConversionToDateTime()
     {
         DateTime expectedDate = new(2020, 7, 19, 23, 47, 19, 856, DateTimeKind.Utc);
@@ -77,12 +76,12 @@ public class DateRemoteValueTests
 
         DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         DateTime dateTimeValue = result;
-        Assert.That(dateTimeValue, Is.EqualTo(expectedDate));
+        Assert.Equal(expectedDate, dateTimeValue);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDateRemoteValueWithMissingValueThrows()
     {
         string json = """
@@ -91,10 +90,10 @@ public class DateRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<DateRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DateRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDateRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -104,10 +103,10 @@ public class DateRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<DateRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DateRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDateRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -117,10 +116,10 @@ public class DateRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<DateRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DateRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidHandleTypeThrows()
     {
         string json = """
@@ -132,10 +131,10 @@ public class DateRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidInternalIdTypeThrows()
     {
         string json = """
@@ -147,10 +146,10 @@ public class DateRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToRemoteObjectReferenceWithoutHandleThrows()
     {
         string json = """
@@ -162,11 +161,11 @@ public class DateRemoteValueTests
 
         DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToRemoteObjectReference());
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -177,9 +176,9 @@ public class DateRemoteValueTests
                       """;
 
         DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         DateRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

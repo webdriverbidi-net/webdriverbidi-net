@@ -2,10 +2,9 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class PrintCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,11 +13,11 @@ public class PrintCommandResultTests
                       }
                       """;
         PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Data, Is.EqualTo("some print data"));
+        Assert.NotNull(result);
+        Assert.Equal("some print data", result.Data);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,19 +26,19 @@ public class PrintCommandResultTests
                       }
                       """;
         PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         PrintCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<PrintCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrintCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = """
@@ -47,6 +46,6 @@ public class PrintCommandResultTests
                         "data": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrintCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrintCommandResult>(json));
     }
 }

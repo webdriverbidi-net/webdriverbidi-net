@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class NullRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeNullRemoteValue()
     {
         string json = """
@@ -16,11 +15,11 @@ public class NullRemoteValueTests
 
         NullRemoteValue? result = JsonSerializer.Deserialize<NullRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Null));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Null, result.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -31,14 +30,14 @@ public class NullRemoteValueTests
 
         NullRemoteValue? result = JsonSerializer.Deserialize<NullRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("null"));
-        Assert.That(argumentLocalValue.Value, Is.Null);
+        Assert.Equal("null", argumentLocalValue.Type);
+        Assert.Null(argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingStringRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -47,10 +46,10 @@ public class NullRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<NullRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NullRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -60,9 +59,9 @@ public class NullRemoteValueTests
                       """;
 
         NullRemoteValue? result = JsonSerializer.Deserialize<NullRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         NullRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class InitiatorTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeInitiator()
     {
         string json = """
@@ -13,18 +12,16 @@ public class InitiatorTests
                       }
                       """;
         Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json);
-        Assert.That(initiator, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(initiator.Type, Is.Null);
-            Assert.That(initiator.ColumnNumber, Is.Null);
-            Assert.That(initiator.LineNumber, Is.Null);
-            Assert.That(initiator.StackTrace, Is.Null);
-            Assert.That(initiator.RequestId, Is.Null);
-        }
+        Assert.NotNull(initiator);
+
+        Assert.Null(initiator.Type);
+        Assert.Null(initiator.ColumnNumber);
+        Assert.Null(initiator.LineNumber);
+        Assert.Null(initiator.StackTrace);
+        Assert.Null(initiator.RequestId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeInitiatorWithOptionalValues()
     {
         string json = """
@@ -46,19 +43,17 @@ public class InitiatorTests
                       }
                       """;
         Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json);
-        Assert.That(initiator, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(initiator.Type, Is.EqualTo(InitiatorType.Script));
-            Assert.That(initiator.ColumnNumber, Is.EqualTo(1));
-            Assert.That(initiator.LineNumber, Is.EqualTo(2));
-            Assert.That(initiator.StackTrace, Is.Not.Null);
-            Assert.That(initiator.StackTrace!.CallFrames, Has.Count.EqualTo(1));
-            Assert.That(initiator.RequestId, Is.EqualTo("myRequestId"));
-        }
+        Assert.NotNull(initiator);
+
+        Assert.Equal(InitiatorType.Script, initiator.Type);
+        Assert.Equal(1u, initiator.ColumnNumber);
+        Assert.Equal(2u, initiator.LineNumber);
+        Assert.NotNull(initiator.StackTrace);
+        Assert.Single(initiator.StackTrace.CallFrames);
+        Assert.Equal("myRequestId", initiator.RequestId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -66,12 +61,12 @@ public class InitiatorTests
                       }
                       """;
         Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json);
-        Assert.That(initiator, Is.Not.Null);
+        Assert.NotNull(initiator);
         Initiator copy = initiator with { };
-        Assert.That(copy, Is.EqualTo(initiator));
+        Assert.Equal(initiator, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInitiatorWithInvalidTypeValueThrows()
     {
         string json = """
@@ -79,6 +74,6 @@ public class InitiatorTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Initiator>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.Contains("value 'invalid' is not valid for enum type", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Initiator>(json)).Message);
     }
 }

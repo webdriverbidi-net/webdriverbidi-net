@@ -3,31 +3,30 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetDownloadBehaviorCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetDownloadBehaviorCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("browser.setDownloadBehavior"));
+        Assert.Equal("browser.setDownloadBehavior", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetDownloadBehaviorCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("downloadBehavior"));
-            Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Null));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("downloadBehavior"));
+        JToken? downloadBehavior = serialized["downloadBehavior"];
+        Assert.NotNull(downloadBehavior);
+        Assert.Equal(JTokenType.Null, downloadBehavior.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithContexts()
     {
         SetDownloadBehaviorCommandParameters properties = new()
@@ -36,22 +35,26 @@ public class SetDownloadBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("downloadBehavior"));
-            Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["userContexts"] as JArray;
-            Assert.That(contextsArray, Is.Not.Null);
-            Assert.That(contextsArray, Has.Count.EqualTo(1));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("myUserContext"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("downloadBehavior"));
+        JToken? downloadBehavior = serialized["downloadBehavior"];
+        Assert.NotNull(downloadBehavior);
+        Assert.Equal(JTokenType.Null, downloadBehavior.Type);
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContexts = serialized["userContexts"];
+        Assert.NotNull(userContexts);
+        Assert.Equal(JTokenType.Array, userContexts.Type);
+        JArray? contextsArray = serialized["userContexts"] as JArray;
+
+        Assert.NotNull(contextsArray);
+        Assert.Single(contextsArray);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("myUserContext", contextsArray[0].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAllowingDownloads()
     {
         SetDownloadBehaviorCommandParameters properties = new()
@@ -60,23 +63,31 @@ public class SetDownloadBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("downloadBehavior"));
-            Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
-            Assert.That(behaviorObject, Has.Count.EqualTo(2));
-            Assert.That(behaviorObject, Contains.Key("type"));
-            Assert.That(behaviorObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(behaviorObject!["type"]!.Value<string>, Is.EqualTo("allowed"));
-            Assert.That(behaviorObject, Contains.Key("destinationFolder"));
-            Assert.That(behaviorObject!["destinationFolder"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(behaviorObject!["destinationFolder"]!.Value<string>, Is.EqualTo("my/destination/folder"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("downloadBehavior"));
+        JToken? downloadBehavior = serialized["downloadBehavior"];
+        Assert.NotNull(downloadBehavior);
+        Assert.Equal(JTokenType.Object, downloadBehavior.Type);
+
+        JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
+        Assert.NotNull(behaviorObject);
+        Assert.Equal(2, behaviorObject.Count);
+
+        Assert.True(behaviorObject.ContainsKey("type"));
+        JToken? type = behaviorObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("allowed", type.Value<string>());
+
+        Assert.True(behaviorObject.ContainsKey("destinationFolder"));
+        JToken? destinationFolder = behaviorObject["destinationFolder"];
+        Assert.NotNull(destinationFolder);
+        Assert.Equal(JTokenType.String, destinationFolder.Type);
+        Assert.Equal("my/destination/folder", destinationFolder.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAllowingDownloadsWithUserContexts()
     {
         SetDownloadBehaviorCommandParameters properties = new()
@@ -86,30 +97,42 @@ public class SetDownloadBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("downloadBehavior"));
-            Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
-            Assert.That(behaviorObject, Has.Count.EqualTo(2));
-            Assert.That(behaviorObject, Contains.Key("type"));
-            Assert.That(behaviorObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(behaviorObject!["type"]!.Value<string>, Is.EqualTo("allowed"));
-            Assert.That(behaviorObject, Contains.Key("destinationFolder"));
-            Assert.That(behaviorObject!["destinationFolder"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(behaviorObject!["destinationFolder"]!.Value<string>, Is.EqualTo("my/destination/folder"));
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["userContexts"] as JArray;
-            Assert.That(contextsArray, Is.Not.Null);
-            Assert.That(contextsArray, Has.Count.EqualTo(1));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("myUserContext"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("downloadBehavior"));
+        JToken? downloadBehavior = serialized["downloadBehavior"];
+        Assert.NotNull(downloadBehavior);
+        Assert.Equal(JTokenType.Object, downloadBehavior.Type);
+
+        JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
+        Assert.NotNull(behaviorObject);
+        Assert.Equal(2, behaviorObject.Count);
+
+        Assert.True(behaviorObject.ContainsKey("type"));
+        JToken? type = behaviorObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("allowed", type.Value<string>());
+
+        Assert.True(behaviorObject.ContainsKey("destinationFolder"));
+        JToken? destinationFolder = behaviorObject["destinationFolder"];
+        Assert.NotNull(destinationFolder);
+        Assert.Equal(JTokenType.String, destinationFolder.Type);
+        Assert.Equal("my/destination/folder", destinationFolder.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContexts = serialized["userContexts"];
+        Assert.NotNull(userContexts);
+        Assert.Equal(JTokenType.Array, userContexts.Type);
+
+        JArray? contextsArray = userContexts as JArray;
+        Assert.NotNull(contextsArray);
+        Assert.Single(contextsArray);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("myUserContext", contextsArray[0].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDenyingDownloads()
     {
         SetDownloadBehaviorCommandParameters properties = new()
@@ -118,20 +141,25 @@ public class SetDownloadBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("downloadBehavior"));
-            Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
-            Assert.That(behaviorObject, Has.Count.EqualTo(1));
-            Assert.That(behaviorObject, Contains.Key("type"));
-            Assert.That(behaviorObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(behaviorObject!["type"]!.Value<string>, Is.EqualTo("denied"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("downloadBehavior"));
+        JToken? downloadBehavior = serialized["downloadBehavior"];
+        Assert.NotNull(downloadBehavior);
+        Assert.Equal(JTokenType.Object, downloadBehavior.Type);
+
+        JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
+        Assert.NotNull(behaviorObject);
+        Assert.Single(behaviorObject);
+
+        Assert.True(behaviorObject.ContainsKey("type"));
+        JToken? type = behaviorObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("denied", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDenyingDownloadsWithUserContexts()
     {
         SetDownloadBehaviorCommandParameters properties = new()
@@ -141,43 +169,50 @@ public class SetDownloadBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("downloadBehavior"));
-            Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
-            Assert.That(behaviorObject, Has.Count.EqualTo(1));
-            Assert.That(behaviorObject, Contains.Key("type"));
-            Assert.That(behaviorObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(behaviorObject!["type"]!.Value<string>, Is.EqualTo("denied"));
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["userContexts"] as JArray;
-            Assert.That(contextsArray, Is.Not.Null);
-            Assert.That(contextsArray, Has.Count.EqualTo(1));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("myUserContext"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("downloadBehavior"));
+        JToken? downloadBehavior = serialized["downloadBehavior"];
+        Assert.NotNull(downloadBehavior);
+        Assert.Equal(JTokenType.Object, downloadBehavior.Type);
+
+        JObject? behaviorObject = serialized["downloadBehavior"] as JObject;
+        Assert.NotNull(behaviorObject);
+        Assert.Single(behaviorObject);
+
+        Assert.True(behaviorObject.ContainsKey("type"));
+        JToken? type = behaviorObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("denied", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContexts = serialized["userContexts"];
+        Assert.NotNull(userContexts);
+        Assert.Equal(JTokenType.Array, userContexts.Type);
+
+        JArray? contextsArray = userContexts as JArray;
+        Assert.NotNull(contextsArray);
+        Assert.Single(contextsArray);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("myUserContext", contextsArray[0].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetResetParameters()
     {
         SetDownloadBehaviorCommandParameters properties = SetDownloadBehaviorCommandParameters.ResetDownloadBehavior;
-        Assert.That(properties, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.DownloadBehavior, Is.Null);
-            Assert.That(properties.UserContexts, Is.Null);
-        }
+        Assert.NotNull(properties);
+
+        Assert.Null(properties.DownloadBehavior);
+        Assert.Null(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
         SetDownloadBehaviorCommandParameters firstInstance = SetDownloadBehaviorCommandParameters.ResetDownloadBehavior;
         SetDownloadBehaviorCommandParameters secondInstance = SetDownloadBehaviorCommandParameters.ResetDownloadBehavior;
-        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+        Assert.NotSame(secondInstance, firstInstance);
     }
 }

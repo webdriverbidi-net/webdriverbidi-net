@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class WindowProxyPropertiesTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,10 +13,10 @@ public class WindowProxyPropertiesTests
                       }
                       """;
         WindowProxyProperties windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
-        Assert.That(windowProxyProperties.Context, Is.EqualTo("myContextId"));
+        Assert.Equal("myContextId", windowProxyProperties.Context);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,10 +26,10 @@ public class WindowProxyPropertiesTests
                       """;
         WindowProxyProperties windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
         WindowProxyProperties copy = windowProxyProperties;
-        Assert.That(copy, Is.EqualTo(windowProxyProperties));
+        Assert.Equal(windowProxyProperties, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidContextTypeThrows()
     {
         string json = """
@@ -38,10 +37,10 @@ public class WindowProxyPropertiesTests
                         "context": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<WindowProxyProperties>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingContextThrows()
     {
         string json = """
@@ -49,6 +48,6 @@ public class WindowProxyPropertiesTests
                         "nodeType": 1
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<WindowProxyProperties>(json));
     }
 }

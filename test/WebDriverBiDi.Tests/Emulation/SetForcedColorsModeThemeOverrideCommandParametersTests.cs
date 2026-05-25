@@ -3,32 +3,31 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetForcedColorsModeThemeOverrideCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetForcedColorsModeThemeOverrideCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("emulation.setForcedColorsModeThemeOverride"));
+        Assert.Equal("emulation.setForcedColorsModeThemeOverride", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetForcedColorsModeThemeOverrideCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("theme"));
-            Assert.That(serialized["theme"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["theme"]!.Value<JObject?>, Is.Null);
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("theme"));
+        JToken? theme = serialized["theme"];
+        Assert.NotNull(theme);
+        Assert.Equal(JTokenType.Null, theme.Type);
+        Assert.Null(theme.Value<JObject?>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNoneMode()
     {
         SetForcedColorsModeThemeOverrideCommandParameters properties = new()
@@ -37,16 +36,16 @@ public class SetForcedColorsModeThemeOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("theme"));
-            Assert.That(serialized["theme"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["theme"]!.Value<string>(), Is.EqualTo("none"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("theme"));
+        JToken? theme = serialized["theme"];
+        Assert.NotNull(theme);
+        Assert.Equal(JTokenType.String, theme.Type);
+        Assert.Equal("none", theme.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithLightMode()
     {
         SetForcedColorsModeThemeOverrideCommandParameters properties = new()
@@ -55,16 +54,16 @@ public class SetForcedColorsModeThemeOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("theme"));
-            Assert.That(serialized["theme"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["theme"]!.Value<string>(), Is.EqualTo("light"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("theme"));
+        JToken? theme = serialized["theme"];
+        Assert.NotNull(theme);
+        Assert.Equal(JTokenType.String, theme.Type);
+        Assert.Equal("light", theme.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDarkMode()
     {
         SetForcedColorsModeThemeOverrideCommandParameters properties = new()
@@ -73,33 +72,31 @@ public class SetForcedColorsModeThemeOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("theme"));
-            Assert.That(serialized["theme"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["theme"]!.Value<string>(), Is.EqualTo("dark"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("theme"));
+        JToken? theme = serialized["theme"];
+        Assert.NotNull(theme);
+        Assert.Equal(JTokenType.String, theme.Type);
+        Assert.Equal("dark", theme.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetResetParameters()
     {
         SetForcedColorsModeThemeOverrideCommandParameters properties = SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
-        Assert.That(properties, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.Theme, Is.Null);
-            Assert.That(properties.Contexts, Is.Null);
-            Assert.That(properties.UserContexts, Is.Null);
-        }
+        Assert.NotNull(properties);
+
+        Assert.Null(properties.Theme);
+        Assert.Null(properties.Contexts);
+        Assert.Null(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
         SetForcedColorsModeThemeOverrideCommandParameters firstInstance = SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
         SetForcedColorsModeThemeOverrideCommandParameters secondInstance = SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
-        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+        Assert.NotSame(secondInstance, firstInstance);
     }
 }

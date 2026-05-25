@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class StackFrameTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -17,17 +16,15 @@ public class StackFrameTests
                       }
                       """;
         StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json);
-        Assert.That(stackFrame, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(stackFrame.FunctionName, Is.EqualTo("myFunction"));
-            Assert.That(stackFrame.LineNumber, Is.EqualTo(1));
-            Assert.That(stackFrame.ColumnNumber, Is.EqualTo(5));
-            Assert.That(stackFrame.Url, Is.EqualTo("http://some.url/file.js"));
-        }
+        Assert.NotNull(stackFrame);
+
+        Assert.Equal("myFunction", stackFrame.FunctionName);
+        Assert.Equal(1, stackFrame.LineNumber);
+        Assert.Equal(5, stackFrame.ColumnNumber);
+        Assert.Equal("http://some.url/file.js", stackFrame.Url);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -39,12 +36,12 @@ public class StackFrameTests
                       }
                       """;
         StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json);
-        Assert.That(stackFrame, Is.Not.Null);
+        Assert.NotNull(stackFrame);
         StackFrame copy = stackFrame with { };
-        Assert.That(copy, Is.EqualTo(stackFrame));
+        Assert.Equal(stackFrame, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingFunctionNameThrows()
     {
         string json = """
@@ -54,10 +51,10 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidFunctionNameTypeThrows()
     {
         string json = """
@@ -68,10 +65,10 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingLineNumberThrows()
     {
         string json = """
@@ -81,10 +78,10 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidLineNumberTypeThrows()
     {
         string json = """
@@ -95,10 +92,10 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingColumnNumberThrows()
     {
         string json = """
@@ -108,10 +105,10 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidColumnNumberTypeThrows()
     {
         string json = """
@@ -122,10 +119,10 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingUrlThrows()
     {
         string json = """
@@ -135,10 +132,10 @@ public class StackFrameTests
                         "columnNumber": 5
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidUrlTypeThrows()
     {
         string json = """
@@ -149,6 +146,6 @@ public class StackFrameTests
                         "url": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackFrame>(json));
     }
 }

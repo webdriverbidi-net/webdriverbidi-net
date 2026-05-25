@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SetTimeZoneOverrideCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SetTimeZoneOverrideCommandResult? result = JsonSerializer.Deserialize<SetTimeZoneOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SetTimeZoneOverrideCommandResult? result = JsonSerializer.Deserialize<SetTimeZoneOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SetTimeZoneOverrideCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

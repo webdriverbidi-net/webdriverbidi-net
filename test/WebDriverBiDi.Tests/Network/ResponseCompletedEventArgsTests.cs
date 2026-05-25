@@ -2,7 +2,6 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class ResponseCompletedEventArgsTests
 {
     private readonly string requestDataJson = """
@@ -34,7 +33,7 @@ public class ResponseCompletedEventArgsTests
                                               }
                                               """;
 
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow;
@@ -76,25 +75,23 @@ public class ResponseCompletedEventArgsTests
                            }
                            """;
         ResponseCompletedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
+        Assert.NotNull(eventArgs);
 
-            // Note that proper RequestData deserialization is tested elsewhere.
-            // Also proper ResponseData deserialization is tested elsewhere.
-            Assert.That(eventArgs.Request, Is.Not.Null);
-            Assert.That(eventArgs.IsBlocked, Is.False);
-            Assert.That(eventArgs.Intercepts, Is.Null);
-            Assert.That(eventArgs.Response, Is.Not.Null);
-        }
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myNavigationId", eventArgs.NavigationId);
+        Assert.Equal(milliseconds, eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(milliseconds), eventArgs.Timestamp);
+        Assert.Equal(0u, eventArgs.RedirectCount);
+
+        // Note that proper RequestData deserialization is tested elsewhere.
+        // Also proper ResponseData deserialization is tested elsewhere.
+        Assert.NotNull(eventArgs.Request);
+        Assert.False(eventArgs.IsBlocked);
+        Assert.Null(eventArgs.Intercepts);
+        Assert.NotNull(eventArgs.Response);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow;
@@ -136,12 +133,12 @@ public class ResponseCompletedEventArgsTests
                            }
                            """;
         ResponseCompletedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         ResponseCompletedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingResponseThrows()
     {
         DateTime now = DateTime.UtcNow;
@@ -157,6 +154,6 @@ public class ResponseCompletedEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson));
     }
 }

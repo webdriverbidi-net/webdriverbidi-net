@@ -3,32 +3,31 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetNetworkConditionsCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetNetworkConditionsCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("emulation.setNetworkConditions"));
+        Assert.Equal("emulation.setNetworkConditions", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetNetworkConditionsCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("networkConditions"));
-            Assert.That(serialized["networkConditions"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["networkConditions"]!.Value<JObject?>, Is.Null);
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("networkConditions"));
+        JToken? networkConditions = serialized["networkConditions"];
+        Assert.NotNull(networkConditions);
+        Assert.Equal(JTokenType.Null, networkConditions.Type);
+        Assert.Null(networkConditions.Value<JObject?>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOffline()
     {
         SetNetworkConditionsCommandParameters properties = new()
@@ -37,20 +36,24 @@ public class SetNetworkConditionsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("networkConditions"));
-            Assert.That(serialized["networkConditions"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? conditionsObject = serialized["networkConditions"] as JObject;
-            Assert.That(conditionsObject, Has.Count.EqualTo(1));
-            Assert.That(conditionsObject, Contains.Key("type"));
-            Assert.That(conditionsObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(conditionsObject!["type"]!.Value<string>(), Is.EqualTo("offline"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("networkConditions"));
+        JToken? networkConditionsToken = serialized["networkConditions"];
+        Assert.NotNull(networkConditionsToken);
+        Assert.Equal(JTokenType.Object, networkConditionsToken.Type);
+        JObject? conditionsObject = networkConditionsToken as JObject;
+        Assert.NotNull(conditionsObject);
+        Assert.Single(conditionsObject);
+
+        Assert.True(conditionsObject.ContainsKey("type"));
+        JToken? type = conditionsObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("offline", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithContexts()
     {
         SetNetworkConditionsCommandParameters properties = new()
@@ -63,24 +66,28 @@ public class SetNetworkConditionsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("networkConditions"));
-            Assert.That(serialized["networkConditions"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["networkConditions"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
-            Assert.That(contextsArray, Has.Count.EqualTo(2));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
-            Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("networkConditions"));
+        JToken? networkConditions = serialized["networkConditions"];
+        Assert.NotNull(networkConditions);
+        Assert.Equal(JTokenType.Null, networkConditions.Type);
+        Assert.Null(networkConditions.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        Assert.Equal(JTokenType.Array, contextsToken.Type);
+        JArray? contextsArray = contextsToken.Value<JArray>();
+        Assert.NotNull(contextsArray);
+        Assert.Equal(2, contextsArray.Count);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("context1", contextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, contextsArray[1].Type);
+        Assert.Equal("context2", contextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithUserContexts()
     {
         SetNetworkConditionsCommandParameters properties = new()
@@ -93,41 +100,43 @@ public class SetNetworkConditionsCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("networkConditions"));
-            Assert.That(serialized["networkConditions"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["networkConditions"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
-            Assert.That(userContextsArray, Has.Count.EqualTo(2));
-            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
-            Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("networkConditions"));
+        JToken? networkConditions = serialized["networkConditions"];
+        Assert.NotNull(networkConditions);
+        Assert.Equal(JTokenType.Null, networkConditions.Type);
+        Assert.Null(networkConditions.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContextsToken = serialized["userContexts"];
+        Assert.NotNull(userContextsToken);
+        Assert.Equal(JTokenType.Array, userContextsToken.Type);
+        JArray? userContextsArray = userContextsToken.Value<JArray>();
+        Assert.NotNull(userContextsArray);
+        Assert.Equal(2, userContextsArray.Count);
+        Assert.Equal(JTokenType.String, userContextsArray[0].Type);
+        Assert.Equal("userContext1", userContextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, userContextsArray[1].Type);
+        Assert.Equal("userContext2", userContextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetResetParameters()
     {
         SetNetworkConditionsCommandParameters properties = SetNetworkConditionsCommandParameters.ResetNetworkConditions;
-        Assert.That(properties, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.NetworkConditions, Is.Null);
-            Assert.That(properties.Contexts, Is.Null);
-            Assert.That(properties.UserContexts, Is.Null);
-        }
+        Assert.NotNull(properties);
+
+        Assert.Null(properties.NetworkConditions);
+        Assert.Null(properties.Contexts);
+        Assert.Null(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
         SetNetworkConditionsCommandParameters firstInstance = SetNetworkConditionsCommandParameters.ResetNetworkConditions;
         SetNetworkConditionsCommandParameters secondInstance = SetNetworkConditionsCommandParameters.ResetNetworkConditions;
-        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+        Assert.NotSame(secondInstance, firstInstance);
     }
 }

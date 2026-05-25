@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class StackTraceTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -21,16 +20,14 @@ public class StackTraceTests
                       }
                       """;
         StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json);
-        Assert.That(stacktrace, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(stacktrace.CallFrames, Is.Not.Null);
-            Assert.That(stacktrace.CallFrames, Has.Count.EqualTo(1));
-            Assert.That(stacktrace.CallFrames[0], Is.TypeOf<StackFrame>());
-        }
+        Assert.NotNull(stacktrace);
+
+        Assert.NotNull(stacktrace.CallFrames);
+        Assert.Single(stacktrace.CallFrames);
+        Assert.IsType<StackFrame>(stacktrace.CallFrames[0]);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -46,19 +43,19 @@ public class StackTraceTests
                       }
                       """;
         StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json);
-        Assert.That(stacktrace, Is.Not.Null);
+        Assert.NotNull(stacktrace);
         StackTrace copy = stacktrace with { };
-        Assert.That(copy, Is.EqualTo(stacktrace));
+        Assert.Equal(stacktrace, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithMissingCallFramesThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackTrace>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializeWithInvalidCallFramesTypeThrows()
     {
         string json = """
@@ -73,6 +70,6 @@ public class StackTraceTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StackTrace>(json));
     }
 }

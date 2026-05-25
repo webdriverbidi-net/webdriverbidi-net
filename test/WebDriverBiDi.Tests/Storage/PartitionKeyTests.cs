@@ -2,24 +2,21 @@ namespace WebDriverBiDi.Storage;
 
 using System.Text.Json;
 
-[TestFixture]
 public class PartitionKeyTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializePartitionKey()
     {
         string json = "{}";
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.UserContextId, Is.Null);
-            Assert.That(result.SourceOrigin, Is.Null);
-            Assert.That(result.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.Null(result.UserContextId);
+        Assert.Null(result.SourceOrigin);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializePartitionKeyWithUserContext()
     {
         string json = """
@@ -28,16 +25,14 @@ public class PartitionKeyTests
                       }
                       """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result.SourceOrigin, Is.Null);
-            Assert.That(result.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("myUserContext", result.UserContextId);
+        Assert.Null(result.SourceOrigin);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializePartitionKeyWithSourceOrigin()
     {
         string json = """
@@ -46,16 +41,14 @@ public class PartitionKeyTests
                       }
                       """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.UserContextId, Is.Null);
-            Assert.That(result.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-            Assert.That(result.AdditionalData, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.Null(result.UserContextId);
+        Assert.Equal("mySourceOrigin", result.SourceOrigin);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializePartitionKeyWithAdditionalData()
     {
         string json = """
@@ -64,25 +57,26 @@ public class PartitionKeyTests
                       }
                       """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.UserContextId, Is.Null);
-            Assert.That(result.SourceOrigin, Is.Null);
-            Assert.That(result.AdditionalData, Has.Count.EqualTo(1));
-            Assert.That(result.AdditionalData, Contains.Key("extraData"));
-            Assert.That(result.AdditionalData["extraData"]!.GetType, Is.EqualTo(typeof(string)));
-            Assert.That(result.AdditionalData["extraData"]!, Is.EqualTo("myExtraData"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Null(result.UserContextId);
+        Assert.Null(result.SourceOrigin);
+        Assert.Single(result.AdditionalData);
+        Assert.True(result.AdditionalData.ContainsKey("extraData"));
+        Assert.NotNull(result.AdditionalData["extraData"]);
+        object? extraData = result.AdditionalData["extraData"];
+        Assert.NotNull(extraData);
+        Assert.Equal(typeof(string), extraData.GetType());
+        Assert.Equal("myExtraData", extraData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = "{}";
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         PartitionKey copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

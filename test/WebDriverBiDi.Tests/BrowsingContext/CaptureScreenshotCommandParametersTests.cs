@@ -4,32 +4,31 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class CaptureScreenshotCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId");
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.captureScreenshot"));
+        Assert.Equal("browsingContext.captureScreenshot", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDefaultBoxClipRectangle()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -38,35 +37,54 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("clip"));
-            Assert.That(serialized["clip"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? clipObject = serialized["clip"]!.Value<JObject>();
-            Assert.That(clipObject, Has.Count.EqualTo(5));
-            Assert.That(clipObject, Contains.Key("type"));
-            Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("box"));
-            Assert.That(clipObject, Contains.Key("x"));
-            Assert.That(clipObject!["x"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["x"]!.Value<double>(), Is.EqualTo(0.0));
-            Assert.That(clipObject, Contains.Key("y"));
-            Assert.That(clipObject!["y"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["y"]!.Value<double>(), Is.EqualTo(0.0));
-            Assert.That(clipObject, Contains.Key("width"));
-            Assert.That(clipObject!["width"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["width"]!.Value<double>(), Is.EqualTo(0.0));
-            Assert.That(clipObject, Contains.Key("height"));
-            Assert.That(clipObject!["height"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["height"]!.Value<double>(), Is.EqualTo(0.0));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("clip"));
+        JToken? clipToken = serialized["clip"];
+        Assert.NotNull(clipToken);
+        Assert.Equal(JTokenType.Object, clipToken.Type);
+        JObject? clipObject = clipToken.Value<JObject>();
+        Assert.NotNull(clipObject);
+        Assert.Equal(5, clipObject.Count);
+
+        Assert.True(clipObject.ContainsKey("type"));
+        JToken? clipType = clipObject["type"];
+        Assert.NotNull(clipType);
+        Assert.Equal(JTokenType.String, clipType.Type);
+        Assert.Equal("box", clipType.Value<string>());
+
+        Assert.True(clipObject.ContainsKey("x"));
+        JToken? clipX = clipObject["x"];
+        Assert.NotNull(clipX);
+        Assert.Equal(JTokenType.Float, clipX.Type);
+        Assert.Equal(0.0, clipX.Value<double>());
+
+        Assert.True(clipObject.ContainsKey("y"));
+        JToken? clipY = clipObject["y"];
+        Assert.NotNull(clipY);
+        Assert.Equal(JTokenType.Float, clipY.Type);
+        Assert.Equal(0.0, clipY.Value<double>());
+
+        Assert.True(clipObject.ContainsKey("width"));
+        JToken? clipWidth = clipObject["width"];
+        Assert.NotNull(clipWidth);
+        Assert.Equal(JTokenType.Float, clipWidth.Type);
+        Assert.Equal(0.0, clipWidth.Value<double>());
+
+        Assert.True(clipObject.ContainsKey("height"));
+        JToken? clipHeight = clipObject["height"];
+        Assert.NotNull(clipHeight);
+        Assert.Equal(JTokenType.Float, clipHeight.Type);
+        Assert.Equal(0.0, clipHeight.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNonDefaultBoxClipRectangle()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -81,35 +99,54 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("clip"));
-            Assert.That(serialized["clip"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? clipObject = serialized["clip"]!.Value<JObject>();
-            Assert.That(clipObject, Has.Count.EqualTo(5));
-            Assert.That(clipObject, Contains.Key("type"));
-            Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("box"));
-            Assert.That(clipObject, Contains.Key("x"));
-            Assert.That(clipObject!["x"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["x"]!.Value<double>(), Is.EqualTo(10.0));
-            Assert.That(clipObject, Contains.Key("y"));
-            Assert.That(clipObject!["y"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["y"]!.Value<double>(), Is.EqualTo(20.0));
-            Assert.That(clipObject, Contains.Key("width"));
-            Assert.That(clipObject!["width"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["width"]!.Value<double>(), Is.EqualTo(200.0));
-            Assert.That(clipObject, Contains.Key("height"));
-            Assert.That(clipObject!["height"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(clipObject["height"]!.Value<double>(), Is.EqualTo(100.0));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("clip"));
+        JToken? clipToken = serialized["clip"];
+        Assert.NotNull(clipToken);
+        Assert.Equal(JTokenType.Object, clipToken.Type);
+        JObject? clipObject = clipToken.Value<JObject>();
+        Assert.NotNull(clipObject);
+        Assert.Equal(5, clipObject.Count);
+
+        Assert.True(clipObject.ContainsKey("type"));
+        JToken? clipType = clipObject["type"];
+        Assert.NotNull(clipType);
+        Assert.Equal(JTokenType.String, clipType.Type);
+        Assert.Equal("box", clipType.Value<string>());
+
+        Assert.True(clipObject.ContainsKey("x"));
+        JToken? clipX = clipObject["x"];
+        Assert.NotNull(clipX);
+        Assert.Equal(JTokenType.Float, clipX.Type);
+        Assert.Equal(10.0, clipX.Value<double>());
+
+        Assert.True(clipObject.ContainsKey("y"));
+        JToken? clipY = clipObject["y"];
+        Assert.NotNull(clipY);
+        Assert.Equal(JTokenType.Float, clipY.Type);
+        Assert.Equal(20.0, clipY.Value<double>());
+
+        Assert.True(clipObject.ContainsKey("width"));
+        JToken? clipWidth = clipObject["width"];
+        Assert.NotNull(clipWidth);
+        Assert.Equal(JTokenType.Float, clipWidth.Type);
+        Assert.Equal(200.0, clipWidth.Value<double>());
+
+        Assert.True(clipObject.ContainsKey("height"));
+        JToken? clipHeight = clipObject["height"];
+        Assert.NotNull(clipHeight);
+        Assert.Equal(JTokenType.Float, clipHeight.Type);
+        Assert.Equal(100.0, clipHeight.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDefaultElementClipRectangle()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -118,28 +155,41 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("clip"));
-            Assert.That(serialized["clip"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? clipObject = serialized["clip"]!.Value<JObject>();
-            Assert.That(clipObject, Has.Count.EqualTo(2));
-            Assert.That(clipObject, Contains.Key("type"));
-            Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("element"));
-            Assert.That(clipObject, Contains.Key("element"));
-            Assert.That(clipObject!["element"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? sharedReferenceObject = clipObject["element"]!.Value<JObject>();
-            Assert.That(sharedReferenceObject, Contains.Key("sharedId"));
-            Assert.That(sharedReferenceObject!["sharedId"]!.Value<string>(), Is.EqualTo("myElementSharedId"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("clip"));
+        JToken? clipToken = serialized["clip"];
+        Assert.NotNull(clipToken);
+        Assert.Equal(JTokenType.Object, clipToken.Type);
+        JObject? clipObject = clipToken.Value<JObject>();
+        Assert.NotNull(clipObject);
+        Assert.Equal(2, clipObject.Count);
+
+        Assert.True(clipObject.ContainsKey("type"));
+        JToken? clipType = clipObject["type"];
+        Assert.NotNull(clipType);
+        Assert.Equal(JTokenType.String, clipType.Type);
+        Assert.Equal("element", clipType.Value<string>());
+
+        Assert.True(clipObject.ContainsKey("element"));
+        JToken? clipElement = clipObject["element"];
+        Assert.NotNull(clipElement);
+        Assert.Equal(JTokenType.Object, clipElement.Type);
+        JObject? sharedReferenceObject = clipElement.Value<JObject>();
+        Assert.NotNull(sharedReferenceObject);
+        Assert.True(sharedReferenceObject.ContainsKey("sharedId"));
+        JToken? sharedId = sharedReferenceObject["sharedId"];
+        Assert.NotNull(sharedId);
+        Assert.Equal("myElementSharedId", sharedId.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithDefaultFormatParameter()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -148,23 +198,30 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("format"));
-            Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? formatObject = serialized["format"]!.Value<JObject>();
-            Assert.That(formatObject, Has.Count.EqualTo(1));
-            Assert.That(formatObject, Contains.Key("type"));
-            Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/png"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("format"));
+        JToken? formatToken = serialized["format"];
+        Assert.NotNull(formatToken);
+        Assert.Equal(JTokenType.Object, formatToken.Type);
+        JObject? formatObject = formatToken.Value<JObject>();
+        Assert.NotNull(formatObject);
+        Assert.Single(formatObject);
+
+        Assert.True(formatObject.ContainsKey("type"));
+        JToken? formatType = formatObject["type"];
+        Assert.NotNull(formatType);
+        Assert.Equal(JTokenType.String, formatType.Type);
+        Assert.Equal("image/png", formatType.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithNonDefaultFormatParameter()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -176,23 +233,30 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("format"));
-            Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? formatObject = serialized["format"]!.Value<JObject>();
-            Assert.That(formatObject, Has.Count.EqualTo(1));
-            Assert.That(formatObject, Contains.Key("type"));
-            Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/jpeg"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("format"));
+        JToken? formatToken = serialized["format"];
+        Assert.NotNull(formatToken);
+        Assert.Equal(JTokenType.Object, formatToken.Type);
+        JObject? formatObject = formatToken.Value<JObject>();
+        Assert.NotNull(formatObject);
+        Assert.Single(formatObject);
+
+        Assert.True(formatObject.ContainsKey("type"));
+        JToken? formatType = formatObject["type"];
+        Assert.NotNull(formatType);
+        Assert.Equal(JTokenType.String, formatType.Type);
+        Assert.Equal("image/jpeg", formatType.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithNonDefaultFormatParameterIncludingQuality()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -205,26 +269,36 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("format"));
-            Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? formatObject = serialized["format"]!.Value<JObject>();
-            Assert.That(formatObject, Has.Count.EqualTo(2));
-            Assert.That(formatObject, Contains.Key("type"));
-            Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/jpeg"));
-            Assert.That(formatObject, Contains.Key("quality"));
-            Assert.That(formatObject!["quality"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(formatObject["quality"]!.Value<double>(), Is.EqualTo(0.5));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("format"));
+        JToken? formatToken = serialized["format"];
+        Assert.NotNull(formatToken);
+        Assert.Equal(JTokenType.Object, formatToken.Type);
+        JObject? formatObject = formatToken.Value<JObject>();
+        Assert.NotNull(formatObject);
+        Assert.Equal(2, formatObject.Count);
+
+        Assert.True(formatObject.ContainsKey("type"));
+        JToken? formatType = formatObject["type"];
+        Assert.NotNull(formatType);
+        Assert.Equal(JTokenType.String, formatType.Type);
+        Assert.Equal("image/jpeg", formatType.Value<string>());
+
+        Assert.True(formatObject.ContainsKey("quality"));
+        JToken? formatQuality = formatObject["quality"];
+        Assert.NotNull(formatQuality);
+        Assert.Equal(JTokenType.Float, formatQuality.Type);
+        Assert.Equal(0.5, formatQuality.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithViewportOrigin()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -233,19 +307,22 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("viewport"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("viewport", origin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDocumentOrigin()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -254,26 +331,29 @@ public class CaptureScreenshotCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("origin"));
-            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("document"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("origin"));
+        JToken? origin = serialized["origin"];
+        Assert.NotNull(origin);
+        Assert.Equal(JTokenType.String, origin.Type);
+        Assert.Equal("document", origin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestImageFormatQualityParameterOutsideValidRangeThrows()
     {
         ImageFormat format = new();
 
         // Also test that Quality property can be explicitly set to null.
         format.Quality = null;
-        Assert.That(() => format.Quality = -.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Quality must be between 0 and 1 inclusive."));
-        Assert.That(() => format.Quality = 1.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Quality must be between 0 and 1 inclusive."));
+        Assert.Contains("Quality must be between 0 and 1 inclusive.", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => format.Quality = -.01).Message);
+        Assert.Contains("Quality must be between 0 and 1 inclusive.", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => format.Quality = 1.01).Message);
     }
 }

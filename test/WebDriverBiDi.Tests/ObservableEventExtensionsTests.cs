@@ -2,18 +2,17 @@ namespace WebDriverBiDi;
 
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class ObservableEventExtensionsTests
 {
-    [Test]
-    public void TestToObservableReturnsIObservable()
+    [Fact]
+    public async Task TestToObservableReturnsIObservable()
     {
         TestEventSource testEventSource = new();
         IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
-        Assert.That(observable, Is.Not.Null);
+        Assert.NotNull(observable);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSubscribeReceivesRaisedEvents()
     {
         TestEventSource testEventSource = new();
@@ -33,29 +32,26 @@ public class ObservableEventExtensionsTests
 
         await testEventSource.RaiseTestEventAsync("value1");
         await testEventSource.RaiseTestEventAsync("value2");
-        await twoReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await twoReceived.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(received, Has.Count.EqualTo(2));
-            Assert.That(received[0], Is.EqualTo("value1"));
-            Assert.That(received[1], Is.EqualTo("value2"));
-        }
+        Assert.Equal(2, received.Count);
+        Assert.Equal("value1", received[0]);
+        Assert.Equal("value2", received[1]);
     }
 
-    [Test]
+    [Fact]
     public async Task TestSubscribeReturnsIDisposable()
     {
         TestEventSource testEventSource = new();
         IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
         IDisposable subscription = observable.Subscribe(new DelegateObserver<TestObservableEventArgs>());
-        Assert.That(subscription, Is.Not.Null);
-        Assert.That(subscription, Is.InstanceOf<IDisposable>());
+        Assert.NotNull(subscription);
+        Assert.IsType<IDisposable>(subscription, exactMatch: false);
         await testEventSource.TestObservableEvent.InvokeNotifyObserversAsync(new TestObservableEventArgs("value"));
         subscription.Dispose();
     }
 
-    [Test]
+    [Fact]
     public async Task TestDisposingSubscriptionCallsOnCompleted()
     {
         TestEventSource testEventSource = new();
@@ -66,12 +62,12 @@ public class ObservableEventExtensionsTests
             onCompleted: () => completed.TrySetResult(true)));
 
         subscription.Dispose();
-        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.That(completed.Task.IsCompletedSuccessfully, Is.True);
+        Assert.True(completed.Task.IsCompletedSuccessfully);
     }
 
-    [Test]
+    [Fact]
     public async Task TestDisposingSubscriptionStopsDeliveringEvents()
     {
         TestEventSource testEventSource = new();
@@ -85,17 +81,17 @@ public class ObservableEventExtensionsTests
 
         await testEventSource.RaiseTestEventAsync("before");
         subscription.Dispose();
-        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         int countAfterDispose = received.Count;
         await testEventSource.RaiseTestEventAsync("after");
 
         // Give the background task a moment to deliver any extra items (it should not)
-        await Task.Delay(50);
-        Assert.That(received, Has.Count.EqualTo(countAfterDispose));
+        await Task.Delay(TimeSpan.FromMicroseconds(50), TestContext.Current.CancellationToken);
+        Assert.Equal(countAfterDispose, received.Count);
     }
 
-    [Test]
+    [Fact]
     public async Task TestOnErrorCalledWhenOnNextThrows()
     {
         TestEventSource testEventSource = new();
@@ -108,12 +104,12 @@ public class ObservableEventExtensionsTests
             onError: ex => errorReceived.TrySetResult(ex)));
 
         await testEventSource.RaiseTestEventAsync("value");
-        Exception received = await errorReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Exception received = await errorReceived.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.That(received, Is.SameAs(thrown));
+        Assert.Same(thrown, received);
     }
 
-    [Test]
+    [Fact]
     public async Task TestMultipleSubscribersEachReceiveAllEvents()
     {
         TestEventSource testEventSource = new();
@@ -147,17 +143,14 @@ public class ObservableEventExtensionsTests
         await testEventSource.RaiseTestEventAsync("value1");
         await testEventSource.RaiseTestEventAsync("value2");
         await Task.WhenAll(
-            sub1Done.Task.WaitAsync(TimeSpan.FromSeconds(5)),
-            sub2Done.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            sub1Done.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
+            sub2Done.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(received1, Has.Count.EqualTo(2));
-            Assert.That(received2, Has.Count.EqualTo(2));
-        }
+        Assert.Equal(2, received1.Count);
+        Assert.Equal(2, received2.Count);
     }
 
-    [Test]
+    [Fact]
     public async Task TestToObservableOnSameSourceProducesIndependentObservables()
     {
         TestEventSource testEventSource = new();
@@ -174,14 +167,11 @@ public class ObservableEventExtensionsTests
 
         await testEventSource.RaiseTestEventAsync("value");
         await Task.WhenAll(
-            result1.Task.WaitAsync(TimeSpan.FromSeconds(5)),
-            result2.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            result1.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
+            result2.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result1.Task.Result, Is.EqualTo("value"));
-            Assert.That(result2.Task.Result, Is.EqualTo("value"));
-        }
+        Assert.Equal("value", await result1.Task);
+        Assert.Equal("value", await result2.Task);
     }
 
     /// <summary>

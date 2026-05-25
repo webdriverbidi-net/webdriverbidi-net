@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class GetRealmsCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeGetRealmsCommandResult()
     {
         string json = """
@@ -14,11 +13,11 @@ public class GetRealmsCommandResultTests
                       }
                       """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Realms, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.Realms);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -27,12 +26,12 @@ public class GetRealmsCommandResultTests
                       }
                       """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         GetRealmsCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeGetRealmsCommandResultWithWindowRealmInfo()
     {
         string json = """
@@ -48,19 +47,17 @@ public class GetRealmsCommandResultTests
                       }
                       """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Realms, Has.Count.EqualTo(1));
-        Assert.That(result.Realms[0], Is.TypeOf<WindowRealmInfo>());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Realms[0].RealmId, Is.EqualTo("realmId"));
-            Assert.That(result.Realms[0].Origin, Is.EqualTo("myOrigin"));
-            Assert.That(result.Realms[0].Type, Is.EqualTo(RealmType.Window));
-            Assert.That(((WindowRealmInfo)result.Realms[0]).BrowsingContext, Is.EqualTo("contextId"));
-        }
+        Assert.NotNull(result);
+        Assert.Single(result.Realms);
+        Assert.IsType<WindowRealmInfo>(result.Realms[0]);
+
+        Assert.Equal("realmId", result.Realms[0].RealmId);
+        Assert.Equal("myOrigin", result.Realms[0].Origin);
+        Assert.Equal(RealmType.Window, result.Realms[0].Type);
+        Assert.Equal("contextId", ((WindowRealmInfo)result.Realms[0]).BrowsingContext);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeGetRealmsCommandResultWithNonWindowRealmInfo()
     {
         string json = """
@@ -75,14 +72,12 @@ public class GetRealmsCommandResultTests
                       }
                       """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Realms, Has.Count.EqualTo(1));
-        Assert.That(result.Realms[0], Is.Not.TypeOf<WindowRealmInfo>());
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Realms[0].RealmId, Is.EqualTo("realmId"));
-            Assert.That(result.Realms[0].Origin, Is.EqualTo("myOrigin"));
-            Assert.That(result.Realms[0].Type, Is.EqualTo(RealmType.Worker));
-        }
+        Assert.NotNull(result);
+        Assert.Single(result.Realms);
+        Assert.IsNotType<WindowRealmInfo>(result.Realms[0]);
+
+        Assert.Equal("realmId", result.Realms[0].RealmId);
+        Assert.Equal("myOrigin", result.Realms[0].Origin);
+        Assert.Equal(RealmType.Worker, result.Realms[0].Type);
     }
 }

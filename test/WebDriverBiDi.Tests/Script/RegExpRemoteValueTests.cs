@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RegExpRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeRegExpRemoteValue()
     {
         string json = """
@@ -20,13 +19,13 @@ public class RegExpRemoteValueTests
 
         RegExpRemoteValue? result = JsonSerializer.Deserialize<RegExpRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.RegExp));
-        Assert.That(result.Value.Pattern, Is.EqualTo("test"));
-        Assert.That(result.Value.Flags, Is.EqualTo("i"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.RegExp, result.Type);
+        Assert.Equal("test", result.Value.Pattern);
+        Assert.Equal("i", result.Value.Flags);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -41,17 +40,18 @@ public class RegExpRemoteValueTests
 
         RegExpRemoteValue? result = JsonSerializer.Deserialize<RegExpRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("regexp"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<RegularExpressionValue>());
+        Assert.Equal("regexp", argumentLocalValue.Type);
+        Assert.NotNull(argumentLocalValue.Value);
+        Assert.IsType<RegularExpressionValue>(argumentLocalValue.Value);
         RegularExpressionValue regexValue = (RegularExpressionValue)argumentLocalValue.Value;
-        Assert.That(regexValue.Pattern, Is.EqualTo("test"));
-        Assert.That(regexValue.Flags, Is.EqualTo("i"));
+        Assert.Equal("test", regexValue.Pattern);
+        Assert.Equal("i", regexValue.Flags);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToRemoteObjectReference()
     {
         string json = """
@@ -68,13 +68,13 @@ public class RegExpRemoteValueTests
 
         RegExpRemoteValue? result = JsonSerializer.Deserialize<RegExpRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RemoteObjectReference remoteObjectReference = result.ToRemoteObjectReference();
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanUseImplicitConversionToRegularExpressionValue()
     {
         string json = """
@@ -89,13 +89,13 @@ public class RegExpRemoteValueTests
 
         RegExpRemoteValue? result = JsonSerializer.Deserialize<RegExpRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RegularExpressionValue regexValue = result;
-        Assert.That(regexValue.Pattern, Is.EqualTo("test"));
-        Assert.That(regexValue.Flags, Is.EqualTo("i"));
+        Assert.Equal("test", regexValue.Pattern);
+        Assert.Equal("i", regexValue.Flags);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRegExpRemoteValueWithMissingValueThrows()
     {
         string json = """
@@ -104,10 +104,10 @@ public class RegExpRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<RegExpRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RegExpRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRegExpRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -117,10 +117,10 @@ public class RegExpRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<RegExpRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RegExpRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRegExpRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -133,10 +133,10 @@ public class RegExpRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<RegExpRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RegExpRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidHandleTypeThrows()
     {
         string json = """
@@ -151,10 +151,10 @@ public class RegExpRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidInternalIdTypeThrows()
     {
         string json = """
@@ -169,10 +169,10 @@ public class RegExpRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToRemoteObjectReferenceWithoutHandleThrows()
     {
         string json = """
@@ -187,11 +187,11 @@ public class RegExpRemoteValueTests
 
         RegExpRemoteValue? result = JsonSerializer.Deserialize<RegExpRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToRemoteObjectReference());
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -205,9 +205,9 @@ public class RegExpRemoteValueTests
                       """;
 
         RegExpRemoteValue? result = JsonSerializer.Deserialize<RegExpRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         RegExpRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

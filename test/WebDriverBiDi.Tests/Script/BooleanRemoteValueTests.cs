@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class BooleanRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeBooleanRemoteValueWithTrue()
     {
         string json = """
@@ -17,12 +16,12 @@ public class BooleanRemoteValueTests
 
         BooleanRemoteValue? result = JsonSerializer.Deserialize<BooleanRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Boolean));
-        Assert.That(result.Value, Is.True);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Boolean, result.Type);
+        Assert.True(result.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeBooleanRemoteValueWithFalse()
     {
         string json = """
@@ -34,12 +33,12 @@ public class BooleanRemoteValueTests
 
         BooleanRemoteValue? result = JsonSerializer.Deserialize<BooleanRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Boolean));
-        Assert.That(result.Value, Is.False);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Boolean, result.Type);
+        Assert.False(result.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -51,15 +50,15 @@ public class BooleanRemoteValueTests
 
         BooleanRemoteValue? result = JsonSerializer.Deserialize<BooleanRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("boolean"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<bool>());
-        Assert.That(argumentLocalValue.Value, Is.True);
+        Assert.Equal("boolean", argumentLocalValue.Type);
+        Assert.IsType<bool>(argumentLocalValue.Value);
+        Assert.True((bool)argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanUseImplicitConversionToBool()
     {
         string json = """
@@ -71,12 +70,12 @@ public class BooleanRemoteValueTests
 
         BooleanRemoteValue? result = JsonSerializer.Deserialize<BooleanRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         bool boolValue = result;
-        Assert.That(boolValue, Is.True);
+        Assert.True(boolValue);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBooleanRemoteValueWithMissingValueThrows()
     {
         string json = """
@@ -85,10 +84,10 @@ public class BooleanRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<BooleanRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BooleanRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBooleanRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -98,10 +97,10 @@ public class BooleanRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<BooleanRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BooleanRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBooleanRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -111,10 +110,10 @@ public class BooleanRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<BooleanRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BooleanRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -125,9 +124,9 @@ public class BooleanRemoteValueTests
                       """;
 
         BooleanRemoteValue? result = JsonSerializer.Deserialize<BooleanRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         BooleanRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

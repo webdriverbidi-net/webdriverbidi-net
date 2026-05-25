@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RealmCreatedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanCreateWithWindowRealmInfo()
     {
         string json = """
@@ -17,17 +16,15 @@ public class RealmCreatedEventArgsTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
+        Assert.NotNull(info);
         RealmCreatedEventArgs eventArgs = new(info);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Window));
-        }
+
+        Assert.Equal("myRealm", eventArgs.RealmId);
+        Assert.Equal("myOrigin", eventArgs.Origin);
+        Assert.Equal(RealmType.Window, eventArgs.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCreateWithNonWindowRealmInfo()
     {
         string json = """
@@ -38,17 +35,15 @@ public class RealmCreatedEventArgsTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
+        Assert.NotNull(info);
         RealmCreatedEventArgs eventArgs = new(info);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Worker));
-        }
+
+        Assert.Equal("myRealm", eventArgs.RealmId);
+        Assert.Equal("myOrigin", eventArgs.Origin);
+        Assert.Equal(RealmType.Worker, eventArgs.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanCastToSpecificRealmType()
     {
         string json = """
@@ -60,18 +55,16 @@ public class RealmCreatedEventArgsTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
+        Assert.NotNull(info);
         RealmCreatedEventArgs eventArgs = new(info);
         WindowRealmInfo castInfo = eventArgs.As<WindowRealmInfo>();
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(castInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(castInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(castInfo.Type, Is.EqualTo(RealmType.Window));
-        }
+
+        Assert.Equal("myRealm", castInfo.RealmId);
+        Assert.Equal("myOrigin", castInfo.Origin);
+        Assert.Equal(RealmType.Window, castInfo.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -83,10 +76,9 @@ public class RealmCreatedEventArgsTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
+        Assert.NotNull(info);
         RealmCreatedEventArgs eventArgs = new(info);
         RealmCreatedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
-
 }

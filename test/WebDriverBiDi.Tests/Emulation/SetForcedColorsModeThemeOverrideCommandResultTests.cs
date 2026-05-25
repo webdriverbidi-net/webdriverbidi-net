@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SetForcedColorsModeThemeOverrideCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SetForcedColorsModeThemeOverrideCommandResult? result = JsonSerializer.Deserialize<SetForcedColorsModeThemeOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SetForcedColorsModeThemeOverrideCommandResult? result = JsonSerializer.Deserialize<SetForcedColorsModeThemeOverrideCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SetForcedColorsModeThemeOverrideCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

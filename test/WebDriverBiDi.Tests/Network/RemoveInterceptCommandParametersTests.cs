@@ -3,28 +3,27 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class RemoveInterceptCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         RemoveInterceptCommandParameters properties = new("interceptId");
-        Assert.That(properties.MethodName, Is.EqualTo("network.removeIntercept"));
+        Assert.Equal("network.removeIntercept", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         RemoveInterceptCommandParameters properties = new("interceptId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("intercept"));
-            Assert.That(serialized["intercept"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["intercept"]!.Value<string>(), Is.EqualTo("interceptId"));
-        }
+
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("intercept"));
+        JToken? intercept = serialized["intercept"];
+        Assert.NotNull(intercept);
+        Assert.Equal(JTokenType.String, intercept.Type);
+        Assert.Equal("interceptId", intercept.Value<string>());
     }
 }

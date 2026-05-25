@@ -3,32 +3,34 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ChannelValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeChannelValue()
     {
         // Note that serialization of ChannelProperties (value property) is tested elsewhere.
         ChannelValue value = new(new ChannelProperties("myChannel"));
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("channel"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-        }
+
+        Assert.Equal(2, parsed.Count);
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal("channel", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? parsedValue = parsed["value"];
+        Assert.NotNull(parsedValue);
+        Assert.Equal(JTokenType.Object, parsedValue.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         // Note that serialization of ChannelProperties (value property) is tested elsewhere.
         ChannelValue value = new(new ChannelProperties("myChannel"));
         ChannelValue copy = value with { };
-        Assert.That(copy, Is.EqualTo(value));
+        Assert.Equal(value, copy);
     }
 }

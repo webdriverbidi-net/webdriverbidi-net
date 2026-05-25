@@ -75,8 +75,16 @@ public class TestTransport : Transport
 
         if (this.ReturnCustomValue)
         {
-            Command returnedCommand = new Command(this.LastCommandId, commandParameters);
-            returnedCommand.SetResult(this.CustomReturnValue!);
+            Command returnedCommand = new(this.LastCommandId, commandParameters);
+            if (this.CustomReturnValue is null)
+            {
+                returnedCommand.SetResult(null!);
+            }
+            else
+            {
+                returnedCommand.SetResult(this.CustomReturnValue);
+            }
+
             return returnedCommand;
         }
 
@@ -130,8 +138,8 @@ public class TestTransport : Transport
     /// </summary>
     public void EnableConnectLockConcurrencyTesting()
     {
-        ManualResetEventSlim connectionMethodHasLock = new(false);
-        ManualResetEventSlim otherMethodBlocked = new(false);
+        TaskCompletionSource firstCallerReadyTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource secondCallerReadyTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         this.BeforeAcquireLockCallback = async () =>
         {
             int currentCallCount = Interlocked.Increment(ref this.concurrentConnectLockAcquisitions);
@@ -140,8 +148,8 @@ public class TestTransport : Transport
                 // ConnectAsync or DisconnectAsync is first into the AcquireConnectionLockAsync,
                 // and is about to acquire the lock. Signal it, then wait for the other method
                 // to also enter the callback.
-                connectionMethodHasLock.Set();
-                await Task.Run(() => otherMethodBlocked.Wait());
+                firstCallerReadyTaskCompletionSource.TrySetResult();
+                await secondCallerReadyTaskCompletionSource.Task;
             }
             else if (currentCallCount == 2)
             {
@@ -149,8 +157,8 @@ public class TestTransport : Transport
                 // Signal that it's here, then wait for ConnectAsync or DisconnectAsync
                 // to signal it is acquiring the lock, and add a small delay so the
                 // semaphore is held by ConnectAsync or DisconnectAsync.
-                otherMethodBlocked.Set();
-                await Task.Run(() => connectionMethodHasLock.Wait());
+                secondCallerReadyTaskCompletionSource.TrySetResult();
+                await firstCallerReadyTaskCompletionSource.Task;
                 await Task.Delay(TimeSpan.FromMilliseconds(50));
             }
         };
@@ -232,9 +240,9 @@ public class TestTransport : Transport
             // TaskCompletionSource.SetException(IEnumerable<Exception>) produces a
             // faulted task whose Exception.InnerExceptions contains every supplied
             // exception, which is what we need to drive the Count != 1 branch.
-            TaskCompletionSource tcs = new();
-            tcs.SetException(this.ReadLoopOuterFault);
-            return tcs.Task;
+            TaskCompletionSource taskCompletionSource = new();
+            taskCompletionSource.SetException(this.ReadLoopOuterFault);
+            return taskCompletionSource.Task;
         }
 
         return base.ReadIncomingMessagesAsync();

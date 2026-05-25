@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
 
-[TestFixture]
 public class DescriptorEventGeneratedEventArgsTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithReadType()
     {
         string json = """
@@ -19,19 +18,17 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
-            Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
-            Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(eventArgs.Type, Is.EqualTo(DescriptorEventGeneratedType.Read));
-            Assert.That(eventArgs.Data, Is.Null);
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myAddress", eventArgs.Address);
+        Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
+        Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal(DescriptorEventGeneratedType.Read, eventArgs.Type);
+        Assert.Null(eventArgs.Data);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithWriteType()
     {
         string json = """
@@ -45,19 +42,17 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
-            Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
-            Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(eventArgs.Type, Is.EqualTo(DescriptorEventGeneratedType.Write));
-            Assert.That(eventArgs.Data, Is.Null);
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myAddress", eventArgs.Address);
+        Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
+        Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal(DescriptorEventGeneratedType.Write, eventArgs.Type);
+        Assert.Null(eventArgs.Data);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithEmptyData()
     {
         string json = """
@@ -72,20 +67,18 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
-            Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
-            Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(eventArgs.Type, Is.EqualTo(DescriptorEventGeneratedType.Read));
-            Assert.That(eventArgs.Data, Is.Not.Null);
-            Assert.That(eventArgs.Data, Is.Empty);
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myAddress", eventArgs.Address);
+        Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
+        Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal(DescriptorEventGeneratedType.Read, eventArgs.Type);
+        Assert.NotNull(eventArgs.Data);
+        Assert.Empty(eventArgs.Data);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithData()
     {
         string json = """
@@ -100,22 +93,20 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
-            Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
-            Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
-            Assert.That(eventArgs.Type, Is.EqualTo(DescriptorEventGeneratedType.Read));
-            Assert.That(eventArgs.Data, Is.Not.Null);
-            Assert.That(eventArgs.Data, Has.Count.EqualTo(2));
-            Assert.That(eventArgs.Data![0], Is.EqualTo(123));
-            Assert.That(eventArgs.Data![1], Is.EqualTo(456));
-        }
+        Assert.NotNull(eventArgs);
+
+        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal("myAddress", eventArgs.Address);
+        Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
+        Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal(DescriptorEventGeneratedType.Read, eventArgs.Type);
+        Assert.NotNull(eventArgs.Data);
+        Assert.Equal(2, eventArgs.Data.Count);
+        Assert.Equal(123u, eventArgs.Data[0]);
+        Assert.Equal(456u, eventArgs.Data[1]);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -129,12 +120,12 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json);
-        Assert.That(eventArgs, Is.Not.Null);
+        Assert.NotNull(eventArgs);
         DescriptorEventGeneratedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));
+        Assert.Equal(eventArgs, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = """
@@ -146,10 +137,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = """
@@ -162,10 +153,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingAddressThrows()
     {
         string json = """
@@ -177,10 +168,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidAddressTypeThrows()
     {
         string json = """
@@ -193,10 +184,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingServiceUuidThrows()
     {
         string json = """
@@ -208,10 +199,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidServiceUuidTypeThrows()
     {
         string json = """
@@ -224,10 +215,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingCharacteristicUuidThrows()
     {
         string json = """
@@ -239,10 +230,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidCharacteristicUuidTypeThrows()
     {
         string json = """
@@ -255,10 +246,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDescriptorUuidThrows()
     {
         string json = """
@@ -270,10 +261,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidDescriptorUuidTypeThrows()
     {
         string json = """
@@ -286,10 +277,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingTypeThrows()
     {
         string json = """
@@ -301,10 +292,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "descriptorUuid": "myDescriptorUuid",
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidTypeDataTypeThrows()
     {
         string json = """
@@ -317,10 +308,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidTypeValueThrows()
     {
         string json = """
@@ -333,10 +324,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithInvalidDataType()
     {
         string json = """
@@ -350,10 +341,10 @@ public class DescriptorEventGeneratedEventArgsTests
                         "data": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithInvalidDataElementsType()
     {
         string json = """
@@ -367,6 +358,6 @@ public class DescriptorEventGeneratedEventArgsTests
                         "data": ["123", false]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
     }
 }

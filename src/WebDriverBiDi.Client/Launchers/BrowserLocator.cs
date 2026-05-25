@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Provides methods for locating and downloading browsers for testing.
 /// </summary>
@@ -200,9 +202,6 @@ public class BrowserLocator
             driverPath = await this.driverLocator.LocateDriverAsync(cacheInfo).ConfigureAwait(false);
         }
 
-        // Save cache if it was loaded (it's only loaded when using AutoLocateAndDownload)
-        cacheInfo?.Save();
-
         return new BrowserExecutableInfo(browserPath, driverPath);
     }
 
@@ -347,30 +346,66 @@ public class BrowserLocator
             throw new InvalidOperationException("Cache should have been loaded for AutoLocateAndDownload behavior.");
         }
 
-        BrowserDownloadInfo browserDownloadInfo = await this.settings.GetBrowserDownloadInfo().ConfigureAwait(false);
-        Cache.InstalledBrowserInfo browserInfo = await this.GetInstalledBrowserInfoFromCacheAsync(cacheInfo, browserDownloadInfo).ConfigureAwait(false);
-        string cachedInstallDirectory = Path.Combine(this.CacheDirectory, this.settings.BrowserName, this.settings.Channel, browserInfo.Version);
-        string executablePath = Path.Combine(cachedInstallDirectory, this.settings.ExpectedExecutablePath);
-
-        string cacheLogMessage = $"Using {this.settings.BrowserLocationBehaviorDescription} browser.";
-        if (!File.Exists(executablePath) || browserInfo.ForceNewDownload)
+        FileLock fileLock = new(Path.Combine(this.CacheDirectory, $".lock-{this.settings.BrowserName}-{this.settings.Channel}"));
+        using IDisposable lockHandle = await fileLock.AcquireAsync().ConfigureAwait(false);
         {
-            if (browserInfo.ForceNewDownload && Directory.Exists(cachedInstallDirectory))
+            // Reload the cache in case the requested browser was downloaded while acquiring the lock.
+            // If cache has a valid, non-expired entry and the executable already exists,
+            // skip the network call entirely.
+            cacheInfo = Cache.Load(this.CacheDirectory);
+            if (this.IsBrowserCached(cacheInfo, out string? cachedExecutablePath))
             {
-                Directory.Delete(cachedInstallDirectory, true);
+                if (!this.settings.IncludeDriver)
+                {
+                    await this.LogAsync($"Using {this.settings.BrowserLocationBehaviorDescription} browser.", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+                }
+
+                return cachedExecutablePath;
             }
 
-            await this.DownloadAndExtractBrowserAsync(browserInfo, cachedInstallDirectory, executablePath).ConfigureAwait(false);
-            cacheLogMessage = $"Downloaded {this.settings.BrowserDisplayName} ready at: {executablePath}";
-        }
+            BrowserDownloadInfo browserDownloadInfo = await this.settings.GetBrowserDownloadInfo().ConfigureAwait(false);
+            Cache.InstalledBrowserInfo browserInfo = await this.GetInstalledBrowserInfoFromCacheAsync(cacheInfo, browserDownloadInfo).ConfigureAwait(false);
+            string cachedInstallDirectory = Path.Combine(this.CacheDirectory, this.settings.BrowserName, this.settings.Channel, browserInfo.Version);
+            string executablePath = Path.Combine(cachedInstallDirectory, this.settings.ExpectedExecutablePath);
 
-        if (!this.settings.IncludeDriver)
+            string cacheLogMessage = $"Using {this.settings.BrowserLocationBehaviorDescription} browser.";
+            if (!File.Exists(executablePath) || browserInfo.ForceNewDownload)
+            {
+                if (browserInfo.ForceNewDownload && Directory.Exists(cachedInstallDirectory))
+                {
+                    Directory.Delete(cachedInstallDirectory, true);
+                }
+
+                await this.DownloadAndExtractBrowserAsync(browserInfo, cachedInstallDirectory, executablePath).ConfigureAwait(false);
+                cacheLogMessage = $"Downloaded {this.settings.BrowserDisplayName} ready at: {executablePath}";
+            }
+
+            if (!this.settings.IncludeDriver)
+            {
+                // If we are using a browser driver, this has already been logged.
+                await this.LogAsync(cacheLogMessage, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            }
+
+            cacheInfo.Save();
+            return executablePath;
+        }
+    }
+
+    private bool IsBrowserCached(Cache cacheInfo, [NotNullWhen(true)] out string? cachedExecutablePath)
+    {
+        cachedExecutablePath = null;
+        if (cacheInfo.TryGetCachedBrowser(this.settings, out Cache.InstalledBrowserInfo? browserInfo) && !browserInfo.IsCachedVersionInfoExpired() && !browserInfo.ForceNewDownload)
         {
-            // If we are using a browser driver, this has already been logged.
-            await this.LogAsync(cacheLogMessage, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+            string installDirectory = Path.Combine(this.CacheDirectory, this.settings.BrowserName, this.settings.Channel, browserInfo.Version);
+            string executablePath = Path.Combine(installDirectory, this.settings.ExpectedExecutablePath);
+            if (File.Exists(executablePath))
+            {
+                cachedExecutablePath = executablePath;
+                return true;
+            }
         }
 
-        return executablePath;
+        return false;
     }
 
     private async Task<Cache.InstalledBrowserInfo> GetInstalledBrowserInfoFromCacheAsync(Cache cacheInfo, BrowserDownloadInfo browserDownloadInfo)

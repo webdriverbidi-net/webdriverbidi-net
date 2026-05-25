@@ -2,7 +2,6 @@ namespace WebDriverBiDi.Network;
 
 using WebDriverBiDi.TestUtilities;
 
-[TestFixture]
 public class NetworkModuleTests
 {
     private readonly string requestDataJson = """
@@ -82,7 +81,7 @@ public class NetworkModuleTests
                                                }
                                                """;
 
-    [Test]
+    [Fact]
     public async Task TestExecuteAddInterceptCommand()
     {
         TestWebSocketConnection connection = new();
@@ -100,24 +99,23 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         AddInterceptCommandParameters commandParameters = new(InterceptPhase.BeforeRequestSent)
         {
             UrlPatterns = [new UrlPatternString("https://example.com/*")]
         };
-        Task<AddInterceptCommandResult> task = module.AddInterceptAsync(commandParameters);
+        Task<AddInterceptCommandResult> task = module.AddInterceptAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        AddInterceptCommandResult result = task.Result;
+        AddInterceptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.InterceptId, Is.EqualTo("myInterceptId"));
+        Assert.NotNull(result);
+        Assert.Equal("myInterceptId", result.InterceptId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteAddDataCollectorCommand()
     {
         TestWebSocketConnection connection = new();
@@ -135,21 +133,20 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         AddDataCollectorCommandParameters commandParameters = new(1024 * 1024);
-        Task<AddDataCollectorCommandResult> task = module.AddDataCollectorAsync(commandParameters);
+        Task<AddDataCollectorCommandResult> task = module.AddDataCollectorAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        AddDataCollectorCommandResult result = task.Result;
+        AddDataCollectorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.CollectorId, Is.EqualTo("myCollectorId"));
+        Assert.NotNull(result);
+        Assert.Equal("myCollectorId", result.CollectorId);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteContinueRequestCommand()
     {
         TestWebSocketConnection connection = new();
@@ -165,19 +162,18 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<ContinueRequestCommandResult> task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"));
+        Task<ContinueRequestCommandResult> task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        ContinueRequestCommandResult result = task.Result;
+        ContinueRequestCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteContinueResponseCommand()
     {
         TestWebSocketConnection connection = new();
@@ -193,19 +189,18 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<ContinueResponseCommandResult> task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"));
+        Task<ContinueResponseCommandResult> task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        ContinueResponseCommandResult result = task.Result;
+        ContinueResponseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteContinueWithAuthCommand()
     {
         TestWebSocketConnection connection = new();
@@ -221,23 +216,22 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         Task<ContinueWithAuthCommandResult> task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
         {
             Action = ContinueWithAuthActionType.ProvideCredentials,
             Credentials = new AuthCredentials("username", "password")
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        ContinueWithAuthCommandResult result = task.Result;
+        ContinueWithAuthCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteDisownDataCommand()
     {
         TestWebSocketConnection connection = new();
@@ -253,20 +247,19 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId");
-        Task<DisownDataCommandResult> task = module.DisownDataAsync(commandParameters);
+        Task<DisownDataCommandResult> task = module.DisownDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        DisownDataCommandResult result = task.Result;
+        DisownDataCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteFailRequestCommand()
     {
         TestWebSocketConnection connection = new();
@@ -282,19 +275,18 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<FailRequestCommandResult> task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"));
+        Task<FailRequestCommandResult> task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        FailRequestCommandResult result = task.Result;
+        FailRequestCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteGetDataCommand()
     {
         TestWebSocketConnection connection = new();
@@ -315,22 +307,21 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         GetDataCommandParameters commandParameters = new("myRequestId");
-        Task<GetDataCommandResult> task = module.GetDataAsync(commandParameters);
+        Task<GetDataCommandResult> task = module.GetDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        GetDataCommandResult result = task.Result;
+        GetDataCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Bytes.Type, Is.EqualTo(BytesValueType.String));
-        Assert.That(result.Bytes.Value, Is.EqualTo("myNetworkData"));
+        Assert.NotNull(result);
+        Assert.Equal(BytesValueType.String, result.Bytes.Type);
+        Assert.Equal("myNetworkData", result.Bytes.Value);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteProvideResponseCommand()
     {
         TestWebSocketConnection connection = new();
@@ -346,19 +337,18 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<ProvideResponseCommandResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
+        Task<ProvideResponseCommandResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        ProvideResponseCommandResult result = task.Result;
+        ProvideResponseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteRemoveDataCollectorCommand()
     {
         TestWebSocketConnection connection = new();
@@ -374,20 +364,19 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         RemoveDataCollectorCommandParameters commandParameters = new("myCollectorId");
-        Task<RemoveDataCollectorCommandResult> task = module.RemoveDataCollectorAsync(commandParameters);
+        Task<RemoveDataCollectorCommandResult> task = module.RemoveDataCollectorAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        RemoveDataCollectorCommandResult result = task.Result;
+        RemoveDataCollectorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteRemoveInterceptCommand()
     {
         TestWebSocketConnection connection = new();
@@ -403,19 +392,18 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<RemoveInterceptCommandResult> task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"));
+        Task<RemoveInterceptCommandResult> task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"), cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        RemoveInterceptCommandResult result = task.Result;
+        RemoveInterceptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteSetCacheBehaviorCommand()
     {
         TestWebSocketConnection connection = new();
@@ -431,19 +419,18 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters(CacheBehavior.Default));
+        Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters(CacheBehavior.Default), cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetCacheBehaviorCommandResult result = task.Result;
+        SetCacheBehaviorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestExecuteSetExtraHeadersCommand()
     {
         TestWebSocketConnection connection = new();
@@ -459,21 +446,20 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         SetExtraHeadersCommandParameters commandParameters = new();
         commandParameters.Headers.Add("X-Extra-Header: headerValue");
-        Task<SetExtraHeadersCommandResult> task = module.SetExtraHeadersAsync(commandParameters);
+        Task<SetExtraHeadersCommandResult> task = module.SetExtraHeadersAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetExtraHeadersCommandResult result = task.Result;
+        SetExtraHeadersCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveAuthRequiredEvent()
     {
         DateTime now = DateTime.UtcNow;
@@ -481,57 +467,55 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnAuthRequired.AddObserver((AuthRequiredEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnAuthRequired.AddObserver(e =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
-                Assert.That(e.RedirectCount, Is.EqualTo(0));
-                Assert.That(e.Timestamp, Is.EqualTo(eventTime));
-                Assert.That(e.EpochTimestamp, Is.EqualTo(milliseconds));
-                Assert.That(e.Request.RequestId, Is.EqualTo("myRequestId"));
-                Assert.That(e.Request.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Request.Method, Is.EqualTo("get"));
-                Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-                Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-                Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
-                Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
-                Assert.That(e.Request.Cookies[0].Secure, Is.False);
-                Assert.That(e.Request.Cookies[0].HttpOnly, Is.True);
-                Assert.That(e.Request.Cookies[0].Size, Is.EqualTo(10));
-                Assert.That(e.Request.Cookies[0].Expires, Is.Null);
-                Assert.That(e.Request.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Request.BodySize, Is.EqualTo(300));
-                Assert.That(e.Request.Timings, Is.Not.Null);
-                Assert.That(e.Response.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Response.Protocol, Is.EqualTo("https"));
-                Assert.That(e.Response.Status, Is.EqualTo(200));
-                Assert.That(e.Response.StatusText, Is.EqualTo("OK"));
-                Assert.That(e.Response.FromCache, Is.False);
-                Assert.That(e.Response.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Response.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Response.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Response.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Response.MimeType, Is.EqualTo("text/html"));
-                Assert.That(e.Response.BytesReceived, Is.EqualTo(400));
-                Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Response.BodySize, Is.EqualTo(300));
-                Assert.That(e.Response.Content.Size, Is.EqualTo(300));
-            }
-            syncEvent.Set();
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal("myNavigationId", e.NavigationId);
+            Assert.Equal(0u, e.RedirectCount);
+            Assert.Equal(eventTime, e.Timestamp);
+            Assert.Equal((ulong)((ulong)(milliseconds)), e.EpochTimestamp);
+            Assert.Equal("myRequestId", e.Request.RequestId);
+            Assert.Equal("https://example.com", e.Request.Url);
+            Assert.Equal("get", e.Request.Method);
+            Assert.Single(e.Request.Headers);
+            Assert.Equal("headerName", e.Request.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Request.Headers[0].Value.Value);
+            Assert.Single(e.Request.Cookies);
+            Assert.Equal("cookieName", e.Request.Cookies[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Cookies[0].Value.Type);
+            Assert.Equal("cookieValue", e.Request.Cookies[0].Value.Value);
+            Assert.Equal("cookieDomain", e.Request.Cookies[0].Domain);
+            Assert.Equal("/cookiePath", e.Request.Cookies[0].Path);
+            Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
+            Assert.False(e.Request.Cookies[0].Secure);
+            Assert.True(e.Request.Cookies[0].HttpOnly);
+            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Null(e.Request.Cookies[0].Expires);
+            Assert.Equal(100u, e.Request.HeadersSize);
+            Assert.Equal(300u, e.Request.BodySize);
+            Assert.NotNull(e.Request.Timings);
+            Assert.Equal("https://example.com", e.Response.Url);
+            Assert.Equal("https", e.Response.Protocol);
+            Assert.Equal(200u, e.Response.Status);
+            Assert.Equal("OK", e.Response.StatusText);
+            Assert.False(e.Response.FromCache);
+            Assert.Single(e.Response.Headers);
+            Assert.Equal("headerName", e.Response.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Response.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Response.Headers[0].Value.Value);
+            Assert.Equal("text/html", e.Response.MimeType);
+            Assert.Equal(400u, e.Response.BytesReceived);
+            Assert.Equal(100u, e.Response.HeadersSize);
+            Assert.Equal(300u, e.Response.BodySize);
+            Assert.Equal(300u, e.Response.Content.Size);
+
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -550,11 +534,10 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveBeforeRequestSendEvent()
     {
         DateTime now = DateTime.UtcNow;
@@ -562,44 +545,43 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnBeforeRequestSent.AddObserver(e =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
-                Assert.That(e.RedirectCount, Is.EqualTo(0));
-                Assert.That(e.Timestamp, Is.EqualTo(eventTime));
-                Assert.That(e.EpochTimestamp, Is.EqualTo(milliseconds));
-                Assert.That(e.Request.RequestId, Is.EqualTo("myRequestId"));
-                Assert.That(e.Request.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Request.Method, Is.EqualTo("get"));
-                Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-                Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-                Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
-                Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
-                Assert.That(e.Request.Cookies[0].Secure, Is.False);
-                Assert.That(e.Request.Cookies[0].HttpOnly, Is.True);
-                Assert.That(e.Request.Cookies[0].Size, Is.EqualTo(10));
-                Assert.That(e.Request.Cookies[0].Expires, Is.Null);
-                Assert.That(e.Request.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Request.BodySize, Is.EqualTo(300));
-                Assert.That(e.Request.Timings, Is.Not.Null);
-                Assert.That(e.Initiator!.Type, Is.EqualTo(InitiatorType.Parser));
-            }
-            syncEvent.Set();
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal("myNavigationId", e.NavigationId);
+            Assert.Equal(0u, e.RedirectCount);
+            Assert.Equal(eventTime, e.Timestamp);
+            Assert.Equal((ulong)((ulong)(milliseconds)), e.EpochTimestamp);
+            Assert.Equal("myRequestId", e.Request.RequestId);
+            Assert.Equal("https://example.com", e.Request.Url);
+            Assert.Equal("get", e.Request.Method);
+            Assert.Single(e.Request.Headers);
+            Assert.Equal("headerName", e.Request.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Request.Headers[0].Value.Value);
+            Assert.Single(e.Request.Cookies);
+            Assert.Equal("cookieName", e.Request.Cookies[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Cookies[0].Value.Type);
+            Assert.Equal("cookieValue", e.Request.Cookies[0].Value.Value);
+            Assert.Equal("cookieDomain", e.Request.Cookies[0].Domain);
+            Assert.Equal("/cookiePath", e.Request.Cookies[0].Path);
+            Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
+            Assert.False(e.Request.Cookies[0].Secure);
+            Assert.True(e.Request.Cookies[0].HttpOnly);
+            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Null(e.Request.Cookies[0].Expires);
+            Assert.Equal(100u, e.Request.HeadersSize);
+            Assert.Equal(300u, e.Request.BodySize);
+            Assert.NotNull(e.Request.Timings);
+            Assert.NotNull(e.Initiator);
+            Assert.Equal(InitiatorType.Parser, e.Initiator.Type);
+
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -620,11 +602,10 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveFetchErrorEvent()
     {
         DateTime now = DateTime.UtcNow;
@@ -632,44 +613,42 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnFetchError.AddObserver((FetchErrorEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnFetchError.AddObserver(e =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
-                Assert.That(e.RedirectCount, Is.EqualTo(0));
-                Assert.That(e.Timestamp, Is.EqualTo(eventTime));
-                Assert.That(e.EpochTimestamp, Is.EqualTo(milliseconds));
-                Assert.That(e.Request.RequestId, Is.EqualTo("myRequestId"));
-                Assert.That(e.Request.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Request.Method, Is.EqualTo("get"));
-                Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-                Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-                Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
-                Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
-                Assert.That(e.Request.Cookies[0].Secure, Is.False);
-                Assert.That(e.Request.Cookies[0].HttpOnly, Is.True);
-                Assert.That(e.Request.Cookies[0].Size, Is.EqualTo(10));
-                Assert.That(e.Request.Cookies[0].Expires, Is.Null);
-                Assert.That(e.Request.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Request.BodySize, Is.EqualTo(300));
-                Assert.That(e.Request.Timings, Is.Not.Null);
-                Assert.That(e.ErrorText, Is.EqualTo("An error occurred"));
-            }
-            syncEvent.Set();
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal("myNavigationId", e.NavigationId);
+            Assert.Equal(0u, e.RedirectCount);
+            Assert.Equal(eventTime, e.Timestamp);
+            Assert.Equal((ulong)((ulong)(milliseconds)), e.EpochTimestamp);
+            Assert.Equal("myRequestId", e.Request.RequestId);
+            Assert.Equal("https://example.com", e.Request.Url);
+            Assert.Equal("get", e.Request.Method);
+            Assert.Single(e.Request.Headers);
+            Assert.Equal("headerName", e.Request.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Request.Headers[0].Value.Value);
+            Assert.Single(e.Request.Cookies);
+            Assert.Equal("cookieName", e.Request.Cookies[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Cookies[0].Value.Type);
+            Assert.Equal("cookieValue", e.Request.Cookies[0].Value.Value);
+            Assert.Equal("cookieDomain", e.Request.Cookies[0].Domain);
+            Assert.Equal("/cookiePath", e.Request.Cookies[0].Path);
+            Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
+            Assert.False(e.Request.Cookies[0].Secure);
+            Assert.True(e.Request.Cookies[0].HttpOnly);
+            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Null(e.Request.Cookies[0].Expires);
+            Assert.Equal(100u, e.Request.HeadersSize);
+            Assert.Equal(300u, e.Request.BodySize);
+            Assert.NotNull(e.Request.Timings);
+            Assert.Equal("An error occurred", e.ErrorText);
+
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -688,11 +667,10 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveResponseStartedEvent()
     {
         DateTime now = DateTime.UtcNow;
@@ -700,57 +678,55 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnResponseStarted.AddObserver((ResponseStartedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnResponseStarted.AddObserver(e =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
-                Assert.That(e.RedirectCount, Is.EqualTo(0));
-                Assert.That(e.Timestamp, Is.EqualTo(eventTime));
-                Assert.That(e.EpochTimestamp, Is.EqualTo(milliseconds));
-                Assert.That(e.Request.RequestId, Is.EqualTo("myRequestId"));
-                Assert.That(e.Request.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Request.Method, Is.EqualTo("get"));
-                Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-                Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-                Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
-                Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
-                Assert.That(e.Request.Cookies[0].Secure, Is.False);
-                Assert.That(e.Request.Cookies[0].HttpOnly, Is.True);
-                Assert.That(e.Request.Cookies[0].Size, Is.EqualTo(10));
-                Assert.That(e.Request.Cookies[0].Expires, Is.Null);
-                Assert.That(e.Request.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Request.BodySize, Is.EqualTo(300));
-                Assert.That(e.Request.Timings, Is.Not.Null);
-                Assert.That(e.Response.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Response.Protocol, Is.EqualTo("https"));
-                Assert.That(e.Response.Status, Is.EqualTo(200));
-                Assert.That(e.Response.StatusText, Is.EqualTo("OK"));
-                Assert.That(e.Response.FromCache, Is.False);
-                Assert.That(e.Response.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Response.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Response.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Response.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Response.MimeType, Is.EqualTo("text/html"));
-                Assert.That(e.Response.BytesReceived, Is.EqualTo(400));
-                Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Response.BodySize, Is.EqualTo(300));
-                Assert.That(e.Response.Content.Size, Is.EqualTo(300));
-            }
-            syncEvent.Set();
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal("myNavigationId", e.NavigationId);
+            Assert.Equal(0u, e.RedirectCount);
+            Assert.Equal(eventTime, e.Timestamp);
+            Assert.Equal((ulong)((ulong)(milliseconds)), e.EpochTimestamp);
+            Assert.Equal("myRequestId", e.Request.RequestId);
+            Assert.Equal("https://example.com", e.Request.Url);
+            Assert.Equal("get", e.Request.Method);
+            Assert.Single(e.Request.Headers);
+            Assert.Equal("headerName", e.Request.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Request.Headers[0].Value.Value);
+            Assert.Single(e.Request.Cookies);
+            Assert.Equal("cookieName", e.Request.Cookies[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Cookies[0].Value.Type);
+            Assert.Equal("cookieValue", e.Request.Cookies[0].Value.Value);
+            Assert.Equal("cookieDomain", e.Request.Cookies[0].Domain);
+            Assert.Equal("/cookiePath", e.Request.Cookies[0].Path);
+            Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
+            Assert.False(e.Request.Cookies[0].Secure);
+            Assert.True(e.Request.Cookies[0].HttpOnly);
+            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Null(e.Request.Cookies[0].Expires);
+            Assert.Equal(100u, e.Request.HeadersSize);
+            Assert.Equal(300u, e.Request.BodySize);
+            Assert.NotNull(e.Request.Timings);
+            Assert.Equal("https://example.com", e.Response.Url);
+            Assert.Equal("https", e.Response.Protocol);
+            Assert.Equal(200u, e.Response.Status);
+            Assert.Equal("OK", e.Response.StatusText);
+            Assert.False(e.Response.FromCache);
+            Assert.Single(e.Response.Headers);
+            Assert.Equal("headerName", e.Response.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Response.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Response.Headers[0].Value.Value);
+            Assert.Equal("text/html", e.Response.MimeType);
+            Assert.Equal(400u, e.Response.BytesReceived);
+            Assert.Equal(100u, e.Response.HeadersSize);
+            Assert.Equal(300u, e.Response.BodySize);
+            Assert.Equal(300u, e.Response.Content.Size);
+
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -769,11 +745,10 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanReceiveResponseCompletedEvent()
     {
         DateTime now = DateTime.UtcNow;
@@ -781,57 +756,55 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnResponseCompleted.AddObserver(e =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
-                Assert.That(e.RedirectCount, Is.EqualTo(0));
-                Assert.That(e.Timestamp, Is.EqualTo(eventTime));
-                Assert.That(e.EpochTimestamp, Is.EqualTo(milliseconds));
-                Assert.That(e.Request.RequestId, Is.EqualTo("myRequestId"));
-                Assert.That(e.Request.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Request.Method, Is.EqualTo("get"));
-                Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
-                Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
-                Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
-                Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
-                Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
-                Assert.That(e.Request.Cookies[0].Secure, Is.False);
-                Assert.That(e.Request.Cookies[0].HttpOnly, Is.True);
-                Assert.That(e.Request.Cookies[0].Size, Is.EqualTo(10));
-                Assert.That(e.Request.Cookies[0].Expires, Is.Null);
-                Assert.That(e.Request.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Request.BodySize, Is.EqualTo(300));
-                Assert.That(e.Request.Timings, Is.Not.Null);
-                Assert.That(e.Response.Url, Is.EqualTo("https://example.com"));
-                Assert.That(e.Response.Protocol, Is.EqualTo("https"));
-                Assert.That(e.Response.Status, Is.EqualTo(200));
-                Assert.That(e.Response.StatusText, Is.EqualTo("OK"));
-                Assert.That(e.Response.FromCache, Is.False);
-                Assert.That(e.Response.Headers, Has.Count.EqualTo(1));
-                Assert.That(e.Response.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Response.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
-                Assert.That(e.Response.Headers[0].Value.Value, Is.EqualTo("headerValue"));
-                Assert.That(e.Response.MimeType, Is.EqualTo("text/html"));
-                Assert.That(e.Response.BytesReceived, Is.EqualTo(400));
-                Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
-                Assert.That(e.Response.BodySize, Is.EqualTo(300));
-                Assert.That(e.Response.Content.Size, Is.EqualTo(300));
-            }
-            syncEvent.Set();
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal("myNavigationId", e.NavigationId);
+            Assert.Equal(0u, e.RedirectCount);
+            Assert.Equal(eventTime, e.Timestamp);
+            Assert.Equal((ulong)((ulong)(milliseconds)), e.EpochTimestamp);
+            Assert.Equal("myRequestId", e.Request.RequestId);
+            Assert.Equal("https://example.com", e.Request.Url);
+            Assert.Equal("get", e.Request.Method);
+            Assert.Single(e.Request.Headers);
+            Assert.Equal("headerName", e.Request.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Request.Headers[0].Value.Value);
+            Assert.Single(e.Request.Cookies);
+            Assert.Equal("cookieName", e.Request.Cookies[0].Name);
+            Assert.Equal(BytesValueType.String, e.Request.Cookies[0].Value.Type);
+            Assert.Equal("cookieValue", e.Request.Cookies[0].Value.Value);
+            Assert.Equal("cookieDomain", e.Request.Cookies[0].Domain);
+            Assert.Equal("/cookiePath", e.Request.Cookies[0].Path);
+            Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
+            Assert.False(e.Request.Cookies[0].Secure);
+            Assert.True(e.Request.Cookies[0].HttpOnly);
+            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Null(e.Request.Cookies[0].Expires);
+            Assert.Equal(100u, e.Request.HeadersSize);
+            Assert.Equal(300u, e.Request.BodySize);
+            Assert.NotNull(e.Request.Timings);
+            Assert.Equal("https://example.com", e.Response.Url);
+            Assert.Equal("https", e.Response.Protocol);
+            Assert.Equal(200u, e.Response.Status);
+            Assert.Equal("OK", e.Response.StatusText);
+            Assert.False(e.Response.FromCache);
+            Assert.Single(e.Response.Headers);
+            Assert.Equal("headerName", e.Response.Headers[0].Name);
+            Assert.Equal(BytesValueType.String, e.Response.Headers[0].Value.Type);
+            Assert.Equal("headerValue", e.Response.Headers[0].Value.Value);
+            Assert.Equal("text/html", e.Response.MimeType);
+            Assert.Equal(400u, e.Response.BytesReceived);
+            Assert.Equal(100u, e.Response.HeadersSize);
+            Assert.Equal(300u, e.Response.BodySize);
+            Assert.Equal(300u, e.Response.Content.Size);
+
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = $$"""
@@ -850,7 +823,6 @@ public class NetworkModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 }

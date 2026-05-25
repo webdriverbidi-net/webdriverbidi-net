@@ -3,20 +3,18 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-
-[TestFixture]
 public class UserPromptHandlerTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerialize()
     {
         UserPromptHandler handler = new();
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithAllOptions()
     {
         UserPromptHandler handler = new()
@@ -30,31 +28,47 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(6));
-            Assert.That(serialized, Contains.Key("default"));
-            Assert.That(serialized["default"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["default"]!.Value<string>(), Is.EqualTo("accept"));
-            Assert.That(serialized, Contains.Key("alert"));
-            Assert.That(serialized["alert"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["alert"]!.Value<string>(), Is.EqualTo("accept"));
-            Assert.That(serialized, Contains.Key("confirm"));
-            Assert.That(serialized["confirm"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["confirm"]!.Value<string>(), Is.EqualTo("dismiss"));
-            Assert.That(serialized, Contains.Key("prompt"));
-            Assert.That(serialized["prompt"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["prompt"]!.Value<string>(), Is.EqualTo("dismiss"));
-            Assert.That(serialized, Contains.Key("beforeunload"));
-            Assert.That(serialized["beforeunload"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["beforeunload"]!.Value<string>(), Is.EqualTo("ignore"));
-            Assert.That(serialized, Contains.Key("file"));
-            Assert.That(serialized["file"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["file"]!.Value<string>(), Is.EqualTo("ignore"));
-        }
+
+        Assert.Equal(6, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("default"));
+        JToken? defaultToken = serialized["default"];
+        Assert.NotNull(defaultToken);
+        Assert.Equal(JTokenType.String, defaultToken.Type);
+        Assert.Equal("accept", defaultToken.Value<string>());
+
+        Assert.True(serialized.ContainsKey("alert"));
+        JToken? alert = serialized["alert"];
+        Assert.NotNull(alert);
+        Assert.Equal(JTokenType.String, alert.Type);
+        Assert.Equal("accept", alert.Value<string>());
+
+        Assert.True(serialized.ContainsKey("confirm"));
+        JToken? confirm = serialized["confirm"];
+        Assert.NotNull(confirm);
+        Assert.Equal(JTokenType.String, confirm.Type);
+        Assert.Equal("dismiss", confirm.Value<string>());
+
+        Assert.True(serialized.ContainsKey("prompt"));
+        JToken? prompt = serialized["prompt"];
+        Assert.NotNull(prompt);
+        Assert.Equal(JTokenType.String, prompt.Type);
+        Assert.Equal("dismiss", prompt.Value<string>());
+
+        Assert.True(serialized.ContainsKey("beforeunload"));
+        JToken? beforeunload = serialized["beforeunload"];
+        Assert.NotNull(beforeunload);
+        Assert.Equal(JTokenType.String, beforeunload.Type);
+        Assert.Equal("ignore", beforeunload.Value<string>());
+
+        Assert.True(serialized.ContainsKey("file"));
+        JToken? file = serialized["file"];
+        Assert.NotNull(file);
+        Assert.Equal(JTokenType.String, file.Type);
+        Assert.Equal("ignore", file.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithOnlyDefault()
     {
         UserPromptHandler handler = new()
@@ -63,16 +77,17 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("default"));
-            Assert.That(serialized["default"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["default"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("default"));
+        JToken? defaultToken = serialized["default"];
+        Assert.NotNull(defaultToken);
+        Assert.Equal(JTokenType.String, defaultToken.Type);
+        Assert.Equal("accept", defaultToken.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithOnlyAlert()
     {
         UserPromptHandler handler = new()
@@ -81,16 +96,17 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("alert"));
-            Assert.That(serialized["alert"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["alert"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("alert"));
+        JToken? alert = serialized["alert"];
+        Assert.NotNull(alert);
+        Assert.Equal(JTokenType.String, alert.Type);
+        Assert.Equal("accept", alert.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithOnlyConfirm()
     {
         UserPromptHandler handler = new()
@@ -99,16 +115,17 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("confirm"));
-            Assert.That(serialized["confirm"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["confirm"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("confirm"));
+        JToken? confirm = serialized["confirm"];
+        Assert.NotNull(confirm);
+        Assert.Equal(JTokenType.String, confirm.Type);
+        Assert.Equal("accept", confirm.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithOnlyPrompt()
     {
         UserPromptHandler handler = new()
@@ -117,16 +134,17 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("prompt"));
-            Assert.That(serialized["prompt"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["prompt"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("prompt"));
+        JToken? prompt = serialized["prompt"];
+        Assert.NotNull(prompt);
+        Assert.Equal(JTokenType.String, prompt.Type);
+        Assert.Equal("accept", prompt.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithOnlyBeforeUnload()
     {
         UserPromptHandler handler = new()
@@ -135,16 +153,17 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("beforeunload"));
-            Assert.That(serialized["beforeunload"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["beforeunload"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("beforeunload"));
+        JToken? beforeunload = serialized["beforeunload"];
+        Assert.NotNull(beforeunload);
+        Assert.Equal(JTokenType.String, beforeunload.Type);
+        Assert.Equal("accept", beforeunload.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithOnlyFile()
     {
         UserPromptHandler handler = new()
@@ -153,16 +172,17 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("file"));
-            Assert.That(serialized["file"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["file"]!.Value<string>(), Is.EqualTo("accept"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("file"));
+        JToken? file = serialized["file"];
+        Assert.NotNull(file);
+        Assert.Equal(JTokenType.String, file.Type);
+        Assert.Equal("accept", file.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -173,19 +193,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.Null);
-            Assert.That(handler.Alert, Is.Null);
-            Assert.That(handler.Confirm, Is.Null);
-            Assert.That(handler.Prompt, Is.Null);
-            Assert.That(handler.BeforeUnload, Is.Null);
-            Assert.That(handler.File, Is.Null);
-        }
+        Assert.NotNull(handler);
+
+        Assert.Null(handler.Default);
+        Assert.Null(handler.Alert);
+        Assert.Null(handler.Confirm);
+        Assert.Null(handler.Prompt);
+        Assert.Null(handler.BeforeUnload);
+        Assert.Null(handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithAllOptions()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -202,19 +220,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handler.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handler.Confirm, Is.EqualTo(UserPromptHandlerType.Dismiss));
-            Assert.That(handler.Prompt, Is.EqualTo(UserPromptHandlerType.Dismiss));
-            Assert.That(handler.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Ignore));
-            Assert.That(handler.File, Is.EqualTo(UserPromptHandlerType.Ignore));
-        }
+        Assert.NotNull(handler);
+
+        Assert.Equal(UserPromptHandlerType.Accept, handler.Default);
+        Assert.Equal(UserPromptHandlerType.Accept, handler.Alert);
+        Assert.Equal(UserPromptHandlerType.Dismiss, handler.Confirm);
+        Assert.Equal(UserPromptHandlerType.Dismiss, handler.Prompt);
+        Assert.Equal(UserPromptHandlerType.Ignore, handler.BeforeUnload);
+        Assert.Equal(UserPromptHandlerType.Ignore, handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeUserPromptHandlerWithOnlyDefault()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -226,19 +242,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handler.Alert, Is.Null);
-            Assert.That(handler.Confirm, Is.Null);
-            Assert.That(handler.Prompt, Is.Null);
-            Assert.That(handler.BeforeUnload, Is.Null);
-            Assert.That(handler.File, Is.Null);
-        }
+        Assert.NotNull(handler);
+
+        Assert.Equal(UserPromptHandlerType.Accept, handler.Default);
+        Assert.Null(handler.Alert);
+        Assert.Null(handler.Confirm);
+        Assert.Null(handler.Prompt);
+        Assert.Null(handler.BeforeUnload);
+        Assert.Null(handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeUserPromptHandlerWithOnlyAlert()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -250,19 +264,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.Null);
-            Assert.That(handler.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handler.Confirm, Is.Null);
-            Assert.That(handler.Prompt, Is.Null);
-            Assert.That(handler.BeforeUnload, Is.Null);
-            Assert.That(handler.File, Is.Null);
-        }
+        Assert.NotNull(handler);
+
+        Assert.Null(handler.Default);
+        Assert.Equal(UserPromptHandlerType.Accept, handler.Alert);
+        Assert.Null(handler.Confirm);
+        Assert.Null(handler.Prompt);
+        Assert.Null(handler.BeforeUnload);
+        Assert.Null(handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeUserPromptHandlerWithOnlyConfirm()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -274,19 +286,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.Null);
-            Assert.That(handler.Alert, Is.Null);
-            Assert.That(handler.Confirm, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handler.Prompt, Is.Null);
-            Assert.That(handler.BeforeUnload, Is.Null);
-            Assert.That(handler.File, Is.Null);
-        }
+        Assert.NotNull(handler);
+
+        Assert.Null(handler.Default);
+        Assert.Null(handler.Alert);
+        Assert.Equal(UserPromptHandlerType.Accept, handler.Confirm);
+        Assert.Null(handler.Prompt);
+        Assert.Null(handler.BeforeUnload);
+        Assert.Null(handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeUserPromptHandlerWithOnlyPrompt()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -298,19 +308,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.Null);
-            Assert.That(handler.Alert, Is.Null);
-            Assert.That(handler.Confirm, Is.Null);
-            Assert.That(handler.Prompt, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handler.BeforeUnload, Is.Null);
-            Assert.That(handler.File, Is.Null);
-        }
+        Assert.NotNull(handler);
+
+        Assert.Null(handler.Default);
+        Assert.Null(handler.Alert);
+        Assert.Null(handler.Confirm);
+        Assert.Equal(UserPromptHandlerType.Accept, handler.Prompt);
+        Assert.Null(handler.BeforeUnload);
+        Assert.Null(handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeUserPromptHandlerWithOnlyBeforeUnload()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -322,19 +330,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.Null);
-            Assert.That(handler.Alert, Is.Null);
-            Assert.That(handler.Confirm, Is.Null);
-            Assert.That(handler.Prompt, Is.Null);
-            Assert.That(handler.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(handler.File, Is.Null);
-        }
+        Assert.NotNull(handler);
+
+        Assert.Null(handler.Default);
+        Assert.Null(handler.Alert);
+        Assert.Null(handler.Confirm);
+        Assert.Null(handler.Prompt);
+        Assert.Equal(UserPromptHandlerType.Accept, handler.BeforeUnload);
+        Assert.Null(handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeUserPromptHandlerWithOnlyFile()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -346,19 +352,17 @@ public class UserPromptHandlerTests
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
-        Assert.That(handler, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(handler.Default, Is.Null);
-            Assert.That(handler.Alert, Is.Null);
-            Assert.That(handler.Confirm, Is.Null);
-            Assert.That(handler.Prompt, Is.Null);
-            Assert.That(handler.BeforeUnload, Is.Null);
-            Assert.That(handler.File, Is.EqualTo(UserPromptHandlerType.Accept));
-        }
+        Assert.NotNull(handler);
+
+        Assert.Null(handler.Default);
+        Assert.Null(handler.Alert);
+        Assert.Null(handler.Confirm);
+        Assert.Null(handler.Prompt);
+        Assert.Null(handler.BeforeUnload);
+        Assert.Equal(UserPromptHandlerType.Accept, handler.File);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializingWithInvalidTypeValueThrows()
     {
         // ProxyConfigurationResult constructor is internal, and the only
@@ -369,6 +373,6 @@ public class UserPromptHandlerTests
                         "default": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserPromptHandler>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptHandler>(json));
     }
 }

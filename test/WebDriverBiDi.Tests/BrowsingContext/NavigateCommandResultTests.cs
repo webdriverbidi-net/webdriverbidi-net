@@ -2,10 +2,9 @@ namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
 
-[TestFixture]
 public class NavigationResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -14,15 +13,13 @@ public class NavigationResultTests
                       }
                       """;
         NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Url, Is.EqualTo("http://example.com"));
-            Assert.That(result.NavigationId, Is.Null);
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("http://example.com", result.Url);
+        Assert.Null(result.NavigationId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNavigationId()
     {
         string json = """
@@ -32,15 +29,13 @@ public class NavigationResultTests
                       }
                       """;
         NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Url, Is.EqualTo("http://example.com"));
-            Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
-        }
+        Assert.NotNull(result);
+
+        Assert.Equal("http://example.com", result.Url);
+        Assert.Equal("myNavigationId", result.NavigationId);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -49,19 +44,19 @@ public class NavigationResultTests
                       }
                       """;
         NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         NavigateCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidUrlTypeThrows()
     {
         string json = """
@@ -69,10 +64,10 @@ public class NavigationResultTests
                         "url": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidNavigationIdTypeThrows()
     {
         string json = """
@@ -81,6 +76,6 @@ public class NavigationResultTests
                         "navigation": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json));
     }
 }

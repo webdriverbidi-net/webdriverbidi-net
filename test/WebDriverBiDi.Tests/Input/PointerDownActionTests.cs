@@ -3,28 +3,30 @@ namespace WebDriverBiDi.Input;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class PointerDownActionTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         PointerDownAction properties = new(0);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerDown"));
-            Assert.That(serialized, Contains.Key("button"));
-            Assert.That(serialized["button"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["button"]!.Value<long>(), Is.EqualTo(0));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerDown", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("button"));
+        JToken? button = serialized["button"];
+        Assert.NotNull(button);
+        Assert.Equal(JTokenType.Integer, button.Type);
+        Assert.Equal(0L, button.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalWidthAndHeight()
     {
         PointerDownAction properties = new(0)
@@ -34,25 +36,34 @@ public class PointerDownActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerDown"));
-            Assert.That(serialized, Contains.Key("button"));
-            Assert.That(serialized["button"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["button"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("width"));
-            Assert.That(serialized["width"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["width"]!.Value<long>(), Is.EqualTo(1));
-            Assert.That(serialized, Contains.Key("height"));
-            Assert.That(serialized["height"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["height"]!.Value<long>(), Is.EqualTo(1));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerDown", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("button"));
+        JToken? button = serialized["button"];
+        Assert.NotNull(button);
+        Assert.Equal(JTokenType.Integer, button.Type);
+        Assert.Equal(0L, button.Value<long>());
+
+        Assert.True(serialized.ContainsKey("width"));
+        JToken? width = serialized["width"];
+        Assert.NotNull(width);
+        Assert.Equal(JTokenType.Integer, width.Type);
+        Assert.Equal(1L, width.Value<long>());
+
+        Assert.True(serialized.ContainsKey("height"));
+        JToken? height = serialized["height"];
+        Assert.NotNull(height);
+        Assert.Equal(JTokenType.Integer, height.Type);
+        Assert.Equal(1L, height.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalPressureProperties()
     {
         PointerDownAction properties = new(0)
@@ -62,25 +73,34 @@ public class PointerDownActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerDown"));
-            Assert.That(serialized, Contains.Key("button"));
-            Assert.That(serialized["button"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["button"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("pressure"));
-            Assert.That(serialized["pressure"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["pressure"]!.Value<double>(), Is.EqualTo(1));
-            Assert.That(serialized, Contains.Key("tangentialPressure"));
-            Assert.That(serialized["tangentialPressure"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["tangentialPressure"]!.Value<double>(), Is.EqualTo(1));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerDown", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("button"));
+        JToken? button = serialized["button"];
+        Assert.NotNull(button);
+        Assert.Equal(JTokenType.Integer, button.Type);
+        Assert.Equal(0L, button.Value<long>());
+
+        Assert.True(serialized.ContainsKey("pressure"));
+        JToken? pressure = serialized["pressure"];
+        Assert.NotNull(pressure);
+        Assert.Equal(JTokenType.Float, pressure.Type);
+        Assert.Equal(1, pressure.Value<double>());
+
+        Assert.True(serialized.ContainsKey("tangentialPressure"));
+        JToken? tangentialPressure = serialized["tangentialPressure"];
+        Assert.NotNull(tangentialPressure);
+        Assert.Equal(JTokenType.Float, tangentialPressure.Type);
+        Assert.Equal(1, tangentialPressure.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalTwistProperty()
     {
         PointerDownAction properties = new(0)
@@ -89,29 +109,35 @@ public class PointerDownActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerDown"));
-            Assert.That(serialized, Contains.Key("button"));
-            Assert.That(serialized["button"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["button"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("twist"));
-            Assert.That(serialized["twist"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["twist"]!.Value<ulong>(), Is.EqualTo(1));
-        }
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerDown", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("button"));
+        JToken? button = serialized["button"];
+        Assert.NotNull(button);
+        Assert.Equal(JTokenType.Integer, button.Type);
+        Assert.Equal(0L, button.Value<long>());
+
+        Assert.True(serialized.ContainsKey("twist"));
+        JToken? twist = serialized["twist"];
+        Assert.NotNull(twist);
+        Assert.Equal(JTokenType.Integer, twist.Type);
+        Assert.Equal(1UL, twist.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestSettingTwistPropertyToInvalidValueThrows()
     {
         PointerDownAction properties = new(0);
-        Assert.That(() => properties.Twist = 360, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Twist value must be between 0 and 359"));
+        Assert.Contains("Twist value must be between 0 and 359", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Twist = 360).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalAngleProperties()
     {
         PointerDownAction properties = new(0)
@@ -121,34 +147,41 @@ public class PointerDownActionTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerDown"));
-            Assert.That(serialized, Contains.Key("button"));
-            Assert.That(serialized["button"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["button"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("altitudeAngle"));
-            Assert.That(serialized["altitudeAngle"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["altitudeAngle"]!.Value<double>(), Is.EqualTo(1));
-            Assert.That(serialized, Contains.Key("azimuthAngle"));
-            Assert.That(serialized["azimuthAngle"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(serialized["azimuthAngle"]!.Value<double>(), Is.EqualTo(1));
-        }
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("pointerDown", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("button"));
+        JToken? button = serialized["button"];
+        Assert.NotNull(button);
+        Assert.Equal(JTokenType.Integer, button.Type);
+        Assert.Equal(0L, button.Value<long>());
+
+        Assert.True(serialized.ContainsKey("altitudeAngle"));
+        JToken? altitudeAngle = serialized["altitudeAngle"];
+        Assert.NotNull(altitudeAngle);
+        Assert.Equal(JTokenType.Float, altitudeAngle.Type);
+        Assert.Equal(1, altitudeAngle.Value<double>());
+
+        Assert.True(serialized.ContainsKey("azimuthAngle"));
+        JToken? azimuthAngle = serialized["azimuthAngle"];
+        Assert.NotNull(azimuthAngle);
+        Assert.Equal(JTokenType.Float, azimuthAngle.Type);
+        Assert.Equal(1, azimuthAngle.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestSettingAnglePropertiesToInvalidValueThrows()
     {
         PointerDownAction properties = new(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => properties.AltitudeAngle = -0.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
-            Assert.That(() => properties.AltitudeAngle = 1.58, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
-            Assert.That(() => properties.AzimuthAngle = -0.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
-            Assert.That(() => properties.AzimuthAngle = 6.29, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
-        }
+
+        Assert.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AltitudeAngle = -0.01).Message);
+        Assert.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AltitudeAngle = 1.58).Message);
+        Assert.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AzimuthAngle = -0.01).Message);
+        Assert.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AzimuthAngle = 6.29).Message);
     }
 }

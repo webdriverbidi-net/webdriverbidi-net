@@ -13,7 +13,6 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver023 analyzer that detects module command calls inside event handlers.
 /// </summary>
-[TestFixture]
 public class BiDiDriver023AnalyzerTests
 {
     // Common stub definitions reused across tests.
@@ -76,7 +75,7 @@ public class BiDiDriver023AnalyzerTests
     /// <summary>
     /// Tests that a module command call inside an event handler reports a warning.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -113,13 +112,13 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that when RunHandlerAsynchronously is set no diagnostic is reported.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithRunHandlerAsynchronously_NoDiagnostic()
     {
         string test = $$"""
@@ -149,13 +148,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a non-AddObserver invocation is not analyzed.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task NonAddObserverInvocation_NoDiagnostic()
     {
         string test = $$"""
@@ -186,13 +185,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a method returning non-EventObserver is not analyzed.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task MethodReturningNonEventObserver_NoDiagnostic()
     {
         string test = $$"""
@@ -229,13 +228,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that multiple module commands in one handler report multiple warnings.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithMultipleModuleCommands_ReportsMultipleWarnings()
     {
         string test = $$"""
@@ -280,13 +279,13 @@ public class BiDiDriver023AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected1);
         testState.ExpectedDiagnostics.Add(expected2);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a named method reference containing a module command reports a warning.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task NamedMethodHandler_WithModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -328,13 +327,13 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a member-access method reference containing a module command reports a warning.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task MemberAccessMethodReference_WithModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -376,13 +375,13 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a local function containing a module command reports a warning.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task LocalFunctionHandler_WithModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -421,13 +420,13 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a parenthesized lambda handler with a module command reports a warning.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task ParenthesizedLambdaHandler_WithModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -464,13 +463,13 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a handler with no module commands does not report a diagnostic.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithNoModuleCommands_NoDiagnostic()
     {
         string test = $$"""
@@ -502,13 +501,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a non-Task-returning module method does not report a diagnostic.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithNonTaskReturningModuleMethod_NoDiagnostic()
     {
         string test = $$"""
@@ -539,13 +538,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a custom class ending in "Module" without the Module base class is not flagged.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithCustomModuleNotInheritingModule_NoDiagnostic()
     {
         string test = $$"""
@@ -581,13 +580,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with no arguments is not analyzed.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task AddObserver_NoArguments_NoDiagnostic()
     {
         string test = $$"""
@@ -621,13 +620,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a module command in a deep inheritance hierarchy is reported.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithDeepInheritanceModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -678,13 +677,13 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that AddObserver with an unresolved method symbol is handled gracefully.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task AddObserver_UnresolvedMethodSymbol_NoDiagnostic()
     {
         string test = $$"""
@@ -720,13 +719,13 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a module non-generic Task method (e.g. Task DoAsync()) is not flagged.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithNonGenericTaskModuleMethod_NoDiagnostic()
     {
         string test = $$"""
@@ -764,7 +763,7 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -772,7 +771,7 @@ public class BiDiDriver023AnalyzerTests
     /// because GetHandlerBody reaches its default null arm (the expression is not a lambda
     /// or identifier/member-access method group).
     /// </summary>
-    [Test]
+    [Fact]
     public async Task AddObserver_HandlerReturnedByInvocation_NoDiagnostic()
     {
         string test = $$"""
@@ -805,7 +804,7 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -813,7 +812,7 @@ public class BiDiDriver023AnalyzerTests
     /// identifier resolves to an ILocalSymbol, not an IMethodSymbol, so GetMethodBodyFromSymbol
     /// returns null and no diagnostic is reported.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task AddObserver_LocalFuncVariableAsIdentifier_NoDiagnostic()
     {
         string test = $$"""
@@ -847,14 +846,14 @@ public class BiDiDriver023AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a named method with an expression body containing a module command reports a warning.
     /// Covers the expression-body (non-block) branch of GetMethodBodyFromSymbol.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task NamedMethod_ExpressionBody_WithModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -894,14 +893,14 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that a local function with an expression body containing a module command reports a warning.
     /// Covers the expression-body (non-block) branch of GetMethodBodyFromSymbol for local functions.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task LocalFunction_ExpressionBody_WithModuleCommand_ReportsWarning()
     {
         string test = $$"""
@@ -938,19 +937,19 @@ public class BiDiDriver023AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that SupportedDiagnostics contains BIDI023.
     /// </summary>
-    [Test]
+    [Fact]
     public void SupportedDiagnostics_ContainsBIDI023()
     {
         BiDiDriver023_ModuleCommandInEventHandlerAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.That(diagnostics, Has.Length.EqualTo(1));
-        Assert.That(diagnostics[0].Id, Is.EqualTo(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId));
+        Assert.Single(diagnostics);
+        Assert.Equal(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, diagnostics[0].Id);
     }
 }

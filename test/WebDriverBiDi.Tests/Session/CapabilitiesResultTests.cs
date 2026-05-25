@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
 
-[TestFixture]
 public class CapabilitiesResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -20,24 +19,22 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.Proxy, Is.Null);
-            Assert.That(result.UnhandledPromptBehavior, Is.Null);
-            Assert.That(result.WebSocketUrl, Is.Null);
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.True(result.SetWindowRect);
+        Assert.Null(result.Proxy);
+        Assert.Null(result.UnhandledPromptBehavior);
+        Assert.Null(result.WebSocketUrl);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithWebSocketUrl()
     {
         string json = """
@@ -53,24 +50,22 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Null);
-            Assert.That(result.UnhandledPromptBehavior, Is.Null);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.WebSocketUrl, Is.EqualTo("ws://socket:1234"));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.Null(result.Proxy);
+        Assert.Null(result.UnhandledPromptBehavior);
+        Assert.True(result.SetWindowRect);
+        Assert.Equal("ws://socket:1234", result.WebSocketUrl);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeManualWithFullProxyProperties()
     {
         string json = """
@@ -93,30 +88,29 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Not.Null);
-            ManualProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
-            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.Manual));
-            Assert.That(proxyResult.HttpProxy, Is.EqualTo("http.proxy"));
-            Assert.That(proxyResult.SslProxy, Is.EqualTo("ssl.proxy"));
-            Assert.That(proxyResult.SocksProxy, Is.EqualTo("socks.proxy"));
-            Assert.That(proxyResult.SocksVersion, Is.EqualTo(5));
-            Assert.That(proxyResult.NoProxyAddresses, Has.Count.EqualTo(1));
-            Assert.That(proxyResult.AdditionalData, Is.Empty);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.Proxy);
+        ManualProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+        Assert.Equal(ProxyType.Manual, proxyResult.ProxyType);
+        Assert.Equal("http.proxy", proxyResult.HttpProxy);
+        Assert.Equal("ssl.proxy", proxyResult.SslProxy);
+        Assert.Equal("socks.proxy", proxyResult.SocksProxy);
+        Assert.Equal(5, proxyResult.SocksVersion);
+        Assert.NotNull(proxyResult.NoProxyAddresses);
+        Assert.Single(proxyResult.NoProxyAddresses);
+        Assert.Empty(proxyResult.AdditionalData);
+        Assert.True(result.SetWindowRect);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeProxyAutoConfigWithFullProxyProperties()
     {
         string json = """
@@ -135,26 +129,24 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Not.Null);
-            PacProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
-            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.ProxyAutoConfig));
-            Assert.That(proxyResult.ProxyAutoConfigUrl, Is.EqualTo("proxy.autoconfig.url"));
-            Assert.That(proxyResult.AdditionalData, Is.Empty);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.Proxy);
+        PacProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
+        Assert.Equal(ProxyType.ProxyAutoConfig, proxyResult.ProxyType);
+        Assert.Equal("proxy.autoconfig.url", proxyResult.ProxyAutoConfigUrl);
+        Assert.Empty(proxyResult.AdditionalData);
+        Assert.True(result.SetWindowRect);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeAutoDetectWithFullProxyProperties()
     {
         string json = """
@@ -172,25 +164,23 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Not.Null);
-            AutoDetectProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
-            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.AutoDetect));
-            Assert.That(proxyResult.AdditionalData, Is.Empty);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.Proxy);
+        AutoDetectProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
+        Assert.Equal(ProxyType.AutoDetect, proxyResult.ProxyType);
+        Assert.Empty(proxyResult.AdditionalData);
+        Assert.True(result.SetWindowRect);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeSystemWithFullProxyProperties()
     {
         string json = """
@@ -208,25 +198,23 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Not.Null);
-            SystemProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
-            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.System));
-            Assert.That(proxyResult.AdditionalData, Is.Empty);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.Proxy);
+        SystemProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        Assert.Equal(ProxyType.System, proxyResult.ProxyType);
+        Assert.Empty(proxyResult.AdditionalData);
+        Assert.True(result.SetWindowRect);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeDirectWithFullProxyProperties()
     {
         string json = """
@@ -244,25 +232,23 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Not.Null);
-            DirectProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
-            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.Direct));
-            Assert.That(proxyResult.AdditionalData, Is.Empty);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.Proxy);
+        DirectProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
+        Assert.Equal(ProxyType.Direct, proxyResult.ProxyType);
+        Assert.Empty(proxyResult.AdditionalData);
+        Assert.True(result.SetWindowRect);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithProxyContainingAdditionalData()
     {
         string json = """
@@ -281,28 +267,26 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Not.Null);
-            SystemProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
-            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.System));
-            Assert.That(proxyResult.AdditionalData, Has.Count.EqualTo(1));
-            Assert.That(proxyResult.AdditionalData, Contains.Key("additionalName"));
-            Assert.That(proxyResult.AdditionalData["additionalName"], Is.InstanceOf<string>());
-            Assert.That(proxyResult.AdditionalData["additionalName"], Is.EqualTo("additionalValue"));
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.Proxy);
+        SystemProxyConfigurationResult proxyResult = result.Proxy.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+        Assert.Equal(ProxyType.System, proxyResult.ProxyType);
+        Assert.Single(proxyResult.AdditionalData);
+        Assert.True(proxyResult.AdditionalData.ContainsKey("additionalName"));
+        Assert.IsType<string>(proxyResult.AdditionalData["additionalName"]);
+        Assert.Equal("additionalValue", proxyResult.AdditionalData["additionalName"]);
+        Assert.True(result.SetWindowRect);
+        Assert.True(result.AdditionalCapabilities.ContainsKey("capName"));
+        Assert.Equal("capValue", result.AdditionalCapabilities["capName"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -317,12 +301,12 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         CapabilitiesResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithInvalidProxyTypeThrows()
     {
         // spell-checker: disable
@@ -342,44 +326,11 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'ProxyConfiguration' proxyType property contains unknown value 'proxyautoconfig'"));
+        Assert.Contains("JSON for 'ProxyConfiguration' proxyType property contains unknown value 'proxyautoconfig'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json)).Message);
         // spell-checker: enable
     }
 
-    // TODO (Issue #19): Remove this test and enable the one below
-    // once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
-    // [Test]
-    public void TestDeserializeWithEmptyProxyYieldsNull()
-    {
-        string json = """
-                      {
-                        "browserName": "greatBrowser",
-                        "browserVersion": "101.5b",
-                        "platformName": "otherOS",
-                        "userAgent": "WebDriverBidi.NET/1.0",
-                        "acceptInsecureCerts": true,
-                        "proxy": {},
-                        "setWindowRect": true,
-                        "capName": "capValue"
-                      }
-                      """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Null);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
-            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        }
-    }
-
-    [Test]
+    [Fact]
     public void TestCannotDeserializeWithEmptyProxy()
     {
         string json = """
@@ -394,10 +345,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'proxyType' property"));
+        Assert.Contains("must contain a 'proxyType' property", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithFullUnhandledPromptBehavior()
     {
         string json = """
@@ -419,27 +370,25 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.UnhandledPromptBehavior, Is.Not.Null);
-            UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior!;
-            Assert.That(userPromptHandler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(userPromptHandler.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(userPromptHandler.Confirm, Is.EqualTo(UserPromptHandlerType.Dismiss));
-            Assert.That(userPromptHandler.Prompt, Is.EqualTo(UserPromptHandlerType.Dismiss));
-            Assert.That(userPromptHandler.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Ignore));
-            Assert.That(userPromptHandler.File, Is.EqualTo(UserPromptHandlerType.Ignore));
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.UnhandledPromptBehavior);
+        UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior;
+        Assert.Equal(UserPromptHandlerType.Accept, userPromptHandler.Default);
+        Assert.Equal(UserPromptHandlerType.Accept, userPromptHandler.Alert);
+        Assert.Equal(UserPromptHandlerType.Dismiss, userPromptHandler.Confirm);
+        Assert.Equal(UserPromptHandlerType.Dismiss, userPromptHandler.Prompt);
+        Assert.Equal(UserPromptHandlerType.Ignore, userPromptHandler.BeforeUnload);
+        Assert.Equal(UserPromptHandlerType.Ignore, userPromptHandler.File);
+        Assert.True(result.SetWindowRect);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNoUnhandledPromptBehavior()
     {
         string json = """
@@ -454,26 +403,24 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.UnhandledPromptBehavior, Is.Not.Null);
-            UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior!;
-            Assert.That(userPromptHandler.Default, Is.Null);
-            Assert.That(userPromptHandler.Alert, Is.Null);
-            Assert.That(userPromptHandler.Confirm, Is.Null);
-            Assert.That(userPromptHandler.Prompt, Is.Null);
-            Assert.That(userPromptHandler.BeforeUnload, Is.Null);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.UnhandledPromptBehavior);
+        UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior;
+        Assert.Null(userPromptHandler.Default);
+        Assert.Null(userPromptHandler.Alert);
+        Assert.Null(userPromptHandler.Confirm);
+        Assert.Null(userPromptHandler.Prompt);
+        Assert.Null(userPromptHandler.BeforeUnload);
+        Assert.True(result.SetWindowRect);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithPartialUnhandledPromptBehavior()
     {
         string json = """
@@ -490,26 +437,24 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.UnhandledPromptBehavior, Is.Not.Null);
-            UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior!;
-            Assert.That(userPromptHandler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
-            Assert.That(userPromptHandler.Alert, Is.Null);
-            Assert.That(userPromptHandler.Confirm, Is.Null);
-            Assert.That(userPromptHandler.Prompt, Is.Null);
-            Assert.That(userPromptHandler.BeforeUnload, Is.Null);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.UnhandledPromptBehavior);
+        UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior;
+        Assert.Equal(UserPromptHandlerType.Accept, userPromptHandler.Default);
+        Assert.Null(userPromptHandler.Alert);
+        Assert.Null(userPromptHandler.Confirm);
+        Assert.Null(userPromptHandler.Prompt);
+        Assert.Null(userPromptHandler.BeforeUnload);
+        Assert.True(result.SetWindowRect);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializingWithInvalidUnhandledPromptBehaviorThrows()
     {
         string json = """
@@ -523,10 +468,10 @@ public class CapabilitiesResultTests
                         "unhandledPromptBehavior": "accept"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWithNoAdditionalProperties()
     {
         string json = """
@@ -543,21 +488,19 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result.Proxy, Is.Not.Null);
-            Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities, Is.Empty);
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.AcceptInsecureCertificates);
+        Assert.Equal("greatBrowser", result.BrowserName);
+        Assert.Equal("101.5b", result.BrowserVersion);
+        Assert.Equal("otherOS", result.PlatformName);
+        Assert.Equal("WebDriverBidi.NET/1.0", result.UserAgent);
+        Assert.NotNull(result.Proxy);
+        Assert.True(result.SetWindowRect);
+        Assert.Empty(result.AdditionalCapabilities);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingBrowserNameThrows()
     {
         string json = """
@@ -573,10 +516,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingBrowserVersionThrows()
     {
         string json = """
@@ -592,10 +535,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingPlatformNameThrows()
     {
         string json = """
@@ -611,10 +554,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingUserAgentThrows()
     {
         string json = """
@@ -630,10 +573,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingAcceptInsecureCertificatesThrows()
     {
         string json = """
@@ -649,10 +592,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingSetWindowRectThrows()
     {
         string json = """
@@ -668,10 +611,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidProxyTypeThrows()
     {
         string json = """
@@ -686,10 +629,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidUnhandledPromptTypeThrows()
     {
         string json = """
@@ -704,10 +647,10 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestProxyReturnsCachedInstanceOnRepeatedAccess()
     {
         string json = """
@@ -724,14 +667,14 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ProxyConfigurationResult? first = result.Proxy;
         ProxyConfigurationResult? second = result.Proxy;
-        Assert.That(first, Is.Not.Null);
-        Assert.That(second, Is.SameAs(first));
+        Assert.NotNull(first);
+        Assert.Same(first, second);
     }
 
-    [Test]
+    [Fact]
     public void TestAdditionalCapabilitiesReturnsCachedInstanceOnRepeatedAccess()
     {
         string json = """
@@ -746,13 +689,13 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         ReceivedDataDictionary first = result.AdditionalCapabilities;
         ReceivedDataDictionary second = result.AdditionalCapabilities;
-        Assert.That(first, Is.SameAs(second));
+        Assert.Same(second, first);
     }
 
-    [Test]
+    [Fact]
     public void TestUnhandledPromptBehaviorReturnsCachedInstanceOnRepeatedAccess()
     {
         string json = """
@@ -769,17 +712,17 @@ public class CapabilitiesResultTests
                       }
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         UserPromptHandlerResult? first = result.UnhandledPromptBehavior;
         UserPromptHandlerResult? second = result.UnhandledPromptBehavior;
-        Assert.That(first, Is.Not.Null);
-        Assert.That(second, Is.SameAs(first));
+        Assert.NotNull(first);
+        Assert.Same(first, second);
     }
 
-    [Test]
+    [Fact]
     public void TestProxyReturnsCachedInstanceForEachProxyType()
     {
-        string[] proxyJsonValues = [ "\"proxyType\": \"direct\"", "\"proxyType\": \"system\"", "\"proxyType\": \"autodetect\"", "\"proxyType\": \"pac\", \"proxyAutoconfigUrl\": \"http://proxy.example\"", "\"proxyType\": \"manual\", \"httpProxy\": \"http.proxy\"" ];
+        string[] proxyJsonValues = ["\"proxyType\": \"direct\"", "\"proxyType\": \"system\"", "\"proxyType\": \"autodetect\"", "\"proxyType\": \"pac\", \"proxyAutoconfigUrl\": \"http://proxy.example\"", "\"proxyType\": \"manual\", \"httpProxy\": \"http.proxy\""];
         foreach (string proxyJson in proxyJsonValues)
         {
             string json = $$"""
@@ -794,15 +737,15 @@ public class CapabilitiesResultTests
                           }
                           """;
             CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
-            Assert.That(result, Is.Not.Null);
+            Assert.NotNull(result);
             ProxyConfigurationResult? first = result.Proxy;
             ProxyConfigurationResult? second = result.Proxy;
-            Assert.That(first, Is.Not.Null);
-            Assert.That(second, Is.SameAs(first));
+            Assert.NotNull(first);
+            Assert.Same(first, second);
         }
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidWebSocketUrlTypeThrows()
     {
         string json = """
@@ -820,6 +763,6 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
     }
 }

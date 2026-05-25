@@ -3,10 +3,9 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Text.Json;
 using WebDriverBiDi.Script;
 
-[TestFixture]
 public class RemoteValueDictionaryJsonConverterTests
 {
-    [Test]
+    [Fact]
     public void TestDeserializingValidMapRepresentation()
     {
         string json = """
@@ -38,10 +37,11 @@ public class RemoteValueDictionaryJsonConverterTests
 
         // Assertions that the elements of the list are deserialized correctly
         // are performed elsewhere.
-        Assert.That(result, Has.Count.EqualTo(3));
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingValidMapWithNonStringKeys()
     {
         string json = """
@@ -82,32 +82,34 @@ public class RemoteValueDictionaryJsonConverterTests
 
         // Assertions that the elements of the list are deserialized correctly
         // are performed elsewhere.
-        Assert.That(result, Has.Count.EqualTo(3));
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingValidEmptyMapRepresentation()
     {
         string json = "[]";
         RemoteValueDictionary? result = JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } });
-        Assert.That(result, Has.Count.EqualTo(0));
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNonArrayThrows()
     {
         string json = "\"not-an-array\"";
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"JSON value could not be converted"));
+        Assert.Contains($"JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingInvalidMapArrayElementThrows()
     {
         string json = "[\"not-a-remote-value\"]";
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"RemoteValue array element for dictionary must be an array"));
+        Assert.Contains($"RemoteValue array element for dictionary must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingMapArrayWithTooLongElementLengthThrows()
     {
         string json = """
@@ -125,10 +127,10 @@ public class RemoteValueDictionaryJsonConverterTests
                         ]
                       ]
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"RemoteValue array element for dictionary must be an array with exactly two elements"));
+        Assert.Contains($"RemoteValue array element for dictionary must be an array with exactly two elements", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingMapArrayWithTooShortElementLengthThrows()
     {
         string json = """
@@ -141,10 +143,10 @@ public class RemoteValueDictionaryJsonConverterTests
                         ]
                       ]
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"RemoteValue array element for dictionary must be an array with exactly two elements"));
+        Assert.Contains($"RemoteValue array element for dictionary must be an array with exactly two elements", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingMapArrayWithInvalidKeyElementTypeThrows()
     {
         string json = """
@@ -158,10 +160,10 @@ public class RemoteValueDictionaryJsonConverterTests
                         ]
                       ]
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object"));
+        Assert.Contains($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingMapArrayWithInvalidValueElementTypeThrows()
     {
         string json = """
@@ -172,14 +174,14 @@ public class RemoteValueDictionaryJsonConverterTests
                         ]
                       ]
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }), Throws.InstanceOf<JsonException>().With.Message.Contains($"RemoteValue array element for dictionary must have a second element (value) that is an object"));
+        Assert.Contains($"RemoteValue array element for dictionary must have a second element (value) that is an object", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestSerializationThrows()
     {
         string json = "[]";
         RemoteValueDictionary? result = JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } });
-        Assert.That(() => JsonSerializer.Serialize(result, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }), Throws.InstanceOf<NotSupportedException>());
+        Assert.ThrowsAny<NotSupportedException>(() => JsonSerializer.Serialize(result, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } }));
     }
 }

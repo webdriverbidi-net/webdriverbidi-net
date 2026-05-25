@@ -3,35 +3,40 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class CallFunctionCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);
-        Assert.That(properties.MethodName, Is.EqualTo("script.callFunction"));
+        Assert.Equal("script.callFunction", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(3));
-            Assert.That(serialized, Contains.Key("functionDeclaration"));
-            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("target"));
-            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("awaitPromise"));
-            Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        }
+
+        Assert.Equal(3, serialized.Count);
+        Assert.True(serialized.ContainsKey("functionDeclaration"));
+        JToken? functionDeclaration = serialized["functionDeclaration"];
+        Assert.NotNull(functionDeclaration);
+        Assert.Equal(JTokenType.String, functionDeclaration.Type);
+
+        Assert.True(serialized.ContainsKey("target"));
+        JToken? target = serialized["target"];
+        Assert.NotNull(target);
+        Assert.Equal(JTokenType.Object, target.Type);
+
+        Assert.True(serialized.ContainsKey("awaitPromise"));
+        JToken? awaitPromise = serialized["awaitPromise"];
+        Assert.NotNull(awaitPromise);
+        Assert.Equal(JTokenType.Boolean, awaitPromise.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithOptionalValues()
     {
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);
@@ -45,29 +50,50 @@ public class CallFunctionCommandParametersTests
         properties.UserActivation = true;
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(8));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("functionDeclaration"));
-            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("target"));
-            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("awaitPromise"));
-            Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized, Contains.Key("arguments"));
-            Assert.That(serialized["arguments"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized, Contains.Key("this"));
-            Assert.That(serialized["this"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("resultOwnership"));
-            Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized, Contains.Key("serializationOptions"));
-            Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized, Contains.Key("userActivation"));
-            Assert.That(serialized["userActivation"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        }
+        Assert.Equal(8, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("functionDeclaration"));
+        JToken? functionDeclaration = serialized["functionDeclaration"];
+        Assert.NotNull(functionDeclaration);
+        Assert.Equal(JTokenType.String, functionDeclaration.Type);
+
+        Assert.True(serialized.ContainsKey("target"));
+        JToken? target = serialized["target"];
+        Assert.NotNull(target);
+        Assert.Equal(JTokenType.Object, target.Type);
+
+        Assert.True(serialized.ContainsKey("awaitPromise"));
+        JToken? awaitPromise = serialized["awaitPromise"];
+        Assert.NotNull(awaitPromise);
+        Assert.Equal(JTokenType.Boolean, awaitPromise.Type);
+
+        Assert.True(serialized.ContainsKey("arguments"));
+        JToken? arguments = serialized["arguments"];
+        Assert.NotNull(arguments);
+        Assert.Equal(JTokenType.Array, arguments.Type);
+
+        Assert.True(serialized.ContainsKey("this"));
+        JToken? thisToken = serialized["this"];
+        Assert.NotNull(thisToken);
+        Assert.Equal(JTokenType.Object, thisToken.Type);
+
+        Assert.True(serialized.ContainsKey("resultOwnership"));
+        JToken? resultOwnership = serialized["resultOwnership"];
+        Assert.NotNull(resultOwnership);
+        Assert.Equal(JTokenType.String, resultOwnership.Type);
+
+        Assert.True(serialized.ContainsKey("serializationOptions"));
+        JToken? serializationOptions = serialized["serializationOptions"];
+        Assert.NotNull(serializationOptions);
+        Assert.Equal(JTokenType.Object, serializationOptions.Type);
+
+        Assert.True(serialized.ContainsKey("userActivation"));
+        JToken? userActivation = serialized["userActivation"];
+        Assert.NotNull(userActivation);
+        Assert.Equal(JTokenType.Boolean, userActivation.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithChannelValueArgument()
     {
         // This test verifies that ChannelValue can be serialized as an ArgumentValue
@@ -83,20 +109,33 @@ public class CallFunctionCommandParametersTests
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("arguments"));
-            Assert.That(serialized["arguments"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray args = (JArray)serialized["arguments"]!;
-            Assert.That(args, Has.Count.EqualTo(1));
-            JObject channelArg = (JObject)args[0]!;
-            Assert.That(channelArg, Contains.Key("type"));
-            Assert.That(channelArg["type"]!.Value<string>(), Is.EqualTo("channel"));
-            Assert.That(channelArg, Contains.Key("value"));
-            Assert.That(channelArg["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject channelValue = (JObject)channelArg["value"]!;
-            Assert.That(channelValue, Contains.Key("channel"));
-            Assert.That(channelValue["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-            Assert.That(channelValue, Contains.Key("ownership"));
-            Assert.That(channelValue["ownership"]!.Value<string>(), Is.EqualTo("root"));
+            Assert.True(serialized.ContainsKey("arguments"));
+            JToken? argumentsToken = serialized["arguments"];
+            Assert.NotNull(argumentsToken);
+            Assert.Equal(JTokenType.Array, argumentsToken.Type);
+            JArray? args = argumentsToken as JArray;
+            Assert.NotNull(args);
+            Assert.Single(args);
+            JObject? channelArg = args[0] as JObject;
+            Assert.NotNull(channelArg);
+            Assert.True(channelArg.ContainsKey("type"));
+            JToken? channelArgType = channelArg["type"];
+            Assert.NotNull(channelArgType);
+            Assert.Equal("channel", channelArgType.Value<string>());
+            Assert.True(channelArg.ContainsKey("value"));
+            JToken? channelArgValueToken = channelArg["value"];
+            Assert.NotNull(channelArgValueToken);
+            Assert.Equal(JTokenType.Object, channelArgValueToken.Type);
+            JObject? channelValue = channelArgValueToken as JObject;
+            Assert.NotNull(channelValue);
+            Assert.True(channelValue.ContainsKey("channel"));
+            JToken? channelName = channelValue["channel"];
+            Assert.NotNull(channelName);
+            Assert.Equal("myChannel", channelName.Value<string>());
+            Assert.True(channelValue.ContainsKey("ownership"));
+            JToken? ownership = channelValue["ownership"];
+            Assert.NotNull(ownership);
+            Assert.Equal("root", ownership.Value<string>());
         });
     }
 }

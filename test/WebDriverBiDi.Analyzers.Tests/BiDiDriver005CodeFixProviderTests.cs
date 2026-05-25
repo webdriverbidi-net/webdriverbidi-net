@@ -13,14 +13,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver005 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver005CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix adds the missing event name to SubscribeAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_AddsEventNameToSubscribeAsync()
     {
         string testCode = """
@@ -179,14 +178,14 @@ public class BiDiDriver005CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that the code fix adds the first event name to an empty SubscribeAsync array.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CodeFix_AddsEventNameToEmptySubscribeAsync()
     {
         string testCode = """
@@ -345,10 +344,10 @@ public class BiDiDriver005CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task NoSubscribeAsync_DiagnosticFires()
     {
         // There is an AddObserver call but no Session.SubscribeAsync in the method.
@@ -435,7 +434,7 @@ public class BiDiDriver005CodeFixProviderTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task CollectionExpression_CodeFixAddsEventName()
     {
         // Exercises the CollectionExpressionSyntax branch in the fix provider.
@@ -597,10 +596,10 @@ public class BiDiDriver005CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    [Test]
+    [Fact]
     public async Task SubscribeAsync_WithNoArguments_CodeFixMakesNoChange()
     {
         // SubscribeAsync() called with no arguments — AddEventNameToSubscribeCall returns
@@ -682,7 +681,7 @@ public class BiDiDriver005CodeFixProviderTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task SubscribeAsync_WithNonArrayArgument_DiagnosticFires()
     {
         // SubscribeAsync called with a variable reference rather than an array literal.

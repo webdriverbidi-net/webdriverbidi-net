@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Testing;
 /// </summary>
 public class BiDiDriver013AnalyzerTests
 {
-    [Test]
+    [Fact]
     public async Task NavigateAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
@@ -42,7 +42,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ReloadAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
@@ -70,7 +70,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task PrintAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
@@ -98,7 +98,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task StartAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
@@ -127,7 +127,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
@@ -158,7 +158,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task WaitForCapturedTasksAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
@@ -189,7 +189,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task NonLongRunningMethod_WithoutCancellationToken_NoDiagnostic()
     {
         string testCode = """
@@ -213,7 +213,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task NonBiDiDriverMethod_WithoutCancellationToken_NoDiagnostic()
     {
         string testCode = """
@@ -244,7 +244,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleLongRunningOperations_WithoutCancellationToken_ReportsAllWarnings()
     {
         string testCode = """
@@ -281,7 +281,7 @@ public class BiDiDriver013AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected0, expected1, expected2);
     }
 
-    [Test]
+    [Fact]
     public async Task MethodWithoutTokenOverload_NoDiagnostic()
     {
         string testCode = """

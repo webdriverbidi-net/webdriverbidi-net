@@ -7,7 +7,6 @@ namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -15,7 +14,7 @@ using Microsoft.CodeAnalysis.Testing;
 /// </summary>
 public class BiDiDriver009AnalyzerTests
 {
-    [Test]
+    [Fact]
     public async Task ExecuteCommandAsync_BeforeStartAsync_ReportsError()
     {
         string testCode = """
@@ -45,7 +44,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ExecuteCommandAsync_AfterStartAsync_NoDiagnostic()
     {
         string testCode = """
@@ -70,7 +69,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommand_BeforeStartAsync_ReportsError()
     {
         string testCode = """
@@ -100,7 +99,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task ModuleCommand_AfterStartAsync_NoDiagnostic()
     {
         string testCode = """
@@ -125,7 +124,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleDrivers_CommandBeforeStartOnOne_ReportsError()
     {
         string testCode = """
@@ -158,7 +157,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleDrivers_BothStarted_NoDiagnostic()
     {
         string testCode = """
@@ -186,7 +185,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MultipleCommands_BeforeStartAsync_ReportsMultipleErrors()
     {
         string testCode = """
@@ -224,7 +223,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected1, expected2);
     }
 
-    [Test]
+    [Fact]
     public async Task NonCommandMethod_BeforeStartAsync_NoDiagnostic()
     {
         string testCode = """
@@ -248,7 +247,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task NonBiDiDriverCommand_NoDiagnostic()
     {
         string testCode = """
@@ -278,7 +277,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task DriverWithoutInitializer_NoDiagnostic()
     {
         string testCode = """
@@ -301,7 +300,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task CommandInConditional_AfterStart_NoDiagnostic()
     {
         string testCode = """
@@ -330,7 +329,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task CommandInLoop_AfterStart_NoDiagnostic()
     {
         string testCode = """
@@ -359,7 +358,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task StartAsync_IsNotFlaggedAsCommand_NoDiagnostic()
     {
         string testCode = """
@@ -382,7 +381,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task StopAsync_BeforeStartAsync_NoDiagnostic()
     {
         string testCode = """
@@ -405,7 +404,7 @@ public class BiDiDriver009AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
 
-    [Test]
+    [Fact]
     public async Task MethodWithoutBody_NoDiagnostic()
     {
         string testCode = """
@@ -423,5 +422,4 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
-
 }

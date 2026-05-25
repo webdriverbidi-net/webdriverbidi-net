@@ -3,79 +3,99 @@ namespace WebDriverBiDi.WebExtension;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class InstallCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         InstallCommandParameters properties = new(new ExtensionPath("myExtension"));
-        Assert.That(properties.MethodName, Is.EqualTo("webExtension.install"));
+        Assert.Equal("webExtension.install", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithExtensionPath()
     {
         InstallCommandParameters properties = new(new ExtensionPath("myExtension"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("extensionData"));
-            Assert.That(serialized["extensionData"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject extensionDataObject = (JObject)serialized["extensionData"]!;
-            Assert.That(extensionDataObject, Has.Count.EqualTo(2));
-            Assert.That(extensionDataObject, Contains.Key("type"));
-            Assert.That(extensionDataObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(extensionDataObject["type"]!.Value<string>(), Is.EqualTo("path"));
-            Assert.That(extensionDataObject, Contains.Key("path"));
-            Assert.That(extensionDataObject["path"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(extensionDataObject["path"]!.Value<string>(), Is.EqualTo("myExtension"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("extensionData"));
+        JToken? extensionDataToken = serialized["extensionData"];
+        Assert.NotNull(extensionDataToken);
+        Assert.Equal(JTokenType.Object, extensionDataToken.Type);
+        JObject? extensionDataObject = extensionDataToken as JObject;
+        Assert.NotNull(extensionDataObject);
+        Assert.Equal(2, extensionDataObject.Count);
+
+        Assert.True(extensionDataObject.ContainsKey("type"));
+        JToken? type = extensionDataObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("path", type.Value<string>());
+
+        Assert.True(extensionDataObject.ContainsKey("path"));
+        JToken? path = extensionDataObject["path"];
+        Assert.NotNull(path);
+        Assert.Equal(JTokenType.String, path.Type);
+        Assert.Equal("myExtension", path.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithExtensionArchivePath()
     {
         InstallCommandParameters properties = new(new ExtensionArchivePath("myExtensionArchive"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("extensionData"));
-            Assert.That(serialized["extensionData"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject extensionDataObject = (JObject)serialized["extensionData"]!;
-            Assert.That(extensionDataObject, Has.Count.EqualTo(2));
-            Assert.That(extensionDataObject, Contains.Key("type"));
-            Assert.That(extensionDataObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(extensionDataObject["type"]!.Value<string>(), Is.EqualTo("archivePath"));
-            Assert.That(extensionDataObject, Contains.Key("path"));
-            Assert.That(extensionDataObject["path"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(extensionDataObject["path"]!.Value<string>(), Is.EqualTo("myExtensionArchive"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("extensionData"));
+        JToken? extensionDataToken = serialized["extensionData"];
+        Assert.NotNull(extensionDataToken);
+        Assert.Equal(JTokenType.Object, extensionDataToken.Type);
+        JObject? extensionDataObject = extensionDataToken as JObject;
+        Assert.NotNull(extensionDataObject);
+        Assert.Equal(2, extensionDataObject.Count);
+
+        Assert.True(extensionDataObject.ContainsKey("type"));
+        JToken? type = extensionDataObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("archivePath", type.Value<string>());
+
+        Assert.True(extensionDataObject.ContainsKey("path"));
+        JToken? path = extensionDataObject["path"];
+        Assert.NotNull(path);
+        Assert.Equal(JTokenType.String, path.Type);
+        Assert.Equal("myExtensionArchive", path.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithBase64Extension()
     {
         InstallCommandParameters properties = new(new ExtensionBase64Encoded("Some base64 encoded data"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("extensionData"));
-            Assert.That(serialized["extensionData"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject extensionDataObject = (JObject)serialized["extensionData"]!;
-            Assert.That(extensionDataObject, Has.Count.EqualTo(2));
-            Assert.That(extensionDataObject, Contains.Key("type"));
-            Assert.That(extensionDataObject["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(extensionDataObject["type"]!.Value<string>(), Is.EqualTo("base64"));
-            Assert.That(extensionDataObject, Contains.Key("value"));
-            Assert.That(extensionDataObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(extensionDataObject["value"]!.Value<string>(), Is.EqualTo("Some base64 encoded data"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("extensionData"));
+        JToken? extensionDataToken = serialized["extensionData"];
+        Assert.NotNull(extensionDataToken);
+        Assert.Equal(JTokenType.Object, extensionDataToken.Type);
+        JObject? extensionDataObject = extensionDataToken as JObject;
+        Assert.NotNull(extensionDataObject);
+        Assert.Equal(2, extensionDataObject.Count);
+
+        Assert.True(extensionDataObject.ContainsKey("type"));
+        JToken? type = extensionDataObject["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("base64", type.Value<string>());
+
+        Assert.True(extensionDataObject.ContainsKey("value"));
+        JToken? value = extensionDataObject["value"];
+        Assert.NotNull(value);
+        Assert.Equal(JTokenType.String, value.Type);
+        Assert.Equal("Some base64 encoded data", value.Value<string>());
     }
 }

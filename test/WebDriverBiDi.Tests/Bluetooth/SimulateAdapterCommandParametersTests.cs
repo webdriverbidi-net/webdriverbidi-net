@@ -3,67 +3,75 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SimulateAdapterCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SimulateAdapterCommandParameters properties = new("myContext", AdapterState.Absent);
-        Assert.That(properties.MethodName, Is.EqualTo("bluetooth.simulateAdapter"));
+        Assert.Equal("bluetooth.simulateAdapter", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithAbsentState()
     {
         SimulateAdapterCommandParameters properties = new("myContext", AdapterState.Absent);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("absent"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("absent", state.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPoweredOffState()
     {
         SimulateAdapterCommandParameters properties = new("myContext", AdapterState.PoweredOff);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("powered-off"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("powered-off", state.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPoweredOnState()
     {
         SimulateAdapterCommandParameters properties = new("myContext", AdapterState.PoweredOn);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
-            Assert.That(serialized, Contains.Key("state"));
-            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("powered-on"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("state"));
+        JToken? state = serialized["state"];
+        Assert.NotNull(state);
+        Assert.Equal(JTokenType.String, state.Type);
+        Assert.Equal("powered-on", state.Value<string>());
     }
 }

@@ -6,21 +6,19 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver007 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver007CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix adds RunHandlerAsynchronously option.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithThreadSleep_CodeFixAddsRunHandlerAsynchronously()
     {
         string testCode = """
@@ -151,14 +149,14 @@ public class BiDiDriver007CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that the code fix replaces existing options parameter.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithExistingOptions_CodeFixReplacesWithRunHandlerAsynchronously()
     {
         string testCode = """
@@ -289,14 +287,14 @@ public class BiDiDriver007CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that the code fix works with Task.Wait.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithTaskWait_CodeFixAddsRunHandlerAsynchronously()
     {
         string testCode = """
@@ -427,6 +425,6 @@ public class BiDiDriver007CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

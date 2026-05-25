@@ -3,77 +3,76 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class UnsubscribeCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         UnsubscribeByAttributesCommandParameters byAttributesProperties = new();
-        Assert.That(byAttributesProperties.MethodName, Is.EqualTo("session.unsubscribe"));
+        Assert.Equal("session.unsubscribe", byAttributesProperties.MethodName);
         UnsubscribeByIdsCommandParameters byIdProperties = new();
-        Assert.That(byIdProperties.MethodName, Is.EqualTo("session.unsubscribe"));
+        Assert.Equal("session.unsubscribe", byIdProperties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeByAttributesParameters()
     {
         UnsubscribeByAttributesCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(0));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("events"));
+        JToken? events = serialized["events"];
+        Assert.NotNull(events);
+        Assert.Empty(events);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeByAttributesParametersWithEvents()
     {
         UnsubscribeByAttributesCommandParameters properties = new();
         properties.Events.Add("some.event");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("events"));
+        JToken? eventsToken = serialized["events"];
+        Assert.NotNull(eventsToken);
+        Assert.Single(eventsToken);
+        Assert.Equal(JTokenType.Array, eventsToken.Type);
+        Assert.Equal("some.event", eventsToken[0]!.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeByIdsParameters()
     {
         UnsubscribeByIdsCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("subscriptions"));
-            Assert.That(serialized["subscriptions"]!.Count, Is.EqualTo(0));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("subscriptions"));
+        JToken? subscriptions = serialized["subscriptions"];
+        Assert.NotNull(subscriptions);
+        Assert.Empty(subscriptions);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeByIdsParametersWithEvents()
     {
         UnsubscribeByIdsCommandParameters properties = new();
         properties.SubscriptionIds.Add("mySubscriptionId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("subscriptions"));
-            Assert.That(serialized["subscriptions"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["subscriptions"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["subscriptions"]![0]!.Value<string>(), Is.EqualTo("mySubscriptionId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("subscriptions"));
+        JToken? subscriptionsToken = serialized["subscriptions"];
+        Assert.NotNull(subscriptionsToken);
+        Assert.Single(subscriptionsToken);
+        Assert.Equal(JTokenType.Array, subscriptionsToken.Type);
+        Assert.Equal("mySubscriptionId", subscriptionsToken[0]!.Value<string>());
     }
 }

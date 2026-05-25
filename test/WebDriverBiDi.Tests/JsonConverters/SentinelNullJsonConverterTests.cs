@@ -6,19 +6,18 @@ using System.Text.Json.Serialization;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.BrowsingContext;
 
-[TestFixture]
 public class SentinelNullJsonConverterTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerialize()
     {
         TestClass instance = new();
         string json = JsonSerializer.Serialize(instance);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.Zero);
+        Assert.Empty(serialized);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithViewportProperty()
     {
         TestClass instance = new()
@@ -27,12 +26,12 @@ public class SentinelNullJsonConverterTests
         };
         string json = JsonSerializer.Serialize(instance);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.That(serialized, Contains.Key("viewport"));
-        Assert.That(serialized["viewport"], Is.Not.Null);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("viewport"));
+        Assert.NotNull(serialized["viewport"]);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithViewportNullProperty()
     {
         TestClass instance = new()
@@ -41,12 +40,14 @@ public class SentinelNullJsonConverterTests
         };
         string json = JsonSerializer.Serialize(instance);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.That(serialized, Contains.Key("viewport"));
-        Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Null));
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("viewport"));
+        JToken? viewport = serialized["viewport"];
+        Assert.NotNull(viewport);
+        Assert.Equal(JTokenType.Null, viewport.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithDoubleProperty()
     {
         TestClass instance = new()
@@ -55,12 +56,14 @@ public class SentinelNullJsonConverterTests
         };
         string json = JsonSerializer.Serialize(instance);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.That(serialized, Contains.Key("double"));
-        Assert.That(serialized["double"]!.Value<double>(), Is.EqualTo(2));
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("double"));
+        JToken? doubleToken = serialized["double"];
+        Assert.NotNull(doubleToken);
+        Assert.Equal(2, doubleToken.Value<double>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeWithDoubleNullProperty()
     {
         TestClass instance = new()
@@ -69,19 +72,21 @@ public class SentinelNullJsonConverterTests
         };
         string json = JsonSerializer.Serialize(instance);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.That(serialized, Contains.Key("double"));
-        Assert.That(serialized["double"]!.Type, Is.EqualTo(JTokenType.Null));
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("double"));
+        JToken? doubleToken = serialized["double"];
+        Assert.NotNull(doubleToken);
+        Assert.Equal(JTokenType.Null, doubleToken.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCannotDeserialize()
     {
         string json = """{ "double": 3 }""";
-        Assert.That(() => JsonSerializer.Deserialize<TestClass>(json), Throws.InstanceOf<NotSupportedException>());
+        Assert.ThrowsAny<NotSupportedException>(() => JsonSerializer.Deserialize<TestClass>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestWriteWithNullValueWritesNothing()
     {
         SentinelNullJsonConverter<Viewport, ViewportSentinelChecker> converter = new();
@@ -92,7 +97,7 @@ public class SentinelNullJsonConverterTests
         writer.WriteEndObject();
         writer.Flush();
         string json = Encoding.UTF8.GetString(stream.ToArray());
-        Assert.That(json, Is.EqualTo("{}"));
+        Assert.Equal("{}", json);
     }
 
     private class TestClass

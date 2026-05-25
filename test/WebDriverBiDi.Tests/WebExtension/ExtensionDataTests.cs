@@ -3,113 +3,137 @@ namespace WebDriverBiDi.WebExtension;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class ExtensionDataTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeExtensionPathExtensionData()
     {
         ExtensionPath value = new("myPath");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("path"));
-            Assert.That(parsed, Contains.Key("path"));
-            Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["path"]!.Value<string>(), Is.EqualTo("myPath"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("path", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("path"));
+        JToken? path = parsed["path"];
+        Assert.NotNull(path);
+        Assert.Equal(JTokenType.String, path.Type);
+        Assert.Equal("myPath", path.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeExtensionPathExtensionDataWithNoArgs()
     {
         ExtensionPath value = new();
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("path"));
-            Assert.That(parsed, Contains.Key("path"));
-            Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["path"]!.Value<string>(), Is.Empty);
-        }
+
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("path", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("path"));
+        JToken? path = parsed["path"];
+        Assert.NotNull(path);
+        Assert.Equal(JTokenType.String, path.Type);
+        Assert.Equal(string.Empty, path.Value<string>());
     }
-    [Test]
+
+    [Fact]
     public void TestCanSerializeExtensionArchivePathExtensionData()
     {
         ExtensionArchivePath value = new("myPath.zip");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("archivePath"));
-            Assert.That(parsed, Contains.Key("path"));
-            Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["path"]!.Value<string>(), Is.EqualTo("myPath.zip"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("archivePath", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("path"));
+        JToken? path = parsed["path"];
+        Assert.NotNull(path);
+        Assert.Equal(JTokenType.String, path.Type);
+        Assert.Equal("myPath.zip", path.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeExtensionArchivePathExtensionDataWithNoArgs()
     {
         ExtensionArchivePath value = new();
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("archivePath"));
-            Assert.That(parsed, Contains.Key("path"));
-            Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["path"]!.Value<string>(), Is.Empty);
-        }
+
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("archivePath", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("path"));
+        JToken? path = parsed["path"];
+        Assert.NotNull(path);
+        Assert.Equal(JTokenType.String, path.Type);
+        Assert.Equal(string.Empty, path.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeExtensionBase64EncodedExtensionData()
     {
         ExtensionBase64Encoded value = new("Base64 Encoded Data");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("base64"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("Base64 Encoded Data"));
-        }
+
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("base64", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueToken = parsed["value"];
+        Assert.NotNull(valueToken);
+        Assert.Equal(JTokenType.String, valueToken.Type);
+        Assert.Equal("Base64 Encoded Data", valueToken.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeExtensionBase64EncodedExtensionDataWithNoArgs()
     {
         ExtensionBase64Encoded value = new();
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(parsed, Has.Count.EqualTo(2));
-            Assert.That(parsed, Contains.Key("type"));
-            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("base64"));
-            Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["value"]!.Value<string>(), Is.Empty);
-        }
+
+        Assert.Equal(2, parsed.Count);
+
+        Assert.True(parsed.ContainsKey("type"));
+        JToken? type = parsed["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("base64", type.Value<string>());
+
+        Assert.True(parsed.ContainsKey("value"));
+        JToken? valueToken = parsed["value"];
+        Assert.NotNull(valueToken);
+        Assert.Equal(JTokenType.String, valueToken.Type);
+        Assert.Equal(string.Empty, valueToken.Value<string>());
     }
 }

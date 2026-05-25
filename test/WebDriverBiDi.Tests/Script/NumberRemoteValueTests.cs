@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class NumberRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeNumberRemoteValue()
     {
         string json = """
@@ -17,12 +16,12 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Number));
-        Assert.That(result.Value, Is.EqualTo(3.14159));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Number, result.Type);
+        Assert.Equal(3.14159, result.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeNumberRemoteValueWithInteger()
     {
         string json = """
@@ -34,12 +33,12 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Number));
-        Assert.That(result.Value, Is.EqualTo(42));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Number, result.Type);
+        Assert.Equal(42, result.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -51,15 +50,15 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("number"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<double>());
-        Assert.That(argumentLocalValue.Value, Is.EqualTo(3.14159));
+        Assert.Equal("number", argumentLocalValue.Type);
+        Assert.IsType<double>(argumentLocalValue.Value);
+        Assert.Equal(3.14159, argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLong()
     {
         string json = """
@@ -71,11 +70,11 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ToLong(), Is.EqualTo(42));
+        Assert.NotNull(result);
+        Assert.Equal(42, result.ToLong());
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToInt()
     {
         string json = """
@@ -87,11 +86,11 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.ToInt(), Is.EqualTo(42));
+        Assert.NotNull(result);
+        Assert.Equal(42, result.ToInt());
     }
 
-    [Test]
+    [Fact]
     public void TestCanUseImplicitConversionToInt()
     {
         string json = """
@@ -103,12 +102,12 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         int intValue = result;
-        Assert.That(intValue, Is.EqualTo(42));
+        Assert.Equal(42, intValue);
     }
 
-    [Test]
+    [Fact]
     public void TestCanUseImplicitConversionToLong()
     {
         string json = """
@@ -120,12 +119,12 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         long longValue = result;
-        Assert.That(longValue, Is.EqualTo(42));
+        Assert.Equal(42, longValue);
     }
 
-    [Test]
+    [Fact]
     public void TestCanUseImplicitConversionToDouble()
     {
         string json = """
@@ -137,12 +136,12 @@ public class NumberRemoteValueTests
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         double doubleValue = result;
-        Assert.That(doubleValue, Is.EqualTo(42));
+        Assert.Equal(42, doubleValue);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNumberRemoteValueWithMissingValueThrows()
     {
         string json = """
@@ -151,10 +150,10 @@ public class NumberRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<NumberRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NumberRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNumberRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -164,10 +163,10 @@ public class NumberRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<NumberRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NumberRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNumberRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -177,10 +176,10 @@ public class NumberRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<NumberRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NumberRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -191,9 +190,9 @@ public class NumberRemoteValueTests
                       """;
 
         NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         NumberRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

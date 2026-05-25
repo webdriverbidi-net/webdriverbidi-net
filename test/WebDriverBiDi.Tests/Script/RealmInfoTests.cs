@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class RealmInfoTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeWorkerRealmInfo()
     {
         string json = """
@@ -16,18 +15,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<RealmInfo>());
-        RealmInfo realmInfo = info;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worker));
-        }
+        Assert.NotNull(info);
+        Assert.IsType<WorkerRealmInfo>(info);
+
+        Assert.Equal("myRealm", info.RealmId);
+        Assert.Equal("myOrigin", info.Origin);
+        Assert.Equal(RealmType.Worker, info.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestRealmInfoCopySemantics()
     {
         string json = """
@@ -38,13 +34,13 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<RealmInfo>());
+        Assert.NotNull(info);
+        Assert.IsType<RealmInfo>(info, exactMatch: false);
         RealmInfo copy = info with { };
-        Assert.That(copy, Is.EqualTo(info));
+        Assert.Equal(info, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWorkletRealmInfo()
     {
         string json = """
@@ -55,18 +51,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<RealmInfo>());
-        RealmInfo realmInfo = info;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worklet));
-        }
+        Assert.NotNull(info);
+        Assert.IsType<WorkletRealmInfo>(info);
+
+        Assert.Equal("myRealm", info.RealmId);
+        Assert.Equal("myOrigin", info.Origin);
+        Assert.Equal(RealmType.Worklet, info.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestWorkletRealmInfoCopySemantics()
     {
         string json = """
@@ -77,14 +70,13 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<WorkletRealmInfo>());
-        WorkletRealmInfo realmInfo = (WorkletRealmInfo)info;
+        Assert.NotNull(info);
+        WorkletRealmInfo realmInfo = Assert.IsType<WorkletRealmInfo>(info);
         WorkletRealmInfo copy = realmInfo with { };
-        Assert.That(copy, Is.EqualTo(info));
+        Assert.Equal(info, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWindowRealmInfo()
     {
         string json = """
@@ -96,20 +88,17 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
-        WindowRealmInfo realmInfo = (WindowRealmInfo)info;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
-            Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
-            Assert.That(realmInfo.Sandbox, Is.Null);
-        }
+        Assert.NotNull(info);
+        WindowRealmInfo realmInfo = Assert.IsType<WindowRealmInfo>(info);
+
+        Assert.Equal("myRealm", realmInfo.RealmId);
+        Assert.Equal("myOrigin", realmInfo.Origin);
+        Assert.Equal(RealmType.Window, realmInfo.Type);
+        Assert.Equal("myContext", realmInfo.BrowsingContext);
+        Assert.Null(realmInfo.Sandbox);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWindowRealmInfoWithUserContext()
     {
         string json = """
@@ -122,21 +111,18 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
-        WindowRealmInfo realmInfo = (WindowRealmInfo)info;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
-            Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
-            Assert.That(realmInfo.Sandbox, Is.Null);
-            Assert.That(realmInfo.UserContext, Is.EqualTo("myUserContext"));
-        }
+        Assert.NotNull(info);
+        WindowRealmInfo realmInfo = Assert.IsType<WindowRealmInfo>(info);
+
+        Assert.Equal("myRealm", realmInfo.RealmId);
+        Assert.Equal("myOrigin", realmInfo.Origin);
+        Assert.Equal(RealmType.Window, realmInfo.Type);
+        Assert.Equal("myContext", realmInfo.BrowsingContext);
+        Assert.Null(realmInfo.Sandbox);
+        Assert.Equal("myUserContext", realmInfo.UserContext);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeWindowRealmInfoWithSandbox()
     {
         string json = """
@@ -149,20 +135,17 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
-        WindowRealmInfo realmInfo = (WindowRealmInfo)info;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
-            Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
-            Assert.That(realmInfo.Sandbox, Is.EqualTo("mySandbox"));
-        }
+        Assert.NotNull(info);
+        WindowRealmInfo realmInfo = Assert.IsType<WindowRealmInfo>(info);
+
+        Assert.Equal("myRealm", realmInfo.RealmId);
+        Assert.Equal("myOrigin", realmInfo.Origin);
+        Assert.Equal(RealmType.Window, realmInfo.Type);
+        Assert.Equal("myContext", realmInfo.BrowsingContext);
+        Assert.Equal("mySandbox", realmInfo.Sandbox);
     }
 
-    [Test]
+    [Fact]
     public void TestWindowRealmInfoCopySemantics()
     {
         string json = """
@@ -175,14 +158,13 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
-        WindowRealmInfo realmInfo = (WindowRealmInfo)info;
+        Assert.NotNull(info);
+        WindowRealmInfo realmInfo = Assert.IsType<WindowRealmInfo>(info);
         WindowRealmInfo copy = realmInfo with { };
-        Assert.That(copy, Is.EqualTo(info));
+        Assert.Equal(info, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeSpecializedWorkerRealmInfo()
     {
         string json = """
@@ -193,18 +175,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<RealmInfo>());
-        RealmInfo realmInfo = (RealmInfo)info!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worker));
-        }
+        Assert.NotNull(info);
+        Assert.IsType<WorkerRealmInfo>(info);
+
+        Assert.Equal("myRealm", info.RealmId);
+        Assert.Equal("myOrigin", info.Origin);
+        Assert.Equal(RealmType.Worker, info.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeDedicatedWorkerRealmInfo()
     {
         string json = """
@@ -216,20 +195,17 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<DedicatedWorkerRealmInfo>());
-        DedicatedWorkerRealmInfo realmInfo = (DedicatedWorkerRealmInfo)info;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.DedicatedWorker));
-            Assert.That(realmInfo.Owners, Has.Count.EqualTo(1));
-            Assert.That(realmInfo.Owners[0], Is.EqualTo("ownerRealm"));
-        }
+        Assert.NotNull(info);
+        DedicatedWorkerRealmInfo realmInfo = Assert.IsType<DedicatedWorkerRealmInfo>(info);
+
+        Assert.Equal("myRealm", realmInfo.RealmId);
+        Assert.Equal("myOrigin", realmInfo.Origin);
+        Assert.Equal(RealmType.DedicatedWorker, realmInfo.Type);
+        Assert.Single(realmInfo.Owners);
+        Assert.Equal("ownerRealm", realmInfo.Owners[0]);
     }
 
-    [Test]
+    [Fact]
     public void TestDedicatedWorkerRealmInfoCopySemantics()
     {
         string json = """
@@ -241,14 +217,14 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<DedicatedWorkerRealmInfo>());
+        Assert.NotNull(info);
+        Assert.IsType<DedicatedWorkerRealmInfo>(info);
         DedicatedWorkerRealmInfo realmInfo = (DedicatedWorkerRealmInfo)info;
         DedicatedWorkerRealmInfo copy = realmInfo with { };
-        Assert.That(copy, Is.EqualTo(info));
+        Assert.Equal(info, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeSharedWorkerRealmInfo()
     {
         string json = """
@@ -259,18 +235,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<SharedWorkerRealmInfo>());
-        SharedWorkerRealmInfo realmInfo = (SharedWorkerRealmInfo)info;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.SharedWorker));
-        }
+        Assert.NotNull(info);
+        Assert.IsType<SharedWorkerRealmInfo>(info);
+
+        Assert.Equal("myRealm", info.RealmId);
+        Assert.Equal("myOrigin", info.Origin);
+        Assert.Equal(RealmType.SharedWorker, info.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestSharedWorkerRealmInfoCopySemantics()
     {
         string json = """
@@ -281,14 +254,13 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<SharedWorkerRealmInfo>());
-        SharedWorkerRealmInfo realmInfo = (SharedWorkerRealmInfo)info;
+        Assert.NotNull(info);
+        SharedWorkerRealmInfo realmInfo = Assert.IsType<SharedWorkerRealmInfo>(info);
         SharedWorkerRealmInfo copy = realmInfo with { };
-        Assert.That(copy, Is.EqualTo(info));
+        Assert.Equal(info, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeServiceWorkerRealmInfo()
     {
         string json = """
@@ -299,18 +271,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
-        ServiceWorkerRealmInfo realmInfo = (ServiceWorkerRealmInfo)info!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.ServiceWorker));
-        }
+        Assert.NotNull(info);
+        Assert.IsType<ServiceWorkerRealmInfo>(info);
+
+        Assert.Equal("myRealm", info.RealmId);
+        Assert.Equal("myOrigin", info.Origin);
+        Assert.Equal(RealmType.ServiceWorker, info.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestServiceWorkerRealmInfoCopySemantics()
     {
         string json = """
@@ -321,14 +290,13 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
-        ServiceWorkerRealmInfo realmInfo = (ServiceWorkerRealmInfo)info;
+        Assert.NotNull(info);
+        ServiceWorkerRealmInfo realmInfo = Assert.IsType<ServiceWorkerRealmInfo>(info);
         ServiceWorkerRealmInfo copy = realmInfo with { };
-        Assert.That(copy, Is.EqualTo(info));
+        Assert.Equal(info, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeSpecializedWorkletRealmInfo()
     {
         string json = """
@@ -339,18 +307,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<RealmInfo>());
-        RealmInfo realmInfo = (RealmInfo)info!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worklet));
-        }
+        Assert.NotNull(info);
+        Assert.IsType<WorkletRealmInfo>(info);
+
+        Assert.Equal("myRealm", info.RealmId);
+        Assert.Equal("myOrigin", info.Origin);
+        Assert.Equal(RealmType.Worklet, info.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializePaintWorkletRealmInfo()
     {
         string json = """
@@ -361,18 +326,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<PaintWorkletRealmInfo>());
-        PaintWorkletRealmInfo realmInfo = (PaintWorkletRealmInfo)info!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.PaintWorklet));
-        }
+        Assert.NotNull(info);
+        PaintWorkletRealmInfo realmInfo = Assert.IsType<PaintWorkletRealmInfo>(info);
+
+        Assert.Equal("myRealm", realmInfo.RealmId);
+        Assert.Equal("myOrigin", realmInfo.Origin);
+        Assert.Equal(RealmType.PaintWorklet, realmInfo.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestPaintWorkletRealmInfoCopySemantics()
     {
         string json = """
@@ -383,14 +345,13 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<PaintWorkletRealmInfo>());
-        PaintWorkletRealmInfo realmInfo = (PaintWorkletRealmInfo)info!;
+        Assert.NotNull(info);
+        PaintWorkletRealmInfo realmInfo = Assert.IsType<PaintWorkletRealmInfo>(info);
         PaintWorkletRealmInfo copy = realmInfo with { };
-        Assert.That(copy, Is.EqualTo(realmInfo));
+        Assert.Equal(realmInfo, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeAudioWorkletRealmInfo()
     {
         string json = """
@@ -401,18 +362,15 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<AudioWorkletRealmInfo>());
-        AudioWorkletRealmInfo realmInfo = (AudioWorkletRealmInfo)info!;
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.AudioWorklet));
-        }
+        Assert.NotNull(info);
+        AudioWorkletRealmInfo realmInfo = Assert.IsType<AudioWorkletRealmInfo>(info);
+
+        Assert.Equal("myRealm", realmInfo.RealmId);
+        Assert.Equal("myOrigin", realmInfo.Origin);
+        Assert.Equal(RealmType.AudioWorklet, realmInfo.Type);
     }
 
-    [Test]
+    [Fact]
     public void TestAudioWorkletRealmInfoCopySemantics()
     {
         string json = """
@@ -423,14 +381,13 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<AudioWorkletRealmInfo>());
-        AudioWorkletRealmInfo realmInfo = (AudioWorkletRealmInfo)info!;
+        Assert.NotNull(info);
+        AudioWorkletRealmInfo realmInfo = Assert.IsType<AudioWorkletRealmInfo>(info);
         AudioWorkletRealmInfo copy = realmInfo with { };
-        Assert.That(copy, Is.EqualTo(realmInfo));
+        Assert.Equal(realmInfo, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithMissingRealmThrows()
     {
         string json = """
@@ -439,10 +396,10 @@ public class RealmInfoTests
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'realm'"));
+        Assert.Contains("missing required properties including: 'realm'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithInvalidRealmTypeThrows()
     {
         string json = """
@@ -452,10 +409,10 @@ public class RealmInfoTests
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("could not be converted"));
+        Assert.Contains("could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithMissingOriginThrows()
     {
         string json = """
@@ -464,10 +421,10 @@ public class RealmInfoTests
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'origin'"));
+        Assert.Contains("missing required properties including: 'origin'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithInvalidOriginTypeThrows()
     {
         string json = """
@@ -477,10 +434,10 @@ public class RealmInfoTests
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("could not be converted"));
+        Assert.Contains("could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithMissingTypeThrows()
     {
         string json = """
@@ -489,10 +446,10 @@ public class RealmInfoTests
                         "origin": "myOrigin"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'type' property"));
+        Assert.Contains("must contain a 'type' property", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithInvalidTypeThrows()
     {
         string json = """
@@ -502,10 +459,10 @@ public class RealmInfoTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'RealmInfo' type property contains unknown value 'invalid'"));
+        Assert.Contains("JSON for 'RealmInfo' type property contains unknown value 'invalid'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithNonStringTypeThrows()
     {
         string json = """
@@ -515,10 +472,10 @@ public class RealmInfoTests
                         "type": null
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowRealmInfoWithMissingContextThrows()
     {
         string json = """
@@ -528,10 +485,10 @@ public class RealmInfoTests
                         "type": "window"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'context'"));
+        Assert.Contains("missing required properties including: 'context'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowRealmInfoWithInvalidContextTypeThrows()
     {
         string json = """
@@ -542,10 +499,10 @@ public class RealmInfoTests
                         "context": 123
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
+        Assert.Contains("value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowRealmInfoWithInvalidSandboxTypeThrows()
     {
         string json = """
@@ -557,10 +514,10 @@ public class RealmInfoTests
                         "sandbox": 2
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
+        Assert.Contains("value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWindowRealmInfoWithInvalidUserContextTypeThrows()
     {
         string json = """
@@ -572,10 +529,10 @@ public class RealmInfoTests
                         "userContext": 2
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
+        Assert.Contains("value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDedicatedWorkerRealmInfoWithMissingOwnersThrows()
     {
         string json = """
@@ -585,10 +542,10 @@ public class RealmInfoTests
                         "type": "dedicated-worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'owners'"));
+        Assert.Contains("missing required properties including: 'owners'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDedicatedWorkerRealmInfoWithInvalidOwnersTypeThrows()
     {
         string json = """
@@ -599,10 +556,10 @@ public class RealmInfoTests
                         "owners": ""
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
+        Assert.Contains("value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDedicatedWorkerRealmInfoWithInvalidOwnersEntryTypeThrows()
     {
         string json = """
@@ -613,17 +570,17 @@ public class RealmInfoTests
                         "owners": [ 123 ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
+        Assert.Contains("value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingRealmInfoWithNonObjectThrows()
     {
         string json = @"[ ""invalid realm info"" ]";
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCanCastToProperSubclassTypeOfRealmInfo()
     {
         string json = """
@@ -635,12 +592,12 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
-        Assert.That(info.As<ServiceWorkerRealmInfo>(), Is.Not.Null);
+        Assert.NotNull(info);
+        Assert.IsType<ServiceWorkerRealmInfo>(info);
+        Assert.NotNull(info.As<ServiceWorkerRealmInfo>());
     }
 
-    [Test]
+    [Fact]
     public void TestCannotCastToImproperSubclassTypeOfRealmInfo()
     {
         string json = """
@@ -652,8 +609,8 @@ public class RealmInfoTests
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
-        Assert.That(() => info.As<SharedWorkerRealmInfo>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("cannot be cast"));
+        Assert.NotNull(info);
+        Assert.IsType<ServiceWorkerRealmInfo>(info);
+        Assert.Contains("cannot be cast", Assert.ThrowsAny<WebDriverBiDiException>(() => info.As<SharedWorkerRealmInfo>()).Message);
     }
 }

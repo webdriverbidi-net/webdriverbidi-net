@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 
-[TestFixture]
 public class NodeRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeNodeRemoteValue()
     {
         string json = """
@@ -20,17 +19,17 @@ public class NodeRemoteValueTests
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Node));
-        Assert.That(result.Value, Is.Not.Null);
-        Assert.That(result.Value.NodeType, Is.EqualTo(1));
-        Assert.That(result.Value.ChildNodeCount, Is.Zero);
-        Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);
-        Assert.That(result.SharedId, Is.Null);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Node, result.Type);
+        Assert.NotNull(result.Value);
+        Assert.Equal(1u, result.Value.NodeType);
+        Assert.Equal(0u, result.Value.ChildNodeCount);
+        Assert.Null(result.Handle);
+        Assert.Null(result.InternalId);
+        Assert.Null(result.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeNodeRemoteValueWithValue()
     {
         string json = """
@@ -45,17 +44,17 @@ public class NodeRemoteValueTests
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Node));
-        Assert.That(result.Value, Is.Not.Null);
-        Assert.That(result.Value.NodeType, Is.EqualTo(1));
-        Assert.That(result.Value.ChildNodeCount, Is.Zero);
-        Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);
-        Assert.That(result.SharedId, Is.Null);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Node, result.Type);
+        Assert.NotNull(result.Value);
+        Assert.Equal(1u, result.Value.NodeType);
+        Assert.Equal(0u, result.Value.ChildNodeCount);
+        Assert.Null(result.Handle);
+        Assert.Null(result.InternalId);
+        Assert.Null(result.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeNodeRemoteValueWithHandle()
     {
         string json = """
@@ -76,17 +75,17 @@ public class NodeRemoteValueTests
         // that can be deserialized into a NodeRemoteValue is tested in
         // RemoteValueTests. Likewise, validation of collection members is also tested
         // there.
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Node));
-        Assert.That(result.Value, Is.Not.Null);
-        Assert.That(result.Value.NodeType, Is.EqualTo(1));
-        Assert.That(result.Value.ChildNodeCount, Is.Zero);
-        Assert.That(result.Handle, Is.EqualTo("myHandle"));
-        Assert.That(result.InternalId, Is.EqualTo("myInternalId"));
-        Assert.That(result.SharedId, Is.Null);
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Node, result.Type);
+        Assert.NotNull(result.Value);
+        Assert.Equal(1u, result.Value.NodeType);
+        Assert.Equal(0u, result.Value.ChildNodeCount);
+        Assert.Equal("myHandle", result.Handle);
+        Assert.Equal("myInternalId", result.InternalId);
+        Assert.Null(result.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeNodeRemoteValueWithSharedId()
     {
         string json = """
@@ -104,15 +103,15 @@ public class NodeRemoteValueTests
         // that can be deserialized into a NodeRemoteValue is tested in
         // RemoteValueTests. Likewise, validation of collection members is also tested
         // there.
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Node));
-        Assert.That(result.Value, Is.Null);
-        Assert.That(result.Handle, Is.EqualTo("myHandle"));
-        Assert.That(result.InternalId, Is.EqualTo("myInternalId"));
-        Assert.That(result.SharedId, Is.EqualTo("mySharedId"));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Node, result.Type);
+        Assert.Null(result.Value);
+        Assert.Equal("myHandle", result.Handle);
+        Assert.Equal("myInternalId", result.InternalId);
+        Assert.Equal("mySharedId", result.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetNodeProperties()
     {
         string json = """
@@ -127,14 +126,14 @@ public class NodeRemoteValueTests
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Node));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Node, result.Type);
         NodeProperties nodeProperties = result.GetNodeProperties();
-        Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
-        Assert.That(nodeProperties.ChildNodeCount, Is.Zero);
+        Assert.Equal(1u, nodeProperties.NodeType);
+        Assert.Equal(0u, nodeProperties.ChildNodeCount);
     }
 
-    [Test]
+    [Fact]
     public void TestGettingNodePropertiesWithNullValueThrows()
     {
         string json = """
@@ -144,11 +143,11 @@ public class NodeRemoteValueTests
                       """;
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.GetNodeProperties(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.GetNodeProperties());
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -164,14 +163,14 @@ public class NodeRemoteValueTests
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         SharedReference sharedReference = (SharedReference)localValue;
-        Assert.That(sharedReference.SharedId, Is.EqualTo("mySharedId"));
-        Assert.That(sharedReference.Handle, Is.Null);
+        Assert.Equal("mySharedId", sharedReference.SharedId);
+        Assert.Null(sharedReference.Handle);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToRemoteObjectReference()
     {
         string json = """
@@ -184,14 +183,14 @@ public class NodeRemoteValueTests
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Value, Is.Null);
+        Assert.NotNull(result);
+        Assert.Null(result.Value);
         RemoteObjectReference remoteObjectReference = result.ToRemoteObjectReference();
-        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
-        Assert.That(remoteObjectReference.SharedId, Is.Null);
+        Assert.Equal("myHandle", remoteObjectReference.Handle);
+        Assert.Null(remoteObjectReference.SharedId);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNodeRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -201,10 +200,10 @@ public class NodeRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<NodeRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingNodeRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -217,10 +216,10 @@ public class NodeRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<NodeRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidHandleTypeThrows()
     {
         string json = """
@@ -235,10 +234,10 @@ public class NodeRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingObjectReferenceRemoteValueWithInvalidInternalIdTypeThrows()
     {
         string json = """
@@ -253,10 +252,10 @@ public class NodeRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToLocalValueWithoutSharedIdThrows()
     {
         string json = """
@@ -265,18 +264,17 @@ public class NodeRemoteValueTests
                         "value": {
                           "nodeType": 1,
                           "childNodeCount": 0
-
                         }
                       }
                       """;
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToLocalValue(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToLocalValue());
     }
 
-    [Test]
+    [Fact]
     public void TestConvertingToRemoteObjectReferenceWithoutHandleThrows()
     {
         string json = """
@@ -285,18 +283,17 @@ public class NodeRemoteValueTests
                         "value": {
                           "nodeType": 1,
                           "childNodeCount": 0
-
                         }
                       }
                       """;
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(() => result.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.NotNull(result);
+        Assert.ThrowsAny<WebDriverBiDiException>(() => result.ToRemoteObjectReference());
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -310,9 +307,9 @@ public class NodeRemoteValueTests
                       """;
 
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         NodeRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

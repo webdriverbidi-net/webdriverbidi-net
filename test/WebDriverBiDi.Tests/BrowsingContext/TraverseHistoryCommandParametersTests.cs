@@ -3,67 +3,75 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class TraverseHistoryCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         TraverseHistoryCommandParameters properties = new("myContextId", 0);
-        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.traverseHistory"));
+        Assert.Equal("browsingContext.traverseHistory", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         TraverseHistoryCommandParameters properties = new("myContextId", 0);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("delta"));
-            Assert.That(serialized["delta"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["delta"]!.Value<long>(), Is.EqualTo(0));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("delta"));
+        JToken? delta = serialized["delta"];
+        Assert.NotNull(delta);
+        Assert.Equal(JTokenType.Integer, delta.Type);
+        Assert.Equal(0L, delta.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithPositiveDelta()
     {
         TraverseHistoryCommandParameters properties = new("myContextId", 1);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("delta"));
-            Assert.That(serialized["delta"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["delta"]!.Value<long>(), Is.EqualTo(1));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("delta"));
+        JToken? delta = serialized["delta"];
+        Assert.NotNull(delta);
+        Assert.Equal(JTokenType.Integer, delta.Type);
+        Assert.Equal(1L, delta.Value<long>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithNegativeDelta()
     {
         TraverseHistoryCommandParameters properties = new("myContextId", -1);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("delta"));
-            Assert.That(serialized["delta"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["delta"]!.Value<long>(), Is.EqualTo(-1));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("delta"));
+        JToken? delta = serialized["delta"];
+        Assert.NotNull(delta);
+        Assert.Equal(JTokenType.Integer, delta.Type);
+        Assert.Equal(-1L, delta.Value<long>());
     }
 }

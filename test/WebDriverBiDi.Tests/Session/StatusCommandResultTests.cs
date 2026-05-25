@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
 
-[TestFixture]
 public class StatusCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         string json = """
@@ -15,15 +14,13 @@ public class StatusCommandResultTests
                       }
                       """;
         StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsReady, Is.EqualTo(true));
-            Assert.That(result.Message, Is.EqualTo("myMessage"));
-        }
+        Assert.NotNull(result);
+
+        Assert.True(result.IsReady);
+        Assert.Equal("myMessage", result.Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -33,12 +30,12 @@ public class StatusCommandResultTests
                       }
                       """;
         StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         StatusCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingReadyThrows()
     {
         string json = """
@@ -46,10 +43,10 @@ public class StatusCommandResultTests
                         "message": "myMessage"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidReadyTypeThrows()
     {
         string json = """
@@ -58,10 +55,10 @@ public class StatusCommandResultTests
                         "message": "myMessage"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingMessageThrows()
     {
         string json = """
@@ -69,10 +66,10 @@ public class StatusCommandResultTests
                         "ready": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithInvalidMessageTypeThrows()
     {
         string json = """
@@ -81,6 +78,6 @@ public class StatusCommandResultTests
                         "message": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
     }
 }

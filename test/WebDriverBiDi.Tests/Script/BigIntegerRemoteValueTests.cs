@@ -3,10 +3,9 @@ namespace WebDriverBiDi.Script;
 using System.Numerics;
 using System.Text.Json;
 
-[TestFixture]
 public class BigIntegerRemoteValueTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeBigIntegerRemoteValue()
     {
         string json = """
@@ -18,12 +17,12 @@ public class BigIntegerRemoteValueTests
 
         BigIntegerRemoteValue? result = JsonSerializer.Deserialize<BigIntegerRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Type, Is.EqualTo(RemoteValueType.BigInt));
-        Assert.That(result.Value, Is.EqualTo(BigInteger.Parse("123456789012345678901234567890")));
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.BigInt, result.Type);
+        Assert.Equal(BigInteger.Parse("123456789012345678901234567890"), result.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestCanConvertToLocalValue()
     {
         string json = """
@@ -35,15 +34,15 @@ public class BigIntegerRemoteValueTests
 
         BigIntegerRemoteValue? result = JsonSerializer.Deserialize<BigIntegerRemoteValue>(json);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         LocalValue localValue = result.ToLocalValue();
         LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
-        Assert.That(argumentLocalValue.Type, Is.EqualTo("bigint"));
-        Assert.That(argumentLocalValue.Value, Is.InstanceOf<BigInteger>());
-        Assert.That(argumentLocalValue.Value, Is.EqualTo(BigInteger.Parse("123456789012345678901234567890")));
+        Assert.Equal("bigint", argumentLocalValue.Type);
+        Assert.IsType<BigInteger>(argumentLocalValue.Value);
+        Assert.Equal(BigInteger.Parse("123456789012345678901234567890"), argumentLocalValue.Value);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBigIntegerRemoteValueWithMissingValueThrows()
     {
         string json = """
@@ -52,10 +51,10 @@ public class BigIntegerRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBigIntegerRemoteValueWithInvalidValueTypeThrows()
     {
         string json = """
@@ -65,10 +64,10 @@ public class BigIntegerRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBigIntegerRemoteValueWithInvalidTypeValueThrows()
     {
         string json = """
@@ -78,10 +77,10 @@ public class BigIntegerRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBigIntegerRemoteValueWithInvalidValueThrows()
     {
         string json = """
@@ -91,10 +90,10 @@ public class BigIntegerRemoteValueTests
                       }
                       """;
 
-        Assert.That(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json), Throws.InstanceOf<JsonException>());
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BigIntegerRemoteValue>(json));
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -105,9 +104,9 @@ public class BigIntegerRemoteValueTests
                       """;
 
         BigIntegerRemoteValue? result = JsonSerializer.Deserialize<BigIntegerRemoteValue>(json);
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         BigIntegerRemoteValue copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
-        Assert.That(copy, Is.Not.SameAs(result));
+        Assert.Equal(result, copy);
+        Assert.NotSame(result, copy);
     }
 }

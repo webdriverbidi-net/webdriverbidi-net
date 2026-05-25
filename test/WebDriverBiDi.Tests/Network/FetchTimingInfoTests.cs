@@ -2,10 +2,9 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 
-[TestFixture]
 public class FetchTimingInfoTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeFetchTimingInfo()
     {
         string json = """
@@ -26,26 +25,24 @@ public class FetchTimingInfoTests
                       }
                       """;
         FetchTimingInfo? info = JsonSerializer.Deserialize<FetchTimingInfo>(json);
-        Assert.That(info, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(info.TimeOrigin, Is.EqualTo(1));
-            Assert.That(info.RequestTime, Is.EqualTo(2));
-            Assert.That(info.RedirectStart, Is.EqualTo(3));
-            Assert.That(info.RedirectEnd, Is.EqualTo(4));
-            Assert.That(info.FetchStart, Is.EqualTo(5));
-            Assert.That(info.DnsStart, Is.EqualTo(6));
-            Assert.That(info.DnsEnd, Is.EqualTo(7));
-            Assert.That(info.ConnectStart, Is.EqualTo(8));
-            Assert.That(info.ConnectEnd, Is.EqualTo(9));
-            Assert.That(info.TlsStart, Is.EqualTo(10));
-            Assert.That(info.RequestStart, Is.EqualTo(11));
-            Assert.That(info.ResponseStart, Is.EqualTo(12));
-            Assert.That(info.ResponseEnd, Is.EqualTo(13));
-        }
+        Assert.NotNull(info);
+
+        Assert.Equal(1, info.TimeOrigin);
+        Assert.Equal(2, info.RequestTime);
+        Assert.Equal(3, info.RedirectStart);
+        Assert.Equal(4, info.RedirectEnd);
+        Assert.Equal(5, info.FetchStart);
+        Assert.Equal(6, info.DnsStart);
+        Assert.Equal(7, info.DnsEnd);
+        Assert.Equal(8, info.ConnectStart);
+        Assert.Equal(9, info.ConnectEnd);
+        Assert.Equal(10, info.TlsStart);
+        Assert.Equal(11, info.RequestStart);
+        Assert.Equal(12, info.ResponseStart);
+        Assert.Equal(13, info.ResponseEnd);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         string json = """
@@ -66,12 +63,12 @@ public class FetchTimingInfoTests
                       }
                       """;
         FetchTimingInfo? info = JsonSerializer.Deserialize<FetchTimingInfo>(json);
-        Assert.That(info, Is.Not.Null);
+        Assert.NotNull(info);
         FetchTimingInfo copy = info with { };
-        Assert.That(copy, Is.EqualTo(info));
+        Assert.Equal(info, copy);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingTimeOriginThrows()
     {
         string json = """
@@ -90,10 +87,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'timeOrigin"));
+        Assert.Contains("was missing required properties including: 'timeOrigin", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingRequestTimeThrows()
     {
         string json = """
@@ -112,10 +109,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'requestTime"));
+        Assert.Contains("was missing required properties including: 'requestTime", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingRedirectStartThrows()
     {
         string json = """
@@ -134,10 +131,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'redirectStart"));
+        Assert.Contains("was missing required properties including: 'redirectStart", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingRedirectEndThrows()
     {
         string json = """
@@ -156,10 +153,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'redirectEnd"));
+        Assert.Contains("was missing required properties including: 'redirectEnd", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingFetchStartThrows()
     {
         string json = """
@@ -178,10 +175,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'fetchStart"));
+        Assert.Contains("was missing required properties including: 'fetchStart", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDnsStartThrows()
     {
         string json = """
@@ -200,10 +197,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'dnsStart"));
+        Assert.Contains("was missing required properties including: 'dnsStart", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDnsEndThrows()
     {
         string json = """
@@ -222,10 +219,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'dnsEnd"));
+        Assert.Contains("was missing required properties including: 'dnsEnd", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingConnectStartThrows()
     {
         string json = """
@@ -244,10 +241,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'connectStart"));
+        Assert.Contains("was missing required properties including: 'connectStart", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingConnectEndThrows()
     {
         string json = """
@@ -266,10 +263,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'connectEnd"));
+        Assert.Contains("was missing required properties including: 'connectEnd", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingTlsStartThrows()
     {
         string json = """
@@ -288,10 +285,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'tlsStart"));
+        Assert.Contains("was missing required properties including: 'tlsStart", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingRequestStartThrows()
     {
         string json = """
@@ -310,10 +307,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'requestStart"));
+        Assert.Contains("was missing required properties including: 'requestStart", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingResponseStartThrows()
     {
         string json = """
@@ -332,10 +329,10 @@ public class FetchTimingInfoTests
                         "responseEnd": 13
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'responseStart"));
+        Assert.Contains("was missing required properties including: 'responseStart", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingResponseEndThrows()
     {
         string json = """
@@ -354,6 +351,6 @@ public class FetchTimingInfoTests
                         "responseStart": 12
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchTimingInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("was missing required properties including: 'responseEnd"));
+        Assert.Contains("was missing required properties including: 'responseEnd", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchTimingInfo>(json)).Message);
     }
 }

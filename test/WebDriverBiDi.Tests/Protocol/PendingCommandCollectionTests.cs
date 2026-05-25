@@ -2,177 +2,176 @@ namespace WebDriverBiDi.Protocol;
 
 using TestUtilities;
 
-[TestFixture]
 public class PendingCommandCollectionTests
 {
-    [Test]
+    [Fact]
     public async Task TestCanAddCommand()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        Assert.That(collection.PendingCommandCount, Is.EqualTo(0));
+        Assert.Equal(0, collection.PendingCommandCount);
 
-        await collection.AddPendingCommandAsync(testCommand);
-        Assert.That(collection.PendingCommandCount, Is.EqualTo(1));
-        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.True);
-        Assert.That(removedCommand!.CommandName, Is.EqualTo("module.command"));
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+        Assert.Equal(1, collection.PendingCommandCount);
+        Assert.True(collection.RemovePendingCommand(1, out Command? removedCommand));
+        Assert.Equal("module.command", removedCommand.CommandName);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanRemoveCommand()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand);
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
 
-        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.True);
-        Assert.That(removedCommand!.CommandName, Is.EqualTo("module.command"));
+        Assert.True(collection.RemovePendingCommand(1, out Command? removedCommand));
+        Assert.Equal("module.command", removedCommand.CommandName);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanClearCollection()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand);
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
         await collection.CloseAsync();
         collection.Clear();
-        Assert.That(collection.PendingCommandCount, Is.EqualTo(0));
+        Assert.Equal(0, collection.PendingCommandCount);
     }
 
-    [Test]
-    public void TestCanAttemptToRemoveNonExistentCommand()
+    [Fact]
+    public async Task TestCanAttemptToRemoveNonExistentCommand()
     {
         PendingCommandCollection collection = new();
-        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.False);
+        Assert.False(collection.RemovePendingCommand(1, out Command? removedCommand));
     }
 
-    [Test]
+    [Fact]
     public async Task TestCannotAddCommandToClosedCollection()
     {
         PendingCommandCollection collection = new();
         await collection.CloseAsync();
-        Assert.That(async () => await collection.AddPendingCommandAsync(new Command(1, new TestCommandParameters("test.command"))), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Cannot add command; pending command collection is closed"));
+        Assert.Equal("Cannot add command; pending command collection is closed", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await collection.AddPendingCommandAsync(new Command(1, new TestCommandParameters("test.command")), TestContext.Current.CancellationToken))).Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCannotAddCommandWithDuplicateId()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand);
-        Assert.That(async () => await collection.AddPendingCommandAsync(new Command(1, new TestCommandParameters("test.command"))), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not add command with id 1, as id already exists"));
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+        Assert.Equal("Could not add command with id 1, as id already exists", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await collection.AddPendingCommandAsync(new Command(1, new TestCommandParameters("test.command")), TestContext.Current.CancellationToken))).Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanRemoveCommandFromClosedCollection()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand);
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
         await collection.CloseAsync();
-        Assert.That(collection.PendingCommandCount, Is.EqualTo(1));
-        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.True);
-        Assert.That(removedCommand!.CommandName, Is.EqualTo("module.command"));
+        Assert.Equal(1, collection.PendingCommandCount);
+        Assert.True(collection.RemovePendingCommand(1, out Command? removedCommand));
+        Assert.Equal("module.command", removedCommand.CommandName);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCanFailAllPendingCommands()
     {
         Command testCommand1 = new(1, new TestCommandParameters("module.command1"));
         Command testCommand2 = new(2, new TestCommandParameters("module.command2"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand1);
-        await collection.AddPendingCommandAsync(testCommand2);
+        await collection.AddPendingCommandAsync(testCommand1, TestContext.Current.CancellationToken);
+        await collection.AddPendingCommandAsync(testCommand2, TestContext.Current.CancellationToken);
         await collection.CloseAsync();
 
         Exception exception = new("connection lost");
         collection.FailAllPendingCommands(exception);
-        Assert.That(collection.PendingCommandCount, Is.EqualTo(0));
-        Assert.That(testCommand1.ThrownException, Is.SameAs(exception));
-        Assert.That(testCommand2.ThrownException, Is.SameAs(exception));
+        Assert.Equal(0, collection.PendingCommandCount);
+        Assert.Same(exception, testCommand1.ThrownException);
+        Assert.Same(exception, testCommand2.ThrownException);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCannotFailAllPendingCommandsUnlessClosed()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand);
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
         Exception exception = new("connection lost");
-        Assert.That(() => collection.FailAllPendingCommands(exception), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first"));
+        Assert.Equal("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first", Assert.ThrowsAny<InvalidOperationException>(() => collection.FailAllPendingCommands(exception)).Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestCannotClearCollectionUnlessClosed()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand);
-        Assert.That(() => collection.Clear(), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first"));
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+        Assert.Equal("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first", Assert.ThrowsAny<InvalidOperationException>(() => collection.Clear()).Message);
     }
 
-    [Test]
+    [Fact]
     public async Task TestIsAcceptingCommandsPropertyHasCorrectValue()
     {
         PendingCommandCollection collection = new();
-        Assert.That(collection.IsAcceptingCommands, Is.True);
+        Assert.True(collection.IsAcceptingCommands);
         await collection.CloseAsync();
-        Assert.That(collection.IsAcceptingCommands, Is.False);
+        Assert.False(collection.IsAcceptingCommands);
     }
 
-    [Test]
-    public void TestCanDispose()
-    {
-        PendingCommandCollection collection = new();
-        Assert.That(() => collection.Dispose(), Throws.Nothing);
-    }
-
-    [Test]
-    public void TestDoubleDisposeDoesNotThrow()
+    [Fact]
+    public async Task TestCanDispose()
     {
         PendingCommandCollection collection = new();
         collection.Dispose();
-        Assert.That(() => collection.Dispose(), Throws.Nothing);
     }
 
-    [Test]
+    [Fact]
+    public async Task TestDoubleDisposeDoesNotThrow()
+    {
+        PendingCommandCollection collection = new();
+        collection.Dispose();
+        collection.Dispose();
+    }
+
+    [Fact]
     public async Task TestCanDisposeAfterUse()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
-        await collection.AddPendingCommandAsync(testCommand);
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
         collection.RemovePendingCommand(1, out _);
         await collection.CloseAsync();
         collection.Clear();
-        Assert.That(() => collection.Dispose(), Throws.Nothing);
+        collection.Dispose();
     }
 
-    [Test]
-    public void TestAddPendingCommandThrowsWhenCancellationTokenIsCanceled()
+    [Fact]
+    public async Task TestAddPendingCommandThrowsWhenCancellationTokenIsCanceled()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
         using CancellationTokenSource cts = new();
         cts.Cancel();
 
-        Assert.That(async () => await collection.AddPendingCommandAsync(testCommand, cts.Token), Throws.InstanceOf<OperationCanceledException>());
-        Assert.That(collection.PendingCommandCount, Is.EqualTo(0));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await collection.AddPendingCommandAsync(testCommand, cts.Token));
+        Assert.Equal(0, collection.PendingCommandCount);
     }
 
-    [Test]
-    public void TestDisposeFinalizerPathDoesNotThrow()
+    [Fact]
+    public async Task TestDisposeFinalizerPathDoesNotThrow()
     {
         ExposedDisposeCollection collection = new();
-        Assert.That(() => collection.DisposeUnmanaged(), Throws.Nothing);
+        collection.DisposeUnmanaged();
     }
 
-    [Test]
-    public void TestDisposeFinalizerPathAfterManagedDisposeDoesNotThrow()
+    [Fact]
+    public async Task TestDisposeFinalizerPathAfterManagedDisposeDoesNotThrow()
     {
         ExposedDisposeCollection collection = new();
         collection.Dispose();
-        Assert.That(() => collection.DisposeUnmanaged(), Throws.Nothing);
+        collection.DisposeUnmanaged();
     }
 
     private sealed class ExposedDisposeCollection : PendingCommandCollection

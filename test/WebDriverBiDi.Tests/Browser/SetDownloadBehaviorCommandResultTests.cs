@@ -2,23 +2,22 @@ namespace WebDriverBiDi.Browser;
 
 using System.Text.Json;
 
-[TestFixture]
 public class SetDownloadBehaviorCommandResultTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserialize()
     {
         SetDownloadBehaviorCommandResult? result = JsonSerializer.Deserialize<SetDownloadBehaviorCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.AdditionalData, Is.Empty);
+        Assert.NotNull(result);
+        Assert.Empty(result.AdditionalData);
     }
 
-    [Test]
+    [Fact]
     public void TestCopySemantics()
     {
         SetDownloadBehaviorCommandResult? result = JsonSerializer.Deserialize<SetDownloadBehaviorCommandResult>("{}");
-        Assert.That(result, Is.Not.Null);
+        Assert.NotNull(result);
         SetDownloadBehaviorCommandResult copy = result with { };
-        Assert.That(copy, Is.EqualTo(result));
+        Assert.Equal(result, copy);
     }
 }

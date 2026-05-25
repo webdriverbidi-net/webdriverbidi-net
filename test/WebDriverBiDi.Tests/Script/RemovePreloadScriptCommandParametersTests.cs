@@ -3,28 +3,27 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class RemovePreloadScriptCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         RemovePreloadScriptCommandParameters properties = new("myLoadScriptId");
-        Assert.That(properties.MethodName, Is.EqualTo("script.removePreloadScript"));
+        Assert.Equal("script.removePreloadScript", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeProperties()
     {
         RemovePreloadScriptCommandParameters properties = new("myLoadScriptId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("script"));
-            Assert.That(serialized["script"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["script"]!.Value<string>(), Is.EqualTo("myLoadScriptId"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("script"));
+        JToken? script = serialized["script"];
+        Assert.NotNull(script);
+        Assert.Equal(JTokenType.String, script.Type);
+        Assert.Equal("myLoadScriptId", script.Value<string>());
     }
 }

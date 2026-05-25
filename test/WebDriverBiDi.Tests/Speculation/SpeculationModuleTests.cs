@@ -2,27 +2,23 @@ namespace WebDriverBiDi.Speculation;
 
 using TestUtilities;
 
-[TestFixture]
 public class SpeculationModuleTests
 {
-    [Test]
+    [Fact]
     public async Task TestCanReceivePrefetchStatusUpdatedEvent()
     {
         TestWebSocketConnection connection = new();
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         SpeculationModule module = driver.Speculation;
 
-        ManualResetEvent syncEvent = new(false);
-        module.OnPrefetchStatusUpdated.AddObserver((PrefetchStatusUpdatedEventArgs e) =>
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnPrefetchStatusUpdated.AddObserver(e =>
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-                Assert.That(e.Url, Is.EqualTo("https://example.com/index.html"));
-                Assert.That(e.Status, Is.EqualTo(PreloadingStatus.Pending));
-            }
-            syncEvent.Set();
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal("https://example.com/index.html", e.Url);
+            Assert.Equal(PreloadingStatus.Pending, e.Status);
+            taskCompletionSource.TrySetResult();
         });
 
         string eventJson = """
@@ -37,7 +33,6 @@ public class SpeculationModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-        Assert.That(eventRaised, Is.True);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
     }
 }

@@ -1,14 +1,11 @@
 namespace WebDriverBiDi.JsonConverters;
 
-using System.Reflection;
-using System.Security;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-[TestFixture]
 public class DiscriminatedUnionJsonConverterTests
 {
-    [Test]
+    [Fact]
     public void TestCanDeserializeDerivedType()
     {
         string json = """
@@ -17,14 +14,15 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyA": "Value for A"
                       }
                       """;
-        ParentTypeWithChildTypes result = JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json)!;
-        Assert.That(result, Is.TypeOf<DerivedTypeA>());
+        ParentTypeWithChildTypes? result = JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json);
+        Assert.NotNull(result);
+        Assert.IsType<DerivedTypeA>(result);
         DerivedTypeA derivedA = (DerivedTypeA)result;
-        Assert.That(derivedA.Type, Is.EqualTo("typeA"));
-        Assert.That(derivedA.PropertyA, Is.EqualTo("Value for A"));
+        Assert.Equal("typeA", derivedA.Type);
+        Assert.Equal("Value for A", derivedA.PropertyA);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDerivedTypeWithInvalidDiscriminatorValueThrows()
     {
         string json = """
@@ -33,10 +31,10 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyC": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'ParentTypeWithChildTypes' type property contains unknown value 'typeC'"));
+        Assert.Contains("JSON for 'ParentTypeWithChildTypes' type property contains unknown value 'typeC'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDerivedTypeWithMissingDiscriminatorPropertyThrows()
     {
         string json = """
@@ -44,10 +42,10 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyC": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'ParentTypeWithChildTypes' must contain a 'type' property"));
+        Assert.Contains("JSON for 'ParentTypeWithChildTypes' must contain a 'type' property", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBaseTypeWithInvalidJsonSchemaThrows()
     {
         string json = """
@@ -56,10 +54,10 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyC"
                       ]
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'ParentTypeWithChildTypes' must be an object, but starting token was StartArray"));
+        Assert.Contains("JSON for 'ParentTypeWithChildTypes' must be an object, but starting token was StartArray", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingDerivedTypeWithInvalidDiscriminatorValueTypeThrows()
     {
         string json = """
@@ -68,10 +66,10 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyC": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON 'type' property must be a string"));
+        Assert.Contains("JSON 'type' property must be a string", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ParentTypeWithChildTypes>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithEmptyDiscriminatorValueThrows()
     {
         string json = """
@@ -80,10 +78,10 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyC": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<EmptyDiscriminator>(json), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("must have a non-empty Discriminator"));
+        Assert.Contains("must have a non-empty Discriminator", Assert.ThrowsAny<InvalidOperationException>(() => JsonSerializer.Deserialize<EmptyDiscriminator>(json)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingWithMissingDiscriminatorValueReturnsNullForAttributeValue()
     {
         string json = """
@@ -92,10 +90,10 @@ public class DiscriminatedUnionJsonConverterTests
                       }
                       """;
         NullForEmptyDiscriminator? result = JsonSerializer.Deserialize<NullForEmptyDiscriminator>(json);
-        Assert.That(result, Is.Null);
+        Assert.Null(result);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeFallbackDerivedType()
     {
         string json = """
@@ -104,14 +102,15 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyA": "Value for A"
                       }
                       """;
-        ParentTypeWithFallback result = JsonSerializer.Deserialize<ParentTypeWithFallback>(json)!;
-        Assert.That(result, Is.TypeOf<FallbackDerivedType>());
+        ParentTypeWithFallback? result = JsonSerializer.Deserialize<ParentTypeWithFallback>(json);
+        Assert.NotNull(result);
+        Assert.IsType<FallbackDerivedType>(result);
         FallbackDerivedType fallbackResult = (FallbackDerivedType)result;
-        Assert.That(fallbackResult.Type, Is.EqualTo("someUnknownType"));
-        Assert.That(fallbackResult.PropertyA, Is.EqualTo("Value for A"));
+        Assert.Equal("someUnknownType", fallbackResult.Type);
+        Assert.Equal("Value for A", fallbackResult.PropertyA);
     }
 
-    [Test]
+    [Fact]
     public void TestCanDeserializeBasedOnPropertyPresence()
     {
         string jsonA = """
@@ -119,23 +118,25 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyA": "Value for A"
                       }
                       """;
-        PropertyPresence resultA = JsonSerializer.Deserialize<PropertyPresence>(jsonA)!;
-        Assert.That(resultA, Is.TypeOf<PropertyPresenceChildA>());
+        PropertyPresence? resultA = JsonSerializer.Deserialize<PropertyPresence>(jsonA);
+        Assert.NotNull(resultA);
+        Assert.IsType<PropertyPresenceChildA>(resultA);
         PropertyPresenceChildA childAResult = (PropertyPresenceChildA)resultA;
-        Assert.That(childAResult.PropertyA, Is.EqualTo("Value for A"));
+        Assert.Equal("Value for A", childAResult.PropertyA);
 
         string jsonB = """
                       {
                         "propertyB": 123
                       }
                       """;
-        PropertyPresence resultB = JsonSerializer.Deserialize<PropertyPresence>(jsonB)!;
-        Assert.That(resultB, Is.TypeOf<PropertyPresenceChildB>());
+        PropertyPresence? resultB = JsonSerializer.Deserialize<PropertyPresence>(jsonB);
+        Assert.NotNull(resultB);
+        Assert.IsType<PropertyPresenceChildB>(resultB);
         PropertyPresenceChildB childBResult = (PropertyPresenceChildB)resultB;
-        Assert.That(childBResult.PropertyB, Is.EqualTo(123));
+        Assert.Equal(123, childBResult.PropertyB);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingBasedOnPropertyPresenceWithInvalidValueThrows()
     {
         string jsonA = """
@@ -143,10 +144,10 @@ public class DiscriminatedUnionJsonConverterTests
                         "propertyC": "Value for C"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PropertyPresence>(jsonA), Throws.InstanceOf<JsonException>().With.Message.Contains("one of the following properties"));
+        Assert.Contains("one of the following properties", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PropertyPresence>(jsonA)).Message);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeDerivedType()
     {
         ParentTypeWithChildTypes derivedB = new DerivedTypeB
@@ -155,10 +156,11 @@ public class DiscriminatedUnionJsonConverterTests
             PropertyB = 42
         };
         string json = JsonSerializer.Serialize(derivedB);
-        Assert.That(json, Is.Not.Null.And.Not.Empty);
+        Assert.NotNull(json);
+        Assert.NotEmpty(json);
     }
 
-    [Test]
+    [Fact]
     public void TestDeserializingTypeWithMissingDiscriminatedTypePropertyAttributeThrows()
     {
         string json = """
@@ -166,7 +168,7 @@ public class DiscriminatedUnionJsonConverterTests
                         "type": "child"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<MissingDiscriminatorAttribute>(json), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("must have a [DiscriminatedTypeProperty] or [DiscriminatedTypePresence] attribute"));
+        Assert.Contains("must have a [DiscriminatedTypeProperty] or [DiscriminatedTypePresence] attribute", Assert.ThrowsAny<InvalidOperationException>(() => JsonSerializer.Deserialize<MissingDiscriminatorAttribute>(json)).Message);
     }
 
     [JsonConverter(typeof(DiscriminatedUnionJsonConverter<ParentTypeWithChildTypes>))]

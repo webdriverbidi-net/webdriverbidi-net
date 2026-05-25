@@ -13,14 +13,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver002 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver002CodeFixProviderTests
 {
     /// <summary>
     /// Tests that the code fix moves RegisterEvent before StartAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task RegisterEvent_CodeFixMovesBeforeStartAsync()
     {
         string testCode = """
@@ -103,14 +102,14 @@ public class BiDiDriver002CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that the code fix moves AddObserver before StartAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task AddObserver_CodeFixMovesBeforeStartAsync()
     {
         string testCode = """
@@ -217,6 +216,6 @@ public class BiDiDriver002CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -3,32 +3,31 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class SetScreenSettingsOverrideCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         SetScreenSettingsOverrideCommandParameters properties = new();
-        Assert.That(properties.MethodName, Is.EqualTo("emulation.setScreenSettingsOverride"));
+        Assert.Equal("emulation.setScreenSettingsOverride", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParameters()
     {
         SetScreenSettingsOverrideCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("screenArea"));
-            Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["screenArea"]!.Value<JObject?>, Is.Null);
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("screenArea"));
+        JToken? screenArea = serialized["screenArea"];
+        Assert.NotNull(screenArea);
+        Assert.Equal(JTokenType.Null, screenArea.Type);
+        Assert.Null(screenArea.Value<JObject?>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithDefaultScreenArea()
     {
         SetScreenSettingsOverrideCommandParameters properties = new()
@@ -37,23 +36,30 @@ public class SetScreenSettingsOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("screenArea"));
-            Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? screenArea = serialized["screenArea"] as JObject;
-            Assert.That(screenArea, Has.Count.EqualTo(2));
-            Assert.That(screenArea, Contains.Key("width"));
-            Assert.That(screenArea!["width"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(screenArea!["width"]!.Value<ulong>, Is.EqualTo(0));
-            Assert.That(screenArea, Contains.Key("height"));
-            Assert.That(screenArea!["height"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(screenArea!["height"]!.Value<ulong>, Is.EqualTo(0));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("screenArea"));
+        JToken? screenAreaToken = serialized["screenArea"];
+        Assert.NotNull(screenAreaToken);
+        Assert.Equal(JTokenType.Object, screenAreaToken.Type);
+        JObject? screenAreaObject = screenAreaToken as JObject;
+        Assert.NotNull(screenAreaObject);
+        Assert.Equal(2, screenAreaObject.Count);
+
+        Assert.True(screenAreaObject.ContainsKey("width"));
+        JToken? width = screenAreaObject["width"];
+        Assert.NotNull(width);
+        Assert.Equal(JTokenType.Integer, width.Type);
+        Assert.Equal(0UL, width.Value<ulong>());
+
+        Assert.True(screenAreaObject.ContainsKey("height"));
+        JToken? height = screenAreaObject["height"];
+        Assert.NotNull(height);
+        Assert.Equal(JTokenType.Integer, height.Type);
+        Assert.Equal(0UL, height.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeParametersWithScreenArea()
     {
         SetScreenSettingsOverrideCommandParameters properties = new()
@@ -66,23 +72,30 @@ public class SetScreenSettingsOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("screenArea"));
-            Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? screenArea = serialized["screenArea"] as JObject;
-            Assert.That(screenArea, Has.Count.EqualTo(2));
-            Assert.That(screenArea, Contains.Key("width"));
-            Assert.That(screenArea!["width"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(screenArea!["width"]!.Value<ulong>, Is.EqualTo(1280));
-            Assert.That(screenArea, Contains.Key("height"));
-            Assert.That(screenArea!["height"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(screenArea!["height"]!.Value<ulong>, Is.EqualTo(1024));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("screenArea"));
+        JToken? screenAreaToken = serialized["screenArea"];
+        Assert.NotNull(screenAreaToken);
+        Assert.Equal(JTokenType.Object, screenAreaToken.Type);
+        JObject? screenAreaObject = screenAreaToken as JObject;
+        Assert.NotNull(screenAreaObject);
+        Assert.Equal(2, screenAreaObject.Count);
+
+        Assert.True(screenAreaObject.ContainsKey("width"));
+        JToken? width = screenAreaObject["width"];
+        Assert.NotNull(width);
+        Assert.Equal(JTokenType.Integer, width.Type);
+        Assert.Equal(1280UL, width.Value<ulong>());
+
+        Assert.True(screenAreaObject.ContainsKey("height"));
+        JToken? height = screenAreaObject["height"];
+        Assert.NotNull(height);
+        Assert.Equal(JTokenType.Integer, height.Type);
+        Assert.Equal(1024UL, height.Value<ulong>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithContexts()
     {
         SetScreenSettingsOverrideCommandParameters properties = new()
@@ -95,24 +108,28 @@ public class SetScreenSettingsOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("screenArea"));
-            Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["screenArea"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
-            Assert.That(contextsArray, Has.Count.EqualTo(2));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
-            Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("screenArea"));
+        JToken? screenArea = serialized["screenArea"];
+        Assert.NotNull(screenArea);
+        Assert.Equal(JTokenType.Null, screenArea.Type);
+        Assert.Null(screenArea.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        Assert.Equal(JTokenType.Array, contextsToken.Type);
+        JArray? contextsArray = contextsToken.Value<JArray>();
+        Assert.NotNull(contextsArray);
+        Assert.Equal(2, contextsArray.Count);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("context1", contextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, contextsArray[1].Type);
+        Assert.Equal("context2", contextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithUserContexts()
     {
         SetScreenSettingsOverrideCommandParameters properties = new()
@@ -125,41 +142,43 @@ public class SetScreenSettingsOverrideCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("screenArea"));
-            Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["screenArea"]!.Value<JObject?>(), Is.Null);
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
-            Assert.That(userContextsArray, Has.Count.EqualTo(2));
-            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
-            Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("screenArea"));
+        JToken? screenArea = serialized["screenArea"];
+        Assert.NotNull(screenArea);
+        Assert.Equal(JTokenType.Null, screenArea.Type);
+        Assert.Null(screenArea.Value<JObject?>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContextsToken = serialized["userContexts"];
+        Assert.NotNull(userContextsToken);
+        Assert.Equal(JTokenType.Array, userContextsToken.Type);
+        JArray? userContextsArray = userContextsToken.Value<JArray>();
+        Assert.NotNull(userContextsArray);
+        Assert.Equal(2, userContextsArray.Count);
+        Assert.Equal(JTokenType.String, userContextsArray[0].Type);
+        Assert.Equal("userContext1", userContextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, userContextsArray[1].Type);
+        Assert.Equal("userContext2", userContextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanGetResetParameters()
     {
         SetScreenSettingsOverrideCommandParameters properties = SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
-        Assert.That(properties, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(properties.ScreenArea, Is.Null);
-            Assert.That(properties.Contexts, Is.Null);
-            Assert.That(properties.UserContexts, Is.Null);
-        }
+        Assert.NotNull(properties);
+
+        Assert.Null(properties.ScreenArea);
+        Assert.Null(properties.Contexts);
+        Assert.Null(properties.UserContexts);
     }
 
-    [Test]
+    [Fact]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
         SetScreenSettingsOverrideCommandParameters firstInstance = SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
         SetScreenSettingsOverrideCommandParameters secondInstance = SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
-        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+        Assert.NotSame(secondInstance, firstInstance);
     }
 }

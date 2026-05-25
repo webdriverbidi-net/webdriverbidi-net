@@ -3,43 +3,47 @@ namespace WebDriverBiDi.Storage;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class PartitionDescriptorTests
 {
-    [Test]
+    [Fact]
     public void TestCanSerializeBrowsingContextPartitionDescriptor()
     {
         BrowsingContextPartitionDescriptor properties = new("myBrowsingContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("context"));
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myBrowsingContext"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("context", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myBrowsingContext", context.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeStorageKeyPartitionDescriptor()
     {
         StorageKeyPartitionDescriptor properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(1));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("storageKey"));
-        }
+
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("storageKey", type.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeStorageKeyPartitionDescriptorWithUserContext()
     {
         StorageKeyPartitionDescriptor properties = new()
@@ -48,19 +52,23 @@ public class PartitionDescriptorTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("storageKey"));
-            Assert.That(serialized, Contains.Key("userContext"));
-            Assert.That(serialized["userContext"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("storageKey", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userContext"));
+        JToken? userContext = serialized["userContext"];
+        Assert.NotNull(userContext);
+        Assert.Equal(JTokenType.String, userContext.Type);
+        Assert.Equal("myUserContext", userContext.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeStorageKeyPartitionDescriptorWithSourceOrigin()
     {
         StorageKeyPartitionDescriptor properties = new()
@@ -69,19 +77,23 @@ public class PartitionDescriptorTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(2));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("storageKey"));
-            Assert.That(serialized, Contains.Key("sourceOrigin"));
-            Assert.That(serialized["sourceOrigin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["sourceOrigin"]!.Value<string>(), Is.EqualTo("mySourceOrigin"));
-        }
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("storageKey", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("sourceOrigin"));
+        JToken? sourceOrigin = serialized["sourceOrigin"];
+        Assert.NotNull(sourceOrigin);
+        Assert.Equal(JTokenType.String, sourceOrigin.Type);
+        Assert.Equal("mySourceOrigin", sourceOrigin.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeStorageKeyPartitionDescriptorWithAllProperties()
     {
         StorageKeyPartitionDescriptor properties = new()
@@ -91,18 +103,25 @@ public class PartitionDescriptorTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Has.Count.EqualTo(3));
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("storageKey"));
-            Assert.That(serialized, Contains.Key("userContext"));
-            Assert.That(serialized["userContext"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-            Assert.That(serialized, Contains.Key("sourceOrigin"));
-            Assert.That(serialized["sourceOrigin"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["sourceOrigin"]!.Value<string>(), Is.EqualTo("mySourceOrigin"));
-        }
+
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("storageKey", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userContext"));
+        JToken? userContext = serialized["userContext"];
+        Assert.NotNull(userContext);
+        Assert.Equal(JTokenType.String, userContext.Type);
+        Assert.Equal("myUserContext", userContext.Value<string>());
+
+        Assert.True(serialized.ContainsKey("sourceOrigin"));
+        JToken? sourceOrigin = serialized["sourceOrigin"];
+        Assert.NotNull(sourceOrigin);
+        Assert.Equal(JTokenType.String, sourceOrigin.Type);
+        Assert.Equal("mySourceOrigin", sourceOrigin.Value<string>());
     }
 }

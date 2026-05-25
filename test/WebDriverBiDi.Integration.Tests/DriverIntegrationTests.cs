@@ -1,4 +1,4 @@
-namespace WebDriverBiDi.Integration;
+namespace WebDriverBiDi.Integration.Tests;
 
 using System.Net;
 using PinchHitter;
@@ -9,11 +9,11 @@ using WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 
-[TestFixture]
 public class DriverIntegrationTests
 {
-    [TestCase(TestBrowser.Firefox)]
-    [TestCase(TestBrowser.Chrome)]
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
     public async Task TestCanNavigate(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
@@ -27,7 +27,7 @@ public class DriverIntegrationTests
 
         string navigatedUrl = string.Empty;
         await using EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver(e => navigatedUrl = e.Url);
-        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName));
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName), cancellationToken: TestContext.Current.CancellationToken);
 
         string browsingContextId = await this.GetBrowsingContext(driver);
 
@@ -36,19 +36,20 @@ public class DriverIntegrationTests
         {
             Wait = ReadinessState.Complete
         };
-        await driver.BrowsingContext.NavigateAsync(navigateParams);
+        await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
-        Assert.That(capturedTasks, Has.Length.EqualTo(1));
-        Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/index.html"));
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await Assert.Single(capturedTasks);
+        Assert.Equal($"http://localhost:{server.Port}/index.html", navigatedUrl);
 
         // Attempt to gracefully close the browser. If the test fails, the
         // browser process will be cleaned up when the launcher is disposed.
-        await driver.Browser.CloseAsync();
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
     }
 
-    [TestCase(TestBrowser.Firefox)]
-    [TestCase(TestBrowser.Chrome)]
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
     public async Task TestCanExecuteScript(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
@@ -65,7 +66,7 @@ public class DriverIntegrationTests
         {
             Wait = ReadinessState.Complete
         };
-        await driver.BrowsingContext.NavigateAsync(navigateParams);
+        await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
 
         string functionDefinition = "(first, second) => first + second";
         List<LocalValue> arguments =
@@ -77,20 +78,21 @@ public class DriverIntegrationTests
         CallFunctionCommandParameters callFunctionParams = new(functionDefinition, new ContextTarget(browsingContextId), true);
         callFunctionParams.Arguments.AddRange(arguments);
 
-        EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
-        Assert.That(scriptResult, Is.InstanceOf<EvaluateResultSuccess>());
+        EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.IsType<EvaluateResultSuccess>(scriptResult);
         EvaluateResultSuccess successResult = (EvaluateResultSuccess)scriptResult;
-        Assert.That(successResult.Result, Is.InstanceOf<NumberRemoteValue>());
+        Assert.IsType<NumberRemoteValue>(successResult.Result);
         NumberRemoteValue resultValue = (NumberRemoteValue)successResult.Result;
-        Assert.That(resultValue.ToInt(), Is.EqualTo(8));
+        Assert.Equal(8, resultValue.ToInt());
 
         // Attempt to gracefully close the browser. If the test fails, the
         // browser process will be cleaned up when the launcher is disposed.
-        await driver.Browser.CloseAsync();
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
     }
 
-    [TestCase(TestBrowser.Firefox)]
-    [TestCase(TestBrowser.Chrome)]
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
     public async Task TestCanClickLink(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
@@ -107,15 +109,15 @@ public class DriverIntegrationTests
         {
             Wait = ReadinessState.Complete
         };
-        await driver.BrowsingContext.NavigateAsync(navigateParams);
-        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName));
+        await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName), cancellationToken: TestContext.Current.CancellationToken);
 
         string navigatedUrl = string.Empty;
         await using EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver(e => navigatedUrl = e.Url);
 
         LocateNodesCommandParameters locateNodesParams = new(browsingContextId, new CssLocator("a"));
-        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(locateNodesParams);
-        Assert.That(locateResult.Nodes, Has.Count.EqualTo(1));
+        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(locateNodesParams, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Single(locateResult.Nodes);
 
         NodeRemoteValue nodeRemoteValue = locateResult.Nodes[0];
         SharedReference elementReference = nodeRemoteValue.ToSharedReference();
@@ -125,19 +127,20 @@ public class DriverIntegrationTests
         inputBuilder.AddClickOnElementAction(elementReference);
         PerformActionsCommandParameters actionsParams = new(browsingContextId);
         actionsParams.Actions.AddRange(inputBuilder.Build());
-        await driver.Input.PerformActionsAsync(actionsParams);
+        await driver.Input.PerformActionsAsync(actionsParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
-        Assert.That(capturedTasks, Has.Length.EqualTo(1));
-        Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/details.html"));
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await Assert.Single(capturedTasks);
+        Assert.Equal($"http://localhost:{server.Port}/details.html", navigatedUrl);
 
         // Attempt to gracefully close the browser. If the test fails, the
         // browser process will be cleaned up when the launcher is disposed.
-        await driver.Browser.CloseAsync();
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
     }
 
-    [TestCase(TestBrowser.Firefox)]
-    [TestCase(TestBrowser.Chrome)]
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
     public async Task TestCanSubmitForm(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
@@ -154,15 +157,15 @@ public class DriverIntegrationTests
         {
             Wait = ReadinessState.Complete
         };
-        await driver.BrowsingContext.NavigateAsync(navigateParams);
-        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName));
+        await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName), cancellationToken: TestContext.Current.CancellationToken);
 
         string navigatedUrl = string.Empty;
         await using EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver(e => navigatedUrl = e.Url);
 
         LocateNodesCommandParameters locateNodesParams = new(browsingContextId, new CssLocator("input#dataToSend"));
-        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(locateNodesParams);
-        Assert.That(locateResult.Nodes, Has.Count.EqualTo(1));
+        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(locateNodesParams, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Single(locateResult.Nodes);
 
         NodeRemoteValue nodeRemoteValue = locateResult.Nodes[0];
         SharedReference elementReference = nodeRemoteValue.ToSharedReference();
@@ -173,11 +176,11 @@ public class DriverIntegrationTests
         inputBuilder.AddSendKeysToActiveElementAction("Hello WebDriver BiDi" + Keys.Enter);
         PerformActionsCommandParameters actionsParams = new(browsingContextId);
         actionsParams.Actions.AddRange(inputBuilder.Build());
-        await driver.Input.PerformActionsAsync(actionsParams);
+        await driver.Input.PerformActionsAsync(actionsParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
-        Assert.That(capturedTasks, Has.Length.EqualTo(1));
-        Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/processForm"));
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await Assert.Single(capturedTasks);
+        Assert.Equal($"http://localhost:{server.Port}/processForm", navigatedUrl);
 
         LocateNodesCommandParameters locateFormResultParams = new(browsingContextId, new CssLocator("span"))
         {
@@ -186,19 +189,19 @@ public class DriverIntegrationTests
                 MaxDomDepth = SerializationOptions.InfiniteMaxDomDepth,
             },
         };
-        LocateNodesCommandResult locateFormResult = await driver.BrowsingContext.LocateNodesAsync(locateFormResultParams);
-        Assert.That(locateFormResult.Nodes, Has.Count.EqualTo(1));
+        LocateNodesCommandResult locateFormResult = await driver.BrowsingContext.LocateNodesAsync(locateFormResultParams, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Single(locateFormResult.Nodes);
 
         NodeRemoteValue resultNodeRemoteValue = locateFormResult.Nodes[0];
         NodeProperties resultNodeProperties = resultNodeRemoteValue.GetNodeProperties();
-        Assert.That(resultNodeProperties.Children, Is.Not.Null);
-        Assert.That(resultNodeProperties.Children, Has.Count.EqualTo(1));
+        Assert.NotNull(resultNodeProperties.Children);
+        Assert.Single(resultNodeProperties.Children);
         NodeRemoteValue textContentValue = resultNodeProperties.Children[0];
-        Assert.That(textContentValue.GetNodeProperties().NodeValue, Is.EqualTo("Hello WebDriver BiDi"));
+        Assert.Equal("Hello WebDriver BiDi", textContentValue.GetNodeProperties().NodeValue);
 
         // Attempt to gracefully close the browser. If the test fails, the
         // browser process will be cleaned up when the launcher is disposed.
-        await driver.Browser.CloseAsync();
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
     }
 
     private async Task<string> GetBrowsingContext(BiDiDriver driver)

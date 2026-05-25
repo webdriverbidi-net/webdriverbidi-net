@@ -3,32 +3,31 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-[TestFixture]
 public class AddPreloadScriptCommandParametersTests
 {
-    [Test]
+    [Fact]
     public void TestCommandName()
     {
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration");
-        Assert.That(properties.MethodName, Is.EqualTo("script.addPreloadScript"));
+        Assert.Equal("script.addPreloadScript", properties.MethodName);
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializeProperties()
     {
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("functionDeclaration"));
-            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
-        }
+        Assert.Single(serialized);
+
+        Assert.True(serialized.ContainsKey("functionDeclaration"));
+        JToken? functionDeclaration = serialized["functionDeclaration"];
+        Assert.NotNull(functionDeclaration);
+        Assert.Equal(JTokenType.String, functionDeclaration.Type);
+        Assert.Equal("myFunctionDeclaration", functionDeclaration.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithSandbox()
     {
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
@@ -37,19 +36,22 @@ public class AddPreloadScriptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("functionDeclaration"));
-            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
-            Assert.That(serialized, Contains.Key("sandbox"));
-            Assert.That(serialized["sandbox"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["sandbox"]!.Value<string>(), Is.EqualTo("mySandbox"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("functionDeclaration"));
+        JToken? functionDeclaration = serialized["functionDeclaration"];
+        Assert.NotNull(functionDeclaration);
+        Assert.Equal(JTokenType.String, functionDeclaration.Type);
+        Assert.Equal("myFunctionDeclaration", functionDeclaration.Value<string>());
+
+        Assert.True(serialized.ContainsKey("sandbox"));
+        JToken? sandbox = serialized["sandbox"];
+        Assert.NotNull(sandbox);
+        Assert.Equal(JTokenType.String, sandbox.Type);
+        Assert.Equal("mySandbox", sandbox.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithArguments()
     {
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
@@ -61,32 +63,44 @@ public class AddPreloadScriptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("functionDeclaration"));
-            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
-            Assert.That(serialized, Contains.Key("arguments"));
-            Assert.That(serialized["arguments"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? argsArray = serialized["arguments"]!.Value<JArray>();
-            Assert.That(argsArray, Has.Count.EqualTo(1));
-            Assert.That(argsArray![0].Type, Is.EqualTo(JTokenType.Object));
-            JObject? argObject = argsArray[0].Value<JObject>();
-            Assert.That(argObject, Has.Count.EqualTo(2));
-            Assert.That(argObject, Contains.Key("type"));
-            Assert.That(argObject!["type"]!.Value<string>(), Is.EqualTo("channel"));
-            Assert.That(argObject, Contains.Key("value"));
-            Assert.That(argObject["value"]!.Type, Is.EqualTo(JTokenType.Object));
-            JObject? argValue = argObject["value"]!.Value<JObject>();
-            Assert.That(argValue!.Value<JObject>(), Has.Count.EqualTo(1));
-            Assert.That(argValue, Contains.Key("channel"));
-            Assert.That(argValue!["channel"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(argValue!["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("functionDeclaration"));
+        JToken? functionDeclaration = serialized["functionDeclaration"];
+        Assert.NotNull(functionDeclaration);
+        Assert.Equal(JTokenType.String, functionDeclaration.Type);
+        Assert.Equal("myFunctionDeclaration", functionDeclaration.Value<string>());
+
+        Assert.True(serialized.ContainsKey("arguments"));
+        JToken? argumentsToken = serialized["arguments"];
+        Assert.NotNull(argumentsToken);
+        Assert.Equal(JTokenType.Array, argumentsToken.Type);
+        JArray? argsArray = argumentsToken as JArray;
+        Assert.NotNull(argsArray);
+        Assert.Single(argsArray);
+        Assert.Equal(JTokenType.Object, argsArray[0].Type);
+        JObject? argObject = argsArray[0] as JObject;
+        Assert.NotNull(argObject);
+        Assert.Equal(2, argObject.Count);
+        Assert.True(argObject.ContainsKey("type"));
+        JToken? argType = argObject["type"];
+        Assert.NotNull(argType);
+        Assert.Equal("channel", argType.Value<string>());
+        Assert.True(argObject.ContainsKey("value"));
+        JToken? argValueToken = argObject["value"];
+        Assert.NotNull(argValueToken);
+        Assert.Equal(JTokenType.Object, argValueToken.Type);
+        JObject? argValue = argValueToken as JObject;
+        Assert.NotNull(argValue);
+        Assert.Single(argValue);
+        Assert.True(argValue.ContainsKey("channel"));
+        JToken? channel = argValue["channel"];
+        Assert.NotNull(channel);
+        Assert.Equal(JTokenType.String, channel.Type);
+        Assert.Equal("myChannel", channel.Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithContexts()
     {
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
@@ -99,24 +113,28 @@ public class AddPreloadScriptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("functionDeclaration"));
-            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
-            Assert.That(contextsArray, Has.Count.EqualTo(2));
-            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
-            Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("functionDeclaration"));
+        JToken? functionDeclaration = serialized["functionDeclaration"];
+        Assert.NotNull(functionDeclaration);
+        Assert.Equal(JTokenType.String, functionDeclaration.Type);
+        Assert.Equal("myFunctionDeclaration", functionDeclaration.Value<string>());
+
+        Assert.True(serialized.ContainsKey("contexts"));
+        JToken? contextsToken = serialized["contexts"];
+        Assert.NotNull(contextsToken);
+        Assert.Equal(JTokenType.Array, contextsToken.Type);
+        JArray? contextsArray = contextsToken as JArray;
+        Assert.NotNull(contextsArray);
+        Assert.Equal(2, contextsArray.Count);
+        Assert.Equal(JTokenType.String, contextsArray[0].Type);
+        Assert.Equal("context1", contextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, contextsArray[1].Type);
+        Assert.Equal("context2", contextsArray[1].Value<string>());
     }
 
-    [Test]
+    [Fact]
     public void TestCanSerializePropertiesWithUserContexts()
     {
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
@@ -129,20 +147,24 @@ public class AddPreloadScriptCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(serialized, Contains.Key("functionDeclaration"));
-            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
-            Assert.That(serialized, Contains.Key("userContexts"));
-            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
-            Assert.That(userContextsArray, Has.Count.EqualTo(2));
-            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
-            Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
-        }
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("functionDeclaration"));
+        JToken? functionDeclaration = serialized["functionDeclaration"];
+        Assert.NotNull(functionDeclaration);
+        Assert.Equal(JTokenType.String, functionDeclaration.Type);
+        Assert.Equal("myFunctionDeclaration", functionDeclaration.Value<string>());
+
+        Assert.True(serialized.ContainsKey("userContexts"));
+        JToken? userContextsToken = serialized["userContexts"];
+        Assert.NotNull(userContextsToken);
+        Assert.Equal(JTokenType.Array, userContextsToken.Type);
+        JArray? userContextsArray = userContextsToken as JArray;
+        Assert.NotNull(userContextsArray);
+        Assert.Equal(2, userContextsArray.Count);
+        Assert.Equal(JTokenType.String, userContextsArray[0].Type);
+        Assert.Equal("userContext1", userContextsArray[0].Value<string>());
+        Assert.Equal(JTokenType.String, userContextsArray[1].Type);
+        Assert.Equal("userContext2", userContextsArray[1].Value<string>());
     }
 }

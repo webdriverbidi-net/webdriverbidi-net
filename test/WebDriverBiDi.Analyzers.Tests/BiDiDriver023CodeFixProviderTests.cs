@@ -13,7 +13,6 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver023 code fix provider.
 /// </summary>
-[TestFixture]
 public class BiDiDriver023CodeFixProviderTests
 {
     private const string CommonStubs = """
@@ -75,7 +74,7 @@ public class BiDiDriver023CodeFixProviderTests
     /// <summary>
     /// Tests that the code fix adds RunHandlerAsynchronously when it is not yet present.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithModuleCommand_CodeFixAddsRunHandlerAsynchronously()
     {
         string testCode = $$"""
@@ -134,13 +133,13 @@ public class BiDiDriver023CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that the code fix replaces an existing options argument with RunHandlerAsynchronously.
     /// </summary>
-    [Test]
+    [Fact]
     public async Task EventHandler_WithExistingNoneOption_CodeFixReplacesWithRunHandlerAsynchronously()
     {
         string testCode = $$"""
@@ -199,32 +198,32 @@ public class BiDiDriver023CodeFixProviderTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests FixableDiagnosticIds contains BIDI023.
     /// </summary>
-    [Test]
+    [Fact]
     public void FixableDiagnosticIds_ContainsBIDI023()
     {
         BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider provider = new();
         System.Collections.Immutable.ImmutableArray<string> ids = provider.FixableDiagnosticIds;
 
-        Assert.That(ids, Has.Length.EqualTo(1));
-        Assert.That(ids[0], Is.EqualTo(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId));
+        Assert.Single(ids);
+        Assert.Equal(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, ids[0]);
     }
 
     /// <summary>
     /// Tests GetFixAllProvider returns the batch fixer.
     /// </summary>
-    [Test]
+    [Fact]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
         BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider provider = new();
         Microsoft.CodeAnalysis.CodeFixes.FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
-        Assert.That(fixAllProvider, Is.Not.Null);
-        Assert.That(fixAllProvider, Is.EqualTo(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer));
+        Assert.NotNull(fixAllProvider);
+        Assert.Equal(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer, fixAllProvider);
     }
 }

@@ -13,14 +13,13 @@ using Microsoft.CodeAnalysis.Testing;
 /// <summary>
 /// Tests for the BiDiDriver004 analyzer that suggests using CancellationToken.
 /// </summary>
-[TestFixture]
 public class BiDiDriver004AnalyzerTests
 {
     /// <summary>
     /// Tests that methods without CancellationToken report an info diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NavigateAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
@@ -79,14 +78,14 @@ public class BiDiDriver004AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that methods with CancellationToken do not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NavigateAsync_WithCancellationToken_NoDiagnostic()
     {
         string test = """
@@ -140,14 +139,14 @@ public class BiDiDriver004AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that non-BiDiDriver/Module methods are not analyzed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonBiDiDriverMethod_NoDiagnostic()
     {
         string test = """
@@ -179,14 +178,14 @@ public class BiDiDriver004AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that methods not in the suggestion list do not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NonSuggestedMethod_WithoutCancellationToken_NoDiagnostic()
     {
         string test = """
@@ -231,14 +230,14 @@ public class BiDiDriver004AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that StartAsync without CancellationToken reports info.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task StartAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
@@ -280,14 +279,14 @@ public class BiDiDriver004AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that EvaluateAsync without CancellationToken reports info.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task EvaluateAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
@@ -337,14 +336,14 @@ public class BiDiDriver004AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that methods without overload that takes CancellationToken do not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task MethodWithoutTokenOverload_NoDiagnostic()
     {
         string test = """
@@ -396,14 +395,14 @@ public class BiDiDriver004AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that unresolved method symbols are handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task UnresolvedMethodSymbol_NoDiagnostic()
     {
         string test = """
@@ -445,14 +444,14 @@ public class BiDiDriver004AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that null containing type is handled gracefully.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task NullContainingType_NoDiagnostic()
     {
         string test = """
@@ -478,50 +477,50 @@ public class BiDiDriver004AnalyzerTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests GetFixAllProvider returns the correct provider.
     /// </summary>
-    [Test]
+    [Fact]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
         BiDiDriver004_CancellationTokenSuggestionCodeFixProvider provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
         FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
-        Assert.That(fixAllProvider, Is.EqualTo(WellKnownFixAllProviders.BatchFixer));
+        Assert.Equal(WellKnownFixAllProviders.BatchFixer, fixAllProvider);
     }
 
     /// <summary>
     /// Tests FixableDiagnosticIds property.
     /// </summary>
-    [Test]
+    [Fact]
     public void FixableDiagnosticIds_ContainsBIDI004()
     {
         BiDiDriver004_CancellationTokenSuggestionCodeFixProvider provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
 
-        Assert.That(provider.FixableDiagnosticIds, Does.Contain(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId));
-        Assert.That(provider.FixableDiagnosticIds.Length, Is.EqualTo(1));
+        Assert.Contains(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, provider.FixableDiagnosticIds);
+        Assert.Single(provider.FixableDiagnosticIds);
     }
 
     /// <summary>
     /// Tests SupportedDiagnostics property of the analyzer.
     /// </summary>
-    [Test]
+    [Fact]
     public void SupportedDiagnostics_ContainsBIDI004()
     {
         BiDiDriver004_CancellationTokenSuggestionAnalyzer analyzer = new BiDiDriver004_CancellationTokenSuggestionAnalyzer();
 
-        Assert.That(analyzer.SupportedDiagnostics.Length, Is.EqualTo(1));
-        Assert.That(analyzer.SupportedDiagnostics[0].Id, Is.EqualTo(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId));
+        Assert.Single(analyzer.SupportedDiagnostics);
+        Assert.Equal(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, analyzer.SupportedDiagnostics[0].Id);
     }
 
     /// <summary>
     /// Tests that CallFunctionAsync without CancellationToken reports info.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task CallFunctionAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
@@ -571,14 +570,14 @@ public class BiDiDriver004AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that ExecuteCommandAsync without CancellationToken reports info.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task ExecuteCommandAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
@@ -620,14 +619,14 @@ public class BiDiDriver004AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that GetTreeAsync without CancellationToken reports info.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task GetTreeAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
@@ -677,14 +676,14 @@ public class BiDiDriver004AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
     /// Tests that LocateNodesAsync without CancellationToken reports info.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Test]
+    [Fact]
     public async Task LocateNodesAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
@@ -734,6 +733,6 @@ public class BiDiDriver004AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(expected);
 
-        await testState.RunAsync();
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

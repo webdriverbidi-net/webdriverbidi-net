@@ -311,18 +311,20 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                     }
                 }
 
-                // If we collected the requested number of tasks, auto-close the channel so that
-                // subsequent handler invocations are not queued into it.
+                // If we collected the requested number of tasks and are the sole active reader,
+                // auto-close the channel so that subsequent handler invocations are not queued
+                // into it. When another waiter is active (readerCount > 1), leave the channel
+                // open so that waiter can continue receiving tasks.
                 if (collected.Count == count)
                 {
+                    int readerCount = 0;
                     lock (this.captureLock)
                     {
-                        // Only close if it is still the same channel we started with
-                        // (StopCapturingTasks might have already closed it).
-                        // Note: We are using ReferenceEquals here, though the equality
-                        // operator (`==`) would be semantically equivalent. ReferenceEquals
-                        // explicitly tells us we are checking for the same instance.
-                        if (ReferenceEquals(this.capturedTaskQueue, channel))
+                        readerCount = this.waitingReaderCount;
+
+                        // Only close if we are the sole active reader and the channel is still
+                        // the one we started with (StopCapturingTasks might have already closed it).
+                        if (readerCount == 1 && ReferenceEquals(this.capturedTaskQueue, channel))
                         {
                             this.CloseCaptureChannel();
                         }
@@ -335,7 +337,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                     // through the normal error pipeline instead of being silently swallowed.
                     // Only do this when we are the sole active reader: if another WaitForCapturedTasksAsync
                     // caller is queued behind the semaphore, those tasks are legitimately theirs to consume.
-                    if (this.waitingReaderCount == 1)
+                    if (readerCount == 1)
                     {
                         string eventName = this.observableEvent.EventName;
                         while (channel.Reader.TryRead(out Task? racedTask))
