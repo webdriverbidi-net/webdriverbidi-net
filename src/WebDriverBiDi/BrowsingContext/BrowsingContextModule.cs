@@ -302,6 +302,30 @@ public sealed class BrowsingContextModule : Module
     }
 
     /// <summary>
+    /// Starts capture of a screencast for a brwosing context.
+    /// </summary>
+    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
+    /// <returns>The result of the command.</returns>
+    public Task<StartScreencastCommandResult> StartScreencastAsync(StartScreencastCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    {
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
+    }
+
+    /// <summary>
+    /// Stops capture of a screencast for a brwosing context.
+    /// </summary>
+    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
+    /// <returns>The result of the command.</returns>
+    public Task<StopScreencastCommandResult> StopScreencastAsync(StopScreencastCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    {
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
+    }
+
+    /// <summary>
     /// Traverses the history entries of the browser.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>

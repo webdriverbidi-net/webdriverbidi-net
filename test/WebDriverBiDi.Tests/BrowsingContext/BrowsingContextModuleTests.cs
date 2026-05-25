@@ -395,6 +395,68 @@ public class BrowsingContextModuleTests
     }
 
     [Fact]
+    public async Task TestExecuteStartScreencastCommand()
+    {
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "screencast": "myScreencastId",
+                                      "path": "path/to/screencast/file"
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        BrowsingContextModule module = driver.BrowsingContext;
+
+        Task<StartScreencastCommandResult> task = module.StartScreencastAsync(new StartScreencastCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
+        StartScreencastCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result);
+
+        Assert.Equal("myScreencastId", result.ScreencastId);
+        Assert.Equal("path/to/screencast/file", result.Path);
+    }
+
+    [Fact]
+    public async Task TestExecuteStopScreencastCommand()
+    {
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "path": "path/to/screencast/file"
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        BrowsingContextModule module = driver.BrowsingContext;
+
+        Task<StopScreencastCommandResult> task = module.StopScreencastAsync(new StopScreencastCommandParameters("myScreencastId"), cancellationToken: TestContext.Current.CancellationToken);
+        StopScreencastCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result);
+
+        Assert.Equal("path/to/screencast/file", result.Path);
+    }
+
+    [Fact]
     public async Task TestExecuteTraverseHistoryCommand()
     {
         TestWebSocketConnection connection = new();
