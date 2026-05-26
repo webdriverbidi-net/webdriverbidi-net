@@ -9,7 +9,7 @@ public class ScriptModuleTests
     public async Task TestExecuteCallFunctionCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -26,7 +26,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -51,7 +51,7 @@ public class ScriptModuleTests
     public async Task TestExecuteCallFunctionCommandReturningError()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -76,7 +76,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -104,7 +104,7 @@ public class ScriptModuleTests
     public async Task TestExecuteEvaluateCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -121,7 +121,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -146,7 +146,7 @@ public class ScriptModuleTests
     public async Task TestExecuteEvaluateCommandReturningError()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -171,7 +171,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -199,7 +199,7 @@ public class ScriptModuleTests
     public async Task TestExecuteGetRealmsCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -218,7 +218,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -245,7 +245,7 @@ public class ScriptModuleTests
     public async Task TestExecuteGetRealmsCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -257,7 +257,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -274,7 +274,7 @@ public class ScriptModuleTests
     public async Task TestExecuteDisownCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -284,7 +284,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -442,7 +442,7 @@ public class ScriptModuleTests
     public async Task TestCanAddPreloadScript()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -454,7 +454,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
@@ -472,7 +472,7 @@ public class ScriptModuleTests
     public async Task TestCanRemovePreloadScript()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -482,7 +482,7 @@ public class ScriptModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;

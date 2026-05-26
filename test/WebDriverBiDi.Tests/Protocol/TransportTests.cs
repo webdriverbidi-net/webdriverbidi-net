@@ -4,6 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 using Newtonsoft.Json.Linq;
 using PinchHitter;
 using TestUtilities;
+using Xunit.Sdk;
 
 public class TransportTests
 {
@@ -1651,7 +1652,7 @@ public class TransportTests
             TransportErrorBehavior.Collect);
         if (!faultCaptured)
         {
-            throw new Xunit.Sdk.XunitException("the fault-capture continuation should record the injected fault before the safety timeout");
+            throw new XunitException("the fault-capture continuation should record the injected fault before the safety timeout");
         }
 
         // Under Collect mode, DisconnectAsync surfaces the captured fault as an
@@ -1687,7 +1688,7 @@ public class TransportTests
             TransportErrorBehavior.Collect);
         if (!faultCaptured)
         {
-            throw new Xunit.Sdk.XunitException("the fault-capture continuation should record the injected faults before the safety timeout");
+            throw new XunitException("the fault-capture continuation should record the injected faults before the safety timeout");
         }
 
         // Under Collect mode, DisconnectAsync surfaces the captured fault as an

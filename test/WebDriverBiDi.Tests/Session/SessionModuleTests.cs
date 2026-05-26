@@ -8,7 +8,7 @@ public class SessionModuleTests
     public async Task TestExecuteStatusCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -21,7 +21,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
@@ -40,7 +40,7 @@ public class SessionModuleTests
     public async Task TestExecuteStatusCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -53,7 +53,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
@@ -72,7 +72,7 @@ public class SessionModuleTests
     public async Task TestExecuteSubscribeCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -84,7 +84,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
@@ -102,7 +102,7 @@ public class SessionModuleTests
     public async Task TestExecuteUnsubscribeByAttributesCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -112,7 +112,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
@@ -130,7 +130,7 @@ public class SessionModuleTests
     public async Task TestExecuteUnsubscribeBySubscriptionIdsCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -140,7 +140,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
@@ -158,7 +158,7 @@ public class SessionModuleTests
     public async Task TestExecuteNewCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -182,7 +182,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
@@ -214,7 +214,7 @@ public class SessionModuleTests
     public async Task TestExecuteEndCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -224,7 +224,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;
@@ -240,7 +240,7 @@ public class SessionModuleTests
     public async Task TestExecuteEndCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -250,7 +250,7 @@ public class SessionModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = driver.Session;

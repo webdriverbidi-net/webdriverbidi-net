@@ -13,7 +13,7 @@ public class StorageModuleTests()
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
         ulong seconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -44,7 +44,7 @@ public class StorageModuleTests()
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
@@ -74,7 +74,7 @@ public class StorageModuleTests()
     public async Task TestGetCookiesCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -87,7 +87,7 @@ public class StorageModuleTests()
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
@@ -104,7 +104,7 @@ public class StorageModuleTests()
     public async Task TestDeleteCookiesCommandWithNoArgument()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -116,7 +116,7 @@ public class StorageModuleTests()
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
@@ -132,7 +132,7 @@ public class StorageModuleTests()
     public async Task TestSetCookieCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -147,7 +147,7 @@ public class StorageModuleTests()
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;
@@ -166,7 +166,7 @@ public class StorageModuleTests()
     public async Task TestDeleteCookiesCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -181,7 +181,7 @@ public class StorageModuleTests()
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = driver.Storage;

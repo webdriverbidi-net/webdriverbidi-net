@@ -199,24 +199,26 @@ public class PipeConnectionTests
     public async Task TestCanOnlySendOneMessageAtATime()
     {
         TestPipeServer testPipeServer = new();
+        TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeConnection connection = new(testPipeServer)
         {
             BypassDataSend = false,
-            DataSendDelay = TimeSpan.FromMilliseconds(100),
+            SendBarrier = sendBarrier,
             DataTimeout = TimeSpan.FromMilliseconds(20),
         };
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        connection.DataSendStarting += (sender, e) =>
-        {
-            taskCompletionSource.TrySetResult();
-        };
+        connection.OnDataSendStarting.AddObserver(e => taskCompletionSource.TrySetResult());
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         _ = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+
+        // Wait until the first send has acquired the semaphore and is blocked on the barrier,
+        // then attempt a second send which must time out before the barrier releases.
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken));
+        sendBarrier.SetResult();
         testPipeServer.Stop();
     }
 
@@ -537,10 +539,11 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestPipesDisposedPropertySetterBothBranches()
     {
-        TestPipeConnection connection = new(new TestPipeServer());
-
-        // Test setting to true (one branch of ternary in setter)
-        connection.PipesDisposed = true;
+        TestPipeConnection connection = new(new TestPipeServer())
+        {
+            // Test setting to true (one branch of ternary in setter)
+            PipesDisposed = true
+        };
         Assert.True(connection.PipesDisposed);
 
         // Test setting to false (other branch of ternary in setter)

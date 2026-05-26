@@ -760,26 +760,28 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
+        TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new()
         {
             BypassStart = false,
             BypassStop = false,
             BypassDataSend = false,
-            DataSendDelay = TimeSpan.FromMilliseconds(100),
+            SendBarrier = sendBarrier,
             DataTimeout = TimeSpan.FromMilliseconds(20),
         };
         await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        connection.DataSendStarting += (sender, e) =>
-        {
-            taskCompletionSource.TrySetResult();
-        };
+        connection.OnDataSendStarting.AddObserver(e => taskCompletionSource.TrySetResult());
 
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         _ = Task.Run(() => connection.SendDataAsync("first data"u8.ToArray(), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+
+        // Wait until the first send has acquired the semaphore and is blocked on the barrier,
+        // then attempt a second send which must time out before the barrier releases.
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync("second data"u8.ToArray(), TestContext.Current.CancellationToken))).Message);
+        sendBarrier.SetResult();
         await connection.StopAsync(TestContext.Current.CancellationToken);
     }
 

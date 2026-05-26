@@ -21,6 +21,7 @@ using WebDriverBiDi.Speculation;
 using WebDriverBiDi.Storage;
 using WebDriverBiDi.UserAgentClientHints;
 using WebDriverBiDi.WebExtension;
+using Xunit.Sdk;
 
 [Collection("EventSourceTests")]
 public class BiDiDriverTests
@@ -45,7 +46,7 @@ public class BiDiDriverTests
     public async Task TestCanExecuteCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string eventJson = """
                                {
@@ -57,7 +58,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
+        });
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
@@ -73,7 +74,7 @@ public class BiDiDriverTests
     public async Task TestCanExecuteCommandWithError()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string errorJson = """
                                {
@@ -85,7 +86,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(errorJson);
-        };
+        });
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
@@ -112,7 +113,7 @@ public class BiDiDriverTests
     public async Task TestCanExecuteCommandThatReturnsThrownExceptionThrows()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string exceptionJson = """
                                    {
@@ -125,7 +126,7 @@ public class BiDiDriverTests
                                    }
                                    """;
             await connection.RaiseDataReceivedEventAsync(exceptionJson);
-        };
+        });
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
@@ -869,7 +870,7 @@ public class BiDiDriverTests
         TaskCompletionSource delayResponseGateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(e =>
         {
             Task.Run(async () =>
             {
@@ -897,7 +898,8 @@ public class BiDiDriverTests
                                    """;
                 await connection.RaiseDataReceivedEventAsync(eventJson);
             });
-        };
+            return Task.CompletedTask;
+        });
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
@@ -997,7 +999,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         string commandValue = string.Empty;
-        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string eventJson = """
                                {
@@ -1009,7 +1011,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
+        });
 
         await using (BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport))
         {
@@ -1136,7 +1138,7 @@ public class BiDiDriverTests
     public async Task TestCanExecuteCommandWithUntypedCommandParameters()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string eventJson = """
                                {
@@ -1148,7 +1150,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
+        });
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
@@ -1163,7 +1165,7 @@ public class BiDiDriverTests
     public async Task TestCanExecuteCommandWithUntypedCommandParametersAndTimeout()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string eventJson = """
                                {
@@ -1175,7 +1177,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
+        });
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
@@ -1255,7 +1257,11 @@ public class BiDiDriverTests
     {
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += (_, _) => taskCompletionSource.TrySetResult();
+        connection.OnDataSendComplete.AddObserver(_ =>
+        {
+            taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
         TestTransport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
@@ -1304,7 +1310,7 @@ public class BiDiDriverTests
     public async Task TestExecuteCommandAsyncWithExplicitPositiveTimeoutSucceeds()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string eventJson = """
                                {
@@ -1316,7 +1322,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
+        });
         TestTransport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
@@ -1329,7 +1335,7 @@ public class BiDiDriverTests
     public async Task TestExecuteCommandAsyncWithInfiniteTimeoutDoesNotThrow()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string eventJson = """
                                {
@@ -1341,7 +1347,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
+        });
         TestTransport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
@@ -1353,7 +1359,7 @@ public class BiDiDriverTests
     public async Task TestExecuteCommandAsyncWithNullTimeoutDoesNotThrow()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             // force a delay in responding to ensure that the timeout is actually being applied
             await Task.Yield();
@@ -1367,7 +1373,7 @@ public class BiDiDriverTests
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(eventJson);
-        };
+        });
         TestTransport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
@@ -1490,7 +1496,7 @@ public class BiDiDriverTests
         object captureLock = new();
 
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(e =>
         {
             // Because sends serialize under the transport's connection semaphore, this
             // handler runs exclusively per send. It is safe to read connection.DataSent
@@ -1505,7 +1511,8 @@ public class BiDiDriverTests
             }
 
             allSendsCompleted.Signal();
-        };
+            return Task.CompletedTask;
+        });
 
         Transport transport = new(connection);
         await using BiDiDriver driver = new(Timeout.InfiniteTimeSpan, transport);
@@ -1532,7 +1539,7 @@ public class BiDiDriverTests
         // remaining assertions in the test are not meaningful, so fail fast here.
         if (!allSendsCompleted.Wait(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken))
         {
-            throw new Xunit.Sdk.XunitException("all sends should complete before the safety timeout");
+            throw new XunitException("all sends should complete before the safety timeout");
         }
 
         Assert.Equal(concurrentCallerCount, transport.PendingCommandCount);
@@ -1580,10 +1587,11 @@ public class BiDiDriverTests
         // TransportTests.TestRemoteDisconnectFailsPendingCommands.
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        connection.OnDataSendComplete.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
-        };
+            return Task.CompletedTask;
+        });
 
         Transport transport = new(connection);
         // Large default timeout: if the disconnect path were broken and the

@@ -1,11 +1,11 @@
 namespace WebDriverBiDi.TestUtilities;
 
 using System.IO;
-using System.IO.Pipes;
 using WebDriverBiDi.Protocol;
 
 public class TestPipeConnection : PipeConnection
 {
+    private readonly ObservableEventInvocable<WebDriverBiDiEventArgs> dataSendStartingInvocable = new("connection.dataSendStaring");
     private int receiveCallCount;
 
     public TestPipeConnection(IPipeServerProcessProvider pipeServerProcessProvider)
@@ -25,7 +25,7 @@ public class TestPipeConnection : PipeConnection
 
     public bool ThrowObjectDisposedExceptionOnReceive { get; set; }
 
-    public TimeSpan? DataSendDelay { get; set; }
+    public TaskCompletionSource? SendBarrier { get; set; }
 
     public Func<bool>? IsActiveOverride { get; set; }
 
@@ -60,7 +60,7 @@ public class TestPipeConnection : PipeConnection
         }
     }
 
-    public event EventHandler? DataSendStarting;
+    public ObservableEvent<WebDriverBiDiEventArgs> OnDataSendStarting => this.dataSendStartingInvocable;
 
     public override Task StopAsync(CancellationToken cancellationToken = default)
     {
@@ -72,9 +72,9 @@ public class TestPipeConnection : PipeConnection
         return base.StopAsync(cancellationToken);
     }
 
-    protected override Task SendPipeDataAsync(byte[] messageBuffer, CancellationToken cancellationToken = default)
+    protected override async Task SendPipeDataAsync(byte[] messageBuffer, CancellationToken cancellationToken = default)
     {
-        this.OnDataSendStarting();
+        await this.dataSendStartingInvocable.InvokeNotifyObserversAsync(new WebDriverBiDiEventArgs());
 
         if (this.ThrowIOExceptionOnSend)
         {
@@ -86,18 +86,15 @@ public class TestPipeConnection : PipeConnection
             throw new ObjectDisposedException("Simulated pipe disposed");
         }
 
-        Task result = Task.CompletedTask;
+        if (this.SendBarrier is not null)
+        {
+            await this.SendBarrier.Task.ConfigureAwait(false);
+        }
+
         if (!this.BypassDataSend)
         {
-            result = base.SendPipeDataAsync(messageBuffer, cancellationToken);
+            await base.SendPipeDataAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
         }
-
-        if (this.DataSendDelay.HasValue)
-        {
-            Task.Delay(this.DataSendDelay.Value).Wait();
-        }
-
-        return result;
     }
 
     protected override Task<int> ReadPipeDataAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
@@ -127,13 +124,5 @@ public class TestPipeConnection : PipeConnection
         }
 
         return base.ReadPipeDataAsync(buffer, offset, count, cancellationToken);
-    }
-
-    protected virtual void OnDataSendStarting()
-    {
-        if (this.DataSendStarting is not null)
-        {
-            this.DataSendStarting(this, new EventArgs());
-        }
     }
 }

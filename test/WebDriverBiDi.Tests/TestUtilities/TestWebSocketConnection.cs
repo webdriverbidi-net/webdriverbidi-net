@@ -6,6 +6,9 @@ using WebDriverBiDi.Protocol;
 
 public class TestWebSocketConnection : WebSocketConnection
 {
+    private readonly ObservableEventInvocable<TestWebSocketConnectionDataSentEventArgs> dataSendCompleteInvocable = new("connection.DataSendComplete");
+    private readonly ObservableEventInvocable<WebDriverBiDiEventArgs> dataSendStartingInvocable = new("connection.dataSendStarting");
+
     private int receiveCallCount;
     private int stopCallCount;
 
@@ -23,7 +26,7 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public string? DataSent { get; set; }
 
-    public TimeSpan? DataSendDelay { get; set; }
+    public TaskCompletionSource? SendBarrier { get; set; }
 
     public TimeSpan? StopDelay { get; set; }
 
@@ -55,9 +58,9 @@ public class TestWebSocketConnection : WebSocketConnection
         }
     }
 
-    public event EventHandler? DataSendStarting;
+    public ObservableEvent<WebDriverBiDiEventArgs> OnDataSendStarting => this.dataSendStartingInvocable;
 
-    public event EventHandler<TestWebSocketConnectionDataSentEventArgs>? DataSendComplete;
+    public ObservableEvent<TestWebSocketConnectionDataSentEventArgs> OnDataSendComplete => this.dataSendCompleteInvocable;
 
     public async Task RaiseDataReceivedEventAsync(string data)
     {
@@ -129,28 +132,28 @@ public class TestWebSocketConnection : WebSocketConnection
         return base.SendDataAsync(data, cancellationToken);
     }
 
-    protected override Task SendWebSocketDataAsync(ArraySegment<byte> data, CancellationToken cancellationToken = default)
+    protected override async Task SendWebSocketDataAsync(ArraySegment<byte> data, CancellationToken cancellationToken = default)
     {
         if (this.SendWebSocketDataOverride is not null)
         {
-            return this.SendWebSocketDataOverride(data);
+            await this.SendWebSocketDataOverride(data).ConfigureAwait(false);
+            return;
         }
 
-        this.OnDataSendStarting();
+        await this.dataSendStartingInvocable.InvokeNotifyObserversAsync(new WebDriverBiDiEventArgs());
         this.DataSent = Encoding.UTF8.GetString(data);
-        Task result = Task.CompletedTask;
+
+        if (this.SendBarrier is not null)
+        {
+            await this.SendBarrier.Task.ConfigureAwait(false);
+        }
+
         if (!this.BypassDataSend)
         {
-            result = base.SendWebSocketDataAsync(data, cancellationToken);
+            await base.SendWebSocketDataAsync(data, cancellationToken).ConfigureAwait(false);
         }
 
-        if (this.DataSendDelay.HasValue)
-        {
-            Task.Delay(this.DataSendDelay.Value).Wait();
-        }
-
-        this.OnDataSendComplete();
-        return result;
+        await this.dataSendCompleteInvocable.InvokeNotifyObserversAsync(new TestWebSocketConnectionDataSentEventArgs(this.DataSent));
     }
 
     protected override async Task<WebSocketReceiveResult> ReceiveWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
@@ -172,21 +175,5 @@ public class TestWebSocketConnection : WebSocketConnection
         }
 
         await base.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    protected virtual void OnDataSendStarting()
-    {
-        if (this.DataSendStarting is not null)
-        {
-            this.DataSendStarting(this, new EventArgs());
-        }
-    }
-
-    protected virtual void OnDataSendComplete()
-    {
-        if (this.DataSendComplete is not null)
-        {
-            this.DataSendComplete(this, new TestWebSocketConnectionDataSentEventArgs(this.DataSent));
-        }
     }
 }
