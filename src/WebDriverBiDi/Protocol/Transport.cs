@@ -473,10 +473,10 @@ public class Transport : IAsyncDisposable
                 // Start timing and log command sending
                 command.StartTiming();
                 WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId.ToString(), commandData.MethodName);
+                await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
 
                 byte[] commandJson = this.SerializeCommand(command);
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
-                await this.LogAsync($"Sent command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
 
                 Interlocked.Increment(ref this.commandMessagesSent);
                 WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);

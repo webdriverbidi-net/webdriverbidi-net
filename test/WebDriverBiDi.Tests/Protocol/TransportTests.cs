@@ -455,7 +455,7 @@ public class TransportTests
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Equal(2, logs.Count);
-        Assert.Contains("Sent command data for command", logs[0].Message);
+        Assert.Contains("Sending command data for command", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Debug, logs[0].Level);
         Assert.Contains("Received result for command", logs[1].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Debug, logs[1].Level);
