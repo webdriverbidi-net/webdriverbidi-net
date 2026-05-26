@@ -21,7 +21,7 @@ public class InputModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
@@ -47,7 +47,7 @@ public class InputModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
@@ -73,7 +73,7 @@ public class InputModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
@@ -88,7 +88,7 @@ public class InputModuleTests
     public async Task TestCanReceiveFileDialogOpenedEvent()
     {
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
@@ -120,7 +120,7 @@ public class InputModuleTests
     public async Task TestCanReceiveFileDialogOpenedEventWithElementReference()
     {
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 

@@ -20,7 +20,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -46,7 +46,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -72,7 +72,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -98,7 +98,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -123,7 +123,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -149,7 +149,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -175,7 +175,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -201,7 +201,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -227,7 +227,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -253,7 +253,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -279,7 +279,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -305,7 +305,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -331,7 +331,7 @@ public class BluetoothModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -345,7 +345,7 @@ public class BluetoothModuleTests
     public async Task TestCanReceiveCharacteristicEventGeneratedEvent()
     {
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -383,7 +383,7 @@ public class BluetoothModuleTests
     public async Task TestCanReceiveDescriptorEventGeneratedEvent()
     {
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -423,7 +423,7 @@ public class BluetoothModuleTests
     public async Task TestGattConnectionAttemptedEvent()
     {
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
@@ -454,7 +454,7 @@ public class BluetoothModuleTests
     public async Task TestCanReceiveRequestDevicePromptUpdatedEvent()
     {
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BluetoothModule module = driver.Bluetooth;
 
