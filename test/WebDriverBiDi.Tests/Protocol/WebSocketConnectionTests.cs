@@ -787,9 +787,13 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // The first send may fault with a WebDriverBiDiConnectionException if StopAsync aborted
         // the WebSocket before the send completed. Observe the exception to prevent
         // UnobservedTaskException from being raised when the task is garbage-collected.
-        await firstSendTask.ContinueWith(
-            t => _ = t.Exception,
-            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+        try
+        {
+            await firstSendTask;
+        }
+        catch (WebDriverBiDiConnectionException)
+        {
+        }
     }
 
     [Fact]
