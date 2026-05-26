@@ -293,7 +293,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
         TestWebSocketConnection connection = new()
         {
             BypassStart = false,
-            BypassStop = false
+            BypassStop = false,
+            BypassCloseClientWebSocket = false,
         };
         Assert.False(connection.IsActive);
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
@@ -403,8 +404,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
             BypassStart = false,
             BypassStop = false,
             BypassCloseClientWebSocket = false,
-            StartupTimeout = TimeSpan.FromMilliseconds(50),
-            ShutdownTimeout = TimeSpan.FromMilliseconds(50),
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
             ReceiveHandler = async (buffer, cancellationToken, callCount) =>
             {
                 // Block until StopAsync cancels the token. Keeps client.State == Open.
@@ -493,16 +494,15 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        this.clientDisconnectedObserver = server.OnClientDisconnected.AddObserver(e =>
+        connection.OnRemoteDisconnected.AddObserver(e =>
         {
-            if (e.ConnectionId == registeredConnectionId)
-            {
-                taskCompletionSource.TrySetResult();
-            }
+            taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
         });
 
-        // Server initiated disconnection requires waiting for the
-        // close websocket message to be received by the client.
+        // Server initiated disconnection requires waiting for the client's receive
+        // loop to complete (OnRemoteDisconnected fires after "Ending processing loop"
+        // is logged), so that StopAsync does not race ahead of that log entry.
         await server.DisconnectAsync(registeredConnectionId);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
@@ -528,7 +528,6 @@ public class WebSocketConnectionTests : IAsyncDisposable
         WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
-            ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
         connection.OnLogMessage.AddObserver(e =>
         {
