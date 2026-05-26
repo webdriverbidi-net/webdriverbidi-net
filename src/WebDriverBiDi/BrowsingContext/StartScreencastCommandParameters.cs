@@ -41,9 +41,16 @@ public class StartScreencastCommandParameters : CommandParameters<StartScreencas
     public string? MimeType { get; set; }
 
     /// <summary>
-    /// Gets or sets the <see cref="MediaStreamOptions"/> describing the audio and video settings for the screencast.
+    /// Gets or sets the video constraints for a screencast.
     /// </summary>
-    [JsonPropertyName("streamOptions")]
+    [JsonPropertyName("video")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public MediaStreamOptions? StreamOptions { get; set; }
+    public MediaTrackConstraints? Video { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the screencast should include an audio track. If omitted, defaults to false.
+    /// </summary>
+    [JsonPropertyName("audio")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Audio { get; set; }
 }
