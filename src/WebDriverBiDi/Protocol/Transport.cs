@@ -368,6 +368,7 @@ public class Transport : IAsyncDisposable
             }
 
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.GetHashCode().ToString(), websocketUri);
+            await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
             if (!this.PendingCommands.IsAcceptingCommands)
             {
@@ -475,6 +476,7 @@ public class Transport : IAsyncDisposable
 
                 byte[] commandJson = this.SerializeCommand(command);
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
+                await this.LogAsync($"Sent command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
 
                 Interlocked.Increment(ref this.commandMessagesSent);
                 WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
@@ -690,6 +692,7 @@ public class Transport : IAsyncDisposable
             WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
             WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.GetHashCode().ToString());
             WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
+            await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
             if (throwCollectedExceptions && this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
             {
@@ -958,39 +961,20 @@ public class Transport : IAsyncDisposable
             if (messageRootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
             {
                 string messageType = messageTypeToken.GetString()!;
-                bool isLogging = this.OnLogMessage.CurrentObserverCount > 0;
-                string loggingMessageData = string.Empty;
-                if (isLogging)
-                {
-                    loggingMessageData = Encoding.UTF8.GetString(messageData);
-                }
-
                 if (messageType == "success")
                 {
-                    isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
+                    isProcessed = await this.ProcessCommandResponseMessage(messageRootElement).ConfigureAwait(false);
                     Interlocked.Increment(ref this.commandResponseMessagesReceived);
-                    if (isLogging)
-                    {
-                        await this.LogAsync($"Command response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-                    }
                 }
                 else if (messageType == "error")
                 {
                     isProcessed = await this.ProcessErrorMessageAsync(messageRootElement).ConfigureAwait(false);
                     Interlocked.Increment(ref this.errorMessagesReceived);
-                    if (isLogging)
-                    {
-                        await this.LogAsync($"Error response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-                    }
                 }
                 else if (messageType == "event")
                 {
                     isProcessed = await this.ProcessEventMessageAsync(messageRootElement).ConfigureAwait(false);
                     Interlocked.Increment(ref this.eventMessagesReceived);
-                    if (isLogging)
-                    {
-                        await this.LogAsync($"Event message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-                    }
                 }
             }
         }
@@ -1007,7 +991,7 @@ public class Transport : IAsyncDisposable
         }
     }
 
-    private bool ProcessCommandResponseMessage(JsonElement message)
+    private async Task<bool> ProcessCommandResponseMessage(JsonElement message)
     {
         if (message.TryGetProperty("id", out JsonElement idToken) && idToken.ValueKind == JsonValueKind.Number && idToken.TryGetInt64(out long responseId))
         {
@@ -1025,6 +1009,7 @@ public class Transport : IAsyncDisposable
                     {
                         CommandResult commandResult = response.Result;
                         commandResult.AdditionalData = response.AdditionalData;
+                        await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                         executedCommand.SetResult(commandResult);
                     }
                 }
@@ -1059,6 +1044,7 @@ public class Transport : IAsyncDisposable
                     // Stop timing and log error
                     executedCommand.StopTiming();
                     WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value.ToString(), executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
+                    await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
 
                     executedCommand.SetResult(result);
                 }
@@ -1101,6 +1087,7 @@ public class Transport : IAsyncDisposable
                     }
 
                     WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
+                    await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData)).ConfigureAwait(false);
                     return true;
                 }

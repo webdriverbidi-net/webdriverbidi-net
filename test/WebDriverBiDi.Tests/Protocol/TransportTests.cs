@@ -450,9 +450,11 @@ public class TransportTests
         Assert.Equal("response value", convertedResult.Value);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Single(logs);
-        Assert.Contains("Command response message processed", logs[0].Message);
-        Assert.Equal(WebDriverBiDiLogLevel.Trace, logs[0].Level);
+        Assert.Equal(2, logs.Count);
+        Assert.Contains("Sent command data for command", logs[0].Message);
+        Assert.Equal(WebDriverBiDiLogLevel.Debug, logs[0].Level);
+        Assert.Contains("Received result for command", logs[1].Message);
+        Assert.Equal(WebDriverBiDiLogLevel.Debug, logs[1].Level);
     }
 
     [Fact]

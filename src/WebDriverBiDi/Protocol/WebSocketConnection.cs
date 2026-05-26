@@ -150,7 +150,7 @@ public class WebSocketConnection : Connection
         await this.LogAsync($"Closing connection").ConfigureAwait(false);
         if (this.client.State != WebSocketState.Open)
         {
-            await this.LogAsync($"Client state is {this.client.State}").ConfigureAwait(false);
+            await this.LogAsync($"Client state is {this.client.State}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
         else
         {
@@ -200,7 +200,7 @@ public class WebSocketConnection : Connection
 
             if (this.OnLogMessage.CurrentObserverCount > 0)
             {
-                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
             }
 
             try
@@ -247,7 +247,7 @@ public class WebSocketConnection : Connection
                     // not initiate the close; send acknowledgement
                     if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
-                        await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})").ConfigureAwait(false);
+                        await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", cancellationToken).ConfigureAwait(false);
                     }
 
@@ -285,7 +285,7 @@ public class WebSocketConnection : Connection
                             {
                                 if (this.OnLogMessage.CurrentObserverCount > 0)
                                 {
-                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(bytes)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(bytes)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
                                 }
 
                                 await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(bytes)).ConfigureAwait(false);
@@ -304,7 +304,7 @@ public class WebSocketConnection : Connection
                 }
             }
 
-            await this.LogAsync($"Ending processing loop in state {this.client.State}").ConfigureAwait(false);
+            await this.LogAsync($"Ending processing loop in state {this.client.State}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
 
             // If the loop exited without cancellation, the remote end closed the connection gracefully.
             if (!cancellationToken.IsCancellationRequested)

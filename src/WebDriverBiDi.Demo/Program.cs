@@ -120,6 +120,6 @@ void OnLogMessage(LogMessageEventArgs e)
 {
     if (e.Level >= logReportingLevel)
     {
-        Console.WriteLine($"Log message: {e.Message}");
+        Console.WriteLine($"Log message ({e.ComponentName}): {e.Message}");
     }
 }
