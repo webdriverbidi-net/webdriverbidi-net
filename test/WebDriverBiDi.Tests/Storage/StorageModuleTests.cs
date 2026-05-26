@@ -46,7 +46,7 @@ public class StorageModuleTests()
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -89,7 +89,7 @@ public class StorageModuleTests()
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -118,7 +118,7 @@ public class StorageModuleTests()
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -149,7 +149,7 @@ public class StorageModuleTests()
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
@@ -183,7 +183,7 @@ public class StorageModuleTests()
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 

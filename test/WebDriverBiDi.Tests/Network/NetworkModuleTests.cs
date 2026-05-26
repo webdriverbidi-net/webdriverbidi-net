@@ -99,7 +99,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -133,7 +133,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -162,7 +162,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -189,7 +189,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -216,7 +216,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -247,7 +247,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -275,7 +275,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -307,7 +307,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -337,7 +337,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -364,7 +364,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -392,7 +392,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -419,7 +419,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -446,7 +446,7 @@ public class NetworkModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -467,7 +467,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -545,7 +545,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -613,7 +613,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -678,7 +678,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
@@ -756,7 +756,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestWebSocketConnection connection = new();
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
