@@ -596,9 +596,11 @@ public class EventObserverTests
         // ShouldReportAsyncFault = false. The drain logic must attach a new continuation
         // that observes the fault so UnobservedTaskException is never raised.
         bool unobservedExceptionRaised = false;
+        AggregateException? unobservedException = null;
         void UnobservedHandler(object? sender, UnobservedTaskExceptionEventArgs e)
         {
             unobservedExceptionRaised = true;
+            unobservedException = e.Exception;
             e.SetObserved();
         }
         TaskScheduler.UnobservedTaskException += UnobservedHandler;
@@ -658,6 +660,11 @@ public class EventObserverTests
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
+
+            if (unobservedException is not null)
+            {
+                throw unobservedException.InnerExceptions[0];
+            }
 
             Assert.False(unobservedExceptionRaised);
         }
