@@ -8,7 +8,7 @@ public class UserAgentClientHintsModuleTests
     public async Task TestSetClientHintsOverrideCommand()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -18,7 +18,7 @@ public class UserAgentClientHintsModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);

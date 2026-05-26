@@ -9,7 +9,7 @@ public class InputModuleTests
     public async Task TestExecutePerformActions()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -19,7 +19,7 @@ public class InputModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -35,7 +35,7 @@ public class InputModuleTests
     public async Task TestExecuteReleaseActions()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -45,7 +45,7 @@ public class InputModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -61,7 +61,7 @@ public class InputModuleTests
     public async Task TestExecuteSetFiles()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
+        connection.OnDataSendComplete.AddObserver(async e =>
         {
             string responseJson = $$"""
                                   {
@@ -71,7 +71,7 @@ public class InputModuleTests
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
+        });
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);

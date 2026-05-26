@@ -2,7 +2,7 @@ namespace WebDriverBiDi.TestUtilities;
 
 using Newtonsoft.Json.Linq;
 
-public class TestWebSocketConnectionDataSentEventArgs : EventArgs
+public record TestWebSocketConnectionDataSentEventArgs : WebDriverBiDiEventArgs
 {
     private readonly long? sentCommandId;
     private readonly string? sentCommandName;
