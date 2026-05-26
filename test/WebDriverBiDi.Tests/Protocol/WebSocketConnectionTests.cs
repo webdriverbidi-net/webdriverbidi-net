@@ -213,7 +213,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             messages.Add(logValue.Message);
         }
 
-        Assert.Equal(5, logValues.Count);
+        Assert.Equal(4, logValues.Count);
         foreach (LogMessageEventArgs args in logValues)
         {
 

@@ -391,12 +391,14 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
         Assert.Single(logs);
 
@@ -411,15 +413,17 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        string commandName = "module.command";
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
 
+        string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
         _ = Task.Run(
@@ -464,6 +468,9 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             if (e.ComponentName == Transport.LoggerComponentName)
@@ -474,7 +481,6 @@ public class TransportTests
 
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync("{ { }");
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -642,6 +648,9 @@ public class TransportTests
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
@@ -658,7 +667,6 @@ public class TransportTests
 
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await Task.WhenAll(
             unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
@@ -686,6 +694,9 @@ public class TransportTests
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
@@ -702,7 +713,6 @@ public class TransportTests
 
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await Task.WhenAll(
             unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
@@ -730,6 +740,9 @@ public class TransportTests
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
@@ -746,7 +759,6 @@ public class TransportTests
 
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await Task.WhenAll(
             unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
@@ -860,6 +872,9 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
@@ -876,7 +891,6 @@ public class TransportTests
 
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await Task.WhenAll(
             unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
@@ -907,6 +921,9 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         transport.RegisterInvalidEventMessageType("protocol.event", typeof(object));
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             loggedEvent = e.Message;
@@ -923,7 +940,6 @@ public class TransportTests
 
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await Task.WhenAll(
             unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
