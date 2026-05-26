@@ -28,25 +28,22 @@ public class StartScreencastCommandParametersTests
     }
 
     [Fact]
-    public async Task TestCanSerializeParametersWithOptionalValues()
+    public async Task TestCanSerializeParametersWithOptionalValuesAudioTrue()
     {
         StartScreencastCommandParameters properties = new("myBrowsingContext")
         {
             MimeType = "video/mpeg4",
-            StreamOptions = new MediaStreamOptions()
+            Audio = true,
+            Video = new MediaTrackConstraints()
             {
-                Audio = true,
-                Video = new MediaTrackConstraints()
-                {
-                    Height = 480,
-                    Width = 640,
-                    FrameRate = 30,
-                }
-            }
+                Height = 480,
+                Width = 640,
+                FrameRate = 30,
+            },
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Equal(3, serialized.Count);
+        Assert.Equal(4, serialized.Count);
 
         Assert.True(serialized.ContainsKey("context"));
         JToken? context = serialized["context"];
@@ -60,12 +57,63 @@ public class StartScreencastCommandParametersTests
         Assert.Equal(JTokenType.String, mimeType.Type);
         Assert.Equal("video/mpeg4", mimeType.Value<string>());
 
-        // MediaStreamOptions has its own serialization tests, so no need to
+        Assert.True(serialized.ContainsKey("audio"));
+        JToken? audio = serialized["audio"];
+        Assert.NotNull(audio);
+        Assert.Equal(JTokenType.Boolean, audio.Type);
+        Assert.True(audio.Value<bool>());
+
+        // MediaTrackConstraints has its own serialization tests, so no need to
         // test all permutations here.
-        Assert.True(serialized.ContainsKey("streamOptions"));
-        JToken? streamOptions = serialized["streamOptions"];
-        Assert.NotNull(streamOptions);
-        Assert.Equal(JTokenType.Object, streamOptions.Type);
-        Assert.Equal(2, streamOptions.Count());
+        Assert.True(serialized.ContainsKey("video"));
+        JToken? video = serialized["video"];
+        Assert.NotNull(video);
+        Assert.Equal(JTokenType.Object, video.Type);
+        Assert.Equal(3, video.Count());
+    }
+
+    [Fact]
+    public async Task TestCanSerializeParametersWithOptionalValuesAudioFalse()
+    {
+        StartScreencastCommandParameters properties = new("myBrowsingContext")
+        {
+            MimeType = "video/mpeg4",
+            Audio = false,
+            Video = new MediaTrackConstraints()
+            {
+                Height = 480,
+                Width = 640,
+                FrameRate = 30,
+            },
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Equal(4, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myBrowsingContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("mimeType"));
+        JToken? mimeType = serialized["mimeType"];
+        Assert.NotNull(mimeType);
+        Assert.Equal(JTokenType.String, mimeType.Type);
+        Assert.Equal("video/mpeg4", mimeType.Value<string>());
+
+        Assert.True(serialized.ContainsKey("audio"));
+        JToken? audio = serialized["audio"];
+        Assert.NotNull(audio);
+        Assert.Equal(JTokenType.Boolean, audio.Type);
+        Assert.False(audio.Value<bool>());
+
+        // MediaTrackConstraints has its own serialization tests, so no need to
+        // test all permutations here.
+        Assert.True(serialized.ContainsKey("video"));
+        JToken? video = serialized["video"];
+        Assert.NotNull(video);
+        Assert.Equal(JTokenType.Object, video.Type);
+        Assert.Equal(3, video.Count());
     }
 }

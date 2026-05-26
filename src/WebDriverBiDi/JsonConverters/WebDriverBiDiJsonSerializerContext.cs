@@ -243,7 +243,6 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(InnerTextMatchType))]
 [JsonSerializable(typeof(LocateNodesCommandParameters))]
 [JsonSerializable(typeof(Locator))]
-[JsonSerializable(typeof(MediaStreamOptions))]
 [JsonSerializable(typeof(MediaTrackConstraints))]
 [JsonSerializable(typeof(NavigateCommandParameters))]
 [JsonSerializable(typeof(PrintCommandParameters))]
