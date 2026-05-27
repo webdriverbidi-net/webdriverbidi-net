@@ -64,7 +64,7 @@ public class EventDataCollector<T> : IDisposable, IAsyncDisposable
         this.channel = Channel.CreateUnbounded<T>(new UnboundedChannelOptions
         {
             SingleReader = false,
-            SingleWriter = false,
+            SingleWriter = true,
             AllowSynchronousContinuations = false,
         });
         this.observer = observableEvent.AddDataCollectingEventObserver(this.CollectDataAsync);
