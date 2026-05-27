@@ -40,6 +40,8 @@ public abstract class Connection : IAsyncDisposable
     /// </summary>
     public const string LoggerComponentName = "Connection";
 
+    // Default buffer size is 2^20 bytes, or 1MB.
+    private const int BufferSizeInBytes = 1 << 20;
     private const string DataReceivedEventName = "connection.dataReceived";
     private const string LogMessageEventName = "connection.logMessage";
     private const string ConnectionErrorEventName = "connection.connectionError";
@@ -62,7 +64,7 @@ public abstract class Connection : IAsyncDisposable
     /// <summary>
     /// Gets the buffer size for communication used by this connection.
     /// </summary>
-    public int BufferSize { get; } = Convert.ToInt32(Math.Pow(2, 20));
+    public int BufferSize { get; } = BufferSizeInBytes;
 
     /// <summary>
     /// Gets or sets the string containing data about which the connection is connected.
