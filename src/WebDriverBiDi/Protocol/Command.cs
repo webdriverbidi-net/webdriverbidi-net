@@ -103,7 +103,9 @@ public class Command
         // Task.WhenAny returns when any of the tasks passed in completes, and
         // returns the task that completes first. If that task is the task from
         // our TaskCompletionSource, the command completed. Otherwise, it timed
-        // out or was externally canceled.
+        // out or was externally canceled. Note that the allocation of the
+        // additional CancellationTokenSource is necessary to be able to cancel
+        // the timeout task.
         using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         Task timeoutTask = Task.Delay(timeout, linkedTokenSource.Token);
         Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, timeoutTask).ConfigureAwait(false);
