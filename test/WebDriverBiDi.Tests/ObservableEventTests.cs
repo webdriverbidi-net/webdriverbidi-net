@@ -36,6 +36,16 @@ public class ObservableEventTests
     }
 
     [Fact]
+    public async Task TestDisposingEventDataCollectorRemovesObserver()
+    {
+        TestEventSource testEventSource = new();
+        EventDataCollector<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddDataCollector();
+        Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
+        observer.Dispose();
+        Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
+    }
+
+    [Fact]
     public async Task TestCannotAddMoreThanMaxObserversUsingStandardObservers()
     {
         TestEventSource testEventSource = new(1);
