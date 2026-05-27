@@ -28,6 +28,7 @@ public class ObservableEvent<T>
     private readonly Dictionary<string, EventObserver<T>> observers = [];
     private Func<EventObserverErrorInfo, Task>? observerErrorReporter;
     private int dataCollectorCount;
+    private int observerCount = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
@@ -54,16 +55,7 @@ public class ObservableEvent<T>
     /// <summary>
     /// Gets the current number of observers, including data collectors, that are observing this event.
     /// </summary>
-    public int CurrentObserverCount
-    {
-        get
-        {
-            lock (this.observerLock)
-            {
-                return this.observers.Count;
-            }
-        }
-    }
+    public int CurrentObserverCount => Interlocked.CompareExchange(ref this.observerCount, 0, 0);
 
     /// <summary>
     /// Gets or sets the <see cref="TimeProvider"/> used for time comparisons in observers.
@@ -174,7 +166,10 @@ public class ObservableEvent<T>
                 this.dataCollectorCount--;
             }
 
-            this.observers.Remove(observerId);
+            if (this.observers.Remove(observerId))
+            {
+                Interlocked.Decrement(ref this.observerCount);
+            }
         }
     }
 
@@ -232,12 +227,44 @@ public class ObservableEvent<T>
         // released before invoking any handlers, so long-running handlers
         // do not block observer registration. The copy is cheap because
         // observer counts are typically very small (1–15 references).
-        EventObserver<T>[] snapshot;
+        EventObserver<T>? singleObserver = null;
+        EventObserver<T>[]? snapshot = null;
         bool hasDataCollectors;
         lock (this.observerLock)
         {
-            snapshot = [.. this.observers.Values];
+            if (this.observerCount > 0)
+            {
+                if (this.observerCount == 1)
+                {
+                    foreach (EventObserver<T> observer in this.observers.Values)
+                    {
+                        singleObserver = observer;
+                        break;
+                    }
+                }
+                else
+                {
+                    snapshot = [.. this.observers.Values];
+                }
+            }
+
             hasDataCollectors = this.dataCollectorCount > 0;
+        }
+
+        // Performance optimization: if there is one and only one observer, we
+        // can notify it directly. Exceptions occurring during the notification
+        // should propagate properly.
+        if (singleObserver is not null)
+        {
+            await singleObserver.NotifyAsync(notifyData).ConfigureAwait(false);
+            return;
+        }
+
+        // Performance optimization: if there are no observers, we have nothing
+        // to notify, so we can return early.
+        if (snapshot is null)
+        {
+            return;
         }
 
         if (hasDataCollectors && snapshot.Length > 1)
@@ -286,6 +313,7 @@ public class ObservableEvent<T>
                 this.dataCollectorCount++;
             }
 
+            Interlocked.Increment(ref this.observerCount);
             return observer;
         }
     }
