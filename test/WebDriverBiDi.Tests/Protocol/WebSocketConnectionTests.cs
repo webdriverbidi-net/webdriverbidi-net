@@ -775,7 +775,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         connection.OnDataSendStarting.AddObserver(e => taskCompletionSource.TrySetResult());
 
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        _ = Task.Run(() => connection.SendDataAsync("first data"u8.ToArray(), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        Task firstSendTask = Task.Run(() => connection.SendDataAsync("first data"u8.ToArray(), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
 
         // Wait until the first send has acquired the semaphore and is blocked on the barrier,
         // then attempt a second send which must time out before the barrier releases.
@@ -783,6 +783,17 @@ public class WebSocketConnectionTests : IAsyncDisposable
         Assert.Equal("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync("second data"u8.ToArray(), TestContext.Current.CancellationToken))).Message);
         sendBarrier.SetResult();
         await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The first send may fault with a WebDriverBiDiConnectionException if StopAsync aborted
+        // the WebSocket before the send completed. Observe the exception to prevent
+        // UnobservedTaskException from being raised when the task is garbage-collected.
+        try
+        {
+            await firstSendTask;
+        }
+        catch (WebDriverBiDiConnectionException)
+        {
+        }
     }
 
     [Fact]

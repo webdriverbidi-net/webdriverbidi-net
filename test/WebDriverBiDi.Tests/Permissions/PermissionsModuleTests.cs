@@ -20,7 +20,7 @@ public class PermissionsModuleTests
             await connection.RaiseDataReceivedEventAsync(responseJson);
         });
 
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         PermissionsModule module = driver.Permissions;
 

@@ -212,7 +212,7 @@ public class PipeConnectionTests
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
-        _ = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        Task firstSendTask = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
 
         // Wait until the first send has acquired the semaphore and is blocked on the barrier,
         // then attempt a second send which must time out before the barrier releases.
@@ -220,6 +220,17 @@ public class PipeConnectionTests
         await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken));
         sendBarrier.SetResult();
         testPipeServer.Stop();
+
+        // The first send may fault with a WebDriverBiDiConnectionException if Stop closed
+        // the pipe before the send completed. Observe the exception to prevent
+        // UnobservedTaskException from being raised when the task is garbage-collected.
+        try
+        {
+            await firstSendTask;
+        }
+        catch (WebDriverBiDiConnectionException)
+        {
+        }
     }
 
     [Fact]

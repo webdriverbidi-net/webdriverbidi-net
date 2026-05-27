@@ -596,12 +596,14 @@ public class EventObserverTests
         // ShouldReportAsyncFault = false. The drain logic must attach a new continuation
         // that observes the fault so UnobservedTaskException is never raised.
         bool unobservedExceptionRaised = false;
-        EventHandler<UnobservedTaskExceptionEventArgs> unobservedHandler = (sender, e) =>
+        AggregateException? unobservedException = null;
+        void UnobservedHandler(object? sender, UnobservedTaskExceptionEventArgs e)
         {
             unobservedExceptionRaised = true;
+            unobservedException = e.Exception;
             e.SetObserved();
-        };
-        TaskScheduler.UnobservedTaskException += unobservedHandler;
+        }
+        TaskScheduler.UnobservedTaskException += UnobservedHandler;
 
         try
         {
@@ -643,9 +645,15 @@ public class EventObserverTests
             Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             _ = Assert.Single(tasks);
 
-            // Let the raced handler fault and wait for it to complete before triggering GC.
+            // Let the raced handler fault and wait for the finally block to run.
             allowFaultTaskCompletionSource.TrySetResult();
             await handlerFaultedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            // handlerFaultedTaskCompletionSource fires from the finally block, which runs
+            // before the async state machine calls SetException to transition the task to
+            // Faulted. Give the faulting thread a scheduler quantum to finish SetException
+            // and run the drain's ExecuteSynchronously fault continuation before GC runs.
+            await Task.Delay(50, TestContext.Current.CancellationToken);
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
@@ -653,11 +661,16 @@ public class EventObserverTests
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
+            if (unobservedException is not null)
+            {
+                throw unobservedException.InnerExceptions[0];
+            }
+
             Assert.False(unobservedExceptionRaised);
         }
         finally
         {
-            TaskScheduler.UnobservedTaskException -= unobservedHandler;
+            TaskScheduler.UnobservedTaskException -= UnobservedHandler;
         }
     }
 
@@ -916,8 +929,11 @@ public class EventObserverTests
 
             await testEventSource.RaiseTestEventAsync("myValue");
 
-            // Wait for the handler to fault before triggering GC.
+            // Wait for the handler to signal just before throwing, then give the faulting
+            // thread time to finish SetException and run the ExecuteSynchronously fault
+            // continuation that observes the exception, before GC pressure is applied.
             await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await Task.Delay(50, TestContext.Current.CancellationToken);
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
