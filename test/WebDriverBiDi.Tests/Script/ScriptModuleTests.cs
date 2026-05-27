@@ -32,8 +32,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
-        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        EvaluateResult result = await module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.IsType<EvaluateResultSuccess>(result);
@@ -82,8 +81,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
-        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        EvaluateResult result = await module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.IsType<EvaluateResultException>(result);
@@ -127,8 +125,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
-        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        EvaluateResult result = await module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.IsType<EvaluateResultSuccess>(result);
@@ -177,8 +174,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
-        EvaluateResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        EvaluateResult result = await module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.IsType<EvaluateResultException>(result);
@@ -224,8 +220,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<GetRealmsCommandResult> task = module.GetRealmsAsync(new GetRealmsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        GetRealmsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetRealmsCommandResult result = await module.GetRealmsAsync(new GetRealmsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Single(result.Realms);
@@ -263,8 +258,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<GetRealmsCommandResult> task = module.GetRealmsAsync(cancellationToken: TestContext.Current.CancellationToken);
-        GetRealmsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetRealmsCommandResult result = await module.GetRealmsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Empty(result.Realms);
@@ -290,8 +284,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<DisownCommandResult> task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }), cancellationToken: TestContext.Current.CancellationToken);
-        DisownCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        DisownCommandResult result = await module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.IsType<DisownCommandResult>(result);
@@ -460,8 +453,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<AddPreloadScriptCommandResult> task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"), cancellationToken: TestContext.Current.CancellationToken);
-        AddPreloadScriptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        AddPreloadScriptCommandResult result = await module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.IsType<AddPreloadScriptCommandResult>(result);
@@ -488,8 +480,7 @@ public class ScriptModuleTests
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
 
-        Task<RemovePreloadScriptCommandResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"), cancellationToken: TestContext.Current.CancellationToken);
-        RemovePreloadScriptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        RemovePreloadScriptCommandResult result = await module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

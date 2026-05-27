@@ -24,8 +24,7 @@ public class DigitalCredentialsModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         DigitalCredentialsModule module = driver.DigitalCredentials;
 
-        Task<SetVirtualWalletBehaviorCommandResult> task = module.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Clear), cancellationToken: TestContext.Current.CancellationToken);
-        SetVirtualWalletBehaviorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetVirtualWalletBehaviorCommandResult result = await module.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Clear), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

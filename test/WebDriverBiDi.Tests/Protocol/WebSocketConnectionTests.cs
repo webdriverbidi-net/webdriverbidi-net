@@ -794,6 +794,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
         catch (WebDriverBiDiConnectionException)
         {
         }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     [Fact]

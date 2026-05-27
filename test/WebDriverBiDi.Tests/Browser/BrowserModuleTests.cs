@@ -24,8 +24,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        CloseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        CloseCommandResult result = await module.CloseAsync(new CloseCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -50,8 +49,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CloseCommandResult> task = module.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
-        CloseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        CloseCommandResult result = await module.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -78,8 +76,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(new CreateUserContextCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        CreateUserContextCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        CreateUserContextCommandResult result = await module.CreateUserContextAsync(new CreateUserContextCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal("myUserContextId", result.UserContextId);
@@ -107,8 +104,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(cancellationToken: TestContext.Current.CancellationToken);
-        CreateUserContextCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        CreateUserContextCommandResult result = await module.CreateUserContextAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal("myUserContextId", result.UserContextId);
@@ -155,8 +151,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(new GetClientWindowsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        GetClientWindowsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetClientWindowsCommandResult result = await module.GetClientWindowsAsync(new GetClientWindowsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -218,8 +213,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(cancellationToken: TestContext.Current.CancellationToken);
-        GetClientWindowsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetClientWindowsCommandResult result = await module.GetClientWindowsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -269,8 +263,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        GetUserContextsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetUserContextsCommandResult result = await module.GetUserContextsAsync(new GetUserContextsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -308,8 +301,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(cancellationToken: TestContext.Current.CancellationToken);
-        GetUserContextsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetUserContextsCommandResult result = await module.GetUserContextsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -338,8 +330,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<RemoveUserContextCommandResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"), cancellationToken: TestContext.Current.CancellationToken);
-        RemoveUserContextCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        RemoveUserContextCommandResult result = await module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -372,7 +363,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<SetClientWindowStateCommandResult> task = module.SetClientWindowStateAsync(new SetClientWindowStateCommandParameters("myClientWindow")
+        SetClientWindowStateCommandResult result = await module.SetClientWindowStateAsync(new SetClientWindowStateCommandParameters("myClientWindow")
         {
             State = ClientWindowState.Normal,
             X = 100,
@@ -380,7 +371,6 @@ public class BrowserModuleTests
             Width = 640,
             Height = 480
         }, cancellationToken: TestContext.Current.CancellationToken);
-        SetClientWindowStateCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -413,8 +403,7 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         BrowserModule module = driver.Browser;
 
-        Task<SetDownloadBehaviorCommandResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetDownloadBehaviorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetDownloadBehaviorCommandResult result = await module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

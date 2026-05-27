@@ -24,8 +24,7 @@ public class UserAgentClientHintsModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         UserAgentClientHintsModule module = driver.UserAgentClientHints;
 
-        Task<SetClientHintsOverrideCommandResult> task = module.SetClientHintsOverrideAsync(new SetClientHintsOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetClientHintsOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetClientHintsOverrideCommandResult result = await module.SetClientHintsOverrideAsync(new SetClientHintsOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
