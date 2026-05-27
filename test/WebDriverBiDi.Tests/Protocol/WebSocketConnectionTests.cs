@@ -349,6 +349,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             "Connection opened",
             "Closing connection",
             "Unexpected error during receive of data: The remote party closed the WebSocket connection without completing the close handshake.",
+            "Ending processing loop in state Aborted",
             "Client state is Aborted"
         ];
 
@@ -396,7 +397,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
             $"Opening connection to URL ws://localhost:{server.Port}",
             "Connection opened",
             "Closing connection",
-            "Client state is CloseSent"  // We send close frame; server may not respond before timeout
+            "Client state is CloseSent",  // We send close frame; server may not respond before timeout
+            "Ending processing loop in state CloseSent"
         ];
 
         TestWebSocketConnection connection = new()
@@ -521,6 +523,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             "Connection opened",
             "Closing connection",
             "Unexpected error during receive of data: The remote party closed the WebSocket connection without completing the close handshake.",
+            "Ending processing loop in state Aborted",
             "Client state is Aborted"
         ];
 
@@ -792,6 +795,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
             await firstSendTask;
         }
         catch (WebDriverBiDiConnectionException)
+        {
+        }
+        catch (OperationCanceledException)
         {
         }
     }

@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Copy NamedPipeTestApplication to test output directory for easier access in tests -->
     <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net10.0\WebDriverBiDi.NamedPipeTestApplication.dll">
       <Link>TestApplications\WebDriverBiDi.NamedPipeTestApplication.dll</Link>

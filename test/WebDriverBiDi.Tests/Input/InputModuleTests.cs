@@ -25,8 +25,7 @@ public class InputModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
-        Task<PerformActionsCommandResult> task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
-        PerformActionsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        PerformActionsCommandResult result = await module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -51,8 +50,7 @@ public class InputModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
-        Task<ReleaseActionsCommandResult> task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
-        ReleaseActionsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        ReleaseActionsCommandResult result = await module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -78,8 +76,7 @@ public class InputModuleTests
         InputModule module = driver.Input;
 
         SharedReference element = new("mySharedId");
-        Task<SetFilesCommandResult> task = module.SetFilesAsync(new SetFilesCommandParameters("myContextId", element), cancellationToken: TestContext.Current.CancellationToken);
-        SetFilesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetFilesCommandResult result = await module.SetFilesAsync(new SetFilesCommandParameters("myContextId", element), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

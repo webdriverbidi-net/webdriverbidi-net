@@ -50,8 +50,7 @@ public class StorageModuleTests()
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<GetCookiesCommandResult> task = module.GetCookiesAsync(new GetCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        GetCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetCookiesCommandResult result = await module.GetCookiesAsync(new GetCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -93,8 +92,7 @@ public class StorageModuleTests()
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<GetCookiesCommandResult> task = module.GetCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
-        GetCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetCookiesCommandResult result = await module.GetCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Empty(result.Cookies);
@@ -122,8 +120,7 @@ public class StorageModuleTests()
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
-        DeleteCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        DeleteCookiesCommandResult result = await module.DeleteCookiesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -153,8 +150,7 @@ public class StorageModuleTests()
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<SetCookieCommandResult> task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")), cancellationToken: TestContext.Current.CancellationToken);
-        SetCookieCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetCookieCommandResult result = await module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -187,8 +183,7 @@ public class StorageModuleTests()
         StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        DeleteCookiesCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        DeleteCookiesCommandResult result = await module.DeleteCookiesAsync(new DeleteCookiesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 

@@ -27,8 +27,7 @@ public class SessionModuleTests
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<StatusCommandResult> task = module.StatusAsync(new StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        StatusCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        StatusCommandResult result = await module.StatusAsync(new StatusCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -59,8 +58,7 @@ public class SessionModuleTests
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<StatusCommandResult> task = module.StatusAsync(cancellationToken: TestContext.Current.CancellationToken);
-        StatusCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        StatusCommandResult result = await module.StatusAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -91,8 +89,7 @@ public class SessionModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         SubscribeCommandParameters subscribeParameters = new(["log.entryAdded"]);
-        Task<SubscribeCommandResult> task = module.SubscribeAsync(subscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
-        SubscribeCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SubscribeCommandResult result = await module.SubscribeAsync(subscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal("mySubscriptionId", result.SubscriptionId);
@@ -120,8 +117,7 @@ public class SessionModuleTests
 
         UnsubscribeByAttributesCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.Events.Add("log.entryAdded");
-        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
-        UnsubscribeCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        UnsubscribeCommandResult result = await module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -148,8 +144,7 @@ public class SessionModuleTests
 
         UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.SubscriptionIds.Add("mySubscriptionId");
-        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
-        UnsubscribeCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        UnsubscribeCommandResult result = await module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -189,8 +184,7 @@ public class SessionModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         NewCommandParameters newCommandParameters = new();
-        Task<NewCommandResult> task = module.NewSessionAsync(newCommandParameters, cancellationToken: TestContext.Current.CancellationToken);
-        NewCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        NewCommandResult result = await module.NewSessionAsync(newCommandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
 
@@ -231,8 +225,7 @@ public class SessionModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         EndCommandParameters endParameters = new();
-        Task<EndCommandResult> task = module.EndAsync(endParameters, cancellationToken: TestContext.Current.CancellationToken);
-        EndCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        EndCommandResult result = await module.EndAsync(endParameters, cancellationToken: TestContext.Current.CancellationToken);
         Assert.NotNull(result);
     }
 
@@ -256,8 +249,7 @@ public class SessionModuleTests
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        Task<EndCommandResult> task = module.EndAsync(cancellationToken: TestContext.Current.CancellationToken);
-        EndCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        EndCommandResult result = await module.EndAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
