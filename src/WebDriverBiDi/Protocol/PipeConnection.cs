@@ -190,7 +190,7 @@ public class PipeConnection : Connection
         this.IsConnectionActive = true;
 
         // Start the receive loop
-        this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
+        this.dataReceiveTask = Task.Run(this.ReceiveDataAsync);
 
         await this.LogAsync("Pipe connection started").ConfigureAwait(false);
     }
