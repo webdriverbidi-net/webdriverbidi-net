@@ -136,7 +136,7 @@ public class WebSocketConnection : Connection
             throw new WebDriverBiDiTimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
         }
 
-        this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
+        this.dataReceiveTask = Task.Run(this.ReceiveDataAsync);
         await this.LogAsync($"Connection opened").ConfigureAwait(false);
     }
 
