@@ -577,8 +577,10 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
-        driver.OnLogMessage.AddObserver(logs.Add);
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        driver.OnLogMessage.AddObserver(logs.Add);
         await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
         Assert.Single(logs);
 

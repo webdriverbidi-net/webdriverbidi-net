@@ -174,9 +174,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Contains(allLogs,
-            e => e.Message.StartsWith("SEND >>> ") && e.Level == WebDriverBiDiLogLevel.Debug);
+            e => e.Message.StartsWith("SEND >>> ") && e.Level == WebDriverBiDiLogLevel.Trace);
         Assert.Contains(allLogs,
-            e => e.Message.StartsWith("RECV <<< ") && e.Level == WebDriverBiDiLogLevel.Debug);
+            e => e.Message.StartsWith("RECV <<< ") && e.Level == WebDriverBiDiLogLevel.Trace);
     }
 
     [Fact]
