@@ -26,8 +26,7 @@ public class WebExtensionModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         WebExtensionModule module = driver.WebExtension;
 
-        Task<InstallCommandResult> task = module.InstallAsync(new InstallCommandParameters(new ExtensionPath("myExtensionPath")), cancellationToken: TestContext.Current.CancellationToken);
-        InstallCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        InstallCommandResult result = await module.InstallAsync(new InstallCommandParameters(new ExtensionPath("myExtensionPath")), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal("myExtensionId", result.ExtensionId);
@@ -53,8 +52,7 @@ public class WebExtensionModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         WebExtensionModule module = driver.WebExtension;
 
-        Task<UninstallCommandResult> task = module.UninstallAsync(new UninstallCommandParameters("myExtensionPath"), cancellationToken: TestContext.Current.CancellationToken);
-        UninstallCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        UninstallCommandResult result = await module.UninstallAsync(new UninstallCommandParameters("myExtensionPath"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

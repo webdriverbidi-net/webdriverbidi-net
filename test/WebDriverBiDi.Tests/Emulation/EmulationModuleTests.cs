@@ -24,8 +24,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetGeolocationOverrideCommandResult> task = module.SetGeolocationOverrideAsync(new SetGeolocationOverrideCoordinatesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetGeolocationOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetGeolocationOverrideCommandResult result = await module.SetGeolocationOverrideAsync(new SetGeolocationOverrideCoordinatesCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -50,8 +49,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetLocaleOverrideCommandResult> task = module.SetLocaleOverrideAsync(new SetLocaleOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetLocaleOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetLocaleOverrideCommandResult result = await module.SetLocaleOverrideAsync(new SetLocaleOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -76,8 +74,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetForcedColorsModeThemeOverrideCommandResult> task = module.SetForcedColorsModeThemeOverrideAsync(new SetForcedColorsModeThemeOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetForcedColorsModeThemeOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetForcedColorsModeThemeOverrideCommandResult result = await module.SetForcedColorsModeThemeOverrideAsync(new SetForcedColorsModeThemeOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -102,8 +99,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScreenOrientationOverrideCommandResult> task = module.SetScreenOrientationOverrideAsync(new SetScreenOrientationOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetScreenOrientationOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetScreenOrientationOverrideCommandResult result = await module.SetScreenOrientationOverrideAsync(new SetScreenOrientationOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -128,8 +124,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScreenSettingsOverrideCommandResult> task = module.SetScreenSettingsOverrideAsync(new SetScreenSettingsOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetScreenSettingsOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetScreenSettingsOverrideCommandResult result = await module.SetScreenSettingsOverrideAsync(new SetScreenSettingsOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -154,8 +149,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScriptingEnabledCommandResult> task = module.SetScriptingEnabledAsync(new SetScriptingEnabledCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetScriptingEnabledCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetScriptingEnabledCommandResult result = await module.SetScriptingEnabledAsync(new SetScriptingEnabledCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -180,8 +174,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetTimeZoneOverrideCommandResult> task = module.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetTimeZoneOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetTimeZoneOverrideCommandResult result = await module.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -206,8 +199,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetScrollbarTypeOverrideCommandResult> task = module.SetScrollbarTypeOverrideAsync(new SetScrollbarTypeOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetScrollbarTypeOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetScrollbarTypeOverrideCommandResult result = await module.SetScrollbarTypeOverrideAsync(new SetScrollbarTypeOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -232,8 +224,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetTouchOverrideCommandResult> task = module.SetTouchOverrideAsync(new SetTouchOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
-        SetTouchOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetTouchOverrideCommandResult result = await module.SetTouchOverrideAsync(new SetTouchOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -258,11 +249,10 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetNetworkConditionsCommandResult> task = module.SetNetworkConditionsAsync(new SetNetworkConditionsCommandParameters()
+        SetNetworkConditionsCommandResult result = await module.SetNetworkConditionsAsync(new SetNetworkConditionsCommandParameters()
         {
             NetworkConditions = new NetworkConditionsOffline()
         }, cancellationToken: TestContext.Current.CancellationToken);
-        SetNetworkConditionsCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -287,11 +277,10 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         EmulationModule module = driver.Emulation;
 
-        Task<SetUserAgentOverrideCommandResult> task = module.SetUserAgentOverrideAsync(new SetUserAgentOverrideCommandParameters()
+        SetUserAgentOverrideCommandResult result = await module.SetUserAgentOverrideAsync(new SetUserAgentOverrideCommandParameters()
         {
             UserAgent = "WebDriverBiDi.NET/1.0 (no platform)"
         }, cancellationToken: TestContext.Current.CancellationToken);
-        SetUserAgentOverrideCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

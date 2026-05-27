@@ -304,8 +304,6 @@ public class WebSocketConnection : Connection
                 }
             }
 
-            await this.LogAsync($"Ending processing loop in state {this.client.State}").ConfigureAwait(false);
-
             // If the loop exited without cancellation, the remote end closed the connection gracefully.
             if (!cancellationToken.IsCancellationRequested)
             {
@@ -324,6 +322,7 @@ public class WebSocketConnection : Connection
         finally
         {
             memoryStream?.Dispose();
+            await this.LogAsync($"Ending processing loop in state {this.client.State}").ConfigureAwait(false);
         }
     }
 

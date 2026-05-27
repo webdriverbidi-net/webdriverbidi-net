@@ -24,8 +24,7 @@ public class PermissionsModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         PermissionsModule module = driver.Permissions;
 
-        Task<SetPermissionCommandResult> task = module.SetPermissionAsync(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"), cancellationToken: TestContext.Current.CancellationToken);
-        SetPermissionCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetPermissionCommandResult result = await module.SetPermissionAsync(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

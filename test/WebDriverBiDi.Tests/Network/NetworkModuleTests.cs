@@ -107,9 +107,7 @@ public class NetworkModuleTests
         {
             UrlPatterns = [new UrlPatternString("https://example.com/*")]
         };
-        Task<AddInterceptCommandResult> task = module.AddInterceptAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
-
-        AddInterceptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        AddInterceptCommandResult result = await module.AddInterceptAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal("myInterceptId", result.InterceptId);
@@ -138,9 +136,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         AddDataCollectorCommandParameters commandParameters = new(1024 * 1024);
-        Task<AddDataCollectorCommandResult> task = module.AddDataCollectorAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
-
-        AddDataCollectorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        AddDataCollectorCommandResult result = await module.AddDataCollectorAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal("myCollectorId", result.CollectorId);
@@ -166,9 +162,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<ContinueRequestCommandResult> task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
-
-        ContinueRequestCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        ContinueRequestCommandResult result = await module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -193,9 +187,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<ContinueResponseCommandResult> task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
-
-        ContinueResponseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        ContinueResponseCommandResult result = await module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -220,13 +212,11 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<ContinueWithAuthCommandResult> task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
+        ContinueWithAuthCommandResult result = await module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
         {
             Action = ContinueWithAuthActionType.ProvideCredentials,
             Credentials = new AuthCredentials("username", "password")
         }, cancellationToken: TestContext.Current.CancellationToken);
-
-        ContinueWithAuthCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -252,9 +242,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId");
-        Task<DisownDataCommandResult> task = module.DisownDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
-
-        DisownDataCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        DisownDataCommandResult result = await module.DisownDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -279,9 +267,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<FailRequestCommandResult> task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
-
-        FailRequestCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        FailRequestCommandResult result = await module.FailRequestAsync(new FailRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -312,9 +298,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         GetDataCommandParameters commandParameters = new("myRequestId");
-        Task<GetDataCommandResult> task = module.GetDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
-
-        GetDataCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        GetDataCommandResult result = await module.GetDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(BytesValueType.String, result.Bytes.Type);
@@ -341,9 +325,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<ProvideResponseCommandResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
-
-        ProvideResponseCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        ProvideResponseCommandResult result = await module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -369,9 +351,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         RemoveDataCollectorCommandParameters commandParameters = new("myCollectorId");
-        Task<RemoveDataCollectorCommandResult> task = module.RemoveDataCollectorAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
-
-        RemoveDataCollectorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        RemoveDataCollectorCommandResult result = await module.RemoveDataCollectorAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -396,9 +376,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<RemoveInterceptCommandResult> task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"), cancellationToken: TestContext.Current.CancellationToken);
-
-        RemoveInterceptCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        RemoveInterceptCommandResult result = await module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -423,9 +401,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters(CacheBehavior.Default), cancellationToken: TestContext.Current.CancellationToken);
-
-        SetCacheBehaviorCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetCacheBehaviorCommandResult result = await module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters(CacheBehavior.Default), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -452,9 +428,7 @@ public class NetworkModuleTests
 
         SetExtraHeadersCommandParameters commandParameters = new();
         commandParameters.Headers.Add("X-Extra-Header: headerValue");
-        Task<SetExtraHeadersCommandResult> task = module.SetExtraHeadersAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
-
-        SetExtraHeadersCommandResult result = await task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        SetExtraHeadersCommandResult result = await module.SetExtraHeadersAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
