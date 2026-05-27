@@ -79,37 +79,43 @@ public class ChromiumTransport : Transport
     /// Deserializes an incoming message from the WebSocket connection.
     /// </summary>
     /// <param name="messageData">The message data to deserialize.</param>
-    /// <returns>A JsonElement representing the parsed message.</returns>
+    /// <returns>A JsonDocument representing the parsed message.</returns>
     /// <exception cref="JsonException">
     /// Thrown when there is a syntax error in the incoming JSON.
     /// </exception>
-    protected override JsonElement DeserializeMessage(byte[] messageData)
+    protected override JsonDocument DeserializeMessage(byte[] messageData)
     {
         // Incoming BiDi messages are received by listening to the Runtime.bindingCalled
         // event, where the binding name is "sendBidiResponse". The BiDi message is
         // the "payload" property of that event.
-        JsonElement deserialized = base.DeserializeMessage(messageData);
-        if (deserialized.TryGetProperty("method", out JsonElement methodNameElement))
+        using JsonDocument deserializedDocument = base.DeserializeMessage(messageData);
+        JsonElement deserialized = deserializedDocument.RootElement;
+        if (!deserialized.TryGetProperty("method", out JsonElement methodNameElement))
         {
-            string? methodName = methodNameElement.GetString();
-            if (methodName is not null && methodName == "Runtime.bindingCalled" && deserialized.TryGetProperty("params", out JsonElement valueElement))
-            {
-                JsonElement bindingNameElement = valueElement.GetProperty("name");
-                string? bindingName = bindingNameElement.GetString();
-                if (bindingName is not null && bindingName == "sendBidiResponse")
-                {
-                    JsonElement payloadElement = valueElement.GetProperty("payload");
-                    string? payload = payloadElement.GetString();
-                    if (payload is not null)
-                    {
-                        using JsonDocument payloadDocument = JsonDocument.Parse(payload);
-                        return payloadDocument.RootElement.Clone();
-                    }
-                }
-            }
+            throw new WebDriverBiDiSerializationException("No 'method' property in JSON");
         }
 
-        return default;
+        string methodName = methodNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'method' property in JSON is not a string");
+        if (methodName != "Runtime.bindingCalled")
+        {
+            throw new WebDriverBiDiSerializationException("'method' property value was not 'Runtime.bindingCalled");
+        }
+
+        if (!deserialized.TryGetProperty("params", out JsonElement valueElement))
+        {
+            throw new WebDriverBiDiSerializationException("No 'params' property in JSON");
+        }
+
+        JsonElement bindingNameElement = valueElement.GetProperty("name");
+        string bindingName = bindingNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'name' property with a string value");
+        if (bindingName != "sendBidiResponse")
+        {
+            throw new WebDriverBiDiSerializationException("'params' object value of 'name' property is not 'sendBidiResponse");
+        }
+
+        JsonElement payloadElement = valueElement.GetProperty("payload");
+        string payload = payloadElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'payload' property with a string value");
+        return JsonDocument.Parse(payload);
     }
 
     /// <summary>
