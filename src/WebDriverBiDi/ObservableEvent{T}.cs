@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi;
 
+using System.Buffers;
+
 /// <summary>
 /// Implementation of a subject in the Observer pattern for events. It can optionally be limited
 /// to a specific number of observers.
@@ -229,12 +231,14 @@ public class ObservableEvent<T>
         // observer counts are typically very small (1–15 references).
         EventObserver<T>? singleObserver = null;
         EventObserver<T>[]? snapshot = null;
+        int snapshotCount = 0;
         bool hasDataCollectors;
         lock (this.observerLock)
         {
-            if (this.observerCount > 0)
+            snapshotCount = this.observerCount;
+            if (snapshotCount > 0)
             {
-                if (this.observerCount == 1)
+                if (snapshotCount == 1)
                 {
                     foreach (EventObserver<T> observer in this.observers.Values)
                     {
@@ -244,7 +248,17 @@ public class ObservableEvent<T>
                 }
                 else
                 {
-                    snapshot = [.. this.observers.Values];
+                    // We use an ArrayPool here as a micro-optimization for performance.
+                    // The perf gain is real, but marginal for the common case of 2-15
+                    // observers. One thing to note, the actual array returned by the
+                    // pool might be larger than the actual number of observers, so we
+                    // have to take that into account in subsequent processing.
+                    snapshot = ArrayPool<EventObserver<T>>.Shared.Rent(snapshotCount);
+                    int i = 0;
+                    foreach (EventObserver<T> obs in this.observers.Values)
+                    {
+                        snapshot[i++] = obs;
+                    }
                 }
             }
 
@@ -267,23 +281,34 @@ public class ObservableEvent<T>
             return;
         }
 
-        if (hasDataCollectors && snapshot.Length > 1)
+        if (hasDataCollectors && snapshotCount > 1)
         {
-            Array.Sort(snapshot);
+            // Using this overload, because the length of snapshot might be larger
+            // than the number of observers.
+            Array.Sort(snapshot, 0, snapshotCount);
         }
 
         List<Exception>? exceptions = null;
-        foreach (EventObserver<T> observer in snapshot)
+        try
         {
-            try
+            // Because the length of snapshot might be larger, we have to use an
+            // indexed for loop instead of a foreach.
+            for (int i = 0; i < snapshotCount; i++)
             {
-                await observer.NotifyAsync(notifyData).ConfigureAwait(false);
+                try
+                {
+                    await snapshot[i].NotifyAsync(notifyData).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    exceptions ??= [];
+                    exceptions.Add(ex);
+                }
             }
-            catch (Exception ex)
-            {
-                exceptions ??= [];
-                exceptions.Add(ex);
-            }
+        }
+        finally
+        {
+            ArrayPool<EventObserver<T>>.Shared.Return(snapshot, clearArray: true);
         }
 
         if (exceptions is not null)
