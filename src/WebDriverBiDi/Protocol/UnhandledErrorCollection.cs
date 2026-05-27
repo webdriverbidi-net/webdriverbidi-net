@@ -192,13 +192,17 @@ public class UnhandledErrorCollection
 
         lock (this.collectionLock)
         {
-            List<UnhandledErrorType> behaviors = this.errorBehaviors
-                .Where(pair => pair.Value == errorBehavior)
-                .Select(pair => pair.Key).ToList();
-            exceptions = this.unhandledErrors
-                .Where(error => behaviors.Contains(error.ErrorType))
-                .Select(error => error.Exception).ToList();
-            return exceptions.Count > 0;
+            List<Exception> result = [];
+            foreach (UnhandledError error in this.unhandledErrors)
+            {
+                if (this.errorBehaviors.TryGetValue(error.ErrorType, out TransportErrorBehavior behavior) && behavior == errorBehavior)
+                {
+                    result.Add(error.Exception);
+                }
+            }
+
+            exceptions = result;
+            return result.Count > 0;
         }
     }
 }
