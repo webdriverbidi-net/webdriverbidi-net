@@ -493,7 +493,10 @@ public class Transport : IAsyncDisposable
                 // Start timing and log command sending
                 command.StartTiming();
                 WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId.ToString(), commandData.MethodName);
-                await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                if (this.OnLogMessage.CurrentObserverCount > 0)
+                {
+                    await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                }
 
                 byte[] commandJson = this.SerializeCommand(command);
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
@@ -1041,7 +1044,11 @@ public class Transport : IAsyncDisposable
                     {
                         CommandResult commandResult = response.Result;
                         commandResult.AdditionalData = response.AdditionalData;
-                        await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                        if (this.OnLogMessage.CurrentObserverCount > 0)
+                        {
+                            await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                        }
+
                         executedCommand.SetResult(commandResult);
                     }
                 }
@@ -1076,7 +1083,10 @@ public class Transport : IAsyncDisposable
                     // Stop timing and log error
                     executedCommand.StopTiming();
                     WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value.ToString(), executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
-                    await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    {
+                        await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                    }
 
                     executedCommand.SetResult(result);
                 }
@@ -1119,7 +1129,11 @@ public class Transport : IAsyncDisposable
                     }
 
                     WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
-                    await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    {
+                        await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                    }
+
                     await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData)).ConfigureAwait(false);
                     return true;
                 }
