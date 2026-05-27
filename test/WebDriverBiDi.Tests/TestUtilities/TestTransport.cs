@@ -164,7 +164,7 @@ public class TestTransport : Transport
         };
     }
 
-    protected override JsonElement DeserializeMessage(byte[] messageData)
+    protected override JsonDocument DeserializeMessage(byte[] messageData)
     {
         if (Interlocked.Decrement(ref this.deserializeThrowCount) >= 0)
         {

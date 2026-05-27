@@ -611,14 +611,13 @@ public class Transport : IAsyncDisposable
     /// Deserializes an incoming message from the WebSocket connection.
     /// </summary>
     /// <param name="messageData">The message data to deserialize.</param>
-    /// <returns>A JsonElement representing the parsed message.</returns>
+    /// <returns>A JsonDocument representing the parsed message.</returns>
     /// <exception cref="JsonException">
     /// Thrown when there is a syntax error in the incoming JSON.
     /// </exception>
-    protected virtual JsonElement DeserializeMessage(byte[] messageData)
+    protected virtual JsonDocument DeserializeMessage(byte[] messageData)
     {
-        using JsonDocument document = JsonDocument.Parse(messageData);
-        return document.RootElement.Clone();
+        return JsonDocument.Parse(messageData);
     }
 
     /// <summary>
@@ -940,10 +939,10 @@ public class Transport : IAsyncDisposable
     private async Task ProcessMessageAsync(byte[] messageData)
     {
         bool isProcessed = false;
-        JsonElement messageRootElement = default;
+        JsonDocument? messageDocument = null;
         try
         {
-            messageRootElement = this.DeserializeMessage(messageData);
+            messageDocument = this.DeserializeMessage(messageData);
         }
         catch (JsonException e)
         {
@@ -956,38 +955,42 @@ public class Transport : IAsyncDisposable
             await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
         }
 
-        if (messageRootElement.ValueKind != JsonValueKind.Undefined)
+        using (messageDocument)
         {
-            if (messageRootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
+            JsonElement messageRootElement = messageDocument?.RootElement ?? default;
+            if (messageRootElement.ValueKind != JsonValueKind.Undefined)
             {
-                string messageType = messageTypeToken.GetString()!;
-                if (messageType == "success")
+                if (messageRootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
                 {
-                    isProcessed = await this.ProcessCommandResponseMessage(messageRootElement).ConfigureAwait(false);
-                    Interlocked.Increment(ref this.commandResponseMessagesReceived);
-                }
-                else if (messageType == "error")
-                {
-                    isProcessed = await this.ProcessErrorMessageAsync(messageRootElement).ConfigureAwait(false);
-                    Interlocked.Increment(ref this.errorMessagesReceived);
-                }
-                else if (messageType == "event")
-                {
-                    isProcessed = await this.ProcessEventMessageAsync(messageRootElement).ConfigureAwait(false);
-                    Interlocked.Increment(ref this.eventMessagesReceived);
+                    string messageType = messageTypeToken.GetString()!;
+                    if (messageType == "success")
+                    {
+                        isProcessed = await this.ProcessCommandResponseMessage(messageRootElement).ConfigureAwait(false);
+                        Interlocked.Increment(ref this.commandResponseMessagesReceived);
+                    }
+                    else if (messageType == "error")
+                    {
+                        isProcessed = await this.ProcessErrorMessageAsync(messageRootElement).ConfigureAwait(false);
+                        Interlocked.Increment(ref this.errorMessagesReceived);
+                    }
+                    else if (messageType == "event")
+                    {
+                        isProcessed = await this.ProcessEventMessageAsync(messageRootElement).ConfigureAwait(false);
+                        Interlocked.Increment(ref this.eventMessagesReceived);
+                    }
                 }
             }
-        }
 
-        if (!isProcessed)
-        {
-            string message = Encoding.UTF8.GetString(messageData);
-            string messageType = messageRootElement.ValueKind != JsonValueKind.Undefined && messageRootElement.TryGetProperty("type", out JsonElement typeElement)
-                ? typeElement.GetString() ?? "unknown"
-                : "unknown";
-            WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(messageType, messageData.Length);
-            await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
-            this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
+            if (!isProcessed)
+            {
+                string message = Encoding.UTF8.GetString(messageData);
+                string messageType = messageRootElement.ValueKind != JsonValueKind.Undefined && messageRootElement.TryGetProperty("type", out JsonElement typeElement)
+                    ? typeElement.GetString() ?? "unknown"
+                    : "unknown";
+                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(messageType, messageData.Length);
+                await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
+                this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
+            }
         }
     }
 
