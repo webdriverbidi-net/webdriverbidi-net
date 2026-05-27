@@ -434,11 +434,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 return false;
             }
 
-            using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             Task whenAllTask = Task.WhenAll(tasksToWait);
-            Task cancellationTask = Task.Delay(remainingTime, linkedCancellationTokenSource.Token);
+            Task cancellationTask = Task.Delay(remainingTime, cancellationToken);
             Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
-            linkedCancellationTokenSource.Cancel();
             if (completedTask == cancellationTask)
             {
                 cancellationToken.ThrowIfCancellationRequested();
