@@ -131,7 +131,13 @@ public class UnhandledErrorCollection
                     throw new InvalidOperationException("No unhandled errors.");
                 }
 
-                return this.unhandledErrors.Select(error => error.Exception).ToList();
+                List<Exception> result = new(this.unhandledErrors.Count);
+                foreach (UnhandledError error in this.unhandledErrors)
+                {
+                    result.Add(error.Exception);
+                }
+
+                return result;
             }
         }
     }
