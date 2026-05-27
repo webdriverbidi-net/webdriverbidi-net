@@ -1106,6 +1106,23 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("test"), cts.Token));
     }
 
+    [Fact]
+    public async Task TestSendDataWithDefaultCancellationTokenUsesConnectionToken()
+    {
+        TestWebSocketConnection connection = new()
+        {
+            IsActiveOverride = () => true,
+        };
+        await connection.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        connection.BypassStart = false;
+
+        byte[] payload = """{"id":1,"method":"session.new","params":{}}"""u8.ToArray();
+#pragma warning disable xUnit1051 // intentionally omits token to exercise the CancellationToken.None branch
+        await connection.SendDataAsync(payload);
+#pragma warning restore xUnit1051
+        Assert.Equal("""{"id":1,"method":"session.new","params":{}}""", connection.DataSent);
+    }
+
     private Server CreateServer()
     {
         Server server = new();

@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.IO.Pipes;
 using System.Text;
 
@@ -261,10 +262,21 @@ public class PipeConnection : Connection
                 await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             }
 
+            CancellationToken effectiveToken;
+            CancellationTokenSource? linkedTokenSource = null;
             try
             {
-                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.connectionTokenSource.Token);
-                await this.SendPipeDataAsync(data, linkedTokenSource.Token).ConfigureAwait(false);
+                if (cancellationToken == CancellationToken.None)
+                {
+                    effectiveToken = this.connectionTokenSource.Token;
+                }
+                else
+                {
+                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.connectionTokenSource.Token);
+                    effectiveToken = linkedTokenSource.Token;
+                }
+
+                await this.SendPipeDataAsync(data, effectiveToken).ConfigureAwait(false);
             }
             catch (IOException ex)
             {
@@ -273,6 +285,10 @@ public class PipeConnection : Connection
             catch (ObjectDisposedException ex)
             {
                 throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
+            }
+            finally
+            {
+                linkedTokenSource?.Dispose();
             }
         }
         finally

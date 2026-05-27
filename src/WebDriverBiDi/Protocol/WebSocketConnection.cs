@@ -203,14 +203,29 @@ public class WebSocketConnection : Connection
                 await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
             }
 
+            CancellationToken effectiveToken;
+            CancellationTokenSource? linkedTokenSource = null;
             try
             {
-                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.clientTokenSource.Token);
-                await this.SendWebSocketDataAsync(new ArraySegment<byte>(data), linkedTokenSource.Token).ConfigureAwait(false);
+                if (cancellationToken == CancellationToken.None)
+                {
+                    effectiveToken = this.clientTokenSource.Token;
+                }
+                else
+                {
+                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.clientTokenSource.Token);
+                    effectiveToken = linkedTokenSource.Token;
+                }
+
+                await this.SendWebSocketDataAsync(new ArraySegment<byte>(data), effectiveToken).ConfigureAwait(false);
             }
             catch (WebSocketException ex)
             {
                 throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
+            }
+            finally
+            {
+                linkedTokenSource?.Dispose();
             }
         }
         finally

@@ -369,6 +369,24 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestSendDataWithDefaultCancellationTokenUsesConnectionToken()
+    {
+        TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            IsActiveOverride = () => true,
+        };
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+#pragma warning disable xUnit1051 // intentionally omits token to exercise the CancellationToken.None branch
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello world"));
+#pragma warning restore xUnit1051
+        testPipeServer.Stop();
+    }
+
+    [Fact]
     public async Task TestStartAfterDisposeThrows()
     {
         TestPipeServer testPipeServer = new();
