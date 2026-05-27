@@ -48,13 +48,14 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
 
         foreach (T value in values)
         {
-            string valueAsString = value.ToString().ToLowerInvariant();
+            string memberName = value.ToString();
+            string valueAsString = memberName.ToLowerInvariant();
 
             // Use GetField rather than GetMember so that the annotation on T
             // ([DynamicallyAccessedMembers(PublicFields)]) is sufficient. Enum
             // values are public static readonly fields on the enum type, so
             // GetField(name) is the correct query for getting values.
-            FieldInfo member = enumType.GetField(value.ToString())!;
+            FieldInfo member = enumType.GetField(memberName)!;
             StringEnumValueAttribute? attribute = member.GetCustomAttribute<StringEnumValueAttribute>();
             if (attribute is not null)
             {
