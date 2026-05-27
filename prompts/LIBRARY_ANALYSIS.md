@@ -172,9 +172,13 @@ test files, counting test methods, and grepping for feature names reveals what
 tests exist, not what code they execute. The authoritative source for any
 coverage-gap claim is:
 ```shell
-dotnet test --project test/WebDriverBiDi.Tests --coverlet --coverlet-output-format lcov
+dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --coverlet --coverlet-output-format lcov
 ```
-with specific uncovered line numbers from the resulting .info file cited as evidence.
+Note that `--configuration Release` is mandatory. A Debug build instruments more
+synthetic branches than a Release build and will produce false negatives.
+The coverage run must match the CI configuration in `_tests.yml`. A coverage
+result from a Debug build is not authoritative and must not be cited. Cite
+specific uncovered line numbers from the resulting .info file as evidence.
 A coverage-gap finding filed without citing line numbers from an actual coverage
 run is a false positive of the same severity as a documentation gap filed without
 reading the docs tree.
@@ -296,12 +300,25 @@ for how to raise them, if any exist. Apply rigorous thought to the suggestions
 you make; invalid suggestions, or those already completed are treated as false
 positives. If there are no suggestions to raise the score — either because the
 project's stated design constraints preclude all recommendations or because no
-verified gaps exist — that is a positive signal, not a neutral one. A category
-with zero actionable improvements must receive a score of 90 or higher. Do not
-deduct points to "leave room" for suggestions that the constraints forbid you
-from making; phantom deductions for precluded suggestions are treated as false
-positives with the same severity as recommending changes for things already
-present.
+verified gaps exist — that is a positive signal, not a neutral one.
+
+**Scores are derived from the Action Plan, not assigned independently.** Assign
+scores last, after the Action Plan is finalized. A category's score equals 100
+minus the deductions from that category's verified Action Plan entries. If the
+Action Plan contains no entries for a category, that category's score is 100.
+
+**A category with zero verified, actionable improvements must receive a score of
+100.** The range 90–99 is only available when at least one verified improvement
+exists for that category but its severity is minor. Do not deduct points to
+"leave room" for suggestions that the constraints forbid you from making; phantom
+deductions for precluded suggestions are treated as false positives with the same
+severity as recommending changes for things already present.
+
+**Before assigning any score below 100**, write out the specific actionable
+recommendation that justifies the deduction and confirm it appears in the Action
+Plan. If you cannot write that sentence, the score is 100. A category score below
+100 with no corresponding Action Plan entry is a scoring error of the same
+severity as a false positive finding.
 
 **Style observations do not warrant score deductions.** If the only concern about
 a category is aesthetic (file length, method length, naming-taste disagreements,
