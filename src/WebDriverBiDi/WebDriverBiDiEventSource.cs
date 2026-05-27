@@ -217,6 +217,9 @@ public sealed class WebDriverBiDiEventSource : EventSource
         }
     }
 
+    // Event ID 11 has been retired.
+    // Event ID 12 has been retired.
+
     /// <summary>
     /// Logs when an unknown message is received from the remote end.
     /// </summary>
