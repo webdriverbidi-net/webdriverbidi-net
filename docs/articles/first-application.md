@@ -99,6 +99,19 @@ Press any key to exit...
 
 Creates a driver with a 30-second command timeout and connects to the browser.
 
+> **Tip:** By default, the driver silently discards event handler exceptions and protocol errors. During
+> development, set the error behaviors to `TransportErrorBehavior.Terminate` so that problems surface
+> immediately rather than being swallowed:
+>
+> ```csharp
+> driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+> driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+> ```
+>
+> See [Error Handling](advanced/error-handling.md) for a full explanation of the four error behavior
+> properties and the recommended settings for production use.
+
 ### 2. Event Subscription
 
 [!code-csharp[Event Subscription](../code/examples/FirstApplicationSamples.cs#EventSubscription)]

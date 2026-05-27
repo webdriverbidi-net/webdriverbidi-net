@@ -226,6 +226,20 @@ Let's break down what this code does:
 
 The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The timeout parameter specifies how long to wait for command responses.
 
+> **Tip:** By default, the driver silently discards event handler exceptions and protocol errors. During
+> development, set the error behaviors to `TransportErrorBehavior.Terminate` so that problems surface
+> immediately rather than being swallowed:
+>
+> ```csharp
+> BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+> driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+> driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+> ```
+>
+> See [Error Handling](advanced/error-handling.md) for a full explanation of the four error behavior
+> properties and the recommended settings for production use.
+
 ### Connecting to the Browser
 
 [!code-csharp[Connecting to Browser](../code/examples/GettingStartedSamples.cs#ConnectingtoBrowser)]
