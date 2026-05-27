@@ -70,7 +70,7 @@ public class CommandJsonConverter : JsonConverter<Command>
         foreach (KeyValuePair<string, object?> pair in value.AdditionalData)
         {
             writer.WritePropertyName(pair.Key);
-            writer.WriteRawValue(JsonSerializer.Serialize(pair.Value, options));
+            JsonSerializer.Serialize(writer, pair.Value, options);
         }
 
         writer.WriteEndObject();
