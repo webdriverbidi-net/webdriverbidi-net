@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
@@ -15,6 +16,7 @@ using System.Text.Json.Serialization.Metadata;
 /// </summary>
 public class IncomingMessage : IDisposable
 {
+    private readonly IMemoryOwner<byte> memoryOwner;
     private readonly Func<JsonDocument, JsonDocument>? documentTransformer;
     private JsonDocument? document;
     private JsonElement payloadElement = default;
@@ -25,20 +27,23 @@ public class IncomingMessage : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="IncomingMessage"/> class.
     /// </summary>
-    /// <param name="data">The collection of bytes representing the incoming message.</param>
-    /// <param name="length">The length, in bytes, of the incoming message.</param>
+    /// <param name="owner">
+    /// The <see cref="IMemoryOwner{T}"/> whose <see cref="IMemoryOwner{T}.Memory"/> contains the
+    /// incoming message bytes. This instance takes ownership and will dispose it on disposal.
+    /// </param>
+    /// <param name="length">The length, in bytes, of the incoming message within the owner's buffer.</param>
     /// <param name="documentTransformer">An optional transforming function that converts the parsed JsonDocument object to another.</param>
-    public IncomingMessage(ReadOnlyMemory<byte> data, int length, Func<JsonDocument, JsonDocument>? documentTransformer = null)
+    public IncomingMessage(IMemoryOwner<byte> owner, int length, Func<JsonDocument, JsonDocument>? documentTransformer = null)
     {
-        this.MessageData = data;
+        this.memoryOwner = owner;
         this.MessageLength = length;
         this.documentTransformer = documentTransformer;
     }
 
     /// <summary>
-    /// Gets the raw data of the incoming message.
+    /// Gets the raw data of the incoming message as a read-only slice of the owner's buffer.
     /// </summary>
-    public ReadOnlyMemory<byte> MessageData { get; }
+    public ReadOnlyMemory<byte> MessageData => this.memoryOwner.Memory.Slice(0, this.MessageLength);
 
     /// <summary>
     /// Gets the length, in bytes, of the incoming message.
@@ -53,9 +58,9 @@ public class IncomingMessage : IDisposable
         get
         {
 #if NET5_0_OR_GREATER
-            return this.cachedText ??= Encoding.UTF8.GetString(this.MessageData[..this.MessageLength].Span);
+            return this.cachedText ??= Encoding.UTF8.GetString(this.memoryOwner.Memory.Slice(0, this.MessageLength).Span);
 #else
-            return this.cachedText ??= Encoding.UTF8.GetString(this.MessageData[..this.MessageLength].ToArray());
+            return this.cachedText ??= Encoding.UTF8.GetString(this.memoryOwner.Memory.Slice(0, this.MessageLength).ToArray());
 #endif
         }
     }
@@ -78,7 +83,7 @@ public class IncomingMessage : IDisposable
                     // type is "unknown".
                     if (this.payloadElement.ValueKind != JsonValueKind.Undefined && this.payloadElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String && messageTypeToken.GetString() is string value)
                     {
-                        this.messagePacketType = this.MapMessagePacketType(value);
+                        this.messagePacketType = MapMessagePacketType(value);
                     }
                     else
                     {
@@ -103,8 +108,8 @@ public class IncomingMessage : IDisposable
 
         this.document?.Dispose();
         this.document = null;
+        this.memoryOwner.Dispose();
         this.isDisposed = true;
-
         GC.SuppressFinalize(this);
     }
 
@@ -115,7 +120,7 @@ public class IncomingMessage : IDisposable
     {
         if (this.document is null)
         {
-            JsonDocument doc = JsonDocument.Parse(this.MessageData[..this.MessageLength]);
+            JsonDocument doc = JsonDocument.Parse(this.memoryOwner.Memory.Slice(0, this.MessageLength));
             if (this.documentTransformer is null)
             {
                 this.document = doc;
@@ -169,10 +174,10 @@ public class IncomingMessage : IDisposable
     }
 
     /// <summary>
-    /// Attempts to deserialize the payload of the incoming message as a command response.
+    /// Deserializes the payload of the incoming message as a command response.
     /// </summary>
     /// <param name="responseTypeInfo">The <see cref="JsonTypeInfo"/> for the type-specific command response data.</param>
-    /// <returns><see langword="true"/> if the incoming message contains a valid command response; otherwise, <see langword="false"/>.</returns>
+    /// <returns>The deserialized <see cref="CommandResponseMessage"/>.</returns>
     internal CommandResponseMessage DeserializeCommandResponseMessage(JsonTypeInfo responseTypeInfo)
     {
         // Deserialize returns CommandResponseMessage or throws JsonException; null is unreachable
@@ -188,9 +193,6 @@ public class IncomingMessage : IDisposable
     /// <returns><see langword="true"/> if the incoming message is a valid error response; otherwise, <see langword="false"/>.</returns>
     internal bool TryGetErrorResponse(JsonTypeInfo<ErrorResponseMessage> typeInfo, [NotNullWhen(true)] out ErrorResponseMessage? errorResponseMessage)
     {
-        // Note carefully, we use the JsonElement.Deserialize() overload that
-        // takes a JsonTypeInfo to remove warnings when publishing AOT compiled
-        // applications.
         errorResponseMessage = this.payloadElement.Deserialize(typeInfo);
         return errorResponseMessage is not null;
     }
@@ -203,9 +205,6 @@ public class IncomingMessage : IDisposable
     /// <returns><see langword="true"/> if the incoming message contains valid event data; otherwise, <see langword="false"/>.</returns>
     internal bool TryDeserializeEventMessage(JsonTypeInfo eventTypeInfo, [NotNullWhen(true)] out EventMessage? eventMessage)
     {
-        // Note carefully, we use the JsonElement.Deserialize() overload that
-        // takes a JsonTypeInfo to remove warnings when publishing AOT compiled
-        // applications.
         if (this.payloadElement.Deserialize(eventTypeInfo) is EventMessage message)
         {
             eventMessage = message;
@@ -216,7 +215,7 @@ public class IncomingMessage : IDisposable
         return false;
     }
 
-    private IncomingMessageKind MapMessagePacketType(string messageTypeString)
+    private static IncomingMessageKind MapMessagePacketType(string messageTypeString)
     {
         return messageTypeString switch
         {

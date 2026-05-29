@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
+using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using WebDriverBiDi.Protocol;
@@ -64,7 +65,10 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public async Task RaiseDataReceivedEventAsync(string data)
     {
-        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(Encoding.UTF8.GetBytes(data)));
+        byte[] bytes = Encoding.UTF8.GetBytes(data);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(owner, bytes.Length));
     }
 
     public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)

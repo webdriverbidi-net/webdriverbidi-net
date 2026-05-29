@@ -916,6 +916,49 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionAssemblesFragmentedMessage()
+    {
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+        };
+
+        byte[] part1 = Encoding.UTF8.GetBytes("Hello");
+        byte[] part2 = Encoding.UTF8.GetBytes(", World!");
+        connection.ReceiveHandler = async (buffer, token, callNum) =>
+        {
+            if (callNum == 1)
+            {
+                part1.CopyTo(buffer.Array!, buffer.Offset);
+                return await Task.FromResult(new WebSocketReceiveResult(part1.Length, WebSocketMessageType.Text, endOfMessage: false));
+            }
+
+            if (callNum == 2)
+            {
+                part2.CopyTo(buffer.Array!, buffer.Offset);
+                return await Task.FromResult(new WebSocketReceiveResult(part2.Length, WebSocketMessageType.Text, endOfMessage: true));
+            }
+
+            taskCompletionSource.TrySetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            throw new OperationCanceledException(token);
+        };
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+        connection.OnLogMessage.AddObserver((e) => { });
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Hello, World!", Encoding.UTF8.GetString(dataReceivedByConnection));
+    }
+
+    [Fact]
     public async Task TestConnectionDiscardsPartialFragmentedMessageOnClose()
     {
         await using Server server = this.CreateServer();

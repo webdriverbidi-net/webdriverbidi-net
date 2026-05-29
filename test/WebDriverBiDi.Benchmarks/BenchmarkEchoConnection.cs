@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System.Buffers;
 using System.Text;
 using System.Text.Json;
 using WebDriverBiDi.Protocol;
@@ -54,7 +55,9 @@ public sealed class BenchmarkEchoConnection : Connection
         // decouples this from the sender's await on WaitForCompletionAsync.
         long commandId = ExtractCommandId(data);
         byte[] response = BuildSuccessResponse(commandId);
-        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(response)).ConfigureAwait(false);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(response.Length);
+        response.CopyTo(owner.Memory);
+        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(owner, response.Length)).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>

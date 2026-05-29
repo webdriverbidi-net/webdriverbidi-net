@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
+using System.Buffers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Protocol;
@@ -173,10 +174,10 @@ public class TestTransport : Transport
         return firstCallerReadyTaskCompletionSource.Task;
     }
 
-    protected override IncomingMessage CreateIncomingMessage(ReadOnlyMemory<byte> data, int length)
+    protected override IncomingMessage CreateIncomingMessage(IMemoryOwner<byte> owner, int length)
     {
         bool throwOnDeserialization = Interlocked.Decrement(ref this.deserializeThrowCount) >= 0;
-        return new TestIncomingMessage(data, length, throwOnDeserialization);
+        return new TestIncomingMessage(owner, length, throwOnDeserialization);
     }
 
     protected override async Task DisconnectAsync(bool throwCollectedExceptions, CancellationToken cancellationToken = default)

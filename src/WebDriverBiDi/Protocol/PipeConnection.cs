@@ -5,9 +5,10 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Buffers;
 using System.Diagnostics;
-using System.Diagnostics.Tracing;
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
 using System.Text;
 
 /// <summary>
@@ -262,21 +263,17 @@ public class PipeConnection : Connection
                 await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             }
 
-            CancellationToken effectiveToken;
+            CancellationToken effectiveCancellationToken = this.connectionTokenSource.Token;
             CancellationTokenSource? linkedTokenSource = null;
             try
             {
-                if (cancellationToken == CancellationToken.None)
+                if (cancellationToken != CancellationToken.None)
                 {
-                    effectiveToken = this.connectionTokenSource.Token;
-                }
-                else
-                {
-                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.connectionTokenSource.Token);
-                    effectiveToken = linkedTokenSource.Token;
+                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, effectiveCancellationToken);
+                    effectiveCancellationToken = linkedTokenSource.Token;
                 }
 
-                await this.SendPipeDataAsync(data, effectiveToken).ConfigureAwait(false);
+                await this.SendPipeDataAsync(data, effectiveCancellationToken).ConfigureAwait(false);
             }
             catch (IOException ex)
             {
@@ -337,15 +334,17 @@ public class PipeConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected override async Task ReceiveDataAsync()
     {
-        CancellationToken cancellationToken = this.connectionTokenSource.Token;
-        MemoryStream messageBuffer = new();
+        CancellationToken connectionCancellationToken = this.connectionTokenSource.Token;
+        using MemoryStream messageBuffer = new();
+        using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try
         {
-            byte[] readBuffer = new byte[this.BufferSize];
-
-            while (!cancellationToken.IsCancellationRequested)
+            // MemoryPool<byte>.Shared is backed by ArrayPool, so TryGetArray always succeeds here.
+            MemoryMarshal.TryGetArray(receivedDataBufferOwner.Memory.Slice(0, this.BufferSize), out ArraySegment<byte> readSegment);
+            byte[] readArray = readSegment.Array!;
+            while (!connectionCancellationToken.IsCancellationRequested)
             {
-                int bytesRead = await this.ReadPipeDataAsync(readBuffer, 0, readBuffer.Length, cancellationToken).ConfigureAwait(false);
+                int bytesRead = await this.ReadPipeDataAsync(readArray, 0, this.BufferSize, connectionCancellationToken).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
                     // Pipe closed
@@ -357,25 +356,30 @@ public class PipeConnection : Connection
                 int startIndex = 0;
                 for (int i = 0; i < bytesRead; i++)
                 {
-                    if (readBuffer[i] == 0)
+                    if (readArray[i] == 0)
                     {
                         // Found a null terminator - complete the message
                         if (i > startIndex)
                         {
-                            messageBuffer.Write(readBuffer, startIndex, i - startIndex);
+                            messageBuffer.Write(readArray, startIndex, i - startIndex);
                         }
 
                         if (messageBuffer.Length > 0)
                         {
-                            byte[] messageData = messageBuffer.ToArray();
+                            int messageLength = (int)messageBuffer.Length;
+                            IMemoryOwner<byte> messageOwner = TakeOwnershipOfReceivedData(messageBuffer.GetBuffer(), messageLength);
                             messageBuffer.SetLength(0);
 
                             if (this.OnLogMessage.CurrentObserverCount > 0)
                             {
-                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+#if NET5_0_OR_GREATER
+                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+#else
+                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+#endif
                             }
 
-                            await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageData)).ConfigureAwait(false);
+                            await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
                         }
 
                         startIndex = i + 1;
@@ -385,14 +389,14 @@ public class PipeConnection : Connection
                 // If there's remaining data after the last null terminator (or no null found), buffer it
                 if (startIndex < bytesRead)
                 {
-                    messageBuffer.Write(readBuffer, startIndex, bytesRead - startIndex);
+                    messageBuffer.Write(readArray, startIndex, bytesRead - startIndex);
                 }
             }
 
             await this.LogAsync($"Ending pipe receive loop").ConfigureAwait(false);
 
             // If the loop exited without cancellation, the remote end closed the connection gracefully.
-            if (!cancellationToken.IsCancellationRequested)
+            if (!connectionCancellationToken.IsCancellationRequested)
             {
                 await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
             }
@@ -410,10 +414,6 @@ public class PipeConnection : Connection
         {
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
-        }
-        finally
-        {
-            messageBuffer.Dispose();
         }
     }
 
