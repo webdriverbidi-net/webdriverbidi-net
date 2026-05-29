@@ -102,7 +102,7 @@ public class Transport : IAsyncDisposable
     // with a bounded channel, and add monitoring of the queue depth to
     // the transport events. Reassignment of this variable happens only
     // under the connection lock, so is thread-safe.
-    private Channel<byte[]> incomingMessageQueue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
+    private Channel<IncomingMessage> incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
     {
         SingleReader = true,
         SingleWriter = true,
@@ -395,7 +395,7 @@ public class Transport : IAsyncDisposable
                 this.PendingCommands = new PendingCommandCollection();
             }
 
-            this.incomingMessageQueue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
+            this.incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
             {
                 SingleReader = true,
                 SingleWriter = true,
@@ -596,7 +596,7 @@ public class Transport : IAsyncDisposable
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
         await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
-        this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
+        this.CaptureUnhandledError(UnhandledErrorKind.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
     }
 
     /// <summary>
@@ -631,16 +631,14 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
-    /// Deserializes an incoming message from the WebSocket connection.
+    /// Creates an <see cref="IncomingMessage"/> object for the data received by this <see cref="Transport"/>.
     /// </summary>
-    /// <param name="messageData">The message data to deserialize.</param>
-    /// <returns>A JsonDocument representing the parsed message.</returns>
-    /// <exception cref="JsonException">
-    /// Thrown when there is a syntax error in the incoming JSON.
-    /// </exception>
-    protected virtual JsonDocument DeserializeMessage(byte[] messageData)
+    /// <param name="data">The byte buffer containing the incoming message data.</param>
+    /// <param name="length">The length, in bytes, of the incoming message within the data buffer.</param>
+    /// <returns>The <see cref="IncomingMessage"/> object for the data received.</returns>
+    protected virtual IncomingMessage CreateIncomingMessage(ReadOnlyMemory<byte> data, int length)
     {
-        return JsonDocument.Parse(messageData);
+        return new IncomingMessage(data, length);
     }
 
     /// <summary>
@@ -794,17 +792,17 @@ public class Transport : IAsyncDisposable
         // is not enough by itself to enable compilation using that construct.
         while (await this.incomingMessageQueue.Reader.WaitToReadAsync().ConfigureAwait(false))
         {
-            while (this.incomingMessageQueue.Reader.TryRead(out byte[]? incomingMessage))
+            while (this.incomingMessageQueue.Reader.TryRead(out IncomingMessage? packet))
             {
                 Interlocked.Decrement(ref this.incomingQueueDepth);
                 try
                 {
-                    await this.ProcessMessageAsync(incomingMessage).ConfigureAwait(false);
+                    await this.ProcessMessageAsync(packet).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     await this.LogAsync($"Unexpected error in message processing loop: {ex.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, "Unexpected error in message processing loop");
+                    this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, "Unexpected error in message processing loop");
                 }
             }
         }
@@ -894,7 +892,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
-        await this.incomingMessageQueue.Writer.WriteAsync(e.Data).ConfigureAwait(false);
+        await this.incomingMessageQueue.Writer.WriteAsync(this.CreateIncomingMessage(e.Data, e.Data.Length)).ConfigureAwait(false);
         Interlocked.Increment(ref this.incomingQueueDepth);
     }
 
@@ -965,70 +963,58 @@ public class Transport : IAsyncDisposable
         // fire-and-forget fault handler. Capture onto the unhandled-error pipeline
         // for symmetry with per-message failures in ReadIncomingMessagesAsync.
         WebDriverBiDiEventSource.RaiseEvent.ProtocolError(exception.Message, "Message processing loop faulted");
-        this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, exception, "Message processing loop faulted");
+        this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, exception, "Message processing loop faulted");
     }
 
-    private async Task ProcessMessageAsync(byte[] messageData)
+    private async Task ProcessMessageAsync(IncomingMessage packet)
     {
         bool isProcessed = false;
-        JsonDocument? messageDocument = null;
-        try
+        using (packet)
         {
-            messageDocument = this.DeserializeMessage(messageData);
-        }
-        catch (JsonException e)
-        {
-            // JSON parsing errors are regarded as "unknown message" errors, rather than
-            // "protocol errors." Protocol errors are defined as valid JSON messages that
-            // resemble protocol data structures, but do not fit the payload definitions
-            // of the protocol. Here, we just log the error; the error will be processed
-            // to be added to the proper unhandled error collection in the "if (!isProcessed)"
-            // block below.
-            await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-        }
-
-        using (messageDocument)
-        {
-            JsonElement messageRootElement = messageDocument?.RootElement ?? default;
-            if (messageRootElement.ValueKind != JsonValueKind.Undefined)
+            try
             {
-                if (messageRootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
-                {
-                    string messageType = messageTypeToken.GetString()!;
-                    if (messageType == "success")
-                    {
-                        isProcessed = await this.ProcessCommandResponseMessage(messageRootElement).ConfigureAwait(false);
-                        Interlocked.Increment(ref this.commandResponseMessagesReceived);
-                    }
-                    else if (messageType == "error")
-                    {
-                        isProcessed = await this.ProcessErrorMessageAsync(messageRootElement).ConfigureAwait(false);
-                        Interlocked.Increment(ref this.errorMessagesReceived);
-                    }
-                    else if (messageType == "event")
-                    {
-                        isProcessed = await this.ProcessEventMessageAsync(messageRootElement).ConfigureAwait(false);
-                        Interlocked.Increment(ref this.eventMessagesReceived);
-                    }
-                }
+                packet.Parse();
+            }
+            catch (JsonException e)
+            {
+                // JSON parsing errors are regarded as "unknown message" errors, rather than
+                // "protocol errors." Protocol errors are defined as valid JSON messages that
+                // resemble protocol data structures, but do not fit the payload definitions
+                // of the protocol. Here, we just log the error; the error will be processed
+                // to be added to the proper unhandled error collection in the "if (!isProcessed)"
+                // block below.
+                await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+            }
+
+            if (packet.MessageKind == IncomingMessageKind.CommandResponse)
+            {
+                isProcessed = await this.ProcessCommandResponseMessage(packet).ConfigureAwait(false);
+                Interlocked.Increment(ref this.commandResponseMessagesReceived);
+            }
+            else if (packet.MessageKind == IncomingMessageKind.ErrorResponse)
+            {
+                isProcessed = await this.ProcessErrorMessageAsync(packet).ConfigureAwait(false);
+                Interlocked.Increment(ref this.errorMessagesReceived);
+            }
+            else if (packet.MessageKind == IncomingMessageKind.Event)
+            {
+                isProcessed = await this.ProcessEventMessageAsync(packet).ConfigureAwait(false);
+                Interlocked.Increment(ref this.eventMessagesReceived);
             }
 
             if (!isProcessed)
             {
-                string message = Encoding.UTF8.GetString(messageData);
-                string messageType = messageRootElement.ValueKind != JsonValueKind.Undefined && messageRootElement.TryGetProperty("type", out JsonElement typeElement)
-                    ? typeElement.GetString() ?? "unknown"
-                    : "unknown";
-                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(messageType, messageData.Length);
+                string message = packet.MessageText;
+                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(packet.MessageKind.ToString().ToLowerInvariant(), packet.MessageLength);
                 await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
-                this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
+                this.CaptureUnhandledError(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
             }
         }
     }
 
-    private async Task<bool> ProcessCommandResponseMessage(JsonElement message)
+    private async Task<bool> ProcessCommandResponseMessage(IncomingMessage packet)
     {
-        if (message.TryGetProperty("id", out JsonElement idToken) && idToken.ValueKind == JsonValueKind.Number && idToken.TryGetInt64(out long responseId))
+        if (packet.TryGetCommandId(out long responseId))
         {
             if (this.PendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
             {
@@ -1037,24 +1023,20 @@ public class Transport : IAsyncDisposable
                 WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId.ToString(), executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
                 try
                 {
-                    // Use the JsonElement.Deserialize() overload that takes a JsonTypeInfo
-                    // to remove warnings when publishing AOT compiled applications.
                     JsonTypeInfo responseTypeInfo = this.options.GetTypeInfo(executedCommand.ResponseType);
-                    if (message.Deserialize(responseTypeInfo) is CommandResponseMessage response)
+                    CommandResponseMessage response = packet.DeserializeCommandResponseMessage(responseTypeInfo);
+                    CommandResult commandResult = response.Result;
+                    commandResult.AdditionalData = response.AdditionalData;
+                    if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
-                        CommandResult commandResult = response.Result;
-                        commandResult.AdditionalData = response.AdditionalData;
-                        if (this.OnLogMessage.CurrentObserverCount > 0)
-                        {
-                            await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
-                        }
-
-                        executedCommand.SetResult(commandResult);
+                        await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     }
+
+                    executedCommand.SetResult(commandResult);
                 }
                 catch (Exception ex)
                 {
-                    executedCommand.SetException(new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for response type (response JSON:{message})", ex));
+                    executedCommand.SetException(new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for response type (response JSON:{packet.MessageText})", ex));
                 }
 
                 return true;
@@ -1064,18 +1046,14 @@ public class Transport : IAsyncDisposable
         return false;
     }
 
-    private async Task<bool> ProcessErrorMessageAsync(JsonElement message)
+    private async Task<bool> ProcessErrorMessageAsync(IncomingMessage packet)
     {
         try
         {
             // If the message doesn't match the schema of an actual error message,
             // an exception will be thrown by the JSON serializer, and we can log
             // the malformed response.
-            // Note carefully, we use the JsonElement.Deserialize() overload that
-            // takes a JsonTypeInfo to remove warnings when publishing AOT compiled
-            // applications.
-            ErrorResponseMessage? errorMessage = message.Deserialize(this.errorResponseJsonTypeInfo);
-            if (errorMessage is not null)
+            if (packet.TryGetErrorResponse(this.errorResponseJsonTypeInfo, out ErrorResponseMessage? errorMessage))
             {
                 ErrorResult result = errorMessage.GetErrorResponseData();
                 if (errorMessage.CommandId.HasValue && this.PendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
@@ -1093,7 +1071,7 @@ public class Transport : IAsyncDisposable
                 else
                 {
                     await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result)).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
+                    this.CaptureUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
                 }
             }
 
@@ -1101,29 +1079,25 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in protocol error response: {message}");
-            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(message.ToString(), 100));
+            string messageString = packet.MessageText;
+            await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+            this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}");
+            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
         }
 
         return false;
     }
 
-    private async Task<bool> ProcessEventMessageAsync(JsonElement message)
+    private async Task<bool> ProcessEventMessageAsync(IncomingMessage packet)
     {
-        if (message.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
+        if (packet.TryGetEventName(out string eventName))
         {
-            // We have already validated that the token is of type string,
-            // and therefore will never be null.
-            string eventName = eventNameToken.GetString()!;
             if (this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
             {
                 try
                 {
-                    // Use the JsonElement.Deserialize() overload that takes a JsonTypeInfo
-                    // to remove warnings when publishing AOT compiled applications.
                     JsonTypeInfo eventTypeInfo = this.options.GetTypeInfo(eventMessageType);
-                    if (message.Deserialize(eventTypeInfo) is not EventMessage eventMessageData)
+                    if (!packet.TryDeserializeEventMessage(eventTypeInfo, out EventMessage? eventMessageData))
                     {
                         throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
                     }
@@ -1139,9 +1113,10 @@ public class Transport : IAsyncDisposable
                 }
                 catch (Exception ex)
                 {
-                    await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in event message: {message}");
-                    WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(message.ToString(), 100));
+                    string messageString = packet.MessageText;
+                    await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+                    this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in event message: {messageString}");
+                    WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
                 }
             }
         }
@@ -1149,21 +1124,21 @@ public class Transport : IAsyncDisposable
         return false;
     }
 
-    private void CaptureUnhandledError(UnhandledErrorType errorType, Exception ex, string terminalReason)
+    private void CaptureUnhandledError(UnhandledErrorKind errorType, Exception ex, string terminalReason)
     {
         bool isTerminalError = false;
         switch (errorType)
         {
-            case UnhandledErrorType.ProtocolError:
+            case UnhandledErrorKind.ProtocolError:
                 isTerminalError = this.ProtocolErrorBehavior == TransportErrorBehavior.Terminate;
                 break;
-            case UnhandledErrorType.UnknownMessage:
+            case UnhandledErrorKind.UnknownMessage:
                 isTerminalError = this.UnknownMessageBehavior == TransportErrorBehavior.Terminate;
                 break;
-            case UnhandledErrorType.UnexpectedError:
+            case UnhandledErrorKind.UnexpectedError:
                 isTerminalError = this.UnexpectedErrorBehavior == TransportErrorBehavior.Terminate;
                 break;
-            case UnhandledErrorType.EventHandlerException:
+            case UnhandledErrorKind.EventHandlerException:
                 isTerminalError = this.EventHandlerExceptionBehavior == TransportErrorBehavior.Terminate;
                 break;
         }

@@ -64,7 +64,7 @@ public class WebSocketConnection : Connection
     /// <summary>
     /// Gets a value indicating the type of data transport used by this connection, in this case, a WebSocket connection.
     /// </summary>
-    public override ConnectionType ConnectionType => ConnectionType.WebSocket;
+    public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -176,7 +176,7 @@ public class WebSocketConnection : Connection
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is not active.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the WebSocket for sending times out.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public override async Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
+    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         if (!this.IsActive)
         {
@@ -200,7 +200,7 @@ public class WebSocketConnection : Connection
 
             if (this.OnLogMessage.CurrentObserverCount > 0)
             {
-                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
             }
 
             CancellationToken effectiveToken;
@@ -217,7 +217,7 @@ public class WebSocketConnection : Connection
                     effectiveToken = linkedTokenSource.Token;
                 }
 
-                await this.SendWebSocketDataAsync(new ArraySegment<byte>(data), effectiveToken).ConfigureAwait(false);
+                await this.SendWebSocketDataAsync(data, effectiveToken).ConfigureAwait(false);
             }
             catch (WebSocketException ex)
             {
@@ -374,9 +374,13 @@ public class WebSocketConnection : Connection
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the WebSocket.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task SendWebSocketDataAsync(ArraySegment<byte> messageBuffer, CancellationToken cancellationToken = default)
+    protected virtual async Task SendWebSocketDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
+#if NET5_0_OR_GREATER
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);
+#else
+        await this.client.SendAsync(new ArraySegment<byte>(messageBuffer.ToArray()), WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);
+#endif
     }
 
     /// <summary>

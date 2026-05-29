@@ -12,17 +12,17 @@ public class UnhandledErrorCollection
 {
     private readonly object collectionLock = new();
     private readonly List<UnhandledError> unhandledErrors = [];
-    private readonly Dictionary<UnhandledErrorType, TransportErrorBehavior> errorBehaviors = [];
+    private readonly Dictionary<UnhandledErrorKind, TransportErrorBehavior> errorBehaviors = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UnhandledErrorCollection"/> class.
     /// </summary>
     public UnhandledErrorCollection()
     {
-        this.errorBehaviors[UnhandledErrorType.ProtocolError] = TransportErrorBehavior.Ignore;
-        this.errorBehaviors[UnhandledErrorType.UnknownMessage] = TransportErrorBehavior.Ignore;
-        this.errorBehaviors[UnhandledErrorType.UnexpectedError] = TransportErrorBehavior.Ignore;
-        this.errorBehaviors[UnhandledErrorType.EventHandlerException] = TransportErrorBehavior.Ignore;
+        this.errorBehaviors[UnhandledErrorKind.ProtocolError] = TransportErrorBehavior.Ignore;
+        this.errorBehaviors[UnhandledErrorKind.UnknownMessage] = TransportErrorBehavior.Ignore;
+        this.errorBehaviors[UnhandledErrorKind.UnexpectedError] = TransportErrorBehavior.Ignore;
+        this.errorBehaviors[UnhandledErrorKind.EventHandlerException] = TransportErrorBehavior.Ignore;
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                return this.errorBehaviors[UnhandledErrorType.ProtocolError];
+                return this.errorBehaviors[UnhandledErrorKind.ProtocolError];
             }
         }
 
@@ -42,7 +42,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                this.errorBehaviors[UnhandledErrorType.ProtocolError] = value;
+                this.errorBehaviors[UnhandledErrorKind.ProtocolError] = value;
             }
         }
     }
@@ -57,7 +57,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                return this.errorBehaviors[UnhandledErrorType.UnknownMessage];
+                return this.errorBehaviors[UnhandledErrorKind.UnknownMessage];
             }
         }
 
@@ -65,7 +65,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                this.errorBehaviors[UnhandledErrorType.UnknownMessage] = value;
+                this.errorBehaviors[UnhandledErrorKind.UnknownMessage] = value;
             }
         }
     }
@@ -80,7 +80,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                return this.errorBehaviors[UnhandledErrorType.UnexpectedError];
+                return this.errorBehaviors[UnhandledErrorKind.UnexpectedError];
             }
         }
 
@@ -88,7 +88,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                this.errorBehaviors[UnhandledErrorType.UnexpectedError] = value;
+                this.errorBehaviors[UnhandledErrorKind.UnexpectedError] = value;
             }
         }
     }
@@ -103,7 +103,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                return this.errorBehaviors[UnhandledErrorType.EventHandlerException];
+                return this.errorBehaviors[UnhandledErrorKind.EventHandlerException];
             }
         }
 
@@ -111,7 +111,7 @@ public class UnhandledErrorCollection
         {
             lock (this.collectionLock)
             {
-                this.errorBehaviors[UnhandledErrorType.EventHandlerException] = value;
+                this.errorBehaviors[UnhandledErrorKind.EventHandlerException] = value;
             }
         }
     }
@@ -147,7 +147,7 @@ public class UnhandledErrorCollection
     /// </summary>
     /// <param name="errorType">The type of error to add.</param>
     /// <param name="exception">The exception that causes the unhandled error.</param>
-    public void AddUnhandledError(UnhandledErrorType errorType, Exception exception)
+    public void AddUnhandledError(UnhandledErrorKind errorType, Exception exception)
     {
         lock (this.collectionLock)
         {

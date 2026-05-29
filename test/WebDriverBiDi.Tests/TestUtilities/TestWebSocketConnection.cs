@@ -36,7 +36,7 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public Func<bool>? IsActiveOverride { get; set; }
 
-    public Func<ArraySegment<byte>, Task>? SendWebSocketDataOverride { get; set; }
+    public Func<ReadOnlyMemory<byte>, Task>? SendWebSocketDataOverride { get; set; }
 
     public bool Disposed => this.IsDisposed;
 
@@ -119,7 +119,7 @@ public class TestWebSocketConnection : WebSocketConnection
         }
     }
 
-    public override Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
+    public override Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         if (this.BypassStart)
         {
@@ -132,7 +132,7 @@ public class TestWebSocketConnection : WebSocketConnection
         return base.SendDataAsync(data, cancellationToken);
     }
 
-    protected override async Task SendWebSocketDataAsync(ArraySegment<byte> data, CancellationToken cancellationToken = default)
+    protected override async Task SendWebSocketDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         if (this.SendWebSocketDataOverride is not null)
         {
@@ -141,7 +141,7 @@ public class TestWebSocketConnection : WebSocketConnection
         }
 
         await this.dataSendStartingInvocable.InvokeNotifyObserversAsync(new WebDriverBiDiEventArgs());
-        this.DataSent = Encoding.UTF8.GetString(data);
+        this.DataSent = Encoding.UTF8.GetString(data.Span);
 
         if (this.SendBarrier is not null)
         {

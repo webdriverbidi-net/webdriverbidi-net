@@ -434,7 +434,7 @@ public class TransportTests
                                 "type": "success",
                                 "id": 1,
                                 "result": {
-                                "value": "response value"
+                                  "value": "response value"
                                 }
                             }
                             """;
@@ -575,7 +575,7 @@ public class TransportTests
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForSuccessMessageWitInvalidIdDataType()
+    public async Task TestTransportRaisesUnknownMessageEventForSuccessMessageWithInvalidIdDataType()
     {
         string json = """
                       {
@@ -604,7 +604,7 @@ public class TransportTests
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForSuccessMessageWitInvalidIdValue()
+    public async Task TestTransportRaisesUnknownMessageEventForSuccessMessageWithInvalidIdValue()
     {
         string json = """
                       {

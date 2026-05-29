@@ -14,7 +14,7 @@ public record ConnectionDataReceivedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="ConnectionDataReceivedEventArgs" /> class.
     /// </summary>
     /// <param name="data">The data received from the connection.</param>
-    public ConnectionDataReceivedEventArgs(byte[] data)
+    public ConnectionDataReceivedEventArgs(ReadOnlyMemory<byte> data)
     {
         this.Data = data;
     }
@@ -22,5 +22,5 @@ public record ConnectionDataReceivedEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets the data received from the connection.
     /// </summary>
-    public byte[] Data { get; }
+    public ReadOnlyMemory<byte> Data { get; }
 }

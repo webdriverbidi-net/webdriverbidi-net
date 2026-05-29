@@ -19,7 +19,7 @@ public class BrowserLauncherBuilder
     private string? customBrowserLocation = null;
     private string? cacheDirectory = null;
     private LaunchStrategy launchStrategy = LaunchStrategy.Direct;
-    private ConnectionType connectionType = ConnectionType.WebSocket;
+    private ConnectionKind connectionType = ConnectionKind.WebSocket;
     private int port = 0;
     private bool headless = false;
     private string? remoteGridHostName = null;
@@ -108,7 +108,7 @@ public class BrowserLauncherBuilder
     /// </summary>
     /// <param name="connectionType">The connection type (WebSocket or Pipes).</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    public BrowserLauncherBuilder WithConnection(ConnectionType connectionType)
+    public BrowserLauncherBuilder WithConnection(ConnectionKind connectionType)
     {
         this.connectionType = connectionType;
         return this;
@@ -322,7 +322,7 @@ public class BrowserLauncherBuilder
         }
 
         // Validate pipe connection requirements
-        if (this.connectionType == ConnectionType.Pipes)
+        if (this.connectionType == ConnectionKind.Pipes)
         {
             if (this.browser != BrowserKind.Chrome)
             {
@@ -349,7 +349,7 @@ public class BrowserLauncherBuilder
             throw new BrowserLauncherConfigurationException("Remote grid hostname must be specified when using LaunchUsingRemoteGrid.");
         }
 
-        if (this.connectionType == ConnectionType.Pipes)
+        if (this.connectionType == ConnectionKind.Pipes)
         {
             throw new BrowserLauncherConfigurationException("Pipe connections are not supported with remote grid launch strategy.");
         }

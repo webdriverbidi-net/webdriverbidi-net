@@ -99,7 +99,7 @@ public class PipeConnection : Connection
     /// <summary>
     /// Gets a value indicating the type of data transport used by this connection, in this case, pipes.
     /// </summary>
-    public override ConnectionType ConnectionType => ConnectionType.Pipes;
+    public override ConnectionKind ConnectionKind => ConnectionKind.Pipes;
 
     /// <summary>
     /// Gets the handle used for sending data to the external process.
@@ -235,7 +235,7 @@ public class PipeConnection : Connection
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the pipe connection is not active.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the pipe connection for sending times out.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public override async Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
+    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         if (!this.IsActive)
         {
@@ -259,7 +259,7 @@ public class PipeConnection : Connection
 
             if (this.OnLogMessage.CurrentObserverCount > 0)
             {
-                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             }
 
             CancellationToken effectiveToken;
@@ -303,12 +303,17 @@ public class PipeConnection : Connection
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the pipe.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task SendPipeDataAsync(byte[] messageBuffer, CancellationToken cancellationToken = default)
+    protected virtual async Task SendPipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
         // Write the data followed by a null terminator
-        await this.pipeToProcess.WriteAsync(messageBuffer, 0, messageBuffer.Length, cancellationToken).ConfigureAwait(false);
-        byte[] nullTerminator = [0];
-        await this.pipeToProcess.WriteAsync(nullTerminator, 0, 1, cancellationToken).ConfigureAwait(false);
+#if NET5_0_OR_GREATER
+        await this.pipeToProcess.WriteAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
+        await this.pipeToProcess.WriteAsync(new ReadOnlyMemory<byte>([0]), cancellationToken).ConfigureAwait(false);
+#else
+        byte[] data = messageBuffer.ToArray();
+        await this.pipeToProcess.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+        await this.pipeToProcess.WriteAsync(new byte[] { 0 }, 0, 1, cancellationToken).ConfigureAwait(false);
+#endif
         await this.pipeToProcess.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 

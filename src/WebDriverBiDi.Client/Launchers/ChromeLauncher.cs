@@ -88,7 +88,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// <summary>
     /// Gets or sets a value indicating the type of connection to use in communicating with the browser.
     /// </summary>
-    public ConnectionType ConnectionType { get; set; } = ConnectionType.WebSocket;
+    public ConnectionKind ConnectionType { get; set; } = ConnectionKind.WebSocket;
 
     /// <summary>
     /// Gets the process that hosts the pipe server. This process is
@@ -111,7 +111,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             args.Add($"--disable-features={string.Join(",", this.disabledFeatures)}");
             args.Add($"--enable-features={string.Join(",", this.enabledFeatures)}");
             args.Add($"--user-data-dir={this.userDataDirectory}");
-            if (this.ConnectionType == ConnectionType.Pipes)
+            if (this.ConnectionType == ConnectionKind.Pipes)
             {
                 args.Add("--remote-debugging-pipe");
             }
@@ -206,7 +206,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
     public override async Task QuitBrowserAsync()
     {
-        if (this.connection is not null && this.connection.IsActive && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
+        if (this.connection is not null && this.connection.IsActive && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection pipeConnection)
         {
             await pipeConnection.StopAsync().ConfigureAwait(false);
             this.connection = null;
@@ -252,7 +252,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// <returns>The <see cref="Connection"/> object to be used to communicate with the browser.</returns>
     protected override Connection CreateConnection()
     {
-        if (this.ConnectionType == ConnectionType.Pipes)
+        if (this.ConnectionType == ConnectionKind.Pipes)
         {
             return new PipeConnection(this);
         }
@@ -309,7 +309,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     {
         string fileName = browserExecutableLocation;
         string args = string.Join(" ", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? this.CommandLineArguments.Select(EscapeWindowsArgument) : this.CommandLineArguments);
-        if (this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
+        if (this.connection is not null && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection pipeConnection)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -372,7 +372,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
                 break;
             }
 
-            if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection)
+            if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection)
             {
                 this.WebSocketUrl = $"pipe://chrome:{this.browserProcess.Id}";
             }

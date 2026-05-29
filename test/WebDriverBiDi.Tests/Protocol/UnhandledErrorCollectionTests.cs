@@ -21,7 +21,7 @@ public class UnhandledErrorCollectionTests()
     public void TestAddingUnhandledErrorWithIgnoreDoesNotAddErrorToCollection()
     {
         UnhandledErrorCollection unhandledErrors = new();
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("new exception"));
 
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
@@ -35,7 +35,7 @@ public class UnhandledErrorCollectionTests()
         {
             ProtocolErrorBehavior = TransportErrorBehavior.Collect
         };
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("new exception"));
 
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
         Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
@@ -49,7 +49,7 @@ public class UnhandledErrorCollectionTests()
         {
             ProtocolErrorBehavior = TransportErrorBehavior.Terminate
         };
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("new exception"));
 
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
@@ -63,7 +63,7 @@ public class UnhandledErrorCollectionTests()
         {
             ProtocolErrorBehavior = TransportErrorBehavior.Collect
         };
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("new exception"));
 
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
         Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
@@ -83,7 +83,7 @@ public class UnhandledErrorCollectionTests()
         {
             ProtocolErrorBehavior = TransportErrorBehavior.Collect
         };
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("new exception"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("new exception"));
         Assert.Single(unhandledErrors.Exceptions);
         Assert.IsType<WebDriverBiDiException>(unhandledErrors.Exceptions[0]);
         WebDriverBiDiException? typedException = unhandledErrors.Exceptions[0] as WebDriverBiDiException;
@@ -99,9 +99,9 @@ public class UnhandledErrorCollectionTests()
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate
         };
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("invalid protocol message"));
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiException("unexpected error"));
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.EventHandlerException, new WebDriverBiDiException("event handler"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("invalid protocol message"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiException("unexpected error"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.EventHandlerException, new WebDriverBiDiException("event handler"));
 
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
         Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
@@ -127,7 +127,7 @@ public class UnhandledErrorCollectionTests()
             UnknownMessageBehavior = TransportErrorBehavior.Collect
         };
         Assert.Equal(TransportErrorBehavior.Collect, unhandledErrors.UnknownMessageBehavior);
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException("unknown message"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException("unknown message"));
 
         Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
         Assert.Single(unhandledErrors.Exceptions);
@@ -145,7 +145,7 @@ public class UnhandledErrorCollectionTests()
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect
         };
         Assert.Equal(TransportErrorBehavior.Collect, unhandledErrors.EventHandlerExceptionBehavior);
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.EventHandlerException, new WebDriverBiDiException("event handler exception"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.EventHandlerException, new WebDriverBiDiException("event handler exception"));
 
         Assert.True(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
         Assert.Single(unhandledErrors.Exceptions);
@@ -186,8 +186,8 @@ public class UnhandledErrorCollectionTests()
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate
         };
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("collected error"));
-        unhandledErrors.AddUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiException("terminal error"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("collected error"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiException("terminal error"));
 
         bool collectResult = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectExceptions);
         bool terminateResult = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminateExceptions);

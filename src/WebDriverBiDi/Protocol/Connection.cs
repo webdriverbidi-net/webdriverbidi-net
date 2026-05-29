@@ -57,9 +57,9 @@ public abstract class Connection : IAsyncDisposable
     public abstract bool IsActive { get; }
 
     /// <summary>
-    /// Gets a value indicating the type of data transport used by this connection.
+    /// Gets a value indicating the kind of data transport used by this connection.
     /// </summary>
-    public abstract ConnectionType ConnectionType { get; }
+    public abstract ConnectionKind ConnectionKind { get; }
 
     /// <summary>
     /// Gets the buffer size for communication used by this connection.
@@ -154,7 +154,7 @@ public abstract class Connection : IAsyncDisposable
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public abstract Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default);
+    public abstract Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously releases the resources used by this <see cref="Connection"/>.
