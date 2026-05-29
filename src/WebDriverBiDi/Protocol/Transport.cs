@@ -838,7 +838,7 @@ public class Transport : IAsyncDisposable
             return message;
         }
 
-        return $"{message.Substring(0, maxLength)}...";
+        return string.Concat(message.Substring(0, maxLength), "...");
     }
 
     private void ThrowIfDisposed()
