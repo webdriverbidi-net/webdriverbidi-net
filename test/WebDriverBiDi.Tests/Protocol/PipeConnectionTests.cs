@@ -11,7 +11,7 @@ public class PipeConnectionTests
     {
         TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
-        Assert.Equal(ConnectionType.Pipes, connection.ConnectionType);
+        Assert.Equal(ConnectionKind.Pipes, connection.ConnectionKind);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class PipeConnectionTests
 
         List<string> receivedData = [];
         PipeConnection connection = new(testPipeServer);
-        connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data)));
+        connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
             remoteDisconnectedTaskCompletionSource.TrySetResult();
@@ -69,7 +69,7 @@ public class PipeConnectionTests
 
         List<string> receivedData = [];
         PipeConnection connection = new(testPipeServer);
-        connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data)));
+        connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
             remoteDisconnectedTaskCompletionSource.TrySetResult();
@@ -151,7 +151,7 @@ public class PipeConnectionTests
     public async Task TestSendDataWithoutStartingThrows()
     {
         PipeConnection connection = new(new TestPipeServer());
-        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync([1, 2, 3], TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync(new byte[] { 1, 2, 3 }, TestContext.Current.CancellationToken));
     }
 
     [Fact]

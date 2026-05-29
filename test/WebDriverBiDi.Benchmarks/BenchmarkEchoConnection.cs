@@ -28,7 +28,7 @@ public sealed class BenchmarkEchoConnection : Connection
     public override bool IsActive => this.isActive;
 
     /// <inheritdoc/>
-    public override ConnectionType ConnectionType => ConnectionType.WebSocket;
+    public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
     /// <inheritdoc/>
     public override Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
@@ -46,7 +46,7 @@ public sealed class BenchmarkEchoConnection : Connection
     }
 
     /// <inheritdoc/>
-    public override async Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
+    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         // Extract the command ID from the outgoing JSON and synthesize a
         // matching success response. Everything runs synchronously on the
@@ -67,7 +67,7 @@ public sealed class BenchmarkEchoConnection : Connection
         return default;
     }
 
-    private static long ExtractCommandId(byte[] commandJson)
+    private static long ExtractCommandId(ReadOnlyMemory<byte> commandJson)
     {
         using JsonDocument document = JsonDocument.Parse(commandJson);
         return document.RootElement.GetProperty("id").GetInt64();

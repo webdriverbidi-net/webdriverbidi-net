@@ -53,7 +53,7 @@ public static class ArchitectureSamples
         BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
-            .WithConnection(ConnectionType.Pipes)
+            .WithConnection(ConnectionKind.Pipes)
             .Build();
 
         await launcher.StartAsync();

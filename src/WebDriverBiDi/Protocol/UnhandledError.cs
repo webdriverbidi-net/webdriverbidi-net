@@ -15,7 +15,7 @@ public class UnhandledError
     /// </summary>
     /// <param name="errorType">The type of unhandled error.</param>
     /// <param name="exception">The <see cref="Exception"/> to be thrown by the unhandled error.</param>
-    public UnhandledError(UnhandledErrorType errorType, Exception exception)
+    public UnhandledError(UnhandledErrorKind errorType, Exception exception)
     {
         this.ErrorType = errorType;
         this.Exception = exception;
@@ -24,7 +24,7 @@ public class UnhandledError
     /// <summary>
     /// Gets the type of unhandled error.
     /// </summary>
-    public UnhandledErrorType ErrorType { get; }
+    public UnhandledErrorKind ErrorType { get; }
 
     /// <summary>
     /// Gets the exception thrown by the unhandled error.

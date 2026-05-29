@@ -191,7 +191,7 @@ public static class ConnectionManagementSamples
         BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
-            .WithConnection(ConnectionType.Pipes)
+            .WithConnection(ConnectionKind.Pipes)
             .Build();
 
         await launcher.StartAsync();
@@ -540,7 +540,7 @@ public class CustomConnection : Connection
 {
     public override bool IsActive => /* your logic */ true;
 
-    public override ConnectionType ConnectionType => ConnectionType.WebSocket;
+    public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
     public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
@@ -554,7 +554,7 @@ public class CustomConnection : Connection
         // Your shutdown logic
     }
 
-    public override async Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
+    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         // Your send logic
     }

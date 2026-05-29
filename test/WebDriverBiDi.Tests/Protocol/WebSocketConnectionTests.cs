@@ -13,7 +13,7 @@ using WebDriverBiDi.TestUtilities;
 public class WebSocketConnectionTests : IAsyncDisposable
 {
     private string lastServerReceivedData = string.Empty;
-    private byte[] lastConnectionReceivedData = [];
+    private ReadOnlyMemory<byte> lastConnectionReceivedData = ReadOnlyMemory<byte>.Empty;
     private string connectionId = string.Empty;
     private readonly AutoResetEvent serverReceiveSyncEvent = new(false);
     private readonly AutoResetEvent connectionReceiveSyncEvent = new(false);
@@ -25,7 +25,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
     {
         this.connectionId = string.Empty;
         this.lastServerReceivedData = string.Empty;
-        this.lastConnectionReceivedData = [];
+        this.lastConnectionReceivedData = ReadOnlyMemory<byte>.Empty;
         this.connectionReceiveSyncEvent.Reset();
         this.serverReceiveSyncEvent.Reset();
         this.connectionSyncEvent.Reset();
@@ -46,7 +46,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
     public async Task TestConnectionType()
     {
         WebSocketConnection connection = new();
-        Assert.Equal(ConnectionType.WebSocket, connection.ConnectionType);
+        Assert.Equal(ConnectionKind.WebSocket, connection.ConnectionKind);
     }
 
     [Fact]
@@ -1158,7 +1158,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
     private byte[] WaitForConnectionToReceiveData(TimeSpan timeout)
     {
         this.connectionReceiveSyncEvent.WaitOne(timeout);
-        return this.lastConnectionReceivedData;
+        return this.lastConnectionReceivedData.ToArray();
     }
 
     private string WaitForServerToReceiveData(TimeSpan timeout)

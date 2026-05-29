@@ -76,46 +76,14 @@ public class ChromiumTransport : Transport
     }
 
     /// <summary>
-    /// Deserializes an incoming message from the WebSocket connection.
+    /// Creates an <see cref="IncomingMessage"/> object for the data received by this <see cref="Transport"/>.
     /// </summary>
-    /// <param name="messageData">The message data to deserialize.</param>
-    /// <returns>A JsonDocument representing the parsed message.</returns>
-    /// <exception cref="JsonException">
-    /// Thrown when there is a syntax error in the incoming JSON.
-    /// </exception>
-    protected override JsonDocument DeserializeMessage(byte[] messageData)
+    /// <param name="data">The byte buffer containing the incoming message data.</param>
+    /// <param name="length">The length, in bytes, of the incoming message within the data buffer.</param>
+    /// <returns>The <see cref="IncomingMessage"/> object for the data received.</returns>
+    protected override IncomingMessage CreateIncomingMessage(ReadOnlyMemory<byte> data, int length)
     {
-        // Incoming BiDi messages are received by listening to the Runtime.bindingCalled
-        // event, where the binding name is "sendBidiResponse". The BiDi message is
-        // the "payload" property of that event.
-        using JsonDocument deserializedDocument = base.DeserializeMessage(messageData);
-        JsonElement deserialized = deserializedDocument.RootElement;
-        if (!deserialized.TryGetProperty("method", out JsonElement methodNameElement))
-        {
-            throw new WebDriverBiDiSerializationException("No 'method' property in JSON");
-        }
-
-        string methodName = methodNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'method' property in JSON is not a string");
-        if (methodName != "Runtime.bindingCalled")
-        {
-            throw new WebDriverBiDiSerializationException("'method' property value was not 'Runtime.bindingCalled");
-        }
-
-        if (!deserialized.TryGetProperty("params", out JsonElement valueElement))
-        {
-            throw new WebDriverBiDiSerializationException("No 'params' property in JSON");
-        }
-
-        JsonElement bindingNameElement = valueElement.GetProperty("name");
-        string bindingName = bindingNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'name' property with a string value");
-        if (bindingName != "sendBidiResponse")
-        {
-            throw new WebDriverBiDiSerializationException("'params' object value of 'name' property is not 'sendBidiResponse");
-        }
-
-        JsonElement payloadElement = valueElement.GetProperty("payload");
-        string payload = payloadElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'payload' property with a string value");
-        return JsonDocument.Parse(payload);
+        return new IncomingMessage(data, length, this.ProcessMessageDocument);
     }
 
     /// <summary>
@@ -275,6 +243,37 @@ public class ChromiumTransport : Transport
         }
 
         throw new WebDriverBiDiException($"Unable to execute BiDi initialization command '{command.Method}' within {timeout.Value.TotalMilliseconds} seconds (retried {retryCount} times)");
+    }
+
+    private JsonDocument ProcessMessageDocument(JsonDocument deserializedDocument)
+    {
+        JsonElement deserialized = deserializedDocument.RootElement;
+        if (!deserialized.TryGetProperty("method", out JsonElement methodNameElement))
+        {
+            throw new WebDriverBiDiSerializationException("No 'method' property in JSON");
+        }
+
+        string methodName = methodNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'method' property in JSON is not a string");
+        if (methodName != "Runtime.bindingCalled")
+        {
+            throw new WebDriverBiDiSerializationException("'method' property value was not 'Runtime.bindingCalled");
+        }
+
+        if (!deserialized.TryGetProperty("params", out JsonElement valueElement))
+        {
+            throw new WebDriverBiDiSerializationException("No 'params' property in JSON");
+        }
+
+        JsonElement bindingNameElement = valueElement.GetProperty("name");
+        string bindingName = bindingNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'name' property with a string value");
+        if (bindingName != "sendBidiResponse")
+        {
+            throw new WebDriverBiDiSerializationException("'params' object value of 'name' property is not 'sendBidiResponse");
+        }
+
+        JsonElement payloadElement = valueElement.GetProperty("payload");
+        string payload = payloadElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'payload' property with a string value");
+        return JsonDocument.Parse(payload);
     }
 
     private class DevToolsProtocolCommand

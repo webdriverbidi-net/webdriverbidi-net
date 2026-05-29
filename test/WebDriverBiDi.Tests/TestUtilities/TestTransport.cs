@@ -164,14 +164,10 @@ public class TestTransport : Transport
         };
     }
 
-    protected override JsonDocument DeserializeMessage(byte[] messageData)
+    protected override IncomingMessage CreateIncomingMessage(ReadOnlyMemory<byte> data, int length)
     {
-        if (Interlocked.Decrement(ref this.deserializeThrowCount) >= 0)
-        {
-            throw new InvalidOperationException("Simulated deserialization failure");
-        }
-
-        return base.DeserializeMessage(messageData);
+        bool throwOnDeserialization = Interlocked.Decrement(ref this.deserializeThrowCount) >= 0;
+        return new TestIncomingMessage(data, length, throwOnDeserialization);
     }
 
     protected override async Task DisconnectAsync(bool throwCollectedExceptions, CancellationToken cancellationToken = default)

@@ -72,7 +72,7 @@ public class TestPipeConnection : PipeConnection
         return base.StopAsync(cancellationToken);
     }
 
-    protected override async Task SendPipeDataAsync(byte[] messageBuffer, CancellationToken cancellationToken = default)
+    protected override async Task SendPipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
         await this.dataSendStartingInvocable.InvokeNotifyObserversAsync(new WebDriverBiDiEventArgs());
 
