@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
@@ -78,12 +79,15 @@ public class ChromiumTransport : Transport
     /// <summary>
     /// Creates an <see cref="IncomingMessage"/> object for the data received by this <see cref="Transport"/>.
     /// </summary>
-    /// <param name="data">The byte buffer containing the incoming message data.</param>
+    /// <param name="owner">
+    /// The <see cref="IMemoryOwner{T}"/> whose buffer contains the incoming message data.
+    /// Ownership transfers to the returned <see cref="IncomingMessage"/>, which will dispose it on disposal.
+    /// </param>
     /// <param name="length">The length, in bytes, of the incoming message within the data buffer.</param>
     /// <returns>The <see cref="IncomingMessage"/> object for the data received.</returns>
-    protected override IncomingMessage CreateIncomingMessage(ReadOnlyMemory<byte> data, int length)
+    protected override IncomingMessage CreateIncomingMessage(IMemoryOwner<byte> owner, int length)
     {
-        return new IncomingMessage(data, length, this.ProcessMessageDocument);
+        return new IncomingMessage(owner, length, this.ProcessMessageDocument);
     }
 
     /// <summary>

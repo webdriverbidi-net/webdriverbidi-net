@@ -5,9 +5,9 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Channels;
@@ -633,12 +633,15 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Creates an <see cref="IncomingMessage"/> object for the data received by this <see cref="Transport"/>.
     /// </summary>
-    /// <param name="data">The byte buffer containing the incoming message data.</param>
-    /// <param name="length">The length, in bytes, of the incoming message within the data buffer.</param>
+    /// <param name="owner">
+    /// The <see cref="IMemoryOwner{T}"/> whose buffer contains the incoming message data.
+    /// Ownership transfers to the returned <see cref="IncomingMessage"/>, which will dispose it on disposal.
+    /// </param>
+    /// <param name="length">The length, in bytes, of the incoming message within the owner's buffer.</param>
     /// <returns>The <see cref="IncomingMessage"/> object for the data received.</returns>
-    protected virtual IncomingMessage CreateIncomingMessage(ReadOnlyMemory<byte> data, int length)
+    protected virtual IncomingMessage CreateIncomingMessage(IMemoryOwner<byte> owner, int length)
     {
-        return new IncomingMessage(data, length);
+        return new IncomingMessage(owner, length);
     }
 
     /// <summary>
@@ -892,7 +895,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
-        await this.incomingMessageQueue.Writer.WriteAsync(this.CreateIncomingMessage(e.Data, e.Data.Length)).ConfigureAwait(false);
+        await this.incomingMessageQueue.Writer.WriteAsync(this.CreateIncomingMessage(e.BufferOwner, e.DataLength)).ConfigureAwait(false);
         Interlocked.Increment(ref this.incomingQueueDepth);
     }
 

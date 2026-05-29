@@ -5,8 +5,10 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Buffers;
 using System.Diagnostics;
 using System.Net.WebSockets;
+using System.Runtime.InteropServices;
 using System.Text;
 
 /// <summary>
@@ -207,21 +209,17 @@ public class WebSocketConnection : Connection
 #endif
             }
 
-            CancellationToken effectiveToken;
+            CancellationToken effectiveCancellationToken = this.clientTokenSource.Token;
             CancellationTokenSource? linkedTokenSource = null;
             try
             {
-                if (cancellationToken == CancellationToken.None)
+                if (cancellationToken != CancellationToken.None)
                 {
-                    effectiveToken = this.clientTokenSource.Token;
-                }
-                else
-                {
-                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.clientTokenSource.Token);
-                    effectiveToken = linkedTokenSource.Token;
+                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, effectiveCancellationToken);
+                    effectiveCancellationToken = linkedTokenSource.Token;
                 }
 
-                await this.SendWebSocketDataAsync(data, effectiveToken).ConfigureAwait(false);
+                await this.SendWebSocketDataAsync(data, effectiveCancellationToken).ConfigureAwait(false);
             }
             catch (WebSocketException ex)
             {
@@ -244,12 +242,15 @@ public class WebSocketConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected override async Task ReceiveDataAsync()
     {
-        CancellationToken cancellationToken = this.clientTokenSource.Token;
+        CancellationToken connectionCancellationToken = this.clientTokenSource.Token;
         MemoryStream? memoryStream = null;
+        using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try
         {
-            ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(this.BufferSize, this.BufferSize);
-            while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
+            // MemoryPool<byte>.Shared is backed by ArrayPool, so TryGetArray always succeeds here.
+            // We need the underlying array to pass to ReceiveAsync, which requires ArraySegment<byte>.
+            MemoryMarshal.TryGetArray(receivedDataBufferOwner.Memory.Slice(0, this.BufferSize), out ArraySegment<byte> socketFrameBuffer);
+            while (this.client.State != WebSocketState.Closed && !connectionCancellationToken.IsCancellationRequested)
             {
                 // Only one receive operation at a time can be active on a ClientWebSocket instance,
                 // so we should synchronize receive access to the socket. However, this receive
@@ -257,17 +258,17 @@ public class WebSocketConnection : Connection
                 // Task running this method, so we will forego use of a semaphore to serialize such
                 // access. If there is a use case where this could happen, we will resolve it at that
                 // time.
-                WebSocketReceiveResult receiveResult = await this.ReceiveWebSocketDataAsync(buffer, cancellationToken).ConfigureAwait(false);
+                WebSocketReceiveResult receiveResult = await this.ReceiveWebSocketDataAsync(socketFrameBuffer, connectionCancellationToken).ConfigureAwait(false);
 
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
-                if (!cancellationToken.IsCancellationRequested)
+                if (!connectionCancellationToken.IsCancellationRequested)
                 {
                     // The server is notifying us that the connection will close, and we did
                     // not initiate the close; send acknowledgement
                     if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
                         await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
-                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", cancellationToken).ConfigureAwait(false);
+                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", connectionCancellationToken).ConfigureAwait(false);
                     }
 
                     // Display text or binary data
@@ -277,35 +278,49 @@ public class WebSocketConnection : Connection
                         {
                             // Intermediate frame of a multi-frame message; accumulate into a MemoryStream.
                             memoryStream ??= new MemoryStream(this.BufferSize);
-                            memoryStream.Write(buffer.Array!, 0, receiveResult.Count);
+                            memoryStream.Write(socketFrameBuffer.Array!, 0, receiveResult.Count);
                         }
                         else
                         {
-                            byte[] bytes;
                             if (memoryStream is not null)
                             {
-                                // Final frame of a multi-frame message; write the last frame and extract the assembled message.
-                                // Note use of the null-forgiving operator (!) here, as the Array property of tbe buffer
-                                // ArraySegment should never be null.
-                                memoryStream.Write(buffer.Array!, 0, receiveResult.Count);
-                                bytes = memoryStream.ToArray();
+                                // Final frame of a multi-frame message; flush to a pooled owner and fire event.
+                                memoryStream.Write(socketFrameBuffer.Array!, 0, receiveResult.Count);
+                                int messageLength = (int)memoryStream.Length;
+
+                                IMemoryOwner<byte> messageBufferOwner = TakeOwnershipOfReceivedData(memoryStream.GetBuffer(), messageLength);
                                 memoryStream.Dispose();
                                 memoryStream = null;
+
+                                if (this.OnLogMessage.CurrentObserverCount > 0)
+                                {
+#if NET5_0_OR_GREATER
+                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#else
+                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#endif
+                                }
+
+                                await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
                             }
                             else
                             {
-                                // Single-frame message; take data directly from the buffer.
-                                bytes = buffer.AsSpan(0, receiveResult.Count).ToArray();
-                            }
-
-                            if (bytes.Length > 0)
-                            {
-                                if (this.OnLogMessage.CurrentObserverCount > 0)
+                                // Single-frame message; rent a pooled owner and copy from the receive buffer.
+                                int messageLength = receiveResult.Count;
+                                if (messageLength > 0)
                                 {
-                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(bytes)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-                                }
+                                    IMemoryOwner<byte> messageBufferOwner = TakeOwnershipOfReceivedData(socketFrameBuffer.Array!, messageLength);
+                                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                                    {
+#if NET5_0_OR_GREATER
+                                        await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#else
+                                        await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#endif
+                                    }
 
-                                await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(bytes)).ConfigureAwait(false);
+                                    await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
+                                }
                             }
                         }
                     }
@@ -322,7 +337,7 @@ public class WebSocketConnection : Connection
             }
 
             // If the loop exited without cancellation, the remote end closed the connection gracefully.
-            if (!cancellationToken.IsCancellationRequested)
+            if (!connectionCancellationToken.IsCancellationRequested)
             {
                 await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
             }

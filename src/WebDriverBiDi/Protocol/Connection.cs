@@ -5,6 +5,9 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Buffers;
+using System.Runtime.InteropServices;
+
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end.
 /// </summary>
@@ -169,6 +172,30 @@ public abstract class Connection : IAsyncDisposable
     {
         await this.DisposeAsyncCore().ConfigureAwait(false);
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Takes ownership of byte array containing data for a completed message, copying it into a local pool-based memory block.
+    /// </summary>
+    /// <param name="messageDataBuffer">A reference to the byte array containing the message data.</param>
+    /// <param name="messageLength">The length of the message in the byte array, as the byte array may be bigger than the message content.</param>
+    /// <returns>
+    /// An <see cref="IMemoryOwner&lt;T&gt;"/> object that has ownership of the pool-based memory block.
+    /// When disposed, the returned object returns the memory block to the pool.
+    /// </returns>
+    protected static IMemoryOwner<byte> TakeOwnershipOfReceivedData(byte[] messageDataBuffer, int messageLength)
+    {
+        // Creates a pool-based memory buffer, with specific, well-defined ownership semantics.
+        // This allows the calling process to specifically take ownership of the memory buffer
+        // rented from the pool, and then be responsible for returning it to the pool by calling
+        // Dispose on it. Once the buffer is created, get a pointer to it as an array, and copy
+        // the contents of the passed-in byte array buffer to the buffer rented from the pool.
+        // TryGetArray will always succeed here, so the Array property of ArraySegment is never
+        // null, and the null-forgiving operator (!) is appropriate here.
+        IMemoryOwner<byte> messageBufferOwner = MemoryPool<byte>.Shared.Rent(messageLength);
+        MemoryMarshal.TryGetArray(messageBufferOwner.Memory.Slice(0, messageLength), out ArraySegment<byte> messageBuffer);
+        Buffer.BlockCopy(messageDataBuffer, 0, messageBuffer.Array!, messageBuffer.Offset, messageLength);
+        return messageBufferOwner;
     }
 
     /// <summary>
