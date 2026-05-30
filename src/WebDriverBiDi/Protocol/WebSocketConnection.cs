@@ -200,7 +200,11 @@ public class WebSocketConnection : Connection
 
             if (this.OnLogMessage.CurrentObserverCount > 0)
             {
+#if NET5_0_OR_GREATER
+                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.Span)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#else
                 await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#endif
             }
 
             CancellationToken effectiveToken;
