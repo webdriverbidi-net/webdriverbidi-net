@@ -161,7 +161,7 @@ public class RemoteValueTests
                         "value": true
                       }
                       """;
-        Assert.Contains("JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+        Assert.Contains("JSON serialization of bigint value should be a string", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
     }
 
     [Fact]

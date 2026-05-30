@@ -24,6 +24,13 @@ public class BigIntegerJsonConverter : JsonConverter<BigInteger>
     /// <returns>The deserialized BigInteger value.</returns>
     public override BigInteger Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
+        if (reader.TokenType != JsonTokenType.String)
+        {
+            throw new JsonException($"JSON serialization of bigint value should be a string, but was {reader.TokenType}");
+        }
+
+        // We have determined that the token type is a string, so cannot be null.
+        // We can legitimately use the null-forgiving operator in this case.
         string bigintString = reader.GetString()!;
         if (!BigInteger.TryParse(bigintString, NumberStyles.Integer, CultureInfo.InvariantCulture, out BigInteger bigintValue))
         {
