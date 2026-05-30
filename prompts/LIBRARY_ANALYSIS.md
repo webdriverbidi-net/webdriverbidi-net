@@ -292,6 +292,7 @@ score on a scale of 0-100 for the following categories:
 * Code quality
 * API design
 * Concurrency and thread-safety
+* Performance
 * Documentation
 * Testing
 
