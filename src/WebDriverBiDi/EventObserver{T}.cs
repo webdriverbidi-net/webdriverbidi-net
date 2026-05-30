@@ -280,7 +280,8 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             this.waitingReaderCount++;
         }
 
-        List<Task> collected = [];
+        Task[] collectedTasks = new Task[count];
+        int currentCaptureCount = 0;
 
 #if NETSTANDARD2_0
         using CancellationTokenSource timeoutCancellationTokenSource = this.timeProvider.CreateCancellationTokenSource(timeout);
@@ -294,7 +295,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             await this.captureReadSemaphore.WaitAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
             try
             {
-                while (collected.Count < count)
+                while (currentCaptureCount < count)
                 {
                     bool hasData = await channel.Reader.WaitToReadAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
                     if (!hasData)
@@ -305,9 +306,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                         break;
                     }
 
-                    while (collected.Count < count && channel.Reader.TryRead(out Task? task))
+                    while (currentCaptureCount < count && channel.Reader.TryRead(out Task? task))
                     {
-                        collected.Add(task);
+                        collectedTasks[currentCaptureCount] = task;
+                        currentCaptureCount++;
                     }
                 }
 
@@ -315,7 +317,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 // auto-close the channel so that subsequent handler invocations are not queued
                 // into it. When another waiter is active (readerCount > 1), leave the channel
                 // open so that waiter can continue receiving tasks.
-                if (collected.Count == count)
+                if (currentCaptureCount == count)
                 {
                     int readerCount = 0;
                     lock (this.captureLock)
@@ -368,7 +370,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             }
         }
 
-        return [.. collected];
+        if (currentCaptureCount < count)
+        {
+            Array.Resize(ref collectedTasks, currentCaptureCount);
+        }
+
+        return collectedTasks;
     }
 
     /// <summary>
