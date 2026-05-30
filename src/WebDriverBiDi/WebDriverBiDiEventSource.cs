@@ -6,6 +6,8 @@
 namespace WebDriverBiDi;
 
 using System.Diagnostics.Tracing;
+using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Script;
 
 /// <summary>
 /// EventSource for WebDriver BiDi protocol instrumentation.
@@ -223,14 +225,21 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// <summary>
     /// Logs when an unknown message is received from the remote end.
     /// </summary>
-    /// <param name="messageType">The type of unknown message.</param>
+    /// <param name="messageKind">The <see cref="IncomingMessageKind"/> of unknown message.</param>
     /// <param name="messageLength">The length of the message in bytes.</param>
-    [Event(13, Level = EventLevel.Warning, Message = "Unknown message received: type={0}, length={1}")]
-    public void UnknownMessageReceived(string messageType, int messageLength)
+    [NonEvent]
+    public void UnknownMessageReceived(IncomingMessageKind messageKind, int messageLength)
     {
         if (this.IsEnabled(EventLevel.Warning, EventKeywords.None))
         {
-            this.WriteEvent(13, messageType, messageLength);
+            string messageKindDescription = messageKind switch
+            {
+                IncomingMessageKind.CommandResponse => "success",
+                IncomingMessageKind.ErrorResponse => "error",
+                IncomingMessageKind.Event => "event",
+                _ => "unknown",
+            };
+            this.UnknownMessageReceived(messageKindDescription, messageLength);
         }
     }
 
@@ -379,5 +388,16 @@ public sealed class WebDriverBiDiEventSource : EventSource
         {
             this.WriteEvent(23, inFlightCount);
         }
+    }
+
+    /// <summary>
+    /// Logs when an unknown message is received from the remote end.
+    /// </summary>
+    /// <param name="messageType">The type of unknown message.</param>
+    /// <param name="messageLength">The length of the message in bytes.</param>
+    [Event(13, Level = EventLevel.Warning, Message = "Unknown message received: type={0}, length={1}")]
+    private void UnknownMessageReceived(string messageType, int messageLength)
+    {
+        this.WriteEvent(13, messageType, messageLength);
     }
 }

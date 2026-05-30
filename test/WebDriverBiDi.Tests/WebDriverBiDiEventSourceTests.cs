@@ -1,6 +1,7 @@
 namespace WebDriverBiDi;
 
 using System.Diagnostics.Tracing;
+using WebDriverBiDi.Protocol;
 
 /// <summary>
 /// Tests for WebDriverBiDiEventSource to ensure events are emitted correctly
@@ -198,7 +199,7 @@ public class WebDriverBiDiEventSourceTests
     public void TestUnknownMessageReceivedEventEmitted()
     {
         TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived("unknown", 256);
+        WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.Unknown, 256);
         listener.Dispose();
 
         Assert.Single(listener.Events);
@@ -209,6 +210,60 @@ public class WebDriverBiDiEventSourceTests
         Assert.Equal(EventLevel.Warning, evt.Level);
         Assert.NotNull(evt.Payload);
         Assert.Equal("unknown", evt.Payload[0]);
+        Assert.Equal(256, evt.Payload[1]);
+    }
+
+    [Fact]
+    public void TestUnknownMessageReceivedEventEmittedWithSuccessCommandResponseMessage()
+    {
+        TestEventListener listener = new();
+        WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.CommandResponse, 256);
+        listener.Dispose();
+
+        Assert.Single(listener.Events);
+        EventWrittenEventArgs evt = listener.Events[0];
+
+        Assert.Equal(13, evt.EventId);
+        Assert.Equal("UnknownMessageReceived", evt.EventName);
+        Assert.Equal(EventLevel.Warning, evt.Level);
+        Assert.NotNull(evt.Payload);
+        Assert.Equal("success", evt.Payload[0]);
+        Assert.Equal(256, evt.Payload[1]);
+    }
+
+    [Fact]
+    public void TestUnknownMessageReceivedEventEmittedWithCommandErrorMessage()
+    {
+        TestEventListener listener = new();
+        WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.ErrorResponse, 256);
+        listener.Dispose();
+
+        Assert.Single(listener.Events);
+        EventWrittenEventArgs evt = listener.Events[0];
+
+        Assert.Equal(13, evt.EventId);
+        Assert.Equal("UnknownMessageReceived", evt.EventName);
+        Assert.Equal(EventLevel.Warning, evt.Level);
+        Assert.NotNull(evt.Payload);
+        Assert.Equal("error", evt.Payload[0]);
+        Assert.Equal(256, evt.Payload[1]);
+    }
+
+    [Fact]
+    public void TestUnknownMessageReceivedEventEmittedWithEventMessage()
+    {
+        TestEventListener listener = new();
+        WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.Event, 256);
+        listener.Dispose();
+
+        Assert.Single(listener.Events);
+        EventWrittenEventArgs evt = listener.Events[0];
+
+        Assert.Equal(13, evt.EventId);
+        Assert.Equal("UnknownMessageReceived", evt.EventName);
+        Assert.Equal(EventLevel.Warning, evt.Level);
+        Assert.NotNull(evt.Payload);
+        Assert.Equal("event", evt.Payload[0]);
         Assert.Equal(256, evt.Payload[1]);
     }
 
