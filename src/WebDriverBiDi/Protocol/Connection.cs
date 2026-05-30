@@ -67,6 +67,11 @@ public abstract class Connection : IAsyncDisposable
     public int BufferSize { get; } = BufferSizeInBytes;
 
     /// <summary>
+    /// Gets the ID of this <see cref="Connection"/>.
+    /// </summary>
+    public string Id { get; } = Guid.NewGuid().ToString();
+
+    /// <summary>
     /// Gets or sets the string containing data about which the connection is connected.
     /// For a WebSocket connection, this is its URL. For a named pipe connection, it is
     /// the name of the pipe.

@@ -45,7 +45,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending("1", "session.status");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandSending");
@@ -59,7 +59,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("1", "session.status", 5000);
+            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandTimeout");
@@ -122,8 +122,8 @@ public class WebDriverBiDiEventSourceLoggerTests
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Warning))
         {
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-1", "ws://test");
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending("1", "test");
-            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("1", "test", 5000);
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
+            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "test", 5000);
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandTimeout");
@@ -136,7 +136,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Informational))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending("1", "test");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-1", "ws://test");
         }
 
@@ -150,7 +150,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandError("1", "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
+            WebDriverBiDiEventSource.RaiseEvent.CommandError(1, "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandError");

@@ -386,7 +386,7 @@ public class Transport : IAsyncDisposable
                 throw new WebDriverBiDiConnectionException($"The transport is already connected to {this.Connection.ConnectionString}; you must disconnect before connecting to another URL");
             }
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.GetHashCode().ToString(), websocketUri);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, websocketUri);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
             if (!this.PendingCommands.IsAcceptingCommands)
@@ -440,7 +440,7 @@ public class Transport : IAsyncDisposable
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.GetHashCode().ToString(), websocketUri);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.Id, websocketUri);
             WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
         }
         finally
@@ -492,7 +492,7 @@ public class Transport : IAsyncDisposable
             {
                 // Start timing and log command sending
                 command.StartTiming();
-                WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId.ToString(), commandData.MethodName);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId, commandData.MethodName);
                 if (this.OnLogMessage.CurrentObserverCount > 0)
                 {
                     await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
@@ -515,7 +515,7 @@ public class Transport : IAsyncDisposable
                     command.StopTiming();
                 }
 
-                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(commandId.ToString(), commandData.MethodName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(commandId, commandData.MethodName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
                 WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
                 throw;
             }
@@ -674,7 +674,7 @@ public class Transport : IAsyncDisposable
             // re-entrant calls (e.g., from event handlers still executing
             // during shutdown) see the transport as disconnected and
             // short-circuit rather than attempting a redundant disconnect.
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.GetHashCode().ToString(), this.TerminationReason);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.Id, this.TerminationReason);
             this.IsConnected = false;
 
             // Close the pending command collection to further addition of commands,
@@ -710,7 +710,7 @@ public class Transport : IAsyncDisposable
             }
 
             WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.GetHashCode().ToString());
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
             WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
             await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
@@ -905,7 +905,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
     {
-        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.GetHashCode().ToString(), e.Exception.Message);
+        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.Id, e.Exception.Message);
         WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
         string logMessage = $"Connection error; pending commands failed: {e.Exception.Message}";
         await this.HandleConnectionDisconnectionAsync(connectionException, logMessage, WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
@@ -1020,7 +1020,7 @@ public class Transport : IAsyncDisposable
             {
                 // Stop timing and log completion
                 executedCommand.StopTiming();
-                WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId.ToString(), executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
+                WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId, executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
                 try
                 {
                     JsonTypeInfo responseTypeInfo = this.options.GetTypeInfo(executedCommand.ResponseType);
@@ -1060,7 +1060,7 @@ public class Transport : IAsyncDisposable
                 {
                     // Stop timing and log error
                     executedCommand.StopTiming();
-                    WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value.ToString(), executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
+                    WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value, executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
                     if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
                         await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);

@@ -164,7 +164,7 @@ public class TransportEventSourceIntegrationTests
 
         Assert.Equal("1", errorPayload[0]);
         Assert.Equal("session.status", errorPayload[1]);
-        Assert.Equal(ErrorCode.InvalidSessionId, errorPayload[2]);
+        Assert.Equal("InvalidSessionId", errorPayload[2]);
         Assert.Equal("invalid session id", errorPayload[3]);
         Assert.Equal("Session not found", errorPayload[4]);
 
