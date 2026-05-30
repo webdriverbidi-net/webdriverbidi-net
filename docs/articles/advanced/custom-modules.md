@@ -24,6 +24,14 @@ All modules inherit from the `Module` base class:
 
 [!code-csharp[Register and Use Module](../../code/advanced/CustomModulesSamples.cs#RegisterandUseModule)]
 
+After registration, retrieve a module by name using `GetModule<T>`:
+
+```csharp
+MyCustomModule myModule = driver.GetModule<MyCustomModule>("myCustom");
+```
+
+This is particularly useful when you have only an `IBiDiCommandExecutor` reference rather than a concrete `BiDiDriver` — for example, inside another module or a helper that accepts the executor interface. `GetModule<T>` throws `InvalidCastException` if the registered module cannot be cast to `T`, and `ArgumentException` if no module with that name has been registered.
+
 ## Creating Commands
 
 ### Command Parameters
