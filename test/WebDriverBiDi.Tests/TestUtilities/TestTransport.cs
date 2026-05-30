@@ -136,10 +136,16 @@ public class TestTransport : Transport
     /// the first method releases it. The orchestration of the concurrency is tricky,
     /// and is done here to centralize the logic and ensure correct timing.
     /// </summary>
-    public void EnableConnectLockConcurrencyTesting()
+    public Task EnableConnectLockConcurrencyTesting()
     {
         TaskCompletionSource firstCallerReadyTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource secondCallerReadyTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource firstCallerAcquiredLockTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Signal once caller 1 has actually acquired the semaphore so caller 2 can
+        // proceed deterministically rather than relying on a fixed-duration delay.
+        this.AfterAcquireLockCallback = () => firstCallerAcquiredLockTaskCompletionSource.TrySetResult();
+
         this.BeforeAcquireLockCallback = async () =>
         {
             int currentCallCount = Interlocked.Increment(ref this.concurrentConnectLockAcquisitions);
@@ -154,14 +160,17 @@ public class TestTransport : Transport
             else if (currentCallCount == 2)
             {
                 // The other method has entered AcquireConnectionLockAsync; it will block.
-                // Signal that it's here, then wait for ConnectAsync or DisconnectAsync
-                // to signal it is acquiring the lock, and add a small delay so the
-                // semaphore is held by ConnectAsync or DisconnectAsync.
+                // Signal that it's here, then wait until caller 1 has acquired the semaphore
+                // before proceeding — this is deterministic unlike a fixed-duration delay.
                 secondCallerReadyTaskCompletionSource.TrySetResult();
-                await firstCallerReadyTaskCompletionSource.Task;
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
+                await firstCallerAcquiredLockTaskCompletionSource.Task;
             }
         };
+
+        // Return the task that completes when the first caller has entered the callback.
+        // Tests that care about which caller is "first" should start their first task,
+        // await this returned task, then start their second task.
+        return firstCallerReadyTaskCompletionSource.Task;
     }
 
     protected override IncomingMessage CreateIncomingMessage(ReadOnlyMemory<byte> data, int length)

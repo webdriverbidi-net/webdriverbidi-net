@@ -647,16 +647,19 @@ public class WebSocketConnectionTests : IAsyncDisposable
         Assert.Equal("First connection acknowledged"u8.ToArray(), receivedData);
 
         await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
-        registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        // Use generous timeouts for the second connection: the abort path above takes the full
+        // ShutdownTimeout (1 s) to complete, and on a loaded CI machine 250 ms is insufficient
+        // for the server to register the new connection and exchange data.
+        registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(3));
         observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("Second connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
-        serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
         observer.Unobserve();
         Assert.Equal("Second connection hello", serverReceivedData);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "Second connection acknowledged");
-        receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Second connection acknowledged"u8.ToArray(), receivedData);
     }

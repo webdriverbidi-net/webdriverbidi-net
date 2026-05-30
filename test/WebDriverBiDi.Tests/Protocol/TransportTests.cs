@@ -1092,7 +1092,7 @@ public class TransportTests
         TestTransport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
-        transport.EnableConnectLockConcurrencyTesting();
+        _ = transport.EnableConnectLockConcurrencyTesting();
 
         Task task1 = transport.DisconnectAsync(TestContext.Current.CancellationToken);
         Task task2 = transport.DisconnectAsync(TestContext.Current.CancellationToken);
@@ -2061,9 +2061,14 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        transport.EnableConnectLockConcurrencyTesting();
+        Task firstCallerReadyTask = transport.EnableConnectLockConcurrencyTesting();
 
+        // Start ConnectAsync first; wait until it has entered the lock callback before
+        // starting RegisterTypeInfoResolverAsync. This guarantees ConnectAsync acquires
+        // the semaphore first and sets IsConnected before RegisterTypeInfoResolverAsync
+        // reads it, making the test deterministic regardless of thread scheduling.
         Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await firstCallerReadyTask;
         Task registerTask = transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), TestContext.Current.CancellationToken);
         await connectTask;
 
@@ -2166,7 +2171,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
-        transport.EnableConnectLockConcurrencyTesting();
+        _ = transport.EnableConnectLockConcurrencyTesting();
 
         Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
         await connection.RaiseConnectionErrorEventAsync(new Exception("Connection lost during race"));
@@ -2302,7 +2307,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
-        transport.EnableConnectLockConcurrencyTesting();
+        _ = transport.EnableConnectLockConcurrencyTesting();
 
         Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
         await connection.RaiseRemoteDisconnectedEventAsync();
