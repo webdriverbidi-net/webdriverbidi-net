@@ -302,7 +302,7 @@ public sealed class BrowsingContextModule : Module
     }
 
     /// <summary>
-    /// Starts capture of a screencast for a brwosing context.
+    /// Starts capture of a screencast for a browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
@@ -314,7 +314,7 @@ public sealed class BrowsingContextModule : Module
     }
 
     /// <summary>
-    /// Stops capture of a screencast for a brwosing context.
+    /// Stops capture of a screencast for a browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
