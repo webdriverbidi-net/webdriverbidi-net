@@ -86,10 +86,10 @@ public class WebDriverBiDiLoggingExtensionsTests
             WebDriverBiDiEventSourceLogger eventSourceLogger = provider.GetRequiredService<WebDriverBiDiEventSourceLogger>();
 
             // Emit a Verbose event - should NOT be captured (below Warning)
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending("1", "session.status");
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
 
             // Emit a Warning event - should be captured
-            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("1", "session.status", 5000);
+            WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
         }
 
         TestLogger.LogEntry entry = fakeLogger.Entries

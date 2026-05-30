@@ -7,7 +7,6 @@ namespace WebDriverBiDi;
 
 using System.Diagnostics.Tracing;
 using WebDriverBiDi.Protocol;
-using WebDriverBiDi.Script;
 
 /// <summary>
 /// EventSource for WebDriver BiDi protocol instrumentation.
@@ -150,12 +149,12 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// </summary>
     /// <param name="commandId">The unique identifier for the command.</param>
     /// <param name="method">The command method name.</param>
-    [Event(6, Level = EventLevel.Verbose, Message = "Sending command {0}: {1}")]
-    public void CommandSending(string commandId, string method)
+    [NonEvent]
+    public void CommandSending(long commandId, string method)
     {
         if (this.IsEnabled(EventLevel.Verbose, EventKeywords.None))
         {
-            this.WriteEvent(6, commandId, method);
+            this.CommandSending(commandId.ToString(), method);
         }
     }
 
@@ -165,12 +164,12 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// <param name="commandId">The unique identifier for the command.</param>
     /// <param name="method">The command method name.</param>
     /// <param name="elapsedMilliseconds">The elapsed time in milliseconds.</param>
-    [Event(7, Level = EventLevel.Informational, Message = "Command {0} ({1}) completed in {2}ms")]
-    public void CommandCompleted(string commandId, string method, long elapsedMilliseconds)
+    [NonEvent]
+    public void CommandCompleted(long commandId, string method, long elapsedMilliseconds)
     {
         if (this.IsEnabled(EventLevel.Informational, EventKeywords.None))
         {
-            this.WriteEvent(7, commandId, method, elapsedMilliseconds);
+            this.CommandCompleted(commandId.ToString(), method, elapsedMilliseconds);
         }
     }
 
@@ -180,12 +179,12 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// <param name="commandId">The unique identifier for the command.</param>
     /// <param name="method">The command method name.</param>
     /// <param name="timeoutMilliseconds">The timeout duration in milliseconds.</param>
-    [Event(8, Level = EventLevel.Warning, Message = "Command {0} ({1}) timed out after {2}ms")]
-    public void CommandTimeout(string commandId, string method, long timeoutMilliseconds)
+    [NonEvent]
+    public void CommandTimeout(long commandId, string method, long timeoutMilliseconds)
     {
         if (this.IsEnabled(EventLevel.Warning, EventKeywords.None))
         {
-            this.WriteEvent(8, commandId, method, timeoutMilliseconds);
+            this.CommandTimeout(commandId.ToString(), method, timeoutMilliseconds);
         }
     }
 
@@ -197,12 +196,12 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// <param name="errorCode">The protocol error code returned by the remote end.</param>
     /// <param name="errorType">The error type returned by the remote end.</param>
     /// <param name="errorMessage">The error message returned by the remote end.</param>
-    [Event(9, Level = EventLevel.Error, Message = "Command {0} ({1}) failed: {2} ({3}) - {4}")]
-    public void CommandError(string commandId, string method, ErrorCode errorCode, string errorType, string errorMessage)
+    [NonEvent]
+    public void CommandError(long commandId, string method, ErrorCode errorCode, string errorType, string errorMessage)
     {
         if (this.IsEnabled(EventLevel.Error, EventKeywords.None))
         {
-            this.WriteEvent(9, commandId, method, errorCode, errorType, errorMessage);
+            this.CommandError(commandId.ToString(), method, errorCode.ToString(), errorType, errorMessage);
         }
     }
 
@@ -360,12 +359,12 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// <param name="failureType">The .NET exception type describing the send failure.</param>
     /// <param name="failureMessage">The failure message.</param>
     /// <param name="elapsedMilliseconds">The elapsed time in milliseconds before the send failed.</param>
-    [Event(22, Level = EventLevel.Warning, Message = "Command {0} ({1}) failed before transmission: {2} - {3} after {4}ms")]
-    public void CommandSendFailed(string commandId, string method, string failureType, string failureMessage, long elapsedMilliseconds)
+    [NonEvent]
+    public void CommandSendFailed(long commandId, string method, string failureType, string failureMessage, long elapsedMilliseconds)
     {
         if (this.IsEnabled(EventLevel.Warning, EventKeywords.None))
         {
-            this.WriteEvent(22, [commandId, method, failureType, failureMessage, elapsedMilliseconds]);
+            this.CommandSendFailed(commandId.ToString(), method, failureType, failureMessage, elapsedMilliseconds);
         }
     }
 
@@ -391,6 +390,55 @@ public sealed class WebDriverBiDiEventSource : EventSource
     }
 
     /// <summary>
+    /// Logs when a command is being sent to the remote end.
+    /// </summary>
+    /// <param name="commandId">The unique identifier for the command.</param>
+    /// <param name="method">The command method name.</param>
+    [Event(6, Level = EventLevel.Verbose, Message = "Sending command {0}: {1}")]
+    private void CommandSending(string commandId, string method)
+    {
+        this.WriteEvent(6, commandId, method);
+    }
+
+    /// <summary>
+    /// Logs when a command response is received from the remote end.
+    /// </summary>
+    /// <param name="commandId">The unique identifier for the command.</param>
+    /// <param name="method">The command method name.</param>
+    /// <param name="elapsedMilliseconds">The elapsed time in milliseconds.</param>
+    [Event(7, Level = EventLevel.Informational, Message = "Command {0} ({1}) completed in {2}ms")]
+    private void CommandCompleted(string commandId, string method, long elapsedMilliseconds)
+    {
+        this.WriteEvent(7, commandId, method, elapsedMilliseconds);
+    }
+
+    /// <summary>
+    /// Logs when a command times out waiting for a response.
+    /// </summary>
+    /// <param name="commandId">The unique identifier for the command.</param>
+    /// <param name="method">The command method name.</param>
+    /// <param name="timeoutMilliseconds">The timeout duration in milliseconds.</param>
+    [Event(8, Level = EventLevel.Warning, Message = "Command {0} ({1}) timed out after {2}ms")]
+    private void CommandTimeout(string commandId, string method, long timeoutMilliseconds)
+    {
+        this.WriteEvent(8, commandId, method, timeoutMilliseconds);
+    }
+
+    /// <summary>
+    /// Logs when a command receives an error response from the remote end.
+    /// </summary>
+    /// <param name="commandId">The unique identifier for the command.</param>
+    /// <param name="method">The command method name.</param>
+    /// <param name="errorCode">The protocol error code returned by the remote end.</param>
+    /// <param name="errorType">The error type returned by the remote end.</param>
+    /// <param name="errorMessage">The error message returned by the remote end.</param>
+    [Event(9, Level = EventLevel.Error, Message = "Command {0} ({1}) failed: {2} ({3}) - {4}")]
+    private void CommandError(string commandId, string method, string errorCode, string errorType, string errorMessage)
+    {
+        this.WriteEvent(9, commandId, method, errorCode, errorType, errorMessage);
+    }
+
+    /// <summary>
     /// Logs when an unknown message is received from the remote end.
     /// </summary>
     /// <param name="messageType">The type of unknown message.</param>
@@ -399,5 +447,19 @@ public sealed class WebDriverBiDiEventSource : EventSource
     private void UnknownMessageReceived(string messageType, int messageLength)
     {
         this.WriteEvent(13, messageType, messageLength);
+    }
+
+    /// <summary>
+    /// Logs when a command fails before it can be successfully transmitted.
+    /// </summary>
+    /// <param name="commandId">The unique identifier for the command.</param>
+    /// <param name="method">The command method name.</param>
+    /// <param name="failureType">The .NET exception type describing the send failure.</param>
+    /// <param name="failureMessage">The failure message.</param>
+    /// <param name="elapsedMilliseconds">The elapsed time in milliseconds before the send failed.</param>
+    [Event(22, Level = EventLevel.Warning, Message = "Command {0} ({1}) failed before transmission: {2} - {3} after {4}ms")]
+    private void CommandSendFailed(string commandId, string method, string failureType, string failureMessage, long elapsedMilliseconds)
+    {
+        this.WriteEvent(22, [commandId, method, failureType, failureMessage, elapsedMilliseconds]);
     }
 }

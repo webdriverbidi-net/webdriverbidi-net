@@ -480,7 +480,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             if (!commandCompleted)
             {
                 this.transport.CancelCommand(command);
-                WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(command.CommandId.ToString(), commandParameters.MethodName, Convert.ToInt64(commandTimeout.Value.TotalMilliseconds));
+                WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(command.CommandId, commandParameters.MethodName, Convert.ToInt64(commandTimeout.Value.TotalMilliseconds));
                 throw new WebDriverBiDiTimeoutException($"Timed out executing command {commandParameters.MethodName} after {commandTimeout.Value.TotalMilliseconds} milliseconds");
             }
         }

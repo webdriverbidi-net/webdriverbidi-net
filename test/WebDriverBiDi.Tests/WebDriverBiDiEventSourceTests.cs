@@ -109,7 +109,7 @@ public class WebDriverBiDiEventSourceTests
     public void TestCommandSendingEventEmitted()
     {
         TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.CommandSending("1", "session.status");
+        WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
         listener.Dispose();
 
         Assert.Single(listener.Events);
@@ -127,7 +127,7 @@ public class WebDriverBiDiEventSourceTests
     public void TestCommandCompletedEventEmitted()
     {
         TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.CommandCompleted("1", "session.status", 42);
+        WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(1, "session.status", 42);
         listener.Dispose();
 
         Assert.Single(listener.Events);
@@ -146,7 +146,7 @@ public class WebDriverBiDiEventSourceTests
     public void TestCommandTimeoutEventEmitted()
     {
         TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("1", "session.status", 5000);
+        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
         listener.Dispose();
 
         Assert.Single(listener.Events);
@@ -163,7 +163,7 @@ public class WebDriverBiDiEventSourceTests
     public void TestCommandErrorEventEmitted()
     {
         TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.CommandError("1", "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
+        WebDriverBiDiEventSource.RaiseEvent.CommandError(1, "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
         listener.Dispose();
 
         Assert.Single(listener.Events);
@@ -173,7 +173,7 @@ public class WebDriverBiDiEventSourceTests
         Assert.Equal("CommandError", evt.EventName);
         Assert.Equal(EventLevel.Error, evt.Level);
         Assert.NotNull(evt.Payload);
-        Assert.Equal(ErrorCode.InvalidSessionId, evt.Payload[2]);
+        Assert.Equal("InvalidSessionId", evt.Payload[2]);
         Assert.Equal("invalid session id", evt.Payload[3]);
         Assert.Equal("Session not found", evt.Payload[4]);
     }
@@ -411,7 +411,7 @@ public class WebDriverBiDiEventSourceTests
     public void TestCommandSendFailedEventEmitted()
     {
         TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed("1", "session.status", "System.InvalidOperationException", "Simulated send failure", 12);
+        WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(1, "session.status", "System.InvalidOperationException", "Simulated send failure", 12);
         listener.Dispose();
 
         Assert.Single(listener.Events);
@@ -434,7 +434,7 @@ public class WebDriverBiDiEventSourceTests
         // Don't create a listener - EventSource should be disabled by default
         // Just verify no exceptions are thrown
         WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("test", "ws://test");
-        WebDriverBiDiEventSource.RaiseEvent.CommandSending("1", "test");
+        WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
         WebDriverBiDiEventSource.RaiseEvent.EventReceived("test.event");
 
         // If we get here without exceptions, the test passes
@@ -447,10 +447,10 @@ public class WebDriverBiDiEventSourceTests
 
         // These should not be captured (below Warning level)
         WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("test-respect-level", "ws://test-respect"); // Informational
-        WebDriverBiDiEventSource.RaiseEvent.CommandSending("9999", "test.respect.level"); // Verbose
+        WebDriverBiDiEventSource.RaiseEvent.CommandSending(9999, "test.respect.level"); // Verbose
 
         // These should be captured (Warning and above)
-        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout("9999", "test.respect.level", 5000); // Warning
+        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(9999, "test.respect.level", 5000); // Warning
         WebDriverBiDiEventSource.RaiseEvent.ConnectionError("test-respect-level", "error-respect-level"); // Error
 
         listener.Dispose();
