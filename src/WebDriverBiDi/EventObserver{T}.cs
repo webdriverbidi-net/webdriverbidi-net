@@ -442,12 +442,15 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             }
 
             Task whenAllTask = Task.WhenAll(tasksToWait);
-            Task cancellationTask = Task.Delay(remainingTime, cancellationToken);
-            Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
-            if (completedTask == cancellationTask)
+            if (!whenAllTask.IsCompleted)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                return false;
+                Task cancellationTask = Task.Delay(remainingTime, cancellationToken);
+                Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
+                if (completedTask == cancellationTask)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return false;
+                }
             }
 
             // Propagate exceptions in event handlers.
