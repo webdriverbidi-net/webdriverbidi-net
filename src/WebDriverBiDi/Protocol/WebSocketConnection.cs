@@ -275,10 +275,8 @@ public class WebSocketConnection : Connection
                     {
                         if (!receiveResult.EndOfMessage)
                         {
-                            // Intermediate frame of a multi-frame message; accumulate data into a MemoryStream.
-                            // Note use of the null-forgiving operator (!) here, as the Array property of tbe buffer
-                            // ArraySegment should never be null.
-                            memoryStream ??= new MemoryStream();
+                            // Intermediate frame of a multi-frame message; accumulate into a MemoryStream.
+                            memoryStream ??= new MemoryStream(this.BufferSize);
                             memoryStream.Write(buffer.Array!, 0, receiveResult.Count);
                         }
                         else
