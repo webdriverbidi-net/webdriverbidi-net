@@ -206,6 +206,38 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncWithAsyncHandlersThatCompleteBeforeTimeout()
+    {
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async e =>
+            {
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    bothStartedTaskCompletionSource.TrySetResult();
+                }
+
+                await Task.Yield();
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        // Ensure both handlers have started so that whenAllTask is not yet complete
+        // when WaitForCapturedTasksCompleteAsync enters the IsCompleted check, exercising
+        // the Task.Delay / Task.WhenAny branch with whenAllTask completing first.
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(fulfilled);
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksCompleteAsyncCanTimeout()
     {
         TimeSpan timeout = TimeSpan.FromSeconds(1);
