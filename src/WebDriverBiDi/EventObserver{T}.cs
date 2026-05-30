@@ -249,7 +249,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// </description></item>
     /// </list>
     /// </returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="count"/> is zero.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="count"/> is zero.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <example>
@@ -265,7 +265,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     {
         if (count < 1)
         {
-            throw new ArgumentException("Count must be greater than 0.", nameof(count));
+            throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than 0.");
         }
 
         Channel<Task> channel;
@@ -392,7 +392,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <returns><see langword="true"/> if the expected number of handler tasks were captured and completed before
     /// the timeout expired; otherwise, <see langword="false"/>. When <see langword="true"/> is returned, the
     /// capture session is automatically ended; a subsequent <see cref="StopCapturingTasks"/> call is a no-op.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="count"/> is zero.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="count"/> is zero.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <remarks>
