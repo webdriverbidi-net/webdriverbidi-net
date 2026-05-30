@@ -1882,6 +1882,24 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestConnectingAfterDisposeThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.DisposeAsync();
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken));        
+    }
+
+    [Fact]
+    public async Task TestSendingCommandAfterDisposeThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.DisposeAsync();
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));        
+    }
+
+    [Fact]
     public async Task TestMessageProcessingLoopContinuesAfterUnhandledException()
     {
         string commandName = "module.command";

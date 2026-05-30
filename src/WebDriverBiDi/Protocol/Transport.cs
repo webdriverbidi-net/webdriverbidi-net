@@ -131,6 +131,7 @@ public class Transport : IAsyncDisposable
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isConnectedTypeSafeFlag = 0;
+    private int isDisposedFlag = 0;
 
     // Message/event sent/received statistics
     private long commandMessagesSent = 0;
@@ -314,6 +315,23 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this transport is disposed.
+    /// </summary>
+    internal bool IsDisposed
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isDisposedFlag, flagValue);
+        }
+    }
+
+    /// <summary>
     /// Gets or sets the collection of pending commands that have been sent and
     /// have not yet received a response. This collection is thread-safe.
     /// </summary>
@@ -359,6 +377,7 @@ public class Transport : IAsyncDisposable
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
     {
+        this.ThrowIfDisposed();
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -451,6 +470,7 @@ public class Transport : IAsyncDisposable
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData, CancellationToken cancellationToken = default)
     {
+        this.ThrowIfDisposed();
         if (this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
         {
             await this.DisconnectAsync(false).ConfigureAwait(false);
@@ -730,6 +750,7 @@ public class Transport : IAsyncDisposable
         this.connectionLogMessageObserver.Dispose();
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
+        this.IsDisposed = true;
     }
 
     /// <summary>
@@ -817,6 +838,14 @@ public class Transport : IAsyncDisposable
         }
 
         return $"{message.Substring(0, maxLength)}...";
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (this.IsDisposed)
+        {
+            throw new ObjectDisposedException(this.GetType().FullName);
+        }
     }
 
     private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)
