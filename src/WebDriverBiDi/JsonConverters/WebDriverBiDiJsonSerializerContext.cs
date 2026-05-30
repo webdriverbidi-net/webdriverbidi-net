@@ -508,6 +508,9 @@ public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
         RuntimeHelpers.RunClassConstructor(typeof(ScreenshotOrigin[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(UserPromptType[]).TypeHandle);
 
+        // DigitalCredentials enums
+        RuntimeHelpers.RunClassConstructor(typeof(VirtualWalletAction[]).TypeHandle);
+
         // Emulation enums
         RuntimeHelpers.RunClassConstructor(typeof(ForcedColorsModeTheme[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationNatural[]).TypeHandle);
