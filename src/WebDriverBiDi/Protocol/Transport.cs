@@ -1005,7 +1005,7 @@ public class Transport : IAsyncDisposable
             if (!isProcessed)
             {
                 string message = packet.MessageText;
-                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(packet.MessageKind.ToString().ToLowerInvariant(), packet.MessageLength);
+                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(packet.MessageKind, packet.MessageLength);
                 await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
                 this.CaptureUnhandledError(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
             }
