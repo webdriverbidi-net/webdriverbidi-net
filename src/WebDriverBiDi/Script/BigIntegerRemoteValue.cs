@@ -12,7 +12,7 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Represents a remote value for a BigInteger, providing type-safe access to the
 /// value and the ability to convert to a local value for use as an argument for
-/// script execution on the remote end..
+/// script execution on the remote end.
 /// </summary>
 public record BigIntegerRemoteValue : ValueHoldingRemoteValue<BigInteger>
 {
