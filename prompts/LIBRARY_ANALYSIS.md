@@ -211,6 +211,19 @@ and must not be flagged. A recommendation to change it is a false positive.
 Only recommend changing an exception type when the current type is
 demonstrably inconsistent with what the CLR would throw for the same operation.
 
+**Before recommending that a library exception type change its base class to
+match a BCL parallel** (e.g. suggesting a timeout exception extend
+`System.TimeoutException`, or an I/O exception extend `System.IO.IOException`),
+verify that the BCL itself consistently applies this convention — and that the
+change does not break the library's own exception hierarchy. If the library uses
+a single-rooted exception hierarchy (all types descend from a common base), and
+adopting the BCL base class would require a marker interface or other workaround
+to restore catch-all behaviour, the current hierarchy is an acceptable design
+choice and must not be flagged as a defect or scored against. You may note in
+the Non-Issues section that a BCL parallel exists, but only if you also note
+that the BCL itself does not consistently mandate the pattern (e.g.
+`HttpRequestException` does not extend `TimeoutException`).
+
 **When a claim concerns something a method or property does not do (lacks validation, lacks a check, lacks a feature), follow every delegation in the call chain to its concrete implementation before concluding the behavior is absent.**
 If A.Foo delegates to B.Bar which calls C.Baz, the claim "Foo does not validate
 X" requires reading C.Baz — not just A.Foo. Abstract methods, virtual methods,
