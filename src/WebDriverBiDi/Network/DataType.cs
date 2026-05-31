@@ -10,7 +10,6 @@ using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// The enumerated value of data being collected by a network data collector.
-/// Note: This exists as an enum in expectation of future other data types like "request".
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<DataType>))]
 public enum DataType
