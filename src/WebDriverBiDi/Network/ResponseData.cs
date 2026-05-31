@@ -71,6 +71,8 @@ public record ResponseData
     {
         get
         {
+            // Safe without a lock: ResponseData instances are only ever accessed on the
+            // single message-processing loop thread; all setters are internal.
             this.readOnlyHeaders ??= [];
             if (this.readOnlyHeaders.Count == 0 && this.SerializableHeaders.Count != 0)
             {
@@ -132,6 +134,7 @@ public record ResponseData
     {
         get
         {
+            // Safe without a lock: same single-thread access invariant as Headers above.
             if (this.authChallenges is null && this.SerializableAuthChallenges is not null)
             {
                 this.authChallenges = [.. this.SerializableAuthChallenges];
