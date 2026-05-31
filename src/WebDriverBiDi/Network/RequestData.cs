@@ -70,6 +70,8 @@ public record RequestData
     {
         get
         {
+            // Safe without a lock: RequestData instances are only ever accessed on the
+            // single message-processing loop thread; all setters are internal.
             this.readOnlyHeaders ??= [];
             if (this.readOnlyHeaders.Count == 0 && this.SerializableHeaders.Count != 0)
             {
