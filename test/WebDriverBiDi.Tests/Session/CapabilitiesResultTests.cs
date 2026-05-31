@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Session;
 
+using System.Reflection;
 using System.Text.Json;
 
 public class CapabilitiesResultTests
@@ -764,5 +765,40 @@ public class CapabilitiesResultTests
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CapabilitiesResult>(json));
+    }
+
+    [Fact]
+    public void TestProxyReturnsNullForUnknownProxyType()
+    {
+        // The _ => null branch in the Proxy switch expression cannot be reached through normal
+        // JSON deserialization: the DiscriminatedUnionJsonConverter throws for any unknown
+        // proxyType string before control reaches the switch. This test exercises it directly
+        // by injecting a ProxyConfiguration whose ProxyType is an out-of-range enum value via
+        // reflection, simulating what would happen if a future spec version added a new proxy
+        // type before the library was updated.
+        // Deserialize without a proxy so that the Proxy cached field stays null, ensuring
+        // the switch expression is entered when we inject an unknown ProxyType below.
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true
+                      }
+                      """;
+        CapabilitiesResult result = JsonSerializer.Deserialize<CapabilitiesResult>(json)!;
+
+        // Inject a ProxyConfiguration with an out-of-range ProxyType value, simulating a
+        // future spec proxy type the library does not yet handle.
+        ProxyConfiguration unknownProxy = new DirectProxyConfiguration();
+        PropertyInfo proxyTypeProperty = typeof(ProxyConfiguration).GetProperty("ProxyType", BindingFlags.Public | BindingFlags.Instance)!;
+        proxyTypeProperty.SetValue(unknownProxy, (ProxyType)99);
+
+        PropertyInfo serializableProxyProperty = typeof(CapabilitiesResult).GetProperty("SerializableProxy", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        serializableProxyProperty.SetValue(result, unknownProxy);
+
+        Assert.Null(result.Proxy);
     }
 }
