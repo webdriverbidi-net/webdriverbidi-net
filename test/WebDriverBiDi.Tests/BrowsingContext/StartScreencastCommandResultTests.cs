@@ -28,7 +28,7 @@ public class SrartScrenncastCommandResultTests
                         "path": "path/to/screencast/file"
                       }
                       """;
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));        
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class SrartScrenncastCommandResultTests
                         "path": "path/to/screencast/file"
                       }
                       """;
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));        
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class SrartScrenncastCommandResultTests
                         "screencast": "myScreencastId"
                       }
                       """;
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));        
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class SrartScrenncastCommandResultTests
                         "path": {}
                       }
                       """;
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));        
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StartScreencastCommandResult>(json));
     }
 
     [Fact]
