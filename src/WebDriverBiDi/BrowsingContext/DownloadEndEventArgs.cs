@@ -41,5 +41,6 @@ public record DownloadEndEventArgs : NavigationEventArgs
     /// </summary>
     [JsonPropertyName("status")]
     [JsonInclude]
+    [JsonRequired]
     public DownloadEndStatus Status { get; internal set; } = DownloadEndStatus.Complete;
 }
