@@ -234,11 +234,12 @@ public class BiDiDriver004AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that StartAsync without CancellationToken reports info.
+    /// Tests that StartAsync without CancellationToken does not report BIDI004, because BIDI013
+    /// already covers this call site with a higher-severity Warning diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task StartAsync_WithoutCancellationToken_ReportsInfo()
+    public async Task StartAsync_WithoutCancellationToken_NoDiagnostic()
     {
         string test = """
             using System;
@@ -262,22 +263,17 @@ public class BiDiDriver004AnalyzerTests
                 {
                     public async Task TestMethod(BiDiDriver driver)
                     {
-                        await {|#0:driver.StartAsync("ws://localhost:9222")|};
+                        await driver.StartAsync("ws://localhost:9222");
                     }
                 }
             }
             """;
-
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
-            .WithLocation(0)
-            .WithArguments("StartAsync");
 
         CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }

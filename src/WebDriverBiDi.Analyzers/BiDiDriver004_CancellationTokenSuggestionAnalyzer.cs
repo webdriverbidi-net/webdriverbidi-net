@@ -117,7 +117,6 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
             "CallFunctionAsync",
             "GetTreeAsync",
             "LocateNodesAsync",
-            "StartAsync",
         ];
 
         return longRunningMethods.Contains(method.Name);
