@@ -100,7 +100,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// the list is sent to the remote end.
     /// </remarks>
     [JsonIgnore]
-    public List<object> PageRanges { get; set; } = [];
+    public List<PageRange> PageRanges { get; set; } = [];
 
     /// <summary>
     /// Gets the list of page ranges to print for serialization purposes.
@@ -117,17 +117,10 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
                 return null;
             }
 
-            List<object> serializable = [];
-            foreach (object pageRange in this.PageRanges)
+            List<object> serializable = new(this.PageRanges.Count);
+            foreach (PageRange range in this.PageRanges)
             {
-                if (pageRange is string || pageRange is long || pageRange is int || pageRange is short)
-                {
-                    serializable.Add(pageRange);
-                }
-                else
-                {
-                    throw new ArgumentException("Page range must be a string or an integer value.", nameof(this.PageRanges));
-                }
+                serializable.Add(range.IsString ? range.StringValue : range.IntValue);
             }
 
             return serializable;
