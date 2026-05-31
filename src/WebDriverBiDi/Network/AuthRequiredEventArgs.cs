@@ -15,7 +15,8 @@ public record AuthRequiredEventArgs : BaseNetworkEventArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthRequiredEventArgs"/> class.
     /// </summary>
-    public AuthRequiredEventArgs()
+    [JsonConstructor]
+    internal AuthRequiredEventArgs()
         : base()
     {
     }
