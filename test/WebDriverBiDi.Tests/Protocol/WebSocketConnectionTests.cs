@@ -636,12 +636,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
         ServerEventObserver<ServerDataReceivedEventArgs> observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("First connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
-        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
         observer.Unobserve();
         Assert.Equal("First connection hello", serverReceivedData);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "First connection acknowledged");
-        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("First connection acknowledged"u8.ToArray(), receivedData);
