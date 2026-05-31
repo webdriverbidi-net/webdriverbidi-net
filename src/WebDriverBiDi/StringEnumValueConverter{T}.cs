@@ -54,7 +54,9 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
             // Use GetField rather than GetMember so that the annotation on T
             // ([DynamicallyAccessedMembers(PublicFields)]) is sufficient. Enum
             // values are public static readonly fields on the enum type, so
-            // GetField(name) is the correct query for getting values.
+            // GetField(name) is the correct query for getting values. Also,
+            // the field name will always resolve, since its value is derived
+            // from the enumerated values of the type.
             FieldInfo member = enumType.GetField(memberName)!;
             StringEnumValueAttribute? attribute = member.GetCustomAttribute<StringEnumValueAttribute>();
             if (attribute is not null)
