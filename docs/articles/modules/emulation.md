@@ -5,7 +5,6 @@ The Emulation module provides functionality for emulating device characteristics
 ## Overview
 
 The Emulation module allows you to:
-- Emulate different devices and viewports (viewport is on BrowsingContext module)
 - Set user agent strings
 - Override forced colors mode theme (light/dark)
 - Override geolocation
