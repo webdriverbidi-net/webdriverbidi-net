@@ -6,11 +6,10 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a regular expression object from the remote end,
-/// providing type-safe access to theRegularExpressionValue value and the ability
+/// providing type-safe access to the RegularExpressionValue value and the ability
 /// to convert to a local value for use as an argument for script execution on the
 /// remote end.
 /// </summary>

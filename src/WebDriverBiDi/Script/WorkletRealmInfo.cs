@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object representing a paint worklet realm for executing script.
+/// Object representing a worklet realm for executing script.
 /// </summary>
 public record WorkletRealmInfo : RealmInfo
 {
