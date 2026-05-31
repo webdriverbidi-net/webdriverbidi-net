@@ -14,10 +14,10 @@ using WebDriverBiDi.JsonConverters;
 public class SerializationOptions
 {
     /// <summary>
-    /// Gets a sentinal value indicating that there should be no limit on
+    /// Gets a sentinel value indicating that there should be no limit on
     /// the maximum depth when serializing DOM nodes from script execution.
     /// </summary>
-    public static readonly long InfiniteMaxDomDepth = -1;
+    public const long InfiniteMaxDomDepth = -1;
 
     /// <summary>
     /// Gets or sets the maximum depth when serializing DOM nodes from script execution.
