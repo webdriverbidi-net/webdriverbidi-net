@@ -444,12 +444,17 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             Task whenAllTask = Task.WhenAll(tasksToWait);
             if (!whenAllTask.IsCompleted)
             {
-                Task cancellationTask = Task.Delay(remainingTime, cancellationToken);
+                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                Task cancellationTask = Task.Delay(remainingTime, linkedTokenSource.Token);
                 Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
                 if (completedTask == cancellationTask)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     return false;
+                }
+                else
+                {
+                    linkedTokenSource.Cancel();
                 }
             }
 
@@ -690,7 +695,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 return;
             }
 
-            this.observerErrorReporter?.Invoke(new EventObserverErrorInfo()
+            Task? reportingTask = this.observerErrorReporter?.Invoke(new EventObserverErrorInfo()
             {
                 ObservableEventName = state.ReportedEventName,
                 ObserverId = this.Id,
@@ -699,6 +704,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 IsAsynchronousHandler = true,
                 FaultOccurredAfterHandlerReturned = true,
             });
+            reportingTask?.ContinueWith(
+                static t => _ = t.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
         finally
         {
