@@ -23,10 +23,10 @@ public class CommandJsonConverter : JsonConverter<Command>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
     /// <returns>A Command object.</returns>
-    /// <exception cref="NotImplementedException">Thrown when called, as this converter is only used for serialization.</exception>
+    /// <exception cref="NotSupportedException">Thrown when called, as this converter is only used for serialization.</exception>
     public override Command? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException("CommandJsonConverter does not support deserialization; commands never need to be deserialized for incoming use.");
     }
 
     /// <summary>
