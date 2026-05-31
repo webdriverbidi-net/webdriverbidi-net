@@ -10,7 +10,7 @@ using System.Text.Json;
 /// <summary>
 /// Provides utilities for converting deserialized JSON data to proper formats.
 /// </summary>
-public static class JsonConverterUtilities
+internal static class JsonConverterUtilities
 {
     /// <summary>
     /// Converts overflow JSON data into appropriate read-only .NET data structures.

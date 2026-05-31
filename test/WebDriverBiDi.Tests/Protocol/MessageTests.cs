@@ -187,6 +187,97 @@ public class MessageTests
     }
 
     [Fact]
+    public void TestCanDeserializeMessageWithComplexAdditionalData()
+    {
+        // The JSON here is carefully crafted to hit all of the permutations of
+        // JSON values that can be deserialized into a ReceivedDataDictionary,
+        // including string, number (integer and floating point), boolean (true
+        // and false), null, array-like lists (JSON arrays), and maps (including
+        // JSON objects). If the implementation changes and/or code coverage drops
+        // for the converter in JsonConverterUtilities, this test will have to be
+        // updated.
+        string json = """
+                      {
+                        "type": "success",
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        },
+                        "stringProperty": "stringValue",
+                        "intValue": 123,
+                        "floatValue": 456.78,
+                        "trueBoolValue": true,
+                        "falseBoolValue": false,
+                        "nullValue": null,
+                        "listValue": [
+                          "listString",
+                          901,
+                          true,
+                          null
+                        ],
+                        "objectValue": {
+                          "objectProperty": "objectValue"
+                        }
+                      }
+                      """;      
+        CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
+        Assert.NotNull(result);
+
+        Assert.Equal("success", result.Type);
+        Assert.IsType<TestCommandResult>(result.Result);
+        Assert.Equal("response value", ((TestCommandResult)result.Result).Value);
+        Assert.Equal(8, result.AdditionalData.Count);
+
+        Assert.True(result.AdditionalData.ContainsKey("stringProperty"));
+        object? additionalDataValue = result.AdditionalData["stringProperty"];
+        Assert.NotNull(additionalDataValue);
+        Assert.IsType<string>(additionalDataValue);
+        Assert.Equal("stringValue", additionalDataValue);
+
+        Assert.True(result.AdditionalData.ContainsKey("intValue"));
+        additionalDataValue = result.AdditionalData["intValue"];
+        Assert.NotNull(additionalDataValue);
+        Assert.IsType<long>(additionalDataValue);
+        Assert.Equal(123L, additionalDataValue);
+
+        Assert.True(result.AdditionalData.ContainsKey("floatValue"));
+        additionalDataValue = result.AdditionalData["floatValue"];
+        Assert.NotNull(additionalDataValue);
+        Assert.IsType<double>(additionalDataValue);
+        Assert.Equal(456.78, additionalDataValue);
+
+        Assert.True(result.AdditionalData.ContainsKey("trueBoolValue"));
+        additionalDataValue = result.AdditionalData["trueBoolValue"];
+        Assert.NotNull(additionalDataValue);
+        Assert.IsType<bool>(additionalDataValue);
+        Assert.True((bool)additionalDataValue);
+
+        Assert.True(result.AdditionalData.ContainsKey("falseBoolValue"));
+        additionalDataValue = result.AdditionalData["falseBoolValue"];
+        Assert.NotNull(additionalDataValue);
+        Assert.IsType<bool>(additionalDataValue);
+        Assert.False((bool)additionalDataValue);
+
+        Assert.True(result.AdditionalData.ContainsKey("nullValue"));
+        additionalDataValue = result.AdditionalData["nullValue"];
+        Assert.Null(additionalDataValue);
+
+        Assert.True(result.AdditionalData.ContainsKey("listValue"));
+        additionalDataValue = result.AdditionalData["listValue"];
+        Assert.NotNull(additionalDataValue);
+        Assert.IsType<ReceivedDataList>(additionalDataValue);
+        ReceivedDataList receivedDataList = (ReceivedDataList)additionalDataValue;
+        Assert.Equal(4, receivedDataList.Count);
+
+        Assert.True(result.AdditionalData.ContainsKey("objectValue"));
+        additionalDataValue = result.AdditionalData["objectValue"];
+        Assert.NotNull(additionalDataValue);
+        Assert.IsType<ReceivedDataDictionary>(additionalDataValue);
+        ReceivedDataDictionary receivedDataDictionary = (ReceivedDataDictionary)additionalDataValue;
+        Assert.Single(receivedDataDictionary);
+    }
+
+    [Fact]
     public void TestCommandResponseMessageThrowsWhenResultIsNull()
     {
         CommandResponseMessage<TestCommandResult> message = new();

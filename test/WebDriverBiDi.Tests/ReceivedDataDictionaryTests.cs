@@ -98,37 +98,4 @@ public class ReceivedDataDictionaryTests
     {
         Assert.Empty(ReceivedDataDictionary.EmptyDictionary);
     }
-
-    [Fact]
-    public void TestCanCreateFromDeserializedData()
-    {
-        string json = @"{ ""stringProperty"": ""stringValue"", ""intValue"": 123, ""floatValue"": 456.78, ""trueBoolValue"": true, ""falseBoolValue"": false, ""nullValue"": null, ""listValue"": [ ""listString"", 901, true, null ], ""objectValue"": { ""objectProperty"": ""objectValue"" } }";
-        OnlyOverflowData? deserializedValue = JsonSerializer.Deserialize<OnlyOverflowData>(json);
-        Assert.NotNull(deserializedValue);
-        Assert.Equal(8, deserializedValue.ReceivedData.Count);
-    }
-
-    private class OnlyOverflowData
-    {
-        private Dictionary<string, JsonElement> overflowData = [];
-        private ReceivedDataDictionary receivedData = ReceivedDataDictionary.EmptyDictionary;
-
-        [JsonIgnore]
-        public ReceivedDataDictionary ReceivedData
-        {
-            get
-            {
-                if (this.overflowData.Count > 0 && this.receivedData.Count == 0)
-                {
-                    this.receivedData = JsonConverterUtilities.ConvertIncomingExtensionData(this.overflowData);
-                }
-
-                return this.receivedData;
-            }
-        }
-
-        [JsonExtensionData]
-        [JsonInclude]
-        private Dictionary<string, JsonElement> OverflowData { get => this.overflowData; set => this.overflowData = value; }
-    }
 }
