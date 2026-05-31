@@ -122,24 +122,15 @@ public record CapabilitiesResult
         {
             if (this.SerializableProxy is not null && field is null)
             {
-                switch (this.SerializableProxy.ProxyType)
+                field = this.SerializableProxy.ProxyType switch
                 {
-                    case ProxyType.Direct:
-                        field = new DirectProxyConfigurationResult((DirectProxyConfiguration)this.SerializableProxy);
-                        break;
-                    case ProxyType.System:
-                        field = new SystemProxyConfigurationResult((SystemProxyConfiguration)this.SerializableProxy);
-                        break;
-                    case ProxyType.AutoDetect:
-                        field = new AutoDetectProxyConfigurationResult((AutoDetectProxyConfiguration)this.SerializableProxy);
-                        break;
-                    case ProxyType.ProxyAutoConfig:
-                        field = new PacProxyConfigurationResult((PacProxyConfiguration)this.SerializableProxy);
-                        break;
-                    case ProxyType.Manual:
-                        field = new ManualProxyConfigurationResult((ManualProxyConfiguration)this.SerializableProxy);
-                        break;
-                }
+                    ProxyType.Direct => new DirectProxyConfigurationResult((DirectProxyConfiguration)this.SerializableProxy),
+                    ProxyType.System => new SystemProxyConfigurationResult((SystemProxyConfiguration)this.SerializableProxy),
+                    ProxyType.AutoDetect => new AutoDetectProxyConfigurationResult((AutoDetectProxyConfiguration)this.SerializableProxy),
+                    ProxyType.ProxyAutoConfig => new PacProxyConfigurationResult((PacProxyConfiguration)this.SerializableProxy),
+                    ProxyType.Manual => new ManualProxyConfigurationResult((ManualProxyConfiguration)this.SerializableProxy),
+                    _ => null,
+                };
             }
 
             return field;
