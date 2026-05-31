@@ -81,5 +81,5 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     [JsonPropertyName("statusCode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public uint? StatusCode { get; set; }
+    public ulong? StatusCode { get; set; }
 }
