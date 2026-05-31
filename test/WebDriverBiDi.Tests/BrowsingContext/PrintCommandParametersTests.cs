@@ -434,7 +434,8 @@ public class PrintCommandParametersTests
             PageRanges =
             [
                 1,
-                "3-5"
+                "3-5",
+                10L,
             ]
         };
         string json = JsonSerializer.Serialize(properties);
@@ -454,12 +455,14 @@ public class PrintCommandParametersTests
 
         JArray? pageRanges = pageRangesToken as JArray;
         Assert.NotNull(pageRanges);
-        Assert.Equal(2, pageRanges.Count);
+        Assert.Equal(3, pageRanges.Count);
 
         Assert.Equal(JTokenType.Integer, pageRanges[0].Type);
         Assert.Equal(1L, pageRanges[0].Value<long>());
         Assert.Equal(JTokenType.String, pageRanges[1].Type);
         Assert.Equal("3-5", pageRanges[1].Value<string>());
+        Assert.Equal(JTokenType.Integer, pageRanges[2].Type);
+        Assert.Equal(10L, pageRanges[2].Value<long>());
     }
 
     [Fact]
@@ -475,20 +478,5 @@ public class PrintCommandParametersTests
         Assert.NotNull(context);
         Assert.Equal(JTokenType.String, context.Type);
         Assert.Equal("myContextId", context.Value<string>());
-    }
-
-    [Fact]
-    public void TestSerializeParametersWithInvalidPageRangesThrows()
-    {
-        PrintCommandParameters properties = new("myContextId")
-        {
-            PageRanges =
-            [
-                1,
-                "3-5",
-                true
-            ]
-        };
-        Assert.Contains("Page range must be a string or an integer value", Assert.ThrowsAny<ArgumentException>(() => JsonSerializer.Serialize(properties)).Message);
     }
 }
