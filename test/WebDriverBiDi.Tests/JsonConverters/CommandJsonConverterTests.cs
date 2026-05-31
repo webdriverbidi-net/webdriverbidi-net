@@ -17,7 +17,7 @@ public class CommandJsonConverterTests
                         "params": { "parameterName": "parameterValue" }
                       }
                       """;
-        Assert.ThrowsAny<NotImplementedException>(() => JsonSerializer.Deserialize<Command>(json));
+        Assert.ThrowsAny<NotSupportedException>(() => JsonSerializer.Deserialize<Command>(json));
     }
 
     [Fact]
