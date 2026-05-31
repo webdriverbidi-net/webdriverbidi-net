@@ -44,7 +44,7 @@ using System.Threading.Channels;
 /// Console.WriteLine($"Page made {requests.Count} network requests");
 /// </code>
 /// </example>
-public class EventDataCollector<T> : IDisposable, IAsyncDisposable
+public sealed class EventDataCollector<T> : IDisposable, IAsyncDisposable
     where T : WebDriverBiDiEventArgs
 {
     private readonly Channel<T> channel;
@@ -131,7 +131,12 @@ public class EventDataCollector<T> : IDisposable, IAsyncDisposable
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
     public async ValueTask DisposeAsync()
     {
-        await this.DisposeAsyncCore().ConfigureAwait(false);
+        if (!this.IsDisposed)
+        {
+            await this.observer.DisposeAsync().ConfigureAwait(false);
+            this.channel.Writer.TryComplete();
+        }
+
         this.Dispose(false);
         GC.SuppressFinalize(this);
     }
@@ -140,7 +145,7 @@ public class EventDataCollector<T> : IDisposable, IAsyncDisposable
     /// Releases the resources used by this data collector.
     /// </summary>
     /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (!this.IsDisposed)
         {
@@ -151,20 +156,6 @@ public class EventDataCollector<T> : IDisposable, IAsyncDisposable
             }
 
             this.IsDisposed = true;
-        }
-    }
-
-    /// <summary>
-    /// Asynchronously releases the managed resources used by this data collector.
-    /// Override this method in derived classes to add custom async cleanup logic.
-    /// </summary>
-    /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
-    protected virtual async ValueTask DisposeAsyncCore()
-    {
-        if (!this.IsDisposed)
-        {
-            await this.observer.DisposeAsync().ConfigureAwait(false);
-            this.channel.Writer.TryComplete();
         }
     }
 
