@@ -61,6 +61,10 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 - [Session Module](articles/modules/session.md)
 - [Storage Module](articles/modules/storage.md)
 - [Emulation Module](articles/modules/emulation.md)
+- [Permissions Module](articles/modules/permissions.md)
+- [Speculation Module](articles/modules/speculation.md)
+- [User Agent Client Hints Module](articles/modules/user-agent-client-hints.md)
+- [Digital Credentials Module](articles/modules/digital-credentials.md)
 - [Additional Modules](articles/modules/additional-modules.md)
 
 ### Examples and Tutorials

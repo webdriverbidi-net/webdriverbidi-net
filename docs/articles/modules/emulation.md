@@ -26,15 +26,7 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 ## Viewport Emulation
 
-Viewport emulation is provided by the **BrowsingContext** module. See [Browsing Context Module](browsing-context.md) for details.
-
-### Set Viewport Size
-
-[!code-csharp[Set Viewport Size](../../code/modules/EmulationModuleSamples.cs#SetViewportSize)]
-
-### Common Device Viewports
-
-[!code-csharp[Common Device Viewports](../../code/modules/EmulationModuleSamples.cs#CommonDeviceViewports)]
+Viewport emulation (setting viewport dimensions, device pixel ratio, and common device presets) is provided by the **BrowsingContext** module, not the Emulation module. See the [Browsing Context Module](browsing-context.md#viewport) guide for details and code examples.
 
 ## User Agent Override
 

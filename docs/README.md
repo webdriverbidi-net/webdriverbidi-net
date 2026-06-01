@@ -29,7 +29,7 @@ docs/
 │   │   ├── bluetooth.md
 │   │   ├── browser.md
 │   │   ├── browsing-context.md
-│   │   └── emulation.md
+│   │   ├── emulation.md
 │   │   ├── input.md
 │   │   ├── log.md
 │   │   ├── network.md
@@ -42,10 +42,10 @@ docs/
 │   │   ├── webextension.md
 │   │   └── additional-modules.md
 │   ├── examples/        # Example tutorials
-│   │   └── common-scenarios.md
-│   │   └── form-submission.md
-│   │   └── network-interception.md
-│   │   └── console-monitoring.md
+│   │   ├── common-scenarios.md
+│   │   ├── form-submission.md
+│   │   ├── network-interception.md
+│   │   ├── console-monitoring.md
 │   │   └── preload-scripts.md
 │   └── toc.yml         # Articles table of contents
 ├── api/                # API reference
