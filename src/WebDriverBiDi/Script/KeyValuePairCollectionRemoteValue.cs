@@ -65,7 +65,7 @@ public record KeyValuePairCollectionRemoteValue : RemoteValue, IObjectReferenceR
         }
 
         RemoteValueDictionary mapping = this.Value;
-        Dictionary<object, LocalValue> dict = new();
+        Dictionary<object, LocalValue> dict = new(mapping.Count);
         foreach (KeyValuePair<object, RemoteValue> entry in mapping)
         {
             object mappedKey = entry.Key;
