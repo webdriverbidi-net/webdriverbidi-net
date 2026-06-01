@@ -841,7 +841,11 @@ public class Transport : IAsyncDisposable
             return message;
         }
 
+#if NETSTANDARD2_0
         return string.Concat(message.Substring(0, maxLength), "...");
+#else
+        return string.Concat(message.AsSpan(0, maxLength), "...");
+#endif
     }
 
     private void ThrowIfDisposed()
