@@ -611,6 +611,31 @@ public static class BrowsingContextModuleSamples
     }
 
     /// <summary>
+    /// Download events.
+    /// </summary>
+    public static void DownloadEvents(BiDiDriver driver)
+    {
+        #region DownloadEvents
+        driver.BrowsingContext.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) =>
+        {
+            Console.WriteLine($"Download starting: {e.SuggestedFileName}");
+            Console.WriteLine($"  Context:  {e.BrowsingContextId}");
+            Console.WriteLine($"  URL:      {e.Url}");
+            Console.WriteLine($"  Download: {e.DownloadId}");
+        });
+
+        driver.BrowsingContext.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
+        {
+            Console.WriteLine($"Download {e.DownloadId} ended: {e.Status}");
+            if (e.Status == DownloadEndStatus.Complete && e.FilePath != null)
+            {
+                Console.WriteLine($"  Saved to: {e.FilePath}");
+            }
+        });
+        #endregion
+    }
+
+    /// <summary>
     /// Context lifecycle events.
     /// </summary>
     public static void ContextLifecycleEvents(BiDiDriver driver)

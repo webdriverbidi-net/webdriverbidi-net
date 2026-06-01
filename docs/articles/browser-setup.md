@@ -209,6 +209,19 @@ Connect with:
 
 [!code-csharp[Firefox Connection](../code/examples/BrowserSetupSamples.cs#FirefoxConnection)]
 
+> **Important:** When connecting via geckodriver, you must call `session.NewSessionAsync` explicitly
+> after `StartAsync`. Geckodriver does not create a WebDriver BiDi session automatically on connect,
+> unlike direct CDP connections to Chrome or Edge. Without this call, subsequent commands will fail
+> because no session exists on the remote end:
+>
+> ```csharp
+> await driver.StartAsync("ws://localhost:4444/session");
+> NewCommandParameters sessionParams = new();
+> NewCommandResult sessionResult = await driver.Session.NewSessionAsync(sessionParams);
+> ```
+>
+> See the [Session Module guide](modules/session.md) for full details and capability negotiation options.
+
 ### Note on Firefox Support
 
 Firefox's WebDriver BiDi implementation is actively being developed. Some features may not be available or may behave differently than in Chromium-based browsers.

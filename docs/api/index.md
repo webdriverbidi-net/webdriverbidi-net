@@ -39,6 +39,7 @@ Tab, window, and iframe management, navigation, and page interaction.
 - `NavigateCommandParameters` - Navigation parameters
 - `NavigateCommandResult` - Navigation results
 - `CaptureScreenshotCommandParameters` - Screenshot parameters
+- `SetViewportCommandParameters` - Viewport size and device pixel ratio settings
 
 ### WebDriverBiDi.Script
 
@@ -108,7 +109,6 @@ Device and media emulation.
 
 **Key Classes:**
 - `EmulationModule` - Emulation module implementation
-- Viewport settings
 - Media feature emulation
 
 ### WebDriverBiDi.Permissions

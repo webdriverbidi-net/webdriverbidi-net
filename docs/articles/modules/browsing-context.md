@@ -195,6 +195,23 @@ To restore default CSP behavior, use `SetBypassCSPCommandParameters.ResetBypassC
 
 [!code-csharp[User Prompt Events](../../code/modules/BrowsingContextModuleSamples.cs#UserPromptEvents)]
 
+### Download Events
+
+`OnDownloadWillBegin` fires when the browser is about to begin a file download. The event args
+(`DownloadWillBeginEventArgs`) carry the download ID (`DownloadId`), the suggested file name
+(`SuggestedFileName`), the originating URL (`Url`), and the browsing context ID
+(`BrowsingContextId`).
+
+`OnDownloadEnd` fires when the download finishes. The event args (`DownloadEndEventArgs`) carry
+the same `DownloadId` and `Url`, along with `Status` (`DownloadEndStatus.Complete` or
+`DownloadEndStatus.Canceled`) and `FilePath` (non-null when the download completed successfully).
+
+[!code-csharp[Download Events](../../code/modules/BrowsingContextModuleSamples.cs#DownloadEvents)]
+
+> **Note:** Both events must be subscribed to via `session.SubscribeAsync` before they are
+> delivered. Use `"browsingContext.downloadWillBegin"` and `"browsingContext.downloadEnd"` as the
+> event names.
+
 ## Common Patterns
 
 ### Wait for Page Load Pattern

@@ -530,7 +530,7 @@ See [Custom Modules](advanced/custom-modules.md) for the full pattern. Register 
 
 ### Custom Transport
 
-Create a class that extends `Transport` and overrides `DeserializeMessage` for custom message processing. Pass an instance to `BiDiDriver(TimeSpan, Transport)`.
+Create a class that extends `Transport` and overrides `CreateIncomingMessage` for custom message processing. Pass an instance to `BiDiDriver(TimeSpan, Transport)`. See [Custom Modules](advanced/custom-modules.md#custom-transport) for details.
 
 ## Performance Considerations
 

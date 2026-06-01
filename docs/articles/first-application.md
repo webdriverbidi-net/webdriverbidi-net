@@ -97,7 +97,7 @@ Press any key to exit...
 
 [!code-csharp[Driver Initialization](../code/examples/FirstApplicationSamples.cs#DriverInitialization)]
 
-Creates a driver with a 30-second command timeout and connects to the browser.
+Creates a driver with a 30-second command timeout and connects to the browser. This overrides the library's default timeout of 60 seconds; adjust the value to suit your environment.
 
 > **Tip:** By default, the driver silently discards event handler exceptions and protocol errors. During
 > development, set the error behaviors to `TransportErrorBehavior.Terminate` so that problems surface

@@ -141,6 +141,37 @@ For actual protocol extensions (not just helper methods):
 
 [!code-csharp[Experimental Module](../../code/advanced/CustomModulesSamples.cs#ExperimentalModule)]
 
+## Custom Transport
+
+For scenarios requiring custom message processing — for example, injecting test doubles, logging
+raw frames, or applying transformations to incoming messages — you can subclass `Transport` and
+override `CreateIncomingMessage`:
+
+```csharp
+using WebDriverBiDi.Protocol;
+using System.Buffers;
+
+public class LoggingTransport : Transport
+{
+    public LoggingTransport(Connection connection) : base(connection) { }
+
+    protected override IncomingMessage CreateIncomingMessage(IMemoryOwner<byte> owner, int length)
+    {
+        // Inspect or log the raw message bytes here before handing them to the base implementation.
+        return base.CreateIncomingMessage(owner, length);
+    }
+}
+```
+
+Pass your custom transport to `BiDiDriver` via the constructor overload that accepts a `Transport`:
+
+```csharp
+WebSocketConnection connection = new();
+LoggingTransport transport = new(connection);
+await using BiDiDriver driver = new(TimeSpan.FromSeconds(60), transport);
+await driver.StartAsync("ws://localhost:9222");
+```
+
 ## Next Steps
 
 - [AOT Compatibility](aot-compatibility.md): Make custom modules work in AOT environments
