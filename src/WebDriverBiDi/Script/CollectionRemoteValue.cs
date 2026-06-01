@@ -65,7 +65,7 @@ public record CollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, 
         }
 
         RemoteValueList originalList = this.Value;
-        List<LocalValue> localValues = new();
+        List<LocalValue> localValues = new(originalList.Count);
         foreach (RemoteValue item in originalList)
         {
             localValues.Add(item.ToLocalValue());
