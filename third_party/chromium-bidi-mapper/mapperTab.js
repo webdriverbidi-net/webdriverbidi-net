@@ -645,7 +645,8 @@
             this.#userContextStorage = userContextStorage;
         }
         close() {
-            setTimeout(() => this.#browserCdpClient.sendCommand('Browser.close').catch(() => { }), 0);
+            setTimeout(() => this.#browserCdpClient.sendCommand('Browser.close').catch(() => {
+            }), 0);
             return {};
         }
         async createUserContext(params) {
@@ -1610,6 +1611,25 @@
             }
         }
     }
+    class ClickContext {
+        static #DOUBLE_CLICK_TIME_MS = 500;
+        static #MAX_DOUBLE_CLICK_RADIUS = 2;
+        count = 0;
+        #x;
+        #y;
+        #time;
+        constructor(x, y, time) {
+            this.#x = x;
+            this.#y = y;
+            this.#time = time;
+        }
+        compare(context) {
+            return (
+            context.#time - this.#time > ClickContext.#DOUBLE_CLICK_TIME_MS ||
+                Math.abs(context.#x - this.#x) > ClickContext.#MAX_DOUBLE_CLICK_RADIUS ||
+                Math.abs(context.#y - this.#y) > ClickContext.#MAX_DOUBLE_CLICK_RADIUS);
+        }
+    }
     class PointerSource {
         type = "pointer" ;
         subtype;
@@ -1647,26 +1667,6 @@
             }
             return buttons;
         }
-        static ClickContext = class ClickContext {
-            static #DOUBLE_CLICK_TIME_MS = 500;
-            static #MAX_DOUBLE_CLICK_RADIUS = 2;
-            count = 0;
-            #x;
-            #y;
-            #time;
-            constructor(x, y, time) {
-                this.#x = x;
-                this.#y = y;
-                this.#time = time;
-            }
-            compare(context) {
-                return (
-                context.#time - this.#time > ClickContext.#DOUBLE_CLICK_TIME_MS ||
-                    Math.abs(context.#x - this.#x) >
-                        ClickContext.#MAX_DOUBLE_CLICK_RADIUS ||
-                    Math.abs(context.#y - this.#y) > ClickContext.#MAX_DOUBLE_CLICK_RADIUS);
-            }
-        };
         #clickContexts = new Map();
         setClickCount(button, context) {
             let storedContext = this.#clickContexts.get(button);
@@ -2582,7 +2582,7 @@
                         modifiers,
                         button: getCdpButton(button),
                         buttons: source.buttons,
-                        clickCount: source.setClickCount(button, new PointerSource.ClickContext(x, y, performance.now())),
+                        clickCount: source.setClickCount(button, new ClickContext(x, y, performance.now())),
                         pointerType,
                         tangentialPressure,
                         tiltX,
@@ -4261,9 +4261,6 @@
         const randomValues = new Uint8Array(16);
         if ('crypto' in globalThis && 'getRandomValues' in globalThis.crypto) {
             globalThis.crypto.getRandomValues(randomValues);
-        }
-        else {
-            require('crypto').webcrypto.getRandomValues(randomValues);
         }
         randomValues[6] = (randomValues[6] & 0x0f) | 0x40;
         randomValues[8] = (randomValues[8] & 0x3f) | 0x80;
@@ -7315,7 +7312,8 @@
                     return;
                 }
                 this.#downloadIdToUrlMap.set(params.guid, params.url);
-                this.#eventManager.registerEvent({
+                this.#eventManager.registerEvent(
+                {
                     type: 'event',
                     method: BrowsingContext$2.EventNames.DownloadWillBegin,
                     params: {
@@ -7337,7 +7335,8 @@
                 const url = this.#downloadIdToUrlMap.get(params.guid);
                 switch (params.state) {
                     case 'canceled':
-                        this.#eventManager.registerEvent({
+                        this.#eventManager.registerEvent(
+                        {
                             type: 'event',
                             method: BrowsingContext$2.EventNames.DownloadEnd,
                             params: {
@@ -7350,7 +7349,8 @@
                         }, this.id);
                         break;
                     case 'completed':
-                        this.#eventManager.registerEvent({
+                        this.#eventManager.registerEvent(
+                        {
                             type: 'event',
                             method: BrowsingContext$2.EventNames.DownloadEnd,
                             params: {
@@ -8689,13 +8689,13 @@
         #interceptPhase;
         #servedFromCache = false;
         #redirectCount;
+        #bodySize = 0;
+        #encodedResponseBodySize = 0;
+        #decodedResponseBodySize = 0;
         #request = {};
         #requestOverrides;
         #responseOverrides;
-        #response = {
-            decodedSize: 0,
-            encodedSize: 0,
-        };
+        #response = {};
         #eventManager;
         #networkStorage;
         #cdpTarget;
@@ -8803,16 +8803,22 @@
             }
             return undefined;
         }
-        get bodySize() {
+        #updateBodySize() {
             if (typeof this.#requestOverrides?.bodySize === 'number') {
-                return this.#requestOverrides.bodySize;
+                this.#bodySize = this.#requestOverrides.bodySize;
+                return;
             }
             if (this.#request.info?.request.postDataEntries !== undefined) {
-                return bidiBodySizeFromCdpPostDataEntries(this.#request.info?.request.postDataEntries);
+                this.#bodySize = bidiBodySizeFromCdpPostDataEntries(this.#request.info?.request.postDataEntries);
+                return;
             }
-            return (this.#getBodySizeFromHeaders(this.#request.info?.request.headers) ??
-                this.#getBodySizeFromHeaders(this.#request.extraInfo?.headers) ??
-                0);
+            this.#bodySize =
+                this.#getBodySizeFromHeaders(this.#request.info?.request.headers) ??
+                    this.#getBodySizeFromHeaders(this.#request.extraInfo?.headers) ??
+                    0;
+        }
+        get bodySize() {
+            return this.#bodySize;
         }
         get #context() {
             const result = this.#response.paused?.frameId ??
@@ -8916,8 +8922,8 @@
         }
         handleRedirect(event) {
             this.#response.hasExtraInfo = false;
-            this.#response.decodedSize = 0;
-            this.#response.encodedSize = 0;
+            this.#decodedResponseBodySize = 0;
+            this.#encodedResponseBodySize = 0;
             this.#response.info = event.redirectResponse;
             this.#emitEventsIfReady({
                 wasRedirected: true,
@@ -8966,11 +8972,13 @@
         }
         onRequestWillBeSentEvent(event) {
             this.#request.info = event;
+            this.#updateBodySize();
             this.#networkStorage.collectIfNeeded(this, "request" );
             this.#emitEventsIfReady();
         }
         onRequestWillBeSentExtraInfoEvent(event) {
             this.#request.extraInfo = event;
+            this.#updateBodySize();
             this.#emitEventsIfReady();
         }
         onResponseReceivedExtraInfoEvent(event) {
@@ -8986,6 +8994,7 @@
         onResponseReceivedEvent(event) {
             this.#response.hasExtraInfo = event.hasExtraInfo;
             this.#response.info = event.response;
+            this.#encodedResponseBodySize = event.response.encodedDataLength;
             this.#networkStorage.collectIfNeeded(this, "response" );
             this.#emitEventsIfReady();
         }
@@ -8995,11 +9004,12 @@
         }
         onLoadingFinishedEvent(event) {
             this.#response.loadingFinished = event;
+            this.#encodedResponseBodySize = event.encodedDataLength;
             this.#emitEventsIfReady();
         }
         onDataReceivedEvent(event) {
-            this.#response.decodedSize += event.dataLength;
-            this.#response.encodedSize += event.encodedDataLength;
+            this.#decodedResponseBodySize += event.dataLength;
+            this.#encodedResponseBodySize += event.encodedDataLength;
         }
         onLoadingFailedEvent(event) {
             this.#response.loadingFailed = event;
@@ -9013,6 +9023,7 @@
                     },
                 };
             });
+            this.disposeData();
         }
         async failRequest(errorReason) {
             assert(this.#fetchId, 'Network Interception not set-up.');
@@ -9182,6 +9193,12 @@
         dispose() {
             this.waitNextPhase.reject(new Error('waitNextPhase disposed'));
         }
+        disposeData() {
+            this.#request = {};
+            this.#response = {};
+            this.#requestOverrides = undefined;
+            this.#responseOverrides = undefined;
+        }
         async #continueWithAuth(authChallengeResponse) {
             assert(this.#fetchId, 'Network Interception not set-up.');
             await this.cdpClient.sendCommand('Fetch.continueWithAuth', {
@@ -9264,7 +9281,7 @@
                 headersSize: computeHeadersSize(headers),
                 bodySize: this.encodedResponseBodySize,
                 content: {
-                    size: this.#response.decodedSize ?? 0,
+                    size: this.#decodedResponseBodySize,
                 },
                 ...(authChallenges ? { authChallenges } : {}),
             };
@@ -9274,10 +9291,10 @@
             };
         }
         get encodedResponseBodySize() {
-            return (this.#response.loadingFinished?.encodedDataLength ??
-                this.#response.info?.encodedDataLength ??
-                this.#response.encodedSize ??
-                0);
+            return this.#encodedResponseBodySize;
+        }
+        get decodedResponseBodySize() {
+            return this.#decodedResponseBodySize;
         }
         #getRequestData() {
             const headers = this.#requestHeaders;
@@ -9708,6 +9725,7 @@
         }
         disposeRequest(id) {
             if (this.#collectorsStorage.isCollected(id)) {
+                this.#requests.get(id)?.disposeData();
                 return;
             }
             this.#requests.delete(id);
@@ -16747,6 +16765,9 @@
         BrowsingContext.NavigationSchema = z.lazy(() => z.string());
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
     (function (BrowsingContext) {
+        BrowsingContext.DownloadSchema = z.lazy(() => z.string());
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
         BrowsingContext.BaseNavigationInfoSchema = z.lazy(() => z.object({
             context: BrowsingContext.BrowsingContextSchema,
             navigation: z.union([BrowsingContext.NavigationSchema, z.null()]),
@@ -17106,6 +17127,7 @@
     (function (BrowsingContext) {
         BrowsingContext.DownloadWillBeginParamsSchema = z.lazy(() => z
             .object({
+            download: BrowsingContext.DownloadSchema,
             suggestedFilename: z.string(),
         })
             .and(BrowsingContext.BaseNavigationInfoSchema));
@@ -17126,6 +17148,7 @@
         BrowsingContext.DownloadCanceledParamsSchema = z.lazy(() => z
             .object({
             status: z.literal('canceled'),
+            download: BrowsingContext.DownloadSchema,
         })
             .and(BrowsingContext.BaseNavigationInfoSchema));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
@@ -17133,6 +17156,7 @@
         BrowsingContext.DownloadCompleteParamsSchema = z.lazy(() => z
             .object({
             status: z.literal('complete'),
+            download: BrowsingContext.DownloadSchema,
             filepath: z.union([z.string(), z.null()]),
         })
             .and(BrowsingContext.BaseNavigationInfoSchema));
