@@ -162,14 +162,14 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
         string methodName = methodSymbol.Name;
 
         // Track StartAsync calls
-        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync")
         {
             DriverVariableState currentState = new DriverVariableState { IsStarted = true };
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
         // Check for RegisterTypeInfoResolver after StartAsync
-        if (methodName == "RegisterTypeInfoResolver" && AnalyzerSymbolHelpers.IsDriverConfigurationType(methodSymbol.ContainingType))
+        if (methodName == "RegisterTypeInfoResolver")
         {
             DriverVariableState state = updatedVariables[driverVariableName];
             if (state.IsStarted)

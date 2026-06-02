@@ -151,8 +151,8 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         return (false, null);
     }
 
-    private static bool IsNullableType(ITypeSymbol? type)
+    private static bool IsNullableType(ITypeSymbol type)
     {
-        return type?.NullableAnnotation == NullableAnnotation.Annotated;
+        return type.NullableAnnotation == NullableAnnotation.Annotated;
     }
 }

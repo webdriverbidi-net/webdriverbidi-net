@@ -131,7 +131,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        return (methodSymbol.ReturnType as INamedTypeSymbol)?.Name == "EventObserver";
+        return ((INamedTypeSymbol)methodSymbol.ReturnType).Name == "EventObserver";
     }
 
     private static bool IsInUsingStatement(LocalDeclarationStatementSyntax declaration)

@@ -943,6 +943,103 @@ public class BiDiDriver005CodeFixProviderTests
     }
 
     /// <summary>
+    /// Tests that the code fix is a no-op when the SubscribeAsync argument is an object
+    /// creation with no constructor argument list (e.g. object-initializer syntax) —
+    /// exercises the objectCreation.ArgumentList?.Arguments.Count null branch (line 122).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_SubscribeAsyncWithObjectInitializerArgument_IsNoOp()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class BiDiDriver
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public LogModule Log { get; } = new LogModule();
+                    public SessionModule Session { get; } = new SessionModule();
+                }
+
+                public class LogModule
+                {
+                    [ObservableEventName("log.entryAdded")]
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
+                }
+
+                public class SessionModule
+                {
+                    public Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters parameters) => Task.FromResult(new SubscribeCommandResult());
+                }
+
+                public class SubscribeCommandParameters
+                {
+                    public string[]? Events { get; set; }
+                }
+
+                public class SubscribeCommandResult { }
+                public class WebDriverBiDiEventArgs { }
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public ObservableEvent(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
+                }
+
+                public class EventObserver<T> where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        // Object initializer — no constructor ArgumentList, so ArgumentList is null.
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters { Events = new[] { "network.beforeRequestSent" } });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+            NumberOfIncrementalIterations = 1,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that the code fix is a no-op when the SubscribeAsync argument is not an
     /// ObjectCreationExpressionSyntax — exercises AddEventNameToSubscribeCall returning
     /// early (line 142).

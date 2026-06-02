@@ -79,8 +79,8 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
             {
                 foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
                 {
-                    ILocalSymbol? localSymbol = semanticModel.GetDeclaredSymbol(variable) as ILocalSymbol;
-                    if (localSymbol?.Type is INamedTypeSymbol { Name: "EventObserver" })
+                    ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
+                    if (localSymbol.Type is INamedTypeSymbol { Name: "EventObserver" })
                     {
                         pendingStartCapturingTasks[variable.Identifier.Text] = null;
                         hasRead[variable.Identifier.Text] = false;

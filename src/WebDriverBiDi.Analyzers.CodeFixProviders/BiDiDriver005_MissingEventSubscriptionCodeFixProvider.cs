@@ -81,8 +81,9 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         {
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                IMethodSymbol? methodSymbol = semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol as IMethodSymbol;
-                if (methodSymbol?.Name == "SubscribeAsync" && methodSymbol.ContainingType?.Name == "SessionModule")
+                if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol methodSymbol
+                    && methodSymbol.Name == "SubscribeAsync"
+                    && methodSymbol.ContainingType.Name == "SessionModule")
                 {
                     subscribeCall = invocation;
                     break;

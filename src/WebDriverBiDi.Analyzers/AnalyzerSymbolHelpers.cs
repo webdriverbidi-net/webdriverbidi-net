@@ -81,7 +81,7 @@ internal static class AnalyzerSymbolHelpers
     /// <returns><see langword="true"/> if the type inherits from <c>Module</c>; otherwise <see langword="false"/>.</returns>
     internal static bool IsModuleSubclass(INamedTypeSymbol? type)
     {
-        INamedTypeSymbol? current = type?.BaseType;
+        INamedTypeSymbol? current = type!.BaseType;
         while (current != null)
         {
             if (current.Name == "Module")

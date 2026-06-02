@@ -1280,4 +1280,157 @@ public class BiDiDriver017AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that adding to a nullable IList{T} property reports a warning —
+    /// exercises the IList/ICollection branch of GetNullableListElementType (line 141).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NullableICollectionAdd_WithoutInitialization_ReportsWarning()
+    {
+        string test = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+
+                public class TestCommandParameters : CommandParameters
+                {
+                    public ICollection<string>? Items { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        TestCommandParameters p = new TestCommandParameters();
+                        {|#0:p.Items|}.Add("item");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver017_NullableListAddAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("string", "Items");
+
+        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that adding to a non-nullable List property does not report a warning —
+    /// exercises the IsNullableType false branch (line 156).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NonNullableListAdd_DoesNotReportWarning()
+    {
+        string test = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+
+                public class TestCommandParameters : CommandParameters
+                {
+                    // Non-nullable List — IsNullableType returns false.
+                    public List<string> Items { get; set; } = new List<string>();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        TestCommandParameters p = new TestCommandParameters();
+                        p.Items.Add("item");
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that adding to a nullable IList{T} property reports a warning —
+    /// exercises the IList/ICollection branch of GetNullableListElementType (line 141).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NullableIListAdd_WithoutInitialization_ReportsWarning()
+    {
+        string test = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+
+                public class TestCommandParameters : CommandParameters
+                {
+                    public IList<string>? Items { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        TestCommandParameters p = new TestCommandParameters();
+                        {|#0:p.Items|}.Add("item");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver017_NullableListAddAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("string", "Items");
+
+        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

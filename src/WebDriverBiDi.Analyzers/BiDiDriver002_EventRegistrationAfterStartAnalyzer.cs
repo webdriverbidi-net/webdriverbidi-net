@@ -161,14 +161,14 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         string methodName = methodSymbol.Name;
 
         // Track StartAsync calls
-        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync")
         {
             DriverVariableState currentState = new DriverVariableState { IsStarted = true };
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
         // Check for RegisterEvent after StartAsync
-        if (methodName == "RegisterEvent" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        if (methodName == "RegisterEvent")
         {
             DriverVariableState state = updatedVariables[driverVariableName];
             if (state.IsStarted)

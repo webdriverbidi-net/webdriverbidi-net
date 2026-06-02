@@ -689,4 +689,61 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a driver variable declared without an initializer does not crash —
+    /// exercises the variable.Initializer == null continue branch (line 87).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DriverVariable_DeclaredWithoutInitializer_DoesNotCrash()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public BrowserModule Browser { get; } = new BrowserModule();
+                }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        // Variable declared without initializer — exercises line 87.
+                        BiDiDriver driver;
+                        driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.Browser.CloseAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

@@ -62,7 +62,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider
         MethodDeclarationSyntax method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
 
         // Find the StartAsync call on the same driver variable as the resolver registration.
-        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
+        string driverVariableName = GetRootIdentifierName(invocation.Expression);
         StatementSyntax startAsyncStatement = method.Body!.Statements
             .First(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
                 .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
@@ -87,12 +87,10 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private static string? GetRootIdentifierName(ExpressionSyntax expression)
+    private static string GetRootIdentifierName(ExpressionSyntax expression)
     {
         // BIDI003 fires only on direct driver calls (driver.RegisterTypeInfoResolverAsync),
         // so the expression is always a single-level MemberAccess with an identifier base.
-        return expression is MemberAccessExpressionSyntax memberAccess
-            ? (memberAccess.Expression as IdentifierNameSyntax)?.Identifier.Text
-            : (expression as IdentifierNameSyntax)?.Identifier.Text;
+        return ((IdentifierNameSyntax)((MemberAccessExpressionSyntax)expression).Expression).Identifier.Text;
     }
 }

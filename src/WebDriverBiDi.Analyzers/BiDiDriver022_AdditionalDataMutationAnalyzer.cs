@@ -111,14 +111,10 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
     {
         if (additionalDataExpr is MemberAccessExpressionSyntax memberAccess)
         {
-            ITypeSymbol? receiverType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
-            if (receiverType != null)
-            {
-                return receiverType.Name;
-            }
+            return context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type!.Name;
         }
 
-        // Fallback: use the declaring type of the property symbol.
+        // Fallback for parenthesized or other expressions (e.g. (cmd.AdditionalData)[key]).
         ISymbol? symbol = context.SemanticModel.GetSymbolInfo(additionalDataExpr).Symbol;
         return symbol?.ContainingType?.Name ?? string.Empty;
     }

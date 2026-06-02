@@ -56,10 +56,8 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
     {
         CastExpressionSyntax castExpression = (CastExpressionSyntax)context.Node;
 
-        // Check if casting to EvaluateResultSuccess or EvaluateResultException;
-        // the 'is' pattern narrows targetType to non-nullable for the rest of the method.
-        if (context.SemanticModel.GetTypeInfo(castExpression.Type).Type is not ITypeSymbol targetType
-            || !IsEvaluateResultDerivedType(targetType))
+        ITypeSymbol targetType = context.SemanticModel.GetTypeInfo(castExpression.Type).Type!;
+        if (!IsEvaluateResultDerivedType(targetType))
         {
             return;
         }
@@ -84,10 +82,8 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
     {
         BinaryExpressionSyntax asExpression = (BinaryExpressionSyntax)context.Node;
 
-        // Check if casting to EvaluateResultSuccess or EvaluateResultException;
-        // the 'is' pattern narrows targetType to non-nullable for the rest of the method.
-        if (context.SemanticModel.GetTypeInfo(asExpression.Right).Type is not ITypeSymbol targetType
-            || !IsEvaluateResultDerivedType(targetType))
+        ITypeSymbol targetType = context.SemanticModel.GetTypeInfo(asExpression.Right).Type!;
+        if (!IsEvaluateResultDerivedType(targetType))
         {
             return;
         }
@@ -106,14 +102,14 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
 
     private static bool IsEvaluateResultBaseType(ITypeSymbol? type)
     {
-        return type?.Name == "EvaluateResult" && type.ContainingNamespace?.ToString() == "WebDriverBiDi.Script";
+        return type!.Name == "EvaluateResult" && type.ContainingNamespace!.ToString() == "WebDriverBiDi.Script";
     }
 
     private static bool IsEvaluateResultDerivedType(ITypeSymbol? type)
     {
-        if (type?.Name is "EvaluateResultSuccess" or "EvaluateResultException")
+        if (type!.Name is "EvaluateResultSuccess" or "EvaluateResultException")
         {
-            return type.ContainingNamespace?.ToString() == "WebDriverBiDi.Script";
+            return type.ContainingNamespace!.ToString() == "WebDriverBiDi.Script";
         }
 
         return false;

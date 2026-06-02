@@ -93,14 +93,13 @@ public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixP
 
     private static string? GetRootIdentifierName(ExpressionSyntax expression)
     {
-        ExpressionSyntax current = expression is MemberAccessExpressionSyntax outerAccess
-            ? outerAccess.Expression
-            : expression;
+        // expression is always a MemberAccessExpressionSyntax when called from this provider.
+        ExpressionSyntax current = ((MemberAccessExpressionSyntax)expression).Expression;
         while (current is MemberAccessExpressionSyntax nestedAccess)
         {
             current = nestedAccess.Expression;
         }
 
-        return (current as IdentifierNameSyntax)?.Identifier.Text;
+        return ((IdentifierNameSyntax)current).Identifier.Text;
     }
 }

@@ -212,11 +212,9 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Apply formatting to normalize whitespace
         newRoot = Microsoft.CodeAnalysis.Formatting.Formatter.Format(newRoot, document.Project.Solution.Workspace);
 
-        // Normalize line endings to match the original document's line ending style
-        string originalText = root.ToFullString();
-        string lineEnding = originalText.Contains("\r\n") ? "\r\n" : "\n";
+        // Normalize line endings — Roslyn always uses \n internally after parsing.
         string newRootText = newRoot.ToFullString();
-        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", lineEnding);
+        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n");
         newRoot = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(normalizedText).GetRoot();
 
         return document.WithSyntaxRoot(newRoot);
@@ -374,11 +372,9 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Apply formatting to normalize whitespace
         newRoot = Microsoft.CodeAnalysis.Formatting.Formatter.Format(newRoot, document.Project.Solution.Workspace);
 
-        // Normalize line endings to match the original document's line ending style
-        string originalText = root.ToFullString();
-        string lineEnding = originalText.Contains("\r\n") ? "\r\n" : "\n";
+        // Normalize line endings — Roslyn always uses \n internally after parsing.
         string newRootText = newRoot.ToFullString();
-        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", lineEnding);
+        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n");
         newRoot = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(normalizedText).GetRoot();
 
         return document.WithSyntaxRoot(newRoot);

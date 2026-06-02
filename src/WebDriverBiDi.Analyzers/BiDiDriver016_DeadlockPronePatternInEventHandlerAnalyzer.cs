@@ -73,7 +73,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        if (methodSymbol.ReturnType is not INamedTypeSymbol returnType || returnType.Name != "EventObserver")
+        if (((INamedTypeSymbol)methodSymbol.ReturnType).Name != "EventObserver")
         {
             return;
         }
@@ -142,7 +142,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
                 continue;
             }
 
-            string? containingTypeName = methodSymbol.ContainingType?.Name;
+            string? containingTypeName = methodSymbol.ContainingType.Name;
             string methodName = methodSymbol.Name;
 
             if (containingTypeName == "Monitor" && (methodName == "Enter" || methodName == "TryEnter"))

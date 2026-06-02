@@ -417,4 +417,38 @@ public class BiDiDriver012AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that DisposeAsync nested inside an if-block is handled — exercises
+    /// GetContainingBlock walking more than one parent level (line 145 while loop body)
+    /// and HasStopAsyncBeforeInStatements iterating statements (line 182 foreach body).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_InsideIfBlock_WithStopAsync_DoesNotReport()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.StopAsync();
+                        if (true)
+                        {
+                            await driver.DisposeAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
 }

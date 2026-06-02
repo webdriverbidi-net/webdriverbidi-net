@@ -862,4 +862,113 @@ public class BiDiDriver003AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that an if-statement in a method body does not crash — exercises the
+    /// statement-is-neither-local-nor-expression branch (line 77).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task MethodWithIfStatement_DoesNotCrash()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                    Task RegisterTypeInfoResolverAsync(object resolver);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(object resolver) => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        // An if-statement exercises the neither-branch path.
+                        if (true) { }
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that awaiting a task variable (not an invocation) does not crash — exercises
+    /// the awaitExpression.Expression is not InvocationExpressionSyntax path (line 122).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task MethodWithAwaitedTaskVariable_DoesNotCrash()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                    Task RegisterTypeInfoResolverAsync(object resolver);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(object resolver) => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        // Awaiting a variable exercises the non-invocation await path.
+                        Task t = Task.CompletedTask;
+                        await t;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -1108,4 +1108,116 @@ public class BiDiDriver001AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that RegisterModule called before StartAsync does not fire — exercises the
+    /// IsStarted false branch of the third && clause on line 145.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_BeforeStartAsync_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                    void RegisterModule(object module);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public void RegisterModule(object module) { }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.RegisterModule(new object());
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that StartAsync called on a non-driver type does not fire — exercises the
+    /// IsCommandExecutorType false branch of line 139.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartAsync_OnNonDriverType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                    void RegisterModule(object module);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public void RegisterModule(object module) { }
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class SomeService
+                {
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        SomeService service = new SomeService();
+                        await service.StartAsync("ws://localhost:9222");
+                        driver.RegisterModule(new object());
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

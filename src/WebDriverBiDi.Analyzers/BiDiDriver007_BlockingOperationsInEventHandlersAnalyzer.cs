@@ -73,7 +73,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (methodSymbol.ReturnType is not INamedTypeSymbol returnType || returnType.Name != "EventObserver")
+        if (((INamedTypeSymbol)methodSymbol.ReturnType).Name != "EventObserver")
         {
             return;
         }
@@ -121,13 +121,13 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 continue;
             }
 
-            if (methodSymbol.ContainingType?.Name == "Thread" && methodSymbol.Name == "Sleep")
+            if (methodSymbol.ContainingType.Name == "Thread" && methodSymbol.Name == "Sleep")
             {
                 blockingOps.Add(invocation);
                 continue;
             }
 
-            if (methodSymbol.ContainingType?.Name == "Task" && methodSymbol.Name == "Wait")
+            if (methodSymbol.ContainingType.Name == "Task" && methodSymbol.Name == "Wait")
             {
                 blockingOps.Add(invocation);
                 continue;

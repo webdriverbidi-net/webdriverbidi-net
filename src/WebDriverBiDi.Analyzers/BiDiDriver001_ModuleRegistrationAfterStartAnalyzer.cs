@@ -136,13 +136,13 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         string methodName = methodSymbol.Name;
 
         // Check if this is StartAsync() being called
-        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync")
         {
             driverVariables[driverVariableName].IsStarted = true;
         }
 
         // Check if this is RegisterModule() being called AFTER StartAsync()
-        if (methodName == "RegisterModule" && AnalyzerSymbolHelpers.IsDriverConfigurationType(methodSymbol.ContainingType) && driverVariables[driverVariableName].IsStarted)
+        if (methodName == "RegisterModule" && driverVariables[driverVariableName].IsStarted)
         {
             // Get module parameter for better error message
             string moduleName = "module";

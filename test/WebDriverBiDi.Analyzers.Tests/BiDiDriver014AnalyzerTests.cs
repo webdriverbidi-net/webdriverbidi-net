@@ -1233,4 +1233,60 @@ public class BiDiDriver014AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that assigning to a field (not a property) on a tracked variable does not
+    /// mark the variable as having a property assignment — exercises the
+    /// symbol is not IPropertySymbol path (line 231).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FieldAssignment_DoesNotMarkVariableAsPropertyAssigned()
+    {
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+
+                public class TestParams : CommandParameters
+                {
+                    public TestParams() { }
+                    public static TestParams Reset => new TestParams();
+                    public string Field = string.Empty;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        TestParams p = {|#0:new TestParams()|};
+                        // Assignment to a field (not a property) — exercises line 231.
+                        p.Field = "value";
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("TestParams", "Reset");
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

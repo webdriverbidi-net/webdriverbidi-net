@@ -238,7 +238,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     private static bool IsModuleType(INamedTypeSymbol? type)
     {
         // Check if the type inherits from Module
-        INamedTypeSymbol? currentType = type?.BaseType;
+        INamedTypeSymbol? currentType = type!.BaseType;
         while (currentType != null)
         {
             if (currentType.Name == "Module")

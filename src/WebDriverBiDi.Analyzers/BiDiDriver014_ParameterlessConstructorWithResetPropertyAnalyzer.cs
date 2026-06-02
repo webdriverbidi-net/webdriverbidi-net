@@ -174,11 +174,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 continue;
             }
 
-            ITypeSymbol? type = semanticModel.GetTypeInfo(objectCreation).Type;
-            if (type == null)
-            {
-                continue;
-            }
+            ITypeSymbol type = semanticModel.GetTypeInfo(objectCreation).Type!;
 
             // Check if this is a CommandParameters type
             if (!IsCommandParametersType(type))
@@ -255,7 +251,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         INamedTypeSymbol? baseType = type.BaseType;
         while (baseType != null)
         {
-            if (baseType.Name == "CommandParameters" && baseType.ContainingNamespace?.ToString() == "WebDriverBiDi")
+            if (baseType.Name == "CommandParameters" && baseType.ContainingNamespace!.ToString() == "WebDriverBiDi")
             {
                 return true;
             }

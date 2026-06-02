@@ -495,4 +495,115 @@ public class BiDiDriver022AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that an AdditionalData property returning a non-Dictionary type does not
+    /// fire — exercises the IsDictionaryStringObject false branch (line 80).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AdditionalData_WithNonDictionaryType_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    // AdditionalData returning List, not Dictionary — IsDictionaryStringObject returns false.
+                    public List<string> AdditionalData { get; } = new();
+                }
+
+                public class GetTreeCommandParameters : CommandParameters { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GetTreeCommandParameters cmd = new GetTreeCommandParameters();
+                        cmd.AdditionalData.Add("value");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
+
+
+    /// <summary>
+    /// Tests that calling a non-Add method (e.g. Clear) on AdditionalData does not fire —
+    /// exercises the !ValueAddingMethodNames.Contains false branch (line 149).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AdditionalData_Clear_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    public Dictionary<string, object?> AdditionalData { get; } = new();
+                }
+
+                public class GetTreeCommandParameters : CommandParameters { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GetTreeCommandParameters cmd = new GetTreeCommandParameters();
+                        // Clear is not in ValueAddingMethodNames — no diagnostic.
+                        cmd.AdditionalData.Clear();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that invoking a non-member-access expression (e.g. a delegate variable) named
+    /// "Add" does not fire — exercises invocation.Expression is not MemberAccessExpressionSyntax
+    /// true path (line 145 branch 1).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DelegateAdd_NotMemberAccess_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Collections.Generic;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        // Invocation where Expression is NOT MemberAccessExpressionSyntax.
+                        Action<string> Add = s => { };
+                        Add("value");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
 }

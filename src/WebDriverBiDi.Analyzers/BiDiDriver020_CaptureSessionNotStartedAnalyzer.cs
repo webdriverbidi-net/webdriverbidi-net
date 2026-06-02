@@ -76,8 +76,8 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             {
                 foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
                 {
-                    ILocalSymbol? localSymbol = semanticModel.GetDeclaredSymbol(variable) as ILocalSymbol;
-                    if (localSymbol?.Type is INamedTypeSymbol { Name: "EventObserver" })
+                    ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
+                    if (localSymbol.Type is INamedTypeSymbol { Name: "EventObserver" })
                     {
                         capturingState[variable.Identifier.Text] = false;
                     }

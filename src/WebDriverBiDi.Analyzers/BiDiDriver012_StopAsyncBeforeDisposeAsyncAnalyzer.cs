@@ -142,19 +142,15 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     private static SyntaxNode GetContainingBlock(SyntaxNode node)
     {
         SyntaxNode? current = node.Parent;
-        while (current != null)
+        while (true)
         {
             if (current is BlockSyntax or MethodDeclarationSyntax)
             {
-                return current;
+                return current!;
             }
 
-            current = current.Parent;
+            current = current!.Parent;
         }
-
-        // The analyzer only fires on MethodDeclaration nodes, so every invocation
-        // it processes is guaranteed to have a BlockSyntax or MethodDeclarationSyntax ancestor.
-        throw new System.InvalidOperationException("No containing block found.");
     }
 
     private static bool HasStopAsyncBeforeInBlock(SyntaxNode block, string variableName, InvocationExpressionSyntax disposeAsyncCall)
@@ -178,39 +174,15 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        // Look for StopAsync calls on the same variable before the DisposeAsync call
-        foreach (StatementSyntax statement in statements)
-        {
-            // Stop when we reach the DisposeAsync statement
-            if (statement == disposeStatement)
-            {
-                break;
-            }
-
-            // Check if this statement contains a StopAsync call on the variable
-            IEnumerable<InvocationExpressionSyntax>? stopAsyncCalls = statement.DescendantNodes()
+        // Look for StopAsync calls on the same variable in all statements before DisposeAsync.
+        return statements
+            .TakeWhile(s => s != disposeStatement)
+            .Any(s => s.DescendantNodes()
                 .OfType<InvocationExpressionSyntax>()
-                .Where(invocation =>
-                {
-                    if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
-                        memberAccess.Name.Identifier.Text == "StopAsync")
-                    {
-                        if (memberAccess.Expression is IdentifierNameSyntax identifier)
-                        {
-                            return identifier.Identifier.Text == variableName;
-                        }
-                    }
-
-                    return false;
-                });
-
-            if (stopAsyncCalls.Any())
-            {
-                return true;
-            }
-        }
-
-        return false;
+                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                    && ma.Name.Identifier.Text == "StopAsync"
+                    && ma.Expression is IdentifierNameSyntax id
+                    && id.Identifier.Text == variableName));
     }
 
     private static IEnumerable<StatementSyntax> GetStatements(MethodDeclarationSyntax method)
