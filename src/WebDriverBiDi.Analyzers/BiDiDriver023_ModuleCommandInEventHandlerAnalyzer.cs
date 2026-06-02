@@ -132,11 +132,6 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
 
     private static bool IsModuleCommandMethod(IMethodSymbol method)
     {
-        if (method.ContainingType == null)
-        {
-            return false;
-        }
-
         if (!method.ContainingType.Name.EndsWith("Module", System.StringComparison.Ordinal))
         {
             return false;

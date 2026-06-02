@@ -1081,4 +1081,156 @@ public class BiDiDriver014AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that property assignment whose left-hand side is not a tracked variable name
+    /// does not crash — exercises GetVariableName returning null via the _ => null arm
+    /// (line 248) and the variableName == null guard (line 230).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task PropertyAssignment_OnLiteralExpression_DoesNotReportDiagnostic()
+    {
+        // Assignment to an array element — not a simple identifier or member access,
+        // so GetVariableName hits the _ => null arm.
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+
+                public class GetCookiesCommandParameters : CommandParameters
+                {
+                    public GetCookiesCommandParameters() { }
+                    public static GetCookiesCommandParameters ResetCookies => new();
+                    public string? Filter { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GetCookiesCommandParameters[] arr = [new GetCookiesCommandParameters()];
+                        // Assignment to array element — GetVariableName hits _ => null
+                        arr[0].Filter = "test";
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that property assignment accessed through a chained member access (e.g.
+    /// obj.Sub.Prop = x) exercises the MemberAccessExpressionSyntax recursive arm of
+    /// GetVariableName (line 247).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task PropertyAssignment_OnChainedMemberAccess_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+
+                public class GetCookiesCommandParameters : CommandParameters
+                {
+                    public GetCookiesCommandParameters() { }
+                    public static GetCookiesCommandParameters ResetCookies => new();
+                    public string? Filter { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class Holder
+                {
+                    public GetCookiesCommandParameters Params { get; set; } = new GetCookiesCommandParameters();
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        Holder holder = new Holder();
+                        // Chained member access: GetVariableName recurses through MemberAccessExpressionSyntax
+                        holder.Params.Filter = "test";
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a CommandParameters type with a parameterless constructor but NO Reset*
+    /// static property does not report a diagnostic — exercises GetResetPropertyName
+    /// returning null (line 285).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_WithNoResetProperty_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+
+                public class GetCookiesCommandParameters : CommandParameters
+                {
+                    // Has parameterless constructor but NO Reset* static property
+                    public GetCookiesCommandParameters() { }
+                    public string? Filter { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GetCookiesCommandParameters p = new GetCookiesCommandParameters();
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

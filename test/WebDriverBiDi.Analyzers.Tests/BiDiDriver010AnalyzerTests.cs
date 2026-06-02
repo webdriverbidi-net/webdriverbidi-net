@@ -914,4 +914,95 @@ public class BiDiDriver010AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a module method returning plain Task (not generic Task{T}) unawaited
+    /// does NOT report BIDI010 — exercises IsTaskReturningMethod returning false (line 113).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_FireAndForget_PlainTask_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    // Plain non-generic Task — IsTaskReturningMethod returns false (line 113)
+                    public Task DoSomethingAsync() => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BrowserModule module)
+                    {
+                        // Fire and forget of a plain Task — not flagged (not Task<T>)
+                        module.DoSomethingAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module method returning Task{string} (not CommandResult) when unawaited
+    /// still reports BIDI010 — BIDI010 checks Task{T} generically via IsTaskReturningMethod,
+    /// not whether T inherits CommandResult. Exercises InheritsFromCommandResult path in
+    /// IsModuleCommandMethod indirectly (all lines of IsModuleCommandMethod are exercised).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_FireAndForget_TaskOfNonCommandResult_ReportsDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    // Task<string> — IsTaskReturningMethod = true; BIDI010 fires on fire-and-forget
+                    public Task<string> GetNameAsync() => Task.FromResult("browser");
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BrowserModule module)
+                    {
+                        module.GetNameAsync();
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithSpan(24, 13, 24, 34)
+            .WithArguments("GetNameAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
+    }
 }

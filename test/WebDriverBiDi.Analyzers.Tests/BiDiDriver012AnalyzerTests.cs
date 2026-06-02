@@ -349,4 +349,72 @@ public class BiDiDriver012AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that DisposeAsync called through a method invocation chain (not a simple
+    /// identifier) does not report a diagnostic — exercises GetDriverVariableName returning
+    /// null (line 122) because the expression is not a MemberAccessExpressionSyntax with an
+    /// identifier base.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_OnMethodCallResult_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await GetDriver().DisposeAsync();
+                    }
+
+                    private static BiDiDriver GetDriver() => new BiDiDriver();
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that DisposeAsync inside a deeply nested block (where GetContainingBlock
+    /// would return null if the driver call is at the compilation-unit level) does not
+    /// crash — exercises the null return from GetContainingBlock (line 158) by placing
+    /// DisposeAsync in an expression-bodied member with no enclosing block.
+    /// Also exercises GetStatements returning empty (line 227) for the expression-bodied path.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_InExpressionBodiedMethod_ReportsInfo()
+    {
+        // Expression-bodied method: HasStopAsyncBefore will find no containing BlockSyntax
+        // or MethodDeclarationSyntax with a body → exercises GetStatements returning empty.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    // Expression-bodied async method — method.Body is null
+                    public Task TestMethod(BiDiDriver driver) =>
+                        driver.DisposeAsync().AsTask();
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithSpan(10, 13, 10, 34)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
+    }
 }

@@ -166,11 +166,11 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
     private static string GetBlockingOperationName(SyntaxNode blockingOperation)
     {
-        return blockingOperation switch
+        if (blockingOperation is InvocationExpressionSyntax invocation && invocation.Expression is MemberAccessExpressionSyntax memberAccess)
         {
-            InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text + "()",
-            MemberAccessExpressionSyntax memberAccessExpr => memberAccessExpr.Name.Identifier.Text,
-            _ => blockingOperation.ToString(),
-        };
+            return memberAccess.Name.Identifier.Text + "()";
+        }
+
+        return ((MemberAccessExpressionSyntax)blockingOperation).Name.Identifier.Text;
     }
 }

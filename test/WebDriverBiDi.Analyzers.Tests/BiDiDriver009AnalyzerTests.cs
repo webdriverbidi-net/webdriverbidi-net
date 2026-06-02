@@ -422,4 +422,271 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that an invocation whose method symbol cannot be resolved does not produce a
+    /// diagnostic — exercises the methodSymbol == null guard (line 124).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task UnresolvableMethodCall_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        // Call to a non-existent method — symbol resolution returns null
+                        driver.{|CS1061:NonExistentMethod|}();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module method that does NOT end in "Async" is not flagged as a command
+    /// before StartAsync — exercises the !method.Name.EndsWith("Async") early return in
+    /// IsModuleCommandMethod (line 206).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_NonAsync_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+
+                public abstract class Module { }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public BrowserModule Browser { get; } = new BrowserModule();
+                }
+
+                public class BrowserModule : Module
+                {
+                    // Non-async method on a module — should not trigger BIDI009
+                    public string GetInfo() => "info";
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        string info = driver.Browser.GetInfo();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a non-Async method on a module called before StartAsync is not flagged —
+    /// exercises the !method.Name.EndsWith("Async") early return in IsModuleCommandMethod
+    /// (line 206).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_NonAsync_BeforeStart_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public abstract class Module { }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public BrowserModule Browser { get; } = new BrowserModule();
+                }
+
+                public class BrowserModule : Module
+                {
+                    // Synchronous method — does not end in "Async", so IsModuleCommandMethod
+                    // returns false at line 206.
+                    public string GetInfo() => "info";
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        string info = driver.Browser.GetInfo();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module Async method returning plain Task (non-generic) is not flagged
+    /// as a command even before StartAsync — exercises IsModuleCommandMethod returning false
+    /// at line 219 (non-generic Task has no TypeArguments).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_AsyncReturningPlainTask_BeforeStart_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public abstract class Module { }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public BrowserModule Browser { get; } = new BrowserModule();
+                }
+
+                public class BrowserModule : Module
+                {
+                    // Non-generic Task → IsModuleCommandMethod returns false (line 219)
+                    public Task DoWorkAsync() => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        // Not started, but DoWorkAsync is not a command → no diagnostic
+                        await driver.Browser.DoWorkAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module Async method returning Task{string} (not a CommandResult) is not
+    /// flagged even before StartAsync — exercises InheritsFromCommandResult returning false
+    /// (line 235) when T is string.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_AsyncReturningTaskOfNonCommandResult_BeforeStart_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public abstract class Module { }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public BrowserModule Browser { get; } = new BrowserModule();
+                }
+
+                public class BrowserModule : Module
+                {
+                    // Task<string>: InheritsFromCommandResult(string) = false (line 235)
+                    public Task<string> GetInfoAsync() => Task.FromResult("info");
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        // GetInfoAsync returns Task<string>, not Task<CommandResult> → no diagnostic
+                        string info = await driver.Browser.GetInfoAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

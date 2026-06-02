@@ -1774,4 +1774,180 @@ public class BiDiDriver015AnalyzerTests
         stream.Position = 0;
         return MetadataReference.CreateFromStream(stream);
     }
+
+    /// <summary>
+    /// Tests that a string literal in SubscribeAsync when the matching module's ObservableEvent
+    /// property has no ObservableEventNameAttribute does not produce a diagnostic — exercises
+    /// GetEventNameFromObservableEventAttribute returning null (line 260).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SubscribeAsync_WhenEventPropertyLacksAttribute_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                // Property has no [ObservableEventNameAttribute] — GetEventNameFromObservableEventAttribute
+                // walks all attributes, finds none, and returns null (line 260).
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public string EventName => string.Empty;
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public class SubscribeCommandResult { }
+
+                public class SubscribeCommandParameters
+                {
+                    public SubscribeCommandParameters(string[] events) { }
+                }
+
+                public class SessionModule
+                {
+                    public Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters parameters)
+                        => Task.FromResult(new SubscribeCommandResult());
+                }
+
+                public class BiDiDriver
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public LogModule Log { get; } = new();
+                    public SessionModule Session { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a non-constant string argument to SubscribeAsync does not produce
+    /// a diagnostic — exercises the constantValue guard (line 172).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SubscribeAsync_WithNonConstantString_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class SessionModule
+                {
+                    public Task SubscribeAsync(IEnumerable<string> eventNames) => Task.CompletedTask;
+                }
+
+                public class BiDiDriver
+                {
+                    public SessionModule Session { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        string eventName = GetEventName();
+                        await driver.Session.SubscribeAsync([eventName]);
+                    }
+
+                    private static string GetEventName() => "log.entryAdded";
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a string literal in SubscribeAsync inside an expression-bodied method
+    /// does not produce a diagnostic — exercises FindObservableEventPath returning null
+    /// when method.Body is null (line 204), and FindDriverVariable returning null (line 280).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SubscribeAsync_InExpressionBodiedMethod_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class SessionModule
+                {
+                    public Task SubscribeAsync(IEnumerable<string> eventNames) => Task.CompletedTask;
+                }
+
+                public class BiDiDriver
+                {
+                    public SessionModule Session { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    // Expression-bodied: method.Body is null
+                    public Task TestMethod(BiDiDriver driver) =>
+                        driver.Session.SubscribeAsync(["log.entryAdded"]);
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

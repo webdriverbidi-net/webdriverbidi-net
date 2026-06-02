@@ -305,4 +305,163 @@ public class BiDiDriver013AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a call to an unresolvable method name does not report a diagnostic —
+    /// exercises methodSymbol == null guard (line 62).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_OnUnresolvableReceiver_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class BiDiDriver { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.{|CS1061:NavigateAsync|}("https://example.com");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that calling a long-running method with an explicit CancellationToken does not
+    /// report a diagnostic — exercises the hasExplicitToken early return (line 87).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_WithExplicitCancellationToken_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class Module { }
+
+                public class BrowsingContextModule : Module
+                {
+                    public Task<string> NavigateAsync(string url, CancellationToken cancellationToken = default)
+                        => Task.FromResult(url);
+                }
+
+                public class BiDiDriver
+                {
+                    public BrowsingContextModule BrowsingContext { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver, CancellationToken token)
+                    {
+                        // Passing an explicit token — hasExplicitToken is true, returns early (line 87).
+                        await driver.BrowsingContext.NavigateAsync("https://example.com", token);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a known long-running method name on a type that is NOT a BiDiDriver or
+    /// module does not report a diagnostic — exercises IsTargetType returning false (line 87).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_OnUnrelatedType_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class SomeHelper
+                {
+                    public Task NavigateAsync(string url) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        SomeHelper helper = new SomeHelper();
+                        await helper.NavigateAsync("https://example.com");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a known long-running method on a target type that has NO overload
+    /// accepting CancellationToken does not report a diagnostic — exercises the
+    /// hasTokenOverload == false early exit (line 107 path not taken → no diagnostic).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_WithNoTokenOverload_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class Module { }
+
+                public class BrowsingContextModule : Module
+                {
+                    // NavigateAsync exists but has no CancellationToken overload
+                    public Task<string> NavigateAsync(string url) => Task.FromResult(url);
+                }
+
+                public class BiDiDriver
+                {
+                    public BrowsingContextModule BrowsingContext { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        await driver.BrowsingContext.NavigateAsync("https://example.com");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+    }
 }

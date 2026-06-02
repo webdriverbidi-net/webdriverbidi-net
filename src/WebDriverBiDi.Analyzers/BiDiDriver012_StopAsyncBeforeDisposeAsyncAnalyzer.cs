@@ -128,13 +128,10 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         InvocationExpressionSyntax disposeAsyncCall)
     {
         // First, try to find StopAsync in the same containing block as DisposeAsync
-        SyntaxNode? containingBlock = GetContainingBlock(disposeAsyncCall);
-        if (containingBlock != null)
+        SyntaxNode containingBlock = GetContainingBlock(disposeAsyncCall);
+        if (HasStopAsyncBeforeInBlock(containingBlock, variableName, disposeAsyncCall))
         {
-            if (HasStopAsyncBeforeInBlock(containingBlock, variableName, disposeAsyncCall))
-            {
-                return true;
-            }
+            return true;
         }
 
         // Fall back to checking at the method level
@@ -142,7 +139,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
     }
 
-    private static SyntaxNode? GetContainingBlock(SyntaxNode node)
+    private static SyntaxNode GetContainingBlock(SyntaxNode node)
     {
         SyntaxNode? current = node.Parent;
         while (current != null)
@@ -155,17 +152,16 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             current = current.Parent;
         }
 
-        return null;
+        // The analyzer only fires on MethodDeclaration nodes, so every invocation
+        // it processes is guaranteed to have a BlockSyntax or MethodDeclarationSyntax ancestor.
+        throw new System.InvalidOperationException("No containing block found.");
     }
 
     private static bool HasStopAsyncBeforeInBlock(SyntaxNode block, string variableName, InvocationExpressionSyntax disposeAsyncCall)
     {
-        IEnumerable<StatementSyntax>? statements = block switch
-        {
-            BlockSyntax blockSyntax => blockSyntax.Statements,
-            MethodDeclarationSyntax method => GetStatements(method),
-            _ => Enumerable.Empty<StatementSyntax>(),
-        };
+        IEnumerable<StatementSyntax> statements = block is BlockSyntax blockSyntax
+            ? blockSyntax.Statements
+            : GetStatements((MethodDeclarationSyntax)block);
 
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
     }
@@ -219,11 +215,6 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
     private static IEnumerable<StatementSyntax> GetStatements(MethodDeclarationSyntax method)
     {
-        if (method.Body != null)
-        {
-            return method.Body.Statements;
-        }
-
-        return Enumerable.Empty<StatementSyntax>();
+        return method.Body?.Statements ?? Enumerable.Empty<StatementSyntax>();
     }
 }

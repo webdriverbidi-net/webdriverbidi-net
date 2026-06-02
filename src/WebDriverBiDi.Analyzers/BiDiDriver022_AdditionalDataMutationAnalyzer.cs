@@ -77,13 +77,7 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // The property must return Dictionary<string, object?> (or a type that is or derives from it).
-        if (property.Type is not INamedTypeSymbol returnType)
-        {
-            return false;
-        }
-
-        return IsDictionaryStringObject(returnType);
+        return property.Type is INamedTypeSymbol returnType && IsDictionaryStringObject(returnType);
     }
 
     private static bool IsDictionaryStringObject(INamedTypeSymbol type)
@@ -152,13 +146,8 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
     {
         InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
-        string methodName = memberAccess.Name.Identifier.Text;
-        if (!ValueAddingMethodNames.Contains(methodName))
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+            || !ValueAddingMethodNames.Contains(memberAccess.Name.Identifier.Text))
         {
             return;
         }

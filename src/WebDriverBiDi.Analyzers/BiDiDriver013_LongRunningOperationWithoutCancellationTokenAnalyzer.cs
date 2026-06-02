@@ -87,11 +87,11 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
             return;
         }
 
-        // Check if an overload exists that accepts CancellationToken
-        INamedTypeSymbol containingType = methodSymbol.ContainingType;
-        System.Collections.Generic.IEnumerable<IMethodSymbol> overloads = containingType.GetMembers(methodSymbol.Name).OfType<IMethodSymbol>();
-
-        bool hasTokenOverload = overloads.Any(overload => overload.Parameters.Any(p => p.Type.Name == "CancellationToken"));
+        // Check if an overload exists that accepts CancellationToken; only report if one does.
+        bool hasTokenOverload = methodSymbol.ContainingType
+            .GetMembers(methodSymbol.Name)
+            .OfType<IMethodSymbol>()
+            .Any(overload => overload.Parameters.Any(p => p.Type.Name == "CancellationToken"));
 
         if (hasTokenOverload)
         {
@@ -102,13 +102,7 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
 
     private static bool IsTargetType(INamedTypeSymbol? type)
     {
-        if (type == null)
-        {
-            return false;
-        }
-
-        // Check for BiDiDriver, modules, or EventObserver<T>
-        return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || type.Name.EndsWith("Module") || (type.Name == "EventObserver" && type.IsGenericType);
+        return type != null && (AnalyzerSymbolHelpers.IsCommandExecutorType(type) || type.Name.EndsWith("Module") || (type.Name == "EventObserver" && type.IsGenericType));
     }
 
     private static bool IsLongRunningMethod(IMethodSymbol method)
