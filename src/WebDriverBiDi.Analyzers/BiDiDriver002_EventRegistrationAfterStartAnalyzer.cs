@@ -245,7 +245,7 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
 
     private static bool IsModuleType(ITypeSymbol type)
     {
-        return type.Name.EndsWith("Module");
+        return AnalyzerSymbolHelpers.IsModuleSubclass(type as INamedTypeSymbol);
     }
 
     private class DriverVariableState
