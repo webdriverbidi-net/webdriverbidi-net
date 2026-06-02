@@ -37,15 +37,10 @@ public class BiDiDriver006_ObserverDisposalCodeFixProvider : CodeFixProvider
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        LocalDeclarationStatementSyntax? declaration = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        LocalDeclarationStatementSyntax declaration = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<LocalDeclarationStatementSyntax>()
             .First();
-
-        if (declaration == null)
-        {
-            return;
-        }
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -61,11 +56,7 @@ public class BiDiDriver006_ObserverDisposalCodeFixProvider : CodeFixProvider
         LocalDeclarationStatementSyntax declaration,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Create a new using declaration statement (C# 8.0 style: using var observer = ...)
         // The using keyword should have only a space after it

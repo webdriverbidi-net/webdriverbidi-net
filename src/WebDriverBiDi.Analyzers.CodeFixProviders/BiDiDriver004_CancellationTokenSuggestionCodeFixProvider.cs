@@ -38,15 +38,10 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
         Diagnostic diagnostic = context.Diagnostics.First();
         TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        InvocationExpressionSyntax? invocation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .First();
-
-        if (invocation == null)
-        {
-            return;
-        }
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -70,11 +65,7 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Add CancellationToken.None as last argument
         ArgumentSyntax tokenArgument = SyntaxFactory.Argument(
@@ -95,11 +86,7 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Add a cancellationToken variable reference
         ArgumentSyntax tokenArgument = SyntaxFactory.Argument(

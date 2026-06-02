@@ -38,25 +38,18 @@ public class BiDiDriver017_NullableListAddCodeFixProvider : CodeFixProvider
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        InvocationExpressionSyntax? invocation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault();
+            .First();
 
-        if (invocation == null || invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
-        if (!diagnostic.Properties.TryGetValue("ElementTypeName", out string? elementTypeName) || string.IsNullOrEmpty(elementTypeName))
-        {
-            return;
-        }
+        MemberAccessExpressionSyntax memberAccess = (MemberAccessExpressionSyntax)invocation.Expression;
+        string elementTypeName = diagnostic.Properties["ElementTypeName"]!;
 
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Use ??= to initialize list before adding",
-                createChangedDocument: c => ApplyFixAsync(context.Document, invocation, memberAccess, elementTypeName!, c),
+                createChangedDocument: c => ApplyFixAsync(context.Document, invocation, memberAccess, elementTypeName, c),
                 equivalenceKey: "UseNullCoalescingAssignment"),
             diagnostic);
     }
@@ -68,11 +61,7 @@ public class BiDiDriver017_NullableListAddCodeFixProvider : CodeFixProvider
         string elementTypeName,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Create: (receiver ??= new List<ElementType>()).Add(...)
         ExpressionSyntax receiver = memberAccess.Expression;

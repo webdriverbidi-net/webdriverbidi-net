@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -598,4 +599,52 @@ public class BiDiDriver008CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that when an 'as' expression appears in a non-variable-declaration context
+    /// (e.g. directly as a method argument) the code fix returns the document unchanged —
+    /// exercises the "other cases" return at line 280 of the code fix provider.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AsExpression_InMethodArgument_CodeFixIsNoOp()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+            using System;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        // 'as' expression passed directly as an argument, not a declaration.
+                        Consume({|#0:result as EvaluateResultSuccess|});
+                    }
+
+                    private static void Consume(EvaluateResultSuccess? s) { }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+            NumberOfIncrementalIterations = 1,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

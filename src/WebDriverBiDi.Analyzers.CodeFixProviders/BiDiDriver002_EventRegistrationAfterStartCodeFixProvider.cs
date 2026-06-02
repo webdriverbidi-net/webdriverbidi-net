@@ -38,15 +38,10 @@ public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixP
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        InvocationExpressionSyntax? invocation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .First();
-
-        if (invocation == null)
-        {
-            return;
-        }
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -62,55 +57,31 @@ public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixP
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Find the statement containing the event registration
-        StatementSyntax? registerStatement = invocation.FirstAncestorOrSelf<StatementSyntax>();
-        if (registerStatement == null)
-        {
-            return document;
-        }
+        StatementSyntax registerStatement = invocation.FirstAncestorOrSelf<StatementSyntax>()!;
 
         // Find the method containing this statement
-        MethodDeclarationSyntax? method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-        if (method?.Body == null)
-        {
-            return document;
-        }
+        MethodDeclarationSyntax method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
 
-        // Find the StartAsync call
-        StatementSyntax? startAsyncStatement = FindStartAsyncStatement(method, invocation);
-        if (startAsyncStatement == null)
-        {
-            return document;
-        }
+        // Find the StartAsync call on the same driver variable as the event registration.
+        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
+        StatementSyntax startAsyncStatement = method.Body!.Statements
+            .First(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                    && ma.Name.Identifier.Text == "StartAsync"
+                    && GetRootIdentifierName(ma) == driverVariableName));
 
         // Track both statements through the transformation
         SyntaxNode trackedMethod = method.TrackNodes(registerStatement, startAsyncStatement);
 
         // Get the current tracked register statement and remove it
-        StatementSyntax? trackedRegisterStatement = trackedMethod.GetCurrentNode(registerStatement);
-        if (trackedRegisterStatement == null)
-        {
-            return document;
-        }
-
-        SyntaxNode? methodWithoutRegister = trackedMethod.RemoveNode(trackedRegisterStatement, SyntaxRemoveOptions.KeepNoTrivia);
-        if (methodWithoutRegister == null)
-        {
-            return document;
-        }
+        StatementSyntax trackedRegisterStatement = trackedMethod.GetCurrentNode(registerStatement)!;
+        SyntaxNode methodWithoutRegister = trackedMethod.RemoveNode(trackedRegisterStatement, SyntaxRemoveOptions.KeepNoTrivia)!;
 
         // Get the current tracked StartAsync statement
-        StatementSyntax? updatedStartAsyncStatement = methodWithoutRegister.GetCurrentNode(startAsyncStatement);
-        if (updatedStartAsyncStatement == null)
-        {
-            return document;
-        }
+        StatementSyntax updatedStartAsyncStatement = methodWithoutRegister.GetCurrentNode(startAsyncStatement)!;
 
         // Insert the register statement before StartAsync
         StatementSyntax registerStatementCopy = trackedRegisterStatement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
@@ -120,72 +91,16 @@ public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixP
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private static StatementSyntax? FindStartAsyncStatement(MethodDeclarationSyntax method, InvocationExpressionSyntax eventRegistration)
+    private static string? GetRootIdentifierName(ExpressionSyntax expression)
     {
-        if (method.Body == null)
+        ExpressionSyntax current = expression is MemberAccessExpressionSyntax outerAccess
+            ? outerAccess.Expression
+            : expression;
+        while (current is MemberAccessExpressionSyntax nestedAccess)
         {
-            return null;
+            current = nestedAccess.Expression;
         }
 
-        // Get the driver variable name from the event registration
-        string? driverVariableName = GetDriverVariableName(eventRegistration);
-        if (driverVariableName == null)
-        {
-            return null;
-        }
-
-        // Find the first StartAsync call on the same driver variable
-        foreach (StatementSyntax statement in method.Body.Statements)
-        {
-            InvocationExpressionSyntax? invocation = statement.DescendantNodes()
-                .OfType<InvocationExpressionSyntax>()
-                .FirstOrDefault();
-
-            if (invocation == null)
-            {
-                continue;
-            }
-
-            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-            {
-                continue;
-            }
-
-            if (memberAccess.Name.Identifier.Text != "StartAsync")
-            {
-                continue;
-            }
-
-            string? invocationDriverName = GetDriverVariableName(invocation);
-            if (invocationDriverName == driverVariableName)
-            {
-                return statement;
-            }
-        }
-
-        return null;
-    }
-
-    private static string? GetDriverVariableName(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return null;
-        }
-
-        ExpressionSyntax current = memberAccess.Expression;
-
-        // Walk through the member access chain to find the base identifier
-        while (current is MemberAccessExpressionSyntax nestedMemberAccess)
-        {
-            current = nestedMemberAccess.Expression;
-        }
-
-        if (current is IdentifierNameSyntax identifier)
-        {
-            return identifier.Identifier.Text;
-        }
-
-        return null;
+        return (current as IdentifierNameSyntax)?.Identifier.Text;
     }
 }

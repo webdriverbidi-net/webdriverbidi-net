@@ -38,15 +38,10 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        InvocationExpressionSyntax? invocation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .First();
-
-        if (invocation == null)
-        {
-            return;
-        }
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -58,25 +53,13 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
 
     private static async Task<Document> AddStartCapturingAsync(Document document, InvocationExpressionSyntax invocation, CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        StatementSyntax? targetStatement = invocation.FirstAncestorOrSelf<StatementSyntax>();
-        if (targetStatement == null)
-        {
-            return document;
-        }
+        StatementSyntax targetStatement = invocation.FirstAncestorOrSelf<StatementSyntax>()!;
 
-        // Derive the receiver name from the invocation (e.g. "observer" from "observer.WaitForAsync(...)").
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess || memberAccess.Expression is not IdentifierNameSyntax receiverIdentifier)
-        {
-            return document;
-        }
-
-        string receiverName = receiverIdentifier.Identifier.Text;
+        // The analyzer only fires when the receiver is an IdentifierNameSyntax, so these casts are safe.
+        MemberAccessExpressionSyntax memberAccess = (MemberAccessExpressionSyntax)invocation.Expression;
+        string receiverName = ((IdentifierNameSyntax)memberAccess.Expression).Identifier.Text;
 
         // Build: observer.StartCapturingTasks();
         ExpressionStatementSyntax startCapturingStatement =
