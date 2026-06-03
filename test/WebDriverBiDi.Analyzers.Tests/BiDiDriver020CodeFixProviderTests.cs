@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Analyzers.Tests;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -206,4 +207,5 @@ public class BiDiDriver020CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
 }

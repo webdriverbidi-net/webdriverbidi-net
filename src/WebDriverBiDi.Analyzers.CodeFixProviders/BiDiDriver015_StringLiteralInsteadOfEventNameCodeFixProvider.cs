@@ -35,27 +35,16 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameCodeFixProvider : Code
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return;
-        }
+        SyntaxNode root = (await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false))!;
 
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
         // Find the string literal expression
-        LiteralExpressionSyntax? literalExpression = root.FindToken(diagnosticSpan.Start).Parent?.AncestorsAndSelf().OfType<LiteralExpressionSyntax>().First();
-        if (literalExpression == null)
-        {
-            return;
-        }
+        LiteralExpressionSyntax literalExpression = root.FindToken(diagnosticSpan.Start).Parent!.AncestorsAndSelf().OfType<LiteralExpressionSyntax>().First();
 
         // Get the event path from diagnostic properties
-        if (!diagnostic.Properties.TryGetValue("EventPath", out string? eventPath) || eventPath == null)
-        {
-            return;
-        }
+        string eventPath = diagnostic.Properties["EventPath"]!;
 
         // Register a code action
         context.RegisterCodeFix(

@@ -1085,4 +1085,253 @@ public class BiDiDriver002AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that AddObserver on a non-module, non-driver type does not report a diagnostic
+    /// (exercises the IsModuleType → IsModuleSubclass null-guard path for a plain class).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnPlainClassWithObservableEvent_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                }
+
+                // Plain class: does NOT inherit from Module — should never trigger BIDI002.
+                public class NotAModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> SomeEvent { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        NotAModule helper = new NotAModule();
+                        await driver.StartAsync("ws://localhost:9222");
+                        helper.SomeEvent.AddObserver(async (e) => { });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that AddObserver whose member-access chain cannot be traced back to a known
+    /// driver variable does not report a diagnostic (exercises GetDriverVariableName → null path
+    /// when the base of the chain is not a simple identifier).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnChainedMethodCallResult_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public ObservableEvent<LogEntryAddedEventArgs> OnLogMessage { get; } = new();
+                }
+
+                public static class DriverFactory
+                {
+                    public static BiDiDriver Create() => new BiDiDriver(TimeSpan.FromSeconds(30));
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        // AddObserver called on a method-call result, not a simple variable —
+                        // GetDriverVariableName cannot extract a name, so no diagnostic.
+                        DriverFactory.Create().OnLogMessage.AddObserver(async (e) => { });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a non-declaration, non-expression statement (like an if-block) in
+    /// a method body does not crash — exercises the neither-branch path on line 76.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task MethodWithIfStatement_DoesNotCrash()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        // An if-statement is neither LocalDeclaration nor ExpressionStatement.
+                        if (true) { }
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that awaiting a non-invocation task does not crash — exercises the
+    /// awaitExpression.Expression is not InvocationExpressionSyntax false branch (line 121).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task MethodWithAwaitedVariable_DoesNotCrash()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public class BiDiDriver : IBiDiCommandExecutor
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        // Await a variable (not an invocation expression).
+                        Task t = Task.CompletedTask;
+                        await t;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

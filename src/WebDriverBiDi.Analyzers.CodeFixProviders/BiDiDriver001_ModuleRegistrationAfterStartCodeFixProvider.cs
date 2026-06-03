@@ -38,15 +38,10 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
         Diagnostic diagnostic = context.Diagnostics.First();
         TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        InvocationExpressionSyntax? invocation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .First();
-
-        if (invocation == null)
-        {
-            return;
-        }
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -61,44 +56,24 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
         InvocationExpressionSyntax registerModuleInvocation,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        MethodDeclarationSyntax? method = registerModuleInvocation.Ancestors()
+        MethodDeclarationSyntax method = registerModuleInvocation.Ancestors()
             .OfType<MethodDeclarationSyntax>()
-            .FirstOrDefault();
-        if (method == null)
-        {
-            return document;
-        }
+            .First();
 
         // Find the statement containing RegisterModule
-        StatementSyntax? registerStatement = registerModuleInvocation.Ancestors()
+        StatementSyntax registerStatement = registerModuleInvocation.Ancestors()
             .OfType<StatementSyntax>()
             .First();
 
         // Find the StartAsync call
-        InvocationExpressionSyntax? startAsyncInvocation = method.DescendantNodes()
+        InvocationExpressionSyntax startAsyncInvocation = method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(inv =>
-            {
-                if (inv.Expression is MemberAccessExpressionSyntax memberAccess)
-                {
-                    return memberAccess.Name.Identifier.Text == "StartAsync";
-                }
+            .First(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Name.Identifier.Text == "StartAsync");
 
-                return false;
-            });
-
-        if (startAsyncInvocation == null)
-        {
-            return document;
-        }
-
-        StatementSyntax? startAsyncStatement = startAsyncInvocation.Ancestors()
+        StatementSyntax startAsyncStatement = startAsyncInvocation.Ancestors()
             .OfType<StatementSyntax>()
             .First();
 
@@ -106,24 +81,11 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
         MethodDeclarationSyntax trackedMethod = method.TrackNodes(registerStatement, startAsyncStatement);
 
         // Remove RegisterModule from its current location
-        StatementSyntax? trackedRegisterStatement = trackedMethod.GetCurrentNode(registerStatement);
-        if (trackedRegisterStatement == null)
-        {
-            return document;
-        }
-
-        MethodDeclarationSyntax? methodWithoutRegister = trackedMethod.RemoveNode(trackedRegisterStatement, SyntaxRemoveOptions.KeepNoTrivia);
-        if (methodWithoutRegister == null)
-        {
-            return document;
-        }
+        StatementSyntax trackedRegisterStatement = trackedMethod.GetCurrentNode(registerStatement)!;
+        MethodDeclarationSyntax methodWithoutRegister = trackedMethod.RemoveNode(trackedRegisterStatement, SyntaxRemoveOptions.KeepNoTrivia)!;
 
         // Find the tracked StartAsync statement in the updated tree
-        StatementSyntax? updatedStartAsyncStatement = methodWithoutRegister.GetCurrentNode(startAsyncStatement);
-        if (updatedStartAsyncStatement == null)
-        {
-            return document;
-        }
+        StatementSyntax updatedStartAsyncStatement = methodWithoutRegister.GetCurrentNode(startAsyncStatement)!;
 
         // Create a copy of the register statement to insert
         StatementSyntax? registerStatementCopy = trackedRegisterStatement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);

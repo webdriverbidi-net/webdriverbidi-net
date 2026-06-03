@@ -218,4 +218,5 @@ public class BiDiDriver002CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
 }

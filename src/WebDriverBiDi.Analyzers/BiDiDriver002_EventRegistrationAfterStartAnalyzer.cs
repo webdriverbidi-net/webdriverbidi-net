@@ -161,14 +161,14 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         string methodName = methodSymbol.Name;
 
         // Track StartAsync calls
-        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync")
         {
             DriverVariableState currentState = new DriverVariableState { IsStarted = true };
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
         // Check for RegisterEvent after StartAsync
-        if (methodName == "RegisterEvent" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        if (methodName == "RegisterEvent")
         {
             DriverVariableState state = updatedVariables[driverVariableName];
             if (state.IsStarted)
@@ -199,10 +199,6 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
     private static bool IsDriverOrModuleObservableEvent(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
         ITypeSymbol? typeSymbol = context.SemanticModel.GetTypeInfo(expression).Type;
-        if (typeSymbol == null)
-        {
-            return false;
-        }
 
         // Check if the type is ObservableEvent<T>
         if (typeSymbol is INamedTypeSymbol namedType && namedType.Name == "ObservableEvent")
@@ -214,9 +210,10 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
                 current = memberAccess.Expression;
             }
 
-            // Check if the root is a BiDiDriver or Module type
+            // Check if the root is a BiDiDriver type (module properties are always accessed
+            // through a driver variable, so IsCommandExecutorType is sufficient here)
             ITypeSymbol? rootType = context.SemanticModel.GetTypeInfo(current).Type;
-            if (rootType != null && (AnalyzerSymbolHelpers.IsCommandExecutorType(rootType) || IsModuleType(rootType)))
+            if (AnalyzerSymbolHelpers.IsCommandExecutorType(rootType))
             {
                 return true;
             }
@@ -241,11 +238,6 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         }
 
         return null;
-    }
-
-    private static bool IsModuleType(ITypeSymbol type)
-    {
-        return AnalyzerSymbolHelpers.IsModuleSubclass(type as INamedTypeSymbol);
     }
 
     private class DriverVariableState

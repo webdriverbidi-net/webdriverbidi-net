@@ -166,11 +166,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
             return;
         }
 
-        Optional<object?> constantValue = context.SemanticModel.GetConstantValue(literal);
-        if (!constantValue.HasValue || constantValue.Value is not string eventName)
-        {
-            return;
-        }
+        string eventName = (string)context.SemanticModel.GetConstantValue(literal).Value!;
 
         // Try to find the corresponding ObservableEvent property
         string? eventPath = FindObservableEventPath(context, driverVariableName, eventName);
@@ -199,14 +195,10 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     {
         // Look for the driver variable in the method
         MethodDeclarationSyntax method = (MethodDeclarationSyntax)context.Node;
-        if (method.Body == null)
-        {
-            return null;
-        }
 
         // Find driver variable declaration
         ITypeSymbol? driverType = null;
-        foreach (StatementSyntax statement in method.Body.Statements)
+        foreach (StatementSyntax statement in method.Body!.Statements)
         {
             if (statement is LocalDeclarationStatementSyntax localDecl)
             {
@@ -224,13 +216,8 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
             }
         }
 
-        if (driverType == null || !AnalyzerSymbolHelpers.IsCommandExecutorType(driverType))
-        {
-            return null;
-        }
-
         // Search through driver's module properties
-        foreach (ISymbol member in driverType.GetMembers())
+        foreach (ISymbol member in driverType!.GetMembers())
         {
             if (member is IPropertySymbol propertySymbol && IsModuleType(propertySymbol.Type))
             {
@@ -275,13 +262,8 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private static string? FindDriverVariable(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method)
     {
-        if (method.Body == null)
-        {
-            return null;
-        }
-
         // Look for BiDiDriver variable declarations
-        foreach (StatementSyntax statement in method.Body.Statements)
+        foreach (StatementSyntax statement in method.Body!.Statements)
         {
             if (statement is LocalDeclarationStatementSyntax localDecl)
             {

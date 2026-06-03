@@ -73,7 +73,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        if (methodSymbol.ReturnType is not INamedTypeSymbol returnType || returnType.Name != "EventObserver")
+        if (((INamedTypeSymbol)methodSymbol.ReturnType).Name != "EventObserver")
         {
             return;
         }
@@ -95,11 +95,9 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        SyntaxNode? handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression);
-        if (handlerBody == null)
-        {
-            return;
-        }
+        // IsAsyncHandler above only returns true for async lambdas, whose Body is
+        // always non-null, so GetHandlerBody is guaranteed to return a non-null body here.
+        SyntaxNode handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression)!;
 
         IEnumerable<(SyntaxNode Node, string Pattern)> deadlockPatterns = FindDeadlockPronePatterns(context, handlerBody);
         foreach ((SyntaxNode node, string pattern) in deadlockPatterns)
@@ -144,7 +142,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
                 continue;
             }
 
-            string? containingTypeName = methodSymbol.ContainingType?.Name;
+            string? containingTypeName = methodSymbol.ContainingType.Name;
             string methodName = methodSymbol.Name;
 
             if (containingTypeName == "Monitor" && (methodName == "Enter" || methodName == "TryEnter"))
@@ -181,11 +179,6 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
                 continue;
             }
 
-            if (containingTypeName == "Mutex" && methodName == "WaitOne")
-            {
-                patterns.Add((invocation, "Mutex.WaitOne"));
-                continue;
-            }
         }
 
         return patterns;

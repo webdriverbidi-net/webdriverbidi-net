@@ -128,13 +128,10 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         InvocationExpressionSyntax disposeAsyncCall)
     {
         // First, try to find StopAsync in the same containing block as DisposeAsync
-        SyntaxNode? containingBlock = GetContainingBlock(disposeAsyncCall);
-        if (containingBlock != null)
+        SyntaxNode containingBlock = GetContainingBlock(disposeAsyncCall);
+        if (HasStopAsyncBeforeInBlock(containingBlock, variableName, disposeAsyncCall))
         {
-            if (HasStopAsyncBeforeInBlock(containingBlock, variableName, disposeAsyncCall))
-            {
-                return true;
-            }
+            return true;
         }
 
         // Fall back to checking at the method level
@@ -142,30 +139,25 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
     }
 
-    private static SyntaxNode? GetContainingBlock(SyntaxNode node)
+    private static SyntaxNode GetContainingBlock(SyntaxNode node)
     {
         SyntaxNode? current = node.Parent;
-        while (current != null)
+        while (true)
         {
             if (current is BlockSyntax or MethodDeclarationSyntax)
             {
-                return current;
+                return current!;
             }
 
-            current = current.Parent;
+            current = current!.Parent;
         }
-
-        return null;
     }
 
     private static bool HasStopAsyncBeforeInBlock(SyntaxNode block, string variableName, InvocationExpressionSyntax disposeAsyncCall)
     {
-        IEnumerable<StatementSyntax>? statements = block switch
-        {
-            BlockSyntax blockSyntax => blockSyntax.Statements,
-            MethodDeclarationSyntax method => GetStatements(method),
-            _ => Enumerable.Empty<StatementSyntax>(),
-        };
+        IEnumerable<StatementSyntax> statements = block is BlockSyntax blockSyntax
+            ? blockSyntax.Statements
+            : GetStatements((MethodDeclarationSyntax)block);
 
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
     }
@@ -182,48 +174,19 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        // Look for StopAsync calls on the same variable before the DisposeAsync call
-        foreach (StatementSyntax statement in statements)
-        {
-            // Stop when we reach the DisposeAsync statement
-            if (statement == disposeStatement)
-            {
-                break;
-            }
-
-            // Check if this statement contains a StopAsync call on the variable
-            IEnumerable<InvocationExpressionSyntax>? stopAsyncCalls = statement.DescendantNodes()
+        // Look for StopAsync calls on the same variable in all statements before DisposeAsync.
+        return statements
+            .TakeWhile(s => s != disposeStatement)
+            .Any(s => s.DescendantNodes()
                 .OfType<InvocationExpressionSyntax>()
-                .Where(invocation =>
-                {
-                    if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
-                        memberAccess.Name.Identifier.Text == "StopAsync")
-                    {
-                        if (memberAccess.Expression is IdentifierNameSyntax identifier)
-                        {
-                            return identifier.Identifier.Text == variableName;
-                        }
-                    }
-
-                    return false;
-                });
-
-            if (stopAsyncCalls.Any())
-            {
-                return true;
-            }
-        }
-
-        return false;
+                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                    && ma.Name.Identifier.Text == "StopAsync"
+                    && ma.Expression is IdentifierNameSyntax id
+                    && id.Identifier.Text == variableName));
     }
 
     private static IEnumerable<StatementSyntax> GetStatements(MethodDeclarationSyntax method)
     {
-        if (method.Body != null)
-        {
-            return method.Body.Statements;
-        }
-
-        return Enumerable.Empty<StatementSyntax>();
+        return method.Body?.Statements ?? Enumerable.Empty<StatementSyntax>();
     }
 }

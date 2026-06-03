@@ -78,24 +78,8 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Don't flag if already using null-conditional: expr?.Add(...)
-        if (memberAccess.Expression is ConditionalAccessExpressionSyntax)
-        {
-            return;
-        }
-
-        // Don't flag if receiver is already wrapped in ??=: (expr ??= new List<T>()).Add(...)
-        if (IsInsideNullCoalescingAssignment(memberAccess))
-        {
-            return;
-        }
-
         // Get the type of the receiver (e.g., params.Contexts)
         ITypeSymbol? receiverType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
-        if (receiverType == null)
-        {
-            return;
-        }
 
         // Check if this is a nullable list/collection type
         (bool isNullableList, ITypeSymbol? elementType) = GetNullableListElementType(receiverType);
@@ -136,39 +120,10 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(diagnostic);
     }
 
-    private static bool IsInsideNullCoalescingAssignment(MemberAccessExpressionSyntax memberAccess)
-    {
-        // Check if we're in (expr ??= new List<T>()).Add(...)
-        SyntaxNode? parent = memberAccess.Parent;
-        while (parent != null)
-        {
-            if (parent is AssignmentExpressionSyntax assignment && assignment.Kind() == SyntaxKind.CoalesceAssignmentExpression)
-            {
-                return true;
-            }
-
-            parent = parent.Parent;
-        }
-
-        return false;
-    }
-
-    private static (bool isNullableList, ITypeSymbol? elementType) GetNullableListElementType(ITypeSymbol type)
+    private static (bool isNullableList, ITypeSymbol? elementType) GetNullableListElementType(ITypeSymbol? type)
     {
         // Handle nullable reference types: List<T>?, IList<T>?, ICollection<T>?
-        ITypeSymbol effectiveType = type;
-        if (type is INamedTypeSymbol namedType && namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
-        {
-            // Value type nullable (int?, etc.) - not a list
-            return (false, null);
-        }
-
-        // For nullable reference types, the type might have NullableAnnotation
-        // Get the underlying type if it's a nullable value type
-        if (type.NullableAnnotation == NullableAnnotation.Annotated || type.NullableAnnotation == NullableAnnotation.NotAnnotated)
-        {
-            effectiveType = type;
-        }
+        ITypeSymbol? effectiveType = type;
 
         // Check for List<T>, IList<T>, ICollection<T>
         if (effectiveType is INamedTypeSymbol namedTypeSymbol)
@@ -198,13 +153,6 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
 
     private static bool IsNullableType(ITypeSymbol type)
     {
-        // Nullable value type
-        if (type is INamedTypeSymbol namedType && namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
-        {
-            return true;
-        }
-
-        // Nullable reference type
         return type.NullableAnnotation == NullableAnnotation.Annotated;
     }
 }

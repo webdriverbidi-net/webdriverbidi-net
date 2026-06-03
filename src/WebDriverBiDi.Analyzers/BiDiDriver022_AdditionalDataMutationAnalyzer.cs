@@ -77,13 +77,7 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // The property must return Dictionary<string, object?> (or a type that is or derives from it).
-        if (property.Type is not INamedTypeSymbol returnType)
-        {
-            return false;
-        }
-
-        return IsDictionaryStringObject(returnType);
+        return property.Type is INamedTypeSymbol returnType && IsDictionaryStringObject(returnType);
     }
 
     private static bool IsDictionaryStringObject(INamedTypeSymbol type)
@@ -117,14 +111,10 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
     {
         if (additionalDataExpr is MemberAccessExpressionSyntax memberAccess)
         {
-            ITypeSymbol? receiverType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
-            if (receiverType != null)
-            {
-                return receiverType.Name;
-            }
+            return context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type!.Name;
         }
 
-        // Fallback: use the declaring type of the property symbol.
+        // Fallback for parenthesized or other expressions (e.g. (cmd.AdditionalData)[key]).
         ISymbol? symbol = context.SemanticModel.GetSymbolInfo(additionalDataExpr).Symbol;
         return symbol?.ContainingType?.Name ?? string.Empty;
     }
@@ -152,13 +142,8 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
     {
         InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
 
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
-        string methodName = memberAccess.Name.Identifier.Text;
-        if (!ValueAddingMethodNames.Contains(methodName))
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+            || !ValueAddingMethodNames.Contains(memberAccess.Name.Identifier.Text))
         {
             return;
         }

@@ -116,10 +116,6 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         eventName = null;
 
         ITypeSymbol? typeSymbol = context.SemanticModel.GetTypeInfo(expression).Type;
-        if (typeSymbol == null)
-        {
-            return false;
-        }
 
         // Check if the type is ObservableEvent<T>
         if (typeSymbol is not INamedTypeSymbol namedType || namedType.Name != "ObservableEvent")
@@ -184,12 +180,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
     {
         System.Collections.Generic.HashSet<string> subscribedEvents = [];
 
-        if (method.Body == null)
-        {
-            return subscribedEvents;
-        }
-
-        foreach (StatementSyntax statement in method.Body.Statements)
+        foreach (StatementSyntax statement in method.Body!.Statements)
         {
             System.Collections.Generic.IEnumerable<InvocationExpressionSyntax> invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
 

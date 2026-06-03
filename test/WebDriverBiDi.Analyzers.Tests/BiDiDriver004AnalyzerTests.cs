@@ -731,4 +731,41 @@ public class BiDiDriver004AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that calling a long-running method through a plain method invocation whose
+    /// containing type cannot be resolved does not produce a diagnostic (exercises the
+    /// IsBiDiDriverOrModuleType null-guard path).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_OnUnresolvableReceiver_DoesNotReportDiagnostic()
+    {
+        // A free function call (not on any type) — the containing type will be null.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await NavigateAsync("https://example.com");
+                    }
+
+                    private static Task NavigateAsync(string url) => Task.CompletedTask;
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

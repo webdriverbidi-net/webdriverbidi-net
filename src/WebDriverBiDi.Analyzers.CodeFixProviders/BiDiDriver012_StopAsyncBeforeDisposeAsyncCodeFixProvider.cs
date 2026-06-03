@@ -37,21 +37,14 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        InvocationExpressionSyntax? invocation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .First();
 
-        if (invocation == null)
-        {
-            return;
-        }
-
-        string? driverVariableName = GetDriverVariableName(invocation);
-        if (driverVariableName == null)
-        {
-            return;
-        }
+        // Extract the driver variable name directly from the invocation expression.
+        // The analyzer only fires when the receiver is a simple identifier, so this cast is safe.
+        string driverVariableName = ((IdentifierNameSyntax)((MemberAccessExpressionSyntax)invocation.Expression).Expression).Identifier.Text;
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -68,18 +61,9 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
         string driverVariableName,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        StatementSyntax? disposeStatement = disposeAsyncInvocation.FirstAncestorOrSelf<StatementSyntax>();
-        if (disposeStatement == null)
-        {
-            return document;
-        }
-
+        StatementSyntax disposeStatement = disposeAsyncInvocation.FirstAncestorOrSelf<StatementSyntax>()!;
         StatementSyntax stopAsyncStatement = CreateStopAsyncStatement(driverVariableName);
 
         SyntaxNode newRoot = root.InsertNodesBefore(disposeStatement, new[] { stopAsyncStatement });
@@ -100,14 +84,4 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
         return statement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
     }
 
-    private static string? GetDriverVariableName(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
-            memberAccess.Expression is IdentifierNameSyntax identifier)
-        {
-            return identifier.Identifier.Text;
-        }
-
-        return null;
-    }
 }

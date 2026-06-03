@@ -131,14 +131,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Check if the return type is EventObserver<T>
-        INamedTypeSymbol? returnType = methodSymbol.ReturnType as INamedTypeSymbol;
-        if (returnType == null)
-        {
-            return false;
-        }
-
-        return returnType.Name == "EventObserver";
+        return ((INamedTypeSymbol)methodSymbol.ReturnType).Name == "EventObserver";
     }
 
     private static bool IsInUsingStatement(LocalDeclarationStatementSyntax declaration)
@@ -147,22 +140,6 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         if (declaration.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
         {
             return true;
-        }
-
-        // Check if this declaration is inside a using statement
-        SyntaxNode? parent = declaration.Parent;
-        while (parent != null)
-        {
-            if (parent is UsingStatementSyntax usingStatement)
-            {
-                // Check if the declaration is the resource of the using statement
-                if (usingStatement.Declaration != null && usingStatement.Declaration.Variables.Any(v => declaration.Declaration.Variables.Any(dv => dv.Identifier.Text == v.Identifier.Text)))
-                {
-                    return true;
-                }
-            }
-
-            parent = parent.Parent;
         }
 
         return false;
@@ -191,21 +168,6 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
                     {
                         return true;
                     }
-                }
-            }
-        }
-
-        // Check for await using statements
-        IEnumerable<AwaitExpressionSyntax> awaitExpressions = methodDeclaration.DescendantNodes()
-            .OfType<AwaitExpressionSyntax>();
-
-        foreach (AwaitExpressionSyntax awaitExpression in awaitExpressions)
-        {
-            if (awaitExpression.Expression is InvocationExpressionSyntax awaitedInvocation && awaitedInvocation.Expression is MemberAccessExpressionSyntax awaitedMemberAccess)
-            {
-                if (awaitedMemberAccess.Expression is IdentifierNameSyntax awaitedIdentifier && awaitedIdentifier.Identifier.Text == variableName && awaitedMemberAccess.Name.Identifier.Text == "DisposeAsync")
-                {
-                    return true;
                 }
             }
         }

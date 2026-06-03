@@ -80,13 +80,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
 
     private static bool IsModuleType(INamedTypeSymbol? type)
     {
-        if (type == null)
-        {
-            return false;
-        }
-
-        // Check if the type is a Module subclass
-        return type.Name.EndsWith("Module") && HasModuleBaseClass(type);
+        return type != null && type.Name.EndsWith("Module") && HasModuleBaseClass(type);
     }
 
     private static bool HasModuleBaseClass(INamedTypeSymbol type)
@@ -107,29 +101,12 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
 
     private static bool IsTaskReturningMethod(IMethodSymbol method)
     {
-        ITypeSymbol? returnType = method.ReturnType;
-        if (returnType == null)
-        {
-            return false;
-        }
-
-        // Check if return type is Task<T> (generic Task)
-        if (returnType is INamedTypeSymbol namedType && namedType.Name == "Task" && namedType.IsGenericType)
-        {
-            return true;
-        }
-
-        return false;
+        return method.ReturnType is INamedTypeSymbol namedType && namedType.Name == "Task" && namedType.IsGenericType;
     }
 
     private static bool IsReturnValueUsed(IInvocationOperation invocation)
     {
         IOperation? parent = invocation.Parent;
-
-        if (parent == null)
-        {
-            return false;
-        }
 
         // Check if the invocation is awaited
         if (parent is IAwaitOperation)
@@ -155,11 +132,14 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
             return true;
         }
 
-        // Check if used in a conversion (e.g., casting to Task)
+        // Check if used in a conversion (e.g., implicit cast to Task base type) that is itself used
         if (parent is IConversionOperation conversionOperation)
         {
-            // If it's part of a conversion, check if that conversion is used
-            return IsReturnValueUsed(conversionOperation);
+            return conversionOperation.Parent is IAwaitOperation or
+                IVariableInitializerOperation or
+                ISimpleAssignmentOperation or
+                IArgumentOperation or
+                IReturnOperation;
         }
 
         // Check if this invocation is the instance of another invocation (e.g., task.ConfigureAwait())
@@ -172,36 +152,9 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         return false;
     }
 
-    private static bool IsReturnValueUsed(IConversionOperation conversion)
-    {
-        IOperation? parent = conversion.Parent;
-
-        if (parent == null)
-        {
-            return false;
-        }
-
-        // Check the same conditions as for invocation
-        if (parent is IAwaitOperation or
-            IVariableInitializerOperation or
-            ISimpleAssignmentOperation or
-            IArgumentOperation or
-            IReturnOperation)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     private static bool IsOperationUsed(IOperation operation)
     {
         IOperation? parent = operation.Parent;
-
-        if (parent == null)
-        {
-            return false;
-        }
 
         // Check if the operation result is awaited
         if (parent is IAwaitOperation)

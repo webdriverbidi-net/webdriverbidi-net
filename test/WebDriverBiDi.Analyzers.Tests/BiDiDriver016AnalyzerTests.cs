@@ -5,7 +5,11 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.Collections.Immutable;
+using System.IO;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -1930,6 +1934,172 @@ public class BiDiDriver016AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithArguments("lock statement");
+
+        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that passing an async method reference from a compiled assembly as the handler
+    /// does not report a diagnostic — exercises GetHandlerBody returning null when the
+    /// method has no syntax references (AnalyzerSymbolHelpers line 114 / BIDI016 line 101).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_WithCompiledAssemblyAsyncMethodRef_DoesNotReportDiagnostic()
+    {
+        string librarySource = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace FakeLib
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+                }
+
+                public class AsyncHandlerHelper
+                {
+                    public static async Task Handle(LogEntryAddedEventArgs e)
+                    {
+                        await Task.CompletedTask;
+                    }
+                }
+            }
+            """;
+
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(librarySource, cancellationToken: TestContext.Current.CancellationToken);
+        ImmutableArray<MetadataReference> netRefs = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, TestContext.Current.CancellationToken);
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "FakeHandlerLib16",
+            [tree],
+            netRefs,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        using MemoryStream stream = new();
+        compilation.Emit(stream, cancellationToken: TestContext.Current.CancellationToken);
+        stream.Position = 0;
+        MetadataReference libRef = MetadataReference.CreateFromStream(stream);
+
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using FakeLib;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        // Async method from compiled assembly — GetHandlerBody returns null (line 101)
+                        using EventObserver<LogEntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(AsyncHandlerHelper.Handle);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(libRef);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that Mutex.WaitOne inside an event handler reports a diagnostic —
+    /// exercises the Mutex.WaitOne detection branch (line 186).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_WithMutexWaitOne_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private static Mutex mutex = new Mutex();
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        using EventObserver<LogEntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                            {
+                                {|#0:mutex.WaitOne()|};
+                                mutex.ReleaseMutex();
+                            });
+                    }
+                }
+            }
+            """;
+
+        // Mutex inherits from WaitHandle, so the diagnostic reports "WaitHandle.WaitOne"
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("WaitHandle.WaitOne");
 
         CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
         {

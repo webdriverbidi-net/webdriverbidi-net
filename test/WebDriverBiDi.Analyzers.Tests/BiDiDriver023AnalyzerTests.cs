@@ -952,4 +952,325 @@ public class BiDiDriver023AnalyzerTests
         Assert.Single(diagnostics);
         Assert.Equal(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, diagnostics[0].Id);
     }
+
+    /// <summary>
+    /// Tests that calling a module method returning plain Task (not generic) in an event
+    /// handler does not report — exercises namedReturn.IsGenericType false (line 146).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommandInEventHandler_PlainTaskMethod_DoesNotReport()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    // Returns plain non-generic Task — IsGenericType is false.
+                    public Task DoWorkAsync() => Task.CompletedTask;
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+                    public BrowserModule Browser { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        using EventObserver<LogEntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                            {
+                                await driver.Browser.DoWorkAsync();
+                            });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an expression-bodied regular method reference as handler is analysed —
+    /// exercises the MethodDeclarationSyntax Body==null path in GetMethodBodyFromSymbol
+    /// (AnalyzerSymbolHelpers line 114 block 0).
+    /// BIDI023 does not check IsAsyncHandler, so it calls GetHandlerBody for all expressions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommandInEventHandler_ExpressionBodiedMethodRef_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<string> CloseAsync() => Task.FromResult("closed");
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+                    public BrowserModule Browser { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private BiDiDriver _driver;
+
+                    public TestClass(BiDiDriver driver) { _driver = driver; }
+
+                    // Expression-bodied method — Body is null, ExpressionBody is non-null.
+                    // When passed as a method reference, BIDI023 calls GetHandlerBody on it.
+                    private Task Handle(LogEntryAddedEventArgs e) =>
+                        {|#0:_driver.Browser.CloseAsync()|};
+
+                    public void Setup()
+                    {
+                        using EventObserver<LogEntryAddedEventArgs> observer =
+                            _driver.Log.OnEntryAdded.AddObserver(Handle);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("CloseAsync");
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an expression-bodied local function as handler is analysed —
+    /// exercises the LocalFunctionStatementSyntax Body==null path in GetMethodBodyFromSymbol
+    /// (AnalyzerSymbolHelpers line 115/142 block 0).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommandInEventHandler_ExpressionBodiedLocalFunctionRef_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<string> CloseAsync() => Task.FromResult("closed");
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+                    public BrowserModule Browser { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver)
+                    {
+                        // Expression-bodied local function — Body is null, ExpressionBody non-null.
+                        Task Handle(LogEntryAddedEventArgs e) =>
+                            {|#0:driver.Browser.CloseAsync()|};
+
+                        using EventObserver<LogEntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(Handle);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("CloseAsync");
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Minimal test that exercises IsModuleCommandMethod's Task generic check (line 146
+    /// branches 54,1 and 72,1) using simplest possible inline stub.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IsModuleCommandMethod_GenericTaskReturn_ExercisesLine146TrueBranches()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class MyEventArgs : WebDriverBiDiEventArgs { }
+                public class MyResult { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public abstract class Module { }
+
+                public class MyModule : Module
+                {
+                    public ObservableEvent<MyEventArgs> OnEvent { get; } = new();
+                    // Task<T> return — IsModuleCommandMethod should return true.
+                    public Task<MyResult> DoCommandAsync() => Task.FromResult(new MyResult());
+                }
+
+                public class BiDiDriver
+                {
+                    public MyModule My { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        using EventObserver<MyEventArgs> obs =
+                            driver.My.OnEvent.AddObserver(async (e) =>
+                            {
+                                await {|#0:driver.My.DoCommandAsync()|};
+                            });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("DoCommandAsync");
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

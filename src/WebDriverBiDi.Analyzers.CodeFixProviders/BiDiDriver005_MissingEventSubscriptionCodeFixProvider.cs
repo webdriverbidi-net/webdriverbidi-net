@@ -35,36 +35,22 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return;
-        }
+        SyntaxNode root = (await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false))!;
 
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
         // Find the AddObserver invocation
-        InvocationExpressionSyntax? addObserverCall = root.FindToken(diagnosticSpan.Start)
-            .Parent?
+        InvocationExpressionSyntax addObserverCall = root.FindToken(diagnosticSpan.Start)
+            .Parent!
             .AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault();
-
-        if (addObserverCall == null)
-        {
-            return;
-        }
+            .First();
 
         // Get the event name from the diagnostic message
         string diagnosticMessage = diagnostic.GetMessage();
         int startIndex = diagnosticMessage.IndexOf('\'') + 1;
         int endIndex = diagnosticMessage.IndexOf('\'', startIndex);
-        if (startIndex < 1 || endIndex < 0)
-        {
-            return;
-        }
-
         string eventName = diagnosticMessage.Substring(startIndex, endIndex - startIndex);
 
         // Register a code action
@@ -84,27 +70,20 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         CancellationToken cancellationToken)
     {
         // Find the containing method
-        MethodDeclarationSyntax? method = addObserverCall.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-        if (method?.Body == null)
-        {
-            return document;
-        }
+        MethodDeclarationSyntax method = addObserverCall.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
 
         // Get semantic model once
-        SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel == null)
-        {
-            return document;
-        }
+        SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Find existing Session.SubscribeAsync call
         InvocationExpressionSyntax? subscribeCall = null;
-        foreach (InvocationExpressionSyntax invocation in method.Body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        foreach (InvocationExpressionSyntax invocation in method.Body!.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                IMethodSymbol? methodSymbol = semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol as IMethodSymbol;
-                if (methodSymbol?.Name == "SubscribeAsync" && methodSymbol.ContainingType?.Name == "SessionModule")
+                if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol methodSymbol
+                    && methodSymbol.Name == "SubscribeAsync"
+                    && methodSymbol.ContainingType.Name == "SessionModule")
                 {
                     subscribeCall = invocation;
                     break;
@@ -187,13 +166,9 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         }
 
         // Handle: ["event1", "event2"] (C# 12 collection expressions)
-        if (arrayExpression is CollectionExpressionSyntax collectionExpression)
-        {
-            ExpressionElementSyntax newElementSyntax = SyntaxFactory.ExpressionElement(newElement);
-            SeparatedSyntaxList<CollectionElementSyntax> newElements = collectionExpression.Elements.Add(newElementSyntax);
-            return collectionExpression.WithElements(newElements);
-        }
-
-        return arrayExpression;
+        CollectionExpressionSyntax collectionExpression = (CollectionExpressionSyntax)arrayExpression;
+        ExpressionElementSyntax newElementSyntax = SyntaxFactory.ExpressionElement(newElement);
+        SeparatedSyntaxList<CollectionElementSyntax> newElements = collectionExpression.Elements.Add(newElementSyntax);
+        return collectionExpression.WithElements(newElements);
     }
 }

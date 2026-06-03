@@ -36,25 +36,15 @@ public class BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider : CodeFixP
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        SyntaxNode? moduleCommandNode = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
-            .FirstOrDefault();
+        SyntaxNode moduleCommandNode = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
+            .First();
 
-        if (moduleCommandNode == null)
-        {
-            return;
-        }
-
-        InvocationExpressionSyntax? addObserverInvocation = moduleCommandNode.AncestorsAndSelf()
+        InvocationExpressionSyntax addObserverInvocation = moduleCommandNode.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(inv =>
+            .First(inv =>
                 inv.Expression is MemberAccessExpressionSyntax memberAccess &&
                 memberAccess.Name.Identifier.Text == "AddObserver");
-
-        if (addObserverInvocation == null)
-        {
-            return;
-        }
 
         context.RegisterCodeFix(
             CodeAction.Create(

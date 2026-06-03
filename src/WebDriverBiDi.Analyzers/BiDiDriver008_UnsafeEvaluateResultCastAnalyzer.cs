@@ -56,23 +56,13 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
     {
         CastExpressionSyntax castExpression = (CastExpressionSyntax)context.Node;
 
-        ITypeSymbol? targetType = context.SemanticModel.GetTypeInfo(castExpression.Type).Type;
-        if (targetType == null)
-        {
-            return;
-        }
-
-        // Check if casting to EvaluateResultSuccess or EvaluateResultException
+        ITypeSymbol targetType = context.SemanticModel.GetTypeInfo(castExpression.Type).Type!;
         if (!IsEvaluateResultDerivedType(targetType))
         {
             return;
         }
 
         ITypeSymbol? expressionType = context.SemanticModel.GetTypeInfo(castExpression.Expression).Type;
-        if (expressionType == null)
-        {
-            return;
-        }
 
         // Check if the expression is of type EvaluateResult (base type)
         if (IsEvaluateResultBaseType(expressionType))
@@ -92,23 +82,13 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
     {
         BinaryExpressionSyntax asExpression = (BinaryExpressionSyntax)context.Node;
 
-        ITypeSymbol? targetType = context.SemanticModel.GetTypeInfo(asExpression.Right).Type;
-        if (targetType == null)
-        {
-            return;
-        }
-
-        // Check if casting to EvaluateResultSuccess or EvaluateResultException
+        ITypeSymbol targetType = context.SemanticModel.GetTypeInfo(asExpression.Right).Type!;
         if (!IsEvaluateResultDerivedType(targetType))
         {
             return;
         }
 
         ITypeSymbol? expressionType = context.SemanticModel.GetTypeInfo(asExpression.Left).Type;
-        if (expressionType == null)
-        {
-            return;
-        }
 
         // Check if the expression is of type EvaluateResult (base type)
         if (IsEvaluateResultBaseType(expressionType))
@@ -120,16 +100,16 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsEvaluateResultBaseType(ITypeSymbol type)
+    private static bool IsEvaluateResultBaseType(ITypeSymbol? type)
     {
-        return type.Name == "EvaluateResult" && type.ContainingNamespace?.ToString() == "WebDriverBiDi.Script";
+        return type!.Name == "EvaluateResult" && type.ContainingNamespace!.ToString() == "WebDriverBiDi.Script";
     }
 
-    private static bool IsEvaluateResultDerivedType(ITypeSymbol type)
+    private static bool IsEvaluateResultDerivedType(ITypeSymbol? type)
     {
-        if (type.Name is "EvaluateResultSuccess" or "EvaluateResultException")
+        if (type!.Name is "EvaluateResultSuccess" or "EvaluateResultException")
         {
-            return type.ContainingNamespace?.ToString() == "WebDriverBiDi.Script";
+            return type.ContainingNamespace!.ToString() == "WebDriverBiDi.Script";
         }
 
         return false;

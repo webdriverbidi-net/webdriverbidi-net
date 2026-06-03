@@ -73,7 +73,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (methodSymbol.ReturnType is not INamedTypeSymbol returnType || returnType.Name != "EventObserver")
+        if (((INamedTypeSymbol)methodSymbol.ReturnType).Name != "EventObserver")
         {
             return;
         }
@@ -121,13 +121,13 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 continue;
             }
 
-            if (methodSymbol.ContainingType?.Name == "Thread" && methodSymbol.Name == "Sleep")
+            if (methodSymbol.ContainingType.Name == "Thread" && methodSymbol.Name == "Sleep")
             {
                 blockingOps.Add(invocation);
                 continue;
             }
 
-            if (methodSymbol.ContainingType?.Name == "Task" && methodSymbol.Name == "Wait")
+            if (methodSymbol.ContainingType.Name == "Task" && methodSymbol.Name == "Wait")
             {
                 blockingOps.Add(invocation);
                 continue;
@@ -166,11 +166,11 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
     private static string GetBlockingOperationName(SyntaxNode blockingOperation)
     {
-        return blockingOperation switch
+        if (blockingOperation is InvocationExpressionSyntax invocation && invocation.Expression is MemberAccessExpressionSyntax memberAccess)
         {
-            InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text + "()",
-            MemberAccessExpressionSyntax memberAccessExpr => memberAccessExpr.Name.Identifier.Text,
-            _ => blockingOperation.ToString(),
-        };
+            return memberAccess.Name.Identifier.Text + "()";
+        }
+
+        return ((MemberAccessExpressionSyntax)blockingOperation).Name.Identifier.Text;
     }
 }

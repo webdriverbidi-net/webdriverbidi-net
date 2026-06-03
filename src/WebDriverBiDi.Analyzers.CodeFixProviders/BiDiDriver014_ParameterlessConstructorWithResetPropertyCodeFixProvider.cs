@@ -38,24 +38,14 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
         // Find the object creation expression that triggered the diagnostic
-        ObjectCreationExpressionSyntax? objectCreation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
+        ObjectCreationExpressionSyntax objectCreation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
             .OfType<ObjectCreationExpressionSyntax>()
             .First();
 
-        if (objectCreation == null)
-        {
-            return;
-        }
-
         // Get the type name and reset property name from the diagnostic
-        string typeName = diagnostic.Properties["TypeName"] ?? string.Empty;
-        string resetPropertyName = diagnostic.Properties["ResetPropertyName"] ?? string.Empty;
-
-        if (string.IsNullOrEmpty(typeName) || string.IsNullOrEmpty(resetPropertyName))
-        {
-            return;
-        }
+        string typeName = diagnostic.Properties["TypeName"]!;
+        string resetPropertyName = diagnostic.Properties["ResetPropertyName"]!;
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -73,11 +63,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         string resetPropertyName,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Create the replacement: TypeName.ResetPropertyName
         MemberAccessExpressionSyntax resetPropertyAccess = SyntaxFactory.MemberAccessExpression(

@@ -38,14 +38,9 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        SyntaxNode? node = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
-            .FirstOrDefault(n => n is CastExpressionSyntax || n is BinaryExpressionSyntax);
-
-        if (node == null)
-        {
-            return;
-        }
+        SyntaxNode node = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
+            .First(n => n is CastExpressionSyntax || n is BinaryExpressionSyntax);
 
         if (node is CastExpressionSyntax castExpression)
         {
@@ -74,24 +69,11 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         CastExpressionSyntax castExpression,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
-
-        SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
+        SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Get the target type name
-        ITypeSymbol? targetType = semanticModel.GetTypeInfo(castExpression.Type, cancellationToken).Type;
-        if (targetType == null)
-        {
-            return document;
-        }
+        ITypeSymbol targetType = semanticModel.GetTypeInfo(castExpression.Type, cancellationToken).Type!;
 
         // Check if this is a variable declaration: var success = (EvaluateResultSuccess)result;
         if (castExpression.Parent is EqualsValueClauseSyntax equalsValue &&
@@ -109,11 +91,7 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         }
 
         // For inline casts (not in variable declarations), wrap just that expression
-        StatementSyntax? statement = castExpression.FirstAncestorOrSelf<StatementSyntax>();
-        if (statement == null)
-        {
-            return document;
-        }
+        StatementSyntax statement = castExpression.FirstAncestorOrSelf<StatementSyntax>()!;
 
         // Generate a variable name based on the type
         string variableName = GenerateVariableName(targetType.Name);
@@ -151,24 +129,13 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         string existingVariableName = variableDeclarator.Identifier.Text;
 
         // Find the containing block to look for dependent statements
-        if (declarationStatement.Parent is not BlockSyntax containingBlock)
-        {
-            return document;
-        }
+        BlockSyntax containingBlock = (BlockSyntax)declarationStatement.Parent!;
 
         // Find the index of the declaration statement
         int declarationIndex = containingBlock.Statements.IndexOf(declarationStatement);
-        if (declarationIndex == -1)
-        {
-            return document;
-        }
 
         // Get semantic model to find references
-        SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel == null)
-        {
-            return document;
-        }
+        SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Find all statements after the declaration that reference the variable
         List<StatementSyntax> dependentStatements = [];
@@ -245,11 +212,9 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Apply formatting to normalize whitespace
         newRoot = Microsoft.CodeAnalysis.Formatting.Formatter.Format(newRoot, document.Project.Solution.Workspace);
 
-        // Normalize line endings to match the original document's line ending style
-        string originalText = root.ToFullString();
-        string lineEnding = originalText.Contains("\r\n") ? "\r\n" : "\n";
+        // Normalize line endings — Roslyn always uses \n internally after parsing.
         string newRootText = newRoot.ToFullString();
-        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", lineEnding);
+        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n");
         newRoot = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(normalizedText).GetRoot();
 
         return document.WithSyntaxRoot(newRoot);
@@ -262,11 +227,6 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         ISymbol? variableSymbol,
         CancellationToken cancellationToken)
     {
-        if (variableSymbol == null)
-        {
-            // Fallback to simple text matching
-            return statement.ToString().Contains(variableName);
-        }
 
         // Find all identifier nodes in the statement
         IEnumerable<IdentifierNameSyntax> identifiers = statement.DescendantNodes()
@@ -290,24 +250,11 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         BinaryExpressionSyntax asExpression,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
-
-        SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
+        SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Get the target type
-        ITypeSymbol? targetType = semanticModel.GetTypeInfo(asExpression.Right, cancellationToken).Type;
-        if (targetType == null)
-        {
-            return document;
-        }
+        ITypeSymbol targetType = semanticModel.GetTypeInfo(asExpression.Right, cancellationToken).Type!;
 
         // Find the variable declaration or assignment that uses this 'as' expression
         SyntaxNode? parent = asExpression.Parent;
@@ -342,24 +289,13 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         string existingVariableName = variableDeclarator.Identifier.Text;
 
         // Find the containing block to look for dependent statements
-        if (declarationStatement.Parent is not BlockSyntax containingBlock)
-        {
-            return document;
-        }
+        BlockSyntax containingBlock = (BlockSyntax)declarationStatement.Parent!;
 
         // Find the index of the declaration statement
         int declarationIndex = containingBlock.Statements.IndexOf(declarationStatement);
-        if (declarationIndex == -1)
-        {
-            return document;
-        }
 
         // Get semantic model to find references
-        SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel == null)
-        {
-            return document;
-        }
+        SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
         // Find all statements after the declaration that reference the variable
         List<StatementSyntax> dependentStatements = [];
@@ -436,11 +372,9 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Apply formatting to normalize whitespace
         newRoot = Microsoft.CodeAnalysis.Formatting.Formatter.Format(newRoot, document.Project.Solution.Workspace);
 
-        // Normalize line endings to match the original document's line ending style
-        string originalText = root.ToFullString();
-        string lineEnding = originalText.Contains("\r\n") ? "\r\n" : "\n";
+        // Normalize line endings — Roslyn always uses \n internally after parsing.
         string newRootText = newRoot.ToFullString();
-        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", lineEnding);
+        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n");
         newRoot = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(normalizedText).GetRoot();
 
         return document.WithSyntaxRoot(newRoot);
@@ -451,16 +385,7 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Convert PascalCase type name to camelCase variable name
         // EvaluateResultSuccess -> success
         // EvaluateResultException -> exception
-        if (typeName.StartsWith("EvaluateResult"))
-        {
-            string suffix = typeName.Substring("EvaluateResult".Length);
-            if (!string.IsNullOrEmpty(suffix))
-            {
-                return char.ToLowerInvariant(suffix[0]) + suffix.Substring(1);
-            }
-        }
-
-        // Fallback: just lowercase the first character
-        return char.ToLowerInvariant(typeName[0]) + typeName.Substring(1);
+        string suffix = typeName.Substring("EvaluateResult".Length);
+        return char.ToLowerInvariant(suffix[0]) + suffix.Substring(1);
     }
 }

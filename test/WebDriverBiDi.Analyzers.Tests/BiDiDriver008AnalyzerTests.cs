@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -1131,5 +1132,376 @@ public class BiDiDriver008AnalyzerTests
 
         Assert.Single(ids);
         Assert.Equal(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, ids[0]);
+    }
+
+    /// <summary>
+    /// Tests that a cast to an unresolvable type does not report a diagnostic —
+    /// exercises targetType == null guard in AnalyzeCastExpression (line 62).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastExpression_WithUnresolvableTargetType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(object value)
+                    {
+                        var x = ({|CS0246:NonExistentType|})value;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an 'as' expression targeting an unresolvable type does not report a
+    /// diagnostic — exercises targetType == null guard in AnalyzeAsExpression (line 74).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AsExpression_WithUnresolvableTargetType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(object value)
+                    {
+                        var x = value as {|CS0246:NonExistentType|};
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast where the source expression type is unresolvable does not report a
+    /// diagnostic — exercises expressionType == null guard in AnalyzeCastExpression (line 98).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastExpression_WithUnresolvableSourceType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            namespace WebDriverBiDi
+            {
+                public abstract record EvaluateResult { }
+                public record EvaluateResultSuccess : EvaluateResult { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var x = (EvaluateResultSuccess)({|CS0103:unknownVariable|});
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an 'as' expression where the left-hand side is unresolvable does not report
+    /// a diagnostic — exercises expressionType == null guard in AnalyzeAsExpression (line 110).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AsExpression_WithUnresolvableSourceType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            namespace WebDriverBiDi
+            {
+                public abstract record EvaluateResult { }
+                public record EvaluateResultSuccess : EvaluateResult { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var x = ({|CS0103:unknownVariable|}) as EvaluateResultSuccess;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that casting to a type that is not EvaluateResultSuccess/Exception does not
+    /// fire — exercises the IsEvaluateResultDerivedType false branch (line 61 `||` and
+    /// line 114 false arm).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastToUnrelatedType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            namespace WebDriverBiDi.Script
+            {
+                public abstract record EvaluateResult { }
+                public record EvaluateResultSuccess : EvaluateResult { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(object value)
+                    {
+                        // Cast to a type that is NOT EvaluateResultSuccess/Exception.
+                        var x = (string)value;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an EvaluateResult type in a different namespace does not fire —
+    /// exercises the ContainingNamespace check in IsEvaluateResultBaseType (line 105).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastFromEvaluateResultInWrongNamespace_DoesNotReportDiagnostic()
+    {
+        // EvaluateResult in a non-WebDriverBiDi.Script namespace — namespace check fails.
+        string test = """
+            namespace NotScript
+            {
+                public abstract record EvaluateResult { }
+                public record EvaluateResultSuccess : EvaluateResult { }
+            }
+
+            namespace TestApp
+            {
+                using NotScript;
+
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        var success = (EvaluateResultSuccess)result;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that casting a non-EvaluateResult source to EvaluateResultSuccess does not
+    /// fire — exercises the IsEvaluateResultBaseType false branch (line 109 &&amp; short-circuit).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastFromNonEvaluateResultType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(object value)
+                    {
+                        // Source is 'object', not EvaluateResult — IsEvaluateResultBaseType returns false.
+                        var success = (EvaluateResultSuccess)value;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an 'as' expression to an unrelated type does not fire — exercises
+    /// the IsEvaluateResultDerivedType false branch (line 89 `||` and line 114 false).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AsExpressionToUnrelatedType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(object value)
+                    {
+                        var x = value as string;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast inside an expression-bodied local function stops at the
+    /// LocalFunctionStatementSyntax boundary — exercises block=33 branch=1 (line 130),
+    /// where is-MethodDeclarationSyntax is false and is-LocalFunctionStatementSyntax is true.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastInsideExpressionBodiedLocalFunction_ReportsDiagnostic()
+    {
+        // Expression-bodied local function has no BlockSyntax, so the walk reaches
+        // LocalFunctionStatementSyntax before finding a safe context.
+        string test = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        // Expression-bodied: cast.Parent is ArrowExpressionClause → LocalFunctionStatement.
+                        EvaluateResultSuccess? Cast(EvaluateResult r) => {|#0:(EvaluateResultSuccess)r|};
+                        var s = Cast(result);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast inside a local-function body is in a safe context — exercises
+    /// the LocalFunctionStatementSyntax branch of IsInSafeContext (line 134).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastInsideLocalFunction_InSafeContext_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        // The cast is inside a local function — IsInSafeContext should detect
+                        // the LocalFunctionStatementSyntax boundary (line 134).
+                        EvaluateResultSuccess? Process(EvaluateResult r)
+                        {
+                            try
+                            {
+                                return (EvaluateResultSuccess)r;
+                            }
+                            catch
+                            {
+                                return null;
+                            }
+                        }
+
+                        var s = Process(result);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

@@ -35,23 +35,13 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : Co
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        SyntaxNode? blockingOperation = root?.FindToken(diagnosticSpan.Start)
-            .Parent?.AncestorsAndSelf()
-            .FirstOrDefault();
+        SyntaxNode blockingOperation = root!.FindToken(diagnosticSpan.Start)
+            .Parent!.AncestorsAndSelf()
+            .First();
 
-        if (blockingOperation == null)
-        {
-            return;
-        }
-
-        InvocationExpressionSyntax? addObserverInvocation = blockingOperation.AncestorsAndSelf()
+        InvocationExpressionSyntax addObserverInvocation = blockingOperation.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.Text == "AddObserver");
-
-        if (addObserverInvocation == null)
-        {
-            return;
-        }
+            .First(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.Text == "AddObserver");
 
         context.RegisterCodeFix(
             CodeAction.Create(

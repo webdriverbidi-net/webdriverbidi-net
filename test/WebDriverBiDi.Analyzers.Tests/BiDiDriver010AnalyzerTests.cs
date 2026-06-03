@@ -914,4 +914,489 @@ public class BiDiDriver010AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a module method returning plain Task (not generic Task{T}) unawaited
+    /// does NOT report BIDI010 — exercises IsTaskReturningMethod returning false (line 113).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_FireAndForget_PlainTask_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    // Plain non-generic Task — IsTaskReturningMethod returns false (line 113)
+                    public Task DoSomethingAsync() => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BrowserModule module)
+                    {
+                        // Fire and forget of a plain Task — not flagged (not Task<T>)
+                        module.DoSomethingAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module method returning Task{string} (not CommandResult) when unawaited
+    /// still reports BIDI010 — BIDI010 checks Task{T} generically via IsTaskReturningMethod,
+    /// not whether T inherits CommandResult. Exercises InheritsFromCommandResult path in
+    /// IsModuleCommandMethod indirectly (all lines of IsModuleCommandMethod are exercised).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethod_FireAndForget_TaskOfNonCommandResult_ReportsDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    // Task<string> — IsTaskReturningMethod = true; BIDI010 fires on fire-and-forget
+                    public Task<string> GetNameAsync() => Task.FromResult("browser");
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BrowserModule module)
+                    {
+                        module.GetNameAsync();
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithSpan(24, 13, 24, 34)
+            .WithArguments("GetNameAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that assigning a module command result to a variable is not flagged —
+    /// exercises the ISimpleAssignmentOperation branch (line 118).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_AssignedToExistingVariable_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BrowserModule module)
+                    {
+                        // Assignment to existing variable — ISimpleAssignmentOperation parent.
+                        Task<EmptyResult> t;
+                        t = module.CloseAsync();
+                        await t;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that passing a module command result as a method argument is not flagged —
+    /// exercises the IArgumentOperation branch (line 118/166 pattern) via a conversion.
+    /// Also exercises the IConversionOperation parent path (line 138) when the result
+    /// is used in an awaited conversion context.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_PassedAsArgument_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BrowserModule module)
+                    {
+                        // Passed as argument — IArgumentOperation parent.
+                        await Consume(module.CloseAsync());
+                    }
+
+                    private static async Task Consume(Task<EmptyResult> t) => await t;
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that awaiting a module command through an explicit cast does not report —
+    /// exercises the IConversionOperation parent IAwaitOperation branch (line 138).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_AwaitedViaExplicitCast_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BrowserModule module)
+                    {
+                        // Explicit cast to base Task type, then awaited.
+                        await (Task)module.CloseAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that returning a module command result from a method does not report —
+    /// exercises the IReturnOperation branch in IsReturnValueUsed (line 130 in the
+    /// invocation overload) and the IsOperationUsed ISimpleAssignmentOperation false
+    /// path (line 166).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_ReturnedFromMethod_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public Task<EmptyResult> GetCloseTask(BrowserModule module)
+                    {
+                        return module.CloseAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module command stored via a variable declaration cast does not report —
+    /// exercises IVariableInitializerOperation branch in IsReturnValueUsed(IConversionOperation)
+    /// (line 138 block 107 branch 1).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_StoredInObjectVariableViaCast_DoesNotReportDiagnostic()
+    {
+        // Cast to object forces a genuine IConversionOperation (widening reference conversion).
+        // IConversionOperation.Parent is IVariableInitializerOperation — exercises block 107 branch 1.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BrowserModule module)
+                    {
+                        // Cast to object: IConversionOperation parent = IVariableInitializerOperation.
+                        object t = (object)module.CloseAsync();
+                        await (Task<EmptyResult>)t;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module command passed as argument via cast does not report —
+    /// exercises IArgumentOperation branch in IsReturnValueUsed(IConversionOperation)
+    /// (line 138 block 125).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_PassedAsArgumentViaCast_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BrowserModule module)
+                    {
+                        // Cast result passed as argument — IConversionOperation parent is IArgumentOperation.
+                        await Consume((Task)module.CloseAsync());
+                    }
+
+                    private static async Task Consume(Task t) => await t;
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module command used as a return value via cast does not report —
+    /// exercises IReturnOperation branch in IsReturnValueUsed(IConversionOperation)
+    /// (line 138 block 125 branch 1).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_ReturnedViaCast_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    // Cast to object, then return — IConversionOperation parent is IReturnOperation.
+                    public object GetTask(BrowserModule module) => (object)module.CloseAsync();
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module command result used via chained method call does not report —
+    /// exercises the IsOperationUsed false path (line 166 block 31 branch 0) where parent
+    /// is neither IVariableInitializerOperation nor ISimpleAssignmentOperation.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_ChainedCallPassedAsArgument_DoesNotReportDiagnostic()
+    {
+        // module.CloseAsync() passed as argument via chained .ToString() call —
+        // parent of CloseAsync is IInvocationOperation (ToString parent), whose parent is
+        // IArgumentOperation → IsOperationUsed: block 23 branch 0 (not IAwait), block 31 branch 0
+        // (not Initializer/Assignment), block 40 branch 1 (IS IArgument → return true).
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BrowserModule module)
+                    {
+                        // ChainedOnInvocation: CloseAsync().GetHashCode() — parent chain goes to argument.
+                        await Consume(module.CloseAsync().GetHashCode());
+                    }
+
+                    private static Task Consume(int v) => Task.CompletedTask;
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>Tests chained call result (existing).</summary>
+    [Fact]
+    public async Task ModuleCommand_UsedInChainedCall_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandResult { }
+                public class EmptyResult : CommandResult { }
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BrowserModule module)
+                    {
+                        // task.ConfigureAwait(false) — parent of CloseAsync() invocation is
+                        // IInvocationOperation (ConfigureAwait), NOT IVariableInitializerOperation.
+                        await module.CloseAsync().ConfigureAwait(false);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
 }

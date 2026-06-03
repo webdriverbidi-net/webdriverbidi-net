@@ -30,17 +30,8 @@ internal static class CodeFixHelpers
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)
     {
-        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root == null)
-        {
-            return document;
-        }
-
-        SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        if (semanticModel == null)
-        {
-            return document;
-        }
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
+        SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
         ArgumentSyntax optionsArgument = SyntaxFactory.Argument(
             SyntaxFactory.MemberAccessExpression(
