@@ -477,6 +477,14 @@ public class Transport : IAsyncDisposable
             throw this.CreateTerminationException(terminationExceptions);
         }
 
+        // Serialize the command immediately. This happens synchronously, as
+        // we are doing it before the first async call in this method. We do
+        // this to make the command parameters immutable for this command
+        // execution and prevent modification of the parameters while the
+        // command is being sent.
+        long commandId = this.GetNextCommandId();
+        Command command = new(commandId, commandData);
+        byte[] commandJson = this.SerializeCommand(command);
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -485,20 +493,17 @@ public class Transport : IAsyncDisposable
                 throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
             }
 
-            long commandId = this.GetNextCommandId();
-            Command command = new(commandId, commandData);
             await this.PendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
             try
             {
                 // Start timing and log command sending
                 command.StartTiming();
-                WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId, commandData.MethodName);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId, command.CommandName);
                 if (this.OnLogMessage.CurrentObserverCount > 0)
                 {
                     await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                 }
 
-                byte[] commandJson = this.SerializeCommand(command);
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
 
                 Interlocked.Increment(ref this.commandMessagesSent);
@@ -515,7 +520,7 @@ public class Transport : IAsyncDisposable
                     command.StopTiming();
                 }
 
-                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(commandId, commandData.MethodName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(commandId, command.CommandName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
                 WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
                 throw;
             }
