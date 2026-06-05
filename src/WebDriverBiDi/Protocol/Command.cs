@@ -17,8 +17,6 @@ using WebDriverBiDi.JsonConverters;
 public class Command
 {
     private readonly Stopwatch commandStopwatch = new();
-    private readonly CommandParameters commandData;
-    private readonly long commandId;
     private readonly TaskCompletionSource<CommandResult> taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
@@ -28,39 +26,40 @@ public class Command
     /// <param name="commandData">The settings for the command, including parameters.</param>
     public Command(long commandId, CommandParameters commandData)
     {
-        this.commandId = commandId;
-        this.commandData = commandData;
+        this.CommandId = commandId;
+        this.CommandParameters = commandData;
+        this.CommandName = commandData.MethodName;
     }
 
     /// <summary>
     /// Gets the ID of the command.
     /// </summary>
     [JsonPropertyName("id")]
-    public long CommandId => this.commandId;
+    public long CommandId { get; }
 
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
     [JsonPropertyName("method")]
-    public string CommandName => this.commandData.MethodName;
+    public string CommandName { get; }
 
     /// <summary>
     /// Gets the parameters of the command.
     /// </summary>
     [JsonPropertyName("params")]
-    public CommandParameters CommandParameters => this.commandData;
+    public CommandParameters CommandParameters { get; }
 
     /// <summary>
     /// Gets additional properties to be serialized with this command.
     /// </summary>
     [JsonExtensionData]
-    public Dictionary<string, object?> AdditionalData => this.commandData.AdditionalData;
+    public Dictionary<string, object?> AdditionalData => this.CommandParameters.AdditionalData;
 
     /// <summary>
     /// Gets the type of the response for this command.
     /// </summary>
     [JsonIgnore]
-    public Type ResponseType => this.commandData.ResponseType;
+    public Type ResponseType => this.CommandParameters.ResponseType;
 
     /// <summary>
     /// Gets the exception thrown during execution of the command, or <see langword="null"/>
