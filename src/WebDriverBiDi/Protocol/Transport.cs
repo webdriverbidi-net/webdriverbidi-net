@@ -1004,7 +1004,7 @@ public class Transport : IAsyncDisposable
             }
             else if (packet.MessageKind == IncomingMessageKind.CommandResponse)
             {
-                isProcessed = await this.ProcessCommandResponseMessage(packet).ConfigureAwait(false);
+                isProcessed = await this.ProcessCommandResponseMessageAsync(packet).ConfigureAwait(false);
                 Interlocked.Increment(ref this.commandResponseMessagesReceived);
             }
             else if (packet.MessageKind == IncomingMessageKind.ErrorResponse)
@@ -1028,7 +1028,7 @@ public class Transport : IAsyncDisposable
         }
     }
 
-    private async Task<bool> ProcessCommandResponseMessage(IncomingMessage packet)
+    private async Task<bool> ProcessCommandResponseMessageAsync(IncomingMessage packet)
     {
         if (packet.TryGetCommandId(out long responseId))
         {
