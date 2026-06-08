@@ -87,6 +87,39 @@ public class IncomingMessageTests
     }
 
     [Fact]
+    public async Task TestParseWithDocumentTransformerReturningNullSetsFilteredKind()
+    {
+        string json = """{ "method": "CDP.someEvent", "params": {} }""";
+        static JsonDocument? Transformer(JsonDocument doc) => null;
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length, Transformer);
+        message.Parse();
+        Assert.Equal(IncomingMessageKind.Filtered, message.MessageKind);
+    }
+
+    [Fact]
+    public async Task TestParseIsNoOpWhenAlreadyFiltered()
+    {
+        string json = """{ "method": "CDP.someEvent", "params": {} }""";
+        int transformerCallCount = 0;
+        JsonDocument? Transformer(JsonDocument doc)
+        {
+            transformerCallCount++;
+            return null;
+        }
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length, Transformer);
+        message.Parse();
+        message.Parse();
+        Assert.Equal(1, transformerCallCount);
+        Assert.Equal(IncomingMessageKind.Filtered, message.MessageKind);
+    }
+
+    [Fact]
     public async Task TestCanDispose()
     {
         byte[] bytes = Encoding.UTF8.GetBytes("{}");

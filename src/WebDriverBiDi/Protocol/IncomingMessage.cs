@@ -17,7 +17,7 @@ using System.Text.Json.Serialization.Metadata;
 public class IncomingMessage : IDisposable
 {
     private readonly IMemoryOwner<byte> memoryOwner;
-    private readonly Func<JsonDocument, JsonDocument>? documentTransformer;
+    private readonly Func<JsonDocument, JsonDocument?>? documentTransformer;
     private JsonDocument? document;
     private JsonElement payloadElement = default;
     private IncomingMessageKind messagePacketType = IncomingMessageKind.Uninitialized;
@@ -32,8 +32,8 @@ public class IncomingMessage : IDisposable
     /// incoming message bytes. This instance takes ownership and will dispose it on disposal.
     /// </param>
     /// <param name="length">The length, in bytes, of the incoming message within the owner's buffer.</param>
-    /// <param name="documentTransformer">An optional transforming function that converts the parsed JsonDocument object to another.</param>
-    public IncomingMessage(IMemoryOwner<byte> owner, int length, Func<JsonDocument, JsonDocument>? documentTransformer = null)
+    /// <param name="documentTransformer">An optional transforming function that converts the parsed JsonDocument object to another, or returns <see langword="null"/> to indicate the message should be silently discarded.</param>
+    public IncomingMessage(IMemoryOwner<byte> owner, int length, Func<JsonDocument, JsonDocument?>? documentTransformer = null)
     {
         this.memoryOwner = owner;
         this.MessageLength = length;
@@ -118,7 +118,7 @@ public class IncomingMessage : IDisposable
     /// </summary>
     public virtual void Parse()
     {
-        if (this.document is null)
+        if (this.document is null && this.messagePacketType != IncomingMessageKind.Filtered)
         {
             JsonDocument doc = JsonDocument.Parse(this.memoryOwner.Memory.Slice(0, this.MessageLength));
             if (this.documentTransformer is null)
@@ -129,7 +129,14 @@ public class IncomingMessage : IDisposable
             {
                 using (doc)
                 {
-                    this.document = this.documentTransformer(doc);
+                    JsonDocument? transformed = this.documentTransformer(doc);
+                    if (transformed is null)
+                    {
+                        this.messagePacketType = IncomingMessageKind.Filtered;
+                        return;
+                    }
+
+                    this.document = transformed;
                 }
             }
 

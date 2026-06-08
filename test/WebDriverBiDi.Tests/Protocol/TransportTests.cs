@@ -2490,6 +2490,41 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestTransportSilentlyDiscardsFilteredMessages()
+    {
+        bool unknownMessageRaised = false;
+        TaskCompletionSource filteredTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource sentinelTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        FilteringTransport transport = new(connection, filteredTaskCompletionSource);
+        transport.OnUnknownMessageReceived.AddObserver(e =>
+        {
+            if (!e.Message.Contains("sentinel"))
+            {
+                unknownMessageRaised = true;
+            }
+
+            sentinelTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        // This message should be silently discarded by the transformer.
+        await connection.RaiseDataReceivedEventAsync("""{"method":"CDP.someEvent","params":{}}""");
+
+        // Wait for the filtered message to be processed by the transport.
+        await filteredTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Send a sentinel unknown message to confirm the transport is still processing normally.
+        await connection.RaiseDataReceivedEventAsync("""{"type":"sentinel"}""");
+        await sentinelTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.False(unknownMessageRaised);
+    }
+
+    [Fact]
     public async Task TestConnectAsyncThrowsWhenCancellationTokenIsCanceled()
     {
         TestWebSocketConnection connection = new();
@@ -2511,5 +2546,26 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new("module.command");
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await transport.SendCommandAsync(commandParameters, cts.Token));
+    }
+
+    private class FilteringTransport : Transport
+    {
+        private readonly TaskCompletionSource filteredMessageProcessed;
+        private int messageCount;
+
+        public FilteringTransport(TestWebSocketConnection connection, TaskCompletionSource filteredMessageProcessed)
+            : base(connection)
+        {
+            this.filteredMessageProcessed = filteredMessageProcessed;
+        }
+
+        protected override IncomingMessage CreateIncomingMessage(System.Buffers.IMemoryOwner<byte> owner, int length)
+        {
+            // Only the first message is filtered; subsequent messages pass through normally
+            // so the sentinel unknown message can still trigger OnUnknownMessageReceived.
+            return Interlocked.Increment(ref this.messageCount) == 1
+                ? new TestIncomingMessage(owner, length, false, (doc) => null, this.filteredMessageProcessed)
+                : new IncomingMessage(owner, length);
+        }
     }
 }
