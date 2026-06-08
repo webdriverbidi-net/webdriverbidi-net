@@ -2564,25 +2564,8 @@ public class TransportTests
             // Only the first message is filtered; subsequent messages pass through normally
             // so the sentinel unknown message can still trigger OnUnknownMessageReceived.
             return Interlocked.Increment(ref this.messageCount) == 1
-                ? new FilterNotifyingIncomingMessage(owner, length, this.filteredMessageProcessed)
+                ? new TestIncomingMessage(owner, length, false, (doc) => null, this.filteredMessageProcessed)
                 : new IncomingMessage(owner, length);
-        }
-
-        private class FilterNotifyingIncomingMessage : IncomingMessage
-        {
-            private readonly TaskCompletionSource filteredTaskCompletionSource;
-
-            public FilterNotifyingIncomingMessage(System.Buffers.IMemoryOwner<byte> owner, int length, TaskCompletionSource filteredTaskCompletionSource)
-                : base(owner, length, static doc => null)
-            {
-                this.filteredTaskCompletionSource = filteredTaskCompletionSource;
-            }
-
-            public override void Parse()
-            {
-                base.Parse();
-                this.filteredTaskCompletionSource.TrySetResult();
-            }
         }
     }
 }
