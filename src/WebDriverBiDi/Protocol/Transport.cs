@@ -998,7 +998,11 @@ public class Transport : IAsyncDisposable
                 await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             }
 
-            if (packet.MessageKind == IncomingMessageKind.CommandResponse)
+            if (packet.MessageKind == IncomingMessageKind.Filtered)
+            {
+                isProcessed = true;
+            }
+            else if (packet.MessageKind == IncomingMessageKind.CommandResponse)
             {
                 isProcessed = await this.ProcessCommandResponseMessage(packet).ConfigureAwait(false);
                 Interlocked.Increment(ref this.commandResponseMessagesReceived);

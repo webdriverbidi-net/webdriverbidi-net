@@ -31,6 +31,11 @@ public enum IncomingMessageKind
     Event,
 
     /// <summary>
+    /// The incoming message was intentionally filtered by the document transformer and should be silently discarded.
+    /// </summary>
+    Filtered,
+
+    /// <summary>
     /// The incoming message is none of the known incoming message kinds.
     /// </summary>
     Unknown,

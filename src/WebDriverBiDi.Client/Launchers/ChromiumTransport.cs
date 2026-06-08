@@ -249,60 +249,54 @@ public class ChromiumTransport : Transport
         throw new WebDriverBiDiException($"Unable to execute BiDi initialization command '{command.Method}' within {timeout.Value.TotalMilliseconds} seconds (retried {retryCount} times)");
     }
 
-    private JsonDocument ProcessMessageDocument(JsonDocument deserializedDocument)
+    private JsonDocument? ProcessMessageDocument(JsonDocument deserializedDocument)
     {
         JsonElement deserialized = deserializedDocument.RootElement;
         if (!deserialized.TryGetProperty("method", out JsonElement methodNameElement))
         {
-            throw new WebDriverBiDiSerializationException("No 'method' property in JSON");
+            return null;
         }
 
-        string methodName = methodNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'method' property in JSON is not a string");
+        string? methodName = methodNameElement.GetString();
         if (methodName != "Runtime.bindingCalled")
         {
-            throw new WebDriverBiDiSerializationException("'method' property value was not 'Runtime.bindingCalled");
+            return null;
         }
 
         if (!deserialized.TryGetProperty("params", out JsonElement valueElement))
         {
-            throw new WebDriverBiDiSerializationException("No 'params' property in JSON");
+            return null;
         }
 
         JsonElement bindingNameElement = valueElement.GetProperty("name");
-        string bindingName = bindingNameElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'name' property with a string value");
+        string? bindingName = bindingNameElement.GetString();
         if (bindingName != "sendBidiResponse")
         {
-            throw new WebDriverBiDiSerializationException("'params' object value of 'name' property is not 'sendBidiResponse");
+            return null;
         }
 
         JsonElement payloadElement = valueElement.GetProperty("payload");
-        string payload = payloadElement.GetString() ?? throw new WebDriverBiDiSerializationException("'params' object does not have a 'payload' property with a string value");
-        return JsonDocument.Parse(payload);
+        string? payload = payloadElement.GetString();
+        return payload is null ? null : JsonDocument.Parse(payload);
     }
 
     private class DevToolsProtocolCommand
     {
-        private readonly string method;
-        private readonly Dictionary<string, object> parameters = [];
-        private readonly TaskCompletionSource<JsonDocument> taskCompletionSource = new();
-        private readonly long id = 0;
-        private string? sessionId = null;
-
         public DevToolsProtocolCommand(long commandId, string method)
         {
-            this.id = commandId;
-            this.method = method;
+            this.Id = commandId;
+            this.Method = method;
         }
 
-        public long Id => this.id;
+        public long Id { get; } = 0;
 
-        public string Method => this.method;
+        public string Method { get; }
 
-        public Dictionary<string, object> Parameters => this.parameters;
+        public Dictionary<string, object> Parameters { get; } = [];
 
-        public string? SessionId { get => this.sessionId; set => this.sessionId = value; }
+        public string? SessionId { get; set; } = null;
 
-        public TaskCompletionSource<JsonDocument> TaskCompletionSource => this.taskCompletionSource;
+        public TaskCompletionSource<JsonDocument> TaskCompletionSource { get; } = new();
 
         /// <summary>
         /// Serializes this command to UTF-8 JSON bytes using Utf8JsonWriter,
@@ -314,10 +308,10 @@ public class ChromiumTransport : Transport
             using (Utf8JsonWriter writer = new(stream))
             {
                 writer.WriteStartObject();
-                writer.WriteNumber("id", this.id);
-                writer.WriteString("method", this.method);
+                writer.WriteNumber("id", this.Id);
+                writer.WriteString("method", this.Method);
                 writer.WriteStartObject("params");
-                foreach (KeyValuePair<string, object> kvp in this.parameters)
+                foreach (KeyValuePair<string, object> kvp in this.Parameters)
                 {
                     switch (kvp.Value)
                     {
@@ -337,9 +331,9 @@ public class ChromiumTransport : Transport
                 }
 
                 writer.WriteEndObject();
-                if (this.sessionId is not null)
+                if (this.SessionId is not null)
                 {
-                    writer.WriteString("sessionId", this.sessionId);
+                    writer.WriteString("sessionId", this.SessionId);
                 }
 
                 writer.WriteEndObject();
