@@ -1,6 +1,7 @@
-namespace WebDriverBiDi.Protocol;
+namespace WebDriverBiDi.TestUtilities;
 
 using System.Buffers;
+using WebDriverBiDi.Protocol;
 
 public class TestIncomingMessage : IncomingMessage
 {
