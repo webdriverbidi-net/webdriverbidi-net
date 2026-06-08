@@ -134,7 +134,7 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
             {
                 if (namedTypeSymbol.TypeArguments.Length == 1)
                 {
-                    return (IsNullableType(type), namedTypeSymbol.TypeArguments[0]);
+                    return (IsNullableType(namedTypeSymbol), namedTypeSymbol.TypeArguments[0]);
                 }
             }
 
@@ -143,7 +143,7 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
             {
                 if (namedTypeSymbol.TypeArguments.Length == 1)
                 {
-                    return (IsNullableType(type), namedTypeSymbol.TypeArguments[0]);
+                    return (IsNullableType(namedTypeSymbol), namedTypeSymbol.TypeArguments[0]);
                 }
             }
         }
