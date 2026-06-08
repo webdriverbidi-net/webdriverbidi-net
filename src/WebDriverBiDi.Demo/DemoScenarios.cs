@@ -658,7 +658,7 @@ public static class DemoScenarios
 
         // Navigating to simpleContent.html generates 5 responses, one for the HTML page itself,
         // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
-        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(3));
         if (capturedTasks.Length != 5)
         {
             Console.WriteLine("Error: Checkpoint not fulfilled");
