@@ -72,6 +72,10 @@ Prefer the `EventName` property from observable events to avoid typos:
 3. **Use context filtering**: Limit events to specific contexts when possible
 4. **Clean up subscriptions**: Unsubscribe when events are no longer needed
 
+## Error Handling
+
+Commands in this module throw `WebDriverBiDiCommandException` when the browser returns a protocol error response (for example, when `SubscribeAsync` is called with an unrecognized event name), and `WebDriverBiDiTimeoutException` when a command exceeds its timeout. See the [Error Handling guide](../advanced/error-handling.md) for full details on exception types, `TransportErrorBehavior` options, and recommended catch patterns.
+
 ## Next Steps
 
 - [Events and Observables](../events-observables.md): Comprehensive event guide

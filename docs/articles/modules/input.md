@@ -96,6 +96,10 @@ Use Unicode values for special keys: Enter `\uE007`, Tab `\uE004`, Control `\uE0
 
 The demo project includes an `InputBuilder` helper class that simplifies common input patterns. Consider creating similar helpers for your projects.
 
+## Error Handling
+
+Commands in this module throw `WebDriverBiDiCommandException` when the browser returns a protocol error response (for example, when an action sequence targets an invalid element or browsing context), and `WebDriverBiDiTimeoutException` when a command exceeds its timeout. See the [Error Handling guide](../advanced/error-handling.md) for full details on exception types, `TransportErrorBehavior` options, and recommended catch patterns.
+
 ## Next Steps
 
 - [Browsing Context Module](browsing-context.md): Locating elements to interact with

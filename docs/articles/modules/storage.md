@@ -64,6 +64,10 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 4. **Clean up between tests**: Clear cookies and storage for test isolation
 5. **Handle secure cookies**: Set `Secure` flag for HTTPS-only cookies
 
+## Error Handling
+
+Commands in this module throw `WebDriverBiDiCommandException` when the browser returns a protocol error response (for example, when cookie data is invalid or the target partition cannot be found), and `WebDriverBiDiTimeoutException` when a command exceeds its timeout. See the [Error Handling guide](../advanced/error-handling.md) for full details on exception types, `TransportErrorBehavior` options, and recommended catch patterns.
+
 ## Next Steps
 
 - [Browser Module](browser.md): Managing user contexts
