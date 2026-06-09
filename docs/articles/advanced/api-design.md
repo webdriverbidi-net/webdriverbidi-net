@@ -176,9 +176,28 @@ Breaking changes are documented in release notes. When upgrading major versions,
 - Changed method signatures
 - Changed default behavior
 
+## IObservable&lt;T&gt; Integration
+
+Any `ObservableEvent<T>` can be adapted to the standard BCL `IObservable<T>` interface via the `ToObservable()` extension method. This enables integration with [Reactive Extensions (Rx)](https://github.com/dotnet/reactive) operators and any code that consumes `IObservable<T>`/`IObserver<T>`.
+
+```csharp
+IDisposable subscription = driver.Network.OnBeforeRequestSent
+    .ToObservable()
+    .Subscribe(new MyObserver());
+```
+
+The adapter only partially satisfies the full Rx push-stream contract. Be aware of these differences:
+
+- **`OnCompleted`** is called only after the subscription handle returned by `Subscribe` is disposed and the internal buffer drains. It is **not** called when the `BiDiDriver` is stopped or disposed — dispose the subscription handle explicitly to trigger completion.
+- **`OnError`** is called if `OnNext` throws. It is **not** called for transport errors or exceptions thrown by other observers on the same event.
+- Each `Subscribe` call creates an independent buffered subscription that counts as one observer against `ObservableEvent<T>.MaxObserverCount`. Dispose the returned handle when done to avoid resource leaks.
+
+For full details, code samples, and Rx operator usage, see [Events and Observables — IObservable&lt;T&gt; Support](../events-observables.md#iobservablet-support).
+
 ## Related Documentation
 
 - [Core Concepts](../core-concepts.md): Command parameters, events, lifecycle
 - [Error Handling](error-handling.md): TransportErrorBehavior, exception handling, timeout patterns, troubleshooting
 - [Architecture](../architecture.md): Transport, connection, error configuration
+- [Events and Observables](../events-observables.md): Observer pattern, data collectors, IObservable&lt;T&gt; integration
 - [Quick Reference](../quick-reference.md): Common commands at a glance
