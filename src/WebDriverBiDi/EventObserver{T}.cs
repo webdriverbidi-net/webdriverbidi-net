@@ -130,47 +130,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         }
     }
 
-    private bool IsDisposed
-    {
-        get
-        {
-            return Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
-        }
-
-        set
-        {
-            int flagValue = value ? 1 : 0;
-            Interlocked.Exchange(ref this.isDisposedFlag, flagValue);
-        }
-    }
-
     /// <summary>
     /// Stops observing the event.
     /// </summary>
     public void Unobserve()
     {
         this.observableEvent.RemoveObserver(this.Id);
-    }
-
-    /// <summary>
-    /// Removes this observer from its observable event and releases all resources.
-    /// Equivalent to calling <see cref="Unobserve"/> followed by resource cleanup.
-    /// </summary>
-    public void Dispose()
-    {
-        this.Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Asynchronously removes this observer from its observable event and releases all resources.
-    /// </summary>
-    /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
-    public async ValueTask DisposeAsync()
-    {
-        await this.DisposeAsyncCore().ConfigureAwait(false);
-        this.Dispose(false);
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -539,6 +504,27 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     }
 
     /// <summary>
+    /// Removes this observer from its observable event and releases all resources.
+    /// Equivalent to calling <see cref="Unobserve"/> followed by resource cleanup.
+    /// </summary>
+    public void Dispose()
+    {
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Asynchronously removes this observer from its observable event and releases all resources.
+    /// </summary>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await this.DisposeAsyncCore().ConfigureAwait(false);
+        this.Dispose(false);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
     /// Compares this observer to another by execution priority.
     /// </summary>
     /// <param name="other">The <see cref="EventObserver{T}"/> to compare against.</param>
@@ -623,14 +609,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
-        if (!this.IsDisposed)
+        if (this.MarkDisposed())
         {
-            if (disposing)
-            {
-                this.DisposeObserver();
-            }
-
-            this.IsDisposed = true;
+            this.DisposeObserver();
         }
     }
 
@@ -641,7 +622,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
     protected virtual ValueTask DisposeAsyncCore()
     {
-        if (!this.IsDisposed)
+        if (this.MarkDisposed())
         {
             this.DisposeObserver();
         }
@@ -657,6 +638,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         }
 
         return observableEventName;
+    }
+
+    private bool MarkDisposed()
+    {
+        return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
     }
 
     private void CloseCaptureChannel()
