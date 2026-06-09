@@ -219,7 +219,7 @@ public class MessageTests
                           "objectProperty": "objectValue"
                         }
                       }
-                      """;      
+                      """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
         Assert.NotNull(result);
 
