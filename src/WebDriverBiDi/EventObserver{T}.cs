@@ -111,7 +111,24 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <summary>
     /// Gets or sets the description of this observer.
     /// </summary>
-    internal string Description { get; set; }
+    internal string Description
+    {
+        get
+        {
+            lock (this.captureLock)
+            {
+                return field;
+            }
+        }
+
+        set
+        {
+            lock (this.captureLock)
+            {
+                field = value;
+            }
+        }
+    }
 
     private bool IsDisposed
     {
