@@ -126,6 +126,11 @@ guide In the project documentation. Please do not suggest one.
 issues you find in your analysis. Verify if any of your design issues are
 covered by those analyzers, and if any new analyzers would help users avoid
 what you consider design deficiencies.
+* The CI coverage enforcement threshold in `_tests.yml` is set to 95% as an
+intentional development affordance, allowing PRs to land before achieving
+100% coverage on new code. The project's target of 100% coverage is a goal
+maintained in practice, not a hard CI gate on every commit. Do not flag the
+95% CI threshold as a gap or recommend raising it.
 
 ## Verification rules
 
@@ -211,18 +216,18 @@ and must not be flagged. A recommendation to change it is a false positive.
 Only recommend changing an exception type when the current type is
 demonstrably inconsistent with what the CLR would throw for the same operation.
 
-**Before recommending that a library exception type change its base class to
-match a BCL parallel** (e.g. suggesting a timeout exception extend
-`System.TimeoutException`, or an I/O exception extend `System.IO.IOException`),
-verify that the BCL itself consistently applies this convention — and that the
-change does not break the library's own exception hierarchy. If the library uses
-a single-rooted exception hierarchy (all types descend from a common base), and
-adopting the BCL base class would require a marker interface or other workaround
-to restore catch-all behaviour, the current hierarchy is an acceptable design
-choice and must not be flagged as a defect or scored against. You may note in
-the Non-Issues section that a BCL parallel exists, but only if you also note
-that the BCL itself does not consistently mandate the pattern (e.g.
-`HttpRequestException` does not extend `TimeoutException`).
+**Before recommending that a library exception type change its base class to match a BCL parallel**
+(e.g. suggesting a timeout exception extend `System.TimeoutException`, or an
+I/O exception extend `System.IO.IOException`), verify that the BCL itself
+consistently applies this convention — and that the change does not break
+the library's own exception hierarchy. If the library uses a single-rooted
+exception hierarchy (all types descend from a common base), and adopting the
+BCL base class would require a marker interface or other workaround to restore
+catch-all behaviour, the current hierarchy is an acceptable design choice and
+must not be flagged as a defect or scored against. You may note in the Non-
+Issues section that a BCL parallel exists, but only if you also note that the
+BCL itself does not consistently mandate the pattern (e.g. `HttpRequestException`
+does not extend `TimeoutException`).
 
 **When a claim concerns something a method or property does not do (lacks validation, lacks a check, lacks a feature), follow every delegation in the call chain to its concrete implementation before concluding the behavior is absent.**
 If A.Foo delegates to B.Bar which calls C.Baz, the claim "Foo does not validate
@@ -280,8 +285,7 @@ in mind:
 100% code coverage for lines, branches, and methods. If you are asked to make
 changes to this library, you should maintain that level of code coverage. Note
 that this level of code coverage is not provided for the Roslyn analyzers
-project (`WebDriverBiDi.Analyzers`) nor for the structured logging project
-(`WebDriverBiDi.Logging`). This is not a deficiency in either of those libraries,
+project (`WebDriverBiDi.Analyzers`). This is not a deficiency in that library,
 and should not be flagged as such.
 * The convention for code in this project is to avoid the use of the `var`
 keyword in the C# language. You should adhere to this convention for any code
@@ -321,8 +325,8 @@ scores last, after the Action Plan is finalized. A category's score equals 100
 minus the deductions from that category's verified Action Plan entries. If the
 Action Plan contains no entries for a category, that category's score is 100.
 
-**A category with zero verified, actionable improvements must receive a score of
-100.** The range 90–99 is only available when at least one verified improvement
+**A category with zero verified, actionable improvements must receive a score of 100.**
+The range 90–99 is only available when at least one verified improvement
 exists for that category but its severity is minor. Do not deduct points to
 "leave room" for suggestions that the constraints forbid you from making; phantom
 deductions for precluded suggestions are treated as false positives with the same
