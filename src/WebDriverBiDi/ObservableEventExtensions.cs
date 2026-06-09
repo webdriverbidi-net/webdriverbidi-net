@@ -104,7 +104,18 @@ public static class ObservableEventExtensions
                 }
                 catch (Exception ex)
                 {
-                    observer.OnError(ex);
+                    try
+                    {
+                        observer.OnError(ex);
+                    }
+                    catch (Exception)
+                    {
+                        // OnError throwing an exception violates the contract
+                        // of IObserver<T>, so we will swallow all exceptions
+                        // here.
+                    }
+
+                    await collector.DisposeAsync().ConfigureAwait(false);
                 }
             });
             return collector;
