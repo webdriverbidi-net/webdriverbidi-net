@@ -102,7 +102,7 @@ public class DownloadEndEventArgsTests
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json));
-     }
+    }
 
     [Fact]
     public void TestCanDeserializingWithMissingStatusThrows()
@@ -119,7 +119,7 @@ public class DownloadEndEventArgsTests
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json));
-     }
+    }
 
     [Fact]
     public void TestCopySemantics()
