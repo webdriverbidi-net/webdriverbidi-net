@@ -272,6 +272,11 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             catch (HttpRequestException)
             {
             }
+
+            if (!isInitialized)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(100));
+            }
         }
 
         initializationStopwatch.Stop();
