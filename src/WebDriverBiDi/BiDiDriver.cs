@@ -73,7 +73,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private readonly EventObserver<LogMessageEventArgs> transportLogMessageObserver;
     private readonly EventObserver<EventHandlerErrorOccurredEventArgs> transportEventHandlerErrorOccurredObserver;
 
-    private readonly ObservableEventInvocable<EventReceivedEventArgs> invocableEventReceivedObserableEvent;
+    private readonly ObservableEventInvocable<EventReceivedEventArgs> invocableEventReceivedObservableEvent;
     private readonly ObservableEventInvocable<ErrorReceivedEventArgs> invocableErrorReceivedObservableEvent;
     private readonly ObservableEventInvocable<UnknownMessageReceivedEventArgs> invocableUnknownMessageReceivedObservableEvent;
     private readonly ObservableEventInvocable<EventHandlerErrorOccurredEventArgs> invocableEventHandlerErrorOccurredObservableEvent;
@@ -151,7 +151,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
         this.transportEventHandlerErrorOccurredObserver = this.transport.OnEventHandlerErrorOccurred.AddObserver(this.OnTransportEventHandlerErrorOccurredAsync);
 
-        this.invocableEventReceivedObserableEvent = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
+        this.invocableEventReceivedObservableEvent = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
         this.invocableErrorReceivedObservableEvent = this.CreateObservableEvent<ErrorReceivedEventArgs>(UnexpectedErrorReceivedEventName);
         this.invocableUnknownMessageReceivedObservableEvent = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
         this.invocableEventHandlerErrorOccurredObservableEvent = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
@@ -208,7 +208,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <summary>
     /// Gets an observable event that notifies when a protocol event is received from protocol transport.
     /// </summary>
-    public ObservableEvent<EventReceivedEventArgs> OnEventReceived => this.invocableEventReceivedObserableEvent;
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived => this.invocableEventReceivedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a protocol error is received from protocol transport.
@@ -783,7 +783,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             await invoker.InvokeEventAsync(e.EventData, e.AdditionalData).ConfigureAwait(false);
         }
 
-        await this.invocableEventReceivedObserableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
