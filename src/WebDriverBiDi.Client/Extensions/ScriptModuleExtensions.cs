@@ -60,7 +60,7 @@ public static class ScriptModuleExtensions
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An Task representing the asynchronous operation.</returns>
-    public static async Task RemovePreloadScriptAsync(this ScriptModule module, string preloadScriptId, TimeSpan? timeoutOverride, CancellationToken cancellationToken)
+    public static async Task RemovePreloadScriptAsync(this ScriptModule module, string preloadScriptId, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         RemovePreloadScriptCommandParameters parameters = new(preloadScriptId);
         await module.RemovePreloadScriptAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
