@@ -63,7 +63,7 @@ public static class ScriptModuleExtensions
     public static async Task RemovePreloadScriptAsync(this ScriptModule module, string preloadScriptId, TimeSpan? timeoutOverride, CancellationToken cancellationToken)
     {
         RemovePreloadScriptCommandParameters parameters = new(preloadScriptId);
-        await module.RemovePreloadScriptAsync(parameters).ConfigureAwait(false);
+        await module.RemovePreloadScriptAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
