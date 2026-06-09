@@ -28,7 +28,6 @@ public class BrowserLocator
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent = new("browserLocator.logMessage");
     private readonly BrowserLocatorSettings settings;
     private readonly DriverLocator? driverLocator;
-    private string cacheDirectory = DefaultCacheDir;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLocator"/> class.
@@ -50,27 +49,18 @@ public class BrowserLocator
         // Wire up driver locator logging to forward through browser locator's event
         if (this.driverLocator is not null)
         {
-            this.driverLocator.CacheDirectory = this.cacheDirectory;
             this.driverLocator.OnLogMessage.AddObserver(this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync);
         }
     }
 
     /// <summary>
-    /// Gets or sets the directory where downloaded browsers should be cached. By default,
+    /// Getsthe directory where downloaded browsers should be cached. By default,
     /// the cache directory is a "webdriverbidi-net" subdirectory of a hidden ".cache"
     /// directory located in the user's profile directory.
     /// </summary>
     public string CacheDirectory
     {
-        get => this.cacheDirectory;
-        set
-        {
-            this.cacheDirectory = value;
-            if (this.driverLocator is not null)
-            {
-                this.driverLocator.CacheDirectory = value;
-            }
-        }
+        get => this.settings.CacheDirectory;
     }
 
     /// <summary>
@@ -148,7 +138,6 @@ public class BrowserLocator
     /// <param name="version">The version of the browser to locate.</param>
     /// <param name="locationBehavior">The strategy for locating the browser.</param>
     /// <param name="customPath">The custom path to the browser executable (only used when locationBehavior is UseCustomLocation).</param>
-    /// <param name="cacheDirectory">The custom cache directory (only used when locationBehavior is AutoLocateAndDownload). If null, uses default cache location.</param>
     /// <returns>The path to the browser executable.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
     /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
@@ -157,8 +146,7 @@ public class BrowserLocator
         BrowserReleaseChannel channel,
         BrowserVersion version,
         FileLocationBehavior locationBehavior,
-        string? customPath = null,
-        string? cacheDirectory = null)
+        string? customPath = null)
     {
         BrowserLocatorSettings settings = browser switch
         {
@@ -174,11 +162,6 @@ public class BrowserLocator
         };
 
         BrowserLocator locator = new(settings);
-        if (cacheDirectory is not null)
-        {
-            locator.CacheDirectory = cacheDirectory;
-        }
-
         return await locator.LocateBrowserAsync().ConfigureAwait(false);
     }
 

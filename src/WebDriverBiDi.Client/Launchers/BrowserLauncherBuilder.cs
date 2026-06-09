@@ -424,10 +424,9 @@ public class BrowserLauncherBuilder
         string browserLocation = this.customBrowserLocation ?? string.Empty;
 
         ChromeBrowserLocatorSettings settings = new(chromeChannel, this.locationBehavior, browserLocation, versionString);
-
         if (this.cacheDirectory is not null)
         {
-            // TODO: Need to add CacheDirectory property to BrowserLocatorSettings or pass through BrowserLocator
+            settings.CacheDirectory = this.cacheDirectory;
         }
 
         if (this.launchStrategy == LaunchStrategy.UsingDriver)
@@ -473,6 +472,10 @@ public class BrowserLauncherBuilder
         string browserLocation = this.customBrowserLocation ?? string.Empty;
 
         FirefoxBrowserLocatorSettings settings = new(firefoxChannel, this.locationBehavior, browserLocation, versionString);
+        if (this.cacheDirectory is not null)
+        {
+            settings.CacheDirectory = this.cacheDirectory;
+        }
 
         if (this.launchStrategy == LaunchStrategy.UsingDriver)
         {

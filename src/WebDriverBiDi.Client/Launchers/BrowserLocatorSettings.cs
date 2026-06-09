@@ -23,12 +23,9 @@ internal abstract class BrowserLocatorSettings
     public const string SystemVersionString = "system";
 
     /// <summary>
-    /// Gets the base cache directory for downloaded browsers, which is a subdirectory of the user's profile directory.
+    /// Gets or sets the directory for the browser and driver cache.
     /// </summary>
-    protected static readonly string BaseCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".cache",
-        "webdriverbidi-net");
+    public string CacheDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "webdriverbidi-net");
 
     /// <summary>
     /// Gets the name of the browser (e.g., "chrome", "firefox").
