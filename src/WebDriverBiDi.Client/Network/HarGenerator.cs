@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Client.Network;
 
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Network;
@@ -98,7 +99,7 @@ public static class HarGenerator
         };
 
         string responseBodyText = request.IsResponseBodyBase64Encoded
-            ? request.ResponseBody
+            ? Encoding.UTF8.GetString(Convert.FromBase64String(request.ResponseBody))
             : request.ResponseBody;
 
         HarResponse harResponse = new()
