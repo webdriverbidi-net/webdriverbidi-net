@@ -36,11 +36,11 @@ public class DriverLocator
     }
 
     /// <summary>
-    /// Gets or sets the directory where downloaded drivers should be cached. By default,
+    /// Gets the directory where downloaded drivers should be cached. By default,
     /// the cache directory is a "webdriverbidi-net" subdirectory of a hidden ".cache"
     /// directory located in the user's profile directory.
     /// </summary>
-    public string CacheDirectory { get; set; } = DefaultCacheDir;
+    public string CacheDirectory => this.settings.CacheDirectory;
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the driver locator.
@@ -118,10 +118,6 @@ public class DriverLocator
 
         settings.IncludeDriver = true;
         DriverLocator locator = new(settings);
-        if (cacheDirectory is not null)
-        {
-            locator.CacheDirectory = cacheDirectory;
-        }
 
         Cache? cacheInfo = locationBehavior == FileLocationBehavior.AutoLocateAndDownload
             ? Cache.Load(locator.CacheDirectory)
