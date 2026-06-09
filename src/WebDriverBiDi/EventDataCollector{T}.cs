@@ -82,7 +82,6 @@ public sealed class EventDataCollector<T> : IDisposable, IAsyncDisposable
     private bool IsDisposed
     {
         get => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
-        set => Interlocked.Exchange(ref this.isDisposedFlag, value ? 1 : 0);
     }
 
     /// <summary>
@@ -121,7 +120,12 @@ public sealed class EventDataCollector<T> : IDisposable, IAsyncDisposable
     /// </summary>
     public void Dispose()
     {
-        this.Dispose(true);
+        if (this.MarkDisposed())
+        {
+            this.observer.Dispose();
+            this.channel.Writer.TryComplete();
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -131,32 +135,18 @@ public sealed class EventDataCollector<T> : IDisposable, IAsyncDisposable
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
     public async ValueTask DisposeAsync()
     {
-        if (!this.IsDisposed)
+        if (this.MarkDisposed())
         {
             await this.observer.DisposeAsync().ConfigureAwait(false);
             this.channel.Writer.TryComplete();
         }
 
-        this.Dispose(false);
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Releases the resources used by this data collector.
-    /// </summary>
-    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
-    private void Dispose(bool disposing)
+    private bool MarkDisposed()
     {
-        if (!this.IsDisposed)
-        {
-            if (disposing)
-            {
-                this.observer.Dispose();
-                this.channel.Writer.TryComplete();
-            }
-
-            this.IsDisposed = true;
-        }
+        return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
     }
 
     private Task CollectDataAsync(T eventData)
