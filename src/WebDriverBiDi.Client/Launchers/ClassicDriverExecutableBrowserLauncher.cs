@@ -288,7 +288,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {
-            await this.LogAsync(this.launcherProcess.StandardOutput.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
+            await this.LogAsync(this.launcherProcess.StandardOutput.ReadLine() ?? string.Empty, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
         }
     }
 
@@ -296,7 +296,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {
-            await this.LogAsync(this.launcherProcess.StandardError.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
+            await this.LogAsync(this.launcherProcess.StandardError.ReadLine() ?? string.Empty, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
         }
     }
 }
