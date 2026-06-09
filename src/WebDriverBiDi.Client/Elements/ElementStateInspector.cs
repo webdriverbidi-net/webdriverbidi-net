@@ -58,7 +58,7 @@ public class ElementStateInspector
         {
             Sandbox = this.sandboxName,
         };
-        AddPreloadScriptCommandResult addScriptResult = await this.driver.Script.AddPreloadScriptAsync(preloadScriptParams);
+        AddPreloadScriptCommandResult addScriptResult = await this.driver.Script.AddPreloadScriptAsync(preloadScriptParams).ConfigureAwait(false);
         this.preloadScriptId = addScriptResult.PreloadScriptId;
     }
 
@@ -70,7 +70,7 @@ public class ElementStateInspector
     {
         if (!string.IsNullOrEmpty(this.preloadScriptId))
         {
-            await this.driver.Script.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters(this.preloadScriptId));
+            await this.driver.Script.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters(this.preloadScriptId)).ConfigureAwait(false);
         }
     }
 
@@ -105,7 +105,7 @@ public class ElementStateInspector
         };
         CallFunctionCommandParameters visibilityFunctionParams = new(visibleFunctionDefinition, contextTarget, true);
         visibilityFunctionParams.Arguments.Add(element);
-        EvaluateResult visibilityScriptResult = await this.driver.Script.CallFunctionAsync(visibilityFunctionParams);
+        EvaluateResult visibilityScriptResult = await this.driver.Script.CallFunctionAsync(visibilityFunctionParams).ConfigureAwait(false);
         if (visibilityScriptResult.ResultType == EvaluateResultType.Exception)
         {
             // If the "waitForInteractionReady" script times out or experiences an
@@ -134,7 +134,7 @@ public class ElementStateInspector
         };
         CallFunctionCommandParameters visibilityFunctionParams = new(visibleFunctionDefinition, contextTarget, true);
         visibilityFunctionParams.Arguments.Add(element);
-        EvaluateResult visibilityScriptResult = await this.driver.Script.CallFunctionAsync(visibilityFunctionParams);
+        EvaluateResult visibilityScriptResult = await this.driver.Script.CallFunctionAsync(visibilityFunctionParams).ConfigureAwait(false);
         if (visibilityScriptResult.ResultType == EvaluateResultType.Exception)
         {
             // If the "waitForInteractionReady" script times out or experiences an

@@ -143,7 +143,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     public override async Task<BrowserInstance> LaunchBrowserAsync()
     {
         this.ThrowIfDisposed();
-        string url = await this.BrowserLocator.LocateBrowserAsync();
+        string url = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
         Dictionary<string, object> classicCapabilities = new()
         {
             ["capabilities"] = new Dictionary<string, object>()
@@ -155,8 +155,8 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             },
         };
         string json = JsonSerializer.Serialize(classicCapabilities);
-        await this.LogAsync("Launching browser", WebDriverBiDiLogLevel.Info);
-        await this.LogAsync($"Sending classic new session command. JSON:\n{json}", WebDriverBiDiLogLevel.Debug);
+        await this.LogAsync("Launching browser", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+        await this.LogAsync($"Sending classic new session command. JSON:\n{json}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         StringContent content = new(json, Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content).ConfigureAwait(false);
         string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -165,7 +165,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             throw new BrowserNotLaunchedException($"Unable to launch browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
         }
 
-        await this.LogAsync($"Received classic new session response. JSON:\n{responseJson}", WebDriverBiDiLogLevel.Debug);
+        await this.LogAsync($"Received classic new session response. JSON:\n{responseJson}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         using (JsonDocument returned = JsonDocument.Parse(responseJson))
         {
             JsonElement rootElement = returned.RootElement;
@@ -209,7 +209,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     {
         if (!string.IsNullOrEmpty(this.sessionId))
         {
-            await this.LogAsync($"Quitting browser", WebDriverBiDiLogLevel.Info);
+            await this.LogAsync($"Quitting browser", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
             using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}").ConfigureAwait(false);
             string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
@@ -275,7 +275,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 
             if (!isInitialized)
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
             }
         }
 
