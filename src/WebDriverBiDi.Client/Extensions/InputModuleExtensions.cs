@@ -28,7 +28,7 @@ public static class InputModuleExtensions
         inputBuilder.AddClickOnElementAction(elementReference);
         PerformActionsCommandParameters parameters = new(browsingContextId);
         parameters.Actions.AddRange(inputBuilder.Build());
-        await module.PerformActionsAsync(parameters, timeoutOverride, cancellationToken);
+        await module.PerformActionsAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -48,6 +48,6 @@ public static class InputModuleExtensions
         inputBuilder.AddSendKeysToActiveElementAction(keysToSend);
         PerformActionsCommandParameters parameters = new(browsingContextId);
         parameters.Actions.AddRange(inputBuilder.Build());
-        await module.PerformActionsAsync(parameters, timeoutOverride, cancellationToken);
+        await module.PerformActionsAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
     }
 }

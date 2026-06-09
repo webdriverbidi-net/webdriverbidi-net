@@ -61,7 +61,7 @@ public class NetworkTrafficMonitor
 
         AddDataCollectorCommandParameters addCollectorParameters = new(200000000, DataType.Request, DataType.Response);
         addCollectorParameters.BrowsingContexts.Add(browsingContextId);
-        AddDataCollectorCommandResult collectorResult = await this.driver.Network.AddDataCollectorAsync(addCollectorParameters);
+        AddDataCollectorCommandResult collectorResult = await this.driver.Network.AddDataCollectorAsync(addCollectorParameters).ConfigureAwait(false);
         this.bodyCollectorId = collectorResult.CollectorId;
 
         List<string> subscribedEvents = [
@@ -76,7 +76,7 @@ public class NetworkTrafficMonitor
                 BrowsingContextIds = [browsingContextId],
                 UrlPatterns = [.. this.requestModifications.Select(m => (UrlPattern)new UrlPatternString(m.UrlPattern))],
             };
-            AddInterceptCommandResult requestInterceptResult = await this.driver.Network.AddInterceptAsync(requestIntercept);
+            AddInterceptCommandResult requestInterceptResult = await this.driver.Network.AddInterceptAsync(requestIntercept).ConfigureAwait(false);
             this.requestInterceptId = requestInterceptResult.InterceptId;
         }
 
@@ -88,7 +88,7 @@ public class NetworkTrafficMonitor
             {
                 BrowsingContextIds = [browsingContextId],
             };
-            AddInterceptCommandResult authInterceptResult = await this.driver.Network.AddInterceptAsync(authIntercept);
+            AddInterceptCommandResult authInterceptResult = await this.driver.Network.AddInterceptAsync(authIntercept).ConfigureAwait(false);
             this.authInterceptId = authInterceptResult.InterceptId;
 
             subscribedEvents.Add(this.driver.Network.OnAuthRequired.EventName);
@@ -96,7 +96,7 @@ public class NetworkTrafficMonitor
 
         List<string> subscribedContexts = [browsingContextId];
         SubscribeCommandParameters subscribe = new(subscribedEvents, subscribedContexts);
-        SubscribeCommandResult subscribeResult = await this.driver.Session.SubscribeAsync(subscribe);
+        SubscribeCommandResult subscribeResult = await this.driver.Session.SubscribeAsync(subscribe).ConfigureAwait(false);
         this.eventSubscriptionId = subscribeResult.SubscriptionId;
     }
 
@@ -132,13 +132,13 @@ public class NetworkTrafficMonitor
             cleanupTasks.Add(this.driver.Network.RemoveInterceptAsync(new RemoveInterceptCommandParameters(this.authInterceptId)));
         }
 
-        await Task.WhenAll(cleanupTasks);
+        await Task.WhenAll(cleanupTasks).ConfigureAwait(false);
 
         if (!string.IsNullOrEmpty(this.eventSubscriptionId))
         {
             UnsubscribeByIdsCommandParameters unsubscribe = new();
             unsubscribe.SubscriptionIds.Add(this.eventSubscriptionId);
-            await this.driver.Session.UnsubscribeAsync(unsubscribe);
+            await this.driver.Session.UnsubscribeAsync(unsubscribe).ConfigureAwait(false);
         }
 
         this.requestInterceptId = string.Empty;
@@ -163,7 +163,7 @@ public class NetworkTrafficMonitor
             requestCompletionTasks.Add(request.WaitForResponseReceivedAsync());
         }
 
-        await Task.WhenAll(requestCompletionTasks);
+        await Task.WhenAll(requestCompletionTasks).ConfigureAwait(false);
         foreach (string capturedRequestId in capturedRequestIds)
         {
             this.pendingRequests.Remove(capturedRequestId);
@@ -175,7 +175,7 @@ public class NetworkTrafficMonitor
             responseCompletionTasks.Add(request.WaitForResponseBodyAsync());
         }
 
-        await Task.WhenAll(responseCompletionTasks);
+        await Task.WhenAll(responseCompletionTasks).ConfigureAwait(false);
         return capturedRequests;
     }
 
@@ -263,7 +263,7 @@ public class NetworkTrafficMonitor
             }
         }
 
-        await this.driver.Network.ContinueRequestAsync(continueParams);
+        await this.driver.Network.ContinueRequestAsync(continueParams).ConfigureAwait(false);
     }
 
     private async Task ProvideAuthAsync(string requestId)
@@ -274,6 +274,6 @@ public class NetworkTrafficMonitor
             Action = ContinueWithAuthActionType.ProvideCredentials,
             Credentials = credentials,
         };
-        await this.driver.Network.ContinueWithAuthAsync(authParams);
+        await this.driver.Network.ContinueWithAuthAsync(authParams).ConfigureAwait(false);
     }
 }
