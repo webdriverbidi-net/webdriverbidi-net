@@ -230,6 +230,10 @@ the same `DownloadId` and `Url`, along with `Status` (`DownloadEndStatus.Complet
 4. **Use appropriate locators**: CSS selectors are generally faster than XPath
 5. **Cache context IDs**: Store context IDs rather than repeatedly calling GetTree
 
+## Error Handling
+
+Commands in this module throw `WebDriverBiDiCommandException` when the browser returns a protocol error response (for example, when a browsing context ID is invalid or a navigation target cannot be reached), and `WebDriverBiDiTimeoutException` when a command exceeds its timeout. See the [Error Handling guide](../advanced/error-handling.md) for full details on exception types, `TransportErrorBehavior` options, and recommended catch patterns.
+
 ## Next Steps
 
 - [Script Module](script.md): Execute JavaScript in browsing contexts

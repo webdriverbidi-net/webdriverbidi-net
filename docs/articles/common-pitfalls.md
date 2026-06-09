@@ -195,6 +195,8 @@ When using `RunHandlerAsynchronously`, the handler runs on a background task. Yo
 
 [!code-csharp[Get Captured Tasks](../code/common-pitfalls/CommonPitfallsSamples.cs#GetCapturedTasksExample)]
 
+> **Note:** `GetCapturedTasks()` blocks the calling thread to acquire an internal reader lock. In environments with a single-threaded `SynchronizationContext` (such as WPF or legacy ASP.NET), if a concurrent `WaitForCapturedTasksAsync()` call holds the lock, `GetCapturedTasks()` will deadlock. In those environments, prefer `WaitForCapturedTasksAsync()`.
+
 **Key Takeaway:** With async handlers, use `WaitForCapturedTasksCompleteAsync()` or `WaitForCapturedTasksAsync()` with manual task management to ensure handlers complete before your code continues.
 
 ---

@@ -92,6 +92,10 @@ Note: This closes the entire browser, not just a tab. To close a tab, use `Brows
 3. **Test window states**: Not all window states work on all platforms
 4. **Handle downloads carefully**: Set download behavior before triggering downloads
 
+## Error Handling
+
+Commands in this module throw `WebDriverBiDiCommandException` when the browser returns a protocol error response, and `WebDriverBiDiTimeoutException` when a command exceeds its timeout. See the [Error Handling guide](../advanced/error-handling.md) for full details on exception types, `TransportErrorBehavior` options, and recommended catch patterns.
+
 ## Next Steps
 
 - [Browsing Context Module](browsing-context.md): Working with tabs and windows
