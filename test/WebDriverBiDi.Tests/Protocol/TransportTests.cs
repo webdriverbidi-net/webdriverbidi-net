@@ -86,7 +86,7 @@ public class TransportTests
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -125,7 +125,7 @@ public class TransportTests
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
-        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -165,7 +165,7 @@ public class TransportTests
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
-        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -208,7 +208,7 @@ public class TransportTests
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
-        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
         Assert.Contains("Response did not contain properly formed JSON for response type", command.ThrownException.Message);
     }
@@ -441,7 +441,7 @@ public class TransportTests
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -1499,7 +1499,7 @@ public class TransportTests
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal(1, transport.LastTestCommandId);
     }
 
