@@ -214,6 +214,49 @@ public class ObservableEventTests
     }
 
     [Fact]
+    public async Task TestRemovingStandardObserverDoesNotDecrementDataCollectorCount()
+    {
+        // Verify that removing a standard (non-data-collector) observer does not
+        // corrupt the dataCollectorCount, which would cause data collectors to lose
+        // their guaranteed execution order ahead of standard handlers.
+        int capturedEventDataCount = 0;
+        TestEventSource testEventSource = new();
+        EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            e => capturedEventDataCount = collector.GetCollectedEventData().Count);
+        Assert.Equal(2, testEventSource.TestObservableEvent.CurrentObserverCount);
+
+        testEventSource.TestObservableEvent.RemoveObserver(observer.Id);
+        Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
+
+        // Re-add the standard handler and raise an event. If dataCollectorCount were
+        // wrongly decremented to 0, the sort would be skipped and the collector might
+        // run after the handler, leaving capturedEventDataCount at 0.
+        testEventSource.TestObservableEvent.AddObserver(
+            e => capturedEventDataCount = collector.GetCollectedEventData().Count);
+        await testEventSource.RaiseTestEventAsync("myValue");
+        Assert.Equal(1, capturedEventDataCount);
+    }
+
+    [Fact]
+    public async Task TestRemovingAlreadyRemovedObserverIsNoOp()
+    {
+        // Exercises the TryGetValue-returns-false branch in RemoveObserver: calling
+        // RemoveObserver with an ID that is no longer in the dictionary must not
+        // throw or corrupt observer count.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
+
+        testEventSource.TestObservableEvent.RemoveObserver(observer.Id);
+        Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
+
+        // Second call with the same (now-absent) ID — TryGetValue returns false.
+        testEventSource.TestObservableEvent.RemoveObserver(observer.Id);
+        Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
+    }
+
+    [Fact]
     public async Task TestDataCollectorsExecuteBeforeHandlers()
     {
         int capturedEventDataCount = 0;

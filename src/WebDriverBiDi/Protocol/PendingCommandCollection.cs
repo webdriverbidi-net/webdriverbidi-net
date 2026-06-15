@@ -30,19 +30,7 @@ public class PendingCommandCollection : IDisposable
     /// </summary>
     public int PendingCommandCount => this.pendingCommands.Count;
 
-    private bool IsDisposed
-    {
-        get
-        {
-            return Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
-        }
-
-        set
-        {
-            int flagValue = value ? 1 : 0;
-            Interlocked.Exchange(ref this.isDisposedFlag, flagValue);
-        }
-    }
+    private bool IsDisposed => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
 
     /// <summary>
     /// Asynchronously adds a command to the collection.
@@ -172,7 +160,12 @@ public class PendingCommandCollection : IDisposable
                 this.commandAdditionSemaphore.Dispose();
             }
 
-            this.IsDisposed = true;
+            this.SetDisposed();
         }
+    }
+
+    private void SetDisposed()
+    {
+        Interlocked.Exchange(ref this.isDisposedFlag, 1);
     }
 }
