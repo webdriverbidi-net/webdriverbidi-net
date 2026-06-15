@@ -201,7 +201,7 @@ public class UnhandledErrorCollection
             List<Exception> result = [];
             foreach (UnhandledError error in this.unhandledErrors)
             {
-                if (this.errorBehaviors.TryGetValue(error.ErrorType, out TransportErrorBehavior behavior) && behavior == errorBehavior)
+                if (this.errorBehaviors[error.ErrorType] == errorBehavior)
                 {
                     result.Add(error.Exception);
                 }

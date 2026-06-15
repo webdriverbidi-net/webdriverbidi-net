@@ -387,6 +387,47 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncCancelsDelayWhenHandlersCompleteBeforeTimeout()
+    {
+        // Handlers are blocked on a gate until both have started, ensuring whenAllTask is not
+        // yet complete when WaitForCapturedTasksCompleteAsync reaches the IsCompleted check.
+        // Releasing the gate lets them finish while the timeout delay is still pending, so
+        // whenAllTask wins WhenAny — exercising the else branch that cancels the delay.
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async e =>
+            {
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    bothStartedTaskCompletionSource.TrySetResult();
+                }
+
+                await gateTaskCompletionSource.Task.ConfigureAwait(false);
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        // Wait until both handlers are running so whenAllTask.IsCompleted is false.
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Release the gate after WaitForCapturedTasksCompleteAsync is inside WhenAny, letting
+        // whenAllTask win the race and take the else branch to cancel the delay task.
+        gateTaskCompletionSource.TrySetResult();
+
+        bool fulfilled = await waitTask;
+        Assert.True(fulfilled);
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksAsyncPropagatesHandlerException()
     {
         TestEventSource testEventSource = new();

@@ -315,21 +315,9 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether this transport is disposed.
+    /// Gets a value indicating whether this transport is disposed.
     /// </summary>
-    internal bool IsDisposed
-    {
-        get
-        {
-            return Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
-        }
-
-        set
-        {
-            int flagValue = value ? 1 : 0;
-            Interlocked.Exchange(ref this.isDisposedFlag, flagValue);
-        }
-    }
+    internal bool IsDisposed => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
 
     /// <summary>
     /// Gets or sets the collection of pending commands that have been sent and
@@ -759,7 +747,7 @@ public class Transport : IAsyncDisposable
         this.connectionLogMessageObserver.Dispose();
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
-        this.IsDisposed = true;
+        this.SetDisposed();
     }
 
     /// <summary>
@@ -851,6 +839,11 @@ public class Transport : IAsyncDisposable
 #else
         return string.Concat(message.AsSpan(0, maxLength), "...");
 #endif
+    }
+
+    private void SetDisposed()
+    {
+        Interlocked.Exchange(ref this.isDisposedFlag, 1);
     }
 
     private void ThrowIfDisposed()

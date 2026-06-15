@@ -30,7 +30,7 @@
         },
         {
             "type": "shell",
-            "command": "dotnet build --configuration Release ${workspaceFolder}/test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj && ${workspaceFolder}/test/WebDriverBiDi.Tests/bin/Release/net10.0/WebDriverBiDi.Tests --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --coverlet-exclude '[WebDriverBiDi.NamedPipeTestApplication]*' --results-directory '${workspaceFolder}/test/coverage' --coverlet-file-prefix lcov",
+            "command": "dotnet build --configuration Debug ${workspaceFolder}/test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj && ${workspaceFolder}/test/WebDriverBiDi.Tests/bin/Debug/net10.0/WebDriverBiDi.Tests --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --coverlet-exclude '[WebDriverBiDi.NamedPipeTestApplication]*' --results-directory '${workspaceFolder}/test/coverage' --coverlet-file-prefix lcov",
             "problemMatcher": "$msCompile",
             "group": {
                 "kind": "test",
