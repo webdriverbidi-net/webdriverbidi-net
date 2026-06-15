@@ -3,32 +3,10 @@ namespace WebDriverBiDi.Storage;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-public class PartitionDescriptorTests
+public class StorageKeyPartitionDescriptorTests
 {
     [Fact]
-    public void TestCanSerializeBrowsingContextPartitionDescriptor()
-    {
-        BrowsingContextPartitionDescriptor properties = new("myBrowsingContext");
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-
-        Assert.Equal(2, serialized.Count);
-
-        Assert.True(serialized.ContainsKey("type"));
-        JToken? type = serialized["type"];
-        Assert.NotNull(type);
-        Assert.Equal(JTokenType.String, type.Type);
-        Assert.Equal("context", type.Value<string>());
-
-        Assert.True(serialized.ContainsKey("context"));
-        JToken? context = serialized["context"];
-        Assert.NotNull(context);
-        Assert.Equal(JTokenType.String, context.Type);
-        Assert.Equal("myBrowsingContext", context.Value<string>());
-    }
-
-    [Fact]
-    public void TestCanSerializeStorageKeyPartitionDescriptor()
+    public void TestCanSerialize()
     {
         StorageKeyPartitionDescriptor properties = new();
         string json = JsonSerializer.Serialize(properties);
@@ -44,7 +22,7 @@ public class PartitionDescriptorTests
     }
 
     [Fact]
-    public void TestCanSerializeStorageKeyPartitionDescriptorWithUserContext()
+    public void TestCanSerializeWithUserContext()
     {
         StorageKeyPartitionDescriptor properties = new()
         {
@@ -69,7 +47,7 @@ public class PartitionDescriptorTests
     }
 
     [Fact]
-    public void TestCanSerializeStorageKeyPartitionDescriptorWithSourceOrigin()
+    public void TestCanSerializeWithSourceOrigin()
     {
         StorageKeyPartitionDescriptor properties = new()
         {
@@ -94,7 +72,7 @@ public class PartitionDescriptorTests
     }
 
     [Fact]
-    public void TestCanSerializeStorageKeyPartitionDescriptorWithAllProperties()
+    public void TestCanSerializeWithAllProperties()
     {
         StorageKeyPartitionDescriptor properties = new()
         {
