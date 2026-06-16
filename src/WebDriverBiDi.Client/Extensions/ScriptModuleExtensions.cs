@@ -81,6 +81,24 @@ public static class ScriptModuleExtensions
     /// <exception cref="WebDriverBiDiException">Thrown when the result of the JavaScript function cannot be converted to the requested type.</exception>
     public static async Task<T?> CallFunctionAsync<T>(this ScriptModule module, string browsingContextId, string functionDeclaration, List<LocalValue>? arguments = null, string? sandbox = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
+        RemoteValue callResult = await module.CallFunctionAsync(browsingContextId, functionDeclaration, arguments, sandbox, timeoutOverride, cancellationToken);
+        return ConvertRemoteValue<T>(callResult);
+    }
+
+    /// <summary>
+    /// Executes a JavaScript function in the specified browsing context.
+    /// </summary>
+    /// <param name="module">The <see cref="ScriptModule"/> to extend.</param>
+    /// <param name="browsingContextId">The ID of the browsing context in which to execute the function.</param>
+    /// <param name="functionDeclaration">The declaration of the JavaScript function.</param>
+    /// <param name="arguments">The arguments for the function.</param>
+    /// <param name="sandbox">An optional name of the sandbox in which the JavaScript function should be executed.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
+    /// <returns>The value of the function.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the result of the JavaScript function cannot be converted to the requested type.</exception>
+    public static async Task<RemoteValue> CallFunctionAsync(this ScriptModule module, string browsingContextId, string functionDeclaration, List<LocalValue>? arguments = null, string? sandbox = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    {
         ContextTarget target = new(browsingContextId)
         {
             Sandbox = sandbox,
@@ -92,12 +110,9 @@ public static class ScriptModuleExtensions
         }
 
         EvaluateResult result = await module.CallFunctionAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
-        if (result is EvaluateResultException exceptionResult)
-        {
-            throw new WebDriverBiDiException(exceptionResult.ExceptionDetails.Text);
-        }
-
-        return ConvertRemoteValue<T>(((EvaluateResultSuccess)result).Result);
+        return result is EvaluateResultException exceptionResult
+            ? throw new WebDriverBiDiException(exceptionResult.ExceptionDetails.Text)
+            : ((EvaluateResultSuccess)result).Result;
     }
 
     private static T? ConvertRemoteValue<T>(RemoteValue value)
