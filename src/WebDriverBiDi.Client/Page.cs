@@ -23,8 +23,9 @@ public class Page
     /// </summary>
     /// <param name="driver">The <see cref="BiDiDriver"/> instance used for executing commands.</param>
     /// <param name="browsingContextId">The ID of the browsing context this page wraps.</param>
-    public Page(BiDiDriver driver, string browsingContextId)
-        : this(driver, browsingContextId, new ElementLocatorSettings())
+    /// <param name="inspector">the <see cref="ElementStateInspector"/> used to inspect element state.</param>
+    internal Page(BiDiDriver driver, string browsingContextId, ElementStateInspector inspector)
+        : this(driver, browsingContextId, new ElementLocatorSettings(), inspector)
     {
     }
 
@@ -34,12 +35,13 @@ public class Page
     /// <param name="driver">The <see cref="BiDiDriver"/> instance used for executing commands.</param>
     /// <param name="browsingContextId">The ID of the browsing context this page wraps.</param>
     /// <param name="locatorSettings">The <see cref="ElementLocatorSettings"/> to apply to element locators created by this page.</param>
-    public Page(BiDiDriver driver, string browsingContextId, ElementLocatorSettings locatorSettings)
+    /// <param name="inspector">the <see cref="ElementStateInspector"/> used to inspect element state.</param>
+    internal Page(BiDiDriver driver, string browsingContextId, ElementLocatorSettings locatorSettings, ElementStateInspector inspector)
     {
         this.driver = driver;
         this.browsingContextId = browsingContextId;
         this.locatorSettings = locatorSettings;
-        this.inspector = new ElementStateInspector(driver);
+        this.inspector = inspector;
     }
 
     /// <summary>
