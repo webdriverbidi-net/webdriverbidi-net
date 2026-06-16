@@ -1050,4 +1050,66 @@ public static class DemoScenarios
             }
         }
     }
+
+    public static async Task PreloadScriptPersistenceAcrossBoundaries(BiDiDriver driver, string baseUrl)
+    {
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        // A preload script will be executed during every navigation, ensuring
+        // that the data structures are available before the page's JavaScript
+        // (if any) is executed. A special note here, we are using the sandbox
+        // feature to isolate the added JS from running code on the page, so as
+        // not to pollute the global objects.
+        AddPreloadScriptCommandParameters preloadScriptParams = new("() => window.bidi = { getTagName: (e) => e.tagName }")
+        {
+            Sandbox = "webdriverbidi",
+        };
+        AddPreloadScriptCommandResult addScriptResult = await driver.Script.AddPreloadScriptAsync(preloadScriptParams);
+        string preloadScriptId = addScriptResult.PreloadScriptId;
+        
+        CreateUserContextCommandResult addedUserContextResult = await driver.Browser.CreateUserContextAsync(new());
+        string addedUserContextId = addedUserContextResult.UserContextId;
+        CreateCommandResult addBrowsingContextResult = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab)
+        {
+            UserContextId = addedUserContextId,
+        });
+        string addedBrowsingContextId = addBrowsingContextResult.BrowsingContextId;
+
+        NavigateCommandParameters navigateParams = new(addedBrowsingContextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(addedBrowsingContextId, new CssLocator(".text")));
+        if (!locateResult.Nodes[0].TryConvertTo(out NodeRemoteValue? node))
+        {
+            Console.WriteLine("Failed to convert located node to NodeRemoteValue");
+            return;
+        }
+
+        // This function will access the "bidi" object added to its window object
+        // and execute the defined function. Calling the function without specifying
+        // the proper sandbox will result in an error, as the object will be undefined.
+        Console.WriteLine("Executing function without specifying using sandbox");
+        string functionDefinition = "(e) => window.bidi.getTagName(e)";
+        ContextTarget contextTarget = new(addedBrowsingContextId)
+        {
+            Sandbox = "webdriverbidi",
+        };
+        CallFunctionCommandParameters callFunctionParams = new(functionDefinition, contextTarget, true);
+        callFunctionParams.Arguments.Add(node.ToSharedReference());
+
+        Console.WriteLine("Executing function with specifying using sandbox");
+        EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
+        {
+            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type}");
+            StringRemoteValue scriptResultValue = scriptSuccessResult.Result.ConvertTo<StringRemoteValue>();
+            Console.WriteLine($"Return value of function is {scriptResultValue.Value}");
+        }
+    }
 }

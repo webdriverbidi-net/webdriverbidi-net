@@ -24,29 +24,6 @@ public class ElementLocator
     private readonly int? specificIndex;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ElementLocator"/> class.
-    /// </summary>
-    /// <param name="driver">The <see cref="BiDiDriver"/> instance used for executing commands.</param>
-    /// <param name="browsingContextId">The ID of the browsing context containing the element(s).</param>
-    /// <param name="locator">The <see cref="Locate"/> strategy to find element(s).</param>
-    public ElementLocator(BiDiDriver driver, string browsingContextId, Locator locator)
-        : this(driver, browsingContextId, locator, null, null, null, null)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ElementLocator"/> class.
-    /// </summary>
-    /// <param name="driver">The <see cref="BiDiDriver"/> instance used for executing commands.</param>
-    /// <param name="browsingContextId">The ID of the browsing context containing the element(s).</param>
-    /// <param name="locator">The <see cref="Locate"/> strategy to find element(s).</param>
-    /// <param name="settings">The <see cref="ElementLocatorSettings"/> for this locator.</param>
-    public ElementLocator(BiDiDriver driver, string browsingContextId, Locator locator, ElementLocatorSettings settings)
-        : this(driver, browsingContextId, locator, null, null, settings, null)
-    {
-    }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ElementLocator"/> class for internal chaining.
     /// </summary>
     /// <param name="driver">The <see cref="BiDiDriver"/> instance used for executing commands.</param>
@@ -214,26 +191,26 @@ public class ElementLocator
             TaskCompletionSource<bool> navigationCompletionSource = new();
 
             // Set up the appropriate event handler based on navigation behavior
-            Action<NavigationEventArgs> navigationHandler = (args) =>
+            void NavigationHandler(NavigationEventArgs args)
             {
                 if (args.BrowsingContextId == this.browsingContextId)
                 {
                     navigationCompletionSource.TrySetResult(true);
                 }
-            };
+            }
 
             switch (navigationBehavior)
             {
                 case ClickNavigationBehavior.WaitForNavigationStart:
-                    observer = this.driver.BrowsingContext.OnNavigationStarted.AddObserver(navigationHandler);
+                    observer = this.driver.BrowsingContext.OnNavigationStarted.AddObserver(NavigationHandler);
                     break;
 
                 case ClickNavigationBehavior.WaitForDomContentLoadedEvent:
-                    observer = this.driver.BrowsingContext.OnDomContentLoaded.AddObserver(navigationHandler);
+                    observer = this.driver.BrowsingContext.OnDomContentLoaded.AddObserver(NavigationHandler);
                     break;
 
                 case ClickNavigationBehavior.WaitForLoadEvent:
-                    observer = this.driver.BrowsingContext.OnLoad.AddObserver(navigationHandler);
+                    observer = this.driver.BrowsingContext.OnLoad.AddObserver(NavigationHandler);
                     break;
             }
 

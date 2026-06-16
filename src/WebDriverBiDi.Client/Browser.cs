@@ -7,79 +7,55 @@ namespace WebDriverBiDi.Client;
 
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Elements;
-using WebDriverBiDi.Client.Launchers;
-using WebDriverBiDi.Session;
 
 /// <summary>
-/// Provides a high-level abstraction for launching a browser, initializing a WebDriver BiDi session,
-/// and accessing a <see cref="Page"/> object for the initial top-level browsing context.
+/// Provides a high-level abstraction over a WebDriver BiDi user context, tracking the top-level
+/// <see cref="Page"/> objects that belong to it.
 /// </summary>
 public class Browser : IAsyncDisposable
 {
-    private readonly BrowserLauncher launcher;
     private readonly BiDiDriver driver;
+    private readonly BrowserGroup repository;
     private readonly ElementLocatorSettings locatorSettings;
-    private Page? page;
+    private readonly List<Page> pages = [];
+    private readonly EventObserver<BrowsingContextEventArgs> contextCreatedObserver;
+    private readonly EventObserver<BrowsingContextEventArgs> contextDestroyedObserver;
+    private readonly ElementStateInspector inspector;
     private bool disposed = false;
 
-    private Browser(BrowserLauncher launcher, BiDiDriver driver, ElementLocatorSettings locatorSettings)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Browser"/> class.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance used for executing commands.</param>
+    /// <param name="userContextId">The ID of the user context this browser represents.</param>
+    /// <param name="repository">The <see cref="BrowserGroup"/> that owns this browser.</param>
+    /// <param name="locatorSettings">The <see cref="ElementLocatorSettings"/> to apply to element locators.</param>
+    internal Browser(BiDiDriver driver, string userContextId, BrowserGroup repository, ElementLocatorSettings locatorSettings)
     {
-        this.launcher = launcher;
         this.driver = driver;
+        this.Id = userContextId;
+        this.repository = repository;
         this.locatorSettings = locatorSettings;
+
+        this.contextCreatedObserver = this.driver.BrowsingContext.OnContextCreated.AddObserver(this.OnContextCreated);
+        this.contextDestroyedObserver = this.driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyed);
+        this.inspector = repository.ElementStateInspector;
     }
 
     /// <summary>
-    /// Gets the <see cref="BiDiDriver"/> instance used to communicate with the browser.
+    /// Gets the ID of this browser.
     /// </summary>
-    public BiDiDriver Driver => this.driver;
+    public string Id { get; }
 
     /// <summary>
-    /// Launches the specified browser, initializes a WebDriver BiDi session, and returns a
-    /// <see cref="Browser"/> instance representing the running browser.
+    /// Gets a read-only list of <see cref="Page"/> objects representing the top-level browsing
+    /// contexts currently open in this user context.
     /// </summary>
-    /// <param name="browserKind">The browser to launch.</param>
-    /// <param name="headless">Whether to run the browser in headless mode. Default is false.</param>
-    /// <param name="locatorSettings">Optional <see cref="ElementLocatorSettings"/> to apply to element locators. If null, default settings are used.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation, containing the launched <see cref="Browser"/> instance.</returns>
-    public static Task<Browser> LaunchAsync(BrowserKind browserKind, bool headless = false, ElementLocatorSettings? locatorSettings = null)
-    {
-        BrowserLauncher launcher = BrowserLauncher.Create(browserKind, headless);
-        return LaunchAsync(launcher, locatorSettings);
-    }
+    public IReadOnlyList<Page> Pages => this.pages.AsReadOnly();
 
     /// <summary>
-    /// Launches a browser using the specified <see cref="BrowserLauncherBuilder"/> configuration,
-    /// initializes a WebDriver BiDi session, and returns a <see cref="Browser"/> instance
-    /// representing the running browser.
-    /// </summary>
-    /// <param name="launcherBuilder">The configured launcher builder to use.</param>
-    /// <param name="locatorSettings">Optional <see cref="ElementLocatorSettings"/> to apply to element locators. If null, default settings are used.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation, containing the launched <see cref="Browser"/> instance.</returns>
-    public static async Task<Browser> LaunchAsync(BrowserLauncherBuilder launcherBuilder, ElementLocatorSettings? locatorSettings = null)
-    {
-        BrowserLauncher launcher = launcherBuilder.Build();
-        return await LaunchAsync(launcher, locatorSettings).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Gets the <see cref="Page"/> object for the initial top-level browsing context.
-    /// </summary>
-    /// <returns>The <see cref="Page"/> object for the initial top-level browsing context.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when no top-level browsing context is available.</exception>
-    public Page GetPage()
-    {
-        if (this.page is null)
-        {
-            throw new InvalidOperationException("No page is available. The browser may not have been launched successfully.");
-        }
-
-        return this.page;
-    }
-
-    /// <summary>
-    /// Asynchronously releases all resources used by this browser instance, including stopping
-    /// the WebDriver BiDi session and quitting the browser process.
+    /// Asynchronously releases all resources associated with this user context, including removing
+    /// it from the owning <see cref="BrowserGroup"/>.
     /// </summary>
     /// <returns>A task representing the asynchronous dispose operation.</returns>
     public async ValueTask DisposeAsync()
@@ -91,66 +67,60 @@ public class Browser : IAsyncDisposable
 
         this.disposed = true;
 
-        try
-        {
-            if (this.launcher.IsBrowserCloseAllowed)
-            {
-                await this.driver.Browser.CloseAsync(new WebDriverBiDi.Browser.CloseCommandParameters()).ConfigureAwait(false);
-            }
-        }
-        catch
-        {
-            // Suppress: closing via BiDi is best-effort; the launcher will terminate the process.
-        }
+        this.contextCreatedObserver.Dispose();
+        this.contextDestroyedObserver.Dispose();
 
         try
         {
-            await this.driver.StopAsync().ConfigureAwait(false);
+            await this.driver.Browser.RemoveUserContextAsync(
+                new WebDriverBiDi.Browser.RemoveUserContextCommandParameters(this.Id))
+                .ConfigureAwait(false);
         }
         catch
         {
-            // Suppress exceptions from driver stop during disposal.
+            // Suppress: removal is best-effort during disposal.
         }
 
-        await this.launcher.DisposeAsync().ConfigureAwait(false);
+        this.repository.RemoveBrowser(this);
         GC.SuppressFinalize(this);
     }
 
-    private static async Task<Browser> LaunchAsync(BrowserLauncher launcher, ElementLocatorSettings? locatorSettings)
+    /// <summary>
+    /// Adds a <see cref="Page"/> to this browser's page list. Used during initial population
+    /// from the browsing context tree.
+    /// </summary>
+    /// <param name="page">The page to add.</param>
+    internal void AddPage(Page page)
     {
-        ElementLocatorSettings settings = locatorSettings ?? new ElementLocatorSettings();
-        BiDiDriver driver = new();
+        this.pages.Add(page);
+    }
 
-        try
+    private void OnContextCreated(BrowsingContextEventArgs args)
+    {
+        if (args.Parent is not null)
         {
-            await launcher.StartAsync().ConfigureAwait(false);
-            await launcher.LaunchBrowserAsync().ConfigureAwait(false);
-            await driver.StartAsync(launcher.WebSocketUrl).ConfigureAwait(false);
-
-            if (!launcher.IsBiDiSessionInitialized)
-            {
-                await driver.Session.NewSessionAsync(new NewCommandParameters()).ConfigureAwait(false);
-            }
-
-            GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters() { MaxDepth = 1 }).ConfigureAwait(false);
-            if (tree.ContextTree.Count == 0)
-            {
-                throw new WebDriverBiDiException("No top-level browsing context found after launching browser.");
-            }
-
-            string contextId = tree.ContextTree[0].BrowsingContextId;
-            Browser browser = new(launcher, driver, settings)
-            {
-                page = new Page(driver, contextId, settings),
-            };
-
-            return browser;
+            return;
         }
-        catch
+
+        if (args.UserContextId != this.Id)
         {
-            await driver.DisposeAsync().ConfigureAwait(false);
-            await launcher.DisposeAsync().ConfigureAwait(false);
-            throw;
+            return;
+        }
+
+        if (this.pages.Any(p => p.Id == args.BrowsingContextId))
+        {
+            return;
+        }
+
+        this.pages.Add(new Page(this.driver, args.BrowsingContextId, this.inspector));
+    }
+
+    private void OnContextDestroyed(BrowsingContextEventArgs args)
+    {
+        Page? page = this.pages.FirstOrDefault(p => p.Id == args.BrowsingContextId);
+        if (page is not null)
+        {
+            this.pages.Remove(page);
         }
     }
 }
