@@ -257,12 +257,10 @@ public class BrowserLauncherBuilder
         {
             BrowserKind.Chrome => this.CreateChromeLauncher(),
             BrowserKind.Firefox => this.CreateFirefoxLauncher(),
+            BrowserKind.Safari => this.CreateSafariLauncher(),
             BrowserKind.Edge => throw new NotImplementedException(
                 "Microsoft Edge browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
                 "Edge support is planned for a future release."),
-            BrowserKind.Safari => throw new NotImplementedException(
-                "Apple Safari browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
-                "Safari support is planned for a future release pending maturity of Safari's BiDi implementation."),
             _ => throw new WebDriverBiDiException($"Unknown browser type: {this.browser}"),
         };
 
@@ -335,6 +333,19 @@ public class BrowserLauncherBuilder
             }
         }
 
+        if (this.browser == BrowserKind.Safari)
+        {
+            if (this.launchStrategy == LaunchStrategy.Direct)
+            {
+                throw new BrowserLauncherConfigurationException("Safari must be launched using a driver; you must use the .LaunchUsingDriver() method with the builder.");
+            }
+
+            if (this.locationBehavior != FileLocationBehavior.UseSystemInstallLocation)
+            {
+                throw new BrowserLauncherConfigurationException("Safari cannot be launched from a custom lcoation; you must use the .AtDefaultInstallLocation() method.");
+            }
+        }
+
         // Validate capabilities are only used with remote grid
         if (this.capabilities is not null && this.capabilities.Count > 0 && this.launchStrategy != LaunchStrategy.UsingRemoteGrid)
         {
@@ -402,6 +413,25 @@ public class BrowserLauncherBuilder
                 "Cannot specify release channel with LaunchUsingRemoteGrid. " +
                 "Use capabilities to configure browser options on the remote grid.");
         }
+    }
+
+    private BrowserLauncher CreateSafariLauncher()
+    {
+        if (this.launchStrategy == LaunchStrategy.UsingRemoteGrid)
+        {
+            return this.CreateRemoteLauncher("chrome");
+        }
+
+        SafariChannel safariChannel = this.channel switch
+        {
+            BrowserReleaseChannel.Stable => SafariChannel.Stable,
+            BrowserReleaseChannel.DeveloperPreview => SafariChannel.TechnologyPreview,
+            _ => throw new WebDriverBiDiException($"Invalid browser release channel for Safari: {this.channel}"),
+        };
+
+        SafariBrowserLocatorSettings settings = new(safariChannel);
+        SafariLauncher safariLauncher = new(settings);
+        return safariLauncher;
     }
 
     private BrowserLauncher CreateChromeLauncher()
