@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class AddDataCollectorCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class AddDataCollectorCommandResultTests
                         "collector": "myCollectorId"
                       }
                       """;
-        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json);
+        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("myCollectorId", result.CollectorId);
     }
@@ -25,27 +30,38 @@ public class AddDataCollectorCommandResultTests
                         "collector": "myCollectorId"
                       }
                       """;
-        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json);
+        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, this.options);
         Assert.NotNull(result);
         AddDataCollectorCommandResult copy = result with { };
         Assert.Equal(result, copy);
     }
 
     [Fact]
-    public void TestDeserializingWithMissingDataThrows()
+    public void TestDeserializingWithMissingCollectorThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, this.options));
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidDataTypeThrows()
+    public void TestDeserializingWithInvalidCollectorDataTypeThrows()
     {
         string json = """
                       {
                         "collector": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullCollectorThrows()
+    {
+        string json = """
+                      {
+                        "collector": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, this.options));
     }
 }

@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class ClientWindowsInfoTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -18,7 +23,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Equal("myClientWindow", result.ClientWindowId);
@@ -44,7 +49,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
         Assert.NotNull(result);
         ClientWindowInfo? copy = result with { };
         Assert.Equal(result, copy);
@@ -62,7 +67,7 @@ public class ClientWindowsInfoTests
                         "height": 400 
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -79,7 +84,24 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullWindowIdThrows()
+    {
+        string json = """
+                      {
+                        "clientWindow": null,
+                        "active": "invalid",
+                        "state": "normal",
+                        "x": 100,
+                        "y": 200,
+                        "width": 300,
+                        "height": 400
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -96,7 +118,7 @@ public class ClientWindowsInfoTests
                         "height": 1024
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Equal("myClientWindow", result.ClientWindowId);
@@ -122,7 +144,7 @@ public class ClientWindowsInfoTests
                         "height": 0
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Equal("myClientWindow", result.ClientWindowId);
@@ -148,7 +170,7 @@ public class ClientWindowsInfoTests
                         "height": 1024
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Equal("myClientWindow", result.ClientWindowId);
@@ -173,7 +195,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -190,7 +212,24 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullStateValueThrows()
+    {
+        string json = """
+                      {
+                        "clientWindow": "myClientWindow",
+                        "active": true,
+                        "state": null,
+                        "x": 100,
+                        "y": 200,
+                        "width": 300,
+                        "height": 400
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -207,7 +246,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -224,7 +263,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Equal("myClientWindow", result.ClientWindowId);
@@ -249,7 +288,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -266,7 +305,24 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullActiveValueThrows()
+    {
+        string json = """
+                      {
+                        "clientWindow": "myClientWindow",
+                        "active": null,
+                        "state": "normal",
+                        "x": 100,
+                        "y": 200,
+                        "width": 300,
+                        "height": 400
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -282,7 +338,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -299,7 +355,24 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullXValueThrows()
+    {
+        string json = """
+                      {
+                        "clientWindow": "myClientWindow",
+                        "active": true,
+                        "state": "normal",
+                        "x": null,
+                        "y": 200,
+                        "width": 300,
+                        "height": 400
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -316,7 +389,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -332,7 +405,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -349,7 +422,24 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullYValueThrows()
+    {
+        string json = """
+                      {
+                        "clientWindow": "myClientWindow",
+                        "active": true,
+                        "state": "normal",
+                        "x": 100,
+                        "y": null,
+                        "width": 300,
+                        "height": 400
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -366,7 +456,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -382,7 +472,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -399,7 +489,24 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullWidthValueThrows()
+    {
+        string json = """
+                      {
+                        "clientWindow": "myClientWindow",
+                        "active": true,
+                        "state": "normal",
+                        "x": 100,
+                        "y": 200,
+                        "width": null,
+                        "height": 400
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -416,7 +523,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -432,7 +539,7 @@ public class ClientWindowsInfoTests
                         "width": 300
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -449,7 +556,24 @@ public class ClientWindowsInfoTests
                         "height": -1
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullHeightValueThrows()
+    {
+        string json = """
+                      {
+                        "clientWindow": "myClientWindow",
+                        "active": true,
+                        "state": "normal",
+                        "x": 100,
+                        "y": 200,
+                        "width": 300,
+                        "height": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 
     [Fact]
@@ -466,6 +590,6 @@ public class ClientWindowsInfoTests
                         "height": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
     }
 }

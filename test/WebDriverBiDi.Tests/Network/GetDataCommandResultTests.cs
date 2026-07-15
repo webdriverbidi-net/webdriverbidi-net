@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class GetDataCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -15,7 +20,7 @@ public class GetDataCommandResultTests
                         }
                       }
                       """;
-        GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json);
+        GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal(BytesValueType.String, result.Bytes.Type);
         Assert.Equal("myNetworkData", result.Bytes.Value);
@@ -32,7 +37,7 @@ public class GetDataCommandResultTests
                         }
                       }
                       """;
-        GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json);
+        GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json, this.options);
         Assert.NotNull(result);
         GetDataCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -42,7 +47,7 @@ public class GetDataCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetDataCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetDataCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -53,6 +58,17 @@ public class GetDataCommandResultTests
                         "bytes": "invalidValue"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetDataCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetDataCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullDataThrows()
+    {
+        string json = """
+                      {
+                        "bytes": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetDataCommandResult>(json, this.options));
     }
 }

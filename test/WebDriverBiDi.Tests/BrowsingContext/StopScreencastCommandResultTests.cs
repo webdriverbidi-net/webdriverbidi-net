@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class StopScreencastCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public async Task TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class StopScreencastCommandResultTests
                         "path": "path/to/screencast/file"
                       }
                       """;
-        StopScreencastCommandResult? result = JsonSerializer.Deserialize<StopScreencastCommandResult>(json);
+        StopScreencastCommandResult? result = JsonSerializer.Deserialize<StopScreencastCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("path/to/screencast/file", result.Path);
         Assert.Null(result.Error);
@@ -27,7 +32,7 @@ public class StopScreencastCommandResultTests
                         "error": "could not write to file"
                       }
                       """;
-        StopScreencastCommandResult? result = JsonSerializer.Deserialize<StopScreencastCommandResult>(json);
+        StopScreencastCommandResult? result = JsonSerializer.Deserialize<StopScreencastCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("path/to/screencast/file", result.Path);
         Assert.Equal("could not write to file", result.Error);
@@ -40,7 +45,7 @@ public class StopScreencastCommandResultTests
                       {
                       }
                       """;
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StopScreencastCommandResult>(json));
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StopScreencastCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -51,7 +56,18 @@ public class StopScreencastCommandResultTests
                         "path": {}
                       }
                       """;
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StopScreencastCommandResult>(json));
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StopScreencastCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public async Task TestDeserializingWithNullPathThrows()
+    {
+        string json = """
+                      {
+                        "path": null
+                      }
+                      """;
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StopScreencastCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -63,7 +79,7 @@ public class StopScreencastCommandResultTests
                         "error": {}
                       }
                       """;
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StopScreencastCommandResult>(json));
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<StopScreencastCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -75,7 +91,7 @@ public class StopScreencastCommandResultTests
                         "error": "could not write to file"
                       }
                       """;
-        StopScreencastCommandResult? result = JsonSerializer.Deserialize<StopScreencastCommandResult>(json);
+        StopScreencastCommandResult? result = JsonSerializer.Deserialize<StopScreencastCommandResult>(json, this.options);
         Assert.NotNull(result);
         StopScreencastCommandResult copy = result with { };
         Assert.Equal(result, copy);

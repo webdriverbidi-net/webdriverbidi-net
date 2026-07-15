@@ -5,6 +5,11 @@ using WebDriverBiDi.Script;
 
 public class ConsoleLogEntryTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -25,7 +30,7 @@ public class ConsoleLogEntryTests
                         }
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, this.options);
         Assert.NotNull(entry);
         Assert.IsType<ConsoleLogEntry>(entry);
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
@@ -65,7 +70,7 @@ public class ConsoleLogEntryTests
                         ]
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, this.options);
         Assert.NotNull(entry);
         Assert.IsType<ConsoleLogEntry>(entry);
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
@@ -100,7 +105,7 @@ public class ConsoleLogEntryTests
                         "args": []
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json, this.options));
     }
 
     [Fact]
@@ -121,7 +126,28 @@ public class ConsoleLogEntryTests
                         "args": []
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullMethodThrows()
+    {
+        DateTime timestamp = DateTime.Now;
+        long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "type": "console",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId"
+                        },
+                        "text": "my log message",
+                        "timestamp": {{epochTimestamp}},
+                        "method": null,
+                        "args": []
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json, this.options));
     }
 
     [Fact]
@@ -141,7 +167,7 @@ public class ConsoleLogEntryTests
                         "method": "myMethod"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json, this.options));
     }
 
     [Fact]
@@ -162,7 +188,28 @@ public class ConsoleLogEntryTests
                         "args": "invalidArgs"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithnullArgsThrows()
+    {
+        DateTime timestamp = DateTime.Now;
+        long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "type": "console",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId"
+                        },
+                        "text": "my log message",
+                        "timestamp": {{epochTimestamp}},
+                        "method": "myMethod",
+                        "args": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json, this.options));
     }
 
     [Fact]
@@ -183,6 +230,6 @@ public class ConsoleLogEntryTests
                         "args": [ "invalidArgs" ]
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LogEntry>(json, this.options));
     }
 }

@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class AuthChallengeTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserializeAuthChallenge()
     {
@@ -13,7 +18,7 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json);
+        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json, this.options);
         Assert.NotNull(challenge);
 
         Assert.Equal("basic", challenge.Scheme);
@@ -29,7 +34,7 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json);
+        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json, this.options);
         Assert.NotNull(challenge);
         AuthChallenge copy = challenge with { };
         Assert.Equal(challenge, copy);
@@ -43,7 +48,7 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json, this.options));
     }
 
     [Fact]
@@ -55,7 +60,19 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullSchemeThrows()
+    {
+        string json = """
+                      {
+                        "scheme": null,
+                        "realm": "example.com"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json, this.options));
     }
 
     [Fact]
@@ -66,7 +83,7 @@ public class AuthChallengeTests
                         "scheme": "basic"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json, this.options));
     }
 
     [Fact]
@@ -78,6 +95,18 @@ public class AuthChallengeTests
                         "realm": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullRealmThrows()
+    {
+        string json = """
+                      {
+                        "scheme": "basic",
+                        "realm": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthChallenge>(json, this.options));
     }
 }

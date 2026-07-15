@@ -6,6 +6,11 @@ using Newtonsoft.Json.Linq;
 
 public class BytesValueTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanSerializeStringValue()
     {
@@ -86,7 +91,7 @@ public class BytesValueTests
                         "value": "{{stringValue}}"
                       }
                       """;
-        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
+        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, this.options);
         Assert.NotNull(value);
 
         Assert.Equal(BytesValueType.String, value.Type);
@@ -107,7 +112,7 @@ public class BytesValueTests
                         "value": "{{base64Value}}"
                       }
                       """;
-        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
+        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, this.options);
         Assert.NotNull(value);
 
         Assert.Equal(BytesValueType.Base64, value.Type);
@@ -129,7 +134,7 @@ public class BytesValueTests
                         "value": "{{stringValue}}"
                       }
                       """;
-        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
+        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, this.options);
         Assert.NotNull(value);
         BytesValue copy = value with { };
         Assert.Equal(value, copy);
@@ -143,7 +148,7 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
     }
 
     [Fact]
@@ -155,7 +160,19 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullTypeValueThrows()
+    {
+        string json = $$"""
+                      {
+                        "type": null,
+                        "value": "this is my string"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
     }
 
     [Fact]
@@ -167,7 +184,7 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
     }
 
     [Fact]
@@ -178,7 +195,7 @@ public class BytesValueTests
                         "type": "string"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
     }
 
     [Fact]
@@ -190,6 +207,18 @@ public class BytesValueTests
                         "value": []
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullValueThrows()
+    {
+        string json = $$"""
+                      {
+                        "type": "base64",
+                        "value": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BytesValue>(json, this.options));
     }
 }

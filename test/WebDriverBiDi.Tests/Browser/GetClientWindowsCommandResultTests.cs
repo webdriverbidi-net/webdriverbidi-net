@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class GetClientWindowsCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -22,7 +27,7 @@ public class GetClientWindowsCommandResultTests
                         ]
                       }
                       """;
-        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
+        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Single(result.ClientWindows);
@@ -53,7 +58,7 @@ public class GetClientWindowsCommandResultTests
                         ]
                       }
                       """;
-        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
+        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, this.options);
         Assert.NotNull(result);
         GetClientWindowsCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -67,8 +72,40 @@ public class GetClientWindowsCommandResultTests
                         "clientWindows": []
                       }
                       """;
-        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
+        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Empty(result.ClientWindows);
+    }
+
+    [Fact]
+    public void TestDeserializingWithMissingClientWindowsThrows()
+    {
+        string json = """
+                      {
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidClientWindowsTypeThrows()
+    {
+        string json = """
+                      {
+                        "clientWindows": {}
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNulllientWindowsThrows()
+    {
+        string json = """
+                      {
+                        "clientWindows": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, this.options));
     }
 }

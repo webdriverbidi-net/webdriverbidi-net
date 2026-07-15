@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class NavigationEventArgsTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -16,7 +21,7 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
+        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -38,7 +43,7 @@ public class NavigationEventArgsTests
                         "navigation": "myNavigationId"
                       }
                       """;
-        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
+        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -59,7 +64,7 @@ public class NavigationEventArgsTests
                         "userContext": "myUserContextId"
                       }
                       """;
-        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
+        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -80,7 +85,7 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
+        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         NavigationEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
@@ -97,7 +102,7 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -112,7 +117,22 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullContextValueThrows()
+    {
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": null,
+                        "url": "http://example.com",
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -126,7 +146,7 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -141,7 +161,22 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullUrlValueThrows()
+    {
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": null,
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -154,7 +189,7 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -169,7 +204,22 @@ public class NavigationEventArgsTests
                         "navigation": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullTimestampValueThrows()
+    {
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": null,
+                        "navigation": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -183,7 +233,7 @@ public class NavigationEventArgsTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -198,6 +248,22 @@ public class NavigationEventArgsTests
                         "navigation": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithInvalidUserContextValueThrows()
+    {
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null,
+                        "userContext": {}
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigationEventArgs>(json, this.options));
     }
 }

@@ -25,5 +25,6 @@ public record AddPreloadScriptCommandResult : CommandResult
     /// </summary>
     [JsonPropertyName("script")]
     [JsonInclude]
+    [JsonRequired]
     public string PreloadScriptId { get; internal set; } = string.Empty;
 }

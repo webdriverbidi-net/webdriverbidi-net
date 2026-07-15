@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class CookieTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserializeCookie()
     {
@@ -22,7 +27,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
 
         Assert.Equal("cookieName", cookie.Name);
@@ -60,7 +65,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
 
         Assert.Equal("cookieName", cookie.Name);
@@ -98,7 +103,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
 
         Assert.Equal("cookieName", cookie.Name);
@@ -135,7 +140,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
 
         Assert.Equal("cookieName", cookie.Name);
@@ -174,7 +179,7 @@ public class CookieTests
                         "expiry": {{milliseconds}}
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
 
         Assert.Equal("cookieName", cookie.Name);
@@ -210,7 +215,7 @@ public class CookieTests
                         "extraData": "myExtraData"
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
 
         Assert.Equal("cookieName", cookie.Name);
@@ -254,7 +259,7 @@ public class CookieTests
                         "expiry": {{milliseconds}}
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
         SetCookieHeader header = cookie.ToSetCookieHeader();
 
@@ -288,7 +293,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
         Cookie copy = cookie with { };
         Assert.Equal(cookie, copy);
@@ -313,7 +318,7 @@ public class CookieTests
                         "expiry": null
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
         Assert.NotNull(cookie);
 
         Assert.Null(cookie.EpochExpires);
@@ -337,7 +342,49 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'name'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("missing required properties including: 'name'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidNameTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": {},
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullNameThrows()
+    {
+        string json = """
+                      {
+                        "name": null,
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 
     [Fact]
@@ -354,7 +401,43 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'value'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("missing required properties including: 'value'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidValueTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": "cookieValue",
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullValueThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": null,
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 
     [Fact]
@@ -374,7 +457,49 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'domain'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("missing required properties including: 'domain'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidDomainTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": {},
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullDomainThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": null,
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 
     [Fact]
@@ -394,7 +519,49 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'path'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("missing required properties including: 'path'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidPathTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": {},
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullPathThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": null,
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 
     [Fact]
@@ -414,7 +581,49 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'secure'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("missing required properties including: 'secure'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidSecureTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": "false",
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullSecureThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": null,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 
     [Fact]
@@ -434,7 +643,49 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'httpOnly'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("missing required properties including: 'httpOnly'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidHttpOnlyTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": "false",
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullHttpOnlyThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": null,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 
     [Fact]
@@ -454,11 +705,11 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'sameSite'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("missing required properties including: 'sameSite'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
     }
 
     [Fact]
-    public void TestDeserializeWithMissingSizeThrows()
+    public void TestDeserializingWithInvalidSameSiteTypeThrows()
     {
         string json = """
                       {
@@ -471,10 +722,32 @@ public class CookieTests
                         "path": "/cookiePath",
                         "secure": false,
                         "httpOnly": false,
-                        "sameSite": "lax"
+                        "sameSite": true,
+                        "size": 100
                       }
                       """;
-        Assert.Contains("missing required properties including: 'size'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullSameSiteThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": null,
+                        "size": 100
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 
     [Fact]
@@ -495,6 +768,68 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.Contains("value 'invalid' is not valid for enum type", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json)).Message);
+        Assert.Contains("value 'invalid' is not valid for enum type", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializeWithMissingSizeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax"
+                      }
+                      """;
+        Assert.Contains("missing required properties including: 'size'", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidSizeTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": "100"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullSizeThrows()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
 }

@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class InstallCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class InstallCommandResultTests
                         "extension": "myExtensionId"
                       }
                       """;
-        InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json);
+        InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("myExtensionId", result.ExtensionId);
     }
@@ -25,7 +30,7 @@ public class InstallCommandResultTests
                         "extension": "myExtensionId"
                       }
                       """;
-        InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json);
+        InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json, this.options);
         Assert.NotNull(result);
         InstallCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -35,7 +40,7 @@ public class InstallCommandResultTests
     public void TestDeserializingWithMissingExtensionThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<InstallCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<InstallCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -46,6 +51,17 @@ public class InstallCommandResultTests
                         "extension": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<InstallCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<InstallCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullExtensionThrows()
+    {
+        string json = """
+                      {
+                        "extension": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<InstallCommandResult>(json, this.options));
     }
 }

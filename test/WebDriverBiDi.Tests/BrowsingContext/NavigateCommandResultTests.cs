@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class NavigationResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class NavigationResultTests
                         "url": "http://example.com"
                       }
                       """;
-        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Equal("http://example.com", result.Url);
@@ -28,7 +33,7 @@ public class NavigationResultTests
                         "navigation": "myNavigationId"
                       }
                       """;
-        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options);
         Assert.NotNull(result);
 
         Assert.Equal("http://example.com", result.Url);
@@ -43,7 +48,7 @@ public class NavigationResultTests
                         "url": "http://example.com"
                       }
                       """;
-        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options);
         Assert.NotNull(result);
         NavigateCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -53,7 +58,7 @@ public class NavigationResultTests
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -64,7 +69,18 @@ public class NavigationResultTests
                         "url": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullUrlThrows()
+    {
+        string json = """
+                      {
+                        "url": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -76,6 +92,6 @@ public class NavigationResultTests
                         "navigation": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options));
     }
 }

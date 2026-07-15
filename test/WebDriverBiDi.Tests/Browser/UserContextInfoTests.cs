@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class UserContextInfoTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class UserContextInfoTests
                         "userContext": "default"
                       }
                       """;
-        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json);
+        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("default", result.UserContextId);
     }
@@ -25,7 +30,7 @@ public class UserContextInfoTests
                         "userContext": "default"
                       }
                       """;
-        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json);
+        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json, this.options);
         Assert.NotNull(result);
         UserContextInfo copy = result with { };
         Assert.Equal(result, copy);
@@ -38,7 +43,7 @@ public class UserContextInfoTests
                       {
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserContextInfo>(json, this.options));
     }
 
     [Fact]
@@ -49,6 +54,17 @@ public class UserContextInfoTests
                         "userContext": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullUserContextThrows()
+    {
+        string json = """
+                      {
+                        "userContext": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserContextInfo>(json, this.options));
     }
 }

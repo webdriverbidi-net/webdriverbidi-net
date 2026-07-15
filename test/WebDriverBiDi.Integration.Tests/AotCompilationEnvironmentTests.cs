@@ -32,12 +32,12 @@ public class AotCompilationEnvironmentTests : IClassFixture<AotCompilationEnviro
         string browserArg = BrowserTestHelper.ToBrowserString(browser);
         string testUrl = $"{browserArg} http://localhost:{server.Port}/test";
 
-        int runExit = await AotCompilationEnvironmentFixture.RunProcessAsync(
+        RunProcessResult runExit = await AotCompilationEnvironmentFixture.RunProcessAsync(
             this.fixture.ExecutablePath,
             testUrl,
             workingDirectory: this.fixture.PublishDir,
             timeoutSeconds: 120);
 
-        Assert.Equal(0, runExit);
+        Assert.Equal(0, runExit.ExitCode);
     }
 }

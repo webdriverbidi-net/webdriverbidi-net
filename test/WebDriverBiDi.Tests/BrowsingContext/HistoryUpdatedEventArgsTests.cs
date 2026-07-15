@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class HistoryUpdatedEventArgsTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -17,7 +22,7 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
+        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -40,7 +45,7 @@ public class HistoryUpdatedEventArgsTests
                         "userContext": "myUserContextId"
                       }
                       """;
-        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
+        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -63,7 +68,7 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
+        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         HistoryUpdatedEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
@@ -81,7 +86,7 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -97,7 +102,23 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullContextValueThrows()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": null,
+                        "url": "http://example.com",
+                        "timestamp": {{milliseconds}}
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -112,7 +133,7 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {{milliseconds}}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -128,7 +149,23 @@ public class HistoryUpdatedEventArgsTests
                           "timestamp": {{milliseconds}}
                         }
                         """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullUrlValueThrows()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                        {
+                          "context": "myContextId",
+                          "url": null,
+                          "timestamp": {{milliseconds}}
+                        }
+                        """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -143,7 +180,7 @@ public class HistoryUpdatedEventArgsTests
                         "url": "http://example.com"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -156,6 +193,19 @@ public class HistoryUpdatedEventArgsTests
                         "timestamp": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullTimestampValueThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
     }
 }

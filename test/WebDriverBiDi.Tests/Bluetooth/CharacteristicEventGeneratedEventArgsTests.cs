@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class CharacteristicEventGeneratedEventArgsTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserializeWithReadType()
     {
@@ -16,7 +21,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -39,7 +44,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "write-without-response"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -62,7 +67,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "write-with-response"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -85,7 +90,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "subscribe-to-notifications"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -108,7 +113,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "unsubscribe-from-notifications"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -132,7 +137,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": []
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -157,7 +162,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": [123, 456]
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -183,7 +188,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         CharacteristicEventGeneratedEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
@@ -200,7 +205,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -215,7 +220,22 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullContextThrows()
+    {
+        string json = """
+                      {
+                        "context": null,
+                        "address": "myAddress",
+                        "serviceUuid": "myServiceUuid",
+                        "characteristicUuid": "myCharacteristicUuid",
+                        "type": "read"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -229,7 +249,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -244,7 +264,22 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullAddressThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "address": null,
+                        "serviceUuid": "myServiceUuid",
+                        "characteristicUuid": "myCharacteristicUuid",
+                        "type": "read"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -258,7 +293,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -273,7 +308,22 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullServiceUuidThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "address": "myAddress",
+                        "serviceUuid": null,
+                        "characteristicUuid": "myCharacteristicUuid",
+                        "type": "read"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -287,7 +337,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                      """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -302,7 +352,22 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullCharacteristicUuidThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "address": "myAddress",
+                        "serviceUuid": "myServiceUuid",
+                        "characteristicUuid": null,
+                        "type": "read"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -316,7 +381,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "characteristicUuid": "myCharacteristicUuid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -331,7 +396,22 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullTypeThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "address": "myAddress",
+                        "serviceUuid": "myServiceUuid",
+                        "characteristicUuid": "myCharacteristicUuid",
+                        "type": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -346,11 +426,11 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
-    public void TestCanDeserializeWithInvalidDataType()
+    public void TestCanDeserializeWithInvalidDataTypeThrows()
     {
         string json = """
                       {
@@ -362,7 +442,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -378,6 +458,6 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": ["123", false]
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
     }
 }

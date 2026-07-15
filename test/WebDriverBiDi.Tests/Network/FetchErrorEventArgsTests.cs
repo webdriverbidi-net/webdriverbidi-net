@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class FetchErrorEventArgsTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     private readonly string requestDataJson = """
                                               {
                                                 "request": "myRequestId",
@@ -50,7 +55,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -84,7 +89,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -119,7 +124,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Null(eventArgs.BrowsingContextId);
@@ -152,7 +157,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, this.options);
         Assert.NotNull(eventArgs);
         FetchErrorEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
@@ -174,7 +179,7 @@ public class FetchErrorEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, this.options));
     }
 
     [Fact]
@@ -194,6 +199,26 @@ public class FetchErrorEventArgsTests
                              "errorText": {}
                            }
                            """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullErrorTextThrows()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId,
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": {{milliseconds}},
+                             "request": {{this.requestDataJson}},
+                             "errorText": null
+                           }
+                           """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, this.options));
     }
 }
