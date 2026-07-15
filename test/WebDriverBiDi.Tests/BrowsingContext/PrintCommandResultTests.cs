@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class PrintCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class PrintCommandResultTests
                         "data": "some print data"
                       }
                       """;
-        PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json);
+        PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("some print data", result.Data);
     }
@@ -25,7 +30,7 @@ public class PrintCommandResultTests
                         "data": "some print data"
                       }
                       """;
-        PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json);
+        PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json, this.options);
         Assert.NotNull(result);
         PrintCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -35,7 +40,7 @@ public class PrintCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrintCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrintCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -46,6 +51,17 @@ public class PrintCommandResultTests
                         "data": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrintCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrintCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullDataThrows()
+    {
+        string json = """
+                      {
+                        "data": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<PrintCommandResult>(json, this.options));
     }
 }

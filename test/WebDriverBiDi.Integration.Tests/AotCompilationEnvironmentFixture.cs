@@ -31,13 +31,13 @@ public class AotCompilationEnvironmentFixture : IAsyncLifetime
         // binary.
         this.PublishDir = Path.Combine(SmokeTestProjectDir, "bin", "AotTestPublish");
 
-        int publishExit = await RunProcessAsync(
+        RunProcessResult publishExit = await RunProcessAsync(
             "dotnet",
             $"publish \"{SmokeTestProjectDir}\" -c Release -o \"{this.PublishDir}\" -p:TreatWarningsAsErrors=true",
             workingDirectory: SmokeTestProjectDir,
             timeoutSeconds: 300);
 
-        Assert.Equal(0, publishExit);
+        Assert.Equal(0, publishExit.ExitCode);
 
         string executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? "WebDriverBiDi.AotTestApplication.exe"
@@ -49,7 +49,7 @@ public class AotCompilationEnvironmentFixture : IAsyncLifetime
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-    internal static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory, int timeoutSeconds)
+    internal static async Task<RunProcessResult> RunProcessAsync(string fileName, string arguments, string workingDirectory, int timeoutSeconds)
     {
         using Process process = new();
         process.StartInfo.FileName = fileName;
@@ -71,6 +71,14 @@ public class AotCompilationEnvironmentFixture : IAsyncLifetime
         string stdout = await stdoutTask;
         string stderr = await stderrTask;
 
+        RunProcessResult result = new()
+        {
+            FileName = fileName,
+            ExitCode = process.ExitCode,
+            StandardOutputConsoleContent = stdout,
+            StandardErrorConsoleContent = stderr,
+        };
+
         TestContext.Current.SendDiagnosticMessage($"[{Path.GetFileName(fileName)}] stdout:\n{stdout}");
         if (!string.IsNullOrWhiteSpace(stderr))
         {
@@ -83,6 +91,6 @@ public class AotCompilationEnvironmentFixture : IAsyncLifetime
             throw new XunitException($"Process '{fileName}' timed out after {timeoutSeconds}s.");
         }
 
-        return process.ExitCode;
+        return result;
     }
 }

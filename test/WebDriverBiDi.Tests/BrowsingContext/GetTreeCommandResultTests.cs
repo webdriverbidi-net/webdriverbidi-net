@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class GetTreeCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -21,7 +26,7 @@ public class GetTreeCommandResultTests
                         ]
                       }
                       """;
-        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json);
+        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Single(result.ContextTree);
     }
@@ -34,7 +39,7 @@ public class GetTreeCommandResultTests
                         "contexts": []
                       }
                       """;
-        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json);
+        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Empty(result.ContextTree);
     }
@@ -56,7 +61,7 @@ public class GetTreeCommandResultTests
                         ]
                       }
                       """;
-        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json);
+        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options);
         Assert.NotNull(result);
         GetTreeCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -66,7 +71,7 @@ public class GetTreeCommandResultTests
     public void TestDeserializingWithMissingContextsThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -77,7 +82,18 @@ public class GetTreeCommandResultTests
                         "contexts": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullContextsThrows()
+    {
+        string json = """
+                      {
+                        "contexts": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -88,6 +104,6 @@ public class GetTreeCommandResultTests
                         "contexts": [ "invalid" ]
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options));
     }
 }

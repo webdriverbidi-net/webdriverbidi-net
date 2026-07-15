@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class CaptureScreenshotCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class CaptureScreenshotCommandResultTests
                         "data": "some screenshot data"
                       }
                       """;
-        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json);
+        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("some screenshot data", result.Data);
     }
@@ -25,7 +30,7 @@ public class CaptureScreenshotCommandResultTests
                         "data": "some screenshot data"
                       }
                       """;
-        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json);
+        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, this.options);
         Assert.NotNull(result);
         CaptureScreenshotCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -35,7 +40,7 @@ public class CaptureScreenshotCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -46,6 +51,17 @@ public class CaptureScreenshotCommandResultTests
                         "data": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullDataThrows()
+    {
+        string json = """
+                      {
+                        "data": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, this.options));
     }
 }

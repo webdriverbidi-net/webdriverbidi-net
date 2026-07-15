@@ -5,6 +5,11 @@ using WebDriverBiDi.Session;
 
 public class UserPromptOpenedEventArgsTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserializeWithTypeAlert()
     {
@@ -16,7 +21,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -36,7 +41,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -57,7 +62,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -78,7 +83,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -99,7 +104,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -120,7 +125,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -141,7 +146,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -163,7 +168,7 @@ public class UserPromptOpenedEventArgsTests
                         "defaultValue": "prompt default"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -185,7 +190,7 @@ public class UserPromptOpenedEventArgsTests
                         "userContext": "myUserContextId"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -206,7 +211,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         UserPromptOpenedEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
@@ -222,7 +227,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -236,7 +241,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -249,7 +254,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -263,7 +268,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -276,7 +281,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -290,7 +295,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -303,7 +308,7 @@ public class UserPromptOpenedEventArgsTests
                         "handler": "accept"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -317,6 +322,6 @@ public class UserPromptOpenedEventArgsTests
                         "message": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json, this.options));
     }
 }

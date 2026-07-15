@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class LocateNodesCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -22,7 +27,7 @@ public class LocateNodesCommandResultTests
                         ]
                       }
                       """;
-        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
+        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Single(result.Nodes);
         Assert.Equal("mySharedId", result.Nodes[0].SharedId);
@@ -36,7 +41,7 @@ public class LocateNodesCommandResultTests
                         "nodes": []
                       }
                       """;
-        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
+        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Empty(result.Nodes);
     }
@@ -59,27 +64,38 @@ public class LocateNodesCommandResultTests
                         ]
                       }
                       """;
-        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
+        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json, this.options);
         Assert.NotNull(result);
         LocateNodesCommandResult copy = result with { };
         Assert.Equal(result, copy);
     }
 
     [Fact]
-    public void TestDeserializingWithMissingDataThrows()
+    public void TestDeserializingWithMissingNodesValueThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json, this.options));
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidDataTypeThrows()
+    public void TestDeserializingWithInvalidNodesTypeThrows()
     {
         string json = """
                       {
                         "nodes": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullNodesThrows()
+    {
+        string json = """
+                      {
+                        "nodes": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json, this.options));
     }
 }

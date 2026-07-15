@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class BrowsingContextInfoTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -17,7 +22,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options);
         Assert.NotNull(info);
         Assert.IsType<BrowsingContextInfo>(info);
 
@@ -53,7 +58,7 @@ public class BrowsingContextInfoTests
                         ]
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options);
         Assert.NotNull(info);
         Assert.IsType<BrowsingContextInfo>(info);
 
@@ -80,7 +85,7 @@ public class BrowsingContextInfoTests
                         "parent": "parentContextId"
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options);
         Assert.NotNull(info);
         Assert.IsType<BrowsingContextInfo>(info);
 
@@ -107,7 +112,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options);
         Assert.NotNull(info);
         Assert.IsType<BrowsingContextInfo>(info);
 
@@ -134,7 +139,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options);
         Assert.NotNull(info);
         BrowsingContextInfo copy = info with { };
         Assert.Equal(info, copy);
@@ -152,82 +157,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
-    }
-
-    [Fact]
-    public void TestDeserializingBrowsingContextInfoWithMissingClientWindowIdThrows()
-    {
-        string json = """
-                      {
-                        "context": "myContextId",
-                        "url": "http://example.com",
-                        "originalOpener": "openerContext",
-                        "userContext": "myUserContextId",
-                        "children": []
-                      }
-                      """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
-    }
-
-    [Fact]
-    public void TestDeserializingBrowsingContextInfoWithMissingUrlThrows()
-    {
-        string json = """
-                      {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "originalOpener": "openerContext",
-                        "userContext": "myUserContextId",
-                        "children": []
-                      }
-                      """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
-    }
-
-    [Fact]
-    public void TestDeserializingBrowsingContextInfoWithMissingOriginalOpenerThrows()
-    {
-        string json = """
-                      {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "userContext": "myUserContextId",
-                        "children": []
-                      }
-                      """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
-    }
-
-    [Fact]
-    public void TestDeserializingBrowsingContextInfoWithMissingChildrenThrows()
-    {
-        string json = """
-                      {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "originalOpener": "openerContext",
-                        "userContext": "myUserContextId"
-                      }
-                      """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
-    }
-
-    [Fact]
-    public void TestDeserializingBrowsingContextInfoWithMissingUserContextThrows()
-    {
-        string json = """
-                      {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "originalOpener": "openerContext",
-                        "children": []
-                      }
-                      """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 
     [Fact]
@@ -243,7 +173,38 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithNullContextThrows()
+    {
+        string json = """
+                      {
+                        "context": null,
+                        "clientWindow": "myClientWindowId",
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": []
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithMissingClientWindowIdThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": []
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 
     [Fact]
@@ -259,7 +220,38 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithNullClientWindowThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "clientWindow": null,
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": []
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithMissingUrlThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": []
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 
     [Fact]
@@ -275,7 +267,38 @@ public class BrowsingContextInfoTests
                         "children": [] 
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithNullUrlThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
+                        "url": null,
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": [] 
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithMissingOriginalOpenerThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
+                        "url": "http://example.com",
+                        "userContext": "myUserContextId",
+                        "children": []
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 
     [Fact]
@@ -291,7 +314,67 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithMissingChildrenThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithInvalidChildrenTypeThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": "invalid"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithNullChildrenThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingBrowsingContextInfoWithMissingUserContextThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "children": []
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 
     [Fact]
@@ -307,22 +390,23 @@ public class BrowsingContextInfoTests
                         "children": [] 
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 
     [Fact]
-    public void TestDeserializingBrowsingContextInfoWithInvalidChildrenTypeThrows()
+    public void TestDeserializingBrowsingContextInfoWithNullUserContextThrows()
     {
         string json = """
                       {
                         "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
                         "url": "http://example.com",
                         "originalOpener": "openerContext",
-                        "userContext": "myUserContextId",
-                        "children": "invalid"
+                        "userContext": null,
+                        "children": [] 
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 
     [Fact]
@@ -338,6 +422,6 @@ public class BrowsingContextInfoTests
                         "parent": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
     }
 }

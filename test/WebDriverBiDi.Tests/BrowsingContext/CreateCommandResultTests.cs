@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class CreateCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class CreateCommandResultTests
                         "context": "myContextId"
                       }
                       """;
-        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("myContextId", result.BrowsingContextId);
     }
@@ -26,7 +31,7 @@ public class CreateCommandResultTests
                         "userContext": "myUserContextId"
                       }
                       """;
-        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("myContextId", result.BrowsingContextId);
         Assert.Equal("myUserContextId", result.UserContextId);
@@ -40,7 +45,7 @@ public class CreateCommandResultTests
                         "context": "myContextId"
                       }
                       """;
-        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, this.options);
         Assert.NotNull(result);
         CreateCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -50,7 +55,7 @@ public class CreateCommandResultTests
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -61,6 +66,17 @@ public class CreateCommandResultTests
                         "context": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullContextThrows()
+    {
+        string json = """
+                      {
+                        "context": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateCommandResult>(json, this.options));
     }
 }

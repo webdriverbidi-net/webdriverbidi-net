@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class AuthRequiredEventArgsTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     private readonly string requestDataJson = """
                                               {
                                                 "request": "myRequestId",
@@ -72,7 +77,7 @@ public class AuthRequiredEventArgsTests
                              }
                            }
                            """;
-        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
+        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, this.options);
         Assert.NotNull(eventArgs);
 
         // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
@@ -119,7 +124,7 @@ public class AuthRequiredEventArgsTests
                              }
                            }
                            """;
-        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
+        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, this.options);
         Assert.NotNull(eventArgs);
         AuthRequiredEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
@@ -141,6 +146,46 @@ public class AuthRequiredEventArgsTests
                              "request": {{this.requestDataJson}}
                            }
                            """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidResponseTypeThrows()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId",
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": {{milliseconds}},
+                             "request": {{this.requestDataJson}},
+                             "response": "invalid response type"
+                           }
+                           """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullResponseThrows()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId",
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": {{milliseconds}},
+                             "request": {{this.requestDataJson}},
+                             "response": null
+                           }
+                           """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, this.options));
     }
 }

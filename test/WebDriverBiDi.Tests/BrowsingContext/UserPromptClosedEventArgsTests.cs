@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class UserPromptClosedEventArgsTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserializeWithAcceptedTrue()
     {
@@ -13,7 +18,7 @@ public class UserPromptClosedEventArgsTests
                         "accepted": true
                       }
                       """;
-        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -30,7 +35,7 @@ public class UserPromptClosedEventArgsTests
                         "accepted": false
                       }
                       """;
-        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -48,7 +53,7 @@ public class UserPromptClosedEventArgsTests
                         "userText": "some text"
                       }
                       """;
-        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -66,7 +71,7 @@ public class UserPromptClosedEventArgsTests
                         "userContext": "myUserContextId"
                       }
                       """;
-        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
@@ -83,7 +88,7 @@ public class UserPromptClosedEventArgsTests
                         "accepted": true
                       }
                       """;
-        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         UserPromptClosedEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
@@ -97,7 +102,7 @@ public class UserPromptClosedEventArgsTests
                         "accepted": true
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -109,7 +114,19 @@ public class UserPromptClosedEventArgsTests
                         "accepted": true
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithNullContextValueThrows()
+    {
+        string json = """
+                      {
+                        "context": null,
+                        "accepted": true
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -120,7 +137,7 @@ public class UserPromptClosedEventArgsTests
                         "context": "myContextId"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -132,7 +149,19 @@ public class UserPromptClosedEventArgsTests
                         "accepted": "some value"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithnullAcceptedValueThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "accepted": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -145,6 +174,6 @@ public class UserPromptClosedEventArgsTests
                         "userText": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
     }
 }

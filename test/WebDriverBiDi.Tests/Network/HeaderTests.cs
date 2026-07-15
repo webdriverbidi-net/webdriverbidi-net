@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class HeaderTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanConstructHeader()
     {
@@ -24,7 +29,7 @@ public class HeaderTests
                         }
                       }
                       """;
-        Header? header = JsonSerializer.Deserialize<Header>(json);
+        Header? header = JsonSerializer.Deserialize<Header>(json, this.options);
         Assert.NotNull(header);
 
         Assert.Equal("headerName", header.Name);
@@ -46,7 +51,7 @@ public class HeaderTests
                         }
                       }
                       """;
-        Header? header = JsonSerializer.Deserialize<Header>(json);
+        Header? header = JsonSerializer.Deserialize<Header>(json, this.options);
         Assert.NotNull(header);
 
         Assert.Equal("headerName", header.Name);
@@ -65,7 +70,37 @@ public class HeaderTests
                         }
                       }
                       """;
-        Assert.Contains("missing required properties including: 'name", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json)).Message);
+        Assert.Contains("missing required properties including: 'name", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidNameTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": {},
+                        "value": {
+                          "type": "string",
+                          "value": "headerValue" 
+                        }
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullNameThrows()
+    {
+        string json = """
+                      {
+                        "name": null,
+                        "value": {
+                          "type": "string",
+                          "value": "headerValue" 
+                        }
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json, this.options));
     }
 
     [Fact]
@@ -76,6 +111,30 @@ public class HeaderTests
                         "name": "headerName"
                       }
                       """;
-        Assert.Contains("missing required properties including: 'value", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json)).Message);
+        Assert.Contains("missing required properties including: 'value", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json, this.options)).Message);
+    }
+
+    [Fact]
+    public void TestDeserializingWithInvalidValueTypeThrows()
+    {
+        string json = """
+                      {
+                        "name": "headerName",
+                        "value": "headerValue"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullValueThrows()
+    {
+        string json = """
+                      {
+                        "name": "headerName",
+                        "value": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Header>(json, this.options));
     }
 }

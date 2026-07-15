@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class AddInterceptCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class AddInterceptCommandResultTests
                         "intercept": "myInterceptId"
                       }
                       """;
-        AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json);
+        AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("myInterceptId", result.InterceptId);
     }
@@ -25,27 +30,38 @@ public class AddInterceptCommandResultTests
                         "intercept": "myInterceptId"
                       }
                       """;
-        AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json);
+        AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json, this.options);
         Assert.NotNull(result);
         AddInterceptCommandResult copy = result with { };
         Assert.Equal(result, copy);
     }
 
     [Fact]
-    public void TestDeserializingWithMissingDataThrows()
+    public void TestDeserializingWithMissingInterceptThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json, this.options));
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidDataTypeThrows()
+    public void TestDeserializingWithInvalidInterceptDataTypeThrows()
     {
         string json = """
                       {
                         "intercept": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullnterceptThrows()
+    {
+        string json = """
+                      {
+                        "intercept": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json, this.options));
     }
 }

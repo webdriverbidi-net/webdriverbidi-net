@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class FileDialogInfoTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserializeWithMultipleTrue()
     {
@@ -13,7 +18,7 @@ public class FileDialogInfoTests
                             "multiple": true
                         }
                         """;
-        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
+        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
 
@@ -31,7 +36,7 @@ public class FileDialogInfoTests
                             "multiple": false
                         }
                         """;
-        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
+        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
 
@@ -50,7 +55,7 @@ public class FileDialogInfoTests
                             "userContext": "myUserContextId"
                         }
                         """;
-        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
+        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
 
@@ -72,7 +77,7 @@ public class FileDialogInfoTests
                       }
                     }
                     """;
-        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
+        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
 
@@ -91,7 +96,7 @@ public class FileDialogInfoTests
                           "multiple": true
                         }
                         """;
-        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json);
+        FileDialogOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options);
         Assert.NotNull(eventArgs);
         Assert.IsType<FileDialogOpenedEventArgs>(eventArgs);
         FileDialogOpenedEventArgs copy = eventArgs with { };
@@ -106,7 +111,7 @@ public class FileDialogInfoTests
                         "multiple": true
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -118,22 +123,34 @@ public class FileDialogInfoTests
                         "multiple": true
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
-    public void TestDeserializingWithMissingMMultipleThrows()
+    public void TestDeserializingWithNullContextThrows()
+    {
+        string json = """
+                      {
+                        "context": null,
+                        "multiple": true
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithMissingMultipleThrows()
     {
         string json = """
                       {
                         "context": "myContextId"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidMMultipleTypeThrows()
+    public void TestDeserializingWithInvalidMultipleTypeThrows()
     {
         string json = """
                       {
@@ -141,7 +158,19 @@ public class FileDialogInfoTests
                         "multiple": "true"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullMultipleTypeThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "multiple": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -154,7 +183,7 @@ public class FileDialogInfoTests
                         "userContext": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -167,7 +196,7 @@ public class FileDialogInfoTests
                         "element": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -187,6 +216,6 @@ public class FileDialogInfoTests
                         }
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<FileDialogOpenedEventArgs>(json, this.options));
     }
 }

@@ -86,6 +86,7 @@ public class Transport : IAsyncDisposable
     private readonly JsonSerializerOptions options = new()
     {
         TypeInfoResolver = CreateTypeInfoResolver(),
+        RespectNullableAnnotations = true,
     };
 
     private readonly ConcurrentDictionary<string, Type> eventMessageTypes = [];

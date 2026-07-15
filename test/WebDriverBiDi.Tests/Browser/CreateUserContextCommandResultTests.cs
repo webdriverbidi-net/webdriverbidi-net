@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class CreateUserContextCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class CreateUserContextCommandResultTests
                         "userContext": "myUserContext"
                       }
                       """;
-        CreateUserContextCommandResult? result = JsonSerializer.Deserialize<CreateUserContextCommandResult>(json);
+        CreateUserContextCommandResult? result = JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("myUserContext", result.UserContextId);
     }
@@ -25,27 +30,38 @@ public class CreateUserContextCommandResultTests
                         "userContext": "myUserContext"
                       }
                       """;
-        CreateUserContextCommandResult? result = JsonSerializer.Deserialize<CreateUserContextCommandResult>(json);
+        CreateUserContextCommandResult? result = JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options);
         Assert.NotNull(result);
         CreateUserContextCommandResult copy = result with { };
         Assert.Equal(result, copy);
     }
 
     [Fact]
-    public void TestDeserializingWithMissingDataThrows()
+    public void TestDeserializingWithMissingUserContextThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options));
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidDataTypeThrows()
+    public void TestDeserializingWithInvalidUserContextDataTypeThrows()
     {
         string json = """
                       {
                         "userContext": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullUserContext()
+    {
+        string json = """
+                      {
+                        "userContext": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options));
     }
 }

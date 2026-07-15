@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class SubscribeCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -12,7 +17,7 @@ public class SubscribeCommandResultTests
                         "subscription": "mySubscription"
                       }
                       """;
-        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json);
+        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json, this.options);
         Assert.NotNull(result);
         Assert.Equal("mySubscription", result.SubscriptionId);
     }
@@ -25,7 +30,7 @@ public class SubscribeCommandResultTests
                         "subscription": "mySubscription"
                       }
                       """;
-        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json);
+        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json, this.options);
         Assert.NotNull(result);
         SubscribeCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -38,7 +43,7 @@ public class SubscribeCommandResultTests
                       {
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -49,6 +54,17 @@ public class SubscribeCommandResultTests
                         "subscription": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializationWithNullSubscriptionThrows()
+    {
+        string json = """
+                      {
+                        "subscription": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json, this.options));
     }
 }

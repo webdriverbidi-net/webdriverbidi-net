@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class StatusCommandResultTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -13,7 +18,7 @@ public class StatusCommandResultTests
                         "message": "myMessage"
                       }
                       """;
-        StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json);
+        StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json, this.options);
         Assert.NotNull(result);
 
         Assert.True(result.IsReady);
@@ -29,7 +34,7 @@ public class StatusCommandResultTests
                         "message": "myMessage"
                       }
                       """;
-        StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json);
+        StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json, this.options);
         Assert.NotNull(result);
         StatusCommandResult copy = result with { };
         Assert.Equal(result, copy);
@@ -43,7 +48,7 @@ public class StatusCommandResultTests
                         "message": "myMessage"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -55,7 +60,7 @@ public class StatusCommandResultTests
                         "message": "myMessage"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -66,7 +71,7 @@ public class StatusCommandResultTests
                         "ready": true
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -78,6 +83,18 @@ public class StatusCommandResultTests
                         "message": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializingWithNullMessageThrows()
+    {
+        string json = """
+                      {
+                        "ready": true,
+                        "message": null
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<StatusCommandResult>(json, this.options));
     }
 }

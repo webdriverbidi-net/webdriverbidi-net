@@ -3,7 +3,7 @@ namespace WebDriverBiDi.Permissions;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
-public class SetPermissionsCommandParametersTests
+public class SetPermissionCommandParametersTests
 {
     [Fact]
     public void TestCommandName()
