@@ -20,7 +20,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         DownloadWillBeginEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options);
@@ -46,7 +46,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         DownloadWillBeginEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options);
@@ -65,7 +65,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -82,7 +82,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -99,7 +99,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -115,7 +115,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -132,7 +132,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -149,7 +149,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -165,7 +165,7 @@ public class DownloadWillBeginEventArgsTests
                         "url": "http://example.com",
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -182,7 +182,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": "invalid value",
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -199,7 +199,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": null,
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -215,7 +215,7 @@ public class DownloadWillBeginEventArgsTests
                         "url": "http://example.com",
                         "timestamp": {{epochTimestamp}},
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -232,7 +232,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": {},
                         "download": "myDownloadId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -265,7 +265,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": {}
+                        "suggestedFilename": {}
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -282,7 +282,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": "myDownloadId",
-                        "suggestedFileName": null
+                        "suggestedFilename": null
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -298,7 +298,7 @@ public class DownloadWillBeginEventArgsTests
                         "url": "http://example.com",
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -315,7 +315,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": {},
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
@@ -332,7 +332,7 @@ public class DownloadWillBeginEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": null,
-                        "suggestedFileName": "myFile.file"
+                        "suggestedFilename": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));

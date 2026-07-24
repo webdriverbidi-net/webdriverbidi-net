@@ -612,7 +612,7 @@ public class BrowsingContextModuleTests
                                "timestamp": {{epochTimestamp}},
                                "navigation": "myNavigationId",
                                "download": "myDownloadId",
-                               "suggestedFileName": "myFile.file"
+                               "suggestedFilename": "myFile.file"
                              }
                            }
                            """;
