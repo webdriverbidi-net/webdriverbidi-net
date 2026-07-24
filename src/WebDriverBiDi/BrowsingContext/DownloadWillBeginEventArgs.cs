@@ -32,7 +32,7 @@ public record DownloadWillBeginEventArgs : NavigationEventArgs
     /// <summary>
     /// Gets the suggested file name of the item to be downloaded.
     /// </summary>
-    [JsonPropertyName("suggestedFileName")]
+    [JsonPropertyName("suggestedFilename")]
     [JsonRequired]
     [JsonInclude]
     public string SuggestedFileName { get; internal set; } = string.Empty;
