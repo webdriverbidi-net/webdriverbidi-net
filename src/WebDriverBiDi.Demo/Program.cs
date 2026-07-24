@@ -21,7 +21,7 @@ int port = 0;
 WebDriverBiDiLogLevel logReportingLevel = WebDriverBiDiLogLevel.Info;
 
 // Select the browser type for which to run this demo.
-BrowserKind testBrowserType = BrowserKind.Firefox;
+BrowserKind testBrowserType = BrowserKind.Chrome;
 
 // Select the release channel of the browser tu use for this demo.
 // The release channel is browser-agnostic, but is mapped to a
@@ -66,7 +66,7 @@ if (!launcher.IsBiDiSessionInitialized)
     await driver.Session.NewSessionAsync(new NewCommandParameters());
 }
 
-// await DemoScenarios.SubmitFormAsync(driver, baseDemoSiteUrl);
+await DemoScenarios.SubmitFormAsync(driver, baseDemoSiteUrl);
 // await DemoScenarios.WaitForDelayLoadAsync(driver, baseDemoSiteUrl);
 // await DemoScenarios.ManipulateCookiesAsync(driver, baseDemoSiteUrl);
 // await DemoScenarios.MonitorNetworkTrafficAsync(driver, baseDemoSiteUrl);
@@ -80,7 +80,7 @@ if (!launcher.IsBiDiSessionInitialized)
 // await DemoScenarios.CaptureAllNetworkTrafficAsync(driver, baseDemoSiteUrl);
 // await DemoScenarios.HandleEventsInMultipleUserContextsAsync(driver, baseDemoSiteUrl);
 // await DemoScenarios.ManipulateShadowRootsAsync(driver, baseDemoSiteUrl);
-await DemoScenarios.PreloadScriptPersistenceAcrossBoundaries(driver, baseDemoSiteUrl);
+// await DemoScenarios.PreloadScriptPersistenceAcrossBoundaries(driver, baseDemoSiteUrl);
 
 Console.WriteLine($"Pausing {viewResultsDelayTimeSpan.TotalSeconds} seconds to view results");
 await Task.Delay(viewResultsDelayTimeSpan);
