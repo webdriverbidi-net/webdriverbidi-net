@@ -10,10 +10,7 @@
 #if NETSTANDARD2_0
 namespace System.Diagnostics.CodeAnalysis
 {
-    [AttributeUsage(
-        AttributeTargets.All,
-        Inherited = false,
-        AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
     internal sealed class UnconditionalSuppressMessageAttribute : Attribute
     {
         public UnconditionalSuppressMessageAttribute(string category, string checkId)
