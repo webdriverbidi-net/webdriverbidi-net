@@ -183,6 +183,35 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestTransportCompletesCommandOnMalformedErrorResponse()
+    {
+        string commandName = "module.command";
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
+        _ = Task.Run(
+            async () =>
+            {
+                // The required "message" field is absent, so the typed error deserialization throws.
+                string json = """
+                            {
+                              "type": "error",
+                              "id": 1,
+                              "error": "unknown command"
+                            }
+                            """;
+                await connection.RaiseDataReceivedEventAsync(json);
+            },
+            TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
+        Assert.Contains("Response did not contain properly formed JSON for error response type", command.ThrownException.Message);
+    }
+
+    [Fact]
     public async Task TestTransportGetResponseWithThrownException()
     {
         string commandName = "module.command";
