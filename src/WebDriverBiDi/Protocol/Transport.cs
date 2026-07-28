@@ -1090,20 +1090,23 @@ public class Transport : IAsyncDisposable
         catch (Exception ex)
         {
             string messageString = packet.MessageText;
-            await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}");
-            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
 
-            // The malformed payload failed to deserialize, so the pending command was
-            // never matched above. Recover its ID from the raw packet and fault it, so a
-            // malformed error response doesn't leave the caller waiting out the command
-            // timeout. TryGetCommandId is only called here, on the failure path.
+            // The malformed payload failed to deserialize, so the pending command was never
+            // matched above. If it still correlates to a pending command, fault that command
+            // and treat the error as handled, so a malformed error response doesn't leave the
+            // caller waiting out the command timeout. TryGetCommandId is only called here, on
+            // the failure path, and a matched command is not also routed to the unhandled-error
+            // pipeline below.
             if (packet.TryGetCommandId(out long responseId) && this.PendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
             {
                 executedCommand.StopTiming();
                 executedCommand.SetException(new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for error response type (response JSON:{messageString})", ex));
                 return true;
             }
+
+            await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+            this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}");
+            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
         }
 
         return false;
