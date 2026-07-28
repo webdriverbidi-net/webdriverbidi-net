@@ -102,6 +102,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(CommandResponseMessage<SetForcedColorsModeThemeOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetGeolocationOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetLocaleOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetMediaFeaturesOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetNetworkConditionsCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetScreenOrientationOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetScreenSettingsOverrideCommandResult>))]
@@ -110,6 +111,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(CommandResponseMessage<SetTimeZoneOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetTouchOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetUserAgentOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetViewportMetaOverrideCommandResult>))]
 
 // ── Input module (command responses and event handlers) ──
 [JsonSerializable(typeof(CommandResponseMessage<PerformActionsCommandResult>))]
@@ -269,6 +271,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(ForcedColorsModeTheme))]
 [JsonSerializable(typeof(GeolocationCoordinates))]
 [JsonSerializable(typeof(GeolocationPositionError))]
+[JsonSerializable(typeof(MediaFeature))]
 [JsonSerializable(typeof(NetworkConditions))]
 [JsonSerializable(typeof(NetworkConditionsOffline))]
 [JsonSerializable(typeof(ScreenArea))]
@@ -281,6 +284,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(SetGeolocationOverrideCoordinatesCommandParameters))]
 [JsonSerializable(typeof(SetGeolocationOverrideErrorCommandParameters))]
 [JsonSerializable(typeof(SetLocaleOverrideCommandParameters))]
+[JsonSerializable(typeof(SetMediaFeaturesOverrideCommandParameters))]
 [JsonSerializable(typeof(SetNetworkConditionsCommandParameters))]
 [JsonSerializable(typeof(SetScreenOrientationOverrideCommandParameters))]
 [JsonSerializable(typeof(SetScreenSettingsOverrideCommandParameters))]
@@ -289,6 +293,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(SetTimeZoneOverrideCommandParameters))]
 [JsonSerializable(typeof(SetTouchOverrideCommandParameters))]
 [JsonSerializable(typeof(SetUserAgentOverrideCommandParameters))]
+[JsonSerializable(typeof(SetViewportMetaOverrideCommandParameters))]
 
 // ── Input module ──
 [JsonSerializable(typeof(ElementOrigin))]
