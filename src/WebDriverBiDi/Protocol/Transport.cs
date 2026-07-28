@@ -1058,47 +1058,31 @@ public class Transport : IAsyncDisposable
 
     private async Task<bool> ProcessErrorMessageAsync(IncomingMessage packet)
     {
-        // Recover the command ID from the raw packet before attempting the typed
-        // deserialization of the error payload, mirroring ProcessCommandResponseMessageAsync.
-        // A malformed error response (for example, one missing a spec-required field)
-        // causes the typed deserialization to throw; recovering the ID first lets us still
-        // fault the awaiting command instead of dropping the error and leaving the caller
-        // to wait out the command timeout.
-        if (packet.TryGetCommandId(out long responseId) && this.PendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
+        try
         {
-            executedCommand.StopTiming();
-            try
+            // If the message doesn't match the schema of an actual error message,
+            // an exception will be thrown by the JSON serializer, and we can log
+            // the malformed response.
+            if (packet.TryGetErrorResponse(this.errorResponseJsonTypeInfo, out ErrorResponseMessage? errorMessage))
             {
-                if (packet.TryGetErrorResponse(this.errorResponseJsonTypeInfo, out ErrorResponseMessage? errorMessage))
+                ErrorResult result = errorMessage.GetErrorResponseData();
+                if (errorMessage.CommandId.HasValue && this.PendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
                 {
-                    ErrorResult result = errorMessage.GetErrorResponseData();
-                    WebDriverBiDiEventSource.RaiseEvent.CommandError(responseId, executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
+                    // Stop timing and log error
+                    executedCommand.StopTiming();
+                    WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value, executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
                     if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
-                        await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {responseId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+                        await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     }
 
                     executedCommand.SetResult(result);
                 }
-            }
-            catch (Exception ex)
-            {
-                executedCommand.SetException(new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for error response type (response JSON:{packet.MessageText})", ex));
-            }
-
-            return true;
-        }
-
-        // No pending command matched this error (it carried no command ID, or an unknown
-        // one). Surface it as a protocol-level error; if the payload itself is malformed,
-        // an exception is thrown by the JSON serializer and we log the malformed response.
-        try
-        {
-            if (packet.TryGetErrorResponse(this.errorResponseJsonTypeInfo, out ErrorResponseMessage? errorMessage))
-            {
-                ErrorResult result = errorMessage.GetErrorResponseData();
-                await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result)).ConfigureAwait(false);
-                this.CaptureUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
+                else
+                {
+                    await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result)).ConfigureAwait(false);
+                    this.CaptureUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
+                }
             }
 
             return true;
@@ -1109,6 +1093,17 @@ public class Transport : IAsyncDisposable
             await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}");
             WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
+
+            // The malformed payload failed to deserialize, so the pending command was
+            // never matched above. Recover its ID from the raw packet and fault it, so a
+            // malformed error response doesn't leave the caller waiting out the command
+            // timeout. TryGetCommandId is only called here, on the failure path.
+            if (packet.TryGetCommandId(out long responseId) && this.PendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
+            {
+                executedCommand.StopTiming();
+                executedCommand.SetException(new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for error response type (response JSON:{messageString})", ex));
+                return true;
+            }
         }
 
         return false;
