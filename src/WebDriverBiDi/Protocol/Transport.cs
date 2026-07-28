@@ -1091,16 +1091,17 @@ public class Transport : IAsyncDisposable
         {
             string messageString = packet.MessageText;
 
-            // The malformed payload failed to deserialize, so the pending command was never
-            // matched above. If it still correlates to a pending command, fault that command
-            // and treat the error as handled, so a malformed error response doesn't leave the
-            // caller waiting out the command timeout. TryGetCommandId is only called here, on
-            // the failure path, and a matched command is not also routed to the unhandled-error
-            // pipeline below.
-            if (packet.TryGetCommandId(out long responseId) && this.PendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
+            // If the malformed payload correlates to a pending command (denoted by the
+            // payload having an `id` property and a command with the value of that ID
+            // existing in the pending command collection), resolve the command so that
+            // the caller does not have to wait for the full command timeout. Note that
+            // the invalid error payload is deliberately not routed to the transport
+            // unandled error pipeline.
+            if (packet.TryGetCommandId(out long commandId) && this.PendingCommands.RemovePendingCommand(commandId, out Command? executedCommand))
             {
                 executedCommand.StopTiming();
-                executedCommand.SetException(new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for error response type (response JSON:{messageString})", ex));
+                WebDriverBiDiEventSource.RaiseEvent.CommandError(commandId, executedCommand.CommandName, ErrorCode.UnsetErrorCode, "invalid error json", "Error response contained incorrect JSON for a protocol error");
+                executedCommand.SetException(new WebDriverBiDiSerializationException($"Error response for command {commandId} contained incorrect JSON for protocol error (response JSON: {messageString})", ex));
                 return true;
             }
 
