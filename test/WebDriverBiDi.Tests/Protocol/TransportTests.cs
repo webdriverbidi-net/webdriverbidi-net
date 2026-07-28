@@ -206,9 +206,10 @@ public class TransportTests
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
-        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool commandCompleted = await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(commandCompleted);
         Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
-        Assert.Contains("Response did not contain properly formed JSON for error response type", command.ThrownException.Message);
+        Assert.Contains("Error response for command 1 contained incorrect JSON for protocol error", command.ThrownException.Message);
     }
 
     [Fact]
