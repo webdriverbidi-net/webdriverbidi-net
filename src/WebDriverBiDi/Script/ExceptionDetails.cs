@@ -34,7 +34,7 @@ public record ExceptionDetails
     [JsonPropertyName("columnNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int ColumnNumber { get; internal set; } = -1;
+    public ulong ColumnNumber { get; internal set; }
 
     /// <summary>
     /// Gets the line number of the statement that caused the exception.
@@ -42,7 +42,7 @@ public record ExceptionDetails
     [JsonPropertyName("lineNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int LineNumber { get; internal set; } = -1;
+    public ulong LineNumber { get; internal set; }
 
     /// <summary>
     /// Gets the stack trace of the exception.

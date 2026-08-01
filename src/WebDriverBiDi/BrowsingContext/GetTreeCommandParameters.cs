@@ -30,7 +30,7 @@ public class GetTreeCommandParameters : CommandParameters<GetTreeCommandResult>
     /// </summary>
     [JsonPropertyName("maxDepth")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? MaxDepth { get; set; }
+    public ulong? MaxDepth { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the browsing context used as the root of the tree.
