@@ -91,8 +91,8 @@ public class ScriptModuleTests
         Assert.Equal("myRealmId", exceptionResult.RealmId);
         Assert.Equal(EvaluateResultType.Exception, exceptionResult.ResultType);
         Assert.Equal("error received from script", exceptionResult.ExceptionDetails.Text);
-        Assert.Equal(2, exceptionResult.ExceptionDetails.LineNumber);
-        Assert.Equal(5, exceptionResult.ExceptionDetails.ColumnNumber);
+        Assert.Equal(2UL, exceptionResult.ExceptionDetails.LineNumber);
+        Assert.Equal(5UL, exceptionResult.ExceptionDetails.ColumnNumber);
         Assert.NotNull(exceptionResult.ExceptionDetails.StackTrace);
         Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
         Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
@@ -184,8 +184,8 @@ public class ScriptModuleTests
         Assert.Equal("myRealmId", exceptionResult.RealmId);
         Assert.Equal(EvaluateResultType.Exception, exceptionResult.ResultType);
         Assert.Equal("error received from script", exceptionResult.ExceptionDetails.Text);
-        Assert.Equal(2, exceptionResult.ExceptionDetails.LineNumber);
-        Assert.Equal(5, exceptionResult.ExceptionDetails.ColumnNumber);
+        Assert.Equal(2UL, exceptionResult.ExceptionDetails.LineNumber);
+        Assert.Equal(5UL, exceptionResult.ExceptionDetails.ColumnNumber);
         Assert.NotNull(exceptionResult.ExceptionDetails.StackTrace);
         Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
         Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);

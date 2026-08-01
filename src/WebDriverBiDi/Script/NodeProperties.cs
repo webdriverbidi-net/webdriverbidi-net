@@ -18,7 +18,7 @@ public record NodeProperties
     [JsonPropertyName("nodeType")]
     [JsonRequired]
     [JsonInclude]
-    public uint NodeType { get; internal set; }
+    public ulong NodeType { get; internal set; }
 
     /// <summary>
     /// Gets the count of the child nodes.
@@ -26,7 +26,7 @@ public record NodeProperties
     [JsonPropertyName("childNodeCount")]
     [JsonRequired]
     [JsonInclude]
-    public uint ChildNodeCount { get; internal set; }
+    public ulong ChildNodeCount { get; internal set; }
 
     /// <summary>
     /// Gets the value of the node.

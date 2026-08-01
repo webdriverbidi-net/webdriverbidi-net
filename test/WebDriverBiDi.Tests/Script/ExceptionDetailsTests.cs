@@ -25,8 +25,8 @@ public class ExceptionDetailsTests
         Assert.NotNull(exceptionDetails);
 
         Assert.Equal("exception message", exceptionDetails.Text);
-        Assert.Equal(1, exceptionDetails.LineNumber);
-        Assert.Equal(5, exceptionDetails.ColumnNumber);
+        Assert.Equal(1UL, exceptionDetails.LineNumber);
+        Assert.Equal(5UL, exceptionDetails.ColumnNumber);
         Assert.Equal("myException", exceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
         Assert.Empty(exceptionDetails.StackTrace.CallFrames);
     }

@@ -34,7 +34,7 @@ public record StackFrame
     [JsonPropertyName("lineNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int LineNumber { get; internal set; } = -1;
+    public ulong LineNumber { get; internal set; }
 
     /// <summary>
     /// Gets the column number for this stack frame.
@@ -42,7 +42,7 @@ public record StackFrame
     [JsonPropertyName("columnNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int ColumnNumber { get; internal set; } = -1;
+    public ulong ColumnNumber { get; internal set; }
 
     /// <summary>
     /// Gets the URL for this stack frame.

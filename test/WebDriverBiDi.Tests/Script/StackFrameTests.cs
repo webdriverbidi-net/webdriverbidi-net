@@ -19,8 +19,8 @@ public class StackFrameTests
         Assert.NotNull(stackFrame);
 
         Assert.Equal("myFunction", stackFrame.FunctionName);
-        Assert.Equal(1, stackFrame.LineNumber);
-        Assert.Equal(5, stackFrame.ColumnNumber);
+        Assert.Equal(1UL, stackFrame.LineNumber);
+        Assert.Equal(5UL, stackFrame.ColumnNumber);
         Assert.Equal("http://some.url/file.js", stackFrame.Url);
     }
 

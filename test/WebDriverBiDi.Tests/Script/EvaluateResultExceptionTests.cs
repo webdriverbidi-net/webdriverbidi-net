@@ -32,8 +32,8 @@ public class EvaluateResultExceptionTests
 
         Assert.Equal("myRealm", exceptionResult.RealmId);
         Assert.Equal("exception thrown", exceptionResult.ExceptionDetails.Text);
-        Assert.Equal(1, exceptionResult.ExceptionDetails.LineNumber);
-        Assert.Equal(5, exceptionResult.ExceptionDetails.ColumnNumber);
+        Assert.Equal(1UL, exceptionResult.ExceptionDetails.LineNumber);
+        Assert.Equal(5UL, exceptionResult.ExceptionDetails.ColumnNumber);
         Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
         Assert.Equal("exception value", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
     }
