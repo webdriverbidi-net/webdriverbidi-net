@@ -36,13 +36,13 @@ public class SelfExtractingExecutableFileExtractor : FileExtractor
     /// <returns>A task that represents the asynchronous operation.</returns>
     public override async Task ExtractFileContentsAsync(string installerPath, string extractDirectory)
     {
-        string extractionPath = Path.Combine(extractDirectory, "extract");
+        string temporaryExtractionPath = Path.Combine(extractDirectory, "extract");
         string destinationPath = Path.Combine(extractDirectory, this.extractedDestinationDirectoryName);
         try
         {
-            if (Directory.Exists(extractionPath))
+            if (Directory.Exists(temporaryExtractionPath))
             {
-                Directory.Delete(extractionPath, true);
+                Directory.Delete(temporaryExtractionPath, true);
             }
 
             if (Directory.Exists(destinationPath))
@@ -50,16 +50,16 @@ public class SelfExtractingExecutableFileExtractor : FileExtractor
                 Directory.Delete(destinationPath, true);
             }
 
-            Directory.CreateDirectory(extractionPath);
-            await this.RunProcessAsync(installerPath, $"/ExtractDir={extractionPath}");
-            string sourcePath = Path.Combine(extractionPath, this.extractedSourceDirectoryName);
+            Directory.CreateDirectory(temporaryExtractionPath);
+            await this.RunProcessAsync(installerPath, $"/ExtractDir={temporaryExtractionPath}");
+            string sourcePath = Path.Combine(temporaryExtractionPath, this.extractedSourceDirectoryName);
             Directory.Move(sourcePath, destinationPath);
         }
         finally
         {
-            if (Directory.Exists(extractionPath))
+            if (Directory.Exists(temporaryExtractionPath))
             {
-                Directory.Delete(extractionPath, true);
+                Directory.Delete(temporaryExtractionPath, true);
             }
 
             if (File.Exists(installerPath))
