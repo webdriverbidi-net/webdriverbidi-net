@@ -12,6 +12,21 @@ namespace WebDriverBiDi.Client.Launchers;
 /// </summary>
 public class SelfExtractingExecutableFileExtractor : FileExtractor
 {
+    private readonly string extractedSourceDirectoryName;
+    private readonly string extractedDestinationDirectoryName;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SelfExtractingExecutableFileExtractor"/> class.
+    /// </summary>
+    /// <param name="extractedSourceDirectoryName">The directory within the archive contents containing the files to be extracted.</param>
+    /// <param name="extractedDestinationDirectoryName">The directory to which the source files should be moved after extraction.</param>
+    public SelfExtractingExecutableFileExtractor(string extractedSourceDirectoryName, string extractedDestinationDirectoryName)
+        : base()
+    {
+        this.extractedSourceDirectoryName = extractedSourceDirectoryName;
+        this.extractedDestinationDirectoryName = extractedDestinationDirectoryName;
+    }
+
     /// <summary>
     /// Extracts the file from the downloaded self-extracting executable installer to the specified directory,
     /// and deletes the installer file.
@@ -21,18 +36,32 @@ public class SelfExtractingExecutableFileExtractor : FileExtractor
     /// <returns>A task that represents the asynchronous operation.</returns>
     public override async Task ExtractFileContentsAsync(string installerPath, string extractDirectory)
     {
+        string extractionPath = Path.Combine(extractDirectory, "extract");
+        string destinationPath = Path.Combine(extractDirectory, this.extractedDestinationDirectoryName);
         try
         {
-            if (Directory.Exists(extractDirectory))
+            if (Directory.Exists(extractionPath))
             {
-                Directory.Delete(extractDirectory, true);
+                Directory.Delete(extractionPath, true);
             }
 
-            Directory.CreateDirectory(extractDirectory);
-            await this.RunProcessAsync(installerPath, $"/S /D={extractDirectory}");
+            if (Directory.Exists(destinationPath))
+            {
+                Directory.Delete(destinationPath, true);
+            }
+
+            Directory.CreateDirectory(extractionPath);
+            await this.RunProcessAsync(installerPath, $"/ExtractDir={extractionPath}");
+            string sourcePath = Path.Combine(extractionPath, this.extractedSourceDirectoryName);
+            Directory.Move(sourcePath, destinationPath);
         }
         finally
         {
+            if (Directory.Exists(extractionPath))
+            {
+                Directory.Delete(extractionPath, true);
+            }
+
             if (File.Exists(installerPath))
             {
                 File.Delete(installerPath);

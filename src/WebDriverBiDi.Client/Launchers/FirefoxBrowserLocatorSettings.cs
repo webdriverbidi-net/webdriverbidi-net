@@ -213,7 +213,7 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
         {
             // Driver distribution for Windows is a .zip file, so the base class
             // ZipFileExtractor can be used.
-            this.BrowserExtractor = new SelfExtractingExecutableFileExtractor();
+            this.BrowserExtractor = new SelfExtractingExecutableFileExtractor("core", this.BrowserName);
         }
         else
         {
