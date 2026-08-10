@@ -52,8 +52,11 @@ public class CommandJsonConverterTests
         Command command = new(1, commandParams);
         string json = JsonSerializer.Serialize(command);
         JObject serialized = JObject.Parse(json);
-        Assert.True(serialized.ContainsKey("extraKey"));
-        JToken? extraKey = serialized["extraKey"];
+        Assert.True(serialized.ContainsKey("params"));
+        JObject? paramsObject = serialized["params"] as JObject;
+        Assert.NotNull(paramsObject);
+        Assert.True(paramsObject.ContainsKey("extraKey"));
+        JToken? extraKey = paramsObject["extraKey"];
         Assert.NotNull(extraKey);
         Assert.Equal("extraValue", extraKey.Value<string>());
     }

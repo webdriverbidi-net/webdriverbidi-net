@@ -14,13 +14,13 @@ public class CommandTests
         Dictionary<string, object?> expectedCommandParameters = new()
         {
             { "parameterName", "parameterValue" },
+            { "overflowParameterName", "overflowParameterValue" },
         };
         Dictionary<string, object?> expected = new()
         {
             { "id", 1 },
             { "method", commandName },
             { "params", expectedCommandParameters },
-            { "overflowParameterName", "overflowParameterValue" },
         };
 
         TestCommandParameters commandParams = new TestCommandParameters(commandName);
