@@ -67,12 +67,6 @@ public class CommandJsonConverter : JsonConverter<Command>
         // to remove warnings when publishing AOT compiled applications.
         JsonTypeInfo paramsTypeInfo = options.GetTypeInfo(value.CommandParameters.GetType());
         JsonSerializer.Serialize(writer, value.CommandParameters, paramsTypeInfo);
-        foreach (KeyValuePair<string, object?> pair in value.AdditionalData)
-        {
-            writer.WritePropertyName(pair.Key);
-            JsonSerializer.Serialize(writer, pair.Value, options);
-        }
-
         writer.WriteEndObject();
     }
 }

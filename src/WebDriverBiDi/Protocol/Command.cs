@@ -50,12 +50,6 @@ public class Command
     public CommandParameters CommandParameters { get; }
 
     /// <summary>
-    /// Gets additional properties to be serialized with this command.
-    /// </summary>
-    [JsonExtensionData]
-    public Dictionary<string, object?> AdditionalData => this.CommandParameters.AdditionalData;
-
-    /// <summary>
     /// Gets the type of the response for this command.
     /// </summary>
     [JsonIgnore]
@@ -88,6 +82,7 @@ public class Command
     /// <summary>
     /// Gets the elapsed time in milliseconds since the command was sent by a <see cref="Transport"/>.
     /// </summary>
+    [JsonIgnore]
     public long ElapsedMilliseconds => this.commandStopwatch.ElapsedMilliseconds;
 
     /// <summary>

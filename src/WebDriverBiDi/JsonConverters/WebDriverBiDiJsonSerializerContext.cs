@@ -38,6 +38,19 @@ using WebDriverBiDi.WebExtension;
 /// </code>
 /// </para>
 /// </summary>
+// ── Standard .NET types typically used in serialization of extension data ──
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(bool))]
+[JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(long))]
+[JsonSerializable(typeof(uint))]
+[JsonSerializable(typeof(ulong))]
+[JsonSerializable(typeof(double))]
+[JsonSerializable(typeof(DateTime))]
+[JsonSerializable(typeof(object))]
+[JsonSerializable(typeof(List<object?>))]
+[JsonSerializable(typeof(Dictionary<string, object?>))]
+
 // ── Protocol ──
 [JsonSerializable(typeof(Command))]
 [JsonSerializable(typeof(ErrorResponseMessage))]

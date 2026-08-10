@@ -55,6 +55,6 @@ public abstract class CommandParameters
     /// or the command will fail at send time with a <see cref="NotSupportedException"/>.
     /// </para>
     /// </remarks>
-    [JsonIgnore]
+    [JsonExtensionData]
     public Dictionary<string, object?> AdditionalData { get; } = [];
 }
