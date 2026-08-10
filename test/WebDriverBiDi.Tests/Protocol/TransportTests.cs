@@ -2441,10 +2441,12 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        TestTransport transport = new(connection)
+        {
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
+        };
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Unknown message handler exception");
         });
         string json = """
@@ -2464,13 +2466,13 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Unknown message handler exception");
         });
         string json = """
@@ -2493,13 +2495,13 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Unknown message handler exception");
         });
         string json = """

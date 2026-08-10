@@ -54,6 +54,13 @@ public class TestTransport : Transport
     public Action? AfterAcquireLockCallback { get; set; }
 
     /// <summary>
+    /// Optional callback invoked after an unhandled error is captured by the
+    /// Transport unhandled error mechanism.
+    /// Used for precise test synchronization.
+    /// </summary>
+    public Action? AfterUnhandledErrorCaptured { get; set; }
+
+    /// <summary>
     /// Gets or sets the number of remaining calls to <see cref="DeserializeMessage"/>
     /// that should throw an <see cref="InvalidOperationException"/> instead of
     /// deserializing normally. Each throwing call decrements the counter.
@@ -252,5 +259,11 @@ public class TestTransport : Transport
         }
 
         return base.ReadIncomingMessagesAsync();
+    }
+
+    protected override void CaptureUnhandledError(UnhandledErrorKind errorType, Exception ex, string terminalReason)
+    {
+        base.CaptureUnhandledError(errorType, ex, terminalReason);
+        this.AfterUnhandledErrorCaptured?.Invoke();
     }
 }

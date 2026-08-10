@@ -806,6 +806,45 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Captures an unhandled error in the protocol.
+    /// </summary>
+    /// <param name="errorType">The <see cref="UnhandledErrorKind"/> describing the type of error.</param>
+    /// <param name="ex">The exception thrown for the error.</param>
+    /// <param name="terminalReason">The reason for terminating the session, if the error is a terminal error.</param>
+    /// <remarks>
+    /// This method is <see langword="protected virtual"/> to allow test doubles to
+    /// precisely determine when an unhandled error has been captured and propagated
+    /// to the unhandled errors collection.
+    /// </remarks>
+    protected virtual void CaptureUnhandledError(UnhandledErrorKind errorType, Exception ex, string terminalReason)
+    {
+        bool isTerminalError = false;
+        switch (errorType)
+        {
+            case UnhandledErrorKind.ProtocolError:
+                isTerminalError = this.ProtocolErrorBehavior == TransportErrorBehavior.Terminate;
+                break;
+            case UnhandledErrorKind.UnknownMessage:
+                isTerminalError = this.UnknownMessageBehavior == TransportErrorBehavior.Terminate;
+                break;
+            case UnhandledErrorKind.UnexpectedError:
+                isTerminalError = this.UnexpectedErrorBehavior == TransportErrorBehavior.Terminate;
+                break;
+            case UnhandledErrorKind.EventHandlerException:
+                isTerminalError = this.EventHandlerExceptionBehavior == TransportErrorBehavior.Terminate;
+                break;
+        }
+
+        // Note carefully that if handling of the error type is "Ignore", adding to the
+        // unhandled errors collection is a no-op.
+        this.UnhandledErrors.AddUnhandledError(errorType, ex);
+        if (isTerminalError)
+        {
+            this.TerminationReason = terminalReason;
+        }
+    }
+
+    /// <summary>
     /// Gets the type info resolver to be used for JSON serialization and deserialization.
     /// By default, this method returns a resolver that uses reflection, but if reflection-
     /// based serialization is not available (e.g., in AOT scenarios), it returns a source-
@@ -1147,34 +1186,6 @@ public class Transport : IAsyncDisposable
         }
 
         return false;
-    }
-
-    private void CaptureUnhandledError(UnhandledErrorKind errorType, Exception ex, string terminalReason)
-    {
-        bool isTerminalError = false;
-        switch (errorType)
-        {
-            case UnhandledErrorKind.ProtocolError:
-                isTerminalError = this.ProtocolErrorBehavior == TransportErrorBehavior.Terminate;
-                break;
-            case UnhandledErrorKind.UnknownMessage:
-                isTerminalError = this.UnknownMessageBehavior == TransportErrorBehavior.Terminate;
-                break;
-            case UnhandledErrorKind.UnexpectedError:
-                isTerminalError = this.UnexpectedErrorBehavior == TransportErrorBehavior.Terminate;
-                break;
-            case UnhandledErrorKind.EventHandlerException:
-                isTerminalError = this.EventHandlerExceptionBehavior == TransportErrorBehavior.Terminate;
-                break;
-        }
-
-        // Note carefully that if handling of the error type is "Ignore", adding to the
-        // unhandled errors collection is a no-op.
-        this.UnhandledErrors.AddUnhandledError(errorType, ex);
-        if (isTerminalError)
-        {
-            this.TerminationReason = terminalReason;
-        }
     }
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
