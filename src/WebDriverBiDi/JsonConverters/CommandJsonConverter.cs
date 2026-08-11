@@ -14,6 +14,13 @@ using WebDriverBiDi.Protocol;
 /// <summary>
 /// A converter for a serializing a Command object.
 /// </summary>
+/// <remarks>
+/// This custom converter is used for <see cref="Command"/> objects so that we do not have
+/// to use the System.Text.Json attribute-based polymorphic serialization. That would require
+/// the base <see cref="CommandParameters"/> class to maintain a list of <see cref="JsonDerivedType"/>
+/// attributes for each command parameter objects. This makes it easier for consumers of this
+/// library to create command parameters classes for custom commands.
+/// </remarks>
 public class CommandJsonConverter : JsonConverter<Command>
 {
     /// <summary>
