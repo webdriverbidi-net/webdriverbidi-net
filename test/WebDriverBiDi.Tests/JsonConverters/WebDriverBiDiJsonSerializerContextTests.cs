@@ -204,6 +204,14 @@ public class WebDriverBiDiJsonSerializerContextTests
                     missingTypes.Add(derivedTypeAttribute.DerivedType);
                 }
             }
+
+            foreach(DiscriminatedDerivedTypeAttribute discriminatedDerivedTypeAttribute in assembly.GetCustomAttributes<DiscriminatedDerivedTypeAttribute>())
+            {
+                if (!coveredTypes.Contains(discriminatedDerivedTypeAttribute.DerivedType) && !missingTypes.Contains(discriminatedDerivedTypeAttribute.DerivedType))
+                {
+                    missingTypes.Add(discriminatedDerivedTypeAttribute.DerivedType);
+                }
+            }
         }
 
         // There should be no missing types.
