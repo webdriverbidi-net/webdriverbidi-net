@@ -19,20 +19,26 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     private static readonly SemaphoreSlim LockObject = new(1, 1);
 
     private readonly List<string> disabledFeatures = [
-      "Translate",
+        "Translate",
 
-      // AcceptCHFrame disabled because of crbug.com/1348106.
-      "AcceptCHFrame",
-      "MediaRouter",
-      "OptimizationHints",
-   ];
+        // AcceptCHFrame disabled because of crbug.com/1348106.
+        "AcceptCHFrame",
+        "MediaRouter",
+        "OptimizationHints",
+        "WebUIReloadButton",
+        "WebUIOmniboxPopup",
+        "WebUIOmniboxAimPopup",
+        "IPH_ReadingModePageActionLabel",
+        "ReadAnythingOmniboxChip",
+        "ProcessPerSiteUpToMainFrameThreshold",
+        "IsolateSandboxedIframes",
+    ];
 
     private readonly List<string> enabledFeatures = [
         "PdfOopif",
     ];
 
     private readonly List<string> chromeArguments = [
-        "--allow-browser-signin=false",
         "--allow-pre-commit-input",
         "--disable-background-networking",
         "--disable-background-timer-throttling",
@@ -40,25 +46,23 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         "--disable-breakpad",
         "--disable-client-side-phishing-detection",
         "--disable-component-extensions-with-background-pages",
-        "--disable-component-update",
         "--disable-default-apps",
         "--disable-dev-shm-usage",
-        "--disable-extensions",
+        "--disable-field-trial-config",
         "--disable-hang-monitor",
         "--disable-infobars",
         "--disable-ipc-flooding-protection",
-        "--disable-notifications",
         "--disable-popup-blocking",
         "--disable-prompt-on-repost",
         "--disable-renderer-backgrounding",
         "--disable-search-engine-choice-screen",
         "--disable-sync",
         "--enable-automation",
+        "--enable-blink-features=IdleDetection",
         "--export-tagged-pdf",
         "--generate-pdf-document-outline",
         "--force-color-profile=srgb",
         "--metrics-recording-only",
-        "--no-default-browser-check",
         "--no-first-run",
         "--password-store=basic",
         "--use-mock-keychain",
@@ -123,7 +127,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             if (this.IsBrowserHeadless)
             {
                 args.Add("--headless=new");
-                args.Add("--disable-dev-shm-usage");
                 args.Add("--no-sandbox");
                 args.Add("--disable-gpu");
             }
