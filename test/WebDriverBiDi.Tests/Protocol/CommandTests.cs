@@ -21,12 +21,14 @@ public class CommandTests
             { "id", 1 },
             { "method", commandName },
             { "params", expectedCommandParameters },
+            { "additionalCommandProperty", "additionalCommandPropertyValue" },
         };
 
         TestCommandParameters commandParams = new TestCommandParameters(commandName);
         commandParams.AdditionalData["overflowParameterName"] = "overflowParameterValue";
 
         Command command = new(1, commandParams);
+        command.AdditionalCommandProperties["additionalCommandProperty"] = "additionalCommandPropertyValue";
         string json = JsonSerializer.Serialize(command);
         Dictionary<string, object?> dataValue = JObject.Parse(json).ToParsedDictionary();
         Assert.Equivalent(expected, dataValue);

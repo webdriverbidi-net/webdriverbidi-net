@@ -50,6 +50,16 @@ public class Command
     public CommandParameters CommandParameters { get; }
 
     /// <summary>
+    /// Gets additional properties to be serialized with this command envelope.
+    /// Note carefully this serializes these additional properties at the top
+    /// level of the command; additional properties to be serialized with the
+    /// command parameters should use the <see cref="CommandParameters.AdditionalData"/>
+    /// property.
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, object?> AdditionalCommandProperties { get; } = [];
+
+    /// <summary>
     /// Gets the type of the response for this command.
     /// </summary>
     [JsonIgnore]
