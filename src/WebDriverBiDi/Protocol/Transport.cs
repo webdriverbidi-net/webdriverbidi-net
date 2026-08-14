@@ -471,8 +471,7 @@ public class Transport : IAsyncDisposable
         // this to make the command parameters immutable for this command
         // execution and prevent modification of the parameters while the
         // command is being sent.
-        long commandId = this.GetNextCommandId();
-        Command command = new(commandId, commandData);
+        Command command = this.CreateCommand(commandData);
         byte[] commandJson = this.SerializeCommand(command);
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -487,7 +486,7 @@ public class Transport : IAsyncDisposable
             {
                 // Start timing and log command sending
                 command.StartTiming();
-                WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId, command.CommandName);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSending(command.CommandId, command.CommandName);
                 if (this.OnLogMessage.CurrentObserverCount > 0)
                 {
                     await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
@@ -504,12 +503,12 @@ public class Transport : IAsyncDisposable
             {
                 // Command failed to send, so roll back adding the command to the pending command
                 // collection, and emit the event for the failure.
-                if (this.PendingCommands.RemovePendingCommand(commandId, out _))
+                if (this.PendingCommands.RemovePendingCommand(command.CommandId, out _))
                 {
                     command.StopTiming();
                 }
 
-                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(commandId, command.CommandName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
+                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(command.CommandId, command.CommandName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
                 WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
                 throw;
             }
@@ -601,6 +600,23 @@ public class Transport : IAsyncDisposable
     protected virtual void AddEventMessageType(string eventName, Type eventMessageType)
     {
         this.eventMessageTypes[eventName] = eventMessageType;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="Command"/> object from the specified command parameters.
+    /// </summary>
+    /// <param name="commandData">The <see cref="CommandParameters"/> object containing the command data.</param>
+    /// <returns>The created <see cref="Command"/>.</returns>
+    /// <remarks>
+    /// This method allows a developer to override the creation of a command. This is useful
+    /// for cases where additional properties need to be sent in the command envelope as
+    /// opposed to the command parameters object.
+    /// </remarks>
+    protected virtual Command CreateCommand(CommandParameters commandData)
+    {
+        long commandId = this.GetNextCommandId();
+        Command command = new(commandId, commandData);
+        return command;
     }
 
     /// <summary>

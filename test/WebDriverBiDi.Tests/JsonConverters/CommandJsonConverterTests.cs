@@ -50,6 +50,7 @@ public class CommandJsonConverterTests
         TestCommandParameters commandParams = new TestCommandParameters("module.command");
         commandParams.AdditionalData["extraKey"] = "extraValue";
         Command command = new(1, commandParams);
+        command.AdditionalCommandProperties["extraCommandProperty"] = "extraCommandPropertyValue";
         string json = JsonSerializer.Serialize(command);
         JObject serialized = JObject.Parse(json);
         Assert.True(serialized.ContainsKey("params"));
@@ -59,6 +60,11 @@ public class CommandJsonConverterTests
         JToken? extraKey = paramsObject["extraKey"];
         Assert.NotNull(extraKey);
         Assert.Equal("extraValue", extraKey.Value<string>());
+        Assert.True(serialized.ContainsKey("extraCommandProperty"));
+        JToken? extraCommandProperty = serialized["extraCommandProperty"];
+        Assert.NotNull(extraCommandProperty);
+        Assert.Equal(JTokenType.String, extraCommandProperty.Type);
+        Assert.Equal("extraCommandPropertyValue", extraCommandProperty.Value<string>());
     }
 
     [Fact]
