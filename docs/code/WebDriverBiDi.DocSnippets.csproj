@@ -24,7 +24,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="OpenTelemetry" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.17.0" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup>
