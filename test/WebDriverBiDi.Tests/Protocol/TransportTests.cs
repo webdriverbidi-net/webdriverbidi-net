@@ -1326,26 +1326,17 @@ public class TransportTests
     [Fact]
     public async Task TestExceptionInTransportEventReceivedCanTerminate()
     {
-        string receivedName = string.Empty;
+        // string receivedName = string.Empty;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver(e =>
-        {
-            try
-            {
-                throw new WebDriverBiDiException("This is an unexpected exception");
-            }
-            finally
-            {
-                taskCompletionSource.TrySetResult();
-            }
-        });
+        transport.OnEventReceived.AddObserver(e => throw new WebDriverBiDiException("This is an unexpected exception"));
         string json = """
                       {
                         "type": "event",
