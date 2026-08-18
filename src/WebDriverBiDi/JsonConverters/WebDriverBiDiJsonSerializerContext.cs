@@ -281,16 +281,36 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(VirtualWalletAction))]
 
 // ── Emulation module ──
+[JsonSerializable(typeof(AnyHoverMediaFeatureValue))]
+[JsonSerializable(typeof(AnyPointerMediaFeatureValue))]
+[JsonSerializable(typeof(ColorGamutMediaFeatureValue))]
+[JsonSerializable(typeof(DisplayModeMediaFeatureValue))]
+[JsonSerializable(typeof(DynamicRangeMediaFeatureValue))]
+[JsonSerializable(typeof(EnvironmentBlendingMediaFeatureValue))]
+[JsonSerializable(typeof(ForcedColorsMediaFeatureValue))]
 [JsonSerializable(typeof(ForcedColorsModeTheme))]
 [JsonSerializable(typeof(GeolocationCoordinates))]
 [JsonSerializable(typeof(GeolocationPositionError))]
-[JsonSerializable(typeof(MediaFeature))]
+[JsonSerializable(typeof(HoverMediaFeatureValue))]
+[JsonSerializable(typeof(InvertedColorsMediaFeatureValue))]
+[JsonSerializable(typeof(MediaFeatures))]
+[JsonSerializable(typeof(NavControlsMediaFeatureValue))]
 [JsonSerializable(typeof(NetworkConditions))]
 [JsonSerializable(typeof(NetworkConditionsOffline))]
+[JsonSerializable(typeof(OverflowBlockMediaFeatureValue))]
+[JsonSerializable(typeof(OverflowInlineMediaFeatureValue))]
+[JsonSerializable(typeof(PointerMediaFeatureValue))]
+[JsonSerializable(typeof(PrefersColorSchemeFeatureValue))]
+[JsonSerializable(typeof(PrefersContrastMediaFeatureValue))]
+[JsonSerializable(typeof(PrefersReducedDataMediaFeatureValue))]
+[JsonSerializable(typeof(PrefersReducedMotionMediaFeatureValue))]
+[JsonSerializable(typeof(PrefersReducedTransparencyMediaFeatureValue))]
+[JsonSerializable(typeof(ScanMediaFeatureValue))]
 [JsonSerializable(typeof(ScreenArea))]
 [JsonSerializable(typeof(ScreenOrientation))]
 [JsonSerializable(typeof(ScreenOrientationNatural))]
 [JsonSerializable(typeof(ScreenOrientationType))]
+[JsonSerializable(typeof(ScriptingMediaFeatureValue))]
 [JsonSerializable(typeof(ScrollbarType))]
 [JsonSerializable(typeof(SetForcedColorsModeThemeOverrideCommandParameters))]
 [JsonSerializable(typeof(SetGeolocationOverrideCommandParameters))]
@@ -307,6 +327,9 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(SetTouchOverrideCommandParameters))]
 [JsonSerializable(typeof(SetUserAgentOverrideCommandParameters))]
 [JsonSerializable(typeof(SetViewportMetaOverrideCommandParameters))]
+[JsonSerializable(typeof(UpdateMediaFeatureValue))]
+[JsonSerializable(typeof(VideoColorGamutMediaFeatureValue))]
+[JsonSerializable(typeof(VideoDynamicRangeMediaFeatureValue))]
 
 // ── Input module ──
 [JsonSerializable(typeof(ElementOrigin))]
@@ -530,10 +553,32 @@ public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
         RuntimeHelpers.RunClassConstructor(typeof(VirtualWalletAction[]).TypeHandle);
 
         // Emulation enums
+        RuntimeHelpers.RunClassConstructor(typeof(AnyHoverMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(AnyPointerMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(ColorGamutMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(DisplayModeMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(DynamicRangeMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(EnvironmentBlendingMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(ForcedColorsMediaFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ForcedColorsModeTheme[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(HoverMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(InvertedColorsMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(NavControlsMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(OverflowBlockMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(OverflowInlineMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PointerMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PrefersColorSchemeFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PrefersContrastMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedDataMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedTransparencyMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(ScanMediaFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationNatural[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationType[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(ScriptingMediaFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScrollbarType[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(UpdateMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(VideoColorGamutMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(VideoDynamicRangeMediaFeatureValue[]).TypeHandle);
 
         // Input enums
         RuntimeHelpers.RunClassConstructor(typeof(PointerType[]).TypeHandle);

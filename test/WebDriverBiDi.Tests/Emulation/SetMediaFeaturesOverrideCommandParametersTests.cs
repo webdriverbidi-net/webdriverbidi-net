@@ -32,7 +32,10 @@ public class SetMediaFeaturesOverrideCommandParametersTests
     {
         SetMediaFeaturesOverrideCommandParameters properties = new()
         {
-            Features = [ new MediaFeature("featureName", "featureValue") ],
+            Features = new()
+            {
+                Pointer = PointerMediaFeatureValue.Coarse,
+            },
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -41,27 +44,16 @@ public class SetMediaFeaturesOverrideCommandParametersTests
         Assert.True(serialized.ContainsKey("features"));
         JToken? featuresToken = serialized["features"];
         Assert.NotNull(featuresToken);
-        Assert.Equal(JTokenType.Array, featuresToken.Type);
-        JArray? featuresArray = featuresToken as JArray;
-        Assert.NotNull(featuresArray);
-        Assert.Single(featuresArray);
+        Assert.Equal(JTokenType.Object, featuresToken.Type);
+        JObject? featuresObject = featuresToken as JObject;
+        Assert.NotNull(featuresObject);
+        Assert.Single(featuresObject);
+        Assert.True(featuresObject.ContainsKey("pointer"));
 
-        JToken featureToken = featuresArray[0];
-        Assert.Equal(JTokenType.Object, featureToken.Type);
-        JObject? featureObject = featureToken as JObject;
-        Assert.NotNull(featureObject);
-        Assert.Equal(2, featureObject.Count);
-        Assert.True(featureObject.ContainsKey("name"));
-        JToken? name = featureObject["name"];
-        Assert.NotNull(name);
-        Assert.Equal(JTokenType.String, name.Type);
-        Assert.Equal("featureName", name.Value<string>());
-
-        Assert.True(featureObject.ContainsKey("value"));
-        JToken? value = featureObject["value"];
-        Assert.NotNull(value);
-        Assert.Equal(JTokenType.String, value.Type);
-        Assert.Equal("featureValue", value.Value<string>());
+        JToken? featureToken = featuresObject["pointer"];
+        Assert.NotNull(featureToken);
+        Assert.Equal(JTokenType.String, featureToken.Type);
+        Assert.Equal("coarse", featureToken.Value<string>());
     }
 
     [Fact]

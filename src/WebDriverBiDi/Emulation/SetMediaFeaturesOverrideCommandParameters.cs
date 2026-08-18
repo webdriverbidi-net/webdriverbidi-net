@@ -36,11 +36,11 @@ public class SetMediaFeaturesOverrideCommandParameters : CommandParameters<SetMe
     public override string MethodName => "emulation.setMediaFeaturesOverride";
 
     /// <summary>
-    /// Gets or sets the media features to emulate. When <see langword="null"/>, clears the emulated media features.
+    /// Gets or sets the media features to emulate. When <see langword="null"/>, clears all emulated media features.
     /// </summary>
     [JsonPropertyName("features")]
     [JsonInclude]
-    public List<MediaFeature>? Features { get; set; }
+    public MediaFeatures? Features { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set the emulated media features.
