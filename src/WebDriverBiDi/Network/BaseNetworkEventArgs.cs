@@ -11,11 +11,6 @@ using WebDriverBiDi.Internal;
 /// <summary>
 /// The base properties of all events for network traffic.
 /// </summary>
-[JsonDerivedType(typeof(AuthRequiredEventArgs))]
-[JsonDerivedType(typeof(BeforeRequestSentEventArgs))]
-[JsonDerivedType(typeof(FetchErrorEventArgs))]
-[JsonDerivedType(typeof(ResponseCompletedEventArgs))]
-[JsonDerivedType(typeof(ResponseStartedEventArgs))]
 public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
 {
     /// <summary>
