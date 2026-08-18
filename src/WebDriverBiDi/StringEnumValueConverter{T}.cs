@@ -20,6 +20,7 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
     where T : struct, Enum
 {
     private readonly T? defaultValue;
+    private readonly T? nullSentinelValue;
     private readonly Dictionary<T, string> enumValuesToStrings = [];
     private readonly Dictionary<string, T> stringToEnumValues = [];
 
@@ -33,6 +34,12 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
         if (unmatchedValueAttribute is not null)
         {
             this.defaultValue = unmatchedValueAttribute.UnmatchedValue;
+        }
+
+        StringEnumNullSentinelValueAttribute<T>? nullSentinelValueAttribute = enumType.GetCustomAttribute<StringEnumNullSentinelValueAttribute<T>>();
+        if (nullSentinelValueAttribute is not null)
+        {
+            this.nullSentinelValue = nullSentinelValueAttribute.NullSentinelValue;
         }
 
         // A note about the below structure. We use Enum.GetValues<T>() to support AOT
@@ -68,6 +75,11 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
             this.enumValuesToStrings[value] = valueAsString;
         }
     }
+
+    /// <summary>
+    /// Gets the value indicating a null should be serialized in JSON, if any.
+    /// </summary>
+    public T? NullSentinelValue => this.nullSentinelValue;
 
     /// <summary>
     /// Gets the enumerated value corresponding to the specified string. If the string does

@@ -39,6 +39,13 @@ public class StringEnumValueConverterTests
     }
 
     [Fact]
+    public void ShouldEnableNullSerializationForSentinelValue()
+    {
+        StringEnumValueConverter<EnumWithSentinelNullValue> converter = new();
+        Assert.Equal(EnumWithSentinelNullValue.Reset, converter.NullSentinelValue);
+    }
+
+    [Fact]
     public void ConvertInvalidStringValueThrows()
     {
         StringEnumValueConverter<BasicEnum> converter = new();
@@ -82,6 +89,15 @@ public class StringEnumValueConverterTests
 
         [StringEnumValue("non-default-value")]
         NonDefaultValue
+    }
+
+    [StringEnumNullSentinelValue<EnumWithSentinelNullValue>(Reset)]
+    private enum EnumWithSentinelNullValue
+    {
+        [StringEnumValue("non-null-value")]
+        NonNull,
+
+        Reset
     }
 
     [Flags]

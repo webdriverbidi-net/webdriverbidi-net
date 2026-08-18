@@ -20,6 +20,13 @@ public class EnumValueJsonConverterTests
     }
 
     [Fact]
+    public void ShouldSerializeNullValueForSentinelValue()
+    {
+        string json = JsonSerializer.Serialize(EnumWithSentinelNullValue.Reset);
+        Assert.Equal("null", json);
+    }
+
+    [Fact]
     public void ShouldDeserializeBasicValue()
     {
         BasicEnum? value = JsonSerializer.Deserialize<BasicEnum>("\"firstvalue\"");
@@ -76,6 +83,16 @@ public class EnumValueJsonConverterTests
 
         [StringEnumValue("non-default-value")]
         NonDefaultValue
+    }
+
+    [JsonConverter(typeof(EnumValueJsonConverter<EnumWithSentinelNullValue>))]
+    [StringEnumNullSentinelValue<EnumWithSentinelNullValue>(Reset)]
+    private enum EnumWithSentinelNullValue
+    {
+        [StringEnumValue("non-null-value")]
+        NonNull,
+
+        Reset
     }
 
     [JsonConverter(typeof(EnumValueJsonConverter<FlagEnum>))]
