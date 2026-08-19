@@ -65,7 +65,7 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are 14 projects in this repository:
+There are 15 projects in this repository:
 * src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code.
 * src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj - Source code for Roslyn analyzers
 to help users avoid antipatterns when using the main library.
@@ -86,14 +86,17 @@ but is designed as a demonstration and is explicitly recommended against product
 structured logging by providing integration with `Microsoft.Extensions.Logging.ILogger`.
 * test/WebDriverBiDi.Analyzers.Tests/WebDriver.Analyzers.Tests.csproj - Tests for the Roslyn analyzers
 and associated code fix providers.
-* test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application used to smoke test proper JSON serialization in
-ahead-of-time (AOT) compilation scenarios.
+* test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application
+used to smoke test proper JSON serialization in ahead-of-time (AOT) compilation scenarios.
 * test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj - Performance benchmarks for the library.
 * test/WebDriverBiDi.Integration.Tests/WebDriverBiDi.Integration.Tests.csproj - Integration tests for
 the main library. These tests use actual browsers to test WebDriver BiDi functionality.
 * test/WebDriverBiDi.Logging.Tests/WebDriverBiDi.Logging.Tests.csproj - Tests for the structured logging extension project.
 * test/WebDriverBiDi.NamedPipeTestApplication/WebDriverBiDi.NamedPipeTestApplication.csproj - A console application
 that acts as a test server for named pipe communication, used by unit tests to validate pipe-based connections.
+* test/WebDriverBiDi.NetStandardTestApplication/WebDriverBiDi.NetStandardTestApplication.csproj - A console
+application whose the main library reference is pinned to its netstandard2.0 build, allowing proper
+smoke testing of netstandard2.0-specific code paths in the main library.
 * test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library.
 
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.

@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Integration;
+namespace WebDriverBiDi.Integration.Tests;
 
 /// <summary>
 /// Represents the browser types available for integration testing.
