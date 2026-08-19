@@ -205,6 +205,45 @@ public class SessionModuleTests
     }
 
     [Fact]
+    public async Task TestExecuteNewCommandWithNoArgument()
+    {
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "sessionId": "mySession",
+                                      "capabilities": {
+                                        "browserName": "greatBrowser",
+                                        "browserVersion": "101.5b",
+                                        "platformName": "otherOS",
+                                        "userAgent": "WebDriverBidi.NET/1.0",
+                                        "acceptInsecureCerts": true,
+                                        "proxy": {
+                                          "proxyType": "system"
+                                        },
+                                        "setWindowRect": true
+                                      }
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        });
+
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
+        SessionModule module = driver.Session;
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        NewCommandResult result = await module.NewSessionAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result);
+        Assert.Equal("mySession", result.SessionId);
+    }
+
+    [Fact]
     public async Task TestExecuteEndCommand()
     {
         TestWebSocketConnection connection = new();
