@@ -205,7 +205,7 @@ public class WebDriverBiDiJsonSerializerContextTests
                 }
             }
 
-            foreach(DiscriminatedDerivedTypeAttribute discriminatedDerivedTypeAttribute in assembly.GetCustomAttributes<DiscriminatedDerivedTypeAttribute>())
+            foreach (DiscriminatedDerivedTypeAttribute discriminatedDerivedTypeAttribute in assembly.GetCustomAttributes<DiscriminatedDerivedTypeAttribute>())
             {
                 if (!coveredTypes.Contains(discriminatedDerivedTypeAttribute.DerivedType) && !missingTypes.Contains(discriminatedDerivedTypeAttribute.DerivedType))
                 {

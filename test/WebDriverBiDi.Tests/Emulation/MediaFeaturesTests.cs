@@ -23,7 +23,7 @@ public class MediaFeaturesTests
         {
             AnyHover = AnyHoverMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -41,7 +41,7 @@ public class MediaFeaturesTests
         {
             AnyHover = AnyHoverMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -58,7 +58,7 @@ public class MediaFeaturesTests
         {
             AnyPointer = AnyPointerMediaFeatureValue.Fine,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -76,7 +76,7 @@ public class MediaFeaturesTests
         {
             AnyPointer = AnyPointerMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -93,7 +93,7 @@ public class MediaFeaturesTests
         {
             Color = 1,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -111,7 +111,7 @@ public class MediaFeaturesTests
         {
             Color = MediaFeatures.ResetColorValue,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -128,7 +128,7 @@ public class MediaFeaturesTests
         {
             ColorGamut = ColorGamutMediaFeatureValue.Srgb,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -146,7 +146,7 @@ public class MediaFeaturesTests
         {
             ColorGamut = ColorGamutMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -163,7 +163,7 @@ public class MediaFeaturesTests
         {
             ColorIndex = 1,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -181,7 +181,7 @@ public class MediaFeaturesTests
         {
             ColorIndex = MediaFeatures.ResetColorIndexValue,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -198,7 +198,7 @@ public class MediaFeaturesTests
         {
             DisplayMode = DisplayModeMediaFeatureValue.PictureInPicture,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -216,7 +216,7 @@ public class MediaFeaturesTests
         {
             DisplayMode = DisplayModeMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -233,7 +233,7 @@ public class MediaFeaturesTests
         {
             DynamicRange = DynamicRangeMediaFeatureValue.Standard,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -251,7 +251,7 @@ public class MediaFeaturesTests
         {
             DynamicRange = DynamicRangeMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -268,7 +268,7 @@ public class MediaFeaturesTests
         {
             EnvironmentBlending = EnvironmentBlendingMediaFeatureValue.Subtractive,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -286,7 +286,7 @@ public class MediaFeaturesTests
         {
             EnvironmentBlending = EnvironmentBlendingMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -303,7 +303,7 @@ public class MediaFeaturesTests
         {
             ForcedColors = ForcedColorsMediaFeatureValue.Active,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -321,7 +321,7 @@ public class MediaFeaturesTests
         {
             ForcedColors = ForcedColorsMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -338,7 +338,7 @@ public class MediaFeaturesTests
         {
             Grid = 1,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -356,7 +356,7 @@ public class MediaFeaturesTests
         {
             Grid = MediaFeatures.ResetGridValue,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -373,7 +373,7 @@ public class MediaFeaturesTests
         {
             HorizontalViewportSegments = 1,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -391,7 +391,7 @@ public class MediaFeaturesTests
         {
             HorizontalViewportSegments = MediaFeatures.ResetHorizonalViewportSegmentsValue,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -408,7 +408,7 @@ public class MediaFeaturesTests
         {
             Hover = HoverMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -426,7 +426,7 @@ public class MediaFeaturesTests
         {
             Hover = HoverMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -443,7 +443,7 @@ public class MediaFeaturesTests
         {
             InvertedColors = InvertedColorsMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -461,7 +461,7 @@ public class MediaFeaturesTests
         {
             InvertedColors = InvertedColorsMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -478,7 +478,7 @@ public class MediaFeaturesTests
         {
             Monochrome = 1,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -496,7 +496,7 @@ public class MediaFeaturesTests
         {
             Monochrome = MediaFeatures.ResetMonochromeValue,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -513,7 +513,7 @@ public class MediaFeaturesTests
         {
             NavControls = NavControlsMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -531,7 +531,7 @@ public class MediaFeaturesTests
         {
             NavControls = NavControlsMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -548,7 +548,7 @@ public class MediaFeaturesTests
         {
             OverflowBlock = OverflowBlockMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -566,7 +566,7 @@ public class MediaFeaturesTests
         {
             OverflowBlock = OverflowBlockMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -583,7 +583,7 @@ public class MediaFeaturesTests
         {
             OverflowInline = OverflowInlineMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -601,7 +601,7 @@ public class MediaFeaturesTests
         {
             OverflowInline = OverflowInlineMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -618,7 +618,7 @@ public class MediaFeaturesTests
         {
             Pointer = PointerMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -636,7 +636,7 @@ public class MediaFeaturesTests
         {
             Pointer = PointerMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -653,7 +653,7 @@ public class MediaFeaturesTests
         {
             PrefersColorScheme = PrefersColorSchemeFeatureValue.Light,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -671,7 +671,7 @@ public class MediaFeaturesTests
         {
             PrefersColorScheme = PrefersColorSchemeFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -688,7 +688,7 @@ public class MediaFeaturesTests
         {
             PrefersContrast = PrefersContrastMediaFeatureValue.NoPreference,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -706,7 +706,7 @@ public class MediaFeaturesTests
         {
             PrefersContrast = PrefersContrastMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -723,7 +723,7 @@ public class MediaFeaturesTests
         {
             PrefersReducedData = PrefersReducedDataMediaFeatureValue.NoPreference,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -741,7 +741,7 @@ public class MediaFeaturesTests
         {
             PrefersReducedData = PrefersReducedDataMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -758,7 +758,7 @@ public class MediaFeaturesTests
         {
             PrefersReducedData = PrefersReducedDataMediaFeatureValue.NoPreference,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -776,7 +776,7 @@ public class MediaFeaturesTests
         {
             PrefersReducedData = PrefersReducedDataMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -793,7 +793,7 @@ public class MediaFeaturesTests
         {
             PrefersReducedMotion = PrefersReducedMotionMediaFeatureValue.NoPreference,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -811,7 +811,7 @@ public class MediaFeaturesTests
         {
             PrefersReducedTransparency = PrefersReducedTransparencyMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -828,7 +828,7 @@ public class MediaFeaturesTests
         {
             Scan = ScanMediaFeatureValue.Interlace,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -846,7 +846,7 @@ public class MediaFeaturesTests
         {
             Scan = ScanMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -863,7 +863,7 @@ public class MediaFeaturesTests
         {
             Scripting = ScriptingMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -881,7 +881,7 @@ public class MediaFeaturesTests
         {
             Scripting = ScriptingMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -898,7 +898,7 @@ public class MediaFeaturesTests
         {
             Update = UpdateMediaFeatureValue.None,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -916,7 +916,7 @@ public class MediaFeaturesTests
         {
             Update = UpdateMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -933,7 +933,7 @@ public class MediaFeaturesTests
         {
             VerticalViewportSegments = 1,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -951,7 +951,7 @@ public class MediaFeaturesTests
         {
             VerticalViewportSegments = MediaFeatures.ResetHorizonalViewportSegmentsValue,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -968,7 +968,7 @@ public class MediaFeaturesTests
         {
             VideoColorGamut = VideoColorGamutMediaFeatureValue.Srgb,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -986,7 +986,7 @@ public class MediaFeaturesTests
         {
             VideoColorGamut = VideoColorGamutMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -1003,7 +1003,7 @@ public class MediaFeaturesTests
         {
             VideoDynamicRange = VideoDynamicRangeMediaFeatureValue.Standard,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
@@ -1021,7 +1021,7 @@ public class MediaFeaturesTests
         {
             VideoDynamicRange = VideoDynamicRangeMediaFeatureValue.Reset,
         };
-        
+
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);

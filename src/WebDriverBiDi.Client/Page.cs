@@ -117,7 +117,7 @@ public class Page
         }
 
         await this.driver.Script.CallFunctionAsync(this.browsingContextId, functionDefinition, args);
-   }
+    }
 
     /// <summary>
     /// Executes a JavaScript function in the page, returning the value of the function. If the function returns a
@@ -133,7 +133,7 @@ public class Page
         Type requestedType = typeof(T);
         if (ValidScriptReturnTypes.Contains(requestedType))
         {
-           throw new WebDriverBiDiException($"requested return type was ${requestedType}, but must be one of the following types: ${string.Join(",", ValidScriptArgumentTypes)}");
+            throw new WebDriverBiDiException($"requested return type was ${requestedType}, but must be one of the following types: ${string.Join(",", ValidScriptArgumentTypes)}");
         }
 
         List<LocalValue> args = [];

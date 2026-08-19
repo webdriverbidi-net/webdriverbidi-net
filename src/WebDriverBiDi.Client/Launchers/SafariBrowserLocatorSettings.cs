@@ -117,7 +117,7 @@ internal class SafariBrowserLocatorSettings : BrowserLocatorSettings
 
     private string GetDefaultSystemInstalledLocation()
     {
-            return Path.Combine(this.GetInstallLocation(), this.GetAppBundleName());
+        return Path.Combine(this.GetInstallLocation(), this.GetAppBundleName());
     }
 
     private string GetAppBundleName()
