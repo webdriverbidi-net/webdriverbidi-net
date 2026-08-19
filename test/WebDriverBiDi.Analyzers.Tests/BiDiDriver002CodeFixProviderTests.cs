@@ -94,7 +94,7 @@ public class BiDiDriver002CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("RegisterEvent");
 
-        CSharpCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -208,7 +208,7 @@ public class BiDiDriver002CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("AddObserver");
 
-        CSharpCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

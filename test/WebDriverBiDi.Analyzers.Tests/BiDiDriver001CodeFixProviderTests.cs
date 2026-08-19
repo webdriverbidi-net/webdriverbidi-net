@@ -113,7 +113,7 @@ public class BiDiDriver001CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("new CustomModule(driver)");
 
-        CSharpCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

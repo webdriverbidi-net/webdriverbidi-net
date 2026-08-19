@@ -92,7 +92,7 @@ public class BiDiDriver003CodeFixProviderTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0);
 
-        CSharpCodeFixTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

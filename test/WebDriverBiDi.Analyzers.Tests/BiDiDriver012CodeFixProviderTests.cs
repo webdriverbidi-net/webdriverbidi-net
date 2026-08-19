@@ -61,7 +61,7 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        CSharpCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -127,7 +127,7 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        CSharpCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -193,7 +193,7 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver2");
 
-        CSharpCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

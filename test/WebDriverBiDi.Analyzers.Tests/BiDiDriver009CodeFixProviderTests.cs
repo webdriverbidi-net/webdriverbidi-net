@@ -62,7 +62,7 @@ public class BiDiDriver009CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("ExecuteCommandAsync");
 
-        CSharpCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -121,7 +121,7 @@ public class BiDiDriver009CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("GetTreeAsync");
 
-        CSharpCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -184,7 +184,7 @@ public class BiDiDriver009CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("GetTreeAsync");
 
-        CSharpCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

@@ -141,7 +141,7 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Sleep()");
 
-        CSharpCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -279,7 +279,7 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Sleep()");
 
-        CSharpCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -417,7 +417,7 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Wait()");
 
-        CSharpCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

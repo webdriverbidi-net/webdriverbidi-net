@@ -115,7 +115,7 @@ public class BiDiDriver004CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("NavigateAsync");
 
-        CSharpCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -227,7 +227,7 @@ public class BiDiDriver004CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("NavigateAsync");
 
-        CSharpCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

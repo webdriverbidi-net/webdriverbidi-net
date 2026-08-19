@@ -117,7 +117,7 @@ public class BiDiDriver006CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("observer");
 
-        CSharpCodeFixTest<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

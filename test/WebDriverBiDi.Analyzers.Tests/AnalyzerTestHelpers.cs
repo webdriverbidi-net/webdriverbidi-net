@@ -9,10 +9,46 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 using WebDriverBiDi;
+
+/// <summary>
+/// A <see cref="CSharpCodeFixTest{TAnalyzer, TCodeFix, TVerifier}"/> that forces LF line endings
+/// for the ad-hoc test project.
+/// </summary>
+/// <typeparam name="TAnalyzer">The type of analyzer under test.</typeparam>
+/// <typeparam name="TCodeFix">The type of code fix provider under test.</typeparam>
+/// <remarks>
+/// Microsoft.CodeAnalysis.Testing's fix-verification pipeline reformats the span touched by a code
+/// fix using the ambient newline setting, which falls back to <c>Environment.NewLine</c> when no
+/// <c>end_of_line</c> EditorConfig override is in effect for the test project. That makes code fix
+/// tests fail on Windows (actual output gets CRLF on the touched line) even though the checked-out
+/// source and the code fix providers themselves are LF-only — this is independent of the code fix
+/// provider's own logic and cannot be worked around from within a provider. Injecting an explicit
+/// <c>end_of_line = lf</c> EditorConfig here makes the comparison consistent across platforms.
+/// </remarks>
+public sealed class LfCodeFixTest<TAnalyzer, TCodeFix> : CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
+    where TAnalyzer : DiagnosticAnalyzer, new()
+    where TCodeFix : CodeFixProvider, new()
+{
+    private const string LfEditorConfig = "root = true\n\n[*]\nend_of_line = lf\n";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LfCodeFixTest{TAnalyzer, TCodeFix}"/> class.
+    /// </summary>
+    public LfCodeFixTest()
+    {
+        // Only TestState needs this: it is the project the code fix provider actually runs
+        // against, which is where the newline-sensitive cleanup pipeline reads its EditorConfig
+        // from. Adding it to FixedState too is unnecessary and, for the handful of tests that
+        // omit FixedCode (relying on the framework's "no explicit fixed state" skip of full output
+        // comparison), it defeats that skip by giving FixedState explicit content.
+        this.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", LfEditorConfig));
+    }
+}
 
 /// <summary>
 /// Helper methods for analyzer tests.

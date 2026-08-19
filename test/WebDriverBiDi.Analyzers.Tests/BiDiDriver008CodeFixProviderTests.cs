@@ -55,7 +55,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
@@ -109,7 +109,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
@@ -200,7 +200,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -305,7 +305,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -396,7 +396,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -501,7 +501,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -589,7 +589,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -634,7 +634,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
@@ -694,7 +694,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -753,7 +753,7 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

@@ -145,7 +145,7 @@ public class BiDiDriver017CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("string", "Contexts");
 
-        CSharpCodeFixTest<BiDiDriver017_NullableListAddAnalyzer, BiDiDriver017_NullableListAddCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver017_NullableListAddAnalyzer, BiDiDriver017_NullableListAddCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
