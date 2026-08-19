@@ -1068,7 +1068,7 @@ public static class DemoScenarios
         };
         AddPreloadScriptCommandResult addScriptResult = await driver.Script.AddPreloadScriptAsync(preloadScriptParams);
         string preloadScriptId = addScriptResult.PreloadScriptId;
-        
+
         CreateUserContextCommandResult addedUserContextResult = await driver.Browser.CreateUserContextAsync(new());
         string addedUserContextId = addedUserContextResult.UserContextId;
         CreateCommandResult addBrowsingContextResult = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab)
