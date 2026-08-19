@@ -115,7 +115,7 @@ Events (Browser → Observers):
 
 **Message Queue Architecture:**
 
-The Transport uses an unbounded `Channel<byte[]>` to buffer incoming messages:
+The Transport uses an unbounded `Channel<IncomingMessage>` to buffer incoming messages:
 
 - **Design**: Single-reader, single-writer unbounded channel
 - **Purpose**: Decouple connection I/O from message processing
@@ -166,7 +166,7 @@ WebDriverBiDi.NET uses an abstract `Connection` class to support multiple transp
 
 ### Connection Architecture
 
-The `Connection` abstract class defines the contract for all transport implementations. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API, including `IsActive`, `ConnectionType`, `StartAsync`, `StopAsync`, `SendDataAsync`, observable events (`OnDataReceived`, `OnConnectionError`, `OnLogMessage`), and configurable timeouts (`StartupTimeout`, `ShutdownTimeout`, `DataTimeout`).
+The `Connection` abstract class defines the contract for all transport implementations. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API, including `IsActive`, `ConnectionKind`, `StartAsync`, `StopAsync`, `SendDataAsync`, observable events (`OnDataReceived`, `OnConnectionError`, `OnLogMessage`), and configurable timeouts (`StartupTimeout`, `ShutdownTimeout`, `DataTimeout`).
 
 ### WebSocket Connection
 
@@ -229,9 +229,9 @@ The `--remote-debugging-pipe` flag instructs the browser to communicate via stdi
 
 The `IPipeServerProcessProvider` interface enables dependency injection for pipe connections. See the interface in the WebDriverBiDi.Protocol namespace—it defines `Process? PipeServerProcess { get; }`. This allows `PipeConnection` to access the browser process and its stdin/stdout handles. You must implement this interface to manage the browser process lifecycle and provide it to the connection.
 
-### ConnectionType Enum
+### ConnectionKind Enum
 
-The `ConnectionType` enum identifies which transport mechanism is being used (`WebSocket` or `Pipes`). See the enum in the WebDriverBiDi.Protocol namespace. Launchers use this to determine which browser flags to use (`--remote-debugging-port` vs `--remote-debugging-pipe`).
+The `ConnectionKind` enum identifies which transport mechanism is being used (`WebSocket` or `Pipes`). See the enum in the WebDriverBiDi.Protocol namespace. Launchers use this to determine which browser flags to use (`--remote-debugging-port` vs `--remote-debugging-pipe`).
 
 ### Choosing a Connection Type
 
