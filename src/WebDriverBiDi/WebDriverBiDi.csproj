@@ -16,6 +16,8 @@
     <Company>WebDriverBiDi.NET Committers</Company>
     <Title>WebDriver BiDirectional Client Library</Title>
     <Description>A .NET client library for the WebDriver BiDi protocol.</Description>
+    <PackageTags>webdriver;bidi;browser-automation;webdriver-bidi;automation</PackageTags>
+    <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
