@@ -170,7 +170,7 @@ public class BiDiDriver005CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -336,7 +336,7 @@ public class BiDiDriver005CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -588,7 +588,7 @@ public class BiDiDriver005CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -840,7 +840,7 @@ public class BiDiDriver005CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
@@ -930,7 +930,7 @@ public class BiDiDriver005CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
@@ -1027,7 +1027,7 @@ public class BiDiDriver005CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
@@ -1126,7 +1126,7 @@ public class BiDiDriver005CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,

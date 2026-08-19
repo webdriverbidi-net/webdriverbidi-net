@@ -169,7 +169,7 @@ public class BiDiDriver015CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
 
-        CSharpCodeFixTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, BiDiDriver015_StringLiteralInsteadOfEventNameCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, BiDiDriver015_StringLiteralInsteadOfEventNameCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

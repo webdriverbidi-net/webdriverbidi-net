@@ -161,7 +161,7 @@ public class BiDiDriver014CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        CSharpCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -325,7 +325,7 @@ public class BiDiDriver014CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        CSharpCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

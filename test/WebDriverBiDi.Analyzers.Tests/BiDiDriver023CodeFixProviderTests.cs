@@ -125,7 +125,7 @@ public class BiDiDriver023CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("NavigateAsync");
 
-        CSharpCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -190,7 +190,7 @@ public class BiDiDriver023CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("NavigateAsync");
 
-        CSharpCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

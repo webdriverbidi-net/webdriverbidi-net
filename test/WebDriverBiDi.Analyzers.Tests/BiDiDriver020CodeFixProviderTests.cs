@@ -66,7 +66,7 @@ public class BiDiDriver020CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("WaitForCapturedTasksAsync", "observer");
 
-        CSharpCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -128,7 +128,7 @@ public class BiDiDriver020CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("WaitForCapturedTasksCompleteAsync", "observer");
 
-        CSharpCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
@@ -196,7 +196,7 @@ public class BiDiDriver020CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("WaitForCapturedTasksAsync", "observer");
 
-        CSharpCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider, DefaultVerifier> testState = new()
+        LfCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
