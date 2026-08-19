@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SetTargetFramework pins this reference to the netstandard2.0 output of the
+         multi-targeted WebDriverBiDi project, even though this app itself targets
+         net10.0. This lets a normal, modern, cross-platform executable host actually
+         load and exercise the netstandard2.0-specific code paths (see the
+         #if NETSTANDARD2_0 branches in Transport.cs, WebSocketConnection.cs,
+         PipeConnection.cs, EventObserver{T}.cs, and IncomingMessage.cs) at runtime,
+         without requiring .NET Framework or Windows. -->
+    <ProjectReference Include="../../src/WebDriverBiDi/WebDriverBiDi.csproj" SetTargetFramework="TargetFramework=netstandard2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- SetTargetFramework (above) only overrides which compiled assembly this project
+         references; it does not retroactively change which package dependencies NuGet
+         restored for that reference, which are still computed from the TargetFramework
+         this project would naturally negotiate (net10.0). The netstandard2.0 build of
+         WebDriverBiDi.dll has real runtime dependencies on the packages referenced in the
+         'netstandard2.0' PackageReference group of WebDriverBiDi.csproj, which must be
+         requested directly here too so NuGet restores and copies them to this app's
+         output — otherwise the app fails at startup with a FileNotFoundException.
+         System.Text.Json and System.Threading.Channels from that group are omitted here:
+         both already ship as part of net10.0's shared framework (confirmed by NuGet's
+         NU1510 "will not be pruned" warning when they were referenced explicitly, and by
+         this app running correctly without them), so only the three Microsoft.Bcl.*
+         polyfills — which net10.0 does not provide — are needed. Keep this list in sync
+         with WebDriverBiDi.csproj's netstandard2.0 PackageReference group if it changes. -->
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>
