@@ -16,6 +16,8 @@
     <Company>WebDriverBiDi.NET Committers</Company>
     <Title>WebDriver BiDirectional Client Library - Microsoft.Extensions.Logging Integration</Title>
     <Description>Microsoft.Extensions.Logging integration for the WebDriver BiDi .NET client library. Provides ILogger support for WebDriver BiDi diagnostic events.</Description>
+    <PackageTags>webdriver;bidi;logging;ilogger;diagnostics</PackageTags>
+    <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
