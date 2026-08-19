@@ -144,7 +144,7 @@ Some commands can reset a value on the remote end to its original state. These c
 
 [!code-csharp[Required Parameters](../code/core-concepts/CoreConceptsSamples.cs#RequiredParameters)]
 
-**Commands with optional parameters** include: `Browser.CloseAsync`, `Browser.CreateUserContextAsync`, `Browser.GetClientWindowsAsync`, `Browser.GetUserContextsAsync`, `BrowsingContext.GetTreeAsync`, `Script.GetRealmsAsync`, `Session.EndAsync`, `Session.StatusAsync`, `Storage.DeleteCookiesAsync`, `Storage.GetCookiesAsync`.
+**Commands with optional parameters** include: `Browser.CloseAsync`, `Browser.CreateUserContextAsync`, `Browser.GetClientWindowsAsync`, `Browser.GetUserContextsAsync`, `BrowsingContext.GetTreeAsync`, `Script.GetRealmsAsync`, `Session.EndAsync`, `Session.NewSessionAsync`, `Session.StatusAsync`, `Storage.DeleteCookiesAsync`, `Storage.GetCookiesAsync`.
 
 **Commands that require parameters** (because they have reset properties) include: `UserAgentClientHints.SetClientHintsOverrideAsync`, `Browser.SetDownloadBehaviorAsync`, `BrowsingContext.SetViewportAsync`, and all Emulation `Set*OverrideAsync` commands (e.g., `SetUserAgentOverrideAsync`, `SetGeolocationOverrideAsync`).
 

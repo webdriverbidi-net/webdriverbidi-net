@@ -37,6 +37,7 @@ Module commands fall into two categories based on their `CommandParameters`:
 | | `Emulation.SetNetworkConditionsAsync` |
 | | `Emulation.SetScriptingEnabledAsync` |
 | `Session.EndAsync` | |
+| `Session.NewSessionAsync` | |
 | `Session.StatusAsync` | |
 | `Storage.DeleteCookiesAsync` | |
 | `Storage.GetCookiesAsync` | |
