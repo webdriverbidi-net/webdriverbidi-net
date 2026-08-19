@@ -95,7 +95,7 @@ the main library. These tests use actual browsers to test WebDriver BiDi functio
 * test/WebDriverBiDi.NamedPipeTestApplication/WebDriverBiDi.NamedPipeTestApplication.csproj - A console application
 that acts as a test server for named pipe communication, used by unit tests to validate pipe-based connections.
 * test/WebDriverBiDi.NetStandardTestApplication/WebDriverBiDi.NetStandardTestApplication.csproj - A console
-application whose the main library reference is pinned to its netstandard2.0 build, allowing proper
+application whose main library reference is pinned to its netstandard2.0 build, allowing proper
 smoke testing of netstandard2.0-specific code paths in the main library.
 * test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library.
 
