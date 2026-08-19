@@ -112,6 +112,9 @@ jobs:
       - name: Test WebDriverBiDi library
         run: dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
 
+      - name: Test Roslyn analyzers
+        run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
+
   integration-tests:
     name: Integration tests (${{ matrix.browser.display }})
     needs: build

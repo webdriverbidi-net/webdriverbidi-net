@@ -1,0 +1,16 @@
+# Normalize all text files to LF line endings on checkout, regardless of
+# platform or the developer's core.autocrlf setting. Without this, Windows
+# checkouts (core.autocrlf=true, which is the Git for Windows default) convert
+# .cs files to CRLF. Several Roslyn code fix provider tests embed expected
+# output in C# raw string literals, whose line endings are the literal source
+# file's physical line endings rather than something the compiler normalizes.
+# The code fix providers themselves always emit LF-only output (see
+# BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider.cs and the
+# SyntaxFactory.ElasticLineFeed usages across the other providers), so a CRLF
+# checkout makes the expected and actual text mismatch only on Windows.
+* text=auto eol=lf
+
+# Explicit binary types, to avoid relying on Git's content-based detection.
+*.png binary
+*.ico binary
+*.snk binary
