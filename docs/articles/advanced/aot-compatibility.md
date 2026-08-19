@@ -45,7 +45,7 @@ Add `[JsonSerializable]` attributes for the **protocol wrapper types** that the 
 
 ### Step 3: Register the Context with the Driver
 
-Call `RegisterTypeInfoResolver` **before** starting the driver:
+Call `RegisterTypeInfoResolverAsync` **before** starting the driver:
 
 [!code-csharp[Register and Connect](../../code/advanced/AotCompatibilitySamples.cs#RegisterandConnect)]
 
@@ -77,7 +77,7 @@ Document that consumers should register it:
 
 If you see errors like `JsonSerializerOptions instance is locked` or types not being serialized correctly:
 
-- Ensure `RegisterTypeInfoResolver` is called **before** `StartAsync`. The transport's serializer options are frozen on first use.
+- Ensure `RegisterTypeInfoResolverAsync` is called **before** `StartAsync`. The transport's serializer options are frozen on first use.
 - Verify that you've included the `CommandResponseMessage<T>` and `EventMessage<T>` wrapper types in your context, not just the inner types.
 
 ### Types work in development but fail in AOT
@@ -95,7 +95,7 @@ If your custom types use enums with a custom `JsonConverter` (such as `EnumValue
 ## Best Practices
 
 1. **Always create a `JsonSerializerContext` for custom modules** — even if you don't target AOT today, this future-proofs your code and avoids reflection overhead.
-2. **Register resolvers before starting** — `RegisterTypeInfoResolver` must be called before `StartAsync`. Attempting to register after connecting throws an exception.
+2. **Register resolvers before starting** — `RegisterTypeInfoResolverAsync` must be called before `StartAsync`. Attempting to register after connecting throws an exception.
 3. **Include wrapper types** — remember to include `CommandResponseMessage<T>` and `EventMessage<T>`, not just your raw parameter/result/event types.
 4. **Test in AOT mode** — publish your application with `dotnet publish -p:PublishAot=true` and verify end-to-end behavior.
 5. **Ship contexts with packages** — if distributing modules as NuGet packages, include the serializer context so consumers can register it.

@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 /// <summary>
-/// Analyzer that detects RegisterTypeInfoResolver() calls after StartAsync().
+/// Analyzer that detects RegisterTypeInfoResolverAsync() calls after StartAsync().
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : DiagnosticAnalyzer
@@ -27,7 +27,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
     private static readonly LocalizableString Title =
         "Type info resolver registration after StartAsync";
 
-    private static readonly LocalizableString MessageFormat = "RegisterTypeInfoResolver is called after calling StartAsync. Type info resolvers must be registered before the driver starts.";
+    private static readonly LocalizableString MessageFormat = "RegisterTypeInfoResolverAsync is called after calling StartAsync. Type info resolvers must be registered before the driver starts.";
 
     private static readonly LocalizableString Description = "Type info resolvers must be registered before calling StartAsync to ensure proper JSON serialization configuration.";
 
@@ -168,8 +168,8 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
-        // Check for RegisterTypeInfoResolver after StartAsync
-        if (methodName == "RegisterTypeInfoResolver")
+        // Check for RegisterTypeInfoResolverAsync after StartAsync
+        if (methodName == "RegisterTypeInfoResolverAsync")
         {
             DriverVariableState state = updatedVariables[driverVariableName];
             if (state.IsStarted)

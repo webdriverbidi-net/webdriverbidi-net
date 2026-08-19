@@ -26,7 +26,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 |----|----------|----------------|
 | **BIDI001** | Error | `RegisterModule()` called after `StartAsync()` |
 | **BIDI002** | Error | Event registered (via `AddObserver`) after `StartAsync()` |
-| **BIDI003** | Error | `RegisterTypeInfoResolver()` called after `StartAsync()` |
+| **BIDI003** | Error | `RegisterTypeInfoResolverAsync()` called after `StartAsync()` |
 | **BIDI004** | Info | Long-running operation called without `CancellationToken`; suggests passing one |
 | **BIDI005** | Warning | Event observer added but event name not included in `Session.SubscribeAsync()` |
 | **BIDI006** | Warning | `EventObserver` not disposed or unobserved |
@@ -53,7 +53,7 @@ The following analyzers have code fix providers:
 
 - **BIDI001** — Moves `RegisterModule()` call before `StartAsync()`
 - **BIDI002** — Moves `AddObserver()` call before `StartAsync()`
-- **BIDI003** — Moves `RegisterTypeInfoResolver()` call before `StartAsync()`
+- **BIDI003** — Moves `RegisterTypeInfoResolverAsync()` call before `StartAsync()`
 - **BIDI004** — Adds `CancellationToken` parameter to long-running operations
 - **BIDI005** — Adds missing event name to `Session.SubscribeAsync()` call
 - **BIDI006** — Adds `using` statement or `.Dispose()` call for `EventObserver`
