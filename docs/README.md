@@ -6,51 +6,79 @@ This directory contains the documentation source for WebDriverBiDi.NET, built us
 
 ```
 docs/
-├── index.md             # Documentation home page
-├── toc.yml              # Main table of contents
-├── docfx.json           # DocFX configuration
-├── articles/            # Conceptual documentation
+├── index.md                # Documentation home page
+├── winston.md              # Project mascot page
+├── toc.yml                 # Main table of contents
+├── docfx.json              # DocFX configuration
+├── articles/               # Conceptual documentation
 │   ├── getting-started.md
 │   ├── browser-setup.md
 │   ├── first-application.md
 │   ├── core-concepts.md
+│   ├── quick-reference.md
+│   ├── protocol-reference.md
+│   ├── common-pitfalls.md
 │   ├── architecture.md
 │   ├── events-observables.md
 │   ├── remote-values.md
-│   ├── advanced/        # Advanced use case guides
-│   │   ├── aot-compatibility.md
-│   │   ├── api-design.md
-│   │   ├── connection-management.md
-│   │   ├── custom-modules.md
-│   │   ├── error-handling.md
-│   │   ├── observability.md
-│   │   └── performance.md
-│   ├── modules/         # Module-specific guides
-│   │   ├── bluetooth.md
+│   ├── modules/            # Module-specific guides
 │   │   ├── browser.md
 │   │   ├── browsing-context.md
-│   │   ├── emulation.md
+│   │   ├── script.md
+│   │   ├── network.md
 │   │   ├── input.md
 │   │   ├── log.md
-│   │   ├── network.md
-│   │   ├── permissions.md
-│   │   ├── script.md
 │   │   ├── session.md
-│   │   ├── speculation.md
 │   │   ├── storage.md
-│   │   ├── user-agent-client-hints.md
+│   │   ├── emulation.md
+│   │   ├── permissions.md
+│   │   ├── bluetooth.md
 │   │   ├── webextension.md
+│   │   ├── speculation.md
+│   │   ├── user-agent-client-hints.md
+│   │   ├── digital-credentials.md
 │   │   └── additional-modules.md
-│   ├── examples/        # Example tutorials
+│   ├── examples/           # Example tutorials
 │   │   ├── common-scenarios.md
 │   │   ├── form-submission.md
 │   │   ├── network-interception.md
 │   │   ├── console-monitoring.md
 │   │   └── preload-scripts.md
-│   └── toc.yml         # Articles table of contents
-├── api/                # API reference
-│   └── index.md        # API reference home
-└── _site/              # Generated documentation (gitignored)
+│   ├── advanced/           # Advanced use case guides
+│   │   ├── analyzers.md
+│   │   ├── observability.md
+│   │   ├── webdriverbidi-logging.md
+│   │   ├── api-design.md
+│   │   ├── error-handling.md
+│   │   ├── performance.md
+│   │   ├── connection-management.md
+│   │   ├── custom-modules.md
+│   │   └── aot-compatibility.md
+│   └── toc.yml             # Articles table of contents
+├── api/                    # API reference
+│   └── index.md            # API reference home
+├── code/                   # Compilable snippets included in articles (see code/README.md)
+│   ├── README.md
+│   ├── DocsReadmeSamples.cs
+│   ├── IndexSamples.cs
+│   ├── QuickReferenceSamples.cs
+│   ├── WebDriverBiDi.DocSnippets.csproj
+│   ├── advanced/
+│   ├── api/
+│   ├── api-design/
+│   ├── architecture/
+│   ├── common-pitfalls/
+│   ├── core-concepts/
+│   ├── error-handling/
+│   ├── events-observables/
+│   ├── examples/
+│   ├── modules/
+│   ├── remote-values/
+│   └── script/
+├── images/                 # Mascot image and favicon
+├── templates/              # Custom DocFX template
+├── tools/                  # validate-doc-regions.sh (run by CI on doc changes)
+└── _site/                  # Generated documentation (gitignored)
 ```
 
 ## Building the Documentation
@@ -249,4 +277,3 @@ For questions about the documentation:
 
 - Open an issue: https://github.com/webdriverbidi-net/webdriverbidi-net/issues
 - Tag with `documentation` label
-
