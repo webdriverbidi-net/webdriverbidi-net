@@ -196,6 +196,53 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestStopHonorsShutdownTimeoutWhenReceiveLoopDoesNotRespondToCancellation()
+    {
+        List<LogMessageEventArgs> logs = [];
+        TaskCompletionSource<int> receiveBlockSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            ReceiveBlockSignal = receiveBlockSignal,
+            ShutdownTimeout = TimeSpan.FromMilliseconds(50),
+        };
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            logs.Add(e);
+            if (e.Message == "Ending pipe receive loop")
+            {
+                receiveLoopEndedSignal.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+        // The receive loop is blocked on receiveBlockSignal and ignores the cancellation
+        // token that StopAsync signals, simulating a pipe read that does not unblock
+        // promptly on cancellation. StopAsync must not hang waiting for it; it should
+        // return once ShutdownTimeout elapses and log a warning.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.False(connection.IsActive);
+        Assert.Contains(logs, log =>
+            log.Message == "Timed out waiting for pipe receive loop to complete during shutdown"
+            && log.Level == WebDriverBiDiLogLevel.Warn
+            && log.ComponentName == Connection.LoggerComponentName);
+
+        // Release the blocked receive loop and let it drain gracefully before tearing down,
+        // so the background task does not outlive the test and leak into later tests.
+        receiveBlockSignal.TrySetResult(0);
+        await receiveLoopEndedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        testPipeServer.Stop();
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
     public async Task TestCanOnlySendOneMessageAtATime()
     {
         TestPipeServer testPipeServer = new();

@@ -202,6 +202,14 @@ public class PipeConnection : Connection
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Waiting for the receive loop to finish is bounded by <see cref="Connection.ShutdownTimeout"/>.
+    /// Unlike <see cref="WebSocketConnection"/>, where cancelling the connection's token reliably aborts
+    /// a pending receive, cancelling the pipe connection's token does not guarantee that an in-progress
+    /// pipe read unblocks promptly on every supported target framework. If the receive loop does not
+    /// finish within the timeout, a warning is logged and this method returns anyway; the receive task
+    /// continues running in the background until the pipe unblocks on its own.
+    /// </remarks>
     public override async Task StopAsync(CancellationToken cancellationToken = default)
     {
         await this.LogAsync("Closing pipe connection").ConfigureAwait(false);
@@ -215,10 +223,20 @@ public class PipeConnection : Connection
         // Signal cancellation to stop the receive loop
         this.connectionTokenSource.Cancel();
 
-        // Wait for the receive task to complete
+        // Wait for the receive task to complete, bounded by ShutdownTimeout. See the
+        // remarks on this method for why the wait must not be unconditional here.
         if (this.dataReceiveTask is not null)
         {
-            await this.dataReceiveTask.ConfigureAwait(false);
+            using CancellationTokenSource shutdownDelayCancelTokenSource = new();
+            Task completedTask = await Task.WhenAny(this.dataReceiveTask, Task.Delay(this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
+            if (completedTask != this.dataReceiveTask)
+            {
+                await this.LogAsync("Timed out waiting for pipe receive loop to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+            }
+            else
+            {
+                shutdownDelayCancelTokenSource.Cancel();
+            }
         }
 
         this.IsConnectionActive = false;
