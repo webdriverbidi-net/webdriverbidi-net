@@ -200,11 +200,13 @@ public class PipeConnectionTests
     {
         List<LogMessageEventArgs> logs = [];
         TaskCompletionSource<int> receiveBlockSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveBlockEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
             ReceiveBlockSignal = receiveBlockSignal,
+            ReceiveBlockEnteredSignal = receiveBlockEnteredSignal,
             ShutdownTimeout = TimeSpan.FromMilliseconds(50),
         };
         connection.OnLogMessage.AddObserver(e =>
@@ -220,6 +222,13 @@ public class PipeConnectionTests
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+        // The background receive loop starts on its own task, so without waiting for this
+        // signal, StopAsync could cancel the token before the loop ever reaches its first
+        // read — the loop's own cancellation check would then exit it immediately, never
+        // touching receiveBlockSignal, and defeating the point of this test. Waiting here
+        // guarantees the loop is actually blocked in the read before shutdown begins.
+        await receiveBlockEnteredSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // The receive loop is blocked on receiveBlockSignal and ignores the cancellation
         // token that StopAsync signals, simulating a pipe read that does not unblock

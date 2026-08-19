@@ -38,6 +38,20 @@ public class TestPipeConnection : PipeConnection
     /// </summary>
     public TaskCompletionSource<int>? ReceiveBlockSignal { get; set; }
 
+    /// <summary>
+    /// When set, is completed the moment <see cref="ReadPipeDataAsync"/> enters the
+    /// <see cref="ReceiveBlockSignal"/> path. The background receive loop starts on a
+    /// separate task (see <c>PipeConnection.StartAsync</c>'s <c>Task.Run</c>), so without
+    /// this signal a caller that calls <c>StopAsync</c> immediately after <c>StartAsync</c>
+    /// races against that task ever reaching its first read: if cancellation is requested
+    /// before the loop's first iteration, the loop's own
+    /// <c>while (!connectionCancellationToken.IsCancellationRequested)</c> guard exits
+    /// immediately and <see cref="ReceiveBlockSignal"/> is never touched, which defeats the
+    /// point of blocking on it. Awaiting this signal before calling <c>StopAsync</c>
+    /// eliminates that race.
+    /// </summary>
+    public TaskCompletionSource? ReceiveBlockEnteredSignal { get; set; }
+
     public bool Disposed => this.IsDisposed;
 
     public async Task RaiseRemoteDisconnectedEventAsync()
@@ -110,6 +124,7 @@ public class TestPipeConnection : PipeConnection
     {
         if (this.ReceiveBlockSignal is not null)
         {
+            this.ReceiveBlockEnteredSignal?.TrySetResult();
             return this.ReceiveBlockSignal.Task;
         }
 
