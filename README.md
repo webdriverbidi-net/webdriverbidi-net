@@ -148,7 +148,7 @@ workflow runs it on every PR that touches the main library or the
 benchmarks themselves, posting a per-benchmark delta table as a PR comment
 relative to a committed baseline.
 
-The numbers below are a snapshot taken on 2026-04-27, measured on an Apple
+The numbers below are a snapshot taken on 2026-08-19, measured on an Apple
 Silicon development machine. They are representative, not canonical: the CI
 runner (`ubuntu-latest`, x64) produces different absolute numbers and is the
 reference hardware for the committed baseline. See
@@ -157,49 +157,49 @@ interpret results and operate the baseline workflow.
 
 **Runtime environment**
 - BenchmarkDotNet 0.15.8
-- macOS Tahoe 26.4.1 (Darwin 25.4.0)
-- Apple M4 Max, 16 physical / 16 logical cores
-- .NET SDK 10.0.102, .NET 10.0.2 runtime, Arm64 RyuJIT (armv8.0-a)
+- macOS Tahoe 26.6.2 (Darwin 25.6.0)
+- Apple M5 Max, 18 physical / 18 logical cores
+- .NET SDK 10.0.400, .NET 10.0.11 runtime, Arm64 RyuJIT (armv8.0-a)
 
 **CommandProcessingBenchmarks** — command object creation overhead
 
 | Method                          | Mean       | Allocated |
 |-------------------------------- |-----------:|----------:|
-| CreateSimpleCommand             |   7.65 ns  |     136 B |
-| CreateComplexCommand            |  14.14 ns  |     224 B |
-| CreateNetworkInterceptCommand   |  33.57 ns  |     352 B |
-| CreateScriptEvaluateCommand     |  11.00 ns  |     176 B |
-| CreateScriptCallFunctionCommand |  41.37 ns  |     424 B |
+| CreateSimpleCommand             |   7.08 ns  |     136 B |
+| CreateComplexCommand            |  12.83 ns  |     224 B |
+| CreateNetworkInterceptCommand   |  30.76 ns  |     352 B |
+| CreateScriptEvaluateCommand     |   9.77 ns  |     176 B |
+| CreateScriptCallFunctionCommand |  34.38 ns  |     424 B |
 
 **SerializationBenchmarks** — JSON serialization/deserialization of protocol messages
 
 | Method                         | Mean         | Allocated |
 |------------------------------- |-------------:|----------:|
-| SerializeCommandParameters     |    173.5 ns  |     696 B |
-| DeserializeCommandResult       |    112.3 ns  |     312 B |
-| DeserializeNetworkEvent        |  2,024.5 ns  |   2,424 B |
-| DeserializeSimpleRemoteValue   |    330.0 ns  |     208 B |
-| DeserializeComplexRemoteValue  |  2,110.3 ns  |   1,024 B |
+| SerializeCommandParameters     |    163.1 ns  |     696 B |
+| DeserializeCommandResult       |     92.2 ns  |     312 B |
+| DeserializeNetworkEvent        |  1,901.6 ns  |   2,424 B |
+| DeserializeSimpleRemoteValue   |    273.0 ns  |     208 B |
+| DeserializeComplexRemoteValue  |  1,911.7 ns  |   1,024 B |
 
 **PendingCommandCollectionBenchmarks** — transport pending-command bookkeeping
 
 | Method                  | Mean      | Allocated |
 |------------------------ |----------:|----------:|
-| AddRemovePendingCommand |  56.45 ns |      48 B |
+| AddRemovePendingCommand |  49.40 ns |      48 B |
 
 **EventDispatchBenchmarks** — `ObservableEvent<T>.NotifyObserversAsync` dispatch cost
 
 | Method          | ObserverCount | Mean       | Allocated |
 |---------------- |-------------- |-----------:|----------:|
-| NotifyObservers | 1             |   26.96 ns |      32 B |
-| NotifyObservers | 4             |   63.28 ns |      56 B |
-| NotifyObservers | 16            |  211.88 ns |     152 B |
+| NotifyObservers | 1             |   19.29 ns |       0 B |
+| NotifyObservers | 4             |   60.14 ns |       0 B |
+| NotifyObservers | 16            |  194.53 ns |       0 B |
 
 **CommandExecutionBenchmarks** — end-to-end `BiDiDriver.ExecuteCommandAsync` round trip via echo connection
 
 | Method                  | Mean      | Allocated |
 |------------------------ |----------:|----------:|
-| ExecuteCommandRoundTrip |  3.356 μs |   3.92 KB |
+| ExecuteCommandRoundTrip |  4.416 μs |   3.66 KB |
 
 To run the suite yourself:
 
