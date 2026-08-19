@@ -140,12 +140,26 @@ Navigation prefetching and speculation.
 **Key Classes:**
 - `SpeculationModule` - Speculation module implementation
 
+### WebDriverBiDi.DigitalCredentials
+
+Digital credentials API testing support (W3C Digital Credentials specification).
+
+**Key Classes:**
+- `DigitalCredentialsModule` - Digital credentials module implementation
+
+### WebDriverBiDi.UserAgentClientHints
+
+User agent client hints override for testing.
+
+**Key Classes:**
+- `UserAgentClientHintsModule` - User agent client hints module implementation
+
 ### WebDriverBiDi.Protocol
 
 Low-level protocol communication types.
 
 **Key Classes:**
-- `Transport` - WebSocket communication handler
+- `Transport` - Communication handler wrapping a `Connection` (WebSocket or pipe)
 - `Command` - Command representation
 - `Message` - Protocol message base class
 
