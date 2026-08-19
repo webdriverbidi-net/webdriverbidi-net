@@ -29,6 +29,15 @@ public class TestPipeConnection : PipeConnection
 
     public Func<bool>? IsActiveOverride { get; set; }
 
+    /// <summary>
+    /// When set, <see cref="ReadPipeDataAsync"/> awaits this source instead of delegating
+    /// to the real pipe, ignoring the cancellation token passed to it. This simulates a
+    /// pipe read that does not unblock promptly when the connection's token is canceled,
+    /// which is the scenario <see cref="PipeConnection.StopAsync"/>'s shutdown-timeout
+    /// bound is meant to guard against.
+    /// </summary>
+    public TaskCompletionSource<int>? ReceiveBlockSignal { get; set; }
+
     public bool Disposed => this.IsDisposed;
 
     public async Task RaiseRemoteDisconnectedEventAsync()
@@ -99,6 +108,11 @@ public class TestPipeConnection : PipeConnection
 
     protected override Task<int> ReadPipeDataAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
     {
+        if (this.ReceiveBlockSignal is not null)
+        {
+            return this.ReceiveBlockSignal.Task;
+        }
+
         int currentCall = Interlocked.Increment(ref this.receiveCallCount);
 
         // For exception tests, return fake data on first call to allow second call to happen
