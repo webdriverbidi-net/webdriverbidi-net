@@ -83,6 +83,35 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           files: test/coverage/lcov.*.info
 
+  unit-tests-windows:
+    name: Unit tests (Windows)
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # No coverage flags here: coverage is collected and uploaded to Coveralls
+      # exclusively by the ubuntu-latest "unit-tests" job above. This job exists
+      # to exercise platform-dependent code paths on the OS where they actually
+      # differ (e.g. PipeConnection's Windows anonymous-pipe handle semantics),
+      # not to duplicate coverage reporting.
+      - name: Test WebDriverBiDi library
+        run: dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
+
   integration-tests:
     name: Integration tests (${{ matrix.browser.display }})
     needs: build
