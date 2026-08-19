@@ -11,16 +11,16 @@ using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
-/// Tests for the BiDiDriver003 analyzer that detects RegisterTypeInfoResolver after StartAsync.
+/// Tests for the BiDiDriver003 analyzer that detects RegisterTypeInfoResolverAsync after StartAsync.
 /// </summary>
 public class BiDiDriver003AnalyzerTests
 {
     /// <summary>
-    /// Tests that RegisterTypeInfoResolver called after StartAsync reports an error diagnostic.
+    /// Tests that RegisterTypeInfoResolverAsync called after StartAsync reports an error diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task RegisterTypeInfoResolver_AfterStartAsync_ReportsError()
+    public async Task RegisterTypeInfoResolverAsync_AfterStartAsync_ReportsError()
     {
         string test = """
             using System;
@@ -36,14 +36,14 @@ public class BiDiDriver003AnalyzerTests
 
                 public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
                 {
-                    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
                 }
 
                 public class BiDiDriver : IBiDiDriverConfiguration
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -58,7 +58,7 @@ public class BiDiDriver003AnalyzerTests
                     {
                         IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
-                        {|#0:driver.RegisterTypeInfoResolver(resolver)|};
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
                     }
                 }
             }
@@ -78,11 +78,11 @@ public class BiDiDriver003AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that RegisterTypeInfoResolver called before StartAsync does not report a diagnostic.
+    /// Tests that RegisterTypeInfoResolverAsync called before StartAsync does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task RegisterTypeInfoResolver_BeforeStartAsync_NoDiagnostic()
+    public async Task RegisterTypeInfoResolverAsync_BeforeStartAsync_NoDiagnostic()
     {
         string test = """
             using System;
@@ -97,7 +97,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -111,7 +111,7 @@ public class BiDiDriver003AnalyzerTests
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-                        driver.RegisterTypeInfoResolver(resolver);
+                        driver.RegisterTypeInfoResolverAsync(resolver);
                         await driver.StartAsync("ws://localhost:9222");
                     }
                 }
@@ -147,7 +147,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -190,7 +190,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public CustomDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
 
                 public class TestClass
@@ -199,7 +199,7 @@ public class BiDiDriver003AnalyzerTests
                     {
                         CustomDriver driver = new CustomDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
-                        driver.RegisterTypeInfoResolver(resolver);
+                        driver.RegisterTypeInfoResolverAsync(resolver);
                     }
                 }
             }
@@ -215,11 +215,11 @@ public class BiDiDriver003AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that multiple RegisterTypeInfoResolver calls after StartAsync report errors.
+    /// Tests that multiple RegisterTypeInfoResolverAsync calls after StartAsync report errors.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task MultipleRegisterTypeInfoResolver_AfterStartAsync_ReportsMultipleErrors()
+    public async Task MultipleRegisterTypeInfoResolverAsync_AfterStartAsync_ReportsMultipleErrors()
     {
         string test = """
             using System;
@@ -234,7 +234,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -249,8 +249,8 @@ public class BiDiDriver003AnalyzerTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
-                        {|#0:driver.RegisterTypeInfoResolver(resolver1)|};
-                        {|#1:driver.RegisterTypeInfoResolver(resolver2)|};
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver1)|};
+                        {|#1:driver.RegisterTypeInfoResolverAsync(resolver2)|};
                     }
                 }
             }
@@ -294,14 +294,14 @@ public class BiDiDriver003AnalyzerTests
 
                 public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
                 {
-                    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
                 }
 
                 public class BiDiDriver : IBiDiDriverConfiguration
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -317,7 +317,7 @@ public class BiDiDriver003AnalyzerTests
                         IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         Task result;
-                        result = {|#0:driver.RegisterTypeInfoResolver(resolver)|};
+                        result = {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
                     }
                 }
             }
@@ -356,7 +356,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -407,7 +407,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -457,7 +457,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -488,11 +488,11 @@ public class BiDiDriver003AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that RegisterTypeInfoResolver on non-tracked drivers doesn't report diagnostic.
+    /// Tests that RegisterTypeInfoResolverAsync on non-tracked drivers doesn't report diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task RegisterTypeInfoResolverOnNonTrackedDriver_NoDiagnostic()
+    public async Task RegisterTypeInfoResolverAsyncOnNonTrackedDriver_NoDiagnostic()
     {
         string test = """
             using System;
@@ -507,7 +507,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -523,7 +523,7 @@ public class BiDiDriver003AnalyzerTests
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
                         await fieldDriver.StartAsync("ws://localhost:9222");
-                        fieldDriver.RegisterTypeInfoResolver(resolver);
+                        fieldDriver.RegisterTypeInfoResolverAsync(resolver);
                     }
                 }
             }
@@ -558,7 +558,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -575,12 +575,12 @@ public class BiDiDriver003AnalyzerTests
                         BiDiDriver driver2 = new BiDiDriver(TimeSpan.FromSeconds(30));
 
                         // driver1: correct order
-                        driver1.RegisterTypeInfoResolver(resolver);
+                        driver1.RegisterTypeInfoResolverAsync(resolver);
                         await driver1.StartAsync("ws://localhost:9222");
 
                         // driver2: incorrect order
                         await driver2.StartAsync("ws://localhost:9222");
-                        {|#0:driver2.RegisterTypeInfoResolver(resolver)|};
+                        {|#0:driver2.RegisterTypeInfoResolverAsync(resolver)|};
                     }
                 }
             }
@@ -619,7 +619,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -670,7 +670,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -685,7 +685,7 @@ public class BiDiDriver003AnalyzerTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
-                        (driver ?? driver).RegisterTypeInfoResolver(resolver);
+                        (driver ?? driver).RegisterTypeInfoResolverAsync(resolver);
                     }
                 }
             }
@@ -721,7 +721,7 @@ public class BiDiDriver003AnalyzerTests
 
                 public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
                 {
-                    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
                     IBiDiDriverConfiguration Self { get; }
                 }
 
@@ -729,7 +729,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                     public IBiDiDriverConfiguration Self => this;
                 }
             }
@@ -745,7 +745,7 @@ public class BiDiDriver003AnalyzerTests
                     {
                         IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
-                        {|#0:driver.Self.RegisterTypeInfoResolver(resolver)|};
+                        {|#0:driver.Self.RegisterTypeInfoResolverAsync(resolver)|};
                     }
                 }
             }
@@ -801,7 +801,7 @@ public class BiDiDriver003AnalyzerTests
     }
 
     [Fact]
-    public async Task RegisterTypeInfoResolver_OnCustomTypeImplementingInterface_AfterStartAsync_ReportsError()
+    public async Task RegisterTypeInfoResolverAsync_OnCustomTypeImplementingInterface_AfterStartAsync_ReportsError()
     {
         // The driver variable is of type MyCustomDriver, whose name is NOT "BiDiDriver" or
         // "IBiDiDriverConfiguration". AnalyzerSymbolHelpers.IsDriverConfigurationType must
@@ -821,7 +821,7 @@ public class BiDiDriver003AnalyzerTests
 
                 public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
                 {
-                    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
                 }
             }
 
@@ -833,7 +833,7 @@ public class BiDiDriver003AnalyzerTests
                 public class MyCustomDriver : IBiDiDriverConfiguration
                 {
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
 
                 public class TestClass
@@ -842,7 +842,7 @@ public class BiDiDriver003AnalyzerTests
                     {
                         MyCustomDriver driver = new MyCustomDriver();
                         await driver.StartAsync("ws://localhost:9222");
-                        {|#0:driver.RegisterTypeInfoResolver(resolver)|};
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
                     }
                 }
             }

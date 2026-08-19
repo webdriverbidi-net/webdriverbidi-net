@@ -389,7 +389,7 @@ When multiple handlers are registered, they all execute in sequence. With synchr
 | "no such frame" / "no such window" | Browsing context was closed or no longer exists | Verify the context ID is still valid. Use `GetTreeAsync` to refresh context list. |
 | "Timed out executing command" | Command exceeded the timeout | Increase `timeoutOverride` for the command, or increase `DefaultCommandTimeout` on the driver. |
 | "Cannot add command; pending command collection is closed" | Command sent during or after shutdown | Avoid sending commands from event handlers during `StopAsync` or `DisconnectAsync`. |
-| "Cannot register a type info resolver after the transport is connected" | `RegisterTypeInfoResolver` called after `StartAsync` | Register type resolvers before calling `StartAsync`. |
+| "Cannot register a type info resolver after the transport is connected" | `RegisterTypeInfoResolverAsync` called after `StartAsync` | Register type resolvers before calling `StartAsync`. |
 | "This observable event only allows N handler(s)" | Too many observers added to an event with `MaxObserverCount` | Remove observers with `Unobserve()` or `Dispose()` before adding new ones. |
 
 ### Connection Diagnostics

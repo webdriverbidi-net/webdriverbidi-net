@@ -15,11 +15,11 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver003CodeFixProviderTests
 {
     /// <summary>
-    /// Tests that the code fix moves RegisterTypeInfoResolver before StartAsync.
+    /// Tests that the code fix moves RegisterTypeInfoResolverAsync before StartAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task RegisterTypeInfoResolver_CodeFixMovesBeforeStartAsync()
+    public async Task RegisterTypeInfoResolverAsync_CodeFixMovesBeforeStartAsync()
     {
         string testCode = """
                 using System;
@@ -34,7 +34,7 @@ public class BiDiDriver003CodeFixProviderTests
                     {
                         public BiDiDriver(TimeSpan timeout) { }
                         public Task StartAsync(string url) => Task.CompletedTask;
-                        public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                        public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                     }
                 }
 
@@ -49,7 +49,7 @@ public class BiDiDriver003CodeFixProviderTests
                         {
                             BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                             await driver.StartAsync("ws://localhost:9222");
-                            {|#0:driver.RegisterTypeInfoResolver(resolver)|};
+                            {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
                         }
                     }
                 }
@@ -68,7 +68,7 @@ public class BiDiDriver003CodeFixProviderTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -82,7 +82,7 @@ public class BiDiDriver003CodeFixProviderTests
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-                        driver.RegisterTypeInfoResolver(resolver);
+                        driver.RegisterTypeInfoResolverAsync(resolver);
                         await driver.StartAsync("ws://localhost:9222");
                     }
                 }

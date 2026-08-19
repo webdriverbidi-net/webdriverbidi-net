@@ -17,7 +17,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
-/// Code fix provider for BIDI003 that moves RegisterTypeInfoResolver before StartAsync.
+/// Code fix provider for BIDI003 that moves RegisterTypeInfoResolverAsync before StartAsync.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider))]
 [Shared]
@@ -44,7 +44,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Move RegisterTypeInfoResolver before StartAsync",
+                title: "Move RegisterTypeInfoResolverAsync before StartAsync",
                 createChangedDocument: c => MoveRegisterTypeInfoResolverBeforeStartAsync(
                     context.Document, invocation, c),
                 equivalenceKey: "MoveRegisterTypeInfoResolverBeforeStartAsync"),
@@ -55,7 +55,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Find the statement containing the RegisterTypeInfoResolver call
+        // Find the statement containing the RegisterTypeInfoResolverAsync call
         StatementSyntax registerStatement = invocation.FirstAncestorOrSelf<StatementSyntax>()!;
 
         // Find the method containing this statement
