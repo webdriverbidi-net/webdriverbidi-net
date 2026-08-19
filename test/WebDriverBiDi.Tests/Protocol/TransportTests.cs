@@ -2339,6 +2339,83 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestCollectedExceptionsAreSurfacedOnDisconnectAfterRemoteDisconnect()
+    {
+        // Regression test: Collect-mode errors captured during the session must still be
+        // surfaced when the connection is later torn down by a remote disconnect rather
+        // than an explicit StopAsync/DisconnectAsync call. HandleConnectionDisconnectionAsync
+        // marks the transport disconnected without running the normal teardown, so a
+        // subsequent DisconnectAsync call previously hit the fast-path guard and returned
+        // silently, losing the collected errors.
+        InvalidOperationException injectedFault = new("simulated outer-loop fault");
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ReadLoopOuterFault = [injectedFault],
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
+            TimeSpan.FromSeconds(5),
+            TransportErrorBehavior.Collect);
+        if (!faultCaptured)
+        {
+            throw new XunitException("the fault-capture continuation should record the injected fault before the safety timeout");
+        }
+
+        // The remote end closes the connection before the caller ever calls DisconnectAsync.
+        // This marks the transport disconnected via HandleConnectionDisconnectionAsync,
+        // bypassing the normal teardown path that (before this fix) was the only place
+        // collected exceptions were thrown.
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // A subsequent call to DisconnectAsync (as BiDiDriver.StopAsync would make) must
+        // still surface the collected exception via the fast-path guard.
+        AggregateException? caught = await Assert.ThrowsAsync<AggregateException>(
+            async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+
+        Assert.NotNull(caught);
+        Assert.Single(caught.InnerExceptions);
+        Assert.Same(injectedFault, caught.InnerExceptions[0]);
+    }
+
+    [Fact]
+    public async Task TestCollectedExceptionsAreSurfacedOnlyOnceAcrossRepeatedDisconnectCalls()
+    {
+        // Companion to TestCollectedExceptionsAreSurfacedOnDisconnectAfterRemoteDisconnect:
+        // once collected exceptions have been thrown from one DisconnectAsync call, a
+        // second call (e.g., a caller invoking StopAsync twice) must not re-throw the
+        // same stale exceptions, since UnhandledErrorCollection.TryGetExceptions does not
+        // remove entries from the collection.
+        InvalidOperationException injectedFault = new("simulated outer-loop fault");
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ReadLoopOuterFault = [injectedFault],
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
+            TimeSpan.FromSeconds(5),
+            TransportErrorBehavior.Collect);
+        if (!faultCaptured)
+        {
+            throw new XunitException("the fault-capture continuation should record the injected fault before the safety timeout");
+        }
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        await Assert.ThrowsAsync<AggregateException>(
+            async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+
+        // The second call finds the transport already disconnected and takes the same
+        // fast-path guard, but must not throw again.
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestExceptionInErrorEventHandlerIsIgnoredByDefault()
     {
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);

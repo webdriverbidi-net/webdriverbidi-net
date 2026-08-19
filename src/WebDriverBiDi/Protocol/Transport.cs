@@ -133,6 +133,7 @@ public class Transport : IAsyncDisposable
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isConnectedTypeSafeFlag = 0;
     private int isDisposedFlag = 0;
+    private int collectedErrorsReportedFlag = 0;
 
     // Message/event sent/received statistics
     private long commandMessagesSent = 0;
@@ -391,7 +392,7 @@ public class Transport : IAsyncDisposable
             });
             Interlocked.Exchange(ref this.incomingQueueDepth, 0);
 
-            this.UnhandledErrors.ClearUnhandledErrors();
+            this.ResetCollectedErrors();
 
             // Reset the command counter for each connection.
             Interlocked.Exchange(ref this.nextCommandId, 0);
@@ -667,8 +668,16 @@ public class Transport : IAsyncDisposable
         // when an event handler processed during shutdown calls SendCommandAsync,
         // which in turn calls DisconnectAsync on the thread that already holds
         // the semaphore.
+        //
+        // The transport may have already been marked disconnected by a remote
+        // disconnect or connection error (see HandleConnectionDisconnectionAsync),
+        // which does not itself run the teardown below and therefore never reaches
+        // the collected-exceptions throw at the end of this method. This is the
+        // only remaining opportunity to surface Collect-mode errors to a caller of
+        // StopAsync/DisconnectAsync for that session.
         if (!this.IsConnected)
         {
+            this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
             return;
         }
 
@@ -680,6 +689,7 @@ public class Transport : IAsyncDisposable
             // If another thread has already disconnected, we can safely return.
             if (!this.IsConnected)
             {
+                this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
                 return;
             }
 
@@ -727,10 +737,7 @@ public class Transport : IAsyncDisposable
             WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
             await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
-            if (throwCollectedExceptions && this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
-            {
-                throw this.CreateTerminationException(collectedExceptions, TransportErrorBehavior.Collect);
-            }
+            this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
         }
         finally
         {
@@ -1218,6 +1225,36 @@ public class Transport : IAsyncDisposable
         }
 
         return new AggregateException(message, exceptions);
+    }
+
+    private void ThrowIfCollectedExceptionsClaimed(bool throwCollectedExceptions)
+    {
+        // Throws the collected Collect-mode exceptions for the current session, if any are
+        // pending and this call successfully claims them via ClaimCollectedErrors.
+        // Claiming is reset for each new session by ResetCollectedErrors, called
+        if (throwCollectedExceptions && this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions) && this.ClaimCollectedErrors())
+        {
+            throw this.CreateTerminationException(collectedExceptions, TransportErrorBehavior.Collect);
+        }
+    }
+
+    private bool ClaimCollectedErrors()
+    {
+        // Atomically checks whether the Collect-mode errors for the current session have
+        // already been reported and, if not, marks them reported, in a single indivisible
+        // operation. This guarantees that <see cref="DisconnectAsync(bool, CancellationToken)"/>
+        // throws its collected exceptions at most once per session, even if multiple callers
+        // race on the pre-semaphore fast-path guard.
+        return Interlocked.CompareExchange(ref this.collectedErrorsReportedFlag, 1, 0) == 0;
+    }
+
+    private void ResetCollectedErrors()
+    {
+        // Clears UnhandledErrors of every category's errors from the prior session, and
+        // resets the collected-errors-reported flag so ClaimCollectedErrors can claim
+        // the new session's Collect-mode errors.
+        this.UnhandledErrors.ClearUnhandledErrors();
+        Interlocked.Exchange(ref this.collectedErrorsReportedFlag, 0);
     }
 
     private string GetEventHandlerTerminalReason(string observableEventName)
