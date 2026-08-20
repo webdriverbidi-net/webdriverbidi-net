@@ -192,3 +192,80 @@ jobs:
           CI: true
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
           CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
+
+  integration-tests-windows:
+    name: Integration tests (${{ matrix.browser.display }}, Windows)
+    needs: build
+    runs-on: windows-latest
+    # windows-latest defaults to Windows PowerShell 5.1, whose Invoke-WebRequest
+    # buffers whole responses through a slow pipeline; PowerShell 7 downloads the
+    # browser archives in a fraction of the time.
+    defaults:
+      run:
+        shell: pwsh
+    strategy:
+      fail-fast: false
+      matrix:
+        browser:
+          - name: firefox-nightly
+            display: Firefox Nightly
+            browser-type: firefox
+          - name: chrome-canary
+            display: Chrome Canary
+            browser-type: chrome
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Create local browser directory
+        run: New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\browsers" | Out-Null
+
+      # The Windows Nightly build ships as an NSIS self-extracting installer rather
+      # than an archive. Its /ExtractDir switch unpacks the payload without running
+      # a real installation, placing the browser files in a "core" subdirectory —
+      # the same mechanism SelfExtractingExecutableFileExtractor uses. Renaming
+      # "core" to "firefox" keeps the on-disk layout identical to the Linux job's.
+      - name: Install Firefox Nightly
+        if: matrix.browser.name == 'firefox-nightly'
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $installer = Join-Path $env:RUNNER_TEMP 'firefox-nightly-installer.exe'
+          $extractDir = Join-Path $env:RUNNER_TEMP 'firefox-nightly-extract'
+          New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+          Invoke-WebRequest -Uri 'https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=win64&lang=en-US' -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList "/ExtractDir=$extractDir" -Wait
+          Move-Item -Path (Join-Path $extractDir 'core') -Destination "$env:GITHUB_WORKSPACE\browsers\firefox"
+
+      # Expand-Archive is used nowhere here because it is pathologically slow on an
+      # archive of Chrome's size; ZipFile.ExtractToDirectory does the same job in a
+      # fraction of the time.
+      - name: Install Chrome Canary
+        if: matrix.browser.name == 'chrome-canary'
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $versions = Invoke-RestMethod -Uri 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json'
+          $url = ($versions.channels.Canary.downloads.chrome | Where-Object { $_.platform -eq 'win64' }).url
+          $archive = Join-Path $env:RUNNER_TEMP 'chrome-canary.zip'
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($archive, "$env:GITHUB_WORKSPACE\browsers")
+          Move-Item -Path "$env:GITHUB_WORKSPACE\browsers\chrome-win64" -Destination "$env:GITHUB_WORKSPACE\browsers\chrome-canary"
+
+      - name: Run integration tests
+        run: dotnet test --project test/WebDriverBiDi.Integration.Tests --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}\browsers\firefox\firefox.exe', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}\browsers\chrome-canary\chrome.exe', github.workspace) || '' }}
