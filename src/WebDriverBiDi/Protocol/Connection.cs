@@ -54,6 +54,13 @@ public abstract class Connection : IAsyncDisposable
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag;
 
+    // Deliberately not exposed to derived classes. Reading the Token property of a disposed
+    // CancellationTokenSource throws ObjectDisposedException, and the receive loop and any
+    // in-flight send can outlive disposal, so subclasses are given the cached
+    // ConnectionCancellationToken instead. They cancel through CancelConnection and start a
+    // new session through ResetConnectionCancellation.
+    private CancellationTokenSource connectionCancellationTokenSource = new();
+
     /// <summary>
     /// Gets a value indicating whether this connection is active.
     /// </summary>
@@ -142,6 +149,29 @@ public abstract class Connection : IAsyncDisposable
     protected ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new(LogMessageEventName);
 
     /// <summary>
+    /// Gets a <see cref="SemaphoreSlim"/> to serialize sending data across the connection, ensuring sending data to be an atomic action.
+    /// </summary>
+    protected SemaphoreSlim DataSendSemaphore { get; } = new(1, 1);
+
+    /// <summary>
+    /// Gets the <see cref="Task"/> object representing the method that receives data from the connection.
+    /// </summary>
+    protected Task? DataReceiveTask { get; private set; }
+
+    /// <summary>
+    /// Gets the <see cref="CancellationToken"/> used to cancel the operations of this connection.
+    /// </summary>
+    /// <remarks>
+    /// This is a cached copy of the token of the connection's <see cref="CancellationTokenSource"/>,
+    /// taken while that source is known to be alive. A <see cref="CancellationToken"/> obtained
+    /// beforehand remains safe to use after its source is disposed, whereas reading the source's
+    /// Token property after disposal throws <see cref="ObjectDisposedException"/>. Both the
+    /// background receive loop and an in-flight send can still be running when the connection is
+    /// disposed, so they must use this property rather than the source directly.
+    /// </remarks>
+    protected CancellationToken ConnectionCancellationToken { get; private set; }
+
+    /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
     /// </summary>
     /// <param name="connectionString">The connection string used to connect to the remote end.</param>
@@ -170,7 +200,16 @@ public abstract class Connection : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     public async ValueTask DisposeAsync()
     {
-        await this.DisposeAsyncCore().ConfigureAwait(false);
+        try
+        {
+            await this.DisposeAsyncCore().ConfigureAwait(false);
+        }
+        finally
+        {
+            this.DataSendSemaphore.Dispose();
+            this.connectionCancellationTokenSource.Dispose();
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -199,13 +238,26 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Attaches a continuation to the background receive loop task that observes any fault
-    /// the task may produce.
+    /// Asynchronously receives data from the remote end of this connection.
     /// </summary>
-    /// <param name="receiveLoopTask">The task running the background receive loop.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    protected abstract Task ReceiveDataAsync();
+
+    /// <summary>
+    /// Asynchronously releases the resources used by this <see cref="Connection"/>.
+    /// Override this method in derived classes to add custom async cleanup logic.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    protected abstract ValueTask DisposeAsyncCore();
+
+    /// <summary>
+    /// Starts the task that receives data on this connection, as defined by the implementation
+    /// of <see cref="ReceiveDataAsync"/>.
+    /// </summary>
     /// <remarks>
     /// <para>
-    /// The receive loop runs on a fire-and-forget task, and shutdown paths are not guaranteed
+    /// This method attaches a continuation to the task on which the receive loop runs. The
+    /// receive loop runs on a fire-and-forget task, and shutdown paths are not guaranteed
     /// to await it: <see cref="PipeConnection.StopAsync(CancellationToken)"/> abandons the loop
     /// when it does not finish within <see cref="ShutdownTimeout"/>, and disposal skips
     /// <see cref="StopAsync(CancellationToken)"/> entirely when the connection is already
@@ -219,9 +271,12 @@ public abstract class Connection : IAsyncDisposable
     /// from seeing the exception.
     /// </para>
     /// </remarks>
-    protected void ObserveReceiveLoopFault(Task receiveLoopTask)
+    protected void StartDataReceiveTask()
     {
-        _ = receiveLoopTask.ContinueWith(
+        // Start the receive loop
+        this.DataReceiveTask = Task.Run(this.ReceiveDataAsync);
+
+        _ = this.DataReceiveTask.ContinueWith(
             this.ReportReceiveLoopFault,
             state: null,
             CancellationToken.None,
@@ -230,17 +285,36 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously receives data from the remote end of this connection.
+    /// Disposes and recreates the connection's <see cref="CancellationTokenSource"/>, readying
+    /// this connection for a new session.
     /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    protected abstract Task ReceiveDataAsync();
+    /// <remarks>
+    /// Call this from <see cref="StartAsync(string, CancellationToken)"/> before any operation
+    /// that consumes <see cref="ConnectionCancellationToken"/>. Because
+    /// <see cref="StopAsync(CancellationToken)"/> cancels the source unconditionally -- including
+    /// when the connection never started -- a session that reuses the previous source would begin
+    /// with cancellation already requested and could never connect.
+    /// </remarks>
+    protected void ResetConnectionCancellation()
+    {
+        this.connectionCancellationTokenSource.Dispose();
+        this.connectionCancellationTokenSource = new();
+
+        // Refresh the cached token in the same step that replaces the source, so the two can
+        // never disagree. Snapshotting later would leave a window in which the connection is
+        // reported as active while the cached token still belongs to the previous, already
+        // canceled session.
+        this.ConnectionCancellationToken = this.connectionCancellationTokenSource.Token;
+    }
 
     /// <summary>
-    /// Asynchronously releases the resources used by this <see cref="Connection"/>.
-    /// Override this method in derived classes to add custom async cleanup logic.
+    /// Requests cancellation of the operations of this connection, signaling the background
+    /// receive loop and any in-flight send to stop.
     /// </summary>
-    /// <returns>A task that represents the asynchronous dispose operation.</returns>
-    protected abstract ValueTask DisposeAsyncCore();
+    protected void CancelConnection()
+    {
+        this.connectionCancellationTokenSource.Cancel();
+    }
 
     /// <summary>
     /// Marks this <see cref="Connection"/> as disposed. Use this method to ensure

@@ -46,15 +46,7 @@ using System.Text;
 /// </remarks>
 public class WebSocketConnection : Connection
 {
-    private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
-    private Task? dataReceiveTask;
     private ClientWebSocket client = new();
-    private CancellationTokenSource clientTokenSource = new();
-
-    // The receive loop's copy of clientTokenSource.Token, read while the source is known
-    // to be alive. See the comment in StartAsync for why the loop must not read the Token
-    // property itself.
-    private CancellationToken receiveLoopCancellationToken;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketConnection" /> class.
@@ -102,8 +94,6 @@ public class WebSocketConnection : Connection
             // the connection, disposing the old one first.
             this.client.Dispose();
             this.client = new ClientWebSocket();
-            this.clientTokenSource.Dispose();
-            this.clientTokenSource = new CancellationTokenSource();
         }
 
         if (this.client.State != WebSocketState.None)
@@ -113,6 +103,8 @@ public class WebSocketConnection : Connection
             throw new WebDriverBiDiConnectionException($"The WebSocket is already connected to {this.ConnectionString}; call the Stop method to disconnect before calling Start");
         }
 
+        this.ResetConnectionCancellation();
+
         await this.LogAsync($"Opening connection to URL {url}").ConfigureAwait(false);
         bool connected = false;
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
@@ -121,7 +113,7 @@ public class WebSocketConnection : Connection
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.clientTokenSource.Token);
+                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.ConnectionCancellationToken);
                 await this.client.ConnectAsync(websocketUri, linkedTokenSource.Token).ConfigureAwait(false);
                 connected = true;
                 this.ConnectionString = url;
@@ -143,15 +135,7 @@ public class WebSocketConnection : Connection
             throw new WebDriverBiDiTimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
         }
 
-        // Snapshot the token here rather than inside the receive loop. Task.Run only queues
-        // the loop; the delegate may not begin executing until well after this method returns,
-        // by which time disposal may already have disposed clientTokenSource, and the Token
-        // property throws ObjectDisposedException once the source is disposed. A CancellationToken
-        // struct that was obtained beforehand remains safe to read after its source is disposed.
-        this.receiveLoopCancellationToken = this.clientTokenSource.Token;
-
-        this.dataReceiveTask = Task.Run(this.ReceiveDataAsync);
-        this.ObserveReceiveLoopFault(this.dataReceiveTask);
+        this.StartDataReceiveTask();
         await this.LogAsync($"Connection opened").ConfigureAwait(false);
     }
 
@@ -173,10 +157,10 @@ public class WebSocketConnection : Connection
         }
 
         // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
-        this.clientTokenSource.Cancel();
-        if (this.dataReceiveTask is not null)
+        this.CancelConnection();
+        if (this.DataReceiveTask is not null)
         {
-            await this.dataReceiveTask.ConfigureAwait(false);
+            await this.DataReceiveTask.ConfigureAwait(false);
         }
 
         this.ConnectionString = string.Empty;
@@ -201,7 +185,7 @@ public class WebSocketConnection : Connection
         // Only one send operation at a time can be active on a ClientWebSocket instance,
         // so we must synchronize send access to the socket in case multiple threads are
         // attempting to send commands or other data simultaneously.
-        if (!await this.dataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
+        if (!await this.DataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
         {
             throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
@@ -222,7 +206,7 @@ public class WebSocketConnection : Connection
 #endif
             }
 
-            CancellationToken effectiveCancellationToken = this.clientTokenSource.Token;
+            CancellationToken effectiveCancellationToken = this.ConnectionCancellationToken;
             CancellationTokenSource? linkedTokenSource = null;
             try
             {
@@ -245,7 +229,7 @@ public class WebSocketConnection : Connection
         }
         finally
         {
-            this.dataSendSemaphore.Release();
+            this.DataSendSemaphore.Release();
         }
     }
 
@@ -255,7 +239,7 @@ public class WebSocketConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected override async Task ReceiveDataAsync()
     {
-        CancellationToken connectionCancellationToken = this.receiveLoopCancellationToken;
+        CancellationToken connectionCancellationToken = this.ConnectionCancellationToken;
         MemoryStream? memoryStream = null;
         using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try
@@ -392,8 +376,6 @@ public class WebSocketConnection : Connection
                 await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
 
-            this.dataSendSemaphore.Dispose();
-            this.clientTokenSource.Dispose();
             this.client.Dispose();
         }
     }
@@ -444,12 +426,12 @@ public class WebSocketConnection : Connection
             // proceed anyway; StopAsync will cancel the token to abort the socket.
             //
             // The infinite delay is intentional: its sole purpose is to convert the CancellationToken defined
-            // earlier in this method into a Task that Task.WhenAny can race against dataReceiveTask. The delay
+            // earlier in this method into a Task that Task.WhenAny can race against DataReceiveTask. The delay
             // itself never elapses; it completes only when the linked token fires (i.e., ShutdownTimeout expires
             // or the external cancellation token is canceled), which is the desired fallback behavior.
-            if (this.dataReceiveTask is not null)
+            if (this.DataReceiveTask is not null)
             {
-                await Task.WhenAny(this.dataReceiveTask, Task.Delay(Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
+                await Task.WhenAny(this.DataReceiveTask, Task.Delay(Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
             }
 
             await this.LogAsync($"Client state is {this.client.State}").ConfigureAwait(false);

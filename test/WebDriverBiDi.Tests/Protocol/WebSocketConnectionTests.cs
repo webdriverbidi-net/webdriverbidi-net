@@ -665,6 +665,91 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionCanBeStartedAfterStoppingWithoutStarting()
+    {
+        // StopAsync cancels the connection's CancellationTokenSource unconditionally, even when
+        // the connection was never started. If StartAsync did not reset that source, this
+        // connection would begin its first session with cancellation already requested and the
+        // connect attempt would fail immediately with a TaskCanceledException.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        WebSocketConnection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        ServerEventObserver<ServerDataReceivedEventArgs> observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
+
+        await connection.SendDataAsync("Hello after premature stop"u8.ToArray(), TestContext.Current.CancellationToken);
+        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
+        observer.Unobserve();
+        Assert.Equal("Hello after premature stop", serverReceivedData);
+
+        await server.SendWebSocketDataAsync(registeredConnectionId, "Acknowledged after premature stop");
+        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("Acknowledged after premature stop"u8.ToArray(), receivedData);
+    }
+
+    [Fact]
+    public async Task TestConnectionCanBeStartedAfterFailedConnectionAttempt()
+    {
+        // A failed connection attempt leaves the ClientWebSocket in the None state, so the branch
+        // in StartAsync that replaces a Closed or Aborted socket does not run. The caller's
+        // cleanup StopAsync still cancels the connection's CancellationTokenSource, so unless
+        // StartAsync resets that source on every start, the retry below would fail immediately
+        // with a TaskCanceledException and the connection could never be used again.
+        //
+        // Find an available port and release it before use, so that the first connection
+        // attempt is made against a port on which nothing is listening. See the comment in
+        // TestConnectionFailure regarding the theoretical race in this approach.
+        int deadPort;
+        using (TcpListener portFinder = new(IPAddress.Loopback, 0))
+        {
+            portFinder.Start();
+            deadPort = ((IPEndPoint)portFinder.LocalEndpoint).Port;
+            portFinder.Stop();
+        }
+
+        WebSocketConnection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromMilliseconds(200),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+
+        _ = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(
+            async () => await connection.StartAsync($"ws://localhost:{deadPort}", TestContext.Current.CancellationToken));
+
+        // The caller cleans up after the failed attempt before retrying.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        ServerEventObserver<ServerDataReceivedEventArgs> observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
+
+        await connection.SendDataAsync("Hello after failed attempt"u8.ToArray(), TestContext.Current.CancellationToken);
+        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
+        observer.Unobserve();
+        Assert.Equal("Hello after failed attempt", serverReceivedData);
+
+        await server.SendWebSocketDataAsync(registeredConnectionId, "Acknowledged after failed attempt");
+        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("Acknowledged after failed attempt"u8.ToArray(), receivedData);
+    }
+
+    [Fact]
     public async Task TestCannotStartAlreadyStartedConnection()
     {
         await using Server server = this.CreateServer();
