@@ -2899,4 +2899,174 @@ public class BiDiDriver005AnalyzerTests
             }
         }
         """;
+
+    /// <summary>
+    /// Tests that an event access whose member-access chain roots at <c>this</c> rather than at an
+    /// identifier is not attributed to a driver variable.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnThisRootedEventAccess_DoesNotReportDiagnostic()
+    {
+        string test = EventChainFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new BiDiDriver();
+
+                    public void Setup()
+                    {
+                        // The chain roots at `this`, not at an identifier.
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            this.driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an event access whose member-access chain roots at a namespace is not attributed
+    /// to a driver variable. A namespace qualifier has no type at all.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnNamespaceRootedEventAccess_DoesNotReportDiagnostic()
+    {
+        string test = EventChainFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public static class EventHolder
+                {
+                    public static ObservableEvent<EntryAddedEventArgs> Entry { get; } = new();
+                }
+
+                public class TestClass
+                {
+                    public void Setup()
+                    {
+                        // The chain roots at the `TestApp` namespace, which has no type.
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            TestApp.EventHolder.Entry.AddObserver(e => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests an <c>ObservableEvent</c> type that also advertises the command-executor interface, so
+    /// a bare variable of that type is simultaneously the observable event and its own chain root.
+    /// The rule requires the event to be reached through a module property, so nothing is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnObservableEventThatIsItselfACommandExecutor_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor { }
+
+                public class WebDriverBiDiEventArgs { }
+
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> : IBiDiCommandExecutor where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void Setup()
+                    {
+                        ObservableEvent<EntryAddedEventArgs> standalone = new ObservableEvent<EntryAddedEventArgs>();
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            standalone.AddObserver(e => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// In-source stand-ins for the driver, log module, and observable-event types used by the
+    /// member-access-chain tests above.
+    /// </summary>
+    private const string EventChainFakeSource = """
+        using System;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public class WebDriverBiDiEventArgs { }
+
+            public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+            public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+            {
+                public void Dispose() { }
+            }
+
+            public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+            {
+                public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+            }
+
+            public class LogModule
+            {
+                public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+            }
+
+            public class BiDiDriver
+            {
+                public LogModule Log { get; } = new();
+            }
+        }
+        """;
 }

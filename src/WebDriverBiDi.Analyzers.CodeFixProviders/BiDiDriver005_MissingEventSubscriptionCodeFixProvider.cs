@@ -166,9 +166,15 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         }
 
         // Handle: ["event1", "event2"] (C# 12 collection expressions)
-        CollectionExpressionSyntax collectionExpression = (CollectionExpressionSyntax)arrayExpression;
-        ExpressionElementSyntax newElementSyntax = SyntaxFactory.ExpressionElement(newElement);
-        SeparatedSyntaxList<CollectionElementSyntax> newElements = collectionExpression.Elements.Add(newElementSyntax);
-        return collectionExpression.WithElements(newElements);
+        if (arrayExpression is CollectionExpressionSyntax collectionExpression)
+        {
+            ExpressionElementSyntax newElementSyntax = SyntaxFactory.ExpressionElement(newElement);
+            SeparatedSyntaxList<CollectionElementSyntax> newElements = collectionExpression.Elements.Add(newElementSyntax);
+            return collectionExpression.WithElements(newElements);
+        }
+
+        // Any other shape — for example a variable holding the event-name array — cannot be
+        // rewritten in place. Return it unchanged so the caller leaves the call site alone.
+        return arrayExpression;
     }
 }

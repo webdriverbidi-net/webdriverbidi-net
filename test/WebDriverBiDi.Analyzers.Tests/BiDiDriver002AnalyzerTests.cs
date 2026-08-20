@@ -1334,4 +1334,130 @@ public class BiDiDriver002AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a driver declared through a base type is not treated as an observable-event owner.
+    /// The variable is tracked because its initializer constructs a <c>BiDiDriver</c>, but the
+    /// declared type of the member-access chain's root is the base type, which is not a command
+    /// executor, so the registration is not attributed to the driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnDriverDeclaredByBaseType_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                // A base type that is not itself recognised as a command executor.
+                public class DriverBase
+                {
+                    public LogModule Log { get; } = new();
+
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                }
+
+                public class BiDiDriver : DriverBase { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task Setup()
+                    {
+                        // Tracked as a driver because the initializer's type is BiDiDriver, but the
+                        // variable's declared type is DriverBase.
+                        DriverBase driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost");
+                        driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an <c>AddObserver</c> extension method whose receiver has an array type is not
+    /// treated as an observable event. An array type is not an <c>INamedTypeSymbol</c>, so it can
+    /// never be the <c>ObservableEvent</c> the rule looks for.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnArrayTypedProperty_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class BiDiDriver
+                {
+                    public string[] Names { get; } = new string[0];
+
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public static class Extensions
+                {
+                    public static object AddObserver(this string[] source, object handler) => source;
+                }
+
+                public class TestClass
+                {
+                    public async Task Setup()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost");
+                        driver.Names.AddObserver(new object());
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

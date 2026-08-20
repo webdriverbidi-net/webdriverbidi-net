@@ -746,4 +746,51 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that invocations which cannot name a driver variable are ignored: one whose expression
+    /// is a bare identifier rather than a member access, and one whose nested member-access root is
+    /// not a driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InvocationsWithoutADriverReceiver_DoNotReportDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class Inner
+                {
+                    public void DoWork() { }
+                }
+
+                public class Holder
+                {
+                    public Inner Inner { get; } = new Inner();
+                }
+
+                public class TestClass
+                {
+                    private static void Helper() { }
+
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        Holder holder = new Holder();
+
+                        // Invocation whose expression is a bare identifier, not a member access.
+                        Helper();
+
+                        // Nested member access whose root identifier is not a driver.
+                        holder.Inner.DoWork();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

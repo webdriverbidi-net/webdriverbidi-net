@@ -765,4 +765,97 @@ public class BiDiDriver008CodeFixProviderTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that a following statement containing an identifier whose text matches the declared
+    /// variable but whose symbol is a different member — here a field of the same name reached
+    /// through <c>this</c> — is not treated as depending on the cast result.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_IdentifierWithMatchingTextButDifferentSymbol_IsNotADependentStatement()
+    {
+        string testCode = """
+            using System;
+
+            namespace WebDriverBiDi.Script
+            {
+                public class EvaluateResult { }
+
+                public class EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; } = string.Empty;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    private string success = string.Empty;
+
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        EvaluateResultSuccess success = {|#0:(EvaluateResultSuccess)result|};
+
+                        // Contains an identifier whose text is "success" but whose symbol is the
+                        // field, not the local declared above.
+                        Console.WriteLine(this.success);
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+
+            namespace WebDriverBiDi.Script
+            {
+                public class EvaluateResult { }
+
+                public class EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; } = string.Empty;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    private string success = string.Empty;
+
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if (result is EvaluateResultSuccess success)
+                        {
+                        }
+
+                        // Contains an identifier whose text is "success" but whose symbol is the
+                        // field, not the local declared above.
+                        Console.WriteLine(this.success);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0);
+
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            NumberOfIncrementalIterations = 1,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

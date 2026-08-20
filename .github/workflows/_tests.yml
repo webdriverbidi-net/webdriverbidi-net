@@ -73,9 +73,7 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov.*.info
 
       - name: Test Roslyn analyzers (with coverage)
-        # --coverlet-include scopes the report to the two analyzer assemblies. Without it
-        # the referenced main library is instrumented too and reported at 0%, since the
-        # analyzer tests use it only as reference metadata for their test compilations.
+        # use --coverlet-include to only scope coverage to the analyzer assemblies.
         run: >
           dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
