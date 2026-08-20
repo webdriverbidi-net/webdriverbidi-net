@@ -134,7 +134,7 @@ jobs:
       - name: Test Roslyn analyzers
         run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
 
-      - name: Test structure logging library
+      - name: Test structured logging library
         run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
 
   integration-tests:
