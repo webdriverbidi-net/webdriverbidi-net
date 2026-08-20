@@ -1882,16 +1882,14 @@ public class BiDiDriver007AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that passing a delegate variable (not an inline lambda or a resolvable method
-    /// reference) as the handler does not report a diagnostic — exercises the
-    /// GetHandlerBody null return path (line 95).
+    /// Tests that a late-bound <c>GetAwaiter().GetResult()</c> chain is not reported. Because the
+    /// receiver is <c>dynamic</c>, the whole chain is late-bound, so the outer <c>GetResult</c>
+    /// call itself binds to no method symbol and the rule stops before it inspects the receiver.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EventHandler_WithGetResultOnDynamicGetAwaiter_DoesNotReportDiagnostic()
     {
-        // dynamic receiver makes GetAwaiter() unresolvable at analysis time —
-        // exercises getAwaiterSymbol == null path (line 141 block 276 branch 0).
         string test = """
             using System;
             using System.Threading.Tasks;
@@ -1933,7 +1931,7 @@ public class BiDiDriver007AnalyzerTests
                         using EventObserver<LogEntryAddedEventArgs> observer =
                             driver.Log.OnEntryAdded.AddObserver(async (e) =>
                             {
-                                // Dynamic receiver: GetAwaiter() is unresolvable — symbol is null.
+                                // Late-bound: neither GetAwaiter() nor GetResult() binds to a method.
                                 dynamic d = Task.CompletedTask;
                                 d.GetAwaiter().GetResult();
                                 await Task.CompletedTask;
@@ -2030,15 +2028,14 @@ public class BiDiDriver007AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that accessing .Result on a non-Task type does not report a diagnostic —
-    /// exercises expressionType?.Name != "Task" (line 157 false branch).
+    /// Tests that accessing <c>.Result</c> on a <c>dynamic</c> receiver does not report a
+    /// diagnostic. A <c>dynamic</c> expression does have a type symbol, but its name is "dynamic"
+    /// rather than "Task", so the receiver-type check rejects it.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EventHandler_WithResultOnDynamicType_DoesNotReportDiagnostic()
     {
-        // Dynamic receiver: GetTypeInfo returns null for dynamic expressions —
-        // exercises expressionType?.Name == "Task" null path (line 157 block 432 branch 0).
         string test = """
             using System;
             using System.Threading.Tasks;
@@ -2080,7 +2077,7 @@ public class BiDiDriver007AnalyzerTests
                         using EventObserver<LogEntryAddedEventArgs> observer =
                             driver.Log.OnEntryAdded.AddObserver(async (e) =>
                             {
-                                // Dynamic: expressionType is null (dynamic has no static type).
+                                // The receiver's type symbol is `dynamic`, which is not `Task`.
                                 dynamic d = Task.FromResult(42);
                                 var result = d.Result;
                                 await Task.CompletedTask;
@@ -2705,6 +2702,143 @@ public class BiDiDriver007AnalyzerTests
                 public LogModule Log { get; } = new();
 
                 public BrowserModule Browser { get; } = new();
+            }
+        }
+        """;
+
+    /// <summary>
+    /// Tests that a member access named <c>Result</c> whose qualifier is a namespace is skipped.
+    /// The name check is purely syntactic, so the rule then asks for the qualifier's type, and a
+    /// namespace has none.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ResultMemberOnNamespaceQualifier_DoesNotReportDiagnostic()
+    {
+        string test = BlockingOperationFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public static class Result
+                {
+                    public static string Value { get; } = string.Empty;
+                }
+
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(e =>
+                            {
+                                // Within `TestApp.Result.Value`, the inner member access is named
+                                // "Result" and its qualifier is the TestApp namespace.
+                                string value = TestApp.Result.Value;
+                                System.Console.WriteLine(value);
+                                return Task.CompletedTask;
+                            });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that <c>GetResult()</c> called on a function-pointer invocation is skipped. A function
+    /// pointer call has a result type, so the outer <c>GetResult</c> binds, but the call itself has
+    /// no method symbol for the rule to inspect.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetResultOnFunctionPointerInvocation_DoesNotReportDiagnostic()
+    {
+        string test = BlockingOperationFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class Holder
+                {
+                    public void GetResult() { }
+                }
+
+                public class TestClass
+                {
+                    private static Holder MakeHolder() => new Holder();
+
+                    public unsafe void Setup(BiDiDriver driver)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(e =>
+                            {
+                                // A function-pointer invocation has a result type but no method symbol.
+                                delegate*<Holder> factory = &MakeHolder;
+                                factory().GetResult();
+                                return Task.CompletedTask;
+                            });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.SolutionTransforms.Add((solution, projectId) =>
+        {
+            CSharpCompilationOptions options =
+                (CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!;
+            return solution.WithProjectCompilationOptions(projectId, options.WithAllowUnsafe(true));
+        });
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// In-source stand-ins for the driver, log module, and observable-event types used by the
+    /// unresolvable-receiver tests above.
+    /// </summary>
+    private const string BlockingOperationFakeSource = """
+        using System;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public class WebDriverBiDiEventArgs { }
+
+            public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+            public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+            {
+                public void Dispose() { }
+            }
+
+            public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+            {
+                public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+            }
+
+            public class LogModule
+            {
+                public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+            }
+
+            public class BiDiDriver
+            {
+                public LogModule Log { get; } = new();
             }
         }
         """;

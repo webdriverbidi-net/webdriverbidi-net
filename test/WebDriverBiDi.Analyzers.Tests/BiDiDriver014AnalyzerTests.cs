@@ -1289,4 +1289,97 @@ public class BiDiDriver014AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests the three ways an inline constructor argument is rejected: it takes constructor
+    /// arguments, it is not a command-parameters type, or its type exposes no usable static
+    /// <c>Reset</c> property. The last case also walks past a public static property whose name does
+    /// not begin with "Reset" and one that does but returns a different type.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InlineConstructors_ThatAreNotResettableParameters_DoNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    public abstract string MethodName { get; }
+                }
+
+                public abstract class CommandParameters<T> : CommandParameters
+                    where T : CommandResult
+                {
+                }
+
+                public class CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Emulation
+            {
+                using WebDriverBiDi;
+
+                public class SampleCommandResult : CommandResult { }
+
+                // Requires constructor arguments.
+                public class WithArgsCommandParameters : CommandParameters<SampleCommandResult>
+                {
+                    public WithArgsCommandParameters(string value) { }
+
+                    public static WithArgsCommandParameters ResetValue => new WithArgsCommandParameters("x");
+
+                    public override string MethodName => "emulation.withArgs";
+                }
+
+                // A command-parameters type with no usable Reset property.
+                public class NoResetCommandParameters : CommandParameters<SampleCommandResult>
+                {
+                    // Public static, but the name does not begin with "Reset".
+                    public static string Label => "label";
+
+                    // Begins with "Reset", but the property type is not the containing type.
+                    public static string ResetLabel => "reset";
+
+                    public override string MethodName => "emulation.noReset";
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Emulation;
+
+                // Not a command-parameters type at all.
+                public class PlainOptions { }
+
+                public class TestClass
+                {
+                    private static void Consume(object value) { }
+
+                    public void TestMethod()
+                    {
+                        // Constructor with arguments — skipped.
+                        Consume(new WithArgsCommandParameters("x"));
+
+                        // Parameterless, but not a command-parameters type — skipped.
+                        Consume(new PlainOptions());
+
+                        // A command-parameters type with no Reset property — skipped.
+                        Consume(new NoResetCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

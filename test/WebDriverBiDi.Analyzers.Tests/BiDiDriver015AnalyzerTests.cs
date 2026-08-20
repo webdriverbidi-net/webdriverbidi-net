@@ -2710,4 +2710,40 @@ public class BiDiDriver015AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that locals whose initializer has an array type, or no type at all, are skipped while
+    /// looking for the driver variable. An array type is not an <c>INamedTypeSymbol</c>, so the
+    /// command-executor interface scan has nothing to walk, and the <c>null</c> literal has no type
+    /// for the scan to start from.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task LocalsWithArrayOrUntypedInitializers_AreSkipped()
+    {
+        string test = """
+            using System;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        // Array type: not an INamedTypeSymbol, so the interface scan is skipped.
+                        string[] names = new string[0];
+
+                        // Null literal: the initializer expression has no type at all.
+                        object untyped = null;
+
+                        Console.WriteLine(names.Length);
+                        Console.WriteLine(untyped);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer>(test);
+    }
 }

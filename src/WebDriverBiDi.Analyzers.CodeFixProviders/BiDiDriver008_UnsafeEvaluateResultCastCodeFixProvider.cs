@@ -40,7 +40,7 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
 
         SyntaxNode node = root!.FindToken(diagnosticSpan.Start)
             .Parent!.AncestorsAndSelf()
-            .First(n => n is CastExpressionSyntax || n is BinaryExpressionSyntax);
+            .First(n => n is CastExpressionSyntax || n.IsKind(SyntaxKind.AsExpression));
 
         if (node is CastExpressionSyntax castExpression)
         {
@@ -52,8 +52,9 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
                     equivalenceKey: "ConvertToPatternMatching"),
                 diagnostic);
         }
-        else if (node is BinaryExpressionSyntax asExpression && asExpression.IsKind(SyntaxKind.AsExpression))
+        else
         {
+            BinaryExpressionSyntax asExpression = (BinaryExpressionSyntax)node;
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: "Use pattern matching with 'is' expression",

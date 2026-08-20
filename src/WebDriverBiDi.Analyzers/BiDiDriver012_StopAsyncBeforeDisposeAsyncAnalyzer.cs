@@ -67,8 +67,9 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
         foreach (InvocationExpressionSyntax disposeAsyncCall in disposeAsyncCalls)
         {
-            // Get the variable on which DisposeAsync is called
-            string? driverVariableName = GetDriverVariableName(disposeAsyncCall);
+            // Get the variable on which DisposeAsync is called. GetDisposeAsyncInvocations only
+            // yields invocations whose expression is a member access, so the cast is safe.
+            string? driverVariableName = GetDriverVariableName((MemberAccessExpressionSyntax)disposeAsyncCall.Expression);
             if (driverVariableName == null)
             {
                 continue;
@@ -109,14 +110,11 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         return invocations;
     }
 
-    private static string? GetDriverVariableName(InvocationExpressionSyntax invocation)
+    private static string? GetDriverVariableName(MemberAccessExpressionSyntax memberAccess)
     {
-        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        if (memberAccess.Expression is IdentifierNameSyntax identifier)
         {
-            if (memberAccess.Expression is IdentifierNameSyntax identifier)
-            {
-                return identifier.Identifier.Text;
-            }
+            return identifier.Identifier.Text;
         }
 
         return null;

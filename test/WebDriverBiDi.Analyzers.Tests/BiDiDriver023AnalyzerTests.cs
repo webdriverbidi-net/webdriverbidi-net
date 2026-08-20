@@ -1476,4 +1476,80 @@ public class BiDiDriver023AnalyzerTests
             }
         }
         """;
+
+    /// <summary>
+    /// Tests that a late-bound (<c>dynamic</c>) call inside a handler is skipped, because the
+    /// invocation binds to no method symbol.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DynamicInvocationInHandler_DoesNotReportDiagnostic()
+    {
+        string test = EventHandlerFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(async e =>
+                            {
+                                // Late-bound call: the invocation binds to no method symbol.
+                                dynamic value = new object();
+                                value.Anything();
+                                await Task.CompletedTask;
+                            });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// In-source stand-ins for the driver, log module, and observable-event types used by the
+    /// handler-body tests above.
+    /// </summary>
+    private const string EventHandlerFakeSource = """
+        using System;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public class WebDriverBiDiEventArgs { }
+
+            public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+            public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+            {
+                public void Dispose() { }
+            }
+
+            public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+            {
+                public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+            }
+
+            public class LogModule
+            {
+                public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+            }
+
+            public class BiDiDriver
+            {
+                public LogModule Log { get; } = new();
+            }
+        }
+        """;
 }
