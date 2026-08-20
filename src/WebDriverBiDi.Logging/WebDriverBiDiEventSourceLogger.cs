@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Logging;
 
+using System.Collections.ObjectModel;
 using System.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;
 
@@ -78,13 +79,15 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
             ["EventSource"] = eventData.EventSource.Name,
         };
 
-        // Add payload properties with their names
-        if (eventData.PayloadNames != null && eventData.Payload != null)
+        // Add payload properties with their names. This construct
+        // accesses payload names and payloads separately. If either
+        // list is null or empty, no properties get added.
+        ReadOnlyCollection<string>? payloadNames = eventData.PayloadNames;
+        ReadOnlyCollection<object?>? payload = eventData.Payload;
+        int payloadCount = Math.Min(payloadNames?.Count ?? 0, payload?.Count ?? 0);
+        for (int i = 0; i < payloadCount; i++)
         {
-            for (int i = 0; i < eventData.PayloadNames.Count && i < eventData.Payload.Count; i++)
-            {
-                state[eventData.PayloadNames[i]] = eventData.Payload[i];
-            }
+            state[payloadNames![i]] = payload![i];
         }
 
         // Create EventId for the log entry

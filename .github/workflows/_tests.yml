@@ -58,22 +58,19 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
+      # Note that each coverage report is scoped only to the assemblies being tested
       - name: Test WebDriverBiDi library (with coverage)
-        # The Coveralls upload globs lcov.*.info from test/coverage/. The analyzer
-        # coverage below writes lcov-analyzers.*.info to the same directory, which
-        # that glob deliberately does not match, so Coveralls continues to report
-        # the main library only.
         run: >
           dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
-          --coverlet-exclude-by-file "**/_/src/**"
-          --results-directory test/coverage --coverlet-file-prefix lcov
+          --coverlet-include "[WebDriverBiDi]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-library
 
-      - name: Enforce coverage thresholds
-        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov.*.info
+      - name: Enforce library coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-library.*.info
 
       - name: Test Roslyn analyzers (with coverage)
-        # use --coverlet-include to only scope coverage to the analyzer assemblies.
+        # Include both the analyzers and code fix providers coverage in one report
         run: >
           dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -84,14 +81,30 @@ jobs:
       - name: Enforce analyzer coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-analyzers.*.info
 
-      - name: Test structured logging library
-        run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
+      - name: Test structured logging library (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Logging]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-logging
+
+      - name: Enforce logging coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-logging.*.info
+
+      - name: Enforce combined coverage thresholds
+        # Perform an aggregate threshold check
+        run: >
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
+          test/coverage/lcov-library.*.info
+          test/coverage/lcov-analyzers.*.info
+          test/coverage/lcov-logging.*.info
 
       - name: Upload code coverage
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          files: test/coverage/lcov.*.info
+          files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info
+          format: lcov
 
   unit-tests-windows:
     name: Unit tests (Windows)
@@ -114,16 +127,15 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-      # No coverage flags here: coverage is collected and uploaded to Coveralls
-      # exclusively by the ubuntu-latest "unit-tests" job above. This job exists
-      # to exercise platform-dependent code paths on the OS where they actually
-      # differ (e.g. PipeConnection's Windows anonymous-pipe handle semantics),
-      # not to duplicate coverage reporting.
+      # Running tests on Windows will deliberately not produce code coverage metrics
       - name: Test WebDriverBiDi library
         run: dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
 
       - name: Test Roslyn analyzers
         run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test structure logging library
+        run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
 
   integration-tests:
     name: Integration tests (${{ matrix.browser.display }})
