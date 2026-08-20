@@ -165,15 +165,10 @@ public class WebDriverBiDiEventSourceLoggerTests
     public void OnEventWritten_WhenEventCarriesNoPayload_ForwardsEventWithoutPayloadProperties()
     {
         // EventSource.Write raises a self-describing (TraceLogging) event rather than a
-        // manifest event. With no payload argument the runtime leaves both PayloadNames
-        // and Payload null, which is the only way to reach the null arms of the guard in
-        // OnEventWritten — a manifest event always yields empty collections instead, even
-        // when declared with no parameters.
-        //
-        // Write is called on the real singleton on purpose. Raising the event from a
-        // second EventSource that shares the "WebDriverBiDi" name works on Linux and
-        // macOS but fails on Windows: the name derives the provider GUID, so the extra
-        // source collides with the real one during ETW registration and never emits.
+        // manifest event, which allows us to test the case where the Payload and PayloadNames
+        // properties are both null. Note carefully that we must use the real singleton even
+        // source here, as a second EventSource sharing the same name will fail to emit
+        // on Windows.
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
