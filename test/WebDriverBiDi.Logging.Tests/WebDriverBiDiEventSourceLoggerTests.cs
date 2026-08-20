@@ -303,6 +303,21 @@ public class WebDriverBiDiEventSourceLoggerTests
         public void EmitTestEvent() => this.TestEvent();
     }
 
+    [Fact]
+    public void OnEventWritten_WhenEventCarriesNoPayload_ForwardsEventWithoutPayloadProperties()
+    {
+        TestLogger fakeLogger = new();
+        using (PayloadlessEventSource payloadlessSource = new())
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            payloadlessSource.RaisePayloadlessEvent("PayloadlessEvent");
+        }
+
+        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "PayloadlessEvent");
+        Assert.Equal("PayloadlessEvent", entry.EventId.Name);
+        Assert.Contains("PayloadlessEvent", entry.Message);
+    }
+
     private sealed class TestEventListenerForOtherSource : EventListener
     {
         private readonly EventSource eventSource;
