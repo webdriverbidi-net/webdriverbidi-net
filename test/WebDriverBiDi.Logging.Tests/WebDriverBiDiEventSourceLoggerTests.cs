@@ -162,6 +162,69 @@ public class WebDriverBiDiEventSourceLoggerTests
     }
 
     [Fact]
+    public void OnEventWritten_WhenEventCarriesNoPayload_ForwardsEventWithoutPayloadProperties()
+    {
+        // EventSource.Write raises a self-describing (TraceLogging) event rather than a
+        // manifest event. With no payload argument the runtime leaves both PayloadNames
+        // and Payload null, which is the only way to reach the null arms of the guard in
+        // OnEventWritten — a manifest event always yields empty collections instead, even
+        // when declared with no parameters.
+        //
+        // Write is called on the real singleton on purpose. Raising the event from a
+        // second EventSource that shares the "WebDriverBiDi" name works on Linux and
+        // macOS but fails on Windows: the name derives the provider GUID, so the extra
+        // source collides with the real one during ETW registration and never emits.
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.Write("PayloadlessEvent");
+        }
+
+        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "PayloadlessEvent");
+        Assert.Equal("PayloadlessEvent", entry.EventId.Name);
+        Assert.Contains("PayloadlessEvent", entry.Message);
+    }
+
+    [Fact]
+    public void OnEventWritten_IgnoresEventsFromNonWebDriverBiDiEventSource()
+    {
+        TestLogger fakeLogger = new();
+        using WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose);
+
+        EventWrittenEventArgs? capturedArgs = null;
+        using (TestEventListenerForOtherSource listener = new(TestEventSource.Log, args => capturedArgs = args))
+        {
+            TestEventSource.Log.EmitTestEvent();
+        }
+
+        Assert.NotNull(capturedArgs);
+        Assert.NotEqual("WebDriverBiDi", capturedArgs!.EventSource.Name);
+
+        MethodInfo onEventWritten = typeof(WebDriverBiDiEventSourceLogger).GetMethod(
+            "OnEventWritten",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        onEventWritten.Invoke(eventSourceLogger, new object[] { capturedArgs });
+
+        Assert.Empty(fakeLogger.Entries);
+    }
+
+    [Fact]
+    public void OnEventWritten_HandlesEventWithNullPayload()
+    {
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-123");
+        }
+
+        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionClosed");
+        Assert.IsType<Dictionary<string, object?>>(entry.State);
+        Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
+        Assert.Equal(4, state["EventId"]);
+        Assert.Equal("ConnectionClosed", state["EventName"]);
+    }
+
+    [Fact]
     public void MapEventLevel_MapsCriticalToLogLevelCritical()
     {
         LogLevel result = InvokeMapEventLevel(EventLevel.Critical);
@@ -243,45 +306,6 @@ public class WebDriverBiDiEventSourceLoggerTests
         return (string)method.Invoke(null, new object?[] { state, exception })!;
     }
 
-    [Fact]
-    public void OnEventWritten_IgnoresEventsFromNonWebDriverBiDiEventSource()
-    {
-        TestLogger fakeLogger = new();
-        using WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose);
-
-        EventWrittenEventArgs? capturedArgs = null;
-        using (TestEventListenerForOtherSource listener = new(TestEventSource.Log, args => capturedArgs = args))
-        {
-            TestEventSource.Log.EmitTestEvent();
-        }
-
-        Assert.NotNull(capturedArgs);
-        Assert.NotEqual("WebDriverBiDi", capturedArgs!.EventSource.Name);
-
-        MethodInfo onEventWritten = typeof(WebDriverBiDiEventSourceLogger).GetMethod(
-            "OnEventWritten",
-            BindingFlags.Instance | BindingFlags.NonPublic)!;
-        onEventWritten.Invoke(eventSourceLogger, new object[] { capturedArgs });
-
-        Assert.Empty(fakeLogger.Entries);
-    }
-
-    [Fact]
-    public void OnEventWritten_HandlesEventWithNullPayload()
-    {
-        TestLogger fakeLogger = new();
-        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
-        {
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-123");
-        }
-
-        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionClosed");
-        Assert.IsType<Dictionary<string, object?>>(entry.State);
-        Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
-        Assert.Equal(4, state["EventId"]);
-        Assert.Equal("ConnectionClosed", state["EventName"]);
-    }
-
     [EventSource(Name = "TestWebDriverBiDiLogger")]
     private sealed class TestEventSource : EventSource
     {
@@ -301,21 +325,6 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         public void EmitTestEvent() => this.TestEvent();
-    }
-
-    [Fact]
-    public void OnEventWritten_WhenEventCarriesNoPayload_ForwardsEventWithoutPayloadProperties()
-    {
-        TestLogger fakeLogger = new();
-        using (PayloadlessEventSource payloadlessSource = new())
-        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
-        {
-            payloadlessSource.RaisePayloadlessEvent("PayloadlessEvent");
-        }
-
-        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "PayloadlessEvent");
-        Assert.Equal("PayloadlessEvent", entry.EventId.Name);
-        Assert.Contains("PayloadlessEvent", entry.Message);
     }
 
     private sealed class TestEventListenerForOtherSource : EventListener
