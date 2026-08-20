@@ -130,8 +130,8 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 continue;
             }
 
-            ITypeSymbol? type = semanticModel.GetTypeInfo(objectCreation).Type;
-            if (type == null || !IsCommandParametersType(type))
+            ITypeSymbol type = semanticModel.GetTypeInfo(objectCreation).Type!;
+            if (!IsCommandParametersType(type))
             {
                 continue;
             }

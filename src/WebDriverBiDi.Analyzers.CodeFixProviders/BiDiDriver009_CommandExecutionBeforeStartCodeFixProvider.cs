@@ -88,7 +88,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         StatementSyntax commandStatementCopy = trackedCommandStatement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
         SyntaxNode newMethod;
 
-        if (startAsyncIndex >= 0 && startAsyncIndex < block.Statements.Count - 1)
+        if (startAsyncIndex < block.Statements.Count - 1)
         {
             // Insert command after StartAsync (before the next statement)
             StatementSyntax nextStatement = block.Statements[startAsyncIndex + 1];
