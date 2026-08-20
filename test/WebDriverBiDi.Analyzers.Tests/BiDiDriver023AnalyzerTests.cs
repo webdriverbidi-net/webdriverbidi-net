@@ -1273,4 +1273,207 @@ public class BiDiDriver023AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a handler resolved to a declaration with neither a block body nor an expression
+    /// body (an interface method declaration) is skipped rather than crashing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommandInEventHandler_InterfaceMethodRef_DoesNotReportDiagnostic()
+    {
+        string test = ModuleCommandFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public interface IHandler
+                {
+                    // A declaration only: Body and ExpressionBody are both null.
+                    Task HandleAsync(EntryAddedEventArgs e);
+                }
+
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver, IHandler handler)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(handler.HandleAsync);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handler resolved to an <c>extern</c> local function, which has neither a block
+    /// body nor an expression body, is skipped rather than crashing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommandInEventHandler_ExternLocalFunctionRef_DoesNotReportDiagnostic()
+    {
+        string test = ModuleCommandFakeSource + """
+
+            namespace TestApp
+            {
+                using System.Runtime.InteropServices;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver)
+                    {
+                        // An extern local function: Body and ExpressionBody are both null.
+                        [DllImport("does-not-exist")]
+                        static extern Task HandleAsync(EntryAddedEventArgs e);
+
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(HandleAsync);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that module methods which do not return <c>Task&lt;T&gt;</c> — a synchronous method
+    /// and a non-generic <c>Task</c> method — are not treated as module commands.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleMethodsNotReturningGenericTask_DoNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public abstract class Module { }
+
+                public class BrowserModule : Module
+                {
+                    public string Describe() => "browser";
+
+                    public Task PingAsync() => Task.CompletedTask;
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+
+                    public BrowserModule Browser { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(async e =>
+                            {
+                                string description = driver.Browser.Describe();
+                                System.Console.WriteLine(description);
+                                await driver.Browser.PingAsync();
+                            });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// In-source stand-ins for the driver, log module, and module-command types used by the
+    /// handler-resolution tests above.
+    /// </summary>
+    private const string ModuleCommandFakeSource = """
+        using System;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public class WebDriverBiDiEventArgs { }
+
+            public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+            public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+            {
+                public void Dispose() { }
+            }
+
+            public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+            {
+                public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+            }
+
+            public class LogModule
+            {
+                public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+            }
+
+            public abstract class Module { }
+
+            public class BrowserModule : Module
+            {
+                public Task<string> CloseAsync() => Task.FromResult("closed");
+            }
+
+            public class BiDiDriver
+            {
+                public LogModule Log { get; } = new();
+
+                public BrowserModule Browser { get; } = new();
+            }
+        }
+        """;
 }

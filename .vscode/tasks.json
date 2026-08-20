@@ -43,6 +43,22 @@
                     "args": ["-c"]
                 }
             }
+        },
+        {
+            "type": "shell",
+            "command": "dotnet build --configuration Debug ${workspaceFolder}/test/WebDriverBiDi.Analyzers.Tests/WebDriverBiDi.Analyzers.Tests.csproj && ${workspaceFolder}/test/WebDriverBiDi.Analyzers.Tests/bin/Debug/net10.0/WebDriverBiDi.Analyzers.Tests --coverlet --coverlet-output-format lcov --coverlet-include '[WebDriverBiDi.Analyzers]*' --coverlet-include '[WebDriverBiDi.Analyzers.CodeFixProviders]*' --results-directory '${workspaceFolder}/test/coverage' --coverlet-file-prefix lcov-analyzers",
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "label": "dotnet: test analyzers with coverage",
+            "options": {
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": ["-c"]
+                }
+            }
         }
     ]
 }

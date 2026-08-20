@@ -165,7 +165,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         // referenced as a compiled assembly rather than compiled alongside user code.
         foreach (AttributeData attr in propertySymbol.GetAttributes())
         {
-            if (attr.AttributeClass?.Name == "ObservableEventNameAttribute" &&
+            if (attr.AttributeClass is { Name: "ObservableEventNameAttribute" } &&
                 attr.ConstructorArguments.Length > 0 &&
                 attr.ConstructorArguments[0].Value is string eventName)
             {

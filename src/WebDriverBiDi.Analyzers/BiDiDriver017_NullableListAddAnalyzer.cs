@@ -50,6 +50,19 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         "InsertRange",
     };
 
+    // Minimally-qualified display names of the collection types whose nullable form this rule
+    // flags. Both the short and namespace-qualified spellings are accepted so the lookup is
+    // independent of how the symbol display format renders the type.
+    private static readonly HashSet<string> CollectionTypeNames = new(StringComparer.Ordinal)
+    {
+        "List<T>",
+        "System.Collections.Generic.List<T>",
+        "IList<T>",
+        "System.Collections.Generic.IList<T>",
+        "ICollection<T>",
+        "System.Collections.Generic.ICollection<T>",
+    };
+
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -130,21 +143,9 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         {
             string typeName = namedTypeSymbol.OriginalDefinition.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 
-            if (typeName == "List<T>" || typeName == "System.Collections.Generic.List<T>")
+            if (CollectionTypeNames.Contains(typeName) && namedTypeSymbol.TypeArguments.Length == 1)
             {
-                if (namedTypeSymbol.TypeArguments.Length == 1)
-                {
-                    return (IsNullableType(namedTypeSymbol), namedTypeSymbol.TypeArguments[0]);
-                }
-            }
-
-            if (typeName == "IList<T>" || typeName == "System.Collections.Generic.IList<T>" ||
-                typeName == "ICollection<T>" || typeName == "System.Collections.Generic.ICollection<T>")
-            {
-                if (namedTypeSymbol.TypeArguments.Length == 1)
-                {
-                    return (IsNullableType(namedTypeSymbol), namedTypeSymbol.TypeArguments[0]);
-                }
+                return (IsNullableType(namedTypeSymbol), namedTypeSymbol.TypeArguments[0]);
             }
         }
 

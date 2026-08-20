@@ -2569,5 +2569,143 @@ public class BiDiDriver007AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-}
 
+    /// <summary>
+    /// Tests that a handler resolved to a declaration with neither a block body nor an expression
+    /// body (an interface method declaration) is skipped rather than crashing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_WithInterfaceMethodReference_DoesNotReportDiagnostic()
+    {
+        string test = HandlerFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public interface IHandler
+                {
+                    // A declaration only: Body and ExpressionBody are both null.
+                    Task HandleAsync(EntryAddedEventArgs e);
+                }
+
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver, IHandler handler)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(handler.HandleAsync);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a <c>GetResult()</c> call whose receiver is an invocation other than
+    /// <c>GetAwaiter()</c>, and a <c>.Result</c> access on a type other than <c>Task</c>, are both
+    /// left alone.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task LookalikeGetResultAndResultMembers_DoNotReportDiagnostic()
+    {
+        string test = HandlerFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class Holder
+                {
+                    public string Result { get; } = string.Empty;
+
+                    public void GetResult() { }
+                }
+
+                public class TestClass
+                {
+                    private static Holder GetHolder() => new Holder();
+
+                    public void Setup(BiDiDriver driver)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.Log.OnEntryAdded.AddObserver(e =>
+                            {
+                                // GetResult() whose receiver is an invocation that is not GetAwaiter().
+                                GetHolder().GetResult();
+
+                                // A .Result access on a type that is not Task.
+                                Holder holder = new Holder();
+                                string value = holder.Result;
+                                System.Console.WriteLine(value);
+                                return Task.CompletedTask;
+                            });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// In-source stand-ins for the driver, log module, and observable-event types used by the
+    /// handler-resolution tests above.
+    /// </summary>
+    private const string HandlerFakeSource = """
+        using System;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public class WebDriverBiDiEventArgs { }
+
+            public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+            public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+            {
+                public void Dispose() { }
+            }
+
+            public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+            {
+                public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+            }
+
+            public class LogModule
+            {
+                public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+            }
+
+            public abstract class Module { }
+
+            public class BrowserModule : Module
+            {
+                public Task<string> CloseAsync() => Task.FromResult("closed");
+            }
+
+            public class BiDiDriver
+            {
+                public LogModule Log { get; } = new();
+
+                public BrowserModule Browser { get; } = new();
+            }
+        }
+        """;
+}

@@ -606,4 +606,36 @@ public class BiDiDriver022AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a property named <c>AdditionalData</c> whose type is an array rather than a
+    /// dictionary is not flagged — exercises the non-INamedTypeSymbol property-type path.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ArrayTypedAdditionalDataProperty_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            #nullable enable
+            namespace TestApp
+            {
+                public class NotCommandParameters
+                {
+                    // Named AdditionalData, but the type is an array, not Dictionary<string, object?>.
+                    public object?[] AdditionalData { get; } = new object?[4];
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        NotCommandParameters parameters = new NotCommandParameters();
+                        parameters.AdditionalData[0] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
 }

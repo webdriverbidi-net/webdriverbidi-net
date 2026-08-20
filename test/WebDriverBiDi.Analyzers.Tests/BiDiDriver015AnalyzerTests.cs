@@ -2536,4 +2536,178 @@ public class BiDiDriver015AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that non-module driver properties and non-observable-event module properties are
+    /// skipped while searching for the ObservableEvent that matches a subscribed event name.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NonModuleAndNonObservableEventMembers_AreSkipped()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class ObservableEventNameAttribute : Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { }
+                }
+
+                public class WebDriverBiDiEventArgs { }
+
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public string EventName { get; } = string.Empty;
+                }
+
+                public class LogModule
+                {
+                    // Declared first so the array-typed (non-INamedTypeSymbol) member is visited
+                    // before the ObservableEvent that ends the search.
+                    public string[] KnownEventNames { get; } = new string[0];
+
+                    [ObservableEventName("log.entryAdded")]
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public class SubscribeCommandResult { }
+
+                public class SubscribeCommandParameters
+                {
+                    public SubscribeCommandParameters(string[] events) { }
+                }
+
+                public class SessionModule
+                {
+                    public Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters parameters) =>
+                        Task.FromResult(new SubscribeCommandResult());
+                }
+
+                public class BiDiDriver
+                {
+                    // Declared first so a non-module property is visited before the modules.
+                    public string SessionId { get; } = string.Empty;
+
+                    public LogModule Log { get; } = new();
+
+                    public SessionModule Session { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task SetupAsync()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.Session.SubscribeAsync(
+                            new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
+        CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an <c>ObservableEventName</c> attribute declared without constructor arguments
+    /// yields no event name, so no replacement is suggested for the string literal.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObservableEventNameAttributeWithoutArguments_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class ObservableEventNameAttribute : Attribute
+                {
+                    public ObservableEventNameAttribute() { }
+                }
+
+                public class WebDriverBiDiEventArgs { }
+
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public string EventName { get; } = string.Empty;
+                }
+
+                public class LogModule
+                {
+                    [ObservableEventName]
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
+                }
+
+                public class SubscribeCommandResult { }
+
+                public class SubscribeCommandParameters
+                {
+                    public SubscribeCommandParameters(string[] events) { }
+                }
+
+                public class SessionModule
+                {
+                    public Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters parameters) =>
+                        Task.FromResult(new SubscribeCommandResult());
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+
+                    public SessionModule Session { get; } = new();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task SetupAsync()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.Session.SubscribeAsync(
+                            new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

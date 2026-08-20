@@ -68,7 +68,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         }
 
         // Check if the return value is used (awaited, assigned, or passed as argument)
-        if (IsReturnValueUsed(invocation))
+        if (IsOperationUsed(invocation))
         {
             return;
         }
@@ -102,54 +102,6 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
     private static bool IsTaskReturningMethod(IMethodSymbol method)
     {
         return method.ReturnType is INamedTypeSymbol namedType && namedType.Name == "Task" && namedType.IsGenericType;
-    }
-
-    private static bool IsReturnValueUsed(IInvocationOperation invocation)
-    {
-        IOperation? parent = invocation.Parent;
-
-        // Check if the invocation is awaited
-        if (parent is IAwaitOperation)
-        {
-            return true;
-        }
-
-        // Check if assigned to a variable
-        if (parent is IVariableInitializerOperation or ISimpleAssignmentOperation)
-        {
-            return true;
-        }
-
-        // Check if used as an argument
-        if (parent is IArgumentOperation)
-        {
-            return true;
-        }
-
-        // Check if used as a return value
-        if (parent is IReturnOperation)
-        {
-            return true;
-        }
-
-        // Check if used in a conversion (e.g., implicit cast to Task base type) that is itself used
-        if (parent is IConversionOperation conversionOperation)
-        {
-            return conversionOperation.Parent is IAwaitOperation or
-                IVariableInitializerOperation or
-                ISimpleAssignmentOperation or
-                IArgumentOperation or
-                IReturnOperation;
-        }
-
-        // Check if this invocation is the instance of another invocation (e.g., task.ConfigureAwait())
-        // In this case, we need to check if that parent invocation is used
-        if (parent is IInvocationOperation parentInvocation)
-        {
-            return IsOperationUsed(parentInvocation);
-        }
-
-        return false;
     }
 
     private static bool IsOperationUsed(IOperation operation)
