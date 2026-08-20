@@ -1433,4 +1433,59 @@ public class BiDiDriver017AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that nullable <c>ICollection&lt;T&gt;</c> and <c>IList&lt;T&gt;</c> properties are
+    /// flagged alongside nullable <c>List&lt;T&gt;</c> properties.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddToNullableInterfaceCollectionProperties_ReportsDiagnostics()
+    {
+        string test = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace TestApp
+            {
+                public class Parameters
+                {
+                    public ICollection<string>? Contexts { get; set; }
+
+                    public IList<string>? Names { get; set; }
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        Parameters parameters = new Parameters();
+                        {|#0:parameters.Contexts|}.Add("context1");
+                        {|#1:parameters.Names|}.Add("name1");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult contexts = new DiagnosticResult(
+            BiDiDriver017_NullableListAddAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("string", "Contexts");
+        DiagnosticResult names = new DiagnosticResult(
+            BiDiDriver017_NullableListAddAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("string", "Names");
+
+        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(contexts);
+        testState.ExpectedDiagnostics.Add(names);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

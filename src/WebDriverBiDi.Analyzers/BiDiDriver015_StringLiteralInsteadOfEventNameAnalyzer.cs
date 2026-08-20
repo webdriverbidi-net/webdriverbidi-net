@@ -62,8 +62,8 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         }
 
         // Find the driver variable (if any)
-        string? driverVariableName = FindDriverVariable(context, method);
-        if (driverVariableName == null)
+        (string Name, ITypeSymbol Type)? driverVariable = FindDriverVariable(context, method);
+        if (driverVariable == null)
         {
             return;
         }
@@ -89,7 +89,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                 // Check if this is Session.SubscribeAsync
                 if (methodSymbol.Name == "SubscribeAsync" && IsSessionModule(methodSymbol.ContainingType))
                 {
-                    AnalyzeSubscribeCall(context, invocation, driverVariableName);
+                    AnalyzeSubscribeCall(context, invocation, driverVariable.Value);
                 }
             }
         }
@@ -98,7 +98,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     private static void AnalyzeSubscribeCall(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
-        string driverVariableName)
+        (string Name, ITypeSymbol Type) driverVariable)
     {
         if (invocation.ArgumentList.Arguments.Count == 0)
         {
@@ -119,27 +119,27 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
         // Get the events array argument
         ExpressionSyntax eventsArg = objectCreation.ArgumentList.Arguments[0].Expression;
-        AnalyzeEventsArray(context, eventsArg, driverVariableName);
+        AnalyzeEventsArray(context, eventsArg, driverVariable);
     }
 
     private static void AnalyzeEventsArray(
         SyntaxNodeAnalysisContext context,
         ExpressionSyntax expression,
-        string driverVariableName)
+        (string Name, ITypeSymbol Type) driverVariable)
     {
         // Handle array creation: new[] { "event1", "event2" } or new string[] { "event1", "event2" }
         if (expression is ImplicitArrayCreationExpressionSyntax implicitArray)
         {
             foreach (ExpressionSyntax item in implicitArray.Initializer.Expressions)
             {
-                AnalyzeStringLiteral(context, item, driverVariableName);
+                AnalyzeStringLiteral(context, item, driverVariable);
             }
         }
         else if (expression is ArrayCreationExpressionSyntax arrayCreation && arrayCreation.Initializer != null)
         {
             foreach (ExpressionSyntax item in arrayCreation.Initializer.Expressions)
             {
-                AnalyzeStringLiteral(context, item, driverVariableName);
+                AnalyzeStringLiteral(context, item, driverVariable);
             }
         }
         else if (expression is CollectionExpressionSyntax collectionExpression)
@@ -149,7 +149,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
             {
                 if (element is ExpressionElementSyntax expressionElement)
                 {
-                    AnalyzeStringLiteral(context, expressionElement.Expression, driverVariableName);
+                    AnalyzeStringLiteral(context, expressionElement.Expression, driverVariable);
                 }
             }
         }
@@ -158,7 +158,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     private static void AnalyzeStringLiteral(
         SyntaxNodeAnalysisContext context,
         ExpressionSyntax expression,
-        string driverVariableName)
+        (string Name, ITypeSymbol Type) driverVariable)
     {
         // Check if this is a string literal
         if (expression is not LiteralExpressionSyntax literal || !literal.IsKind(SyntaxKind.StringLiteralExpression))
@@ -169,12 +169,12 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         string eventName = (string)context.SemanticModel.GetConstantValue(literal).Value!;
 
         // Try to find the corresponding ObservableEvent property
-        string? eventPath = FindObservableEventPath(context, driverVariableName, eventName);
+        string? eventPath = FindObservableEventPath(context, driverVariable, eventName);
         if (eventPath != null)
         {
             ImmutableDictionary<string, string?>.Builder propertiesBuilder = ImmutableDictionary.CreateBuilder<string, string?>();
             propertiesBuilder.Add("EventPath", eventPath);
-            propertiesBuilder.Add("DriverVariable", driverVariableName);
+            propertiesBuilder.Add("DriverVariable", driverVariable.Name);
             ImmutableDictionary<string, string?> properties = propertiesBuilder.ToImmutable();
 
             Diagnostic diagnostic = Diagnostic.Create(
@@ -190,34 +190,12 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private static string? FindObservableEventPath(
         SyntaxNodeAnalysisContext context,
-        string driverVariableName,
+        (string Name, ITypeSymbol Type) driverVariable,
         string eventName)
     {
-        // Look for the driver variable in the method
-        MethodDeclarationSyntax method = (MethodDeclarationSyntax)context.Node;
-
-        // Find driver variable declaration
-        ITypeSymbol? driverType = null;
-        foreach (StatementSyntax statement in method.Body!.Statements)
-        {
-            if (statement is LocalDeclarationStatementSyntax localDecl)
-            {
-                foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
-                {
-                    if (variable.Identifier.Text == driverVariableName)
-                    {
-                        if (variable.Initializer?.Value != null)
-                        {
-                            driverType = context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Search through driver's module properties
-        foreach (ISymbol member in driverType!.GetMembers())
+        // Search through the driver's module properties. The driver's type was already resolved
+        // when its declaration was located, so there is no need to walk the method body again.
+        foreach (ISymbol member in driverVariable.Type.GetMembers())
         {
             if (member is IPropertySymbol propertySymbol && IsModuleType(propertySymbol.Type))
             {
@@ -230,7 +208,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                         string? observableEventName = GetEventNameFromObservableEvent(context, eventProperty);
                         if (observableEventName == eventName)
                         {
-                            return $"{driverVariableName}.{propertySymbol.Name}.{eventProperty.Name}.EventName";
+                            return $"{driverVariable.Name}.{propertySymbol.Name}.{eventProperty.Name}.EventName";
                         }
                     }
                 }
@@ -249,7 +227,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         // referenced as a compiled assembly rather than compiled alongside user code.
         foreach (AttributeData attr in propertySymbol.GetAttributes())
         {
-            if (attr.AttributeClass?.Name == "ObservableEventNameAttribute" &&
+            if (attr.AttributeClass is { Name: "ObservableEventNameAttribute" } &&
                 attr.ConstructorArguments.Length > 0 &&
                 attr.ConstructorArguments[0].Value is string eventName)
             {
@@ -260,7 +238,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         return null;
     }
 
-    private static string? FindDriverVariable(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method)
+    private static (string Name, ITypeSymbol Type)? FindDriverVariable(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method)
     {
         // Look for BiDiDriver variable declarations
         foreach (StatementSyntax statement in method.Body!.Statements)
@@ -274,7 +252,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                         ITypeSymbol? type = context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
                         if (type != null && AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                         {
-                            return variable.Identifier.Text;
+                            return (variable.Identifier.Text, type);
                         }
                     }
                 }

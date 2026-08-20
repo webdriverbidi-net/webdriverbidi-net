@@ -138,7 +138,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 memberAccess.Expression is InvocationExpressionSyntax getAwaiterCall)
             {
                 IMethodSymbol? getAwaiterSymbol = context.SemanticModel.GetSymbolInfo(getAwaiterCall).Symbol as IMethodSymbol;
-                if (getAwaiterSymbol?.Name == "GetAwaiter")
+                if (getAwaiterSymbol is { Name: "GetAwaiter" })
                 {
                     blockingOps.Add(invocation);
                     continue;
@@ -154,7 +154,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             if (memberAccess.Name.Identifier.Text == "Result")
             {
                 ITypeSymbol? expressionType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
-                if (expressionType?.Name == "Task")
+                if (expressionType is { Name: "Task" })
                 {
                     blockingOps.Add(memberAccess);
                 }

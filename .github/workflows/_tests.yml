@@ -59,9 +59,10 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Test WebDriverBiDi library (with coverage)
-        # Coverage is produced only for the main library's test project. The
-        # Coveralls upload globs lcov.*.info from test/coverage/ — other test
-        # projects do not write coverage there.
+        # The Coveralls upload globs lcov.*.info from test/coverage/. The analyzer
+        # coverage below writes lcov-analyzers.*.info to the same directory, which
+        # that glob deliberately does not match, so Coveralls continues to report
+        # the main library only.
         run: >
           dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
@@ -71,8 +72,19 @@ jobs:
       - name: Enforce coverage thresholds
         run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov.*.info
 
-      - name: Test Roslyn analyzers
-        run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
+      - name: Test Roslyn analyzers (with coverage)
+        # --coverlet-include scopes the report to the two analyzer assemblies. Without it
+        # the referenced main library is instrumented too and reported at 0%, since the
+        # analyzer tests use it only as reference metadata for their test compilations.
+        run: >
+          dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Analyzers]*"
+          --coverlet-include "[WebDriverBiDi.Analyzers.CodeFixProviders]*"
+          --results-directory test/coverage --coverlet-file-prefix lcov-analyzers
+
+      - name: Enforce analyzer coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage/lcov-analyzers.*.info
 
       - name: Test structured logging library
         run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal

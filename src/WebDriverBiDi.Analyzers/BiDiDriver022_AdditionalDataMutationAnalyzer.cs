@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -44,9 +46,11 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
 
     // Methods on Dictionary<TKey, TValue> that add new values (and therefore introduce
     // potentially non-AOT-safe objects that will be serialized later).
-    private static readonly ImmutableHashSet<string> ValueAddingMethodNames = ImmutableHashSet.Create(
+    private static readonly HashSet<string> ValueAddingMethodNames = new(StringComparer.Ordinal)
+    {
         "Add",
-        "TryAdd");
+        "TryAdd",
+    };
 
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -114,9 +118,11 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
             return context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type!.Name;
         }
 
-        // Fallback for parenthesized or other expressions (e.g. (cmd.AdditionalData)[key]).
-        ISymbol? symbol = context.SemanticModel.GetSymbolInfo(additionalDataExpr).Symbol;
-        return symbol?.ContainingType?.Name ?? string.Empty;
+        // Fallback for unqualified or parenthesized access (e.g. `AdditionalData[key]` inside the
+        // declaring type, or `(cmd.AdditionalData)[key]`). Every caller has already run
+        // IsAdditionalDataProperty on this expression, so it binds to a property symbol here.
+        IPropertySymbol property = (IPropertySymbol)context.SemanticModel.GetSymbolInfo(additionalDataExpr).Symbol!;
+        return property.ContainingType.Name;
     }
 
     private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)

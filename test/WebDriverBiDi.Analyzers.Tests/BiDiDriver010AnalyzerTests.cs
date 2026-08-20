@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Analyzers.Tests;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.CSharp.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver010 analyzer.
@@ -1399,4 +1400,132 @@ public class BiDiDriver010AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a module command whose <c>Task&lt;T&gt;</c> result is implicitly converted to
+    /// <c>Task</c> is treated as used in every position the conversion can appear in.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ConvertedResultInEveryUsedPosition_DoesNotReportDiagnostic()
+    {
+        string test = ModuleFakeSource + """
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private static void Consume(Task task) { }
+
+                    public Task AsExpressionBodiedReturn(BiDiDriver driver) => driver.Browser.CloseAsync();
+
+                    public Task AsReturnStatement(BiDiDriver driver)
+                    {
+                        return driver.Browser.CloseAsync();
+                    }
+
+                    public void AsArgument(BiDiDriver driver)
+                    {
+                        Consume(driver.Browser.CloseAsync());
+                    }
+
+                    public void AsVariableInitializer(BiDiDriver driver)
+                    {
+                        Task task = driver.Browser.CloseAsync();
+                        Consume(task);
+                    }
+
+                    public void AsSimpleAssignment(BiDiDriver driver)
+                    {
+                        Task task;
+                        task = driver.Browser.CloseAsync();
+                        Consume(task);
+                    }
+
+                    public async Task AsAwaitedConversionAsync(BiDiDriver driver)
+                    {
+                        await (Task)driver.Browser.CloseAsync();
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the result of <c>ConfigureAwait</c> on a module command counts as used when it is
+    /// stored in a local rather than awaited directly.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ConfigureAwaitResultStoredInLocal_DoesNotReportDiagnostic()
+    {
+        string test = ModuleFakeSource + """
+
+            namespace TestApp
+            {
+                using System.Runtime.CompilerServices;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task VariableInitializerAsync(BiDiDriver driver)
+                    {
+                        ConfiguredTaskAwaitable<string> awaitable =
+                            driver.Browser.CloseAsync().ConfigureAwait(false);
+                        string result = await awaitable;
+                        System.Console.WriteLine(result);
+                    }
+
+                    public async Task SimpleAssignmentAsync(BiDiDriver driver)
+                    {
+                        ConfiguredTaskAwaitable<string> awaitable;
+                        awaitable = driver.Browser.CloseAsync().ConfigureAwait(false);
+                        string result = await awaitable;
+                        System.Console.WriteLine(result);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// In-source stand-ins for the driver and module types used by the conversion tests above.
+    /// </summary>
+    private const string ModuleFakeSource = """
+        using System;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public abstract class Module { }
+
+            public class BrowserModule : Module
+            {
+                public Task<string> CloseAsync() => Task.FromResult("closed");
+            }
+
+            public class BiDiDriver
+            {
+                public BrowserModule Browser { get; } = new();
+            }
+        }
+        """;
 }
