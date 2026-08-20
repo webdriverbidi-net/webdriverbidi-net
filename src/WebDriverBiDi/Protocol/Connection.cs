@@ -199,6 +199,37 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Attaches a continuation to the background receive loop task that observes any fault
+    /// the task may produce.
+    /// </summary>
+    /// <param name="receiveLoopTask">The task running the background receive loop.</param>
+    /// <remarks>
+    /// <para>
+    /// The receive loop runs on a fire-and-forget task, and shutdown paths are not guaranteed
+    /// to await it: <see cref="PipeConnection.StopAsync(CancellationToken)"/> abandons the loop
+    /// when it does not finish within <see cref="ShutdownTimeout"/>, and disposal skips
+    /// <see cref="StopAsync(CancellationToken)"/> entirely when the connection is already
+    /// inactive. An abandoned task that faults would otherwise sit unobserved until the
+    /// finalizer raises <see cref="TaskScheduler.UnobservedTaskException"/>, which surfaces
+    /// as a failure in whatever code happens to be running when the garbage collector runs.
+    /// </para>
+    /// <para>
+    /// Reading <see cref="Task.Exception"/> inside the continuation observes the fault and
+    /// yields it for reporting. This does not prevent a shutdown path that does await the task
+    /// from seeing the exception.
+    /// </para>
+    /// </remarks>
+    protected void ObserveReceiveLoopFault(Task receiveLoopTask)
+    {
+        _ = receiveLoopTask.ContinueWith(
+            this.ReportReceiveLoopFault,
+            state: null,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    /// <summary>
     /// Asynchronously receives data from the remote end of this connection.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
@@ -240,5 +271,18 @@ public abstract class Connection : IAsyncDisposable
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+    }
+
+    private void ReportReceiveLoopFault(Task faultedTask, object? state)
+    {
+        // Reading Task.Exception observes the fault, which is the point of this continuation.
+        // The property is guaranteed non-null here because the continuation is scheduled with
+        // OnlyOnFaulted, so the null-forgiving operator is appropriate. AggregateException.Message
+        // already incorporates the messages of its inner exceptions, so no unwrapping is needed.
+        AggregateException aggregateException = faultedTask.Exception!;
+
+        // Use EventSource rather than LogAsync to keep this fire-and-forget fault handler
+        // synchronous; awaiting the log pipeline here would create another unobserved task.
+        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Id, aggregateException.Message);
     }
 }

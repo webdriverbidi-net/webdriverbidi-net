@@ -290,6 +290,44 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestReceiveLoopFaultIsObservedAndDoesNotRaiseUnobservedTaskException()
+    {
+        // The receive loop runs on a fire-and-forget task, and StopAsync only waits on it with
+        // Task.WhenAny, which does not observe a fault. Without the fault-observing continuation
+        // attached by Connection.ObserveReceiveLoopFault, a receive loop that faults leaves its
+        // exception unobserved until the finalizer raises TaskScheduler.UnobservedTaskException,
+        // which then surfaces as a failure in whatever unrelated test happens to force the next
+        // garbage collection.
+        using UnobservedTaskExceptionMonitor monitor = new("simulated receive loop fault");
+
+        // The connection and its receive task are created inside a separate method so that
+        // nothing roots them once it returns, letting the collection below finalize the task.
+        await StartAndDisposeFaultingConnectionAsync();
+
+        // Force garbage collection to trigger UnobservedTaskException
+        // for any task whose exception was not observed.
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        Assert.False(monitor.Raised, monitor.Exception?.ToString());
+
+        static async Task StartAndDisposeFaultingConnectionAsync()
+        {
+            TestPipeServer testPipeServer = new();
+            TestPipeConnection connection = new(testPipeServer)
+            {
+                ReceiveLoopOuterFault = new InvalidOperationException("simulated receive loop fault"),
+            };
+
+            testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+            await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+            testPipeServer.Stop();
+            await connection.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public async Task TestCanDispose()
     {
         PipeConnection connection = new(new TestPipeServer());

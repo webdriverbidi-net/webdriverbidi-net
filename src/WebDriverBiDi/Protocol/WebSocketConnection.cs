@@ -51,6 +51,11 @@ public class WebSocketConnection : Connection
     private ClientWebSocket client = new();
     private CancellationTokenSource clientTokenSource = new();
 
+    // The receive loop's copy of clientTokenSource.Token, read while the source is known
+    // to be alive. See the comment in StartAsync for why the loop must not read the Token
+    // property itself.
+    private CancellationToken receiveLoopCancellationToken;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketConnection" /> class.
     /// </summary>
@@ -138,7 +143,15 @@ public class WebSocketConnection : Connection
             throw new WebDriverBiDiTimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
         }
 
+        // Snapshot the token here rather than inside the receive loop. Task.Run only queues
+        // the loop; the delegate may not begin executing until well after this method returns,
+        // by which time disposal may already have disposed clientTokenSource, and the Token
+        // property throws ObjectDisposedException once the source is disposed. A CancellationToken
+        // struct that was obtained beforehand remains safe to read after its source is disposed.
+        this.receiveLoopCancellationToken = this.clientTokenSource.Token;
+
         this.dataReceiveTask = Task.Run(this.ReceiveDataAsync);
+        this.ObserveReceiveLoopFault(this.dataReceiveTask);
         await this.LogAsync($"Connection opened").ConfigureAwait(false);
     }
 
@@ -242,7 +255,7 @@ public class WebSocketConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected override async Task ReceiveDataAsync()
     {
-        CancellationToken connectionCancellationToken = this.clientTokenSource.Token;
+        CancellationToken connectionCancellationToken = this.receiveLoopCancellationToken;
         MemoryStream? memoryStream = null;
         using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try
