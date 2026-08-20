@@ -54,17 +54,9 @@ using System.Text;
 /// </remarks>
 public class PipeConnection : Connection
 {
-    private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
     private readonly AnonymousPipeServerStream pipeToProcess;
     private readonly AnonymousPipeServerStream pipeFromProcess;
     private readonly IPipeServerProcessProvider processProvider;
-    private Task? dataReceiveTask;
-    private CancellationTokenSource connectionTokenSource = new();
-
-    // The receive loop's copy of connectionTokenSource.Token, read while the source is
-    // known to be alive. See the comment in StartAsync for why the loop must not read
-    // the Token property itself.
-    private CancellationToken receiveLoopCancellationToken;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isConnectionActiveTypeSafeFlag = 0;
@@ -190,22 +182,12 @@ public class PipeConnection : Connection
         }
 
         // Create a new cancellation token source for this connection session
-        this.connectionTokenSource.Dispose();
-        this.connectionTokenSource = new CancellationTokenSource();
-
-        // Snapshot the token here rather than inside the receive loop. Task.Run only queues
-        // the loop; the delegate may not begin executing until well after this method returns,
-        // by which time disposal may already have disposed connectionTokenSource, and the Token
-        // property throws ObjectDisposedException once the source is disposed. A CancellationToken
-        // struct that was obtained beforehand remains safe to read after its source is disposed.
-        this.receiveLoopCancellationToken = this.connectionTokenSource.Token;
+        this.ResetConnectionCancellation();
 
         this.ConnectionString = connectionString;
         this.IsConnectionActive = true;
 
-        // Start the receive loop
-        this.dataReceiveTask = Task.Run(this.ReceiveDataAsync);
-        this.ObserveReceiveLoopFault(this.dataReceiveTask);
+        this.StartDataReceiveTask();
 
         await this.LogAsync("Pipe connection started").ConfigureAwait(false);
     }
@@ -234,15 +216,15 @@ public class PipeConnection : Connection
         }
 
         // Signal cancellation to stop the receive loop
-        this.connectionTokenSource.Cancel();
+        this.CancelConnection();
 
         // Wait for the receive task to complete, bounded by ShutdownTimeout. See the
         // remarks on this method for why the wait must not be unconditional here.
-        if (this.dataReceiveTask is not null)
+        if (this.DataReceiveTask is not null)
         {
             using CancellationTokenSource shutdownDelayCancelTokenSource = new();
-            Task completedTask = await Task.WhenAny(this.dataReceiveTask, Task.Delay(this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
-            if (completedTask != this.dataReceiveTask)
+            Task completedTask = await Task.WhenAny(this.DataReceiveTask, Task.Delay(this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
+            if (completedTask != this.DataReceiveTask)
             {
                 await this.LogAsync("Timed out waiting for pipe receive loop to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
@@ -277,7 +259,7 @@ public class PipeConnection : Connection
         // Only one send operation at a time can be active on a pipe,
         // so we must synchronize send access to the pipe in case multiple threads are
         // attempting to send commands or other data simultaneously.
-        if (!await this.dataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
+        if (!await this.DataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
         {
             throw new WebDriverBiDiTimeoutException("Timed out waiting to access pipe for sending; only one send operation is permitted at a time.");
         }
@@ -294,7 +276,7 @@ public class PipeConnection : Connection
                 await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             }
 
-            CancellationToken effectiveCancellationToken = this.connectionTokenSource.Token;
+            CancellationToken effectiveCancellationToken = this.ConnectionCancellationToken;
             CancellationTokenSource? linkedTokenSource = null;
             try
             {
@@ -321,7 +303,7 @@ public class PipeConnection : Connection
         }
         finally
         {
-            this.dataSendSemaphore.Release();
+            this.DataSendSemaphore.Release();
         }
     }
 
@@ -365,7 +347,7 @@ public class PipeConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected override async Task ReceiveDataAsync()
     {
-        CancellationToken connectionCancellationToken = this.receiveLoopCancellationToken;
+        CancellationToken connectionCancellationToken = this.ConnectionCancellationToken;
         using MemoryStream messageBuffer = new();
         using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try
@@ -473,8 +455,6 @@ public class PipeConnection : Connection
             // by the caller and may be used across multiple connection sessions.
             // Disposing it here could cause ObjectDisposedExceptions in the caller
             // if they attempt to use the process after the connection is disposed.
-            this.dataSendSemaphore.Dispose();
-            this.connectionTokenSource.Dispose();
             this.pipeToProcess.Dispose();
             this.pipeFromProcess.Dispose();
         }
