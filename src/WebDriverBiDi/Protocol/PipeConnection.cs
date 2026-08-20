@@ -61,6 +61,11 @@ public class PipeConnection : Connection
     private Task? dataReceiveTask;
     private CancellationTokenSource connectionTokenSource = new();
 
+    // The receive loop's copy of connectionTokenSource.Token, read while the source is
+    // known to be alive. See the comment in StartAsync for why the loop must not read
+    // the Token property itself.
+    private CancellationToken receiveLoopCancellationToken;
+
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isConnectionActiveTypeSafeFlag = 0;
     private int areConnectionPipesDisposedTypeSafeFlag = 0;
@@ -188,11 +193,19 @@ public class PipeConnection : Connection
         this.connectionTokenSource.Dispose();
         this.connectionTokenSource = new CancellationTokenSource();
 
+        // Snapshot the token here rather than inside the receive loop. Task.Run only queues
+        // the loop; the delegate may not begin executing until well after this method returns,
+        // by which time disposal may already have disposed connectionTokenSource, and the Token
+        // property throws ObjectDisposedException once the source is disposed. A CancellationToken
+        // struct that was obtained beforehand remains safe to read after its source is disposed.
+        this.receiveLoopCancellationToken = this.connectionTokenSource.Token;
+
         this.ConnectionString = connectionString;
         this.IsConnectionActive = true;
 
         // Start the receive loop
         this.dataReceiveTask = Task.Run(this.ReceiveDataAsync);
+        this.ObserveReceiveLoopFault(this.dataReceiveTask);
 
         await this.LogAsync("Pipe connection started").ConfigureAwait(false);
     }
@@ -352,7 +365,7 @@ public class PipeConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected override async Task ReceiveDataAsync()
     {
-        CancellationToken connectionCancellationToken = this.connectionTokenSource.Token;
+        CancellationToken connectionCancellationToken = this.receiveLoopCancellationToken;
         using MemoryStream messageBuffer = new();
         using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try

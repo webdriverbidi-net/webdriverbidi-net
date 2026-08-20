@@ -52,6 +52,18 @@ public class TestPipeConnection : PipeConnection
     /// </summary>
     public TaskCompletionSource? ReceiveBlockEnteredSignal { get; set; }
 
+    /// <summary>
+    /// Gets or sets an exception that, when set, causes the background receive loop to fault
+    /// immediately instead of running.
+    /// </summary>
+    /// <remarks>
+    /// The real receive loop catches every exception it expects to see, so under normal
+    /// operation <c>dataReceiveTask</c> never faults. This seam simulates an unrecoverable
+    /// outer-loop fault so that the fault-observing continuation attached by
+    /// <c>Connection.ObserveReceiveLoopFault</c> can be exercised.
+    /// </remarks>
+    public Exception? ReceiveLoopOuterFault { get; set; }
+
     public bool Disposed => this.IsDisposed;
 
     public async Task RaiseRemoteDisconnectedEventAsync()
@@ -93,6 +105,16 @@ public class TestPipeConnection : PipeConnection
         }
 
         return base.StopAsync(cancellationToken);
+    }
+
+    protected override Task ReceiveDataAsync()
+    {
+        if (this.ReceiveLoopOuterFault is not null)
+        {
+            return Task.FromException(this.ReceiveLoopOuterFault);
+        }
+
+        return base.ReceiveDataAsync();
     }
 
     protected override async Task SendPipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
