@@ -33,7 +33,7 @@ public class AotCompilationEnvironmentFixture : IAsyncLifetime
             "dotnet",
             $"publish \"{SmokeTestProjectDir}\" -c Release -o \"{this.PublishDir}\" -p:TreatWarningsAsErrors=true",
             workingDirectory: SmokeTestProjectDir,
-            timeoutSeconds: 300);
+            timeout: TimeSpan.FromMinutes(5));
 
         Assert.Equal(0, publishExit.ExitCode);
 

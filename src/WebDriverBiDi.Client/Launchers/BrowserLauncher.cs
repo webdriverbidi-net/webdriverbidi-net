@@ -49,6 +49,13 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// <summary>
     /// Gets or sets a value indicating the time to wait for an initial connection before timing out.
     /// </summary>
+    /// <remarks>
+    /// This bounds two distinct waits: the wait for the launched browser to report that its
+    /// WebDriver BiDi endpoint is accepting connections, and the startup retries of the
+    /// <see cref="Connection"/> created by <see cref="CreateConnection"/>. The value is read when
+    /// the connection is created, so it must be set before calling <see cref="CreateTransport"/>
+    /// to affect the latter.
+    /// </remarks>
     public TimeSpan InitializationTimeout { get; set; } = TimeSpan.FromSeconds(20);
 
     /// <summary>
@@ -271,7 +278,10 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// <returns>The <see cref="Connection"/> object to be used to communicate with the browser.</returns>
     protected virtual Connection CreateConnection()
     {
-        return new WebSocketConnection();
+        return new WebSocketConnection()
+        {
+            StartupTimeout = this.InitializationTimeout,
+        };
     }
 
     /// <summary>

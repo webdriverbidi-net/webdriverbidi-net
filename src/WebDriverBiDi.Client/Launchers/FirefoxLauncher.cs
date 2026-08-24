@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Client.Launchers;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
 
@@ -19,6 +20,12 @@ public class FirefoxLauncher : BrowserLauncher
 {
     private static readonly SemaphoreSlim LockObject = new(1, 1);
 
+    // Firefox announces that its WebDriver BiDi endpoint is accepting connections with a
+    // line of the form "WebDriver BiDi listening on ws://127.0.0.1:9222" on its standard
+    // error stream. This differs from the "DevTools listening on ..." line matched by the
+    // base class implementation, which Firefox never emits.
+    private static readonly Regex BiDiEndpointReadyMatcher = new(@"WebDriver BiDi listening on ws:\/\/", RegexOptions.IgnoreCase);
+
     private readonly List<string> firefoxArguments = [
       "--no-remote",
     ];
@@ -27,6 +34,9 @@ public class FirefoxLauncher : BrowserLauncher
 
     private Process? browserProcess;
     private string userDataDirectory = string.Empty;
+
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
+    private int isBiDiEndpointReadyFlag;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.
@@ -76,6 +86,23 @@ public class FirefoxLauncher : BrowserLauncher
         }
     }
 
+    // Set from the browser process's output handler, which runs on a thread pool thread, and
+    // read by the initialization wait loop, which may resume on a different one. Reads and
+    // writes go through Interlocked so both threads are guaranteed to agree on the value.
+    private bool IsBiDiEndpointReady
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isBiDiEndpointReadyFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isBiDiEndpointReadyFlag, flagValue);
+        }
+    }
+
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
@@ -120,6 +147,7 @@ public class FirefoxLauncher : BrowserLauncher
             this.CreateUserDataDirectory();
             this.CreateProfile();
 
+            this.IsBiDiEndpointReady = false;
             this.browserProcess = new Process()
             {
                 StartInfo = this.CreateProcessStartInfo(browserExecutableLocation),
@@ -132,7 +160,10 @@ public class FirefoxLauncher : BrowserLauncher
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
             if (!launcherAvailable)
             {
-                throw new BrowserNotLaunchedException($"Unable to launch Firefox browser. Browser process did not start within {this.InitializationTimeout.TotalSeconds} seconds.");
+                string reason = this.IsRunning
+                    ? $"Browser process did not report its WebDriver BiDi endpoint as ready within {this.InitializationTimeout.TotalSeconds} seconds."
+                    : "Browser process exited before reporting its WebDriver BiDi endpoint as ready.";
+                throw new BrowserNotLaunchedException($"Unable to launch Firefox browser. {reason}");
             }
 
             this.WebSocketUrl = $"ws://localhost:{this.Port}/session";
@@ -185,7 +216,7 @@ public class FirefoxLauncher : BrowserLauncher
     public override Transport CreateTransport()
     {
         this.ThrowIfDisposed();
-        return new Transport();
+        return new Transport(this.CreateConnection());
     }
 
     /// <summary>
@@ -195,6 +226,26 @@ public class FirefoxLauncher : BrowserLauncher
     protected override int GetProcessId()
     {
         return this.browserProcess?.Id ?? 0;
+    }
+
+    /// <summary>
+    /// Provides a handler for reading the console output of the browser process, detecting
+    /// the message emitted by Firefox once its WebDriver BiDi endpoint is accepting connections.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The event data.</param>
+    /// <remarks>
+    /// This only records that the endpoint is ready; it deliberately does not capture the
+    /// announced URL. Firefox announces the endpoint's origin without a path, whereas creating
+    /// a session requires the "/session" path, so <see cref="LaunchBrowserAsync"/> continues to
+    /// construct the session URL from the port the launcher selected.
+    /// </remarks>
+    protected override void ReadConsoleOutputForWebSocketUrl(object sender, DataReceivedEventArgs e)
+    {
+        if (e.Data is not null && BiDiEndpointReadyMatcher.IsMatch(e.Data))
+        {
+            this.IsBiDiEndpointReady = true;
+        }
     }
 
     private static Dictionary<string, object> GetDefaultPreferences(Dictionary<string, object> preferences)
@@ -496,22 +547,32 @@ public class FirefoxLauncher : BrowserLauncher
     /// Asynchronously waits for the initialization of the browser launcher.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Waiting for the browser process to merely be running is not sufficient: the process is
+    /// running the instant it is started, but its WebDriver BiDi endpoint is not yet listening,
+    /// and a connection attempt made in that window fails. Returning early leaves the race to
+    /// be absorbed by the connection's startup retries, which is not always enough on a cold or
+    /// heavily loaded machine.
+    /// </remarks>
     private async Task<bool> WaitForInitializationAsync()
     {
         bool isInitialized = false;
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
-        while (!isInitialized && initializationStopwatch.Elapsed < this.InitializationTimeout)
+        while (!isInitialized && initializationStopwatch.Elapsed <= this.InitializationTimeout)
         {
-            // If the driver service process has exited, we can exit early.
+            // If the browser process has exited, we can exit early.
             if (!this.IsRunning)
             {
-                await Task.Delay(100);
+                break;
             }
-            else
+
+            if (this.IsBiDiEndpointReady)
             {
                 isInitialized = true;
                 break;
             }
+
+            await Task.Delay(100).ConfigureAwait(false);
         }
 
         initializationStopwatch.Stop();
