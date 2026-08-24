@@ -550,7 +550,7 @@ public static class DemoScenarios
 
         AddInterceptCommandParameters addIntercept = new(InterceptPhase.BeforeRequestSent)
         {
-            BrowsingContextIds = [contextId],
+            Contexts = [contextId],
             UrlPatterns = [new UrlPatternPattern() { PathName = "simpleContent.html" }],
         };
         await driver.Network.AddInterceptAsync(addIntercept);
@@ -616,7 +616,7 @@ public static class DemoScenarios
         // Actual practice would probably require a larger allocation
         // for data collection.
         AddDataCollectorCommandParameters addCollectorParameters = new(Convert.ToUInt64(Math.Pow(2, 24)));
-        addCollectorParameters.BrowsingContexts.Add(contextId);
+        addCollectorParameters.Contexts.Add(contextId);
         AddDataCollectorCommandResult collectorResult = await driver.Network.AddDataCollectorAsync(addCollectorParameters);
         string collectorId = collectorResult.CollectorId;
 

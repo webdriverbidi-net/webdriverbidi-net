@@ -60,7 +60,7 @@ public class NetworkTrafficMonitor
         this.responseObserver = this.driver.Network.OnResponseCompleted.AddObserver(this.HandleResponseCompleted);
 
         AddDataCollectorCommandParameters addCollectorParameters = new(200000000, DataType.Request, DataType.Response);
-        addCollectorParameters.BrowsingContexts.Add(browsingContextId);
+        addCollectorParameters.Contexts.Add(browsingContextId);
         AddDataCollectorCommandResult collectorResult = await this.driver.Network.AddDataCollectorAsync(addCollectorParameters).ConfigureAwait(false);
         this.bodyCollectorId = collectorResult.CollectorId;
 
@@ -73,7 +73,7 @@ public class NetworkTrafficMonitor
         {
             AddInterceptCommandParameters requestIntercept = new(InterceptPhase.BeforeRequestSent)
             {
-                BrowsingContextIds = [browsingContextId],
+                Contexts = [browsingContextId],
                 UrlPatterns = [.. this.requestModifications.Select(m => (UrlPattern)new UrlPatternString(m.UrlPattern))],
             };
             AddInterceptCommandResult requestInterceptResult = await this.driver.Network.AddInterceptAsync(requestIntercept).ConfigureAwait(false);
@@ -86,7 +86,7 @@ public class NetworkTrafficMonitor
 
             AddInterceptCommandParameters authIntercept = new(InterceptPhase.AuthRequired)
             {
-                BrowsingContextIds = [browsingContextId],
+                Contexts = [browsingContextId],
             };
             AddInterceptCommandResult authInterceptResult = await this.driver.Network.AddInterceptAsync(authIntercept).ConfigureAwait(false);
             this.authInterceptId = authInterceptResult.InterceptId;

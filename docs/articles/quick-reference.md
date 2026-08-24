@@ -44,7 +44,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Add intercept | `AddInterceptCommandParameters p = new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent); await driver.Network.AddInterceptAsync(p);` |
-| Add data collector | `AddDataCollectorCommandParameters p = new AddDataCollectorCommandParameters(1024 * 1024); p.BrowsingContexts.Add(contextId); await driver.Network.AddDataCollectorAsync(p);` |
+| Add data collector | `AddDataCollectorCommandParameters p = new AddDataCollectorCommandParameters(1024 * 1024); p.Contexts.Add(contextId); await driver.Network.AddDataCollectorAsync(p);` |
 | Continue request | `await driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(requestId));` |
 | Provide response | `ProvideResponseCommandParameters p = new ProvideResponseCommandParameters(requestId) { Body = BytesValue.FromString(body) }; await driver.Network.ProvideResponseAsync(p);` |
 

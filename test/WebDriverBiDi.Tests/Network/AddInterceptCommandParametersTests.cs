@@ -79,7 +79,7 @@ public class AddInterceptCommandParametersTests
     {
         AddInterceptCommandParameters properties = new(InterceptPhase.BeforeRequestSent)
         {
-            BrowsingContextIds = ["myContext"],
+            Contexts = ["myContext"],
             UrlPatterns = [new UrlPatternString("https://example.com/*")]
         };
         string json = JsonSerializer.Serialize(properties);
