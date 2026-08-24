@@ -1791,6 +1791,64 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestTransportDisconnectTimesOutWithHangingEventHandlerAndQueuedMessages()
+    {
+        // Regression test for the shutdown liveness defect where DisconnectAsync
+        // waited unbounded on the incoming message queue draining. A handler that
+        // never completes suspends the reader task while it is processing the first
+        // message, so a second message written to the queue is never read. The
+        // queue-drain wait must time out (within the shared ShutdownTimeout budget)
+        // rather than hanging forever; the message-processing wait then short-circuits
+        // on the already-elapsed timeout and logs its own warning.
+        TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        List<LogMessageEventArgs> logs = [];
+
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            handlerStartedTaskCompletionSource.TrySetResult();
+            return new TaskCompletionSource<bool>().Task;
+        });
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+        await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // With the reader task suspended in the hanging handler, this second
+        // message is guaranteed to remain unread in the incoming message queue,
+        // so the queue can never drain during shutdown.
+        await connection.RaiseDataReceivedEventAsync(json);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains(logs,
+            log => log.Message.Contains("Timed out waiting for message writer to complete during shutdown")
+                   && log.Level == WebDriverBiDiLogLevel.Warn);
+        Assert.Contains(logs,
+            log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown")
+                   && log.Level == WebDriverBiDiLogLevel.Warn);
+    }
+
+    [Fact]
     public async Task TestTransportDisconnectCompletesWithinShutdownTimeout()
     {
         List<LogMessageEventArgs> logs = [];
