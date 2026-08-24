@@ -52,7 +52,7 @@ public static class NetworkInterceptionSamples
             Console.WriteLine("Setting up network intercept...");
             AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
             addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
-            addIntercept.BrowsingContextIds = new List<string> { contextId };
+            addIntercept.Contexts = new List<string> { contextId };
 
             AddInterceptCommandResult interceptResult =
                 await driver.Network.AddInterceptAsync(addIntercept);
@@ -279,7 +279,7 @@ public static class NetworkInterceptionSamples
         ulong maxSize = Convert.ToUInt64(Math.Pow(2, 24)); // 16 MB
         AddDataCollectorCommandParameters collectorParams =
             new AddDataCollectorCommandParameters(maxSize);
-        collectorParams.BrowsingContexts.Add(contextId);
+        collectorParams.Contexts.Add(contextId);
 
         AddDataCollectorCommandResult collectorResult =
             await driver.Network.AddDataCollectorAsync(collectorParams);
@@ -433,7 +433,7 @@ public static class NetworkInterceptionSamples
         // Intercept only on specific pages
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
-        addIntercept.BrowsingContextIds = new List<string> { contextId };
+        addIntercept.Contexts = new List<string> { contextId };
 
         await driver.Network.AddInterceptAsync(addIntercept);
 

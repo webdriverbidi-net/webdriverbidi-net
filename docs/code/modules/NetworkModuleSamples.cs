@@ -210,7 +210,7 @@ public static class NetworkModuleSamples
         parameters.Phases.Add(InterceptPhase.BeforeRequestSent);
 
         // Optional: limit to specific contexts
-        parameters.BrowsingContextIds = new List<string> { contextId };
+        parameters.Contexts = new List<string> { contextId };
 
         // Optional: URL patterns to intercept
         parameters.UrlPatterns = new List<UrlPattern>
@@ -360,7 +360,7 @@ public static class NetworkModuleSamples
         AddDataCollectorCommandParameters parameters =
             new AddDataCollectorCommandParameters(maxSize);
 
-        parameters.BrowsingContexts.Add(contextId);
+        parameters.Contexts.Add(contextId);
 
         AddDataCollectorCommandResult result =
             await driver.Network.AddDataCollectorAsync(parameters);
@@ -729,7 +729,7 @@ public static class NetworkModuleSamples
         // Set up data collector
         AddDataCollectorCommandParameters addParams =
             new AddDataCollectorCommandParameters(Convert.ToUInt64(Math.Pow(2, 26)));
-        addParams.BrowsingContexts.Add(contextId);
+        addParams.Contexts.Add(contextId);
 
         AddDataCollectorCommandResult collectorResult =
             await driver.Network.AddDataCollectorAsync(addParams);
@@ -787,7 +787,7 @@ public static class NetworkModuleSamples
 
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
-        addIntercept.BrowsingContextIds = new List<string> { contextId };
+        addIntercept.Contexts = new List<string> { contextId };
 
         AddInterceptCommandResult interceptResult = await driver.Network.AddInterceptAsync(addIntercept);
 

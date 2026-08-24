@@ -76,7 +76,7 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// the list is sent to the remote end.
     /// </remarks>
     [JsonIgnore]
-    public List<string> BrowsingContexts { get; } = [];
+    public List<string> Contexts { get; } = [];
 
     /// <summary>
     /// Gets the list of user context IDs for which to collect network data.
@@ -100,12 +100,12 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     {
         get
         {
-            if (this.BrowsingContexts.Count == 0)
+            if (this.Contexts.Count == 0)
             {
                 return null;
             }
 
-            return this.BrowsingContexts;
+            return this.Contexts;
         }
     }
 

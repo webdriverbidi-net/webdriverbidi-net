@@ -84,7 +84,7 @@ public static class QuickReferenceSamples
     {
         AddInterceptCommandParameters p = new AddInterceptCommandParameters();
         p.Phases.Add(InterceptPhase.BeforeRequestSent);
-        p.BrowsingContextIds = new List<string> { contextId };
+        p.Contexts = new List<string> { contextId };
         AddInterceptCommandResult result = await driver.Network.AddInterceptAsync(p);
     }
 

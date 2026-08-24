@@ -65,7 +65,7 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// </remarks>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? BrowsingContextIds { get; set; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the list of URL patterns for which to intercept network traffic.

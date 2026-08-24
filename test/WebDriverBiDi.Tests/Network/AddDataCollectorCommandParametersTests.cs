@@ -142,7 +142,7 @@ public class AddDataCollectorCommandParametersTests
     public void TestCanSerializeParametersWithBrowsingContexts()
     {
         AddDataCollectorCommandParameters properties = new(100);
-        properties.BrowsingContexts.Add("myContext");
+        properties.Contexts.Add("myContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
 
