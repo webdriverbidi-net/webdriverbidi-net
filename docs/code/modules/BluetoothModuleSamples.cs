@@ -470,13 +470,13 @@ public static class BluetoothModuleSamples
     public static async Task CharacteristicEventGenerated(BiDiDriver driver)
     {
         #region CharacteristicEventGenerated
-        driver.Bluetooth.OnCharacteristicGeneratedEvent.AddObserver((CharacteristicEventGeneratedEventArgs e) =>
+        driver.Bluetooth.OnCharacteristicGenerated.AddObserver((CharacteristicEventGeneratedEventArgs e) =>
         {
             Console.WriteLine($"Characteristic {e.CharacteristicUuid} event: {e.Type}");
         });
 
         SubscribeCommandParameters subscribe =
-            new SubscribeCommandParameters(driver.Bluetooth.OnCharacteristicGeneratedEvent.EventName);
+            new SubscribeCommandParameters(driver.Bluetooth.OnCharacteristicGenerated.EventName);
         await driver.Session.SubscribeAsync(subscribe);
         #endregion
     }
@@ -487,13 +487,13 @@ public static class BluetoothModuleSamples
     public static async Task DescriptorEventGenerated(BiDiDriver driver)
     {
         #region DescriptorEventGenerated
-        driver.Bluetooth.OnDescriptorGeneratedEvent.AddObserver((DescriptorEventGeneratedEventArgs e) =>
+        driver.Bluetooth.OnDescriptorGenerated.AddObserver((DescriptorEventGeneratedEventArgs e) =>
         {
             Console.WriteLine($"Descriptor {e.DescriptorUuid} event: {e.Type}");
         });
 
         SubscribeCommandParameters subscribe =
-            new SubscribeCommandParameters(driver.Bluetooth.OnDescriptorGeneratedEvent.EventName);
+            new SubscribeCommandParameters(driver.Bluetooth.OnDescriptorGenerated.EventName);
         await driver.Session.SubscribeAsync(subscribe);
         #endregion
     }
