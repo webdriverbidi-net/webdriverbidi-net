@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\WebDriverBiDi.Client\WebDriverBiDi.Client.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

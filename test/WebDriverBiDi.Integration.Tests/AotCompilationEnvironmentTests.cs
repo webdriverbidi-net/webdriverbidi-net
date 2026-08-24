@@ -36,7 +36,7 @@ public class AotCompilationEnvironmentTests : IClassFixture<AotCompilationEnviro
             this.fixture.ExecutablePath,
             testUrl,
             workingDirectory: this.fixture.PublishDir,
-            timeoutSeconds: 120);
+            timeout: TimeSpan.FromMinutes(2));
 
         Assert.Equal(0, runExit.ExitCode);
     }

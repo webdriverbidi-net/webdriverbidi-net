@@ -10,7 +10,12 @@ using Xunit.Sdk;
 
 public static class ProcessRunner
 {
-    public static async Task<RunProcessResult> RunProcessAsync(string fileName, string arguments, string workingDirectory, int timeoutSeconds)
+    // Once the process tree is gone, its ends of the redirected pipes are closed and the
+    // pending reads complete immediately. This bounds the wait anyway, so that a descendant
+    // that somehow escaped the kill can cost us the console output but never the test run.
+    private static readonly TimeSpan ConsoleDrainTimeout = TimeSpan.FromSeconds(5);
+
+    public static async Task<RunProcessResult> RunProcessAsync(string fileName, string arguments, string workingDirectory, TimeSpan timeout)
     {
         using Process process = new();
         process.StartInfo.FileName = fileName;
@@ -23,22 +28,40 @@ public static class ProcessRunner
 
         process.Start();
 
-        // Read stdout/stderr concurrently to avoid deadlocks.
+        // Read stdout/stderr concurrently to avoid deadlocks. These tasks complete only when
+        // their pipes reach end-of-stream, which cannot happen while the process still holds
+        // the write ends open, so neither may be awaited until the process is known to be gone.
         Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
         Task<string> stderrTask = process.StandardError.ReadToEndAsync();
 
-        bool exited = await Task.Run(() => process.WaitForExit(timeoutSeconds * 1000));
+        // Note the overload taking a timeout waits only for the process to exit, unlike the
+        // parameterless overload, which additionally waits for the redirected streams to reach
+        // end-of-stream. Draining those streams is handled explicitly below.
+        bool exited = await Task.Run(() => process.WaitForExit(timeout * 1000));
+        if (!exited)
+        {
+            // The process must be killed before its output can be collected, for the reason
+            // given above.
+            process.Kill(entireProcessTree: true);
+            await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask);
+            throw new XunitException($"Process '{fileName}' timed out after {timeout}s.");
+        }
 
-        string stdout = await stdoutTask;
-        string stderr = await stderrTask;
+        ConsoleOutputs outputs = await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask);
 
-        RunProcessResult result = new()
+        return new RunProcessResult()
         {
             FileName = fileName,
             ExitCode = process.ExitCode,
-            StandardOutputConsoleContent = stdout,
-            StandardErrorConsoleContent = stderr,
+            StandardOutputConsoleContent = outputs.StandardOutput,
+            StandardErrorConsoleContent = outputs.StandardError,
         };
+    }
+
+    private static async Task<ConsoleOutputs> ReportConsoleContentAsync(string fileName, Task<string> stdoutTask, Task<string> stderrTask)
+    {
+        string stdout = await DrainAsync(stdoutTask);
+        string stderr = await DrainAsync(stderrTask);
 
         TestContext.Current.SendDiagnosticMessage($"[{Path.GetFileName(fileName)}] stdout:\n{stdout}");
         if (!string.IsNullOrWhiteSpace(stderr))
@@ -46,12 +69,30 @@ public static class ProcessRunner
             TestContext.Current.SendDiagnosticMessage($"[{Path.GetFileName(fileName)}] stderr:\n{stderr}");
         }
 
-        if (!exited)
+        return new ConsoleOutputs(stdout, stderr);
+    }
+
+    private static async Task<string> DrainAsync(Task<string> readTask)
+    {
+        Task completedTask = await Task.WhenAny(readTask, Task.Delay(ConsoleDrainTimeout));
+        if (completedTask != readTask)
         {
-            process.Kill(entireProcessTree: true);
-            throw new XunitException($"Process '{fileName}' timed out after {timeoutSeconds}s.");
+            return $"<unavailable: the redirected pipe was still open {ConsoleDrainTimeout.TotalSeconds}s after the process was expected to be gone>";
         }
 
-        return result;
+        return await readTask;
+    }
+
+    private record ConsoleOutputs
+    {
+        public ConsoleOutputs(string standardOutput, string standardError)
+        {
+            this.StandardOutput = standardOutput;
+            this.StandardError = standardError;
+        }
+
+        public string StandardOutput { get; init; }
+
+        public string StandardError { get; init; }
     }
 }

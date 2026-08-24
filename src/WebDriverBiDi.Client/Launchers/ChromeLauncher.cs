@@ -260,7 +260,10 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             return new PipeConnection(this);
         }
 
-        return new WebSocketConnection();
+        return new WebSocketConnection()
+        {
+            StartupTimeout = this.InitializationTimeout,
+        };
     }
 
     /// <summary>

@@ -31,7 +31,7 @@ public class NetStandardCompatibilityFixture : IAsyncLifetime
             "dotnet",
             $"build \"{SmokeAppProjectDir}\" -c Release -o \"{this.BuildDir}\" -p:TreatWarningsAsErrors=true",
             workingDirectory: SmokeAppProjectDir,
-            timeoutSeconds: 180);
+            timeout: TimeSpan.FromMinutes(3));
 
         Assert.Equal(0, buildExit.ExitCode);
 

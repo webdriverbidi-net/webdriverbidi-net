@@ -112,7 +112,7 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
             "dotnet",
             $"\"{this.fixture.DllPath}\" ws://localhost:{server.Port}",
             workingDirectory: this.fixture.BuildDir,
-            timeoutSeconds: 30);
+            timeout: TimeSpan.FromSeconds(30));
 
         await server.StopAsync();
 
