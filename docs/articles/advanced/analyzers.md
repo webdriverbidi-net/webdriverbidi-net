@@ -56,8 +56,8 @@ The following analyzers have code fix providers:
 - **BIDI003** — Moves `RegisterTypeInfoResolverAsync()` call before `StartAsync()`
 - **BIDI004** — Adds `CancellationToken` parameter to long-running operations
 - **BIDI005** — Adds missing event name to `Session.SubscribeAsync()` call
-- **BIDI006** — Adds `using` statement or `.Dispose()` call for `EventObserver`
-- **BIDI007** — Replaces blocking call with `await` in event handler
+- **BIDI006** — Adds a `using` declaration for the `EventObserver`
+- **BIDI007** — Adds the `ObservableEventHandlerOptions.RunHandlerAsynchronously` option to the `AddObserver` call
 - **BIDI008** — Replaces unsafe cast with pattern matching
 - **BIDI009** — Adds `await driver.StartAsync()` before command execution
 - **BIDI012** — Adds `await driver.StopAsync()` before `DisposeAsync()`

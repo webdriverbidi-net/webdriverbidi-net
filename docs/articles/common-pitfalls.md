@@ -311,8 +311,6 @@ Before running your WebDriverBiDi.NET code, verify:
 - [ ] Thread safety considered for concurrent operations
 - [ ] Resources properly cleaned up with try-finally or using statements
 
-**Tip:** Add the [WebDriverBiDi.Analyzers](advanced/analyzers.md) package to get compile-time diagnostics for many of these pitfalls.
-
 ---
 
 ## See Also

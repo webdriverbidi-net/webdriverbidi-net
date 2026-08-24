@@ -621,6 +621,74 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
+    /// Set media features override.
+    /// </summary>
+    public static async Task SetMediaFeatures(BiDiDriver driver, string contextId)
+    {
+        #region SetMediaFeatures
+        SetMediaFeaturesOverrideCommandParameters parameters = new SetMediaFeaturesOverrideCommandParameters
+        {
+            Features = new MediaFeatures
+            {
+                PrefersColorScheme = PrefersColorSchemeFeatureValue.Dark,
+                PrefersReducedMotion = PrefersReducedMotionMediaFeatureValue.Reduce
+            },
+            Contexts = new List<string> { contextId }
+        };
+
+        await driver.Emulation.SetMediaFeaturesOverrideAsync(parameters);
+        Console.WriteLine("Media features overridden: dark color scheme, reduced motion");
+        #endregion
+    }
+
+    /// <summary>
+    /// Clear media features override.
+    /// </summary>
+    public static async Task ClearMediaFeaturesOverride(BiDiDriver driver, string contextId)
+    {
+        #region ClearMediaFeaturesOverride
+        SetMediaFeaturesOverrideCommandParameters parameters =
+            SetMediaFeaturesOverrideCommandParameters.ResetMediaFeaturesOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetMediaFeaturesOverrideAsync(parameters);
+        Console.WriteLine("Media features override cleared");
+        #endregion
+    }
+
+    /// <summary>
+    /// Set viewport meta override.
+    /// </summary>
+    public static async Task SetViewportMetaOverride(BiDiDriver driver, string contextId)
+    {
+        #region SetViewportMetaOverride
+        SetViewportMetaOverrideCommandParameters parameters = new SetViewportMetaOverrideCommandParameters
+        {
+            IsViewportMetaOverridden = true,
+            Contexts = new List<string> { contextId }
+        };
+
+        await driver.Emulation.SetViewportMetaOverrideAsync(parameters);
+        Console.WriteLine("Viewport meta override enabled");
+        #endregion
+    }
+
+    /// <summary>
+    /// Clear viewport meta override.
+    /// </summary>
+    public static async Task ClearViewportMetaOverride(BiDiDriver driver, string contextId)
+    {
+        #region ClearViewportMetaOverride
+        SetViewportMetaOverrideCommandParameters parameters =
+            SetViewportMetaOverrideCommandParameters.ResetViewportMetaOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetViewportMetaOverrideAsync(parameters);
+        Console.WriteLine("Viewport meta override cleared");
+        #endregion
+    }
+
+    /// <summary>
     /// Pattern: Mobile device emulation.
     /// </summary>
 #region MobileDeviceEmulation

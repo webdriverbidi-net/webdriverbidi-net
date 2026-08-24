@@ -106,6 +106,7 @@ Creates a driver with a 30-second command timeout and connects to the browser. T
 > ```csharp
 > driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
 > driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
 > driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 > ```
 >

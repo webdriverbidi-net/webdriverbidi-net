@@ -250,16 +250,20 @@ public class ScriptSamples
     public static async Task DisownHandles(BiDiDriver driver, string contextId)
     {
         #region Disown
+        // Request root ownership so the returned value carries a handle.
         EvaluateResult evalResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
                 "document.querySelector('button')",
                 new ContextTarget(contextId),
-                true));
+                true)
+            {
+                ResultOwnership = ResultOwnership.Root,
+            });
 
         if (evalResult is EvaluateResultSuccess success &&
             success.Result is NodeRemoteValue element)
         {
-            string? handle = element.SharedId;
+            string? handle = element.Handle;
 
             if (handle != null)
             {

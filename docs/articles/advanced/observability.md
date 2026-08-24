@@ -91,6 +91,7 @@ Choose the appropriate level based on your needs:
 | `TransportStarted` | Info | Transport message processing started | (none) |
 | `TransportStopped` | Info | Transport message processing stopped | `reason` |
 | `PendingCommandCount` | Verbose | Current pending command count | `pendingCount` |
+| `AsyncHandlerTaskCount` | Verbose | Number of in-flight asynchronous event handler tasks (see [Performance](performance.md#in-flight-async-handler-tasks-asynchandlertaskcount-eventsource-event)) | `inFlightCount` |
 | `MessageStatistics` | Verbose | Message statistics snapshot | `messagesSent`, `messagesReceived`, `eventsReceived`, `errorsReceived` |
 
 ### Module & Extensibility
