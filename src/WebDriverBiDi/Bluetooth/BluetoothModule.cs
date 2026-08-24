@@ -42,13 +42,13 @@ public sealed class BluetoothModule : Module
     /// Gets an observable event that notifies when a Bluetooth device generates a characteristic event.
     /// </summary>
     [ObservableEventName(CharacteristicEventGeneratedEventName)]
-    public ObservableEvent<CharacteristicEventGeneratedEventArgs> OnCharacteristicGeneratedEvent => this.invocableCharacteristicGeneratedObservableEvent;
+    public ObservableEvent<CharacteristicEventGeneratedEventArgs> OnCharacteristicGenerated => this.invocableCharacteristicGeneratedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device generates a descriptor event.
     /// </summary>
     [ObservableEventName(DescriptorEventGeneratedEventName)]
-    public ObservableEvent<DescriptorEventGeneratedEventArgs> OnDescriptorGeneratedEvent => this.invocableDescriptorEventGeneratedObservableEvent;
+    public ObservableEvent<DescriptorEventGeneratedEventArgs> OnDescriptorGenerated => this.invocableDescriptorEventGeneratedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device attempts a GATT connection.
