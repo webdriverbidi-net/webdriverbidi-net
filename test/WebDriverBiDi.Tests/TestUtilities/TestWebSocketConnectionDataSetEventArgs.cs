@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 public record TestWebSocketConnectionDataSentEventArgs : WebDriverBiDiEventArgs
@@ -11,11 +12,17 @@ public record TestWebSocketConnectionDataSentEventArgs : WebDriverBiDiEventArgs
     {
         if (dataSent is not null)
         {
-            JObject jsonObject = JObject.Parse(dataSent);
-            JToken? id = jsonObject["id"];
-            JToken? method = jsonObject["method"];
-            this.sentCommandId = id?.Value<long>();
-            this.sentCommandName = method?.Value<string>();
+            try
+            {
+                JObject jsonObject = JObject.Parse(dataSent);
+                JToken? id = jsonObject["id"];
+                JToken? method = jsonObject["method"];
+                this.sentCommandId = id?.Value<long>();
+                this.sentCommandName = method?.Value<string>();
+            }
+            catch (JsonException)
+            {
+            }
         }
     }
 
