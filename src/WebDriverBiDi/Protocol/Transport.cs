@@ -236,6 +236,10 @@ public class Transport : IAsyncDisposable
     /// without waiting for the remaining processing to finish. Messages still in the queue
     /// will not be processed, and any pending commands will be canceled. The default is 10 seconds.
     /// </summary>
+    /// <remarks>
+    /// This timeout applies to both waiting for the incoming message queue to empty, and for
+    /// the messages in the queue to be processed.
+    /// </remarks>
     public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
     /// <summary>
@@ -705,6 +709,10 @@ public class Transport : IAsyncDisposable
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
             await this.Connection.StopAsync(cancellationToken).ConfigureAwait(false);
 
+            using CancellationTokenSource timeoutCancelTokenSource = new();
+            Task timeoutTask = Task.Delay(this.ShutdownTimeout, timeoutCancelTokenSource.Token);
+            bool shutdownTimedOut = false;
+
             // Mark the incoming message queue as complete for writing, indicating
             // no further messages will be written to the queue. Existing messages
             // currently in the queue, however should still be processed. Then,
@@ -713,7 +721,12 @@ public class Transport : IAsyncDisposable
             // queue does not imply that processing of all items has completed; that
             // must be awaited separately.
             this.incomingMessageQueue.Writer.Complete();
-            await this.incomingMessageQueue.Reader.Completion.ConfigureAwait(false);
+            Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.Reader.Completion, timeoutTask).ConfigureAwait(false);
+            if (messageQueueReaderCompleteTask != this.incomingMessageQueue.Reader.Completion)
+            {
+                shutdownTimedOut = true;
+                await this.LogAsync("Timed out waiting for message writer to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+            }
 
             // Clear the pending command collection. This will also cancel any tasks
             // associated with the remaining pending commands. Then wait for the
@@ -721,15 +734,16 @@ public class Transport : IAsyncDisposable
             // the message queue, but with a timeout to prevent hanging if an
             // in-process event handler is stuck.
             this.PendingCommands.Clear();
-            using CancellationTokenSource commandDelayCancelTokenSource = new();
-            Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout, commandDelayCancelTokenSource.Token)).ConfigureAwait(false);
-            if (completedTask != this.messageQueueProcessingTask)
+            Task messageProcessingShutdownCompletedTask = await Task.WhenAny(this.messageQueueProcessingTask, timeoutTask).ConfigureAwait(false);
+            if (messageProcessingShutdownCompletedTask != this.messageQueueProcessingTask)
             {
+                shutdownTimedOut = true;
                 await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
-            else
+
+            if (!shutdownTimedOut)
             {
-                commandDelayCancelTokenSource.Cancel();
+                timeoutCancelTokenSource.Cancel();
             }
 
             WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
