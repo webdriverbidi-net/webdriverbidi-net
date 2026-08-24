@@ -234,6 +234,7 @@ The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The 
 > BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 > driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
 > driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
 > driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 > ```
 >

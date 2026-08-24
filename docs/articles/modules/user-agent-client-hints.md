@@ -114,7 +114,7 @@ When `Contexts` or `UserContexts` is `null`, the override applies to all context
 **Problem**: Client hints and User-Agent string don't match.
 
 **Solution**:
-- Use the Emulation module's `SetUserAgentAsync` in conjunction with `SetClientHintsOverrideAsync`
+- Use the Emulation module's `SetUserAgentOverrideAsync` in conjunction with `SetClientHintsOverrideAsync`
 - Ensure brands, platform, and mobile flag align between both overrides
 
 ### Override Not Clearing

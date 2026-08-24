@@ -159,7 +159,9 @@ Use `SetCacheBehaviorAsync` to control whether the browser uses its cache for ne
 
 [!code-csharp[Restore Default Cache Behavior](../../code/modules/NetworkModuleSamples.cs#RestoreDefaultCacheBehavior)]
 
-## Cookies
+## Cookies (Storage Module)
+
+Cookie commands belong to the **Storage** module (`driver.Storage`), not the Network module. They are shown here because network testing frequently involves setting up or inspecting cookies; see the [Storage Module](storage.md) guide for full coverage.
 
 ### Add Cookie
 

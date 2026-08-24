@@ -98,6 +98,7 @@ WebDriverBiDi.NET includes the following modules:
 | **Emulation** | Device and media emulation | `driver.Emulation` |
 | **Permissions** | Permission management | `driver.Permissions` |
 | **Bluetooth** | Web Bluetooth API control | `driver.Bluetooth` |
+| **DigitalCredentials** | Virtual digital wallet simulation | `driver.DigitalCredentials` |
 | **WebExtension** | Browser extension management | `driver.WebExtension` |
 | **Speculation** | Navigation prefetching | `driver.Speculation` |
 | **UserAgentClientHints** | Emulates browser, platform, and device reporting | `driver.UserAgentClientHints` |

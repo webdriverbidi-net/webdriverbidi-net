@@ -168,13 +168,13 @@ Combine all approaches for comprehensive error management. See the [Collect Mode
 
 ### Best Practices
 
-1. **Use Terminate mode in production**: Ensures errors are reported
+1. **Use Terminate mode during development**: Surfaces handler bugs and protocol issues immediately instead of silently swallowing them
 2. **Handle errors inside event handlers**: Use try-catch within handlers when possible
 3. **Use Collect mode for diagnostics**: Helpful for troubleshooting event handler issues
 4. **Monitor connection events**: Use OnConnectionError for real-time error visibility
 5. **Remember the threading model**: Event handlers run on separate threads
 6. **Check for errors at logical points**: With Collect mode, inspect errors after operations
-7. **Never rely on Ignore mode**: Always prefer explicit error handling
+7. **Don't lean on Ignore mode to hide errors**: The Ignore default is appropriate for production only when your handlers do their own error handling (see the mode table below); it is not a substitute for explicit error handling
 
 ## Script Execution Errors
 

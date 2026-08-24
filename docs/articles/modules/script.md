@@ -121,7 +121,7 @@ Preload script arguments in WebDriver BiDi use channels to pass values. Use `Cha
 
 ### Disowning Handles
 
-When you evaluate or call functions that return object references (e.g., DOM elements), the browser keeps those objects alive. Use `DisownAsync` to release handles when you no longer need them, allowing the script engine to garbage collect the objects. Pass the target (context or realm) and the handle values (from `RemoteValue.SharedId`):
+When you evaluate or call functions that return object references (e.g., DOM elements), the browser keeps those objects alive. Use `DisownAsync` to release handles when you no longer need them, allowing the script engine to garbage collect the objects. Handles are populated on returned values only when you request them via `ResultOwnership.Root`; pass the target (context or realm) and the handle values (from the value's `Handle` property — note that a node's `SharedId` is a different identifier and cannot be disowned):
 
 [!code-csharp[Disown](../../code/script/ScriptSamples.cs#Disown)]
 

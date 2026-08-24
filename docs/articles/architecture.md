@@ -156,6 +156,7 @@ See `BrowsingContextModule` in the WebDriverBiDi.BrowsingContext namespace. Each
 - `EmulationModule`: Device emulation
 - `PermissionsModule`: Permission control
 - `BluetoothModule`: Web Bluetooth API
+- `DigitalCredentialsModule`: Virtual digital wallet simulation
 - `WebExtensionModule`: Extension management
 - `SpeculationModule`: Navigation prefetching
 - `UserAgentClientHintsModule`: User agent client hints emulation

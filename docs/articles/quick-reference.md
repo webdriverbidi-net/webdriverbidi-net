@@ -53,14 +53,14 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Get cookies | `GetCookiesCommandParameters p = new GetCookiesCommandParameters(); p.Partition = new BrowsingContextPartitionDescriptor(contextId); GetCookiesCommandResult r = await driver.Storage.GetCookiesAsync(p);` |
-| Set cookie | `await driver.Storage.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie(name, value, domain)));` |
+| Set cookie | `await driver.Storage.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie(name, BytesValue.FromString(value), domain)));` |
 | Delete cookies | `DeleteCookiesCommandParameters p = new DeleteCookiesCommandParameters(); p.Partition = new BrowsingContextPartitionDescriptor(contextId); await driver.Storage.DeleteCookiesAsync(p);` |
 
 ## Input
 
 | Operation | Code |
 |-----------|------|
-| Perform actions | `PerformActionsCommandParameters p = new PerformActionsCommandParameters(contextId); PointerSourceActions mouse = new PointerSourceActions(); mouse.Actions.Add(new PointerMoveAction(100, 100)); p.Actions.Add(mouse); await driver.Input.PerformActionsAsync(p);` |
+| Perform actions | `PerformActionsCommandParameters p = new PerformActionsCommandParameters(contextId); PointerSourceActions mouse = new PointerSourceActions(); mouse.Actions.Add(new PointerMoveAction { X = 100, Y = 100 }); p.Actions.Add(mouse); await driver.Input.PerformActionsAsync(p);` |
 
 ## Digital Credentials
 

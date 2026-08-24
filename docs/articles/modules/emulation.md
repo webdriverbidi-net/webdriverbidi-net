@@ -9,12 +9,14 @@ The Emulation module allows you to:
 - Override forced colors mode theme (light/dark)
 - Override geolocation
 - Emulate timezone and locale settings
+- Override media features (e.g., `prefers-color-scheme`, `prefers-reduced-motion`)
 - Emulate network conditions (e.g., offline)
 - Override screen orientation (portrait/landscape)
 - Override screen settings (dimensions)
 - Override JavaScript enabled state
 - Override scrollbar type (classic/overlay)
 - Override touch capability (max touch points)
+- Override viewport meta tag handling
 
 ## Accessing the Module
 
@@ -26,7 +28,7 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 ## Viewport Emulation
 
-Viewport emulation (setting viewport dimensions, device pixel ratio, and common device presets) is provided by the **BrowsingContext** module, not the Emulation module. See the [Browsing Context Module](browsing-context.md#viewport) guide for details and code examples.
+Viewport emulation (setting viewport dimensions, device pixel ratio, and common device presets) is provided by the **BrowsingContext** module, not the Emulation module. See the [Browsing Context Module](browsing-context.md#setting-viewport) guide for details and code examples.
 
 ## User Agent Override
 
@@ -167,6 +169,30 @@ The Emulation module provides `SetTouchOverrideAsync` to emulate touch capabilit
 ### Clear Touch Override
 
 [!code-csharp[Clear Touch Override](../../code/modules/EmulationModuleSamples.cs#ClearTouchOverride)]
+
+## Media Features Override
+
+The Emulation module provides `SetMediaFeaturesOverrideAsync` to override CSS media features such as `prefers-color-scheme` and `prefers-reduced-motion`, allowing you to test styles and behavior that respond to media queries without changing operating system settings.
+
+### Set Media Features
+
+[!code-csharp[Set Media Features](../../code/modules/EmulationModuleSamples.cs#SetMediaFeatures)]
+
+### Clear Media Features Override
+
+[!code-csharp[Clear Media Features Override](../../code/modules/EmulationModuleSamples.cs#ClearMediaFeaturesOverride)]
+
+## Viewport Meta Override
+
+The Emulation module provides `SetViewportMetaOverrideAsync` to override how the browser honors the page's `<meta name="viewport">` tag, which is useful when testing mobile layouts.
+
+### Set Viewport Meta Override
+
+[!code-csharp[Set Viewport Meta Override](../../code/modules/EmulationModuleSamples.cs#SetViewportMetaOverride)]
+
+### Clear Viewport Meta Override
+
+[!code-csharp[Clear Viewport Meta Override](../../code/modules/EmulationModuleSamples.cs#ClearViewportMetaOverride)]
 
 ## Common Patterns
 
