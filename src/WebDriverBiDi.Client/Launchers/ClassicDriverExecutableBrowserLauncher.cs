@@ -230,7 +230,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
                         // for a failed HTTP request due to a closed socket is particularly
                         // expensive.
                         using HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.ServiceUrl}/shutdown").ConfigureAwait(false);
-                        this.launcherProcess.WaitForExit(3000);
+                        this.launcherProcess.WaitForExit(Convert.ToInt32(TimeSpan.FromSeconds(3).TotalMilliseconds));
                     }
                     catch (WebException)
                     {

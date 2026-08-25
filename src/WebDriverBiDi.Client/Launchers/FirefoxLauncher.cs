@@ -162,7 +162,7 @@ public class FirefoxLauncher : BrowserLauncher
             {
                 string reason = this.IsRunning
                     ? $"Browser process did not report its WebDriver BiDi endpoint as ready within {this.InitializationTimeout.TotalSeconds} seconds."
-                    : "Browser process exited before reporting its WebDriver BiDi endpoint as ready.";
+                    : $"Browser process exited with code {this.browserProcess.ExitCode} before reporting its WebDriver BiDi endpoint as ready.";
                 throw new BrowserNotLaunchedException($"Unable to launch Firefox browser. {reason}");
             }
 

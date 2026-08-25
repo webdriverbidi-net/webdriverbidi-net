@@ -37,14 +37,14 @@ public static class ProcessRunner
         // Note the overload taking a timeout waits only for the process to exit, unlike the
         // parameterless overload, which additionally waits for the redirected streams to reach
         // end-of-stream. Draining those streams is handled explicitly below.
-        bool exited = await Task.Run(() => process.WaitForExit(timeout * 1000));
+        bool exited = await Task.Run(() => process.WaitForExit(timeout));
         if (!exited)
         {
             // The process must be killed before its output can be collected, for the reason
             // given above.
             process.Kill(entireProcessTree: true);
             await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask);
-            throw new XunitException($"Process '{fileName}' timed out after {timeout}s.");
+            throw new XunitException($"Process '{fileName}' timed out after {timeout.TotalSeconds}s.");
         }
 
         ConsoleOutputs outputs = await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask);
