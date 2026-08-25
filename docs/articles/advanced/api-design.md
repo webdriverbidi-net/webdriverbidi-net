@@ -103,7 +103,23 @@ Use `AdditionalData` when:
 - You need to pass extension data that the library does not yet model as a typed property
 - You are integrating with a custom BiDi implementation that expects extra fields
 
-Entries in `AdditionalData` are serialized as top-level properties on the command message (alongside `id`, `method`, and `params`). Values must be JSON-serializable (strings, numbers, booleans, null, arrays, or dictionaries).
+Entries in `AdditionalData` are serialized as additional properties *inside the `params` object* of the command message, alongside the command's typed parameters. They do not appear at the envelope level next to `id`, `method`, and `params`. Values must be JSON-serializable (strings, numbers, booleans, null, arrays, or dictionaries).
+
+For example, adding `parameters.AdditionalData["customOption"] = "customValue"` to a navigate command produces:
+
+```json
+{
+  "id": 1,
+  "method": "browsingContext.navigate",
+  "params": {
+    "context": "...",
+    "url": "https://example.com",
+    "customOption": "customValue"
+  }
+}
+```
+
+If you need extra properties at the envelope level (a sibling of `id`, `method`, and `params`), override `Transport.CreateCommand` in a custom transport and populate `Command.AdditionalCommandProperties` on the `Command` it returns. See [Custom Modules — Custom Transport](custom-modules.md#custom-transport) for how to supply a custom `Transport` to `BiDiDriver`.
 
 [!code-csharp[Protocol Extensions via AdditionalData](../../code/api-design/AdditionalDataSamples.cs#ProtocolExtensionsviaAdditionalData)]
 

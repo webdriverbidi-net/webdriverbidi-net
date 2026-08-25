@@ -36,6 +36,13 @@ public abstract class CommandParameters
     /// properties as needed.
     /// </para>
     /// <para>
+    /// Entries are serialized as additional properties inside the <c>params</c> object of the
+    /// command message, alongside the typed parameter properties. They are not written at the
+    /// envelope level next to <c>id</c>, <c>method</c>, and <c>params</c>; for envelope-level
+    /// properties, override <see cref="Protocol.Transport.CreateCommand(CommandParameters)"/>
+    /// and populate <see cref="Protocol.Command.AdditionalCommandProperties"/>.
+    /// </para>
+    /// <para>
     /// Though the values of this dictionary are typed as <see cref="object"/>, they will be
     /// serialized to JSON using the same rules as other properties of the command. This means
     /// that values can be of any type that is serializable to JSON, including complex objects,
