@@ -909,6 +909,8 @@ public class Transport : IAsyncDisposable
     /// from unit testing.
     /// </remarks>
     [ExcludeFromCodeCoverage]
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = "Guarded by JsonSerializer.IsReflectionEnabledByDefault feature switch; trimmed away under PublishAot")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = "Guarded by JsonSerializer.IsReflectionEnabledByDefault feature switch; trimmed away under PublishAot")]
     private static IJsonTypeInfoResolver CreateTypeInfoResolver()
     {
         return JsonSerializer.IsReflectionEnabledByDefault
