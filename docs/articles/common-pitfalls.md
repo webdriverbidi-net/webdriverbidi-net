@@ -223,6 +223,11 @@ This also applies to exceptions from handlers using `ObservableEventHandlerOptio
 
 [!code-csharp[Collect Error Behavior](../code/common-pitfalls/CommonPitfallsSamples.cs#CollectErrorBehavior)]
 
+> **Note:** With `Collect`, the errors are thrown only by `StopAsync()`. `DisposeAsync()` catches them, logs them at
+> `Warn` level, and discards them—so `await using var driver = ...` on its own never surfaces collected errors. Call
+> `StopAsync()` explicitly (as above) before disposal. The [BIDI012](advanced/analyzers.md#available-analyzers)
+> analyzer warns when it sees a `Collect` behavior set in a method that disposes the driver without stopping it.
+
 **The Solution - For Production: Handle Exceptions in Handlers:**
 
 [!code-csharp[Handle Exceptions In Handlers](../code/common-pitfalls/CommonPitfallsSamples.cs#HandleExceptionsInHandlers)]
@@ -232,7 +237,7 @@ This also applies to exceptions from handlers using `ObservableEventHandlerOptio
 | Mode | Behavior | Best For |
 |------|----------|----------|
 | **Ignore** (default) | Errors discarded silently | Production (with try-catch in handlers) |
-| **Collect** | Errors stored in list | Development, diagnostics |
+| **Collect** | Errors stored in list; thrown by `StopAsync()` only (discarded by `DisposeAsync()`) | Development, diagnostics |
 | **Terminate** | Throws on next command | Development, fast failure |
 
 **Key Takeaway:** Default error behavior is Ignore. During development, use Terminate or Collect mode to catch handler bugs. In production, handle exceptions within your handlers.

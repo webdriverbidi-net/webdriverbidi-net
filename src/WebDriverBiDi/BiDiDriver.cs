@@ -701,6 +701,12 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// Asynchronously releases the resources used by this driver instance.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    /// <remarks>
+    /// If any <see cref="TransportErrorBehavior"/> is <see cref="TransportErrorBehavior.Collect"/>,
+    /// the collected exceptions are thrown only by <see cref="StopAsync"/>. <see cref="DisposeAsync"/>
+    /// catches and logs them at <see cref="WebDriverBiDiLogLevel.Warn"/> level and does not rethrow.
+    /// Call <see cref="StopAsync"/> first to observe them.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
         await this.DisposeAsyncCore().ConfigureAwait(false);

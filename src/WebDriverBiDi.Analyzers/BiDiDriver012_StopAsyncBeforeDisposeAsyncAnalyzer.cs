@@ -30,7 +30,9 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
     private static readonly LocalizableString MessageFormat = "Consider calling StopAsync on '{0}' before calling DisposeAsync for cleaner shutdown";
 
-    private static readonly LocalizableString Description = "While DisposeAsync internally calls StopAsync, explicitly calling StopAsync before DisposeAsync provides better error handling and distinguishes intentional shutdown from disposal errors. This follows best practices for resource cleanup.";
+    private static readonly LocalizableString Description = "While DisposeAsync internally calls StopAsync, explicitly calling StopAsync before DisposeAsync provides better error handling and distinguishes intentional shutdown from disposal errors. When any TransportErrorBehavior is set to Collect, the collected errors are thrown only by StopAsync; DisposeAsync catches, logs, and discards them.";
+
+    private static readonly LocalizableString CollectModeMessageFormat = "Call StopAsync on '{0}' before calling DisposeAsync; a TransportErrorBehavior is set to Collect, and DisposeAsync discards collected errors without throwing them";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -41,8 +43,28 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         isEnabledByDefault: true,
         description: Description);
 
+    // Same ID, category, and default severity as Rule (so release tracking is unchanged), but a
+    // message that explains the concrete consequence. It is reported with an effective severity of
+    // Warning, because losing collected errors is a silent data loss rather than a style preference.
+    private static readonly DiagnosticDescriptor CollectModeRule = new(
+        DiagnosticId,
+        Title,
+        CollectModeMessageFormat,
+        Category,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: Description);
+
+    private static readonly string[] ErrorBehaviorPropertyNames =
+    [
+        "EventHandlerExceptionBehavior",
+        "ProtocolErrorBehavior",
+        "UnknownMessageBehavior",
+        "UnexpectedErrorBehavior",
+    ];
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, CollectModeRule];
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -65,6 +87,9 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         // Find all DisposeAsync invocations in the method
         IEnumerable<InvocationExpressionSyntax> disposeAsyncCalls = GetDisposeAsyncInvocations(methodDeclaration, context.SemanticModel);
 
+        // Computed lazily: only needed once a DisposeAsync call without a preceding StopAsync is found.
+        bool? hasCollectBehaviorAssignment = null;
+
         foreach (InvocationExpressionSyntax disposeAsyncCall in disposeAsyncCalls)
         {
             // Get the variable on which DisposeAsync is called. GetDisposeAsyncInvocations only
@@ -80,10 +105,55 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
             if (!hasStopAsyncBefore)
             {
-                Diagnostic diagnostic = Diagnostic.Create(Rule, disposeAsyncCall.GetLocation(), driverVariableName);
+                hasCollectBehaviorAssignment ??= HasCollectBehaviorAssignment(methodDeclaration, context.SemanticModel);
+                Diagnostic diagnostic = hasCollectBehaviorAssignment.Value
+                    ? Diagnostic.Create(CollectModeRule, disposeAsyncCall.GetLocation(), DiagnosticSeverity.Warning, additionalLocations: null, properties: null, driverVariableName)
+                    : Diagnostic.Create(Rule, disposeAsyncCall.GetLocation(), driverVariableName);
                 context.ReportDiagnostic(diagnostic);
             }
         }
+    }
+
+    /// <summary>
+    /// Determines whether the method assigns <c>TransportErrorBehavior.Collect</c> to any of the
+    /// four error-behavior properties, on any receiver (a <c>BiDiDriver</c>, a <c>Transport</c>, or
+    /// an object initializer for either), so that the diagnostic can explain the consequence of
+    /// disposing without stopping.
+    /// </summary>
+    /// <param name="method">The method being analyzed.</param>
+    /// <param name="semanticModel">The semantic model for the method.</param>
+    /// <returns><see langword="true"/> if a <c>Collect</c> assignment is present; otherwise <see langword="false"/>.</returns>
+    private static bool HasCollectBehaviorAssignment(MethodDeclarationSyntax method, SemanticModel semanticModel)
+    {
+        foreach (AssignmentExpressionSyntax assignment in method.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        {
+            if (!IsErrorBehaviorProperty(assignment.Left))
+            {
+                continue;
+            }
+
+            if (semanticModel.GetSymbolInfo(assignment.Right).Symbol is IFieldSymbol { Name: "Collect" } field
+                && field.ContainingType.Name == "TransportErrorBehavior")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsErrorBehaviorProperty(ExpressionSyntax assignmentTarget)
+    {
+        // Handles both `driver.ProtocolErrorBehavior = ...` (member access) and the object
+        // initializer form `new Transport(connection) { ProtocolErrorBehavior = ... }` (identifier).
+        string? propertyName = assignmentTarget switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text,
+            IdentifierNameSyntax identifier => identifier.Identifier.Text,
+            _ => null,
+        };
+
+        return propertyName is not null && ErrorBehaviorPropertyNames.Contains(propertyName);
     }
 
     private static IEnumerable<InvocationExpressionSyntax> GetDisposeAsyncInvocations(
