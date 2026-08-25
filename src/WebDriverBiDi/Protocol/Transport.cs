@@ -152,9 +152,15 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="Transport"/> class with a given command timeout and connection.
     /// </summary>
-    /// <param name="connection">The connection used to communicate with the protocol remote end.</param>
+    /// <param name="connection">The <see cref="Connection"/> used to communicate with the protocol remote end.</param>
+    /// <exception cref="ArgumentException">Thrown when the provided <see cref="Connection"/> already has an observer for its OnDataReceived event.</exception>
     public Transport(Connection connection)
     {
+        if (connection.OnDataReceived.CurrentObserverCount > 0)
+        {
+            throw new ArgumentException("The provided connection already has a listener for its OnDataReceived event.", nameof(connection));
+        }
+
         this.Connection = connection;
 
         // Cache the JsonTypeInfo for JSON serialized or deserialized classes for perf reasons.

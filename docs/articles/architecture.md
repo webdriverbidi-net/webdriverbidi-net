@@ -167,7 +167,7 @@ WebDriverBiDi.NET uses an abstract `Connection` class to support multiple transp
 
 ### Connection Architecture
 
-The `Connection` abstract class defines the contract for all transport implementations. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API, including `IsActive`, `ConnectionKind`, `StartAsync`, `StopAsync`, `SendDataAsync`, observable events (`OnDataReceived`, `OnConnectionError`, `OnLogMessage`), and configurable timeouts (`StartupTimeout`, `ShutdownTimeout`, `DataTimeout`).
+The `Connection` abstract class defines the contract for all transport implementations. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API, including `IsActive`, `ConnectionKind`, `StartAsync`, `StopAsync`, `SendDataAsync`, observable events (`OnDataReceived`, which transfers buffer ownership and so admits only a single observer — the `Transport`; `OnConnectionError`; and `OnLogMessage`), and configurable timeouts (`StartupTimeout`, `ShutdownTimeout`, `DataTimeout`).
 
 ### WebSocket Connection
 

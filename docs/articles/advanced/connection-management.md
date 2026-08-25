@@ -122,13 +122,23 @@ This is suitable for typical WebDriver BiDi messages. Large transfers (screensho
 
 Connections provide observable events for diagnostics. This is useful for monitoring and debugging.
 
-### OnDataReceived Event
+### Inspecting Protocol Traffic
 
-Monitors raw data received from the browser:
+To see the raw messages exchanged with the browser, observe `OnLogMessage` and filter for
+`Trace` level. Connections emit every message they send and receive at that level, prefixed
+with `SEND >>>` or `RECV <<<`:
 
-[!code-csharp[OnDataReceived Event](../../code/advanced/ConnectionManagementSamples.cs#OnDataReceivedEvent)]
+[!code-csharp[Protocol Traffic Logging](../../code/advanced/ConnectionManagementSamples.cs#ProtocolTrafficLogging)]
 
 **Use cases:** Protocol debugging, traffic analysis, performance monitoring.
+
+> [!IMPORTANT]
+> Do not observe `OnDataReceived` for this purpose. That event hands over ownership of a
+> pooled buffer rather than broadcasting a copy of the data, so it admits **one, and only one,
+> observer** — the `Transport`, which claims it when constructed. A second observer would read
+> a buffer the first one may already have released. The event enforces this: adding a second
+> observer throws, and constructing a `Transport` over a connection that already has one throws
+> `ArgumentException`.
 
 ### OnConnectionError Event
 

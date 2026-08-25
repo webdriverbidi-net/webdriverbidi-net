@@ -348,6 +348,16 @@ public class WebSocketConnection : Connection
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
+        catch (Exception e)
+        {
+            // If the observer for OnDataReceived throws an unhandled exception, we will capture
+            // that here. This is important because otherwise the loop would stop silently, which
+            // is a separate case than the simple case of no further data being received. For
+            // pending commands, this would look like a command that never returns a response
+            // rather than the loop ending due to the observer exception.
+            await this.LogAsync($"Unexpected error processing received data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+        }
         finally
         {
             memoryStream?.Dispose();
