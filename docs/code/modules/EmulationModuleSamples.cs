@@ -265,7 +265,7 @@ public class EmulationModuleSamples
     {
         #region ClearGeolocationOverride
         SetGeolocationOverrideCommandParameters parameters =
-            SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
+            SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetGeolocationOverrideAsync(parameters);

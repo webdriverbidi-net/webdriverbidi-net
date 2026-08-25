@@ -15,6 +15,223 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver014AnalyzerTests
 {
     /// <summary>
+    /// Stub types mirroring the real geolocation command parameters: an abstract-style base with a
+    /// protected constructor that declares the static Reset property (returning the base type), and a
+    /// public derived class with a parameterless constructor. Also includes a property-level-sentinel
+    /// class whose Reset* members return unrelated types.
+    /// </summary>
+    private const string InheritedResetStubTypes = """
+        using System;
+        using System.Collections.Generic;
+        using System.Text.Json.Serialization;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public abstract class CommandParameters
+            {
+                [JsonIgnore]
+                public abstract string MethodName { get; }
+
+                [JsonIgnore]
+                public abstract Type ResponseType { get; }
+            }
+
+            public abstract class CommandParameters<T> : CommandParameters
+                where T : CommandResult
+            {
+                [JsonIgnore]
+                public override Type ResponseType => typeof(T);
+            }
+
+            public class CommandResult { }
+        }
+
+        namespace WebDriverBiDi.Emulation
+        {
+            using System.Text.Json.Serialization;
+            using WebDriverBiDi;
+
+            public class SetGeolocationOverrideCommandResult : CommandResult { }
+
+            public class GeolocationCoordinates { }
+
+            public class SetGeolocationOverrideCommandParameters : CommandParameters<SetGeolocationOverrideCommandResult>
+            {
+                protected SetGeolocationOverrideCommandParameters() { }
+
+                public static SetGeolocationOverrideCommandParameters ResetGeolocationOverride => new SetGeolocationOverrideCoordinatesCommandParameters();
+
+                [JsonIgnore]
+                public override string MethodName => "emulation.setGeolocationOverride";
+
+                [JsonPropertyName("contexts")]
+                [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+                public List<string>? Contexts { get; set; }
+            }
+
+            public class SetGeolocationOverrideCoordinatesCommandParameters : SetGeolocationOverrideCommandParameters
+            {
+                public SetGeolocationOverrideCoordinatesCommandParameters() : base() { }
+
+                [JsonPropertyName("coordinates")]
+                [JsonInclude]
+                public GeolocationCoordinates? Coordinates { get; set; }
+            }
+        }
+
+        namespace WebDriverBiDi.BrowsingContext
+        {
+            using System.Text.Json.Serialization;
+            using WebDriverBiDi;
+
+            public class SetViewportCommandResult : CommandResult { }
+
+            public class Viewport { }
+
+            public class SetViewportCommandParameters : CommandParameters<SetViewportCommandResult>
+            {
+                public SetViewportCommandParameters() { }
+
+                public static Viewport ResetToDefaultViewport => new();
+
+                public static double ResetToDefaultDevicePixelRatio => -1;
+
+                [JsonIgnore]
+                public override string MethodName => "browsingContext.setViewport";
+
+                [JsonPropertyName("viewport")]
+                [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+                public Viewport? Viewport { get; set; }
+            }
+        }
+
+        """;
+
+    /// <summary>
+    /// Tests that a parameterless constructor of a derived class is reported when the Reset
+    /// property is declared on its base class and returns the base type.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DerivedParameterlessConstructor_WithInheritedResetProperty_ReportsDiagnostic()
+    {
+        string test = InheritedResetStubTypes + """
+            namespace TestApp
+            {
+                using WebDriverBiDi.Emulation;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        SetGeolocationOverrideCoordinatesCommandParameters parameters = {|#0:new SetGeolocationOverrideCoordinatesCommandParameters()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetGeolocationOverrideCoordinatesCommandParameters", "ResetGeolocationOverride");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test, expected);
+    }
+
+    /// <summary>
+    /// Tests that an inline parameterless constructor of the derived class passed as an argument
+    /// is reported when the Reset property is inherited.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DerivedInlineParameterlessConstructor_WithInheritedResetProperty_ReportsDiagnostic()
+    {
+        string test = InheritedResetStubTypes + """
+            namespace TestApp
+            {
+                using WebDriverBiDi.Emulation;
+
+                public class TestClass
+                {
+                    public void Use(SetGeolocationOverrideCommandParameters parameters) { }
+
+                    public void TestMethod()
+                    {
+                        this.Use({|#0:new SetGeolocationOverrideCoordinatesCommandParameters()|});
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetGeolocationOverrideCoordinatesCommandParameters", "ResetGeolocationOverride");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test, expected);
+    }
+
+    /// <summary>
+    /// Tests that setting a property on the derived instance suppresses the diagnostic, as it does
+    /// for classes that declare their own Reset property.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DerivedParameterlessConstructor_WithPropertyAssignment_NoDiagnostic()
+    {
+        string test = InheritedResetStubTypes + """
+            namespace TestApp
+            {
+                using WebDriverBiDi.Emulation;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        SetGeolocationOverrideCoordinatesCommandParameters parameters = new SetGeolocationOverrideCoordinatesCommandParameters();
+                        parameters.Coordinates = new GeolocationCoordinates();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test);
+    }
+
+    /// <summary>
+    /// Tests that Reset* properties returning a type unrelated to the constructed type (the
+    /// property-level sentinel pattern used by SetViewportCommandParameters) are not treated as
+    /// command-level reset properties — exercises the base-type walk exhausting without a match.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ResetPropertyReturningUnrelatedType_NoDiagnostic()
+    {
+        string test = InheritedResetStubTypes + """
+            namespace TestApp
+            {
+                using WebDriverBiDi.BrowsingContext;
+
+                public class TestClass
+                {
+                    public void Use(SetViewportCommandParameters parameters) { }
+
+                    public void TestMethod()
+                    {
+                        SetViewportCommandParameters parameters = new SetViewportCommandParameters();
+                        this.Use(new SetViewportCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test);
+    }
+
+    /// <summary>
     /// Tests that parameterless constructor without property assignment reports a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
