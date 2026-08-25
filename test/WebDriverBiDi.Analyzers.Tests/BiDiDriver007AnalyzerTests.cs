@@ -256,54 +256,19 @@ public class BiDiDriver007AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that handlers with RunHandlerAsynchronously option do not report a diagnostic.
+    /// Tests that a non-async Task-returning lambda with RunHandlerAsynchronously still reports blocking
+    /// operations, using the message that explains the option does not offload a synchronous body.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task EventHandler_WithRunHandlerAsynchronouslyOption_NoDiagnostic()
+    public async Task EventHandler_NonAsyncTaskLambda_WithRunHandlerAsynchronouslyOption_ReportsSynchronousBodyWarning()
     {
-        string test = """
-            using System;
-            using System.Threading;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new LogModule();
-                }
-            }
-
+        string test = RunAsynchronouslyOptionStubs + """
             namespace TestApp
             {
+                using System;
                 using System.Threading;
+                using System.Threading.Tasks;
                 using WebDriverBiDi;
 
                 public class TestClass
@@ -312,8 +277,52 @@ public class BiDiDriver007AnalyzerTests
                     {
                         var observer = driver.Log.OnEntryAdded.AddObserver(args =>
                         {
-                            Thread.Sleep(1000);
+                            {|#0:Thread.Sleep(1000)|};
                             return Task.CompletedTask;
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' detected in event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' and await before the blocking work, or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an async lambda with RunHandlerAsynchronously does not report a diagnostic, because
+    /// the blocking work runs in a continuation off the dispatching thread.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithRunHandlerAsynchronouslyOption_NoDiagnostic()
+    {
+        string test = RunAsynchronouslyOptionStubs + """
+            namespace TestApp
+            {
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Yield();
+                            Thread.Sleep(1000);
                         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
                     }
                 }
@@ -328,6 +337,208 @@ public class BiDiDriver007AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a handler bound to the Action&lt;T&gt; overload with RunHandlerAsynchronously does not
+    /// report a diagnostic, because the library queues the whole action to the thread pool.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_ActionLambda_WithRunHandlerAsynchronouslyOption_NoDiagnostic()
+    {
+        string test = RunAsynchronouslyOptionStubs + """
+            namespace TestApp
+            {
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args =>
+                        {
+                            Thread.Sleep(1000);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a method group resolving to an async method with RunHandlerAsynchronously does not
+    /// report a diagnostic.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncMethodGroup_WithRunHandlerAsynchronouslyOption_NoDiagnostic()
+    {
+        string test = RunAsynchronouslyOptionStubs + """
+            namespace TestApp
+            {
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(this.HandleAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+
+                    private async Task HandleAsync(LogEntryAddedEventArgs args)
+                    {
+                        await Task.Yield();
+                        Thread.Sleep(1000);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a method group resolving to a non-async Task-returning method with RunHandlerAsynchronously
+    /// still reports blocking operations in the method body.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_NonAsyncTaskMethodGroup_WithRunHandlerAsynchronouslyOption_ReportsSynchronousBodyWarning()
+    {
+        string test = RunAsynchronouslyOptionStubs + """
+            namespace TestApp
+            {
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(this.Handle, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+
+                    private Task Handle(LogEntryAddedEventArgs args)
+                    {
+                        {|#0:Thread.Sleep(1000)|};
+                        return Task.CompletedTask;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' detected in event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' and await before the blocking work, or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a delegate-typed property passed as the handler with RunHandlerAsynchronously does not
+    /// report a diagnostic, because neither the handler kind nor its body can be resolved.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_DelegateProperty_WithRunHandlerAsynchronouslyOption_NoDiagnostic()
+    {
+        string test = RunAsynchronouslyOptionStubs + """
+            namespace TestApp
+            {
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private Func<LogEntryAddedEventArgs, Task> Handler { get; } = args => Task.CompletedTask;
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(this.Handler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handler wrapped in a cast expression with RunHandlerAsynchronously does not report a
+    /// diagnostic, because the handler body cannot be resolved through the cast.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_CastLambda_WithRunHandlerAsynchronouslyOption_NoDiagnostic()
+    {
+        string test = RunAsynchronouslyOptionStubs + """
+            namespace TestApp
+            {
+                using System;
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver((Func<LogEntryAddedEventArgs, Task>)(args =>
+                        {
+                            Thread.Sleep(1000);
+                            return Task.CompletedTask;
+                        }), ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 
     /// <summary>
     /// Tests that GetAwaiter().GetResult() pattern reports a warning.
@@ -1117,8 +1328,10 @@ public class BiDiDriver007AnalyzerTests
         BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.Single(diagnostics);
-        Assert.Equal(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, diagnostics[0].Id);
+        // Two descriptors share the ID: the default message and the message used when
+        // RunHandlerAsynchronously is present but the handler body is synchronous.
+        Assert.Equal(2, diagnostics.Length);
+        Assert.All(diagnostics, descriptor => Assert.Equal(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, descriptor.Id));
     }
 
     /// <summary>
@@ -2665,6 +2878,47 @@ public class BiDiDriver007AnalyzerTests
     /// In-source stand-ins for the driver, log module, and observable-event types used by the
     /// handler-resolution tests above.
     /// </summary>
+    private const string RunAsynchronouslyOptionStubs = """
+        using System;
+        using System.Threading;
+        using System.Threading.Tasks;
+
+        namespace WebDriverBiDi
+        {
+            public class WebDriverBiDiEventArgs { }
+
+            public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+            public enum ObservableEventHandlerOptions
+            {
+                None = 0,
+                RunHandlerAsynchronously = 1
+            }
+
+            public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+            {
+                public void Dispose() { }
+            }
+
+            public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+            {
+                public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions options = ObservableEventHandlerOptions.None) => new EventObserver<T>();
+                public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options = ObservableEventHandlerOptions.None) => new EventObserver<T>();
+            }
+
+            public class LogModule
+            {
+                public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+            }
+
+            public class BiDiDriver
+            {
+                public LogModule Log { get; } = new LogModule();
+            }
+        }
+
+        """;
+
     private const string HandlerFakeSource = """
         using System;
         using System.Threading.Tasks;

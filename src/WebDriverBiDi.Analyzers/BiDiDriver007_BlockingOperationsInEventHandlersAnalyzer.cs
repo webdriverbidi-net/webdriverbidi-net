@@ -32,6 +32,8 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
     private static readonly LocalizableString Description = "Blocking operations like Thread.Sleep(), Task.Wait(), or .Result in event handlers can cause deadlocks and performance issues. Use RunHandlerAsynchronously option for handlers with blocking operations, or refactor to be fully asynchronous.";
 
+    private static readonly LocalizableString SynchronousBodyMessageFormat = "Blocking operation '{0}' detected in event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' and await before the blocking work, or move the work into Task.Run.";
+
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         Title,
@@ -41,8 +43,20 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         isEnabledByDefault: true,
         description: Description);
 
+    // Same ID, category, and severity as Rule (release tracking is unchanged); used when the
+    // RunHandlerAsynchronously option is present but the handler is a non-async Task-returning
+    // delegate, so the option cannot help; the code fix converts the handler to async instead.
+    private static readonly DiagnosticDescriptor SynchronousBodyRule = new(
+        DiagnosticId,
+        Title,
+        SynchronousBodyMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description);
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, SynchronousBodyRule];
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -78,7 +92,12 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation))
+        // The option only helps when the handler actually runs off the dispatching thread:
+        // an Action<T> handler (queued to the thread pool by the library), an async lambda, or
+        // an async method group. A non-async Task-returning handler still executes its body
+        // inline, so blocking calls in it are reported with a message that says so.
+        bool optionPresent = AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
+        if (optionPresent && AnalyzerSymbolHelpers.IsHandlerAsynchronous(context, invocation, methodSymbol))
         {
             return;
         }
@@ -95,11 +114,12 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
+        DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
         IEnumerable<SyntaxNode> blockingOperations = FindBlockingOperations(context, handlerBody);
         foreach (SyntaxNode blockingOp in blockingOperations)
         {
             string operationName = GetBlockingOperationName(blockingOp);
-            Diagnostic diagnostic = Diagnostic.Create(Rule, blockingOp.GetLocation(), operationName);
+            Diagnostic diagnostic = Diagnostic.Create(rule, blockingOp.GetLocation(), operationName);
             context.ReportDiagnostic(diagnostic);
         }
     }

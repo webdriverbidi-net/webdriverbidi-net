@@ -26,6 +26,8 @@ Use `ObservableEventHandlerOptions.RunHandlerAsynchronously` for any handler tha
 
 [!code-csharp[Non-Blocking Handler](../code/common-pitfalls/CommonPitfallsSamples.cs#Non-BlockingHandler)]
 
+**One Caveat:** the option detaches the `Task` the handler *returns*; it does not move where the handler *starts*. The handler is still invoked on the transport thread, so in an `async` lambda the code before the first real `await` runs there, and a non-`async` handler that does its work and then returns `Task.CompletedTask` is not offloaded at all. Write the handler as `async` and `await` before the heavy work (an `await Task.Yield();` first statement guarantees it), or wrap the work in `Task.Run`. `Action<T>` handlers are queued to the thread pool as a whole and need no such care. The BIDI007/BIDI023 analyzers flag handlers where the option cannot help.
+
 **When Synchronous is OK:**
 
 Synchronous handlers are fine for quick operations:

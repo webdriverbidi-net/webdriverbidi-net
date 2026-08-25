@@ -276,7 +276,10 @@ public static class EventObserverSamples
                     // During these 5 seconds:
                     // - Transport thread continues processing
                     // - Other events are handled normally
-                    // - Handler runs on Task pool thread
+                    // - The continuation after 'await' runs on a thread pool thread.
+                    //   (The code *before* the first await still ran on the transport
+                    //   thread: the option detaches the returned Task, it does not
+                    //   move the start of the handler.)
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );

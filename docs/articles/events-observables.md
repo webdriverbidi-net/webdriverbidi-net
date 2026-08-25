@@ -428,6 +428,16 @@ Use `RunHandlerAsynchronously` for I/O operations or long-running work:
 - You need to call driver commands from the handler
 - Handler might take more than a few milliseconds
 
+**What the option does — and does not — do:**
+
+`RunHandlerAsynchronously` changes what the dispatcher does with the `Task` your handler *returns*: it stops awaiting it. It does not change where the handler *starts*. Every handler is invoked on the thread that is dispatching the event (the transport's message-processing thread), so:
+
+- In an `async` lambda, everything up to the first `await` that does not complete synchronously still runs on the dispatching thread. Put the `await` before the heavy work (an `await Task.Yield();` as the first statement is the simplest way to guarantee it).
+- A non-`async` `Task`-returning handler that does its work synchronously and then returns a completed task — `e => { DoSlowThing(); return Task.CompletedTask; }` — is **not** offloaded at all. The option cannot help it; make the handler `async` (and `await` first) or wrap the work in `Task.Run`.
+- Handlers added with the `Action<T>` overload are the exception: with the option set, the whole action is queued to the thread pool, so none of it runs on the dispatching thread.
+
+The BIDI007 and BIDI023 analyzers report handlers where the option is present but cannot help, and their code fix converts a non-`async` lambda into an `async` one that awaits `Task.Yield()` first.
+
 ### Practical Examples
 
 #### Quick Operations (Synchronous)
