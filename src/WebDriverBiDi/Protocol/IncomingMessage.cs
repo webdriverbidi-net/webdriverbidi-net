@@ -32,7 +32,13 @@ public class IncomingMessage : IDisposable
     /// incoming message bytes. This instance takes ownership and will dispose it on disposal.
     /// </param>
     /// <param name="length">The length, in bytes, of the incoming message within the owner's buffer.</param>
-    /// <param name="documentTransformer">An optional transforming function that converts the parsed JsonDocument object to another, or returns <see langword="null"/> to indicate the message should be silently discarded.</param>
+    /// <param name="documentTransformer">
+    /// An optional transforming function that converts the parsed <see cref="JsonDocument"/> to another,
+    /// or returns <see langword="null"/> to indicate the message should be silently discarded. The function
+    /// may return the document it was given unchanged. If it returns a different document, the original
+    /// parsed document is disposed by this message; the returned document becomes owned by this message
+    /// and is disposed when the message is disposed.
+    /// </param>
     public IncomingMessage(IMemoryOwner<byte> owner, int length, Func<JsonDocument, JsonDocument?>? documentTransformer = null)
     {
         this.memoryOwner = owner;
@@ -127,15 +133,25 @@ public class IncomingMessage : IDisposable
             }
             else
             {
-                using (doc)
+                JsonDocument? transformed = this.documentTransformer(doc);
+                if (transformed is null)
                 {
-                    JsonDocument? transformed = this.documentTransformer(doc);
-                    if (transformed is null)
-                    {
-                        this.messagePacketType = IncomingMessageKind.Filtered;
-                        return;
-                    }
+                    this.messagePacketType = IncomingMessageKind.Filtered;
+                    return;
+                }
 
+                // A transformer may hand back the very document it was given (a pass-through
+                // transformer), in which case that document is kept as-is. If it returns a
+                // different document, the original parsed document is no longer needed and
+                // is disposed here; the transformed document is then owned by this message
+                // and disposed with it.
+                if (ReferenceEquals(transformed, doc))
+                {
+                    this.document = doc;
+                }
+                else
+                {
+                    doc.Dispose();
                     this.document = transformed;
                 }
             }
