@@ -87,6 +87,53 @@ public class IncomingMessageTests
     }
 
     [Fact]
+    public async Task TestCanParseWithDocumentTransformerReturningSameDocument()
+    {
+        // A pass-through transformer returns the document it was handed. The message must keep
+        // using that document (not dispose it), so the message kind and payload remain readable
+        // and a second Parse is a no-op.
+        string json = """{ "type": "event", "method": "protocol.event", "params": { "paramName": "paramValue" } }""";
+        int transformerCallCount = 0;
+        JsonDocument Transformer(JsonDocument doc)
+        {
+            transformerCallCount++;
+            return doc;
+        }
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length, Transformer);
+        message.Parse();
+        Assert.Equal(IncomingMessageKind.Event, message.MessageKind);
+        Assert.Equal(json, message.MessageText);
+        message.Parse();
+        Assert.Equal(IncomingMessageKind.Event, message.MessageKind);
+        Assert.Equal(1, transformerCallCount);
+    }
+
+    [Fact]
+    public async Task TestParseWithDocumentTransformerReturningNewDocumentDisposesOriginal()
+    {
+        // When the transformer returns a different document, the original parsed document is
+        // no longer referenced by the message and must be disposed to release its pooled buffer.
+        string json = """{ "method": "CDP.someEvent", "params": { "payload": "{ \"type\": \"event\", \"method\": \"protocol.event\", \"params\": {} }" } }""";
+        JsonDocument? originalDocument = null;
+        JsonDocument Transformer(JsonDocument doc)
+        {
+            originalDocument = doc;
+            return JsonDocument.Parse(doc.RootElement.GetProperty("params").GetProperty("payload").GetString()!);
+        }
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length, Transformer);
+        message.Parse();
+        Assert.Equal(IncomingMessageKind.Event, message.MessageKind);
+        Assert.NotNull(originalDocument);
+        Assert.Throws<ObjectDisposedException>(() => originalDocument.RootElement.GetProperty("method"));
+    }
+
+    [Fact]
     public async Task TestParseWithDocumentTransformerReturningNullSetsFilteredKind()
     {
         string json = """{ "method": "CDP.someEvent", "params": {} }""";
