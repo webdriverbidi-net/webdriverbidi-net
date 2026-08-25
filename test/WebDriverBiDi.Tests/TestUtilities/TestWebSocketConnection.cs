@@ -68,7 +68,12 @@ public class TestWebSocketConnection : WebSocketConnection
         byte[] bytes = Encoding.UTF8.GetBytes(data);
         IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
         bytes.CopyTo(owner.Memory);
-        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(owner, bytes.Length));
+        await this.RaiseDataReceivedEventAsync(owner, bytes.Length);
+    }
+
+    public async Task RaiseDataReceivedEventAsync(IMemoryOwner<byte> owner, int length)
+    {
+        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(owner, length));
     }
 
     public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)

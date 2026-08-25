@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
+using System.Text;
 using System.Text.Json.Serialization.Metadata;
 using Newtonsoft.Json.Linq;
 using PinchHitter;
@@ -1642,6 +1643,26 @@ public class TransportTests
         await connection.RaiseDataReceivedEventAsync(secondResponseJson);
         await secondCommand.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal(0, transport.PendingCommandCount);
+    }
+
+    [Fact]
+    public async Task TestDataReceivedAfterDisconnectIsDisposedAndNotQueued()
+    {
+        // DisconnectAsync completes the incoming message channel's writer. A connection whose
+        // receive loop outlives StopAsync (PipeConnection abandons the loop after its
+        // ShutdownTimeout) can still deliver data afterwards. That data must not throw, must not
+        // be counted in the queue depth, and its pooled buffer must be returned via disposal.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"module.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        Assert.True(owner.IsDisposed);
+        Assert.Equal(0, transport.IncomingQueueDepth);
     }
 
     [Fact]
