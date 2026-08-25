@@ -464,7 +464,7 @@ Controls how exceptions thrown by your event handlers are handled:
 
 **When to Use Each Mode:**
 - **Ignore** (default): Event handler exceptions are logged but don't interrupt message processing. The same applies to exceptions from asynchronously run handlers when those tasks are not captured via a capture session. Use for non-critical handlers.
-- **Collect**: Exceptions are stored and thrown when `StopAsync()` is called. Exceptions from asynchronously run handlers are collected the same way when those tasks are not captured via a capture session. Use when debugging event handler issues.
+- **Collect**: Exceptions are stored and thrown when `StopAsync()` is called (not by `DisposeAsync()`, which logs and discards them—call `StopAsync()` first). Exceptions from asynchronously run handlers are collected the same way when those tasks are not captured via a capture session. Use when debugging event handler issues.
 - **Terminate**: Driver terminates when next command is sent after exception. Exceptions from asynchronously run handlers also surface on the next command when those tasks are not captured via a capture session. Use when event handler failure indicates unrecoverable state.
 
 If you explicitly capture async handler tasks with `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()`, those task exceptions are instead owned by the caller and are not surfaced a second time through transport termination or collection.
@@ -514,7 +514,7 @@ All four error behaviors can be configured independently:
 - Switch to **Ignore** in production for non-critical errors
 - Monitor logs regardless of behavior setting
 - Consider your application's error tolerance when choosing behaviors
-- Remember that **Collect** mode defers errors until `StopAsync()` is called
+- Remember that **Collect** mode defers errors until `StopAsync()` is called, and that `DisposeAsync()` alone discards them
 - Remember that **Terminate** mode throws errors on the next command, not immediately when the error occurs
 
 ## Extension Points

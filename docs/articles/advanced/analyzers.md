@@ -34,7 +34,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI008** | Warning | Unsafe cast of `EvaluateResult`; suggests pattern matching |
 | **BIDI009** | Error | Module command called before `StartAsync()` |
 | **BIDI010** | Error | Async module command not awaited (fire-and-forget) |
-| **BIDI012** | Info | `DisposeAsync()` called without `StopAsync()` first; suggests calling `StopAsync` |
+| **BIDI012** | Info / Warning | `DisposeAsync()` called without `StopAsync()` first; suggests calling `StopAsync`. Reported as a **Warning** when the same method also assigns `TransportErrorBehavior.Collect` to any of the four error-behavior properties, because `DisposeAsync()` logs and discards collected errors—only `StopAsync()` throws them |
 | **BIDI013** | Warning | Long-running operation (e.g., `NavigateAsync`) called without `CancellationToken` |
 | **BIDI014** | Warning | Parameterless constructor used for a command with a command-level reset property (i.e., a `static Reset*` property returning the same `CommandParameters` type); suggests using `.Reset*`. Does not apply to property-level sentinel classes such as `SetViewportCommandParameters`. |
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
@@ -76,6 +76,7 @@ The following analyzers have code fix providers:
 | Blocking handlers (BIDI007, BIDI016) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
 | Module commands in event handlers (BIDI023) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
 | Observer disposal (BIDI006) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
+| Collect mode and disposal (BIDI012) | [Error Handling - Collect Mode](error-handling.md#collect-mode) |
 | Nullable collections (BIDI017) | [Common Pitfalls - Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
 | Capture session ordering (BIDI020, BIDI021) | [Events and Observables - Event Synchronization](../events-observables.md#event-synchronization) |

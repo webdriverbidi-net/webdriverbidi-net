@@ -118,6 +118,13 @@ Collect mode stores transport errors in a list, throwing them when the driver is
 **Important:** Your code continues normally—errors throw when driver stopped as an `AggregateException`.
 This includes exceptions from handlers being run asynchronously unless you have explicitly captured those handler tasks via a capture session.
 
+**Collected errors are thrown only by `StopAsync()`.** `DisposeAsync()` calls `StopAsync()` internally, but it catches
+the resulting `AggregateException`, logs it at `Warn` level through `OnLogMessage`, and does not rethrow. If you rely on
+`await using` (or a bare `DisposeAsync()`) without calling `StopAsync()` first, every collected error is silently discarded.
+Always call `await driver.StopAsync()` inside a `try` block and observe the `AggregateException` there, as the sample above
+does; the [BIDI012](analyzers.md#available-analyzers) analyzer reports a warning when a `Collect` behavior is configured
+in a method that disposes the driver without stopping it first.
+
 ### Terminate Mode
 
 Terminate mode stores exceptions from event handlers and throws them when you send the next command:

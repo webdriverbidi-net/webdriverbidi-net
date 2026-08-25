@@ -73,6 +73,73 @@ public class BiDiDriver012CodeFixProviderTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that the code fix also applies to the Warning-severity Collect-mode variant of the
+    /// diagnostic, which shares the diagnostic ID.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_WithCollectBehavior_CodeFixInsertsStopAsync()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+                        await driver.StartAsync("ws://localhost:9222");
+                        await {|#0:driver.DisposeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.StopAsync();
+                        await driver.DisposeAsync();
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Call StopAsync on 'driver' before calling DisposeAsync; a TransportErrorBehavior is set to Collect, and DisposeAsync discards collected errors without throwing them");
+
+        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
     [Fact]
     public async Task DisposeAsync_InConditional_CodeFixInsertsStopAsync()
     {
