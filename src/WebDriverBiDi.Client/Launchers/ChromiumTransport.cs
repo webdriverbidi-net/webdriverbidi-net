@@ -128,24 +128,6 @@ public class ChromiumTransport : Transport
         // bootstrap as a whole rather than each command within it.
         using CancellationTokenSource initializationTokenSource = new(this.InitializationTimeout);
 
-        // The await using contruct ensures the observer is disposed properly.
-        await using EventObserver<ConnectionDataReceivedEventArgs> observer = this.Connection.OnDataReceived.AddObserver((e) =>
-        {
-            JsonDocument document = JsonDocument.Parse(e.Data);
-            if (!document.RootElement.TryGetProperty("id", out JsonElement idElement))
-            {
-                // Only return data from command responses; ignore events.
-                return;
-            }
-
-            if (idElement.TryGetInt64(out long responseId) && this.initializationCommandDictionary.TryGetValue(responseId, out DevToolsProtocolCommand command))
-            {
-                // Only set the result of the task if the response corresponds to
-                // a known command ID.
-                command.TaskCompletionSource.SetResult(document);
-            }
-        });
-
         // Create a hidden tab in the browser to host the BiDi-to-CDP mapper code.
         DevToolsProtocolCommand command = new(this.GetNextCommandId(), "Target.createTarget");
         command.Parameters["url"] = "about:blank";
@@ -248,9 +230,8 @@ public class ChromiumTransport : Transport
                 break;
             }
 
-            this.initializationCommandDictionary.TryRemove(currentCommand.Id, out _);
-            JsonDocument document = await currentCommand.TaskCompletionSource.Task.ConfigureAwait(false);
-            if (document.RootElement.TryGetProperty("result", out JsonElement result))
+            JsonElement response = await currentCommand.TaskCompletionSource.Task.ConfigureAwait(false);
+            if (response.TryGetProperty("result", out JsonElement result))
             {
                 return result;
             }
@@ -291,6 +272,29 @@ public class ChromiumTransport : Transport
     private JsonDocument? ProcessMessageDocument(JsonDocument deserializedDocument)
     {
         JsonElement deserialized = deserializedDocument.RootElement;
+
+        // Responses to the initialization commands are consumed here, rather than through a
+        // second observer on the connection's OnDataReceived event. That event hands each
+        // message's pooled buffer to a single consumer which disposes it once the message has
+        // been processed, so a second observer reading the same buffer races that disposal and
+        // can throw ObjectDisposedException. Such an exception escapes into the connection's
+        // receive loop, which catches only cancellation and WebSocket errors, and silently
+        // kills it: the socket stays open but no further message is ever delivered. This path
+        // runs while the message still owns its buffer, so no such race exists.
+        if (!this.initializationCommandDictionary.IsEmpty &&
+            deserialized.TryGetProperty("id", out JsonElement initializationIdElement) &&
+            initializationIdElement.TryGetInt64(out long initializationResponseId) &&
+            this.initializationCommandDictionary.TryRemove(initializationResponseId, out DevToolsProtocolCommand initializationCommand))
+        {
+            // Clone detaches the element from deserializedDocument, which the caller disposes
+            // as soon as this method returns.
+            initializationCommand.TaskCompletionSource.TrySetResult(deserialized.Clone());
+
+            // Returning null marks the message as filtered, so it is discarded rather than
+            // travelling on to the WebDriver BiDi message pipeline, which cannot interpret it.
+            return null;
+        }
+
         if (!deserialized.TryGetProperty("method", out JsonElement methodNameElement))
         {
             return null;
@@ -335,7 +339,7 @@ public class ChromiumTransport : Transport
 
         public string? SessionId { get; set; } = null;
 
-        public TaskCompletionSource<JsonDocument> TaskCompletionSource { get; } = new();
+        public TaskCompletionSource<JsonElement> TaskCompletionSource { get; } = new();
 
         /// <summary>
         /// Serializes this command to UTF-8 JSON bytes using Utf8JsonWriter,
