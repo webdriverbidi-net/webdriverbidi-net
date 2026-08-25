@@ -2163,6 +2163,14 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestConstructionWithNullConnectionThrows()
+    {
+        WebSocketConnection connection = new();
+        connection.OnDataReceived.AddObserver(e => {});
+        Assert.Throws<ArgumentNullException>(() => new Transport(null!));
+    }
+
+    [Fact]
     public async Task TestConnectionErrorFailsPendingCommands()
     {
         string commandName = "module.command";
