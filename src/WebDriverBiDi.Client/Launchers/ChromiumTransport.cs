@@ -18,6 +18,11 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public class ChromiumTransport : Transport
 {
+    // Separates retries of a failed initialization command. Without it, a command that returns
+    // an error immediately and repeatedly is resent as fast as the connection allows for the
+    // whole of the initialization budget. Matches the polling cadence used by the launchers.
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(100);
+
     private readonly ConcurrentDictionary<long, DevToolsProtocolCommand> initializationCommandDictionary = new();
     private string sessionId = string.Empty;
     private string mapperTabTargetId = string.Empty;
@@ -38,6 +43,18 @@ public class ChromiumTransport : Transport
         : base(connection)
     {
     }
+
+    /// <summary>
+    /// Gets or sets the total time allowed for the WebDriver BiDi mapper bootstrap performed
+    /// when connecting to a Chromium-based browser.
+    /// </summary>
+    /// <remarks>
+    /// This is a single budget shared by every Chrome DevTools Protocol command issued during
+    /// that bootstrap, not an allowance for each one. What matters is that the mapper becomes
+    /// usable, not that any individual command completes, so a slow early command legitimately
+    /// consumes time that a later one can no longer use.
+    /// </remarks>
+    public TimeSpan InitializationTimeout { get; set; } = TimeSpan.FromSeconds(20);
 
     /// <summary>
     /// Asynchronously connects to the remote end web socket.
@@ -107,6 +124,10 @@ public class ChromiumTransport : Transport
 
     private async Task InitializeBiDiAsync(bool hideMapperTab = true)
     {
+        // Every command below races against this one token, so InitializationTimeout bounds the
+        // bootstrap as a whole rather than each command within it.
+        using CancellationTokenSource initializationTokenSource = new(this.InitializationTimeout);
+
         // The await using contruct ensures the observer is disposed properly.
         await using EventObserver<ConnectionDataReceivedEventArgs> observer = this.Connection.OnDataReceived.AddObserver((e) =>
         {
@@ -129,7 +150,7 @@ public class ChromiumTransport : Transport
         DevToolsProtocolCommand command = new(this.GetNextCommandId(), "Target.createTarget");
         command.Parameters["url"] = "about:blank";
         command.Parameters["hidden"] = hideMapperTab;
-        JsonElement result = await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        JsonElement result = await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
 
         this.mapperTabTargetId = result.GetProperty("targetId").GetString() ?? string.Empty;
         if (string.IsNullOrEmpty(this.mapperTabTargetId))
@@ -141,7 +162,7 @@ public class ChromiumTransport : Transport
         command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.attachToTarget");
         command.Parameters["targetId"] = this.mapperTabTargetId;
         command.Parameters["flatten"] = true;
-        result = await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        result = await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
 
         this.sessionId = result.GetProperty("sessionId").GetString() ?? string.Empty;
         if (string.IsNullOrEmpty(this.sessionId))
@@ -152,7 +173,7 @@ public class ChromiumTransport : Transport
         // Enable the Runtime CDP domain.
         command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.enable");
         command.SessionId = this.sessionId;
-        await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
 
         // Send a click event to the target so that the beforeunload event
         // will not be fired upon close.
@@ -160,13 +181,13 @@ public class ChromiumTransport : Transport
         command.Parameters["expression"] = "document.body.click()";
         command.Parameters["userGesture"] = true;
         command.SessionId = this.sessionId;
-        await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
 
         // Expose CDP for the mapper tab.
         command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.exposeDevToolsProtocol");
         command.Parameters["bindingName"] = "cdp";
         command.Parameters["targetId"] = this.mapperTabTargetId;
-        await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
 
         // Load the mapper tab source code from the resources of this assembly.
         // This source code can be generated by building the chromium-bidi project
@@ -191,62 +212,80 @@ public class ChromiumTransport : Transport
         command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.evaluate");
         command.Parameters["expression"] = mapperScript;
         command.SessionId = this.sessionId;
-        await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
 
         // Start the BiDi-to-CDP mapper code.
         command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.evaluate");
         command.Parameters["expression"] = @$"window.runMapperInstance(""{this.mapperTabTargetId}"")";
         command.Parameters["awaitPromise"] = true;
         command.SessionId = this.sessionId;
-        await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
 
         // Add a binding to be notified when a response is sent from the BiDi-to-CDP mapper code.
         command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.addBinding");
         command.Parameters["name"] = "sendBidiResponse";
         command.SessionId = this.sessionId;
-        await this.ExecuteInitializationCommandAsync(command).ConfigureAwait(false);
+        await this.ExecuteInitializationCommandAsync(command, initializationTokenSource.Token).ConfigureAwait(false);
     }
 
-    private async Task<JsonElement> ExecuteInitializationCommandAsync(DevToolsProtocolCommand command, TimeSpan? timeout = null)
+    private async Task<JsonElement> ExecuteInitializationCommandAsync(DevToolsProtocolCommand command, CancellationToken cancellationToken)
     {
-        timeout ??= TimeSpan.FromSeconds(3);
         int retryCount = 0;
         DevToolsProtocolCommand currentCommand = command;
-        CancellationTokenSource cancellationTokenSource = new();
-        Task timeoutTask = Task.Delay(timeout.Value, cancellationTokenSource.Token);
-        while (!cancellationTokenSource.IsCancellationRequested && !timeoutTask.IsCompleted)
+
+        // The infinite delay is intentional: its sole purpose is to convert the cancellation
+        // token into a Task that Task.WhenAny can race against a command's completion. It never
+        // elapses; it completes only when the token fires, which happens once the initialization
+        // budget shared by every command in this bootstrap is exhausted.
+        Task budgetExhaustedTask = Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+        while (!cancellationToken.IsCancellationRequested)
         {
             this.initializationCommandDictionary.TryAdd(currentCommand.Id, currentCommand);
             await this.Connection.SendDataAsync(currentCommand.SerializeToUtf8Bytes()).ConfigureAwait(false);
-            Task completedTask = await Task.WhenAny(timeoutTask, currentCommand.TaskCompletionSource.Task).ConfigureAwait(false);
-            if (completedTask != timeoutTask)
+            Task completedTask = await Task.WhenAny(budgetExhaustedTask, currentCommand.TaskCompletionSource.Task).ConfigureAwait(false);
+            if (completedTask == budgetExhaustedTask)
             {
-                this.initializationCommandDictionary.TryRemove(currentCommand.Id, out _);
-                JsonDocument document = await currentCommand.TaskCompletionSource.Task;
-                if (document.RootElement.TryGetProperty("result", out JsonElement result))
-                {
-                    cancellationTokenSource.Cancel();
-                    return result;
-                }
-                else
-                {
-                    // The command result was an error. Copy the command parameters and retry,
-                    // up until the timeout.
-                    retryCount++;
-                    currentCommand = new DevToolsProtocolCommand(this.GetNextCommandId(), command.Method);
-                    foreach (KeyValuePair<string, object> entry in command.Parameters)
-                    {
-                        currentCommand.Parameters[entry.Key] = entry.Value;
-                        if (!string.IsNullOrEmpty(command.SessionId))
-                        {
-                            currentCommand.SessionId = command.SessionId;
-                        }
-                    }
-                }
+                break;
+            }
+
+            this.initializationCommandDictionary.TryRemove(currentCommand.Id, out _);
+            JsonDocument document = await currentCommand.TaskCompletionSource.Task.ConfigureAwait(false);
+            if (document.RootElement.TryGetProperty("result", out JsonElement result))
+            {
+                return result;
+            }
+
+            // The command result was an error. Copy the command parameters and retry, until the
+            // shared budget is exhausted.
+            retryCount++;
+            currentCommand = new DevToolsProtocolCommand(this.GetNextCommandId(), command.Method);
+            foreach (KeyValuePair<string, object> entry in command.Parameters)
+            {
+                currentCommand.Parameters[entry.Key] = entry.Value;
+            }
+
+            // Note this sits outside the parameter loop deliberately. A command carrying a session
+            // ID but no parameters, such as Runtime.enable, would otherwise be retried without its
+            // session ID and fail for a second, unrelated reason.
+            if (!string.IsNullOrEmpty(command.SessionId))
+            {
+                currentCommand.SessionId = command.SessionId;
+            }
+
+            try
+            {
+                await Task.Delay(RetryDelay, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
             }
         }
 
-        throw new WebDriverBiDiException($"Unable to execute BiDi initialization command '{command.Method}' within {timeout.Value.TotalMilliseconds} seconds (retried {retryCount} times)");
+        // The command in flight when the budget ran out never received a response, so nothing
+        // else will remove it from the dictionary.
+        this.initializationCommandDictionary.TryRemove(currentCommand.Id, out _);
+        throw new WebDriverBiDiException($"Unable to execute BiDi initialization command '{command.Method}' within {this.InitializationTimeout.TotalSeconds} seconds (retried {retryCount} times)");
     }
 
     private JsonDocument? ProcessMessageDocument(JsonDocument deserializedDocument)

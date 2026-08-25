@@ -190,7 +190,14 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
             if (!launcherAvailable)
             {
-                throw new BrowserNotLaunchedException($"Unable to launch Chrome browser. Browser process did not start within {this.InitializationTimeout.TotalSeconds} seconds.");
+                // The wait ends as soon as the browser process does, so a failure here is not
+                // necessarily a timeout. A browser that fails at startup typically exits within
+                // a fraction of the timeout, and reporting that as "did not start within N
+                // seconds" hides the real fault; its exit code is the first clue as to the cause.
+                string reason = this.IsRunning
+                    ? $"Browser process did not report its DevTools endpoint within {this.InitializationTimeout.TotalSeconds} seconds."
+                    : $"Browser process exited with code {this.browserProcess.ExitCode} before reporting its DevTools endpoint.";
+                throw new BrowserNotLaunchedException($"Unable to launch Chrome browser. {reason}");
             }
         }
         finally
@@ -246,7 +253,10 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     public override Transport CreateTransport()
     {
         this.ThrowIfDisposed();
-        return new ChromiumTransport(this.connection ?? this.CreateConnection());
+        return new ChromiumTransport(this.connection ?? this.CreateConnection())
+        {
+            InitializationTimeout = this.InitializationTimeout,
+        };
     }
 
     /// <summary>
