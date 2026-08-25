@@ -333,7 +333,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                         string eventName = this.observableEvent.EventName;
                         while (channel.Reader.TryRead(out Task? racedTask))
                         {
-                            this.AttachFaultContinuation(racedTask, eventName, true);
+                            this.AttachCompletionContinuation(racedTask, eventName, true, decrementInFlightCount: false);
                         }
                     }
                 }
@@ -592,21 +592,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             // precede attaching the decrement continuation: if the task completes
             // between this line and ContinueWith, the continuation still runs (it
             // schedules on already-completed tasks), so the counter remains balanced.
+            // The continuation also will observe the task if it is faulted, preventing
+            // an UnobservedTaskException, and forwarding the exception to the higher-
+            // level error reporting pipeline.
             AsyncHandlerTaskMetrics.IncrementInFlight();
-            _ = executingTask.ContinueWith(
-                static (_, _) => AsyncHandlerTaskMetrics.DecrementInFlight(),
-                state: null,
-                CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
-
-            // The handler is still running asynchronously. Attach a continuation
-            // to observe any eventual exception, preventing UnobservedTaskException
-            // from being raised when the task is garbage-collected. Faults are
-            // only forwarded into a higher-level error pipeline when the invocation
-            // is not already owned by checkpoint or capture.
             string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
-            this.AttachFaultContinuation(executingTask, reportedEventName, !isCaptured);
+            this.AttachCompletionContinuation(executingTask, reportedEventName, !isCaptured, decrementInFlightCount: true);
         }
 
         if (!isSynchronouslyFaulted)
@@ -680,13 +671,13 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         this.captureReadSemaphore.Dispose();
     }
 
-    private void AttachFaultContinuation(Task task, string eventName, bool shouldReport)
+    private void AttachCompletionContinuation(Task task, string eventName, bool shouldReport, bool decrementInFlightCount)
     {
         _ = task.ContinueWith(
-            this.ReportObserverErrorContinuation,
-            new AsynchronousFaultState(eventName, shouldReport),
+            this.HandlerCompletedContinuation,
+            new AsynchronousFaultState(eventName, shouldReport, decrementInFlightCount),
             CancellationToken.None,
-            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
     }
 
@@ -698,16 +689,25 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         }
     }
 
-    private void ReportObserverErrorContinuation(Task faultedTask, object? faultStateObject)
+    private void HandlerCompletedContinuation(Task handlerTask, object? faultStateObject)
     {
         // The state object is always passed to the continuation by the Notify method,
         // so the null-forgiving operator is appropriate here.
         AsynchronousFaultState state = (AsynchronousFaultState)faultStateObject!;
+        if (state.ShouldDecrementInFlight)
+        {
+            AsyncHandlerTaskMetrics.DecrementInFlight();
+        }
 
-        // This continuation only runs for faulted tasks, and faulted Task.Exception is
-        // guaranteed by the Task Parallel Library to be non-null, so the use of the
-        // null-forgiving operator is appropriate here.
-        AggregateException aggregateException = faultedTask.Exception!;
+        if (!handlerTask.IsFaulted)
+        {
+            return;
+        }
+
+        // At this point, the task is guaranteed to be faulted, and for faulted tasks,
+        // Task.Exception is guaranteed by the Task Parallel Library to be non-null,
+        // so the use of the null-forgiving operator is appropriate here.
+        AggregateException aggregateException = handlerTask.Exception!;
         Exception exception = aggregateException.InnerExceptions.Count == 1 ? aggregateException.InnerExceptions[0] : aggregateException;
         try
         {
@@ -733,7 +733,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         }
         finally
         {
-            _ = faultedTask.Exception;
+            _ = handlerTask.Exception;
         }
     }
 
@@ -743,11 +743,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// </summary>
     private class AsynchronousFaultState
     {
-        public AsynchronousFaultState(string reportedEventName, bool shouldReportAsyncFault)
+        public AsynchronousFaultState(string reportedEventName, bool shouldReportAsyncFault, bool shouldDecrementInFlight)
         {
             this.ReportedEventName = reportedEventName;
             this.ShouldReportAsyncFault = shouldReportAsyncFault;
+            this.ShouldDecrementInFlight = shouldDecrementInFlight;
         }
+
+        public bool ShouldDecrementInFlight { get; }
 
         public string ReportedEventName { get; }
 

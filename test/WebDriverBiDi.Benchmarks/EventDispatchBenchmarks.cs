@@ -19,8 +19,10 @@ namespace WebDriverBiDi.Benchmarks;
 public class EventDispatchBenchmarks
 {
     private ObservableEventInvocable<BenchmarkEventArgs> observableEvent = null!;
+    private ObservableEventInvocable<BenchmarkEventArgs> asyncObservableEvent = null!;
     private BenchmarkEventArgs eventArgs = null!;
     private List<EventObserver<BenchmarkEventArgs>> observers = null!;
+    private List<EventObserver<BenchmarkEventArgs>> asyncObservers = null!;
 
     /// <summary>
     /// Gets or sets the number of observers to register for each benchmark
@@ -48,6 +50,19 @@ public class EventDispatchBenchmarks
             // the ObservableEvent implementation rather than handler cost.
             this.observers.Add(this.observableEvent.AddObserver(_ => { }));
         }
+
+        this.asyncObservableEvent = new ObservableEventInvocable<BenchmarkEventArgs>("benchmark.asyncEvent");
+        this.asyncObservers = new List<EventObserver<BenchmarkEventArgs>>(this.ObserverCount);
+        for (int i = 0; i < this.ObserverCount; i++)
+        {
+            // Asynchronous handler that yields once, so the returned Task is still
+            // running when the observer inspects it. This exercises the in-flight
+            // metric and fault-observation continuation path, which is the path
+            // the performance guide steers high-throughput users toward.
+            this.asyncObservers.Add(this.asyncObservableEvent.AddObserver(
+                async _ => await Task.Yield(),
+                ObservableEventHandlerOptions.RunHandlerAsynchronously));
+        }
     }
 
     /// <summary>
@@ -60,6 +75,11 @@ public class EventDispatchBenchmarks
         {
             observer.Dispose();
         }
+
+        foreach (EventObserver<BenchmarkEventArgs> observer in this.asyncObservers)
+        {
+            observer.Dispose();
+        }
     }
 
     /// <summary>
@@ -69,6 +89,17 @@ public class EventDispatchBenchmarks
     public async Task NotifyObservers()
     {
         await this.observableEvent.InvokeNotifyObserversAsync(this.eventArgs).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Notifies all registered asynchronous observers of a single event. Measures
+    /// dispatch cost only, including attachment of the completion continuation to
+    /// each still-running handler task; handler completion is not awaited.
+    /// </summary>
+    [Benchmark]
+    public async Task NotifyAsyncObservers()
+    {
+        await this.asyncObservableEvent.InvokeNotifyObserversAsync(this.eventArgs).ConfigureAwait(false);
     }
 
     /// <summary>
