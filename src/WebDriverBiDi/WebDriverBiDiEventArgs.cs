@@ -11,7 +11,7 @@ namespace WebDriverBiDi;
 public record WebDriverBiDiEventArgs
 {
     /// <summary>
-    /// Gets or sets additional extended data sent with the event.
+    /// Gets additional extended data sent with the event.
     /// </summary>
-    public ReceivedDataDictionary AdditionalData { get; set; } = ReceivedDataDictionary.EmptyDictionary;
+    public ReceivedDataDictionary AdditionalData { get; internal set; } = ReceivedDataDictionary.EmptyDictionary;
 }
