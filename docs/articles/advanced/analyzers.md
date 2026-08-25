@@ -36,7 +36,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI010** | Error | Async module command not awaited (fire-and-forget) |
 | **BIDI012** | Info / Warning | `DisposeAsync()` called without `StopAsync()` first; suggests calling `StopAsync`. Reported as a **Warning** when the same method also assigns `TransportErrorBehavior.Collect` to any of the four error-behavior properties, because `DisposeAsync()` logs and discards collected errors—only `StopAsync()` throws them |
 | **BIDI013** | Warning | Long-running operation (e.g., `NavigateAsync`) called without `CancellationToken` |
-| **BIDI014** | Warning | Parameterless constructor used for a command with a command-level reset property (i.e., a `static Reset*` property returning the same `CommandParameters` type); suggests using `.Reset*`. Does not apply to property-level sentinel classes such as `SetViewportCommandParameters`. |
+| **BIDI014** | Warning | Parameterless constructor used for a command with a command-level reset property (i.e., a `public static Reset*` property, declared on the class or inherited from a base class, that returns the constructed `CommandParameters` type or one of its base types — this covers `SetGeolocationOverrideCoordinatesCommandParameters`, whose reset helper lives on `SetGeolocationOverrideCommandParameters`); suggests using `.Reset*`. Does not apply to property-level sentinel classes such as `SetViewportCommandParameters`, whose `Reset*` members return unrelated types. |
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
 | **BIDI016** | Warning | Deadlock-prone pattern (e.g., `.Result`, `.Wait()`) in event handler |
 | **BIDI017** | Warning | Adding to nullable list property without `??= new List<T>()` |
@@ -61,7 +61,7 @@ The following analyzers have code fix providers:
 - **BIDI008** — Replaces unsafe cast with pattern matching
 - **BIDI009** — Adds `await driver.StartAsync()` before command execution
 - **BIDI012** — Adds `await driver.StopAsync()` before `DisposeAsync()`
-- **BIDI014** — Replaces parameterless constructor with `.Reset*` property
+- **BIDI014** — Replaces parameterless constructor with `.Reset*` property (qualified by the type that declares it; a local declared with the derived type is retyped to match)
 - **BIDI015** — Replaces string literal with `ObservableEvent.EventName` property
 - **BIDI017** — Adds null-coalescing assignment before adding to nullable list
 - **BIDI020** — Inserts `observer.StartCapturingTasks()` before the offending `WaitForCapturedTasksAsync` or `WaitForCapturedTasksCompleteAsync` call

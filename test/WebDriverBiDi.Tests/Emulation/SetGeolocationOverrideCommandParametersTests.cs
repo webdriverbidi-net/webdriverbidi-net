@@ -8,14 +8,14 @@ public class SetGeolocationOverrideCommandParametersTests
     [Fact]
     public void TestCommandName()
     {
-        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
+        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
         Assert.Equal("emulation.setGeolocationOverride", properties.MethodName);
     }
 
     [Fact]
     public void TestCanGetResetParameters()
     {
-        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
+        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
         Assert.NotNull(properties);
         Assert.IsType<SetGeolocationOverrideCommandParameters>(properties, exactMatch: false);
 
@@ -27,8 +27,8 @@ public class SetGeolocationOverrideCommandParametersTests
     [Fact]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
-        SetGeolocationOverrideCommandParameters firstInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
-        SetGeolocationOverrideCommandParameters secondInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
+        SetGeolocationOverrideCommandParameters firstInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
+        SetGeolocationOverrideCommandParameters secondInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
         Assert.NotSame(secondInstance, firstInstance);
     }
 }

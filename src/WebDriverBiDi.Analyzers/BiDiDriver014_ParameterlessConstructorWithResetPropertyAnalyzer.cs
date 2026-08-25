@@ -84,14 +84,10 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         {
             if (!kvp.Value.HasPropertyAssignment && kvp.Value.ResetPropertyName != null)
             {
-                ImmutableDictionary<string, string?>.Builder properties = ImmutableDictionary.CreateBuilder<string, string?>();
-                properties.Add("TypeName", kvp.Value.TypeName);
-                properties.Add("ResetPropertyName", kvp.Value.ResetPropertyName);
-
                 Diagnostic diagnostic = Diagnostic.Create(
                     Rule,
                     kvp.Value.ConstructorLocation,
-                    properties.ToImmutable(),
+                    CreateDiagnosticProperties(kvp.Value.TypeName, kvp.Value.ResetPropertyName, kvp.Value.DeclaringTypeName),
                     kvp.Value.TypeName,
                     kvp.Value.ResetPropertyName);
 
@@ -136,23 +132,28 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 continue;
             }
 
-            string? resetPropertyName = GetResetPropertyName(type);
-            if (resetPropertyName == null)
+            ResetPropertyInfo? resetProperty = GetResetProperty(type);
+            if (resetProperty == null)
             {
                 continue;
             }
 
-            ImmutableDictionary<string, string?>.Builder properties = ImmutableDictionary.CreateBuilder<string, string?>();
-            properties.Add("TypeName", type.Name);
-            properties.Add("ResetPropertyName", resetPropertyName);
-
             context.ReportDiagnostic(Diagnostic.Create(
                 Rule,
                 objectCreation.GetLocation(),
-                properties.ToImmutable(),
+                CreateDiagnosticProperties(type.Name, resetProperty.PropertyName, resetProperty.DeclaringTypeName),
                 type.Name,
-                resetPropertyName));
+                resetProperty.PropertyName));
         }
+    }
+
+    private static ImmutableDictionary<string, string?> CreateDiagnosticProperties(string typeName, string resetPropertyName, string declaringTypeName)
+    {
+        ImmutableDictionary<string, string?>.Builder properties = ImmutableDictionary.CreateBuilder<string, string?>();
+        properties.Add("TypeName", typeName);
+        properties.Add("ResetPropertyName", resetPropertyName);
+        properties.Add("DeclaringTypeName", declaringTypeName);
+        return properties.ToImmutable();
     }
 
     private static void AnalyzeLocalDeclaration(
@@ -182,9 +183,9 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 continue;
             }
 
-            // Check if the type has a public static Reset property
-            string? resetPropertyName = GetResetPropertyName(type);
-            if (resetPropertyName == null)
+            // Check if the type (or one of its base types) has a public static Reset property
+            ResetPropertyInfo? resetProperty = GetResetProperty(type);
+            if (resetProperty == null)
             {
                 continue;
             }
@@ -196,7 +197,8 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
             trackedVariables[variable.Identifier.Text] = new VariableState
             {
                 TypeName = type.Name,
-                ResetPropertyName = resetPropertyName,
+                ResetPropertyName = resetProperty.PropertyName,
+                DeclaringTypeName = resetProperty.DeclaringTypeName,
                 ConstructorLocation = objectCreation.GetLocation(),
                 HasPropertyAssignment = hasObjectInitializer,
             };
@@ -262,23 +264,45 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         return false;
     }
 
-    private static string? GetResetPropertyName(ITypeSymbol type)
+    private static ResetPropertyInfo? GetResetProperty(ITypeSymbol type)
     {
-        // Look for public static properties that start with "Reset" and return the same type
-        IEnumerable<IPropertySymbol> properties = type.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(p => p.IsStatic && p.DeclaredAccessibility == Accessibility.Public);
-
-        foreach (IPropertySymbol? property in properties)
+        // Look for a public static property that starts with "Reset" and returns the constructed
+        // type or one of its base types. The property may be declared on the constructed type or
+        // inherited from a base class; ITypeSymbol.GetMembers() returns declared members only, so
+        // the base-type chain is walked explicitly. A reset helper declared on an abstract base
+        // that returns the base type (e.g. SetGeolocationOverrideCommandParameters.
+        // ResetGeolocationOverride, used with the derived
+        // SetGeolocationOverrideCoordinatesCommandParameters) is therefore recognized, while
+        // property-level sentinels that return an unrelated type (e.g. Viewport, double) are not.
+        for (ITypeSymbol? current = type; current != null; current = current.BaseType)
         {
-            // Check if property name starts with "Reset" and returns the same type
-            if (property.Name.StartsWith("Reset") && SymbolEqualityComparer.Default.Equals(property.Type, type))
+            IEnumerable<IPropertySymbol> properties = current.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(p => p.IsStatic && p.DeclaredAccessibility == Accessibility.Public);
+
+            foreach (IPropertySymbol property in properties)
             {
-                return property.Name;
+                if (property.Name.StartsWith("Reset") && IsSameTypeOrBaseTypeOf(property.Type, type))
+                {
+                    return new ResetPropertyInfo(property.Name, current.Name);
+                }
             }
         }
 
         return null;
+    }
+
+    private static bool IsSameTypeOrBaseTypeOf(ITypeSymbol candidate, ITypeSymbol type)
+    {
+        for (ITypeSymbol? current = type; current != null; current = current.BaseType)
+        {
+            if (SymbolEqualityComparer.Default.Equals(candidate, current))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private class VariableState
@@ -287,8 +311,23 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
 
         public string? ResetPropertyName { get; set; }
 
+        public string DeclaringTypeName { get; set; } = string.Empty;
+
         public Location ConstructorLocation { get; set; } = Location.None;
 
         public bool HasPropertyAssignment { get; set; }
+    }
+
+    private class ResetPropertyInfo
+    {
+        public ResetPropertyInfo(string propertyName, string declaringTypeName)
+        {
+            this.PropertyName = propertyName;
+            this.DeclaringTypeName = declaringTypeName;
+        }
+
+        public string PropertyName { get; }
+
+        public string DeclaringTypeName { get; }
     }
 }
