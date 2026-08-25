@@ -82,11 +82,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
     private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
-    private readonly object moduleRegistrationLock = new();
-    private readonly object eventRegistrationLock = new();
+    private readonly object registrationLock = new();
 
     // Track when constructor work is completed for custom event registration observability.
     private readonly bool isInitializationComplete = false;
+
+    // Track when a start of the driver is being requested, for purposes of registering
+    // custom modules and events.
+    private bool isStartRequested = false;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag = 0;
@@ -402,7 +405,21 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
-        await this.transport.ConnectAsync(connectionString, cancellationToken).ConfigureAwait(false);
+
+        // Publish the start transition under the registration lock before the first await.
+        // RegisterModule and RegisterEvent check this flag under the same lock, so a
+        // registration either completes entirely before this point or is rejected.
+        this.SetIsStartRequestedValue(true);
+
+        try
+        {
+            await this.transport.ConnectAsync(connectionString, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            this.SetIsStartRequestedValue(false);
+            throw;
+        }
     }
 
     /// <summary>
@@ -419,6 +436,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual async Task StopAsync(CancellationToken cancellationToken = default)
     {
         await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
+
+        // The transport supports reconnect, and registration is legal again after
+        // StopAsync (IsStarted is false). Preserve that by clearing the flag once the
+        // disconnect has completed.
+        this.SetIsStartRequestedValue(false);
     }
 
     /// <summary>
@@ -550,9 +572,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
         this.ThrowIfDisposed();
-        lock (this.eventRegistrationLock)
+        lock (this.registrationLock)
         {
-            if (this.IsStarted)
+            // Note: Can check the isStartRequested field directly, because we are already
+            // inside the registration lock.
+            if (this.isStartRequested || this.IsStarted)
             {
                 throw new InvalidOperationException("Cannot register an event after the driver has started");
             }
@@ -617,9 +641,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual void RegisterModule(Module module)
     {
         this.ThrowIfDisposed();
-        lock (this.moduleRegistrationLock)
+        lock (this.registrationLock)
         {
-            if (this.IsStarted)
+            // Note: Can check the isStartRequested field directly, because we are already
+            // inside the registration lock.
+            if (this.isStartRequested || this.IsStarted)
             {
                 throw new InvalidOperationException("Cannot register a module after the driver has started");
             }
@@ -766,6 +792,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         if (this.IsDisposed)
         {
             throw new ObjectDisposedException(this.GetType().FullName);
+        }
+    }
+
+    private void SetIsStartRequestedValue(bool value)
+    {
+        lock (this.registrationLock)
+        {
+            this.isStartRequested = value;
         }
     }
 

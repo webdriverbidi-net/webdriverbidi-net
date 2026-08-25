@@ -1710,4 +1710,108 @@ public class BiDiDriverTests
         Assert.Equal("raced task fault", ex.Message);
         Assert.Equal("browsingContext.contextCreated", errorInfo.ObservableEventName);
     }
+
+    [Fact]
+    public async Task TestRegisteringModuleWhileStartIsInProgressThrows()
+    {
+        // StartAsync publishes the start transition under the registration lock before its
+        // first await. The connection's StartBarrier holds ConnectAsync open so that the
+        // registration attempt happens while the driver is still starting (IsStarted is
+        // false, because the transport has not yet finished connecting).
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+        };
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        Task startTask = driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.False(driver.IsStarted);
+        InvalidOperationException exception = Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));
+        Assert.Equal("Cannot register a module after the driver has started", exception.Message);
+
+        startBarrier.SetResult();
+        await startTask;
+        Assert.True(driver.IsStarted);
+    }
+
+    [Fact]
+    public async Task TestRegisteringEventWhileStartIsInProgressThrows()
+    {
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+        };
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        Task startTask = driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.False(driver.IsStarted);
+        InvalidOperationException exception = Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask));
+        Assert.Equal("Cannot register an event after the driver has started", exception.Message);
+
+        startBarrier.SetResult();
+        await startTask;
+        Assert.True(driver.IsStarted);
+    }
+
+    [Fact]
+    public async Task TestRegistrationIsAllowedAgainAfterFailedStart()
+    {
+        // With BypassStart disabled, the real WebSocketConnection.StartAsync rejects a
+        // non-WebSocket scheme, so ConnectAsync throws and the driver must re-open
+        // registration rather than leaving the instance permanently locked.
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+        };
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => driver.StartAsync("http://localhost:5555", TestContext.Current.CancellationToken));
+        Assert.False(driver.IsStarted);
+
+        driver.RegisterModule(new TestProtocolModule(driver, 0, false));
+        driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
+        Assert.IsType<TestProtocolModule>(driver.GetModule<TestProtocolModule>("protocol"));
+    }
+
+    [Fact]
+    public async Task TestRegistrationIsAllowedAgainAfterStop()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));
+
+        await driver.StopAsync(TestContext.Current.CancellationToken);
+        Assert.False(driver.IsStarted);
+
+        driver.RegisterModule(new TestProtocolModule(driver, 0, false));
+        driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
+
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.True(driver.IsStarted);
+        Assert.IsType<TestProtocolModule>(driver.GetModule<TestProtocolModule>("protocol"));
+    }
+
+    [Fact]
+    public async Task TestRegistrationIsRejectedWhenTransportWasConnectedExternally()
+    {
+        // The driver never observed StartAsync, so its start-requested flag is false; the
+        // IsStarted check (backed by Transport.IsConnected) must still refuse registration.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.True(driver.IsStarted);
+
+        Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));
+        Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask));
+    }
 }
