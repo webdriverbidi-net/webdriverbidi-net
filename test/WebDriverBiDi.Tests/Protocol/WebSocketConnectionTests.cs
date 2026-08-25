@@ -384,6 +384,40 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestReceiveDataRaisesErrorEventOnDataReceivedObserverException()
+    {
+        // An exception from the observer of OnDataReceived is rethrown by the event into the
+        // receive loop. Were it not caught there, the loop would end without notice: the socket
+        // would remain open while no further message was ever delivered, which a caller awaiting
+        // a command response cannot distinguish from a remote end that has simply gone quiet.
+        static Task ThrowOnDataReceived(ConnectionDataReceivedEventArgs e) => throw new InvalidOperationException("observer failure");
+
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        ConnectionErrorEventArgs? receivedErrorArgs = null;
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        WebSocketConnection connection = new();
+        connection.OnDataReceived.AddObserver(ThrowOnDataReceived);
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            receivedErrorArgs = e;
+            taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await server.SendWebSocketDataAsync(registeredConnectionId, "Hello back");
+
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.NotNull(receivedErrorArgs);
+        Assert.Equal("observer failure", Assert.IsType<InvalidOperationException>(receivedErrorArgs.Exception).Message);
+    }
+
+    [Fact]
     public async Task TestConnectionStopWhileReceiveBlocked()
     {
         await using Server server = this.CreateServer();

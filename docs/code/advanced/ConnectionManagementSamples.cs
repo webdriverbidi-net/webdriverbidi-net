@@ -99,15 +99,21 @@ public static class ConnectionManagementSamples
     }
 
     /// <summary>
-    /// OnDataReceived event - monitors raw data received from the browser.
+    /// Inspecting protocol traffic through trace-level logging.
     /// </summary>
-    public static void OnDataReceivedEvent(WebSocketConnection connection)
+    public static void ProtocolTrafficLogging(WebSocketConnection connection)
     {
-        #region OnDataReceivedEvent
-        connection.OnDataReceived.AddObserver((ConnectionDataReceivedEventArgs e) =>
+        #region ProtocolTrafficLogging
+        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
-            Console.WriteLine($"Received: {e.Data.Length} bytes");
-            // e.Data contains the raw byte array
+            // A connection emits every message it sends and receives at Trace level,
+            // prefixed with "SEND >>>" or "RECV <<<". The messages are only produced
+            // when this event has at least one observer, so there is no cost to leaving
+            // the instrumentation in place until you subscribe.
+            if (e.Level == WebDriverBiDiLogLevel.Trace)
+            {
+                Console.WriteLine(e.Message);
+            }
         });
         #endregion
     }
@@ -562,7 +568,10 @@ public class CustomConnection : Connection
     protected override async Task ReceiveDataAsync()
     {
         // Your receive logic
-        // Call OnDataReceived.NotifyObserversAsync() with received data
+        // Call OnDataReceived.NotifyObserversAsync() with received data. The event args take
+        // an IMemoryOwner<byte> whose ownership passes to the single observer of that event,
+        // which disposes it once the message has been processed. Do not read or release the
+        // buffer after raising the event.
     }
 
     protected override async ValueTask DisposeAsyncCore()

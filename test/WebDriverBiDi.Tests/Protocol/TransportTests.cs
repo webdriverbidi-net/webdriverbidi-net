@@ -2155,6 +2155,14 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestConstructionWithConnectionHavingExistingDataReceivedObserverThrows()
+    {
+        WebSocketConnection connection = new();
+        connection.OnDataReceived.AddObserver(e => {});
+        Assert.Throws<ArgumentException>(() => new Transport(connection));
+    }
+
+    [Fact]
     public async Task TestConnectionErrorFailsPendingCommands()
     {
         string commandName = "module.command";

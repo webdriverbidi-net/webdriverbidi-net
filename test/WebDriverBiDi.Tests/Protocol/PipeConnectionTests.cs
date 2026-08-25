@@ -660,6 +660,42 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestReceiveDataRaisesErrorEventOnDataReceivedObserverException()
+    {
+        // An exception from the observer of OnDataReceived is rethrown by the event into the
+        // receive loop. Were it not caught there, the loop would end without notice: the pipe
+        // would remain open while no further message was ever delivered, which a caller awaiting
+        // a command response cannot distinguish from a remote end that has simply gone quiet.
+        static Task ThrowOnDataReceived(ConnectionDataReceivedEventArgs e) => throw new InvalidOperationException("observer failure");
+
+        ConnectionErrorEventArgs? receivedErrorArgs = null;
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestPipeServer testPipeServer = new();
+        testPipeServer.Responses.Add("Acknowledged!");
+
+        PipeConnection connection = new(testPipeServer);
+        connection.OnDataReceived.AddObserver(ThrowOnDataReceived);
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            receivedErrorArgs = e;
+            taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
+
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.NotNull(receivedErrorArgs);
+        Assert.Equal("observer failure", Assert.IsType<InvalidOperationException>(receivedErrorArgs.Exception).Message);
+    }
+
+
+    [Fact]
     public async Task TestPipesDisposedPropertySetterBothBranches()
     {
         TestPipeConnection connection = new(new TestPipeServer())
