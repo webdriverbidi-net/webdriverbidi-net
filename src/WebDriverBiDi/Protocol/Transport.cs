@@ -986,10 +986,22 @@ public class Transport : IAsyncDisposable
         await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 
-    private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
+    private Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
-        await this.incomingMessageQueue.Writer.WriteAsync(this.CreateIncomingMessage(e.BufferOwner, e.DataLength)).ConfigureAwait(false);
+        // TryWrite on an unbounded channel fails only after the writer has been completed,
+        // which DisconnectAsync does once the connection has been asked to stop. A pipe
+        // connection's receive loop can outlive that (see PipeConnection.StopAsync), so a
+        // late message must be disposed here to return its pooled buffer rather than being
+        // dropped on the floor.
+        IncomingMessage message = this.CreateIncomingMessage(e.BufferOwner, e.DataLength);
+        if (!this.incomingMessageQueue.Writer.TryWrite(message))
+        {
+            message.Dispose();
+            return Task.CompletedTask;
+        }
+
         Interlocked.Increment(ref this.incomingQueueDepth);
+        return Task.CompletedTask;
     }
 
     private async Task OnConnectionRemotelyDisconnectedAsync(ConnectionDisconnectedEventArgs e)
