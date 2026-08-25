@@ -29,8 +29,8 @@ public class ObservableEvent<T>
     private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
     private Func<EventObserverErrorInfo, Task>? observerErrorReporter;
-    private int dataCollectorCount;
     private int observerCount = 0;
+    private uint observerSequence = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
@@ -163,11 +163,6 @@ public class ObservableEvent<T>
     {
         lock (this.observerLock)
         {
-            if (this.observers.TryGetValue(observerId, out EventObserver<T>? observer) && observer.Priority == EventObserverPriority.DataCollectorObserverPriority)
-            {
-                this.dataCollectorCount--;
-            }
-
             if (this.observers.Remove(observerId))
             {
                 Interlocked.Decrement(ref this.observerCount);
@@ -232,7 +227,6 @@ public class ObservableEvent<T>
         EventObserver<T>? singleObserver = null;
         EventObserver<T>[]? snapshot = null;
         int snapshotCount = 0;
-        bool hasDataCollectors;
         lock (this.observerLock)
         {
             snapshotCount = this.observerCount;
@@ -261,8 +255,6 @@ public class ObservableEvent<T>
                     }
                 }
             }
-
-            hasDataCollectors = this.dataCollectorCount > 0;
         }
 
         // Performance optimization: if there is one and only one observer, we
@@ -281,7 +273,7 @@ public class ObservableEvent<T>
             return;
         }
 
-        if (hasDataCollectors && snapshotCount > 1)
+        if (snapshotCount > 1)
         {
             // Using this overload, because the length of snapshot might be larger
             // than the number of observers.
@@ -331,13 +323,9 @@ public class ObservableEvent<T>
                 throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "observer" : "observers")}.""");
             }
 
-            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerErrorReporter, priority);
+            this.observerSequence += 1;
+            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerErrorReporter, this.observerSequence, priority);
             this.observers.Add(observer.Id, observer);
-            if (priority == EventObserverPriority.DataCollectorObserverPriority)
-            {
-                this.dataCollectorCount++;
-            }
-
             Interlocked.Increment(ref this.observerCount);
             return observer;
         }

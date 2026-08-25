@@ -266,4 +266,25 @@ public class ObservableEventTests
         await testEventSource.RaiseTestEventAsync("myValue1");
         Assert.Equal(1, capturedEventDataCount);
     }
+
+    [Fact]
+    public async Task TestHandlersExecuteInAdditionOrder()
+    {
+        List<string> eventValues = [];
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => eventValues.Add("first"));
+        testEventSource.TestObservableEvent.AddObserver(e => eventValues.Add("second"));
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        Assert.Equal(["first", "second"], eventValues);
+
+        eventValues.Clear();
+        observer.Unobserve();
+        testEventSource.TestObservableEvent.AddObserver(e => eventValues.Add("first"));
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        Assert.Equal(["second", "first"], eventValues);
+    }
 }

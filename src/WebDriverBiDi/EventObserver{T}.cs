@@ -65,8 +65,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <param name="description">The optional description of this observer.</param>
     /// <param name="timeProvider">The <see cref="TimeProvider"/> used to calculate timeouts.</param>
     /// <param name="observerErrorReporter">The callback used to report late observer execution errors, if any.</param>
+    /// <param name="sequence">The sequence in which the observer is added to the observable event.</param>
     /// <param name="priority">The priority with which the observer will be executed relative to other observers.</param>
-    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, TimeProvider timeProvider, Func<EventObserverErrorInfo, Task>? observerErrorReporter, EventObserverPriority priority = EventObserverPriority.NormalObserverPriority)
+    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, TimeProvider timeProvider, Func<EventObserverErrorInfo, Task>? observerErrorReporter, uint sequence, EventObserverPriority priority = EventObserverPriority.NormalObserverPriority)
     {
         this.observableEvent = observableEvent;
         this.handler = handler;
@@ -74,6 +75,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         this.timeProvider = timeProvider;
         this.observerErrorReporter = observerErrorReporter;
         this.Priority = priority;
+        this.Sequence = sequence;
         if (string.IsNullOrEmpty(description))
         {
             this.Description = $"EventObserver<{typeof(T).Name}> (id: {this.Id})";
@@ -107,6 +109,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// Gets the priority with which this observer executes relative to other observers.
     /// </summary>
     internal EventObserverPriority Priority { get; private set; }
+
+    /// <summary>
+    /// Gets the sequence with which the observer is added to the observable event.
+    /// </summary>
+    internal uint Sequence { get; private set; }
 
     /// <summary>
     /// Gets or sets the description of this observer.
@@ -531,7 +538,18 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <returns>
     /// A negative integer if this observer has higher priority than <paramref name="other"/>,
     /// zero if they have equal priority, or a positive integer if this observer has lower priority.</returns>
-    public int CompareTo(EventObserver<T>? other) => this.Priority.CompareTo(other?.Priority);
+    public int CompareTo(EventObserver<T>? other)
+    {
+        if (other is null)
+        {
+            return 1;
+        }
+
+        // Cast Priority to int to prevent boxing/unboxing with CompareTo for an enum.
+        // This is a microoptimization for performance in memory allocation.
+        int priorityComparison = ((int)this.Priority).CompareTo((int)other.Priority);
+        return priorityComparison != 0 ? priorityComparison : this.Sequence.CompareTo(other.Sequence);
+    }
 
     /// <summary>
     /// Gets the string representation of this event observer.
