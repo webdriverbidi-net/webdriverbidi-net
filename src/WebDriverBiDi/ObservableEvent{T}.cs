@@ -71,10 +71,10 @@ public class ObservableEvent<T>
     /// <param name="handler">An action that handles the observed event.</param>
     /// <param name="handlerOptions">
     /// The options for executing the handler. Defaults to <see cref="ObservableEventHandlerOptions.RunHandlerSynchronously"/>,
-    /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
-    /// Handlers that perform I/O tasks, long-running operations, or execute driver commands during
-    /// the event handling should be added with the <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
-    /// option.
+    /// meaning the action runs inline on the thread dispatching the event and notification waits for it to return.
+    /// With <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> the whole action is queued to the
+    /// thread pool via <see cref="Task.Run(Action)"/>, so none of it runs on the dispatching thread; use that option
+    /// for actions that perform I/O, long-running work, or execute driver commands.
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
@@ -83,13 +83,15 @@ public class ObservableEvent<T>
     /// </exception>
     public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
-        Task WrappedHandler(T args)
-        {
-            handler(args);
-            return Task.CompletedTask;
-        }
+        Func<T, Task> wrappedHandler = handlerOptions == ObservableEventHandlerOptions.RunHandlerAsynchronously
+            ? args => Task.Run(() => handler(args))
+            : args =>
+            {
+                handler(args);
+                return Task.CompletedTask;
+            };
 
-        return this.AddObserver(WrappedHandler, handlerOptions, description);
+        return this.AddObserver(wrappedHandler, handlerOptions, description);
     }
 
     /// <summary>
@@ -98,10 +100,14 @@ public class ObservableEvent<T>
     /// <param name="handler">A function returning a Task that handles the observed event.</param>
     /// <param name="handlerOptions">
     /// The options for executing the handler. Defaults to <see cref="ObservableEventHandlerOptions.RunHandlerSynchronously"/>,
-    /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
-    /// Handlers that perform I/O tasks, long-running operations, or execute driver commands during
-    /// the event handling should be added with the <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
-    /// option.
+    /// meaning notification awaits the returned <see cref="Task"/> before continuing. With
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> the returned <see cref="Task"/> is not awaited,
+    /// but the handler is still <em>invoked</em> on the thread dispatching the event: in an <c>async</c> lambda everything
+    /// up to the first <c>await</c> that does not complete synchronously runs on that thread, and a non-<c>async</c>
+    /// handler that does its work before returning a completed task is not offloaded at all. Handlers that perform I/O,
+    /// long-running work, or execute driver commands should use this option <em>and</em> be written as <c>async</c>
+    /// handlers that <c>await</c> before doing the heavy work (for example <c>await Task.Yield()</c>), or wrap it in
+    /// <c>Task.Run</c>. See <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>

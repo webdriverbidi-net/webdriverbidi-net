@@ -5,8 +5,10 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -225,5 +227,115 @@ public class BiDiDriver023CodeFixProviderTests
 
         Assert.NotNull(fixAllProvider);
         Assert.Equal(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer, fixAllProvider);
+    }
+
+    /// <summary>
+    /// Tests that when RunHandlerAsynchronously is already present on a non-async, expression-bodied
+    /// Task-returning lambda, the code fix converts it to an async block lambda that awaits
+    /// Task.Yield before issuing the command, and keeps the option.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_NonAsyncExpressionLambda_WithRunHandlerAsynchronously_CodeFixMakesHandlerAsync()
+    {
+        string testCode = $$"""
+            {{CommonStubs}}
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(
+                            args => {|#0:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|},
+                            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = $$"""
+            {{CommonStubs}}
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(
+                            async args =>
+                            {
+                                await Task.Yield();
+                                await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
+                            },
+                            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Module command 'NavigateAsync' is called inside an event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' so the command is issued from a continuation rather than on the dispatching thread.");
+
+        LfCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that no code fix is offered (and no exception is thrown) when the module command is
+    /// reported inside a method passed as a method group, because the diagnostic is not enclosed by
+    /// the AddObserver invocation; the provider is invoked directly because the diagnostic is non-local.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_MethodGroup_OffersNoCodeFix()
+    {
+        string source = $$"""
+            {{CommonStubs}}
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new BiDiDriver();
+
+                    public void TestMethod()
+                    {
+                        var observer = this.driver.Log.OnEntryAdded.AddObserver(this.HandleAsync);
+                    }
+
+                    private async Task HandleAsync(LogEntryAddedEventArgs args)
+                    {
+                        await this.driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, _) = await AnalyzerTestHelpers
+            .GetCodeActionsAsync<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider>(source);
+
+        Assert.Empty(actions);
     }
 }

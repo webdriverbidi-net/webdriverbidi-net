@@ -39,16 +39,18 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : Co
             .Parent!.AncestorsAndSelf()
             .First();
 
-        InvocationExpressionSyntax addObserverInvocation = blockingOperation.AncestorsAndSelf()
+        InvocationExpressionSyntax? addObserverInvocation = blockingOperation.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .First(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.Text == "AddObserver");
+            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.Text == "AddObserver");
+        if (addObserverInvocation == null)
+        {
+            // The diagnostic is inside a method passed as a method group rather than inside a
+            // lambda handler; the method declaration itself would have to change, so no fix.
+            return;
+        }
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: "Add RunHandlerAsynchronously option",
-                createChangedDocument: c => CodeFixHelpers.AddRunHandlerAsynchronouslyOptionAsync(
-                    context.Document, addObserverInvocation, c),
-                equivalenceKey: "AddRunHandlerAsynchronously"),
-            diagnostic);
+
+        SemanticModel semanticModel = (await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false))!;
+        CodeFixHelpers.RegisterAddObserverHandlerFix(context, diagnostic, semanticModel, addObserverInvocation);
     }
 }

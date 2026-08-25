@@ -57,7 +57,10 @@ public static class CommonPitfallsSamples
                 Console.WriteLine($"Request: {e.Request.Url}");
 
                 // Transport thread continues processing other messages
-                // while this handler runs on a task pool thread
+                // while the continuation after 'await' runs on a thread pool
+                // thread. Note: the handler is still *invoked* on the transport
+                // thread; the option detaches the returned Task, so put the
+                // await before any heavy work.
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );

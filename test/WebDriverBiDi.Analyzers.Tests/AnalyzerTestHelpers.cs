@@ -5,11 +5,17 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
@@ -95,6 +101,60 @@ public static class AnalyzerTestHelpers
         test.ExpectedDiagnostics.AddRange(expected);
 
         await test.RunAsync();
+    }
+
+    /// <summary>
+    /// Runs an analyzer over the given source and invokes a code fix provider directly for every
+    /// diagnostic it reports, returning the registered code actions and the document they apply to.
+    /// </summary>
+    /// <typeparam name="TAnalyzer">The type of analyzer to run.</typeparam>
+    /// <typeparam name="TCodeFix">The type of code fix provider to invoke.</typeparam>
+    /// <param name="source">The source code to analyze.</param>
+    /// <returns>The registered code actions and the analyzed document.</returns>
+    /// <remarks>
+    /// Use this instead of <see cref="LfCodeFixTest{TAnalyzer, TCodeFix}"/> when the diagnostic is
+    /// reported outside the syntax node the analyzer registered for (for example inside the body of
+    /// a method passed as a method group); the testing framework rejects such "non-local"
+    /// diagnostics before the provider is ever invoked.
+    /// </remarks>
+    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        where TCodeFix : CodeFixProvider, new()
+    {
+        ImmutableArray<MetadataReference> references = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);
+        using AdhocWorkspace workspace = new();
+        Project project = workspace.AddProject("TestProject", LanguageNames.CSharp)
+            .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddMetadataReferences(references);
+        Document document = project.AddDocument("Test0.cs", source);
+
+        Compilation compilation = (await document.Project.GetCompilationAsync(CancellationToken.None))!;
+        CompilationWithAnalyzers withAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new TAnalyzer()));
+        ImmutableArray<Diagnostic> diagnostics = await withAnalyzers.GetAnalyzerDiagnosticsAsync(CancellationToken.None);
+
+        List<CodeAction> actions = [];
+        TCodeFix provider = new();
+        foreach (Diagnostic diagnostic in diagnostics)
+        {
+            CodeFixContext context = new(document, diagnostic, (action, _) => actions.Add(action), CancellationToken.None);
+            await provider.RegisterCodeFixesAsync(context);
+        }
+
+        return (actions, document);
+    }
+
+    /// <summary>
+    /// Applies a code action and returns the resulting text of the given document.
+    /// </summary>
+    /// <param name="action">The code action to apply.</param>
+    /// <param name="document">The document whose changed text is returned.</param>
+    /// <returns>The document text after the action is applied.</returns>
+    internal static async Task<string> ApplyCodeActionAsync(CodeAction action, Document document)
+    {
+        ImmutableArray<CodeActionOperation> operations = await action.GetOperationsAsync(CancellationToken.None);
+        ApplyChangesOperation applyChanges = Assert.Single(operations.OfType<ApplyChangesOperation>());
+        Document changedDocument = applyChanges.ChangedSolution.GetDocument(document.Id)!;
+        return (await changedDocument.GetTextAsync(CancellationToken.None)).ToString();
     }
 
     /// <summary>

@@ -116,6 +116,49 @@ public class BiDiDriver023AnalyzerTests
     }
 
     /// <summary>
+    /// Tests that a non-async Task-returning lambda with RunHandlerAsynchronously still reports the
+    /// module command, using the message that explains the option does not offload a synchronous body.
+    /// </summary>
+    [Fact]
+    public async Task EventHandler_NonAsyncTaskLambda_WithRunHandlerAsynchronously_ReportsSynchronousBodyWarning()
+    {
+        string test = $$"""
+            {{CommonStubs}}
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(
+                            args => {|#0:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|},
+                            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Module command 'NavigateAsync' is called inside an event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' so the command is issued from a continuation rather than on the dispatching thread.");
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that when RunHandlerAsynchronously is set no diagnostic is reported.
     /// </summary>
     [Fact]
@@ -949,8 +992,10 @@ public class BiDiDriver023AnalyzerTests
         BiDiDriver023_ModuleCommandInEventHandlerAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        Assert.Single(diagnostics);
-        Assert.Equal(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, diagnostics[0].Id);
+        // Two descriptors share the ID: the default message and the message used when
+        // RunHandlerAsynchronously is present but the handler body is synchronous.
+        Assert.Equal(2, diagnostics.Length);
+        Assert.All(diagnostics, descriptor => Assert.Equal(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, descriptor.Id));
     }
 
     /// <summary>

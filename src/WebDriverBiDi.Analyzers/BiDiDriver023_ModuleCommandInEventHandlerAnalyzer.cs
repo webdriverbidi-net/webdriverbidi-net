@@ -41,8 +41,22 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         isEnabledByDefault: true,
         description: Description);
 
+    private static readonly LocalizableString SynchronousBodyMessageFormat = "Module command '{0}' is called inside an event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' so the command is issued from a continuation rather than on the dispatching thread.";
+
+    // Same ID, category, and severity as Rule (release tracking is unchanged); used when the
+    // RunHandlerAsynchronously option is present but the handler is a non-async Task-returning
+    // delegate, so the option cannot help; the code fix converts the handler to async instead.
+    private static readonly DiagnosticDescriptor SynchronousBodyRule = new(
+        DiagnosticId,
+        Title,
+        SynchronousBodyMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description);
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule, SynchronousBodyRule];
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -78,9 +92,12 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        // When RunHandlerAsynchronously is present the handler already runs on a thread-pool
-        // thread, so module commands are safe to call.
-        if (AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation))
+        // When RunHandlerAsynchronously is present AND the handler actually runs off the
+        // dispatching thread (an Action<T> handler, an async lambda, or an async method group),
+        // module commands are safe to call. A non-async Task-returning handler still issues the
+        // command inline, so it is reported with a message that says the option cannot help.
+        bool optionPresent = AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
+        if (optionPresent && AnalyzerSymbolHelpers.IsHandlerAsynchronous(context, invocation, methodSymbol))
         {
             return;
         }
@@ -97,10 +114,11 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
+        DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
         IEnumerable<(InvocationExpressionSyntax Node, string MethodName)> moduleCommands = FindModuleCommandInvocations(context, handlerBody);
         foreach ((InvocationExpressionSyntax node, string methodName) in moduleCommands)
         {
-            Diagnostic diagnostic = Diagnostic.Create(Rule, node.GetLocation(), methodName);
+            Diagnostic diagnostic = Diagnostic.Create(rule, node.GetLocation(), methodName);
             context.ReportDiagnostic(diagnostic);
         }
     }

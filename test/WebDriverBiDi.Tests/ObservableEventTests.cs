@@ -287,4 +287,90 @@ public class ObservableEventTests
 
         Assert.Equal(["second", "first"], eventValues);
     }
+
+    [Fact]
+    public async Task TestActionHandlerRunAsynchronouslyDoesNotBlockNotification()
+    {
+        // An Action<T> handler has no Task of its own to become asynchronous, so the
+        // RunHandlerAsynchronously option must queue the whole handler to the thread pool.
+        // Otherwise the option would be a no-op and the handler would block the caller.
+        using ManualResetEventSlim releaseHandler = new(false);
+        TaskCompletionSource handlerStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            e =>
+            {
+                handlerStarted.TrySetResult();
+                releaseHandler.Wait();
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        Task notifyTask = testEventSource.RaiseTestEventAsync("myValue");
+
+        // Notification completes while the handler is still parked on the reset event; the
+        // captured handler task is therefore still running when the wait returns.
+        await notifyTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await handlerStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task capturedTask = Assert.Single(capturedTasks);
+        Assert.False(capturedTask.IsCompleted);
+
+        releaseHandler.Set();
+        await capturedTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(capturedTask.IsCompletedSuccessfully);
+    }
+
+    [Fact]
+    public async Task TestActionHandlerRunAsynchronouslyFaultIsReportedAsAsynchronousFault()
+    {
+        // Because the handler now runs on the thread pool, an exception it throws is a fault
+        // of the queued task: notification itself does not throw, and the fault is surfaced
+        // through the observer error reporter as an asynchronous, post-return fault.
+        EventObserverErrorInfo? reportedErrorInfo = null;
+        TaskCompletionSource reporterInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(errorInfo =>
+        {
+            reportedErrorInfo = errorInfo;
+            reporterInvoked.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        // Declared explicitly as Action<T>: a bare `e => throw ...` lambda would bind to the
+        // Func<T, Task> overload, which is not the overload under test here.
+        Action<TestObservableEventArgs> throwingHandler = e => throw new InvalidOperationException("action handler failure");
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            throwingHandler,
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+        await reporterInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(reportedErrorInfo);
+        Assert.Equal(observer.Id, reportedErrorInfo.ObserverId);
+        InvalidOperationException exception = Assert.IsType<InvalidOperationException>(reportedErrorInfo.Exception);
+        Assert.Equal("action handler failure", exception.Message);
+        Assert.True(reportedErrorInfo.IsAsynchronousHandler);
+        Assert.True(reportedErrorInfo.FaultOccurredAfterHandlerReturned);
+    }
+
+    [Fact]
+    public async Task TestActionHandlerRunSynchronouslyExecutesInlineOnNotifyingThread()
+    {
+        int notifyingThreadId = Environment.CurrentManagedThreadId;
+        int handlerThreadId = -1;
+        bool handlerCompleted = false;
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(e =>
+        {
+            handlerThreadId = Environment.CurrentManagedThreadId;
+            handlerCompleted = true;
+        });
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        Assert.True(handlerCompleted);
+        Assert.Equal(notifyingThreadId, handlerThreadId);
+    }
 }

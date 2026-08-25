@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Analyzers;
 
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -53,6 +54,40 @@ internal static class AnalyzerSymbolHelpers
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Determines whether the handler passed to an <c>AddObserver</c> invocation will actually
+    /// execute off the dispatching thread when <c>RunHandlerAsynchronously</c> is specified.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="invocation">The AddObserver invocation to inspect.</param>
+    /// <param name="addObserverMethod">The resolved AddObserver overload.</param>
+    /// <returns><see langword="true"/> if the handler is asynchronous; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The option only affects what happens with the <c>Task</c> a handler returns; the code that
+    /// runs before the handler returns still executes on the dispatching thread. A handler is
+    /// therefore considered asynchronous when it is bound to the <c>Action&lt;T&gt;</c> overload
+    /// (the library queues the whole action to the thread pool in that case), when it is an
+    /// <c>async</c> lambda or anonymous method, or when it is a method group that resolves to an
+    /// <c>async</c> method. A non-<c>async</c> <c>Task</c>-returning handler is not offloaded.
+    /// Callers only invoke this when an options argument is present, so the invocation always has
+    /// at least one argument and the resolved overload at least one parameter.
+    /// </remarks>
+    internal static bool IsHandlerAsynchronous(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation, IMethodSymbol addObserverMethod)
+    {
+        if (addObserverMethod.Parameters[0].Type.Name == "Action")
+        {
+            return true;
+        }
+
+        ExpressionSyntax handler = invocation.ArgumentList.Arguments[0].Expression;
+        return handler switch
+        {
+            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
+            IdentifierNameSyntax or MemberAccessExpressionSyntax => context.SemanticModel.GetSymbolInfo(handler).Symbol is IMethodSymbol { IsAsync: true },
+            _ => false,
+        };
     }
 
     /// <summary>
