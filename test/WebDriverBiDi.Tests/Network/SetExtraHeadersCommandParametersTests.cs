@@ -34,7 +34,7 @@ public class SetExtraHeadersCommandParametersTests
     {
         SetExtraHeadersCommandParameters properties = new()
         {
-            Headers = ["X-Extra-Header: headerValue"],
+            Headers = [new Header("X-Extra-Header", "headerValue")],
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -46,9 +46,20 @@ public class SetExtraHeadersCommandParametersTests
         Assert.Equal(JTokenType.Array, headersToken.Type);
         JArray? headersArray = headersToken as JArray;
         Assert.NotNull(headersArray);
-        Assert.Single(headersArray);
-        Assert.Equal(JTokenType.String, headersArray[0].Type);
-        Assert.Equal("X-Extra-Header: headerValue", headersArray[0].Value<string>());
+        JToken headerObjectToken = Assert.Single(headersArray);
+
+        Assert.Equal(JTokenType.Object, headerObjectToken.Type);
+        JObject? headerObject = headerObjectToken as JObject;
+        Assert.NotNull(headerObject);
+        Assert.True(headerObject.ContainsKey("name"));
+        Assert.Equal(JTokenType.String, headerObject["name"]!.Type);
+        Assert.Equal("X-Extra-Header", headerObject["name"]!.Value<string>());
+        Assert.True(headerObject.ContainsKey("value"));
+        Assert.Equal(JTokenType.Object, headerObject["value"]!.Type);
+        JObject? headerValueObject = headerObject["value"] as JObject;
+        Assert.NotNull(headerValueObject);
+        Assert.True(headerValueObject.ContainsKey("value"));
+        Assert.Equal("headerValue", headerValueObject["value"]!.Value<string>());
     }
 
     [Fact]
@@ -58,7 +69,7 @@ public class SetExtraHeadersCommandParametersTests
         {
             Contexts = ["myContext"]
         };
-        properties.Headers.Add("X-Extra-Header: headerValue");
+        properties.Headers.Add(new Header("X-Extra-Header",  "headerValue"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
 
@@ -69,9 +80,20 @@ public class SetExtraHeadersCommandParametersTests
         Assert.Equal(JTokenType.Array, headersToken.Type);
         JArray? headersArray = headersToken as JArray;
         Assert.NotNull(headersArray);
-        Assert.Single(headersArray);
-        Assert.Equal(JTokenType.String, headersArray[0].Type);
-        Assert.Equal("X-Extra-Header: headerValue", headersArray[0].Value<string>());
+        JToken headerObjectToken = Assert.Single(headersArray);
+
+        Assert.Equal(JTokenType.Object, headerObjectToken.Type);
+        JObject? headerObject = headerObjectToken as JObject;
+        Assert.NotNull(headerObject);
+        Assert.True(headerObject.ContainsKey("name"));
+        Assert.Equal(JTokenType.String, headerObject["name"]!.Type);
+        Assert.Equal("X-Extra-Header", headerObject["name"]!.Value<string>());
+        Assert.True(headerObject.ContainsKey("value"));
+        Assert.Equal(JTokenType.Object, headerObject["value"]!.Type);
+        JObject? headerValueObject = headerObject["value"] as JObject;
+        Assert.NotNull(headerValueObject);
+        Assert.True(headerValueObject.ContainsKey("value"));
+        Assert.Equal("headerValue", headerValueObject["value"]!.Value<string>());
 
         Assert.True(serialized.ContainsKey("contexts"));
         JToken? contextsToken = serialized["contexts"];
@@ -90,7 +112,7 @@ public class SetExtraHeadersCommandParametersTests
         {
             UserContexts = ["myUserContext"]
         };
-        properties.Headers.Add("X-Extra-Header: headerValue");
+        properties.Headers.Add(new Header("X-Extra-Header", "headerValue"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
 
@@ -101,9 +123,20 @@ public class SetExtraHeadersCommandParametersTests
         Assert.Equal(JTokenType.Array, headersToken.Type);
         JArray? headersArray = headersToken as JArray;
         Assert.NotNull(headersArray);
-        Assert.Single(headersArray);
-        Assert.Equal(JTokenType.String, headersArray[0].Type);
-        Assert.Equal("X-Extra-Header: headerValue", headersArray[0].Value<string>());
+        JToken headerObjectToken = Assert.Single(headersArray);
+
+        Assert.Equal(JTokenType.Object, headerObjectToken.Type);
+        JObject? headerObject = headerObjectToken as JObject;
+        Assert.NotNull(headerObject);
+        Assert.True(headerObject.ContainsKey("name"));
+        Assert.Equal(JTokenType.String, headerObject["name"]!.Type);
+        Assert.Equal("X-Extra-Header", headerObject["name"]!.Value<string>());
+        Assert.True(headerObject.ContainsKey("value"));
+        Assert.Equal(JTokenType.Object, headerObject["value"]!.Type);
+        JObject? headerValueObject = headerObject["value"] as JObject;
+        Assert.NotNull(headerValueObject);
+        Assert.True(headerValueObject.ContainsKey("value"));
+        Assert.Equal("headerValue", headerValueObject["value"]!.Value<string>());
 
         Assert.True(serialized.ContainsKey("userContexts"));
         JToken? userContextsToken = serialized["userContexts"];

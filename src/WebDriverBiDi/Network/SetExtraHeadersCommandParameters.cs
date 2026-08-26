@@ -33,7 +33,7 @@ public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeader
     /// </summary>
     [JsonPropertyName("headers")]
     [JsonInclude]
-    public List<string> Headers { get; set; } = [];
+    public List<Header> Headers { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the browsing contexts, if any, for which to set the extra headers.
