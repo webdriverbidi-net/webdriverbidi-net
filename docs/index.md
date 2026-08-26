@@ -15,6 +15,8 @@ The library is built on .NET Standard 2.0, ensuring broad compatibility across .
   - [Permissions API](https://www.w3.org/TR/permissions/)
   - [Web Bluetooth](https://webbluetoothcg.github.io/web-bluetooth/)
   - [Navigation Speculation (Prefetch)](https://wicg.github.io/nav-speculation/prefetch.html)
+  - [User Agent Client Hints](https://wicg.github.io/ua-client-hints/)
+  - [Digital Credentials](https://www.w3.org/TR/digital-credentials/)
 - **Event-Driven Architecture**: Asynchronous event handling for browser events
 - **Type-Safe API**: Strongly-typed commands and responses with full IntelliSense support
 - **JSON Serialization**: Built on System.Text.Json for efficient communication

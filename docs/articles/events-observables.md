@@ -111,8 +111,11 @@ or routing custom module events.
 [!code-csharp[OnEventReceived](../code/events-observables/EventObserverSamples.cs#OnEventReceived)]
 
 The `EventName` property contains the full protocol event name (e.g., `"log.entryAdded"`). `EventData`
-contains the deserialized event payload, whose concrete type depends on the event. For events the driver
-does not recognize, `EventData` will be `null`.
+contains the deserialized event payload, whose concrete type depends on the event (for example,
+`log.entryAdded` carries a `LogEntry`). Only events whose name has been registered with the driver — the
+built-in module events, plus any custom events registered via `RegisterEvent` before `StartAsync` — reach
+this observable. An event message the driver does not recognize is never delivered here; it is routed to
+[`OnUnknownMessageReceived`](#onunknownmessagereceived) and counted under `UnknownMessageBehavior`.
 
 #### OnUnexpectedErrorReceived
 
@@ -452,17 +455,22 @@ The BIDI007 and BIDI023 analyzers report handlers where the option is present bu
 
 When handlers are async, you need to synchronize if you want to ensure they complete before continuing.
 
-#### Using WaitForCapturedTasksAsync (Recommended)
+#### Using WaitForCapturedTasksCompleteAsync (Recommended)
 
 The simplest way is to use the built-in helper method:
 
-[!code-csharp[WaitForCapturedTasksAsync](../code/events-observables/EventObserverSamples.cs#WaitForCapturedTasksAsync)]
+[!code-csharp[WaitForCapturedTasksCompleteAsync](../code/events-observables/EventObserverSamples.cs#WaitForCapturedTasksAsync)]
 
-This method waits for:
-1. The requested number of events to arrive
-2. All captured handler tasks to complete
+This method waits, in order, for:
+1. The requested number of events to arrive (the capture phase)
+2. All of the captured handler tasks to complete (the completion phase)
 
-**Note**: The timeout only applies to waiting for events to arrive. Handler execution time is not limited by the timeout.
+**Note**: The single `timeout` argument is a budget for *both* phases: whatever time remains after the
+events arrive is the time allowed for the handlers to finish. A `false` return therefore means either that
+fewer than the requested number of events arrived, or that all events arrived but one or more handlers had
+not finished before the budget was exhausted; if you need to tell these apart, use
+`WaitForCapturedTasksAsync` and await the returned tasks with your own timeout handling. Pass
+`Timeout.InfiniteTimeSpan` to wait indefinitely for both phases.
 
 **Important**: When you use `WaitForCapturedTasksCompleteAsync()`, exceptions from the captured async handler tasks are propagated through this method. Those exceptions are considered owned by the caller and are not surfaced again through transport-level `EventHandlerExceptionBehavior`.
 
