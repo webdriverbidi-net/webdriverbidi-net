@@ -41,11 +41,11 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     public override string MethodName => "network.addDataCollector";
 
     /// <summary>
-    /// Gets or sets the list of <see cref="DataType"/> values associated with this data collector.
+    /// Gets the list of <see cref="DataType"/> values associated with this data collector.
     /// </summary>
     [JsonPropertyName("dataTypes")]
     [JsonInclude]
-    public HashSet<DataType> DataTypes { get; set; } = [];
+    public HashSet<DataType> DataTypes { get; } = [];
 
     /// <summary>
     /// Gets or sets the maximum encoded data size for this collector in bytes.

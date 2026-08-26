@@ -45,9 +45,17 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     /// Gets or sets the headers of the request.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// <para>
+    /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
+    /// settable, because the protocol gives a present-but-empty array its own meaning. The remote end steps
+    /// for <c>network.continueRequest</c> state: "If command parameters contains "headers": Let headers be an empty
+    /// header list" and then append each entry, so sending <c>[]</c> replaces the header list with none, while
+    /// omitting the field keeps the original header list.
+    /// </para>
+    /// <para>
+    /// When <see langword="null"/>, the property is not included in the command; when an empty list, an
+    /// empty array is sent to the remote end. Every other list property is read-only and is omitted while empty.
+    /// </para>
     /// </remarks>
     [JsonPropertyName("headers")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -57,9 +65,17 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     /// Gets or sets the cookie headers of the request.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// <para>
+    /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
+    /// settable, because the protocol gives a present-but-empty array its own meaning. The remote end steps
+    /// for <c>network.continueRequest</c> state: "If command parameters contains "cookies": Let cookies be an empty
+    /// cookie list" and then append each entry, so sending <c>[]</c> replaces the cookie list with none, while
+    /// omitting the field keeps the original cookie list.
+    /// </para>
+    /// <para>
+    /// When <see langword="null"/>, the property is not included in the command; when an empty list, an
+    /// empty array is sent to the remote end. Every other list property is read-only and is omitted while empty.
+    /// </para>
     /// </remarks>
     [JsonPropertyName("cookies")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

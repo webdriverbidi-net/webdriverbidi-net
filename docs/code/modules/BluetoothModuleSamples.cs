@@ -352,7 +352,7 @@ public static class BluetoothModuleSamples
                 SimulateCharacteristicResponseType.Read,
                 0)
             {
-                Data = new List<uint> { 0x64 },  // Heart rate value 100
+                Data = { 0x64 },  // Heart rate value 100
             };
         await driver.Bluetooth.SimulateCharacteristicResponseAsync(readParams);
         #endregion
@@ -392,7 +392,7 @@ public static class BluetoothModuleSamples
                 SimulateDescriptorResponseType.Read,
                 0)
             {
-                Data = new List<uint> { 0x48, 0x65, 0x61, 0x72, 0x74, 0x20, 0x52, 0x61, 0x74, 0x65 },
+                Data = { 0x48, 0x65, 0x61, 0x72, 0x74, 0x20, 0x52, 0x61, 0x74, 0x65 },
             };
         await driver.Bluetooth.SimulateDescriptorResponseAsync(parameters);
         #endregion

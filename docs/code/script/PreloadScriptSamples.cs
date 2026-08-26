@@ -517,7 +517,7 @@ public static class PreloadScriptSamples
             new AddPreloadScriptCommandParameters(preloadScript);
 
         // Limit to specific contexts
-        preloadParams.Contexts = new List<string> { contextId };
+        preloadParams.Contexts.Add(contextId);
 
         AddPreloadScriptCommandResult result =
             await driver.Script.AddPreloadScriptAsync(preloadParams);

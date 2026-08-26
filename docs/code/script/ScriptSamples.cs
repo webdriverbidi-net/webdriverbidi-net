@@ -361,7 +361,7 @@ public class ScriptSamples
         ChannelValue channel = new ChannelValue(new ChannelProperties("myChannel"));
 
         AddPreloadScriptCommandParameters parameters = new AddPreloadScriptCommandParameters(preloadScript);
-        parameters.Arguments = new List<ChannelValue> { channel };
+        parameters.Arguments.Add(channel);
 
         await driver.Script.AddPreloadScriptAsync(parameters);
         #endregion
@@ -885,7 +885,7 @@ public class ScriptSamples
 
         AddPreloadScriptCommandParameters parameters =
             new AddPreloadScriptCommandParameters(preloadScript);
-        parameters.Arguments = new List<ChannelValue> { channel };
+        parameters.Arguments.Add(channel);
 
         await driver.Script.AddPreloadScriptAsync(parameters);
         await driver.BrowsingContext.NavigateAsync(navParams);

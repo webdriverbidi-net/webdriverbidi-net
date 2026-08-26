@@ -60,10 +60,10 @@ public class SetClientHintsOverrideCommandParametersTests
         SetClientHintsOverrideCommandParameters properties = new()
         {
             Contexts =
-            [
+            {
                 "context1",
                 "context2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -94,10 +94,10 @@ public class SetClientHintsOverrideCommandParametersTests
         SetClientHintsOverrideCommandParameters properties = new()
         {
             UserContexts =
-            [
+            {
                 "userContext1",
                 "userContext2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -129,8 +129,8 @@ public class SetClientHintsOverrideCommandParametersTests
         Assert.NotNull(properties);
 
         Assert.Null(properties.ClientHints);
-        Assert.Null(properties.Contexts);
-        Assert.Null(properties.UserContexts);
+        Assert.Empty(properties.Contexts);
+        Assert.Empty(properties.UserContexts);
     }
 
     [Fact]

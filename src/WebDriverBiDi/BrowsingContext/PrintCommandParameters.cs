@@ -89,7 +89,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     public bool? ShrinkToFit { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of page ranges to print in the resulting output.
+    /// Gets the list of page ranges to print in the resulting output.
     /// The objects of the list must be strings or longs. Other value types
     /// will cause an error when sending the browsingContext.print command.
     /// </summary>
@@ -100,7 +100,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// the list is sent to the remote end.
     /// </remarks>
     [JsonIgnore]
-    public List<PageRange> PageRanges { get; set; } = [];
+    public List<PageRange> PageRanges { get; } = [];
 
     /// <summary>
     /// Gets the list of page ranges to print for serialization purposes.

@@ -57,7 +57,7 @@ public class CommandProcessingBenchmarks
     {
         return new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent)
         {
-            UrlPatterns = new List<UrlPattern>
+            UrlPatterns =
             {
                 new UrlPatternString("https://example.com/*"),
                 new UrlPatternString("https://test.com/*")

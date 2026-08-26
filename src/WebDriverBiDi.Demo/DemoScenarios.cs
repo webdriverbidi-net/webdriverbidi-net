@@ -122,7 +122,7 @@ public static class DemoScenarios
         ChannelValue channelValue = new(new ChannelProperties("delayLoadChannel"));
         AddPreloadScriptCommandParameters preloadScriptParameters = new(preloadScriptFunction)
         {
-            Arguments = [channelValue],
+            Arguments = {channelValue},
         };
         await driver.Script.AddPreloadScriptAsync(preloadScriptParameters);
 
@@ -401,7 +401,6 @@ public static class DemoScenarios
         // yields an exception that the object can't be found, because the preload script didn't
         // create it on the new page after navigation.
         Console.WriteLine("Executing function after removing preload script");
-        callFunctionParams.Arguments.Clear();
         callFunctionParams.Arguments.Add(node.ToSharedReference());
         scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultException removedScriptExceptionResult)
@@ -550,8 +549,8 @@ public static class DemoScenarios
 
         AddInterceptCommandParameters addIntercept = new(InterceptPhase.BeforeRequestSent)
         {
-            Contexts = [contextId],
-            UrlPatterns = [new UrlPatternPattern() { PathName = "simpleContent.html" }],
+            Contexts = { contextId },
+            UrlPatterns = {new UrlPatternPattern() { PathName = "simpleContent.html" }},
         };
         await driver.Network.AddInterceptAsync(addIntercept);
 

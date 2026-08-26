@@ -31,7 +31,7 @@ public class SetDownloadBehaviorCommandParametersTests
     {
         SetDownloadBehaviorCommandParameters properties = new()
         {
-            UserContexts = ["myUserContext"],
+            UserContexts = {"myUserContext"},
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -93,7 +93,7 @@ public class SetDownloadBehaviorCommandParametersTests
         SetDownloadBehaviorCommandParameters properties = new()
         {
             DownloadBehavior = new DownloadBehaviorAllowed("my/destination/folder"),
-            UserContexts = ["myUserContext"],
+            UserContexts = {"myUserContext"},
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -165,7 +165,7 @@ public class SetDownloadBehaviorCommandParametersTests
         SetDownloadBehaviorCommandParameters properties = new()
         {
             DownloadBehavior = new DownloadBehaviorDenied(),
-            UserContexts = ["myUserContext"],
+            UserContexts = {"myUserContext"},
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -205,7 +205,7 @@ public class SetDownloadBehaviorCommandParametersTests
         Assert.NotNull(properties);
 
         Assert.Null(properties.DownloadBehavior);
-        Assert.Null(properties.UserContexts);
+        Assert.Empty(properties.UserContexts);
     }
 
     [Fact]

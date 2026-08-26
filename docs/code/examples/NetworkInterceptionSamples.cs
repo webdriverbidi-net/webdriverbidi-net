@@ -52,7 +52,7 @@ public static class NetworkInterceptionSamples
             Console.WriteLine("Setting up network intercept...");
             AddInterceptCommandParameters addIntercept =
                 new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-            addIntercept.Contexts = new List<string> { contextId };
+            addIntercept.Contexts.Add(contextId);
 
             AddInterceptCommandResult interceptResult =
                 await driver.Network.AddInterceptAsync(addIntercept);
@@ -161,11 +161,11 @@ public static class NetworkInterceptionSamples
         // Set up intercept for API endpoints
         AddInterceptCommandParameters addIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        addIntercept.UrlPatterns = new List<UrlPattern>
-        {
+        addIntercept.UrlPatterns.AddRange(
+        [
             new UrlPatternPattern { PathName = "/api/users" },
             new UrlPatternPattern { PathName = "/api/settings" }
-        };
+        ]);
 
         await driver.Network.AddInterceptAsync(addIntercept);
 
@@ -357,12 +357,12 @@ public static class NetworkInterceptionSamples
         // Intercept image requests
         AddInterceptCommandParameters addIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        addIntercept.UrlPatterns = new List<UrlPattern>
-        {
+        addIntercept.UrlPatterns.AddRange(
+        [
             new UrlPatternString("*.jpg"),
             new UrlPatternString("*.png"),
             new UrlPatternString("*.gif")
-        };
+        ]);
 
         await driver.Network.AddInterceptAsync(addIntercept);
 
@@ -396,10 +396,10 @@ public static class NetworkInterceptionSamples
         // Intercept requests to old domain
         AddInterceptCommandParameters addIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        addIntercept.UrlPatterns = new List<UrlPattern>
-        {
+        addIntercept.UrlPatterns.AddRange(
+        [
             new UrlPatternPattern { HostName = "old-api.example.com" }
-        };
+        ]);
 
         await driver.Network.AddInterceptAsync(addIntercept);
 
@@ -433,7 +433,7 @@ public static class NetworkInterceptionSamples
         // Intercept only on specific pages
         AddInterceptCommandParameters addIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        addIntercept.Contexts = new List<string> { contextId };
+        addIntercept.Contexts.Add(contextId);
 
         await driver.Network.AddInterceptAsync(addIntercept);
 

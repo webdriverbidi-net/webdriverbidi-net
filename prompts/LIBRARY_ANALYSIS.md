@@ -61,13 +61,45 @@ but do not list it as something that should be changed. The rationale for this
 design decision is thoroughly documented in both XML documentation comments and
 in the documentation in the `docs` directory. Under no circumstances should you
 ever recommend revisiting this design decision.
-* For many `CommandParameters` properties that expose lists, if the property is
-marked as nullable, that means the protocol sees it as optional for the JSON
-payload. It is important to distinguish between omitting the value altogether
-(null) or an empty list, so these properties are deliberately initialized as
-null. These properties should be documented in their XML documentation comments
-for the rationale for the There is no need to recommend making changes to these
-properties.
+* List properties on `CommandParameters` (sent) types are never settable, with one narrow
+exception. The rule, keyed to the WebDriver BiDi CDDL of the member being serialized:
+  * **Required lists** (`name: [+x]` or `name: [*x]`, no `?`) are read-only and initialized
+  (`public List<T> Name { get; } = []`; `HashSet<T>` where set semantics apply, e.g.
+  `AddDataCollectorCommandParameters.DataTypes`), regardless of whether the protocol allows
+  them to be empty.
+  * **Optional lists** (`?name: [+x]` or `?name: [*x]`) are read-only and initialized, marked
+  `[JsonIgnore]`, and backed by an `internal List<T>? SerializableName` property
+  (`[JsonPropertyName]`, `[JsonInclude]`, `[JsonIgnore(Condition = WhenWritingNull)]`) that
+  returns `null` while the list is empty, so the field is omitted from the payload. An empty
+  array is never sent. This applies whether the CDDL is `[+x]` (where an empty array would be
+  rejected) or `[*x]` (where the spec treats an absent field and an empty array identically,
+  e.g. `addIntercept` "urlPatterns … if present, or an empty list otherwise"). Examples:
+  `Contexts`/`UserContexts` throughout, `LocateNodesCommandParameters.StartNodes`,
+  `CallFunctionCommandParameters.Arguments`, `AddPreloadScriptCommandParameters.Arguments`,
+  `AddInterceptCommandParameters.UrlPatterns`, `PrintCommandParameters.PageRanges`, the
+  Bluetooth `Simulate*ResponseCommandParameters.Data` lists.
+  * **The exception — optional lists where a present-but-empty array has its own meaning** are
+  nullable and settable (`public List<T>? Name { get; set; }`): `null` omits the field, an empty
+  list sends `[]`. Whether a list qualifies is decided by the command's *remote end steps* in the
+  specification, not by its CDDL: it qualifies **iff** the steps branch on the field's presence
+  and, inside that branch, discard or replace existing state before consuming the array, so that
+  a present-but-empty array produces a different outcome from an absent field. The signature is
+  a step of the form *"If command parameters contains "X": Let X be an empty …"* (as for
+  `headers` and `cookies` on `network.continueRequest`, `network.continueResponse` and
+  `network.provideResponse`). Steps of the form *"Let X be the "X" field if present, or an
+  empty list otherwise"* mean absent ≡ empty, and the list is read-only. The current members
+  of the exception are enumerated in the allow list in
+  `test/WebDriverBiDi.Tests/CommandParametersConventionTests.cs`, and each carries XML remarks
+  quoting the step; re-derive membership from the specification rather than trusting either.
+  That test also enforces every rule in this bullet on every `CommandParameters` type, so a
+  declaration that violates them cannot merge — a finding about list shape must therefore
+  either show the test is wrong or show the allow list admits a member whose steps do not
+  match the signature above.
+
+  None of these shapes is a defect, and they must not be reported as "inconsistent" with each
+  other. Do not recommend adding setters, nulling a read-only list, initializing one of the six
+  nullable network lists, or collapsing the shapes. A finding is warranted only when a
+  declaration contradicts the rule for its CDDL production (cite the production).
 * Some module commands accept an optional `CommandParameters` object, and this
 is an intentional API design decision. The rule for this pattern is that only
 commands taking `CommandParameters` with no required properties omitting the
@@ -276,6 +308,18 @@ themselves is outside the library's contract and is not evidence of a leak. The 
 transport-level `Protocol/*EventArgs` types are also exempt from constructor-visibility
 findings: they must remain publicly constructible so that custom `Connection` and `Transport`
 implementations can raise them.
+
+**Before flagging a list-typed property on a `CommandParameters` type as inconsistent, mutable,
+nullable-by-mistake, or missing initialization**, look up the member in the WebDriver BiDi CDDL
+(or the relevant extension specification) and record whether it is required, `?name: [+x]`,
+or `?name: [*x]`, and — for optional `[*x]` members — whether the spec's remote-end steps give a
+present-but-empty array a meaning distinct from omission. Then compare the declaration against
+the list-property rules in the design invariants (required → read-only initialized; optional →
+read-only with `Serializable*` shim; the six network `headers`/`cookies` lists → nullable settable). Read the whole type, including any `internal Serializable*` member: a read-only
+list paired with a shim that nulls when empty is the intended `[+x]` shape, not an
+inconsistency with the nullable-settable `[*x]` shape found on other types. Cite the CDDL
+production and the shape rule in any finding you keep; omit the finding if the declaration
+already matches its cardinality.
 
 **Before recommending a manual verification step for any artifact (documentation snippets, sample code correctness, file existence)**,
 check whether a CI job already validates that artifact continuously. Read

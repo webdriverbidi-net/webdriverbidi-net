@@ -63,7 +63,7 @@ public class SetCacheBehaviorCommandParametersTests
     {
         SetCacheBehaviorCommandParameters properties = new(CacheBehavior.Default)
         {
-            Contexts = ["myContext"]
+            Contexts = {"myContext"}
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

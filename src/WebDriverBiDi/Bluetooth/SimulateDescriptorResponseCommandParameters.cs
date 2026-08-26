@@ -82,14 +82,32 @@ public class SimulateDescriptorResponseCommandParameters : CommandParameters<Sim
     public uint Code { get; set; }
 
     /// <summary>
-    /// Gets or sets the data for the simulated descriptor response.
+    /// Gets the data for the simulated descriptor response.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
+    /// empty array. An empty list therefore means "not specified": the property is omitted from the
+    /// JSON payload entirely. Add entries to the list to populate it.
     /// </remarks>
+    [JsonIgnore]
+    public List<uint> Data { get; } = [];
+
+    /// <summary>
+    /// Gets the data for the simulated descriptor response, for serialization purposes.
+    /// </summary>
     [JsonPropertyName("data")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<uint>? Data { get; set; }
+    [JsonInclude]
+    internal List<uint>? SerializableData
+    {
+        get
+        {
+            if (this.Data.Count == 0)
+            {
+                return null;
+            }
+
+            return this.Data;
+        }
+    }
 }

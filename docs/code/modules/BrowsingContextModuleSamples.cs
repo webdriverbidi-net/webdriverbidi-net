@@ -358,7 +358,7 @@ public static class BrowsingContextModuleSamples
         #region EnableCSPBypass
         SetBypassCSPCommandParameters parameters = new SetBypassCSPCommandParameters
         {
-            Contexts = new List<string> { contextId },
+            Contexts = { contextId },
             Bypass = true
         };
 
@@ -373,7 +373,7 @@ public static class BrowsingContextModuleSamples
     {
         #region ClearCSPBypassOverride
         SetBypassCSPCommandParameters parameters = SetBypassCSPCommandParameters.ResetBypassCSP;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.BrowsingContext.SetBypassCSPAsync(parameters);
         #endregion

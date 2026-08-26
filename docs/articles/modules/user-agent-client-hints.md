@@ -68,7 +68,7 @@ To clear the client hints override and restore default browser behavior, use the
 
 [!code-csharp[Target Specific User Contexts](../../code/modules/UserAgentClientHintsModuleSamples.cs#TargetSpecificUserContexts)]
 
-When `Contexts` or `UserContexts` is `null`, the override applies to all contexts. When set to an empty list, it applies to no contexts (effectively clearing for those scopes).
+While `Contexts` and `UserContexts` are left empty they are omitted from the command and the override applies to all contexts. Add entries to scope the override to specific browsing contexts or user contexts.
 
 ## Common Patterns
 

@@ -62,10 +62,10 @@ public class SetMediaFeaturesOverrideCommandParametersTests
         SetMediaFeaturesOverrideCommandParameters properties = new()
         {
             Contexts =
-            [
+            {
                 "context1",
                 "context2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -96,10 +96,10 @@ public class SetMediaFeaturesOverrideCommandParametersTests
         SetMediaFeaturesOverrideCommandParameters properties = new()
         {
             UserContexts =
-            [
+            {
                 "userContext1",
                 "userContext2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -131,8 +131,8 @@ public class SetMediaFeaturesOverrideCommandParametersTests
         Assert.NotNull(properties);
 
         Assert.Null(properties.Features);
-        Assert.Null(properties.Contexts);
-        Assert.Null(properties.UserContexts);
+        Assert.Empty(properties.Contexts);
+        Assert.Empty(properties.UserContexts);
     }
 
     [Fact]

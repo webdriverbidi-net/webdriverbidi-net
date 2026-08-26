@@ -20,8 +20,8 @@ public class SetGeolocationOverrideCommandParametersTests
         Assert.IsType<SetGeolocationOverrideCommandParameters>(properties, exactMatch: false);
 
         Assert.Null(((SetGeolocationOverrideCoordinatesCommandParameters)properties).Coordinates);
-        Assert.Null(properties.Contexts);
-        Assert.Null(properties.UserContexts);
+        Assert.Empty(properties.Contexts);
+        Assert.Empty(properties.UserContexts);
     }
 
     [Fact]

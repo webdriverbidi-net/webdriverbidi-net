@@ -212,78 +212,78 @@ public static class CommonPitfallsSamples
     }
 
     /// <summary>
-    /// Nullable collection - null vs empty list protocol difference.
+    /// Optional lists come in two shapes; how you add items differs.
     /// </summary>
-    public static void NullableCollectionExample()
+    public static void NullableCollectionExample(
+        string contextId,
+        string userContextId,
+        ContinueRequestCommandParameters continueParams)
     {
         #region NullableCollectionExample
-        SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters()
+        // Shape 1: read-only, always initialized. Every optional list
+        // (contexts, userContexts, startNodes, arguments, urlPatterns, ...).
+        SetLocaleOverrideCommandParameters localeParams = new SetLocaleOverrideCommandParameters()
         {
             Locale = "en-US",
+            Contexts = { contextId },          // collection initializer - no `new List<string>()`
         };
+        localeParams.UserContexts.Add(userContextId);   // ...or add later
 
-        // Why is Contexts null instead of an empty list?
-        if (parameters.Contexts == null)  // This is true!
-        {
-            parameters.Contexts = new List<string>();
-        }
+        // Shape 2: nullable and settable. Only headers/cookies on the network
+        // continueRequest, continueResponse and provideResponse commands, where the
+        // protocol distinguishes an absent field from an empty array.
+        continueParams.Headers = [];           // sends "headers": []
         #endregion
     }
 
     /// <summary>
-    /// Null vs empty vs items - protocol JSON difference.
+    /// What each state serializes to.
     /// </summary>
-    public static void NullVsEmptyVsItems()
+    public static void NullVsEmptyVsItems(ContinueRequestCommandParameters continueParams)
     {
         #region NullvsEmptyvsItems
-        // Case 1: Contexts is null
+        // Read-only lists: empty means "not specified" and the property is omitted
         SetLocaleOverrideCommandParameters p1 = new SetLocaleOverrideCommandParameters()
         {
             Locale = "en-US",
         };
-        // JSON sent: { "locale": "en-US" /* no "contexts" property */ }
+        // JSON sent: { "locale": "en-US" }   (no "contexts"; the override applies everywhere)
 
-        // Case 2: Contexts is empty list
+        // Read-only lists: items are sent as an array
         SetLocaleOverrideCommandParameters p2 = new SetLocaleOverrideCommandParameters()
         {
             Locale = "en-US",
+            Contexts = { "<valid browsing context ID>" },
         };
-        p2.Contexts = new List<string>();
-        // JSON sent: { "locale": "en-US",  "contexts": [] }
+        // JSON sent: { "locale": "en-US", "contexts": ["<valid browsing context ID>"] }
 
-        // Case 3: Events has items
-        SetLocaleOverrideCommandParameters p3 = new SetLocaleOverrideCommandParameters()
-        {
-            Locale = "en-US",
-        };
-        p3.Contexts = new List<string> { "<valid browsing context ID>" };
-        // JSON sent: { "locale": "en-US",  "contexts": ["<valid browsing context ID>"] }
+        // There is no way to send "contexts": [] - the browser rejects it as an invalid
+        // argument, so the library does not let you express it.
+
+        // Nullable lists keep all three states
+        continueParams.Headers = null;   // "headers" omitted: keep the original headers
+        continueParams.Headers = [];     // "headers": []  - send the request with no headers
         #endregion
     }
 
     /// <summary>
-    /// Handle nullable collections - three options.
+    /// Adding items to each shape.
     /// </summary>
-    public static void HandleNullableCollections(SetLocaleOverrideCommandParameters parameters)
+    public static void HandleNullableCollections(
+        SetLocaleOverrideCommandParameters localeParams,
+        ContinueRequestCommandParameters continueParams,
+        Header header)
     {
         #region HandleNullableCollections
-        // ✅ Option 1: Null-conditional + null-coalescing
-        parameters.Contexts ??= new List<string>();
-        parameters.Contexts.Add("<valid browsing context ID>");
+        // ✅ Read-only lists: nothing to initialize, just add
+        localeParams.Contexts.Add("<valid browsing context ID>");
 
-        // ✅ Option 2: Check before adding
-        if (parameters.Contexts == null)
-        {
-            parameters.Contexts = new List<string>();
-        }
-        parameters.Contexts.Add("<valid browsing context ID>");
+        // ✅ Nullable lists: initialize before adding (analyzer BIDI017 flags a missing ??=)
+        continueParams.Headers ??= [];
+        continueParams.Headers.Add(header);
 
-        // ✅ Option 3: Initialize in one line
-        parameters.Contexts = new List<string>
-        {
-            "<valid browsing context ID>",
-            "<another valid browsing context ID>"
-        };
+        // ✅ Nullable lists: or assign in one step
+        continueParams.Headers = [header];
         #endregion
     }
 

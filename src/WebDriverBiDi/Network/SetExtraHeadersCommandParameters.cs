@@ -29,33 +29,71 @@ public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeader
     public override string MethodName => "network.setExtraHeaders";
 
     /// <summary>
-    /// Gets or sets the list of extra HTTP headers to send with every request.
+    /// Gets the list of extra HTTP headers to send with every request.
     /// </summary>
     [JsonPropertyName("headers")]
     [JsonInclude]
-    public List<Header> Headers { get; set; } = [];
+    public List<Header> Headers { get; } = [];
 
     /// <summary>
-    /// Gets or sets the browsing contexts, if any, for which to set the extra headers.
+    /// Gets the browsing contexts, if any, for which to set the extra headers.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
+    [JsonIgnore]
+    public List<string> Contexts { get; } = [];
+
+    /// <summary>
+    /// Gets the user contexts, if any, for which to set the extra headers.
+    /// </summary>
+    /// <remarks>
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
+    /// </remarks>
+    [JsonIgnore]
+    public List<string> UserContexts { get; } = [];
+
+    /// <summary>
+    /// Gets the browsing contexts, if any, for which to set the extra headers, for serialization purposes.
+    /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get; set; }
+    [JsonInclude]
+    internal List<string>? SerializableContexts
+    {
+        get
+        {
+            if (this.Contexts.Count == 0)
+            {
+                return null;
+            }
+
+            return this.Contexts;
+        }
+    }
 
     /// <summary>
-    /// Gets or sets the user contexts, if any, for which to set the extra headers.
+    /// Gets the user contexts, if any, for which to set the extra headers, for serialization purposes.
     /// </summary>
-    /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
-    /// </remarks>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get; set; }
+    [JsonInclude]
+    internal List<string>? SerializableUserContexts
+    {
+        get
+        {
+            if (this.UserContexts.Count == 0)
+            {
+                return null;
+            }
+
+            return this.UserContexts;
+        }
+    }
 }
