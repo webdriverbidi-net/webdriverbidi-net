@@ -262,6 +262,21 @@ and interface implementations must be traced to their concrete override.
 Stopping at the first delegation point and inferring the absence of behavior is
 a verification failure equivalent to not reading the implementation at all.
 
+**Before flagging a type as a mutable "received" object (public setters, mutable collections,
+`JsonElement` reachability, or similar), classify it by the library's public exposure, not by
+whether the JSON serializer is capable of deserializing it.** A type is "received" only if a
+public property, return value, or event-args member hands a deserialized instance to the
+consumer. Trace every deserialization site to the public surface: if the deserialized instance
+is held in an `internal` member and exposed only through an immutable wrapper (e.g.
+`CapabilitiesResult.SerializableProxy` → `ProxyConfigurationResult`), the type is a *sent* type
+for the purposes of the immutability rule, and its mutable members are by design (README:
+"objects being sent from the local end to the remote end are intended to have settable
+properties"). Cite the exposure path in the finding. A consumer deserializing the type
+themselves is outside the library's contract and is not evidence of a leak. The library's
+transport-level `Protocol/*EventArgs` types are also exempt from constructor-visibility
+findings: they must remain publicly constructible so that custom `Connection` and `Transport`
+implementations can raise them.
+
 **Before recommending a manual verification step for any artifact (documentation snippets, sample code correctness, file existence)**,
 check whether a CI job already validates that artifact continuously. Read
 `.github/workflows/ci.yml` and any reusable workflow files it references.
