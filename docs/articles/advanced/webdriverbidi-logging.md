@@ -35,7 +35,7 @@ services.AddLogging(builder =>
 var serviceProvider = services.BuildServiceProvider();
 
 await using var driver = new BiDiDriver();
-await driver.StartAsync("ws://localhost:9222");
+await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 ```
 
 The default overload captures events at `EventLevel.Informational` and above.

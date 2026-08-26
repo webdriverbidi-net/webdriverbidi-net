@@ -239,7 +239,7 @@ public static class FormSubmissionSamples
     public static async Task RunCompleteFormSubmissionExample()
     {
         #region CompleteFormSubmissionExample
-        string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
+        string webSocketUrl = "ws://localhost:9515/session/YOUR-SESSION-ID";
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         try

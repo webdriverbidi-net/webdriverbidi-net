@@ -26,28 +26,25 @@ Add the WebDriverBiDi package:
 dotnet add package WebDriverBiDi
 ```
 
-## Step 3: Launch the Browser
+## Step 3: Start chromedriver
 
-Before running the application, launch Chrome with WebDriver BiDi enabled:
+Chrome does not speak WebDriver BiDi on its own `--remote-debugging-port`; chromedriver provides the BiDi endpoint. Download the chromedriver that matches your Chrome from [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/) and start it:
 
 ```bash
-# Windows
-chrome.exe --remote-debugging-port=9222 --user-data-dir=C:\temp\chrome-profile
-
-# macOS
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9222 \
-  --user-data-dir=/tmp/chrome-profile
-
-# Linux
-google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-profile
+chromedriver --port=9515
 ```
 
-## Step 4: Find the WebSocket URL
+## Step 4: Create a Session and Find the WebSocket URL
 
-1. Open a new tab in the launched browser
-2. Navigate to `http://localhost:9222/json/version`
-3. Copy the `webSocketDebuggerUrl` value (it will look like `ws://localhost:9222/devtools/browser/...`)
+Create a WebDriver session that asks for a BiDi WebSocket (chromedriver launches Chrome for you):
+
+```bash
+curl -X POST http://localhost:9515/session \
+  -H "Content-Type: application/json" \
+  -d '{"capabilities":{"alwaysMatch":{"webSocketUrl":true}}}'
+```
+
+Copy the `webSocketUrl` value from the response (it will look like `ws://localhost:9515/session/8a4d1c2e-…`). The application connects to this URL; because the session already exists, it never calls `Session.NewSessionAsync`.
 
 ## Step 5: Write the Application
 
@@ -158,9 +155,10 @@ Captures a screenshot and saves it to disk.
 **Problem**: The browser isn't running or the WebSocket URL is wrong.
 
 **Solution**: 
-- Ensure the browser is launched with `--remote-debugging-port=9222`
-- Verify the WebSocket URL by visiting `http://localhost:9222/json/version`
-- Check that no firewall is blocking port 9222
+- Ensure chromedriver is running (`chromedriver --port=9515`) and the session was created (Step 4)
+- Verify the driver is listening by visiting `http://localhost:9515/status`
+- Check that no firewall is blocking port 9515
+- Make sure the URL is the `webSocketUrl` from the session response, not Chrome's `/devtools/browser/…` CDP URL
 
 ### "Timeout waiting for command"
 

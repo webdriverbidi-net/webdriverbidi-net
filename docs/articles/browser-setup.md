@@ -1,127 +1,80 @@
 # Browser Setup Guide
 
-This guide explains how to set up different browsers for use with WebDriverBiDi.NET.
+This guide explains how to obtain a WebDriver BiDi endpoint for each browser and connect WebDriverBiDi.NET to it.
 
 ## Overview
 
-WebDriverBiDi.NET requires a browser with WebDriver BiDi support running with remote debugging enabled. The library supports two connection types:
+`BiDiDriver.StartAsync` needs a WebSocket URL that **speaks WebDriver BiDi**. Which URL that is depends on the browser:
 
-- **WebSocket Connection** (default): Connects to browsers via `--remote-debugging-port`
-- **Pipe Connection**: Connects to browsers via `--remote-debugging-pipe`
+| Browser | Speaks BiDi natively? | How to get a BiDi endpoint |
+|---------|-----------------------|----------------------------|
+| Chrome / Chromium / Edge | **No.** `--remote-debugging-port` and `--remote-debugging-pipe` expose the Chrome DevTools Protocol (CDP) only | Create a session through **chromedriver** / **msedgedriver** with the `webSocketUrl` capability (recommended), or inject a BiDi-over-CDP mapper (advanced) |
+| Firefox | **Yes.** `--remote-debugging-port` exposes BiDi at `/session` | Connect directly, or go through **geckodriver** |
 
-This guide covers both approaches, with WebSocket being the recommended starting point for most users.
+> **Important:** the `ws://localhost:9222/devtools/browser/<id>` URL that Chrome prints at startup and reports from `http://localhost:9222/json/version` is a **CDP** endpoint. A `BiDiDriver` connected to it will open the socket successfully and then fail on its first command, because the browser does not understand WebDriver BiDi messages on that endpoint. Do not use it.
+
+The library supports two connection types, both usable with any of the above:
+
+- **WebSocket Connection** (default): connects to a WebSocket URL
+- **Pipe Connection**: connects over anonymous pipes to a browser you launched with `--remote-debugging-pipe` (Chromium only; see [Connection Types](#connection-types))
 
 ## Chrome / Chromium
 
-### Windows
+### Through chromedriver (recommended)
 
-```cmd
-# Basic launch
-chrome.exe --remote-debugging-port=9222
+chromedriver hosts the BiDi implementation for Chrome: a classic WebDriver session created with the `webSocketUrl: true` capability comes back with a `webSocketUrl` that speaks WebDriver BiDi.
 
-# With custom profile
-chrome.exe --remote-debugging-port=9222 --user-data-dir=C:\temp\chrome-profile
+1. Get a chromedriver that matches your Chrome version from [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/).
+2. Start it:
 
-# Headless mode
-chrome.exe --remote-debugging-port=9222 --headless=new
-```
+   ```bash
+   chromedriver --port=9515
+   ```
 
-### macOS
+3. Create a session, requesting `webSocketUrl`. Browser flags (`--headless=new`, `--user-data-dir=…`, `--no-sandbox`, …) go in `goog:chromeOptions.args`; chromedriver launches the browser for you:
 
-```bash
-# Basic launch
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9222
+   ```bash
+   curl -X POST http://localhost:9515/session \
+     -H "Content-Type: application/json" \
+     -d '{"capabilities":{"alwaysMatch":{"webSocketUrl":true,"goog:chromeOptions":{"args":["--headless=new"]}}}}'
+   ```
 
-# With custom profile
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9222 \
-  --user-data-dir=/tmp/chrome-profile
+   The response contains the endpoint:
 
-# Headless mode
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9222 \
-  --headless=new
-```
+   ```json
+   {
+     "value": {
+       "sessionId": "8a4d1c2e-0b7f-4c9a-9d3e-5f6a7b8c9d0e",
+       "capabilities": {
+         "browserName": "chrome",
+         "browserVersion": "131.0.6778.85",
+         "webSocketUrl": "ws://localhost:9515/session/8a4d1c2e-0b7f-4c9a-9d3e-5f6a7b8c9d0e"
+       }
+     }
+   }
+   ```
 
-### Linux
+   Doing the same from C#:
 
-```bash
-# Basic launch
-google-chrome --remote-debugging-port=9222
+   [!code-csharp[Create Session Through Driver](../code/examples/BrowserSetupSamples.cs#CreateSessionThroughDriver)]
 
-# With custom profile
-google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-profile
+4. Connect to the `webSocketUrl`:
 
-# Headless mode
-google-chrome --remote-debugging-port=9222 --headless=new
-```
+   [!code-csharp[Connect with WebSocket URL](../code/examples/BrowserSetupSamples.cs#ConnectwithWebSocketURL)]
 
-### Getting the WebSocket URL
+The session already exists, so **do not call `Session.NewSessionAsync`** on this connection. To finish, call `driver.Session.EndAsync()` (which also closes the browser) or `DELETE http://localhost:9515/session/<sessionId>`, then stop chromedriver.
 
-After launching Chrome:
+### Through a BiDi-over-CDP mapper (advanced)
 
-1. Open a browser tab
-2. Navigate to `http://localhost:9222/json/version`
-3. Copy the `webSocketDebuggerUrl` value
-
-Example response:
-```json
-{
-  "Browser": "Chrome/121.0.6167.85",
-  "Protocol-Version": "1.3",
-  "User-Agent": "Mozilla/5.0...",
-  "V8-Version": "12.1.285.27",
-  "WebKit-Version": "537.36",
-  "webSocketDebuggerUrl": "ws://localhost:9222/devtools/browser/abc-123-def"
-}
-```
-
-Use the `webSocketDebuggerUrl` value to connect:
-
-[!code-csharp[Connect with WebSocket URL](../code/examples/BrowserSetupSamples.cs#ConnectwithWebSocketURL)]
+The [chromium-bidi](https://github.com/GoogleChromeLabs/chromium-bidi) project provides a JavaScript "mapper" that implements WebDriver BiDi on top of CDP. Injecting it into a hidden tab lets a client talk BiDi over the browser's own CDP endpoint (WebSocket or pipe) with no driver executable. The repository's `WebDriverBiDi.Client` demonstration library does exactly this in its `ChromiumTransport` (a `Transport` subclass that bootstraps the mapper during `ConnectAsync`); that library is not published to NuGet, but it is the reference for building your own. This is the only route that works over a pipe connection, and it requires `Session.NewSessionAsync` after connecting because the mapper does not create a session.
 
 ## Microsoft Edge
 
-Microsoft Edge is based on Chromium and uses the same commands.
-
-### Windows
-
-```cmd
-# Basic launch
-msedge.exe --remote-debugging-port=9222
-
-# With custom profile
-msedge.exe --remote-debugging-port=9222 --user-data-dir=C:\temp\edge-profile
-
-# Headless mode
-msedge.exe --remote-debugging-port=9222 --headless=new
-```
-
-### macOS
+Edge is Chromium-based and follows the chromedriver path exactly, using **msedgedriver** (from the [Edge WebDriver page](https://developer.microsoft.com/microsoft-edge/tools/webdriver/)) and `ms:edgeOptions` in place of `goog:chromeOptions`:
 
 ```bash
-# Basic launch
-/Applications/Microsoft\ Edge.app/Contents/MacOS/Microsoft\ Edge \
-  --remote-debugging-port=9222
-
-# With custom profile
-/Applications/Microsoft\ Edge.app/Contents/MacOS/Microsoft\ Edge \
-  --remote-debugging-port=9222 \
-  --user-data-dir=/tmp/edge-profile
+msedgedriver --port=9515
 ```
-
-### Linux
-
-```bash
-# Basic launch
-microsoft-edge --remote-debugging-port=9222
-
-# With custom profile
-microsoft-edge --remote-debugging-port=9222 --user-data-dir=/tmp/edge-profile
-```
-
-WebSocket URL discovery is the same as Chrome - visit `http://localhost:9222/json/version`.
 
 ## Connection Types
 
@@ -130,10 +83,9 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 ### WebSocket Connection (Default)
 
 **How it Works:**
-- Browser launches with `--remote-debugging-port=PORT`
-- Browser listens on a TCP port for WebSocket connections
-- Your application connects via `ws://localhost:PORT/devtools/browser/ID`
-- Multiple clients can connect to the same browser
+- Your application connects to a WebDriver BiDi WebSocket URL: the `webSocketUrl` of a session created through chromedriver/msedgedriver/geckodriver, or Firefox's `ws://localhost:PORT/session`
+- Works with local and remote endpoints
+- Multiple clients can connect to the same driver or browser (each gets its own session)
 
 **Best For:**
 - Development and debugging
@@ -148,10 +100,10 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 ### Pipe Connection
 
 **How it Works:**
-- Browser launches with flags to enable pipe communication
-- Browser communicates via anonymous pipes (stdin/stdout)
+- A Chromium browser is launched with `--remote-debugging-pipe`
+- Browser communicates via anonymous pipes (file descriptors 3 and 4 on Unix-like systems)
 - Protocol uses null-terminated JSON messages
-- On Unix-like systems: File descriptors 3 (browser reads) and 4 (browser writes)
+- The pipe carries **CDP**, so a BiDi-over-CDP mapper is required (see above); Firefox has no pipe mode
 - Single client can connect (the process that launched the browser)
 
 **Best For:**
@@ -166,7 +118,7 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 
 **Example:**
 
-> **Note:** The `WebDriverBiDi` NuGet package does not include a browser launcher. The repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) provides a `BrowserLauncher` whose Chromium launcher implements `IPipeServerProcessProvider`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates (file descriptors 3 and 4 on Unix), and pass a `Transport` built over that `PipeConnection` to `BiDiDriver`:
+> **Note:** The `WebDriverBiDi` NuGet package does not include a browser launcher. The repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) provides a `BrowserLauncher` whose Chromium launcher implements `IPipeServerProcessProvider` and returns a `ChromiumTransport`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates, and pass a mapper-installing `Transport` built over that `PipeConnection` to `BiDiDriver`:
 
 [!code-csharp[Pipe Launcher Pattern](../code/examples/BrowserSetupSamples.cs#PipeLauncherPattern)]
 
@@ -181,48 +133,40 @@ The skeleton of your own `IPipeServerProcessProvider` implementation looks like 
 | **Latency** | Moderate (TCP overhead) | Lower (direct IPC) |
 | **Remote Access** | ✓ Yes | ✗ No |
 | **Multi-Client** | ✓ Yes | ✗ No |
-| **Setup Complexity** | Simple | Moderate |
+| **Setup Complexity** | Simple | Moderate (mapper required) |
 | **Debugging** | Easy (inspect traffic) | Moderate |
 | **Use Case** | Development, debugging | Automation, testing |
 
-**Recommendation:** Start with WebSocket connections for simplicity, switch to Pipes if you need lower latency or are building automation frameworks.
+**Recommendation:** Start with WebSocket connections through a driver executable for simplicity; switch to pipes only if you need lower latency and are prepared to host the mapper.
 
 ## Firefox
 
-Firefox support for WebDriver BiDi is still evolving. The setup is different from Chromium-based browsers.
+Firefox implements WebDriver BiDi natively, so there are two ways in.
 
-### Using GeckoDriver
+### Direct: `--remote-debugging-port`
+
+```bash
+firefox --remote-debugging-port=9222
+```
+
+Firefox then serves WebDriver BiDi at `ws://localhost:9222/session`. No session exists yet, so create one after connecting:
+
+[!code-csharp[Firefox Direct Connection](../code/examples/BrowserSetupSamples.cs#FirefoxDirectConnection)]
+
+### Through geckodriver
 
 1. Download geckodriver from https://github.com/mozilla/geckodriver/releases
 2. Launch geckodriver:
 
-```bash
-geckodriver --port 4444
-```
+   ```bash
+   geckodriver --port 4444
+   ```
 
-3. Firefox will launch automatically when you connect
+3. Either create a classic session with `webSocketUrl: true` exactly as for chromedriver (browser flags go in `moz:firefoxOptions.args`) and connect to the returned `webSocketUrl` — no `NewSessionAsync` needed — or connect to geckodriver's BiDi-only endpoint and create the session yourself:
 
-### WebSocket URL
+   [!code-csharp[Firefox Connection](../code/examples/BrowserSetupSamples.cs#FirefoxConnection)]
 
-Firefox uses a different URL format:
-```
-ws://localhost:4444/session
-```
-
-Connect with:
-
-[!code-csharp[Firefox Connection](../code/examples/BrowserSetupSamples.cs#FirefoxConnection)]
-
-> **Important:** When connecting via geckodriver, you must call `session.NewSessionAsync` explicitly
-> after `StartAsync`. Geckodriver does not create a WebDriver BiDi session automatically on connect,
-> unlike direct CDP connections to Chrome or Edge. Without this call, subsequent commands will fail
-> because no session exists on the remote end:
->
-> ```csharp
-> await driver.StartAsync("ws://localhost:4444/session");
-> NewCommandParameters sessionParams = new();
-> NewCommandResult sessionResult = await driver.Session.NewSessionAsync(sessionParams);
-> ```
+> **Important:** On the `/session` endpoints (Firefox direct, or geckodriver without a classic session) you must call `Session.NewSessionAsync` after `StartAsync`; without it, subsequent commands fail because no session exists on the remote end. On a `webSocketUrl` returned by a classic new-session request the session already exists and `NewSessionAsync` must **not** be called.
 >
 > See the [Session Module guide](modules/session.md) for full details and capability negotiation options.
 
@@ -230,39 +174,27 @@ Connect with:
 
 Firefox's WebDriver BiDi implementation is actively being developed. Some features may not be available or may behave differently than in Chromium-based browsers.
 
-## Using with Selenium Manager
+## Using with Selenium
 
-If you're using Selenium, you can let Selenium Manager handle browser launching:
+If you already use Selenium, let it locate the driver and browser (Selenium Manager) and create the session; ask it for a BiDi WebSocket with `UseWebSocketUrl`, then connect a `BiDiDriver` to the `webSocketUrl` capability:
 
-[!code-csharp[Selenium Manager Integration](../code/examples/BrowserSetupSamples.cs#SeleniumManagerIntegration)]
+[!code-csharp[Selenium Integration](../code/examples/BrowserSetupSamples.cs#SeleniumManagerIntegration)]
 
-This is conceptual—WebDriverBiDi.NET doesn't include Selenium. Let Selenium's `ChromeDriver` launch the browser, ask the browser for its `webSocketDebuggerUrl` through Selenium's CDP bridge (`ExecuteCdpCommand("Target.getTargets", …)`, as the sample does; fetching `http://localhost:<port>/json/version` works too if you launched with `--remote-debugging-port`), then connect a `BiDiDriver` to that URL.
+WebDriverBiDi.NET does not depend on Selenium; the two share only the session. Stop the `BiDiDriver` before calling `Quit()` on the Selenium driver, which ends the session.
 
 ## Docker Container
 
-You can run Chrome in a Docker container with remote debugging:
-
-```dockerfile
-FROM selenium/standalone-chrome:latest
-
-# Expose remote debugging port
-EXPOSE 9222
-
-# Launch with remote debugging
-CMD google-chrome \
-  --remote-debugging-port=9222 \
-  --remote-debugging-address=0.0.0.0 \
-  --disable-gpu \
-  --no-sandbox
-```
+Run the browser *and its driver* in the container and publish the driver's port; never publish a CDP port (`--remote-debugging-address=0.0.0.0`), which speaks CDP and exposes full browser control. The official Selenium images do this for you: `selenium/standalone-chrome` serves a WebDriver endpoint on port 4444 that accepts `webSocketUrl: true` and returns a BiDi URL routed through the container.
 
 ```bash
-docker run -p 9222:9222 my-chrome-debug
+docker run -d -p 4444:4444 --shm-size=2g selenium/standalone-chrome:latest
 ```
 
-Connect to `ws://localhost:9222/devtools/browser/...`
+Then create the session at `http://localhost:4444` exactly as in the chromedriver steps above and connect to the returned `webSocketUrl`.
 
 ## Common Launch Options
+
+When the browser is launched by a driver, pass these as `goog:chromeOptions.args` / `ms:edgeOptions.args` / `moz:firefoxOptions.args` in the new-session capabilities; when you launch Firefox directly, put them on the command line.
 
 ### Disable GPU
 
@@ -308,47 +240,50 @@ Prevent shared memory issues in Docker:
 
 ### Example CI Launch
 
-```bash
-google-chrome \
-  --remote-debugging-port=9222 \
-  --headless=new \
-  --disable-gpu \
-  --no-sandbox \
-  --disable-dev-shm-usage \
-  --window-size=1920,1080
+```json
+{
+  "capabilities": {
+    "alwaysMatch": {
+      "webSocketUrl": true,
+      "goog:chromeOptions": {
+        "args": ["--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage", "--window-size=1920,1080"]
+      }
+    }
+  }
+}
 ```
 
 ## Programmatic Browser Launch
 
-You can launch the browser process yourself, discover its WebSocket URL, and only then connect. The snippet below shows just the connection step; the [WebSocket Launcher Pattern](#websocket-launcher-pattern) further down shows the launch and discovery steps:
+You can start the driver executable yourself, create the session, and only then connect. The snippet below shows just the session and connection steps; the [WebSocket Launcher Pattern](#websocket-launcher-pattern) further down shows launching the driver process as well:
 
 [!code-csharp[Programmatic Browser Launch](../code/examples/BrowserSetupSamples.cs#ProgrammaticBrowserLaunch)]
 
 ## Implementing Your Own Launcher
 
-The `WebDriverBiDi` NuGet package does **not** ship a browser launcher; the library only provides the protocol client. The repository's `WebDriverBiDi.Client` demonstration library shows one way to do it (see `BrowserLauncher` in `src/WebDriverBiDi.Client/Launchers`), but it is not published, so to automate browser launch in your own project you implement the launcher yourself. The patterns below sketch the two approaches.
+The `WebDriverBiDi` NuGet package does **not** ship a browser launcher; the library only provides the protocol client. The repository's `WebDriverBiDi.Client` demonstration library shows one way to do it (see `BrowserLauncher` and its `ChromeDriverLauncher`, `GeckoDriverLauncher`, `FirefoxLauncher` and `ChromeLauncher` in `src/WebDriverBiDi.Client/Launchers`), but it is not published, so to automate browser launch in your own project you implement the launcher yourself. The patterns below sketch the two approaches.
 
 ### WebSocket Launcher Pattern
 
-Launch the browser with `--remote-debugging-port`, then discover the WebSocket URL and connect. The snippet fetches `/json/version` but leaves parsing its `webSocketDebuggerUrl` property to you (any JSON library will do); in the example the parsed value is represented by the `webSocketUrl` parameter:
+Start the driver executable, wait for its `/status` endpoint, create a session with `webSocketUrl: true`, and connect to the returned URL. Ending the session closes the browser; then stop the driver process:
 
 [!code-csharp[WebSocket Launcher Pattern](../code/examples/BrowserSetupSamples.cs#WebSocketLauncherPattern)]
 
 ### Pipe Launcher Pattern
 
-For pipe connections, implement `IPipeServerProcessProvider` to launch the browser with pipe flags and provide a `Transport` to `BiDiDriver`. See the `Transport` and `PipeConnection` types in the API reference for the interface contract.
+For pipe connections (Chromium only), implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide a `Transport` to `BiDiDriver`. Because the pipe carries CDP, that `Transport` must install a BiDi-over-CDP mapper — see `ChromiumTransport` in the demonstration library. See the `Transport` and `PipeConnection` types in the API reference for the interface contract.
 
 ## Troubleshooting
 
 ### Port Already in Use
 
 ```
-Error: Port 9222 already in use
+Error: Port 9515 already in use
 ```
 
 **Solutions:**
-- Close existing Chrome instances
-- Use a different port: `--remote-debugging-port=9223`
+- Stop the other driver instance
+- Use a different port: `chromedriver --port=9516`
 - Find and kill the process using the port
 
 ### Connection Refused
@@ -358,10 +293,10 @@ WebDriverBiDiException: Connection refused
 ```
 
 **Solutions:**
-- Verify browser is running
+- Verify the driver (or Firefox with `--remote-debugging-port`) is running
 - Check the WebSocket URL is correct
 - Ensure no firewall is blocking the port
-- Try `http://localhost:9222` in a browser to verify
+- Try `http://localhost:9515/status` in a browser to verify the driver is listening
 
 ### Browser Closes Immediately
 
@@ -370,27 +305,34 @@ WebDriverBiDiException: Connection refused
 - Check for conflicting flags
 - Run without `--headless` to debug
 
-### Invalid WebSocket URL
+### Connected, but the First Command Fails
+
+If `StartAsync` succeeds and the first command (or `Session.StatusAsync`) fails or times out, the URL is almost certainly a CDP endpoint:
 
 **Solutions:**
-- Don't use the URL from the initial tab (it's for that specific page)
-- Always get the browser-level WebSocket URL from `/json/version`
-- The URL should contain `/devtools/browser/`, not `/devtools/page/`
+- A URL containing `/devtools/browser/` or `/devtools/page/` is Chrome's CDP endpoint; WebDriver BiDi is not spoken there
+- Use the `webSocketUrl` from a driver's new-session response (`ws://localhost:9515/session/<id>`), or Firefox's `ws://localhost:PORT/session`
+
+### "session not created" After Connecting
+
+**Cause:** `Session.NewSessionAsync` was called on a connection whose session already exists (any `webSocketUrl` returned by chromedriver, msedgedriver, geckodriver or Selenium).
+
+**Solution:** Call `NewSessionAsync` only on the `/session` endpoints of Firefox or geckodriver, or after connecting through a mapper.
 
 ## Best Practices
 
-1. **Use a dedicated profile**: `--user-data-dir` prevents conflicts
-2. **Fixed port**: Always use the same port for consistency
-3. **Launch before connect**: Ensure browser is fully started
+1. **Use a dedicated profile**: `--user-data-dir` (or let the driver create a temporary one) prevents conflicts
+2. **Fixed port**: Always use the same driver port for consistency
+3. **Launch before connect**: Wait for the driver's `/status` endpoint before creating a session
 4. **Clean shutdown**: Close connections before killing browser
 5. **Headless for CI**: Use `--headless=new` in CI environments
 6. **Log output**: Redirect stdout/stderr when launching programmatically
 
 ## Security Considerations
 
-⚠️ **Warning**: Remote debugging exposes full browser control. Do not:
-- Run with remote debugging on production systems
-- Expose the debugging port to the internet
+⚠️ **Warning**: A driver port, a Firefox remote-debugging port, and above all a Chrome CDP port expose full browser control. Do not:
+- Run them on production systems
+- Expose them to the internet
 - Use with sensitive data without proper isolation
 
 For production use:

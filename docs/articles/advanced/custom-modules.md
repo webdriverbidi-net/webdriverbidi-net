@@ -169,7 +169,7 @@ Pass your custom transport to `BiDiDriver` via the constructor overload that acc
 WebSocketConnection connection = new();
 LoggingTransport transport = new(connection);
 await using BiDiDriver driver = new(TimeSpan.FromSeconds(60), transport);
-await driver.StartAsync("ws://localhost:9222");
+await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 ```
 
 ## Next Steps

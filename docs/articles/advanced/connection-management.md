@@ -319,7 +319,7 @@ Usage: create the custom connection, wrap in transport, and pass to BiDiDriver:
 
 ### 2. Use a Browser Launcher for Local Automation
 
-Use a launcher to manage the browser process and connection (the sample uses the demonstration `BrowserLauncher`; your own would launch with `--remote-debugging-port`, discover the WebSocket URL from `/json/version`, then connect):
+Use a launcher to manage the browser process and connection (the sample uses the demonstration `BrowserLauncher`; your own would start a driver executable such as chromedriver, create a session with the `webSocketUrl: true` capability, then connect to the returned URL — see [Browser Setup](../browser-setup.md)):
 
 [!code-csharp[Best Practice Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#BestPracticeBrowserLauncher)]
 

@@ -191,10 +191,10 @@ The `Connection` abstract class defines the contract for all transport implement
 
 **Browser Launch:**
 ```bash
-chrome --remote-debugging-port=9222
+chromedriver --port=9515
 ```
 
-The browser provides the WebSocket URL in its output or via the `/json/version` endpoint.
+A classic new-session request to the driver with the `webSocketUrl: true` capability returns the WebDriver BiDi WebSocket URL. (Chrome's own `--remote-debugging-port` endpoint speaks CDP, not BiDi; see [Browser Setup](browser-setup.md).) Firefox launched with `--remote-debugging-port` serves BiDi directly at `/session`.
 
 ### Pipe Connection
 

@@ -21,7 +21,7 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 ## Creating a New Session
 
-Use `NewSessionAsync` to create a WebDriver BiDi session when connecting to a browser that does not automatically provide one. This is typically needed when connecting directly to a browser via Chrome DevTools Protocol (CDP) or similar, without a classic WebDriver driver (e.g., chromedriver) that would have already established a session.
+Use `NewSessionAsync` to create a WebDriver BiDi session when the endpoint you connected to has none yet: Firefox launched with `--remote-debugging-port` (`ws://localhost:PORT/session`), geckodriver's BiDi-only `/session` endpoint, or a BiDi-over-CDP mapper. Do **not** call it on the `webSocketUrl` returned by a classic new-session request to chromedriver, msedgedriver, geckodriver or Selenium — that session already exists, and the call fails. See [Browser Setup](../browser-setup.md).
 
 ### Create New Session
 

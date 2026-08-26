@@ -26,7 +26,7 @@ public static class ConnectionManagementSamples
         #region SimpleWebSocketConnection
         // BiDiDriver handles connection automatically
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
+        await driver.StartAsync("ws://localhost:9515/session/abc-123");
 
         // Use driver...
 
@@ -153,8 +153,8 @@ public static class ConnectionManagementSamples
     {
         #region WebSocketURLRequirements
         // ✅ Valid
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-        await driver.StartAsync("wss://remote-host:9222/devtools/browser/abc-123");
+        await driver.StartAsync("ws://localhost:9515/session/abc-123");
+        await driver.StartAsync("wss://remote-host:9515/session/abc-123");
 
         // ❌ Invalid
         await driver.StartAsync("http://localhost:9222");  // Wrong scheme
@@ -341,7 +341,7 @@ public static class ConnectionManagementSamples
     {
         #region DockerWebSocketConnection
         // WebSocket to containerized browser
-        string url = $"ws://172.17.0.2:9222/devtools/browser/abc-123";
+        string url = $"ws://172.17.0.2:9515/session/abc-123";
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(url);
         #endregion
@@ -441,7 +441,7 @@ public static class ConnectionManagementSamples
 
         // Create driver with custom transport
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
+        await driver.StartAsync("ws://localhost:9515/session/abc-123");
 
         try
         {
@@ -570,7 +570,7 @@ public static class ConnectionManagementSamples
 /// </summary>
 public class ExampleBrowserLauncher
 {
-    public string WebSocketUrl { get; set; } = "ws://localhost:9222/devtools/browser/abc-123";
+    public string WebSocketUrl { get; set; } = "ws://localhost:9515/session/abc-123";
 
     public Transport CreateTransport() => new Transport(new WebSocketConnection());
 

@@ -164,7 +164,7 @@ public static class CommonPitfallsSamples
         #region WrongRegistrationOrder
         // ❌ WRONG: Registration after starting
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // This will throw InvalidOperationException!
         driver.RegisterModule(new CustomModule(driver));
@@ -195,7 +195,7 @@ public static class CommonPitfallsSamples
         driver.BrowsingContext.OnLoad.AddObserver((e) => Console.WriteLine($"Loaded: {e.Url}"));
 
         // 3. NOW start the driver
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // 4. Subscribe to events through Session module
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
@@ -521,7 +521,7 @@ public static class CommonPitfallsSamples
 
         try
         {
-            await driver.StartAsync("ws://localhost:9222");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
             // Add handler that might throw
             driver.Log.OnEntryAdded.AddObserver((e) => ProcessLogEntry(e));
@@ -557,7 +557,7 @@ public static class CommonPitfallsSamples
 
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-        await driver.StartAsync("ws://localhost:9222");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
         driver.Log.OnEntryAdded.AddObserver((e) => ProcessLogEntry(e));
         await driver.Session.SubscribeAsync(subscribeParams);
         await driver.BrowsingContext.NavigateAsync(navParams);

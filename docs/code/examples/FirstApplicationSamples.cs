@@ -26,7 +26,7 @@ public static class FirstApplicationSamples
     {
         #region FullFirstApplication
         // Replace with your WebSocket URL from step 4
-        string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
+        string webSocketUrl = "ws://localhost:9515/session/YOUR-SESSION-ID";
 
         // Create driver with 30 second timeout
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));

@@ -10,11 +10,14 @@ namespace WebDriverBiDi.Docs.Code.Examples;
 
 using System.Diagnostics;
 using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using OpenQA.Selenium.Chrome;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Snippets for browser setup documentation.
@@ -22,35 +25,82 @@ using WebDriverBiDi.Protocol;
 public static class BrowserSetupSamples
 {
     /// <summary>
-    /// Connect using WebSocket URL from /json/version.
+    /// Connect using the webSocketUrl returned by a driver's classic new-session response.
     /// </summary>
     public static async Task ConnectWithWebSocketUrl(BiDiDriver driver)
     {
         #region ConnectwithWebSocketURL
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123-def");
+        // The value of "webSocketUrl" from chromedriver's new-session response
+        await driver.StartAsync("ws://localhost:9515/session/8a4d1c2e-0b7f-4c9a-9d3e-5f6a7b8c9d0e");
         #endregion
     }
+
+    #region CreateSessionThroughDriver
+    /// <summary>
+    /// Creates a WebDriver session through a classic driver executable (chromedriver, msedgedriver,
+    /// geckodriver) and returns the WebDriver BiDi WebSocket URL it advertises.
+    /// </summary>
+    public static async Task<(string SessionId, string WebSocketUrl)> CreateBiDiSessionAsync(
+        string driverUrl = "http://localhost:9515",
+        bool headless = false)
+    {
+        using HttpClient client = new HttpClient();
+
+        // "webSocketUrl": true asks the driver to expose the session over WebDriver BiDi.
+        // Browser arguments go in the vendor-specific options (goog:chromeOptions here).
+        string body = $$"""
+            {
+              "capabilities": {
+                "alwaysMatch": {
+                  "webSocketUrl": true,
+                  "goog:chromeOptions": { "args": [{{(headless ? "\"--headless=new\"" : string.Empty)}}] }
+                }
+              }
+            }
+            """;
+        using StringContent content = new StringContent(body, Encoding.UTF8, "application/json");
+        using HttpResponseMessage response = await client.PostAsync($"{driverUrl}/session", content);
+        string json = await response.Content.ReadAsStringAsync();
+        response.EnsureSuccessStatusCode();
+
+        using JsonDocument doc = JsonDocument.Parse(json);
+        JsonElement value = doc.RootElement.GetProperty("value");
+        string sessionId = value.GetProperty("sessionId").GetString()
+            ?? throw new InvalidOperationException("The driver did not return a session ID.");
+        string webSocketUrl = value.GetProperty("capabilities").TryGetProperty("webSocketUrl", out JsonElement url)
+            ? url.GetString() ?? string.Empty
+            : string.Empty;
+        if (string.IsNullOrEmpty(webSocketUrl))
+        {
+            throw new InvalidOperationException(
+                "The driver did not return a webSocketUrl; the browser or driver may not support WebDriver BiDi.");
+        }
+
+        return (sessionId, webSocketUrl);
+    }
+    #endregion
 
     /// <summary>
     /// WebSocket connection example.
     /// </summary>
-    public static async Task WebSocketConnection(
-        string webSocketUrl,
-        NavigateCommandParameters navParams)
+    public static async Task WebSocketConnection(NavigateCommandParameters navParams)
     {
         #region WebSocketConnection
+        // chromedriver is already running: chromedriver --port=9515
+        (string sessionId, string webSocketUrl) = await CreateBiDiSessionAsync("http://localhost:9515");
+
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+        await driver.StartAsync(webSocketUrl);
 
-        // Connect to browser at WebSocket URL
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-
+        // The driver created the session; do NOT call Session.NewSessionAsync here.
         try
         {
-            // Use the driver
-            var result = await driver.BrowsingContext.NavigateAsync(navParams);
+            NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(navParams);
         }
         finally
         {
+            // session.end closes the browser and releases the driver's session
+            await driver.Session.EndAsync();
             await driver.StopAsync();
         }
         #endregion
@@ -63,18 +113,32 @@ public static class BrowserSetupSamples
     {
         #region FirefoxConnection
         await driver.StartAsync("ws://localhost:4444/session");
+
+        // No session exists yet on this endpoint; create one
+        NewCommandResult sessionResult = await driver.Session.NewSessionAsync(new NewCommandParameters());
+        #endregion
+    }
+
+    /// <summary>
+    /// Firefox launched directly with --remote-debugging-port.
+    /// </summary>
+    public static async Task FirefoxDirectConnection(BiDiDriver driver)
+    {
+        #region FirefoxDirectConnection
+        // firefox --remote-debugging-port=9222 exposes WebDriver BiDi directly
+        await driver.StartAsync("ws://localhost:9222/session");
+        NewCommandResult sessionResult = await driver.Session.NewSessionAsync(new NewCommandParameters());
         #endregion
     }
 
     /// <summary>
     /// Programmatic browser launch before connecting.
     /// </summary>
-    public static async Task ProgrammaticBrowserLaunch(
-        BiDiDriver driver,
-        string webSocketUrl)
+    public static async Task ProgrammaticBrowserLaunch(BiDiDriver driver)
     {
         #region ProgrammaticBrowserLaunch
-        // Launch Chrome via Process, wait, get WebSocket URL via HttpClient /json/version, then connect
+        // Start chromedriver (see the WebSocket Launcher Pattern), create a session, then connect
+        (string sessionId, string webSocketUrl) = await CreateBiDiSessionAsync("http://localhost:9515");
         await driver.StartAsync(webSocketUrl);
         #endregion
     }
@@ -85,7 +149,8 @@ public static class BrowserSetupSamples
     public static async Task PipeLauncherPattern(NavigateCommandParameters navParams)
     {
         #region PipeLauncherPattern
-        // Launcher implements IPipeServerProcessProvider
+        // Launcher implements IPipeServerProcessProvider. Its CreateTransport() returns a
+        // ChromiumTransport, which installs the BiDi-over-CDP mapper the pipe requires.
         BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
@@ -104,8 +169,11 @@ public static class BrowserSetupSamples
 
             await driver.StartAsync("pipes");
 
+            // The mapper does not create a session; do it here
+            await driver.Session.NewSessionAsync(new NewCommandParameters());
+
             // Use the driver
-            var result = await driver.BrowsingContext.NavigateAsync(navParams);
+            NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(navParams);
 
             await driver.StopAsync();
         }
@@ -118,57 +186,74 @@ public static class BrowserSetupSamples
     }
 
     /// <summary>
-    /// Selenium Manager - launch Chrome with fixed debug port, get WebSocket URL, connect BiDiDriver.
-    /// Conceptual: WebDriverBiDi.NET doesn't include Selenium; use together if needed.
+    /// Selenium integration - let Selenium create the session with webSocketUrl, then connect BiDiDriver to it.
     /// </summary>
     public static async Task SeleniumManagerIntegration(ChromeOptions chromeOptions)
     {
         #region SeleniumManagerIntegration
-        // This is conceptual - WebDriverBiDi.NET doesn't include Selenium Manager,
-        // but you can use them together: let Selenium launch the browser, then ask the
-        // browser (via CDP) for the WebSocket URL and connect a BiDiDriver to it.
-        var seleniumDriver = new ChromeDriver(chromeOptions);
-        string wsUrl = (string)((Dictionary<string, object>)seleniumDriver
-            .ExecuteCdpCommand("Target.getTargets", new Dictionary<string, object>()))
-            ["webSocketDebuggerUrl"];
+        // Ask Selenium to request a WebDriver BiDi WebSocket for the session it creates.
+        // Selenium Manager locates (or downloads) chromedriver and the browser for you.
+        chromeOptions.UseWebSocketUrl = true;
+        ChromeDriver seleniumDriver = new ChromeDriver(chromeOptions);
+
+        string webSocketUrl = seleniumDriver.Capabilities.GetCapability("webSocketUrl") as string
+            ?? throw new InvalidOperationException("Selenium did not return a webSocketUrl capability.");
 
         BiDiDriver driver = new BiDiDriver();
-        await driver.StartAsync(wsUrl);
+        await driver.StartAsync(webSocketUrl);
+
+        // The session already exists; do not call Session.NewSessionAsync.
+        // Stop the BiDiDriver before seleniumDriver.Quit() ends the session.
         #endregion
     }
 
     /// <summary>
-    /// WebSocket launcher pattern - launch Chrome via Process, discover URL via /json/version, connect.
+    /// WebSocket launcher pattern - launch chromedriver via Process, create a session, connect.
     /// </summary>
-    public static async Task WebSocketLauncherPattern(BiDiDriver driver, string webSocketUrl)
+    public static async Task WebSocketLauncherPattern(BiDiDriver driver)
     {
         #region WebSocketLauncherPattern
-        // Launch Chrome
-        Process chromeProcess = new Process
+        // Launch chromedriver (it launches Chrome itself when a session is created)
+        Process driverProcess = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = "chrome.exe",
-                Arguments = "--remote-debugging-port=9222 --user-data-dir=C:\\temp\\chrome",
+                FileName = "chromedriver",
+                Arguments = "--port=9515",
                 UseShellExecute = false,
-                RedirectStandardOutput = true
-            }
+                RedirectStandardOutput = true,
+            },
         };
-        chromeProcess.Start();
+        driverProcess.Start();
 
-        // Wait for Chrome to start
-        await Task.Delay(2000);
-
-        // Get WebSocket URL
+        // Wait until the driver answers /status
         using HttpClient client = new HttpClient();
-        string json = await client.GetStringAsync("http://localhost:9222/json/version");
-        // Parse JSON to get webSocketDebuggerUrl
+        while (true)
+        {
+            try
+            {
+                using HttpResponseMessage status = await client.GetAsync("http://localhost:9515/status");
+                if (status.IsSuccessStatusCode)
+                {
+                    break;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // Not listening yet
+            }
 
-        // Connect
+            await Task.Delay(100);
+        }
+
+        // Create the session and connect to its WebDriver BiDi endpoint
+        (string sessionId, string webSocketUrl) = await CreateBiDiSessionAsync("http://localhost:9515");
         await driver.StartAsync(webSocketUrl);
 
-        // Later: clean up
-        chromeProcess.Kill();
+        // Later: clean up - end the session (closes the browser), then stop the driver process
+        await driver.Session.EndAsync();
+        await driver.StopAsync();
+        driverProcess.Kill();
         #endregion
     }
 }
@@ -181,6 +266,9 @@ public class BrowserSetupPipeLauncher : IPipeServerProcessProvider
 {
     public Process? PipeServerProcess => null; // Implement: launch browser process with pipe flags
 
+    // For a Chromium browser the pipe carries CDP, so the Transport returned here must translate
+    // WebDriver BiDi to CDP (see ChromiumTransport in the WebDriverBiDi.Client demonstration
+    // library, which injects the chromium-bidi mapper). A plain Transport is shown only for shape.
     public Transport CreateTransport() => new Transport(new PipeConnection(this));
 
     public Task StartAsync() => Task.CompletedTask;

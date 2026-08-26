@@ -448,7 +448,7 @@ When multiple handlers are registered, they all execute in sequence. With synchr
 
 When the connection fails or behaves unexpectedly:
 
-1. **Verify the WebSocket URL**: Ensure the URL matches what your browser provides (e.g., `ws://localhost:9222/devtools/browser/...`).
+1. **Verify the WebSocket URL**: Ensure the URL is a WebDriver BiDi endpoint — the `webSocketUrl` from a driver session (e.g., `ws://localhost:9515/session/...`) or Firefox's `/session` — not Chrome's CDP `/devtools/browser/...` URL, which accepts the connection but fails every command.
 2. **Check browser is running**: The remote end must be listening before you connect.
 3. **Use connection events**: Subscribe to `connection.OnConnectionError` and `connection.OnLogMessage` for real-time diagnostics.
 4. **Inspect `UnhandledErrors`**: `Transport.UnhandledErrors` is `protected`, so it is readable only from within your own `Transport` subclass; from application code, observe collected errors through the `AggregateException` thrown by `StopAsync()` (when using `TransportErrorBehavior.Collect`).

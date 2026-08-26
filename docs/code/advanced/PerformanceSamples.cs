@@ -35,7 +35,7 @@ public class PerformanceSamples
         #region WebSocketConnection
         // Standard WebSocket connection
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
+        await driver.StartAsync("ws://localhost:9515/session/abc-123");
         #endregion
     }
 
