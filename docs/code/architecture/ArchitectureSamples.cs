@@ -29,7 +29,7 @@ public static class ArchitectureSamples
         #region WebSocketExample
         // Connect to browser at WebSocket URL
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
+        await driver.StartAsync("ws://localhost:9515/session/abc-123");
 
         try
         {
@@ -193,7 +193,7 @@ public static class ArchitectureSamples
         };
         try
         {
-            await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
         }
         catch (WebDriverBiDiException ex)
         {
@@ -218,7 +218,7 @@ public static class ArchitectureSamples
         };
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Perform operations...
         await driver.BrowsingContext.NavigateAsync(navParams);
@@ -256,7 +256,7 @@ public static class ArchitectureSamples
         Transport transport = new Transport(connection);
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Errors won't be thrown or collected
         await driver.BrowsingContext.NavigateAsync(navParams);
@@ -288,7 +288,7 @@ public static class ArchitectureSamples
         Transport transport = new Transport(connection);
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
         #endregion
     }
 
@@ -336,7 +336,7 @@ public static class ArchitectureSamples
 
         try
         {
-            await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
             // Perform operations...
             await driver.BrowsingContext.NavigateAsync(navParams);  // Exception thrown here if handler failed
@@ -359,7 +359,7 @@ public static class ArchitectureSamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Perform operations...
         await driver.BrowsingContext.NavigateAsync(navParams);
@@ -385,7 +385,7 @@ public static class ArchitectureSamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Browser sends new event type not yet supported by library
         // With Ignore mode, these are logged but don't cause errors
@@ -406,7 +406,7 @@ public static class ArchitectureSamples
 
         try
         {
-            await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
             // If browser sends error response without matching command ID, exception thrown on next command
             await driver.BrowsingContext.NavigateAsync(navParams);
@@ -432,7 +432,7 @@ public static class ArchitectureSamples
         driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;         // Ignore unknown messages
         driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;       // Collect unexpected errors
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Perform operations...
         await driver.BrowsingContext.NavigateAsync(navParams);

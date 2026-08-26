@@ -38,159 +38,82 @@ For compile-time help catching common usage errors, add the [WebDriverBiDi.Analy
 
 ## Browser Setup
 
-WebDriverBiDi.NET requires a browser with WebDriver BiDi support running and listening on a WebSocket endpoint.
+WebDriverBiDi.NET requires a WebSocket endpoint that speaks WebDriver BiDi. See the [Browser Setup Guide](browser-setup.md) for the full picture; the essentials are below.
 
-### Chrome/Chromium
+### Chrome, Chromium and Edge
 
-Launch Chrome with the `--remote-debugging-port` flag:
-
-```bash
-# Windows
-chrome.exe --remote-debugging-port=9222
-
-# macOS
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
-
-# Linux
-google-chrome --remote-debugging-port=9222
-```
-
-For Chromium-based browsers, use the browser-level WebSocket URL returned by `/json/version`, for example `ws://localhost:9222/devtools/browser/<browser-id>`
-
-### Microsoft Edge
-
-Launch Edge similarly:
+Chrome and Edge do **not** speak WebDriver BiDi on their `--remote-debugging-port` endpoint — that endpoint (`ws://localhost:9222/devtools/browser/<id>`, reported by `/json/version`) speaks the Chrome DevTools Protocol only, and a `BiDiDriver` connected to it fails on its first command. Use the browser's driver executable instead: chromedriver (from [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)) or msedgedriver.
 
 ```bash
-# Windows
-msedge.exe --remote-debugging-port=9222
-
-# macOS
-/Applications/Microsoft\ Edge.app/Contents/MacOS/Microsoft\ Edge --remote-debugging-port=9222
+chromedriver --port=9515
 ```
+
+Then create a WebDriver session that asks for a BiDi WebSocket:
+
+```bash
+curl -X POST http://localhost:9515/session \
+  -H "Content-Type: application/json" \
+  -d '{"capabilities":{"alwaysMatch":{"webSocketUrl":true}}}'
+```
+
+The response's `value.capabilities.webSocketUrl` — for example `ws://localhost:9515/session/8a4d1c2e-…` — is the URL for `BiDiDriver.StartAsync()`. chromedriver launches the browser as part of creating the session, so you do not start Chrome yourself; browser flags such as `--headless=new` go in `goog:chromeOptions.args` (`ms:edgeOptions.args` for Edge).
 
 ### Firefox
 
-Firefox requires geckodriver with WebDriver BiDi support:
+Firefox speaks WebDriver BiDi natively. Either launch it directly:
 
 ```bash
-# Download geckodriver from https://github.com/mozilla/geckodriver/releases
-geckodriver --port 4444
-
-# Then launch Firefox through geckodriver
+firefox --remote-debugging-port=9222
 ```
 
-### Discovering the WebSocket URL
+and connect to `ws://localhost:9222/session`, or run geckodriver (`geckodriver --port 4444`) and connect to `ws://localhost:4444/session`. On both of these endpoints you must call `driver.Session.NewSessionAsync(...)` after `StartAsync`, because no session exists yet. (geckodriver also accepts the `webSocketUrl: true` classic session shown above, in which case the session already exists.)
 
-Chromium-based browsers provide HTTP endpoints to discover WebSocket URLs programmatically.
+### Getting the WebSocket URL Programmatically
 
-#### Method 1: Browser-Level WebSocket URL
+Creating the session from C# is a single HTTP request:
 
-The `/json/version` endpoint returns the browser-level WebSocket URL:
+[!code-csharp[Create a BiDi Session](../code/examples/GettingStartedSamples.cs#DiscoverWebSocketURL)]
 
-```bash
-# Query the endpoint
-curl http://localhost:9222/json/version
-```
-
-**Example JSON response:**
-```json
-{
-  "Browser": "Chrome/120.0.6099.129",
-  "Protocol-Version": "1.3",
-  "User-Agent": "Mozilla/5.0...",
-  "V8-Version": "12.0.267.17",
-  "WebKit-Version": "537.36",
-  "webSocketDebuggerUrl": "ws://localhost:9222/devtools/browser/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-}
-```
-
-The `webSocketDebuggerUrl` field contains the URL to use with `BiDiDriver.StartAsync()`.
-
-**Programmatic Discovery:**
-
-[!code-csharp[Discover WebSocket URL](../code/examples/GettingStartedSamples.cs#DiscoverWebSocketURL)]
-
-[!code-csharp[Discover WebSocket URL](../code/examples/GettingStartedSamples.cs#DiscoverWebSocketUrlUsage)]
-
-#### Method 2: Page-Specific WebSocket URLs
-
-The `/json` endpoint returns information about all open pages:
-
-```bash
-# Query all pages
-curl http://localhost:9222/json
-```
-
-**Example JSON response:**
-```json
-[
-  {
-    "description": "",
-    "devtoolsFrontendUrl": "/devtools/inspector.html?ws=localhost:9222/devtools/page/123",
-    "id": "page-123",
-    "title": "Example Domain",
-    "type": "page",
-    "url": "https://example.com/",
-    "webSocketDebuggerUrl": "ws://localhost:9222/devtools/page/page-123"
-  },
-  {
-    "id": "page-456",
-    "title": "Google",
-    "type": "page",
-    "url": "https://www.google.com/",
-    "webSocketDebuggerUrl": "ws://localhost:9222/devtools/page/page-456"
-  }
-]
-```
-
-Each page has its own `webSocketDebuggerUrl`. However, **for WebDriver BiDi, use the browser-level URL from `/json/version`**, not page-specific URLs.
-
-#### Method 3: Browser Console Output
-
-When launching Chrome with `--remote-debugging-port`, it prints the DevTools URL to the console:
-
-```
-DevTools listening on ws://127.0.0.1:9222/devtools/browser/a1b2c3d4-e5f6-7890-abcd-ef1234567890
-```
-
-You can parse this output programmatically when launching the browser.
+[!code-csharp[Create a BiDi Session Usage](../code/examples/GettingStartedSamples.cs#DiscoverWebSocketUrlUsage)]
 
 #### Common Connection String Formats
 
-**Browser-level (recommended for WebDriver BiDi):**
+**Session created through chromedriver, msedgedriver or geckodriver (recommended):**
 ```
-ws://localhost:9222/devtools/browser/<browser-id>
+ws://localhost:9515/session/<session-id>
 ```
+The session already exists; do not call `NewSessionAsync`.
 
-**Firefox via geckodriver:**
+**Firefox launched directly, or geckodriver's BiDi-only endpoint:**
 ```
+ws://localhost:9222/session
 ws://localhost:4444/session
 ```
+Call `NewSessionAsync` after connecting.
 
-**Page-specific (not recommended for WebDriver BiDi):**
+**Chrome's CDP endpoints (do not use):**
 ```
+ws://localhost:9222/devtools/browser/<browser-id>
 ws://localhost:9222/devtools/page/<page-id>
 ```
 
-#### Complete Discovery Example
+#### Complete Connection Example
 
 [!code-csharp[Connect to Browser](../code/examples/GettingStartedSamples.cs#ConnecttoBrowser)]
 
 [!code-csharp[Connect to Browser](../code/examples/GettingStartedSamples.cs#ConnectToBrowserUsage)]
 
 **Best Practices:**
-- Use `/json/version` to get the browser-level WebSocket URL
+- Create the session through the driver and use its `webSocketUrl`; never a `/devtools/…` URL
 - Include fallback logic for connection failures
-- Validate the WebSocket URL format before connecting
-- Handle HttpClient timeouts appropriately (browser might not be ready)
+- Handle HttpClient timeouts appropriately (the driver launches the browser while answering the new-session request)
 
 ### Connection Methods
 
 WebDriverBiDi.NET supports two ways to connect to browsers:
 
-- **WebSocket Connection** (used in this guide): Browser listens on a port, your application connects via WebSocket URL
-- **Pipe Connection**: Browser communicates via anonymous pipes for lower latency
+- **WebSocket Connection** (used in this guide): a driver executable or Firefox listens on a port, your application connects via WebSocket URL
+- **Pipe Connection**: a Chromium browser communicates via anonymous pipes for lower latency (requires a BiDi-over-CDP mapper; see Browser Setup)
 
 For getting started, WebSocket connections are recommended as they're simpler to configure and supported by most browsers. See [Browser Setup](browser-setup.md#connection-types) for more details about connection methods.
 
@@ -289,8 +212,8 @@ Now that you have a working WebDriverBiDi.NET application, explore these topics:
 
 ### "Connection refused" Error
 
-- Ensure the browser is running with remote debugging enabled
-- Verify the port number matches your browser's configuration
+- Ensure the driver executable (or Firefox with `--remote-debugging-port`) is running and, for a driver, that the session was created
+- Verify the URL is the session's `webSocketUrl` (or Firefox's `/session`), not a `/devtools/…` CDP URL
 - Check that no firewall is blocking the connection
 
 ### "Timeout waiting for command" Error

@@ -39,7 +39,7 @@ public static class CoreConceptsSamples
         BiDiDriver driverWithTimeout = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Start the connection
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Stop the connection when done
         await driver.StopAsync();
@@ -69,7 +69,7 @@ public static class CoreConceptsSamples
         driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
 
         // 3. Start the driver
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // 4. Check if started
         if (driver.IsStarted)
@@ -244,7 +244,7 @@ public static class CoreConceptsSamples
             });
 
             // Start the driver
-            await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
             // Verify driver is started
             if (!driver.IsStarted)

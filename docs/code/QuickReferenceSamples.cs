@@ -27,7 +27,7 @@ public static class QuickReferenceSamples
     public static async Task DriverLifecycle()
     {
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
         if (driver.IsStarted)
         {
             // ...

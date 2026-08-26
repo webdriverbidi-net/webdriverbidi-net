@@ -140,7 +140,7 @@ public class ErrorHandlingSamples
 
         try
         {
-            await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
             // Event handler errors will be silently discarded
             driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -184,7 +184,7 @@ public class ErrorHandlingSamples
 
         try
         {
-            await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
             // Subscribe to events with potentially failing handlers
             driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -264,7 +264,7 @@ public class ErrorHandlingSamples
 
         try
         {
-            await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+            await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
             // Subscribe to events
             driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -307,7 +307,7 @@ public class ErrorHandlingSamples
     {
         #region ThreadingModel
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Main thread (your code)
         Console.WriteLine("Main thread: Setting up event handler");
@@ -369,7 +369,7 @@ public class ErrorHandlingSamples
         Transport transport = new Transport(connection);
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
         #endregion
     }
 
@@ -751,7 +751,7 @@ public class ErrorHandlingSamples
     {
         #region HandlerExecutionBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Synchronous handler (default)
         driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -863,7 +863,7 @@ public class ErrorHandlingSamples
         };
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {

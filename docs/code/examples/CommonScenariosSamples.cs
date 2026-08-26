@@ -30,7 +30,7 @@ public static class CommonScenariosSamples
     {
         #region BasicPageNavigation
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -74,7 +74,7 @@ public static class CommonScenariosSamples
     {
         #region FormSubmission
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -147,7 +147,7 @@ public static class CommonScenariosSamples
     {
         #region MonitoringConsoleLogs
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -206,7 +206,7 @@ public static class CommonScenariosSamples
     {
         #region CaptureScreenshot
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -246,7 +246,7 @@ public static class CommonScenariosSamples
     {
         #region NetworkTrafficMonitoring
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -300,7 +300,7 @@ public static class CommonScenariosSamples
     {
         #region Multi-TabManagement
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -370,7 +370,7 @@ public static class CommonScenariosSamples
     {
         #region WaitforElement
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -429,7 +429,7 @@ public static class CommonScenariosSamples
     {
         #region CookieManagement
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {
@@ -489,7 +489,7 @@ public static class CommonScenariosSamples
     {
         #region JavaScriptExecution
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         try
         {

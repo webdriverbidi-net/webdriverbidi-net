@@ -35,7 +35,7 @@ public static class ObservabilitySamples
 
         // Use WebDriverBiDi normally - events will be logged to console
         await using var driver = new BiDiDriver();
-        await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
         #endregion
     }
 
@@ -174,11 +174,11 @@ public static class ObservabilitySamples
 
         // Use WebDriverBiDi - events will be automatically logged
         await using var driver = new BiDiDriver();
-        await driver.StartAsync("ws://localhost:9222");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Logs will show:
-        // [12:34:56 INF] ConnectionOpening, connectionId=12345, url=ws://localhost:9222
-        // [12:34:56 INF] ConnectionOpened, connectionId=12345, url=ws://localhost:9222
+        // [12:34:56 INF] ConnectionOpening, connectionId=12345, url=ws://localhost:9515/session/YOUR-SESSION-ID
+        // [12:34:56 INF] ConnectionOpened, connectionId=12345, url=ws://localhost:9515/session/YOUR-SESSION-ID
         // [12:34:56 INF] TransportStarted
 
         await driver.Session.StatusAsync();

@@ -35,7 +35,7 @@ public static class SerilogObservabilitySamples
 
         // Structured properties will be captured by Serilog
         await using var driver = new BiDiDriver();
-        await driver.StartAsync("ws://localhost:9222");
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Serilog output includes structured properties:
         // [12:34:56 INF] CommandCompleted {"EventId":7,"EventName":"CommandCompleted","commandId":"1","method":"session.status","elapsedMilliseconds":42}
