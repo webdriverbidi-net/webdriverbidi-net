@@ -15,6 +15,23 @@ public class NoneSourceActions : SourceActions
     private readonly List<INoneSourceAction> actions = [];
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="NoneSourceActions"/> class.
+    /// </summary>
+    public NoneSourceActions()
+        : this(Guid.NewGuid().ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NoneSourceActions"/> class.
+    /// </summary>
+    /// <param name="sourceId">The unique ID of the null (pause-only) input source.</param>
+    public NoneSourceActions(string sourceId)
+        : base(sourceId)
+    {
+    }
+
+    /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonPropertyName("type")]

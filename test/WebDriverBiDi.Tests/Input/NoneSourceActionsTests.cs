@@ -75,4 +75,33 @@ public class NoneSourceActionsTests
         Assert.Equal(JTokenType.String, actionType.Type);
         Assert.Equal("pause", actionType.Value<string>());
     }
+
+    [Fact]
+    public void TestCanSerializeParametersWithExplicitSourceId()
+    {
+        NoneSourceActions properties = new("my none source");
+        Assert.Equal("my none source", properties.Id);
+
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("id"));
+        JToken? id = serialized["id"];
+        Assert.NotNull(id);
+        Assert.Equal(JTokenType.String, id.Type);
+        Assert.Equal("my none source", id.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        Assert.Equal("none", serialized["type"]!.Value<string>());
+    }
+
+    [Fact]
+    public void TestDefaultConstructorGeneratesUniqueSourceIds()
+    {
+        NoneSourceActions first = new();
+        NoneSourceActions second = new();
+        Assert.False(string.IsNullOrEmpty(first.Id));
+        Assert.NotEqual(first.Id, second.Id);
+    }
 }

@@ -99,4 +99,33 @@ public class WheelSourceActionsTests
         Assert.Equal(JTokenType.Integer, deltaY.Type);
         Assert.Equal(0, deltaY.Value<long>());
     }
+
+    [Fact]
+    public void TestCanSerializeParametersWithExplicitSourceId()
+    {
+        WheelSourceActions properties = new("my wheel source");
+        Assert.Equal("my wheel source", properties.Id);
+
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("id"));
+        JToken? id = serialized["id"];
+        Assert.NotNull(id);
+        Assert.Equal(JTokenType.String, id.Type);
+        Assert.Equal("my wheel source", id.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        Assert.Equal("wheel", serialized["type"]!.Value<string>());
+    }
+
+    [Fact]
+    public void TestDefaultConstructorGeneratesUniqueSourceIds()
+    {
+        WheelSourceActions first = new();
+        WheelSourceActions second = new();
+        Assert.False(string.IsNullOrEmpty(first.Id));
+        Assert.NotEqual(first.Id, second.Id);
+    }
 }

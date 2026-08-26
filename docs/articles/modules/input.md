@@ -42,6 +42,19 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 [!code-csharp[Modifier Keys](../../code/modules/InputModuleSamples.cs#ModifierKeys)]
 
+### Reusing an Input Source Across Calls
+
+Every `SourceActions` object (`KeySourceActions`, `PointerSourceActions`, `WheelSourceActions`, `NoneSourceActions`)
+is identified on the remote end by its `Id`. The browser keeps per-source state — which keys and buttons are
+currently pressed, and where the pointer is — keyed by that ID, and the state persists across
+`PerformActionsAsync` calls until you call `ReleaseActionsAsync`. By default a new source gets a random ID, so
+each call starts from a fresh, released source. To continue a sequence across calls (for example, press in one
+call and drag-and-release in another), create the source with an explicit ID and reuse it:
+
+[!code-csharp[Reusing Input Source IDs](../../code/modules/InputModuleSamples.cs#ReusingInputSourceIds)]
+
+Two sources in the same `PerformActionsAsync` call must have different IDs.
+
 ### Release Actions
 
 [!code-csharp[Release Actions](../../code/modules/InputModuleSamples.cs#ReleaseActions)]
