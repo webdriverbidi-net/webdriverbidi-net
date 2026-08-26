@@ -135,7 +135,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        AddDataCollectorCommandParameters commandParameters = new(1024 * 1024);
+        AddDataCollectorCommandParameters commandParameters = new(1024 * 1024, DataType.Response);
         AddDataCollectorCommandResult result = await module.AddDataCollectorAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);

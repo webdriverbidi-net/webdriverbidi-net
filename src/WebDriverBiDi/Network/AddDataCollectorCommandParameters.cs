@@ -19,20 +19,16 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// The maximum size (in bytes) allocated to be collected for each request or response collected.
     /// Note carefully that zero (0) is an invalid value for maximum size.
     /// </param>
-    /// <param name="collectionDataTypes">
-    /// One or more <see cref="DataType"/> values specifying the type for which data will be collected.
-    /// If no collection data types are specified, the data collector defaults to collecting data for
-    /// responses only.
+    /// <param name="collectionDataType">The <see cref="DataType"/> value specifying the type for which data will be collected.</param>
+    /// <param name="additionalCollectionDataTypes">
+    /// One or more additional <see cref="DataType"/> values specifying the type for which data will
+    /// also be collected.
     /// </param>
-    public AddDataCollectorCommandParameters(ulong maxEncodedDataSize, params DataType[] collectionDataTypes)
+    public AddDataCollectorCommandParameters(ulong maxEncodedDataSize, DataType collectionDataType, params DataType[] additionalCollectionDataTypes)
     {
         this.MaxEncodedDataSize = maxEncodedDataSize;
-        if (collectionDataTypes.Length == 0)
-        {
-            this.DataTypes.Add(DataType.Response);
-        }
-
-        foreach (DataType dataType in collectionDataTypes)
+        this.DataTypes.Add(collectionDataType);
+        foreach (DataType dataType in additionalCollectionDataTypes)
         {
             this.DataTypes.Add(dataType);
         }

@@ -658,13 +658,14 @@ public class PerformanceSamples
     {
         #region ScopedInterception
         // ❌ Slow: Intercept everything
-        AddInterceptCommandParameters slowIntercept = new AddInterceptCommandParameters();
+        AddInterceptCommandParameters slowIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         slowIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
         await driver.Network.AddInterceptAsync(slowIntercept);
 
         // ✅ Fast: Intercept only what you need
-        AddInterceptCommandParameters fastIntercept = new AddInterceptCommandParameters();
-        fastIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters fastIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         fastIntercept.UrlPatterns = new List<UrlPattern>
         {
             new UrlPatternPattern { HostName = "api.example.com" }
@@ -680,8 +681,8 @@ public class PerformanceSamples
     {
         #region BlockUnnecessaryResources
         // Speed up page loads by blocking images, CSS, fonts
-        AddInterceptCommandParameters intercept = new AddInterceptCommandParameters();
-        intercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters intercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         intercept.UrlPatterns = new List<UrlPattern>
         {
             new UrlPatternString("*.jpg"),

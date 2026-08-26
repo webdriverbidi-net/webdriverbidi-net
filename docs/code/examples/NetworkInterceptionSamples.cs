@@ -50,8 +50,8 @@ public static class NetworkInterceptionSamples
 
             // Set up intercept for all requests
             Console.WriteLine("Setting up network intercept...");
-            AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-            addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+            AddInterceptCommandParameters addIntercept =
+                new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
             addIntercept.Contexts = new List<string> { contextId };
 
             AddInterceptCommandResult interceptResult =
@@ -120,8 +120,8 @@ public static class NetworkInterceptionSamples
         };
 
         // Set up intercept with URL patterns
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
 
         foreach (string domain in adDomains)
         {
@@ -159,8 +159,8 @@ public static class NetworkInterceptionSamples
     {
         #region MockingAPIResponses
         // Set up intercept for API endpoints
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         addIntercept.UrlPatterns = new List<UrlPattern>
         {
             new UrlPatternPattern { PathName = "/api/users" },
@@ -233,8 +233,8 @@ public static class NetworkInterceptionSamples
     {
         #region AddingCustomHeaders
         // Set up intercept
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         await driver.Network.AddInterceptAsync(addIntercept);
 
         // Add custom headers to all requests
@@ -278,7 +278,7 @@ public static class NetworkInterceptionSamples
         Console.WriteLine("Setting up data collector...");
         ulong maxSize = Convert.ToUInt64(Math.Pow(2, 24)); // 16 MB
         AddDataCollectorCommandParameters collectorParams =
-            new AddDataCollectorCommandParameters(maxSize);
+            new AddDataCollectorCommandParameters(maxSize, DataType.Response);
         collectorParams.Contexts.Add(contextId);
 
         AddDataCollectorCommandResult collectorResult =
@@ -355,8 +355,8 @@ public static class NetworkInterceptionSamples
     {
         #region SlowDownSpecificResources
         // Intercept image requests
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         addIntercept.UrlPatterns = new List<UrlPattern>
         {
             new UrlPatternString("*.jpg"),
@@ -394,8 +394,8 @@ public static class NetworkInterceptionSamples
     {
         #region RedirectRequests
         // Intercept requests to old domain
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         addIntercept.UrlPatterns = new List<UrlPattern>
         {
             new UrlPatternPattern { HostName = "old-api.example.com" }
@@ -431,8 +431,8 @@ public static class NetworkInterceptionSamples
     {
         #region ConditionalInterception
         // Intercept only on specific pages
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         addIntercept.Contexts = new List<string> { contextId };
 
         await driver.Network.AddInterceptAsync(addIntercept);

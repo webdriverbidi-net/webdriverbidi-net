@@ -615,7 +615,7 @@ public static class DemoScenarios
         // Allocate a small amount of memory for this demonstration.
         // Actual practice would probably require a larger allocation
         // for data collection.
-        AddDataCollectorCommandParameters addCollectorParameters = new(Convert.ToUInt64(Math.Pow(2, 24)));
+        AddDataCollectorCommandParameters addCollectorParameters = new(Convert.ToUInt64(Math.Pow(2, 24)), DataType.Response);
         addCollectorParameters.Contexts.Add(contextId);
         AddDataCollectorCommandResult collectorResult = await driver.Network.AddDataCollectorAsync(addCollectorParameters);
         string collectorId = collectorResult.CollectorId;

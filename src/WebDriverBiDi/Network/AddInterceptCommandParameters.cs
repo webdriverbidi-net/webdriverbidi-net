@@ -16,27 +16,16 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// Initializes a new instance of the <see cref="AddInterceptCommandParameters" /> class.
     /// </summary>
     /// <param name="phase">The <see cref="InterceptPhase"/> for which to add the intercept.</param>
-    public AddInterceptCommandParameters(InterceptPhase phase)
+    /// <param name="additionalPhases">The additional <see cref="InterceptPhase"/>s for which to add the intercept.</param>
+    public AddInterceptCommandParameters(InterceptPhase phase, params InterceptPhase[] additionalPhases)
     {
         this.Phases.Add(phase);
-    }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AddInterceptCommandParameters" /> class.
-    /// </summary>
-    /// <param name="phases">The <see cref="InterceptPhase"/>s for which to add the intercept.</param>
-    public AddInterceptCommandParameters(params InterceptPhase[] phases)
-    {
-        if (phases.Length == 0)
+        foreach (InterceptPhase additionalPhase in additionalPhases)
         {
-            throw new ArgumentException("You must supply at least one phase for the intercept", nameof(phases));
-        }
-
-        foreach (InterceptPhase phase in phases)
-        {
-            if (!this.Phases.Contains(phase))
+            if (!this.Phases.Contains(additionalPhase))
             {
-                this.Phases.Add(phase);
+                this.Phases.Add(additionalPhase);
             }
         }
     }

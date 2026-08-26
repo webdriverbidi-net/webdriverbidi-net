@@ -82,8 +82,8 @@ public static class QuickReferenceSamples
     /// </summary>
     public static async Task NetworkAddIntercept(BiDiDriver driver, string contextId)
     {
-        AddInterceptCommandParameters p = new AddInterceptCommandParameters();
-        p.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters p =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         p.Contexts = new List<string> { contextId };
         AddInterceptCommandResult result = await driver.Network.AddInterceptAsync(p);
     }
