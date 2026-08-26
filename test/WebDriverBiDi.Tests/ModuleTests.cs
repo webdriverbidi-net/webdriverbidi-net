@@ -97,11 +97,28 @@ public class ModuleTests
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
-        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver(e =>
+        TaskCompletionSource handlerStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handlerFinished = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource secondEventDispatched = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int synchronousInvocationCount = 0;
+
+        // The asynchronous handler blocks until the test releases it.
+        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver(async e =>
         {
-            taskCompletionSource.TrySetResult();
+            handlerStarted.TrySetResult();
+            await handlerGate.Task;
+            handlerFinished.TrySetResult();
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        // A synchronous observer records how many events have been dispatched.
+        module.OnEventInvoked.AddObserver(e =>
+        {
+            if (Interlocked.Increment(ref synchronousInvocationCount) == 2)
+            {
+                secondEventDispatched.TrySetResult();
+            }
+        });
 
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         string eventJson = """
@@ -114,7 +131,17 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await handlerStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // While the asynchronous handler is still blocked, a second event is dispatched
+        // and observed: message processing did not wait for the handler to complete.
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        await secondEventDispatched.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(handlerFinished.Task.IsCompleted);
+
+        handlerGate.TrySetResult();
+        await handlerFinished.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(2, synchronousInvocationCount);
     }
 
     [Fact]

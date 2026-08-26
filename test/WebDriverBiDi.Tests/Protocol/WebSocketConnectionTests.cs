@@ -1215,12 +1215,13 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task TestConnectionDiscardsPartialFragmentedMessageOnClose()
+    public async Task TestConnectionDeliversNothingForPartialFragmentedMessageOnClose()
     {
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int deliveredMessageCount = 0;
         TestWebSocketConnection connection = new()
         {
             BypassStart = false,
@@ -1242,20 +1243,29 @@ public class WebSocketConnectionTests : IAsyncDisposable
             await Task.Delay(Timeout.Infinite, token);
             throw new OperationCanceledException(token);
         };
-        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(e =>
+        {
+            Interlocked.Increment(ref deliveredMessageCount);
+            return this.OnConnectionDataReceivedAsync(e);
+        });
         await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The partial fragment was never completed, so no message may have been delivered
+        // (the connection discards the partial buffer rather than handing it on).
+        Assert.Equal(0, deliveredMessageCount);
     }
 
     [Fact]
-    public async Task TestConnectionCleansUpPartialFragmentedMessageOnException()
+    public async Task TestConnectionDeliversNothingForPartialFragmentedMessageOnException()
     {
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int deliveredMessageCount = 0;
         TestWebSocketConnection connection = new()
         {
             BypassStart = false,
@@ -1271,11 +1281,19 @@ public class WebSocketConnectionTests : IAsyncDisposable
             taskCompletionSource.TrySetResult();
             throw new OperationCanceledException();
         };
-        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(e =>
+        {
+            Interlocked.Increment(ref deliveredMessageCount);
+            return this.OnConnectionDataReceivedAsync(e);
+        });
         await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The partial fragment was never completed, so no message may have been delivered
+        // (the connection discards the partial buffer rather than handing it on).
+        Assert.Equal(0, deliveredMessageCount);
     }
 
     [Fact]
