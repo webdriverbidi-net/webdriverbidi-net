@@ -405,6 +405,25 @@ public class Transport : IAsyncDisposable
                 this.PendingCommands = new PendingCommandCollection();
             }
 
+            // When reconnecting after disconnect, the message processing of the previous
+            // connection may not be complete, even if the reader is completed during
+            // disconnect. Wait for that processing to complete before recreating the
+            // message processing task.
+            if (!this.messageQueueProcessingTask.IsCompleted)
+            {
+                using CancellationTokenSource previousProcessingWaitCancelTokenSource = new();
+                Task previousProcessingWaitTask = Task.Delay(this.ShutdownTimeout, previousProcessingWaitCancelTokenSource.Token);
+                Task previousProcessingCompletedTask = await Task.WhenAny(this.messageQueueProcessingTask, previousProcessingWaitTask).ConfigureAwait(false);
+                if (previousProcessingCompletedTask == this.messageQueueProcessingTask)
+                {
+                    previousProcessingWaitCancelTokenSource.Cancel();
+                }
+                else
+                {
+                    await this.LogAsync("Timed out waiting for message processing of the previous connection to complete before reconnecting", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                }
+            }
+
             this.incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
             {
                 SingleReader = true,
@@ -702,10 +721,11 @@ public class Transport : IAsyncDisposable
         //
         // The transport may have already been marked disconnected by a remote
         // disconnect or connection error (see HandleConnectionDisconnectionAsync),
-        // which does not itself run the teardown below and therefore never reaches
-        // the collected-exceptions throw at the end of this method. This is the
-        // only remaining opportunity to surface Collect-mode errors to a caller of
-        // StopAsync/DisconnectAsync for that session.
+        // which completes the incoming message queue but does not run the rest of
+        // the teardown below and therefore never reaches the collected-exceptions
+        // throw at the end of this method. This is the only remaining opportunity
+        // to surface Collect-mode errors to a caller of StopAsync/DisconnectAsync
+        // for that session.
         if (!this.IsConnected)
         {
             this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
@@ -746,8 +766,10 @@ public class Transport : IAsyncDisposable
             // wait for the incoming message queue to consume the remaining messages
             // already in the queue. Note that having all items consumed from the
             // queue does not imply that processing of all items has completed; that
-            // must be awaited separately.
-            this.incomingMessageQueue.Writer.Complete();
+            // must be awaited separately. TryComplete is used rather than Complete
+            // because the queue may already have been completed by a remote disconnect
+            // or connection error that raced with this call.
+            this.incomingMessageQueue.Writer.TryComplete();
             Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.Reader.Completion, timeoutTask).ConfigureAwait(false);
             if (messageQueueReaderCompleteTask != this.incomingMessageQueue.Reader.Completion)
             {
@@ -846,14 +868,19 @@ public class Transport : IAsyncDisposable
     /// <returns>A task representing the asynchronous message-processing loop.</returns>
     protected virtual async Task ReadIncomingMessagesAsync()
     {
+        // Capture the queue this reader is bound to. Reading the field directly
+        // in the below code may lead to accessing the wrong reader in the
+        // reconnect-after-disconnect scenario, because the channel gets recreated.
+        ChannelReader<IncomingMessage> reader = this.incomingMessageQueue.Reader;
+
         // In theory, we could accomplish this with an `await foreach` using
         // IAsyncEnumerable, but this would require additional dependencies,
         // which is challenging. Initial experiments has shown that simply
         // adding a reference to the Microsoft.Bcl.AsyncInterfaces assembly
         // is not enough by itself to enable compilation using that construct.
-        while (await this.incomingMessageQueue.Reader.WaitToReadAsync().ConfigureAwait(false))
+        while (await reader.WaitToReadAsync().ConfigureAwait(false))
         {
-            while (this.incomingMessageQueue.Reader.TryRead(out IncomingMessage? packet))
+            while (reader.TryRead(out IncomingMessage? packet))
             {
                 Interlocked.Decrement(ref this.incomingQueueDepth);
                 try
@@ -1064,6 +1091,16 @@ public class Transport : IAsyncDisposable
             // with an appropriate exception.
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
             this.PendingCommands.FailAllPendingCommands(connectionException);
+
+            // Complete the incoming message queue so that the reader task drains any
+            // messages already received and then exits, rather than waiting forever on
+            // a queue that will never be written to again. The reader is deliberately
+            // not awaited here: this method runs on the connection's receive loop and
+            // holds the connection lock, and an event handler still executing on the
+            // reader may itself need that lock (e.g., to send a command, which will
+            // fail because the transport is now disconnected). ConnectAsync waits for
+            // the reader to finish before starting a new session.
+            this.incomingMessageQueue.Writer.TryComplete();
 
             // Log appropriate statistics and information.
             WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);

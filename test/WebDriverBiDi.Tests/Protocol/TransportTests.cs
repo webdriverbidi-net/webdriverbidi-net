@@ -2851,7 +2851,7 @@ public class TransportTests
     {
         TaskCompletionSource errorTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection)
         {
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
         };
@@ -2860,6 +2860,12 @@ public class TransportTests
 
         await connection.RaiseDataReceivedEventAsync("""{"type":"error","id":999,"error":"unknown error","message":"no such command"}""");
         await errorTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The transport notifies OnErrorEventReceived observers before it records the error in
+        // its unhandled-error collection, so the observer firing is not sufficient to guarantee
+        // the Terminate behavior is armed. Wait for the error to actually be captured.
+        bool errorCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
+        Assert.True(errorCaptured);
 
         WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
         Assert.Contains("Received error for unknown command ID 999", exception.Message);
@@ -2888,5 +2894,161 @@ public class TransportTests
         await connection.RaiseDataReceivedEventAsync($$$"""{"type":"success","id":{{{first.CommandId}}},"result":{"parameterName":"parameterValue"}}""");
         await unknownTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestReconnectAfterRemoteDisconnectWaitsForPreviousMessageProcessing()
+    {
+        // A remote disconnect completes the incoming message queue but does not wait for the
+        // reader task, which may still be executing an event handler. ConnectAsync must wait
+        // for that reader to finish before installing the new queue, so that the previous
+        // session's reader can never consume the new session's messages and every message is
+        // processed exactly once.
+        TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource secondEventProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int eventCount = 0;
+
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(async e =>
+        {
+            int currentCount = Interlocked.Increment(ref eventCount);
+            if (currentCount == 1)
+            {
+                handlerStartedTaskCompletionSource.TrySetResult();
+                await releaseHandlerTaskCompletionSource.Task;
+            }
+            else
+            {
+                secondEventProcessedTaskCompletionSource.TrySetResult();
+            }
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+        await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The remote end closes the connection while the handler is still executing.
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // Reconnecting must block until the previous reader has exited. The fixed delay is a
+        // negative check: the reconnect must still be pending after it elapses.
+        Task reconnectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Task completedTask = await Task.WhenAny(reconnectTask, Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken));
+        Assert.NotSame(reconnectTask, completedTask);
+
+        releaseHandlerTaskCompletionSource.TrySetResult();
+        await reconnectTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Messages for the new session are processed by the new reader, exactly once.
+        await connection.RaiseDataReceivedEventAsync(json);
+        await secondEventProcessedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(2, eventCount);
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestReconnectAfterRemoteDisconnectTimesOutWaitingForHangingHandler()
+    {
+        // If the previous session's reader never finishes (a handler that hangs), ConnectAsync
+        // must not wait forever: it logs a warning after ShutdownTimeout and proceeds, and the
+        // new session's messages are still processed by the new reader.
+        TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource secondEventProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        List<LogMessageEventArgs> logs = [];
+        int eventCount = 0;
+
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            int currentCount = Interlocked.Increment(ref eventCount);
+            if (currentCount == 1)
+            {
+                handlerStartedTaskCompletionSource.TrySetResult();
+                return new TaskCompletionSource<bool>().Task;
+            }
+
+            secondEventProcessedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+        await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.Contains(logs,
+            log => log.Message.Contains("Timed out waiting for message processing of the previous connection to complete before reconnecting")
+                   && log.Level == WebDriverBiDiLogLevel.Warn);
+
+        await connection.RaiseDataReceivedEventAsync(json);
+        await secondEventProcessedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(2, eventCount);
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestDataReceivedAfterRemoteDisconnectIsDisposedAndNotQueued()
+    {
+        // A remote disconnect completes the incoming message queue, so data delivered by the
+        // connection afterwards must be disposed rather than queued, exactly as after an
+        // explicit DisconnectAsync.
+        bool eventReceived = false;
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            eventReceived = true;
+            return Task.CompletedTask;
+        });
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{"paramName":"paramValue"}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        Assert.True(owner.IsDisposed);
+        Assert.False(eventReceived);
+        Assert.Equal(0, transport.IncomingQueueDepth);
     }
 }
