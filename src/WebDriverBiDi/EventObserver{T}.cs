@@ -21,6 +21,14 @@ using WebDriverBiDi.Protocol;
 /// at a time per observer.
 /// </para>
 /// <para>
+/// <strong>Disposal:</strong> <see cref="Dispose()"/> and <see cref="DisposeAsync"/> remove the observer
+/// from its event and end any active capture session. Capture methods called afterwards throw
+/// <see cref="ObjectDisposedException"/>, and a <see cref="WaitForCapturedTasksAsync"/> or
+/// <see cref="WaitForCapturedTasksCompleteAsync"/> call that is still waiting when the observer is
+/// disposed completes with <see cref="ObjectDisposedException"/> rather than waiting for its timeout.
+/// <see cref="Unobserve"/>, <see cref="StopCapturingTasks"/> and repeated disposal remain safe no-ops.
+/// </para>
+/// <para>
 /// <strong>Typical capture flow:</strong> Call <see cref="StartCapturingTasks"/> before triggering
 /// the action that produces events, then use <see cref="WaitForCapturedTasksAsync"/>
 /// to wait for a specific number of handler tasks, or <see cref="WaitForCapturedTasksCompleteAsync"/> to wait for
@@ -154,6 +162,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// full requested batch; call <see cref="StopCapturingTasks"/> to end the session early.
     /// </summary>
     /// <exception cref="WebDriverBiDiException">Thrown when a capture session is already active on this observer.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the observer has been disposed.</exception>
     /// <remarks>
     /// <para>
     /// This method is thread-safe. Only one capture session may be active at a time.
@@ -178,6 +187,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     {
         lock (this.captureLock)
         {
+            this.ThrowIfDisposed();
             if (this.capturedTaskQueue is not null)
             {
                 throw new WebDriverBiDiException("This observer already has an active capture session. Call StopCapturingTasks before starting a new one.");
@@ -246,6 +256,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the observer has been disposed, or is disposed while this method is waiting.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <example>
     /// <code>
@@ -271,6 +282,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         Channel<Task> channel;
         lock (this.captureLock)
         {
+            this.ThrowIfDisposed();
             if (this.capturedTaskQueue is null)
             {
                 throw new InvalidOperationException("No capture session is active. Call StartCapturingTasks before calling WaitForCapturedTasksAsync or WaitForCapturedTasksCompleteAsync.");
@@ -372,6 +384,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
 
         if (currentCaptureCount < count)
         {
+            // Disposal closes the capture channel, which wakes this method exactly as
+            // StopCapturingTasks does. A caller whose wait was ended by disposal, rather than
+            // fulfilled, is told so instead of receiving a partial result to inspect.
+            this.ThrowIfDisposed();
             Array.Resize(ref collectedTasks, currentCaptureCount);
         }
 
@@ -400,6 +416,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the observer has been disposed, or is disposed while this method is waiting.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <remarks>
     /// <para>
@@ -477,6 +494,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// Does not wait for additional tasks to arrive. Ownership of the returned tasks transfers to the caller.
     /// </summary>
     /// <returns>All handler tasks available in the capture buffer at the time of the call, or an empty array if no capture session is active.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the observer has been disposed.</exception>
     /// <remarks>
     /// <para>
     /// This method acquires an internal reader lock that is shared with
@@ -503,6 +521,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         Channel<Task>? channel;
         lock (this.captureLock)
         {
+            this.ThrowIfDisposed();
             channel = this.capturedTaskQueue;
         }
 
@@ -686,7 +705,19 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             this.CloseCaptureChannel();
         }
 
-        this.captureReadSemaphore.Dispose();
+        // The capture-read semaphore is deliberately not disposed. Closing the capture channel
+        // above wakes any WaitForCapturedTasksAsync call still waiting, and that call must be
+        // able to release the semaphore on its way out; a disposed SemaphoreSlim would throw
+        // ObjectDisposedException from that release instead. SemaphoreSlim holds no unmanaged
+        // resources unless its AvailableWaitHandle is used, which this class never does.
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1)
+        {
+            throw new ObjectDisposedException(this.GetType().FullName);
+        }
     }
 
     private void AttachCompletionContinuation(Task task, string eventName, bool shouldReport, bool decrementInFlightCount)

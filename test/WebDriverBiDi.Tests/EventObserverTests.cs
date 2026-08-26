@@ -1381,4 +1381,66 @@ public class EventObserverTests
         await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
         Assert.True(observer.CompareTo(null) > 0);
     }
+
+    [Fact]
+    public async Task TestDisposeWhileWaitingForCapturedTasksEndsWaitWithObjectDisposedException()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+
+        // The wait would otherwise run for its full ten-second timeout; disposal must end it promptly.
+        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        observer.Dispose();
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await waitTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
+    }
+
+    [Fact]
+    public async Task TestDisposeAsyncWhileWaitingForCapturedTasksCompleteEndsWaitWithObjectDisposedException()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await observer.DisposeAsync();
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await waitTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task TestFulfilledWaitIsUnaffectedByLaterDisposal()
+    {
+        // Disposal only turns an unfulfilled wait into an exception; tasks already collected are returned.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("value");
+
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        observer.Dispose();
+
+        _ = Assert.Single(tasks);
+        await Task.WhenAll(tasks);
+    }
+
+    [Fact]
+    public async Task TestCaptureMethodsAfterDisposeThrowObjectDisposedException()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => observer.StartCapturingTasks());
+        Assert.Throws<ObjectDisposedException>(() => observer.GetCapturedTasks());
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
+
+        // The idempotent members stay safe after disposal.
+        observer.StopCapturingTasks();
+        observer.Unobserve();
+        observer.Dispose();
+    }
 }
