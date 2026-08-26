@@ -376,7 +376,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// </summary>
     /// <param name="count">The number of handler tasks to wait for. Must be at least 1.</param>
     /// <param name="timeout">How long to wait for the handler tasks to be captured and for the handlers to complete
-    /// their execution.</param>
+    /// their execution. Pass <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely for both phases.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns><see langword="true"/> if the expected number of handler tasks were captured and completed before
     /// the timeout expired; otherwise, <see langword="false"/>. When <see langword="true"/> is returned, the
@@ -424,8 +424,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         Task[] tasksToWait = await this.WaitForCapturedTasksAsync(count, timeout, cancellationToken).ConfigureAwait(false);
         if (tasksToWait.Length == count)
         {
-            TimeSpan remainingTime = timeout - this.timeProvider.GetElapsedTime(startTimestamp);
-            if (remainingTime <= TimeSpan.Zero)
+            bool isInfiniteTimeout = timeout == Timeout.InfiniteTimeSpan;
+            TimeSpan remainingTime = isInfiniteTimeout ? Timeout.InfiniteTimeSpan : timeout - this.timeProvider.GetElapsedTime(startTimestamp);
+            if (!isInfiniteTimeout && remainingTime <= TimeSpan.Zero)
             {
                 return false;
             }
