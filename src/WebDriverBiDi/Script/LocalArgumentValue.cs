@@ -22,6 +22,7 @@ public record LocalArgumentValue : LocalValue
     /// </summary>
     /// <param name="argType">The type of value represented by this LocalValue.</param>
     internal LocalArgumentValue(string argType)
+        : base()
     {
         this.Type = argType;
     }
