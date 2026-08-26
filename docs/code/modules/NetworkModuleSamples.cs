@@ -204,10 +204,9 @@ public static class NetworkModuleSamples
     public static async Task AddIntercept(BiDiDriver driver, string contextId)
     {
         #region AddIntercept
-        AddInterceptCommandParameters parameters = new AddInterceptCommandParameters();
-
         // Specify which phase to intercept
-        parameters.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters parameters =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
 
         // Optional: limit to specific contexts
         parameters.Contexts = new List<string> { contextId };
@@ -229,8 +228,8 @@ public static class NetworkModuleSamples
     public static async Task InterceptSpecificUrls(BiDiDriver driver)
     {
         #region InterceptSpecificURLs
-        AddInterceptCommandParameters parameters = new AddInterceptCommandParameters();
-        parameters.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters parameters =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
 
         // Intercept all .jpg images
         parameters.UrlPatterns = new List<UrlPattern>
@@ -249,8 +248,8 @@ public static class NetworkModuleSamples
     {
         #region BlockRequests
         // Add intercept
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         addIntercept.UrlPatterns = new List<UrlPattern>
         {
             new UrlPatternPattern { HostName = "ads.example.com" },
@@ -358,7 +357,7 @@ public static class NetworkModuleSamples
         ulong maxSize = Convert.ToUInt64(Math.Pow(2, 24));  // 16 MB
 
         AddDataCollectorCommandParameters parameters =
-            new AddDataCollectorCommandParameters(maxSize);
+            new AddDataCollectorCommandParameters(maxSize, DataType.Response);
 
         parameters.Contexts.Add(contextId);
 
@@ -642,8 +641,8 @@ public static class NetworkModuleSamples
             "tracker.example.com"
         };
 
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
 
         foreach (string domain in adDomains)
         {
@@ -678,8 +677,8 @@ public static class NetworkModuleSamples
             { "/api/settings", "{\"theme\": \"dark\", \"lang\": \"en\"}" },
         };
 
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         await driver.Network.AddInterceptAsync(addIntercept);
 
         driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs e) =>
@@ -728,7 +727,7 @@ public static class NetworkModuleSamples
 
         // Set up data collector
         AddDataCollectorCommandParameters addParams =
-            new AddDataCollectorCommandParameters(Convert.ToUInt64(Math.Pow(2, 26)));
+            new AddDataCollectorCommandParameters(Convert.ToUInt64(Math.Pow(2, 26)), DataType.Response);
         addParams.Contexts.Add(contextId);
 
         AddDataCollectorCommandResult collectorResult =
@@ -785,8 +784,8 @@ public static class NetworkModuleSamples
         );
         await driver.Session.SubscribeAsync(subscribe);
 
-        AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        AddInterceptCommandParameters addIntercept =
+            new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
         addIntercept.Contexts = new List<string> { contextId };
 
         AddInterceptCommandResult interceptResult = await driver.Network.AddInterceptAsync(addIntercept);

@@ -127,10 +127,4 @@ public class AddInterceptCommandParametersTests
         Assert.Equal(JTokenType.String, pattern.Type);
         Assert.Equal("https://example.com/*", pattern.Value<string>());
     }
-
-    [Fact]
-    public void TestOmittingPhaseInConstructorThrows()
-    {
-        Assert.StartsWith("You must supply at least one phase for the intercept", Assert.ThrowsAny<ArgumentException>(() => new AddInterceptCommandParameters()).Message);
-    }
 }

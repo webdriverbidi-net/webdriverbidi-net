@@ -8,14 +8,14 @@ public class AddDataCollectorCommandParametersTests
     [Fact]
     public void TestCommandName()
     {
-        AddDataCollectorCommandParameters properties = new(1024);
+        AddDataCollectorCommandParameters properties = new(1024, DataType.Response);
         Assert.Equal("network.addDataCollector", properties.MethodName);
     }
 
     [Fact]
     public void TestCanSerializeParameters()
     {
-        AddDataCollectorCommandParameters properties = new(1024);
+        AddDataCollectorCommandParameters properties = new(1024, DataType.Response);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
 
@@ -141,7 +141,7 @@ public class AddDataCollectorCommandParametersTests
     [Fact]
     public void TestCanSerializeParametersWithBrowsingContexts()
     {
-        AddDataCollectorCommandParameters properties = new(100);
+        AddDataCollectorCommandParameters properties = new(100, DataType.Response);
         properties.Contexts.Add("myContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -175,7 +175,7 @@ public class AddDataCollectorCommandParametersTests
     [Fact]
     public void TestCanSerializeParametersWithUserContexts()
     {
-        AddDataCollectorCommandParameters properties = new(100);
+        AddDataCollectorCommandParameters properties = new(100, DataType.Response);
         properties.UserContexts.Add("myUserContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -209,7 +209,7 @@ public class AddDataCollectorCommandParametersTests
     [Fact]
     public void TestCanSerializeParametersWithCollectorType()
     {
-        AddDataCollectorCommandParameters properties = new(100)
+        AddDataCollectorCommandParameters properties = new(100, DataType.Response)
         {
             CollectorType = CollectorType.Blob,
         };
