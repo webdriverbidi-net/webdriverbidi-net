@@ -348,7 +348,7 @@ public class PipeConnection : Connection
     protected override async Task ReceiveDataAsync()
     {
         CancellationToken connectionCancellationToken = this.ConnectionCancellationToken;
-        using MemoryStream messageBuffer = new();
+        using MessageBuffer messageBuffer = new();
         using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try
         {
@@ -371,17 +371,14 @@ public class PipeConnection : Connection
                 {
                     if (readArray[i] == 0)
                     {
-                        // Found a null terminator - complete the message
-                        if (i > startIndex)
+                        // Found a null terminator - complete the message. The accumulator's pooled
+                        // buffer becomes the message buffer directly (a message contained entirely in
+                        // this read is copied exactly once, from the read buffer into pooled memory),
+                        // and the IncomingMessage built from it returns the buffer to the pool on disposal.
+                        messageBuffer.Append(readArray.AsSpan(startIndex, i - startIndex));
+                        if (messageBuffer.HasData)
                         {
-                            messageBuffer.Write(readArray, startIndex, i - startIndex);
-                        }
-
-                        if (messageBuffer.Length > 0)
-                        {
-                            int messageLength = (int)messageBuffer.Length;
-                            IMemoryOwner<byte> messageOwner = TakeOwnershipOfReceivedData(messageBuffer.GetBuffer(), messageLength);
-                            messageBuffer.SetLength(0);
+                            IMemoryOwner<byte> messageOwner = messageBuffer.TakeOwnership(out int messageLength);
 
                             if (this.OnLogMessage.CurrentObserverCount > 0)
                             {
@@ -400,10 +397,7 @@ public class PipeConnection : Connection
                 }
 
                 // If there's remaining data after the last null terminator (or no null found), buffer it
-                if (startIndex < bytesRead)
-                {
-                    messageBuffer.Write(readArray, startIndex, bytesRead - startIndex);
-                }
+                messageBuffer.Append(readArray.AsSpan(startIndex, bytesRead - startIndex));
             }
 
             await this.LogAsync($"Ending pipe receive loop").ConfigureAwait(false);

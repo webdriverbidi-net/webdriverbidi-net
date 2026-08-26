@@ -89,6 +89,66 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestReceivesMessageSpanningMultipleReadsLargerThanInitialBuffer()
+    {
+        // A single message delivered across three reads, each filling the read buffer, must be
+        // accumulated in pooled memory (growing twice) and delivered once, intact, when the
+        // null terminator finally arrives.
+        TaskCompletionSource<byte[]> receivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer);
+
+        int readSize = connection.BufferSize;
+        byte[] expected = new byte[(readSize * 2) + (readSize / 2)];
+        for (int i = 0; i < expected.Length; i++)
+        {
+            // Never emit a zero byte, which the pipe protocol treats as a message terminator.
+            expected[i] = (byte)((i % 255) + 1);
+        }
+
+        int delivered = 0;
+        connection.ReadHandler = (buffer, offset, count, callNumber) =>
+        {
+            if (delivered < expected.Length)
+            {
+                int chunk = Math.Min(count, expected.Length - delivered);
+                Array.Copy(expected, delivered, buffer, offset, chunk);
+                delivered += chunk;
+                if (delivered == expected.Length && chunk < count)
+                {
+                    // Room remains in this read for the terminator.
+                    buffer[offset + chunk] = 0;
+                    chunk++;
+                }
+
+                return Task.FromResult(chunk);
+            }
+
+            // Pipe closed by the remote end.
+            return Task.FromResult(0);
+        };
+
+        connection.OnDataReceived.AddObserver(e => receivedTaskCompletionSource.TrySetResult(e.Data.ToArray()));
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            remoteDisconnectedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+        byte[] received = await receivedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(expected.Length, received.Length);
+        Assert.True(received.AsSpan().SequenceEqual(expected), "Reassembled message content did not match the data that was read");
+    }
+
+    [Fact]
     public async Task TestStartingWithoutSettingExternalProcessThrows()
     {
         PipeConnection connection = new(new TestPipeServer());
