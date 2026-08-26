@@ -1892,4 +1892,27 @@ public class BiDiDriverTests
         Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));
         Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask));
     }
+
+    [Fact]
+    public async Task TestUnserializableCommandParametersThrowSerializationException()
+    {
+        // A NaN pressure cannot be represented in JSON. The failure happens while serializing the
+        // outbound command and must surface as the library's serialization exception rather than
+        // a raw System.Text.Json exception, mirroring the handling of unreadable responses.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        Input.PerformActionsCommandParameters parameters = new("myContext");
+        Input.PointerSourceActions pointer = new();
+        pointer.Actions.Add(new Input.PointerDownAction(0) { Pressure = double.NaN });
+        parameters.Actions.Add(pointer);
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await driver.Input.PerformActionsAsync(parameters, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Contains("Could not serialize command 'input.performActions'", exception.Message);
+        Assert.IsType<JsonException>(exception.InnerException);
+        Assert.Null(connection.DataSent);
+    }
 }

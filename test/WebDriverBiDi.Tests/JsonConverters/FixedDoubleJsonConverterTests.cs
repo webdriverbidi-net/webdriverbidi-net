@@ -51,6 +51,17 @@ public class FixedDoubleJsonConverterTests
         Assert.Equal(preciseValue, deserialized.Value);
     }
 
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void TestWriteNonFiniteDoubleThrowsJsonException(double value)
+    {
+        TestWrapper wrapper = new() { Value = value };
+        JsonException exception = Assert.Throws<JsonException>(() => JsonSerializer.Serialize(wrapper));
+        Assert.Contains("only finite numbers", exception.Message);
+    }
+
     private class TestWrapper
     {
         [JsonPropertyName("value")]

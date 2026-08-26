@@ -832,4 +832,57 @@ public class CookieTests
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Cookie>(json, this.options));
     }
+
+    [Theory]
+    [InlineData(253402300800UL)]
+    [InlineData(ulong.MaxValue)]
+    public void TestExpiryBeyondDateTimeRangeIsClampedToMaxValue(ulong expiry)
+    {
+        // The protocol's js-uint permits values far beyond what DateTime can represent; a
+        // conforming remote end must not cause the cookie (and the whole result) to fail.
+        string json = $$"""
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100,
+                        "expiry": {{expiry}}
+                      }
+                      """;
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
+        Assert.NotNull(cookie);
+        Assert.Equal(expiry, cookie.EpochExpires);
+        Assert.Equal(DateTime.MaxValue, cookie.Expires);
+    }
+
+    [Fact]
+    public void TestExpiryAtLastRepresentableSecondIsConverted()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100,
+                        "expiry": 253402300799
+                      }
+                      """;
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
+        Assert.NotNull(cookie);
+        Assert.Equal(new DateTime(9999, 12, 31, 23, 59, 59, DateTimeKind.Utc), cookie.Expires);
+    }
 }

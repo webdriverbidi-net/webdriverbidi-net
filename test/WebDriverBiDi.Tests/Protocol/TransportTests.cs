@@ -3051,4 +3051,47 @@ public class TransportTests
         Assert.False(eventReceived);
         Assert.Equal(0, transport.IncomingQueueDepth);
     }
+
+    [Fact]
+    public async Task TestSendCommandWrapsSerializationFailures()
+    {
+        TestWebSocketConnection connection = new();
+        FailingSerializationTransport transport = new(connection, new NotSupportedException("no metadata"));
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+        Assert.Contains("Could not serialize command 'module.command'", exception.Message);
+        Assert.IsType<NotSupportedException>(exception.InnerException);
+        Assert.Equal(0, transport.PendingCommandCount);
+    }
+
+    [Fact]
+    public async Task TestSendCommandDoesNotWrapUnrelatedSerializationExceptions()
+    {
+        // Only the exception types the JSON serializer itself raises are translated; anything
+        // else coming out of an overridden SerializeCommand is the override's own problem.
+        TestWebSocketConnection connection = new();
+        FailingSerializationTransport transport = new(connection, new InvalidOperationException("custom failure"));
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+    }
+
+    private sealed class FailingSerializationTransport : Transport
+    {
+        private readonly Exception exception;
+
+        public FailingSerializationTransport(Connection connection, Exception exception)
+            : base(connection)
+        {
+            this.exception = exception;
+        }
+
+        protected override byte[] SerializeCommand(Command command)
+        {
+            throw this.exception;
+        }
+    }
 }
