@@ -102,14 +102,18 @@ public class WebDriverBiDiJsonSerializerContextTests
         FieldInfo? field = transport.GetType().GetField("eventMessageTypes", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(field);
 
-        ConcurrentDictionary<string, Type>? eventMessageTypes = field.GetValue(transport) as ConcurrentDictionary<string, Type>;
+        // The registry maps event names to an internal registration object exposing the message type.
+        System.Collections.IDictionary? eventMessageTypes = field.GetValue(transport) as System.Collections.IDictionary;
         Assert.NotNull(eventMessageTypes);
 
         // Add any of the EventMessage<T> types that are not in the list of types registered with
         // the custom JsonSerializerContext to the list of missing types. 
         List<Type> missingTypes = [];
-        foreach (Type eventMessageType in eventMessageTypes.Values)
+        foreach (object? registration in eventMessageTypes.Values)
         {
+            Assert.NotNull(registration);
+            Type? eventMessageType = registration.GetType().GetProperty("EventMessageType")?.GetValue(registration) as Type;
+            Assert.NotNull(eventMessageType);
             if (!registeredTypes.Contains(eventMessageType) && !missingTypes.Contains(eventMessageType))
             {
                 missingTypes.Add(eventMessageType);

@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Channels;
+using WebDriverBiDi.Internal;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
@@ -94,7 +95,8 @@ public class Transport : IAsyncDisposable
         RespectNullableAnnotations = true,
     };
 
-    private readonly ConcurrentDictionary<string, Type> eventMessageTypes = [];
+    private readonly ConcurrentDictionary<string, EventMessageRegistration> eventMessageTypes = [];
+    private readonly ConcurrentDictionary<Type, JsonTypeInfo> responseTypeInfoCache = [];
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
@@ -650,7 +652,9 @@ public class Transport : IAsyncDisposable
     /// <param name="eventName">The name of the event.</param>
     public virtual void RegisterEventMessage<T>(string eventName)
     {
-        this.AddEventMessageType(eventName, typeof(EventMessage<T>));
+        // T is a compile-time generic argument here, so building the envelope's type info with the
+        // library-owned converter is ahead-of-time compatible and needs only T to be resolvable.
+        this.AddEventMessageType(eventName, typeof(EventMessage<T>), static options => JsonMetadataServices.CreateValueInfo<EventMessage<T>>(options, new EventMessageJsonConverter<T>()));
     }
 
     /// <summary>
@@ -682,7 +686,7 @@ public class Transport : IAsyncDisposable
     /// <param name="eventMessageType">The type of data to be returned in the event.</param>
     protected virtual void AddEventMessageType(string eventName, Type eventMessageType)
     {
-        this.eventMessageTypes[eventName] = eventMessageType;
+        this.AddEventMessageType(eventName, eventMessageType, null);
     }
 
     /// <summary>
@@ -992,6 +996,11 @@ public class Transport : IAsyncDisposable
             : WebDriverBiDiJsonSerializerContext.Default;
     }
 
+    private static ReceivedDataDictionary ConvertPayloadExtensionData(Dictionary<string, JsonElement> extensionData)
+    {
+        return extensionData.Count == 0 ? ReceivedDataDictionary.EmptyDictionary : JsonConverterUtilities.ConvertIncomingExtensionData(extensionData);
+    }
+
     private static string TruncateMessage(string message, int maxLength)
     {
         if (message.Length <= maxLength)
@@ -1017,6 +1026,31 @@ public class Transport : IAsyncDisposable
         {
             throw new ObjectDisposedException(this.GetType().FullName);
         }
+    }
+
+    /// <summary>
+    /// Adds an event message type to the map of known event message types, with an optional factory
+    /// that creates its <see cref="JsonTypeInfo"/> instead of resolving it through the serializer options.
+    /// </summary>
+    /// <param name="eventName">The name of the event.</param>
+    /// <param name="eventMessageType">The type of data to be returned in the event.</param>
+    /// <param name="typeInfoFactory">The factory creating the type info, or <see langword="null"/> to resolve <paramref name="eventMessageType"/> through the serializer options.</param>
+    private void AddEventMessageType(string eventName, Type eventMessageType, Func<JsonSerializerOptions, JsonTypeInfo>? typeInfoFactory)
+    {
+        this.eventMessageTypes[eventName] = new EventMessageRegistration(eventMessageType, typeInfoFactory);
+    }
+
+    /// <summary>
+    /// Gets the type info used to deserialize responses to a command, preferring the command's own
+    /// envelope type info (which needs only the result type to be resolvable) over the serializer options.
+    /// </summary>
+    /// <param name="command">The command awaiting a response.</param>
+    /// <returns>The type info for the response envelope.</returns>
+    private JsonTypeInfo GetResponseTypeInfo(Command command)
+    {
+        return this.responseTypeInfoCache.GetOrAdd(
+            command.ResponseType,
+            _ => command.CommandParameters.CreateResponseTypeInfo(this.options) ?? this.options.GetTypeInfo(command.ResponseType));
     }
 
     private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)
@@ -1219,10 +1253,14 @@ public class Transport : IAsyncDisposable
                 WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId, executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
                 try
                 {
-                    JsonTypeInfo responseTypeInfo = this.options.GetTypeInfo(executedCommand.ResponseType);
+                    JsonTypeInfo responseTypeInfo = this.GetResponseTypeInfo(executedCommand);
                     CommandResponseMessage response = packet.DeserializeCommandResponseMessage(responseTypeInfo);
                     CommandResult commandResult = response.Result;
-                    commandResult.AdditionalData = response.AdditionalData;
+
+                    // Extension properties live in two distinct places and are never merged: inside the
+                    // result object (AdditionalData) and on the response envelope (AdditionalResponseProperties).
+                    commandResult.AdditionalData = ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("result", this.options.GetTypeInfo(commandResult.GetType())));
+                    commandResult.AdditionalResponseProperties = response.AdditionalData;
                     if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
                         await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
@@ -1320,11 +1358,12 @@ public class Transport : IAsyncDisposable
     {
         if (packet.TryGetEventName(out string eventName))
         {
-            if (this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
+            if (this.eventMessageTypes.TryGetValue(eventName, out EventMessageRegistration? registration))
             {
+                Type eventMessageType = registration.EventMessageType;
                 try
                 {
-                    JsonTypeInfo eventTypeInfo = this.options.GetTypeInfo(eventMessageType);
+                    JsonTypeInfo eventTypeInfo = registration.GetTypeInfo(this.options);
                     if (!packet.TryDeserializeEventMessage(eventTypeInfo, out EventMessage? eventMessageData))
                     {
                         throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
@@ -1336,7 +1375,12 @@ public class Transport : IAsyncDisposable
                         await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     }
 
-                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData)).ConfigureAwait(false);
+                    // As for responses, extension properties inside the params object and on the event
+                    // envelope are exposed separately (AdditionalData and AdditionalEventProperties).
+                    ReceivedDataDictionary payloadExtensionData = eventMessageData.EventData is null
+                        ? ReceivedDataDictionary.EmptyDictionary
+                        : ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("params", this.options.GetTypeInfo(eventMessageData.EventData.GetType())));
+                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData, payloadExtensionData)).ConfigureAwait(false);
                     return true;
                 }
                 catch (Exception ex)

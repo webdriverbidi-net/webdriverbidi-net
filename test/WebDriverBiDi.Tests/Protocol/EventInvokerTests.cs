@@ -14,7 +14,7 @@ public class EventInvokerTests
             return Task.CompletedTask;
         }
         EventInvoker<TestEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
         Assert.True(eventInvoked);
     }
 
@@ -22,7 +22,7 @@ public class EventInvokerTests
     public async Task TestInvokeEventWithInvalidObjectTypeThrows()
     {
         EventInvoker<TestEventArgs> invoker = new((info) => Task.CompletedTask);
-        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await invoker.InvokeEventAsync("this is an invalid object", ReceivedDataDictionary.EmptyDictionary));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await invoker.InvokeEventAsync("this is an invalid object", ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary));
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class EventInvokerTests
 
         TestEventArgs originalEventArgs = new TestEventArgs();
         EventInvoker<TestEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(originalEventArgs, ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(originalEventArgs, ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedEventData);
         Assert.Same(originalEventArgs, capturedEventData);
@@ -57,7 +57,7 @@ public class EventInvokerTests
         ReceivedDataDictionary additionalData = new(additionalDataValues);
 
         EventInvoker<TestEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(new TestEventArgs(), additionalData);
+        await invoker.InvokeEventAsync(new TestEventArgs(), additionalData, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedAdditionalData);
         Assert.Same(additionalData, capturedAdditionalData);
@@ -76,7 +76,7 @@ public class EventInvokerTests
         }
 
         EventInvoker<TestEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedAdditionalData);
         Assert.Empty(capturedAdditionalData);
@@ -97,7 +97,7 @@ public class EventInvokerTests
         ReceivedDataDictionary additionalData = new(additionalDataValues);
 
         EventInvoker<TestEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(new TestEventArgs(), additionalData);
+        await invoker.InvokeEventAsync(new TestEventArgs(), additionalData, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedAdditionalData);
         Assert.IsType<ReceivedDataDictionary>(capturedAdditionalData["outer"]);
@@ -107,7 +107,7 @@ public class EventInvokerTests
     public async Task TestInvokeWithNullEventDataThrows()
     {
         EventInvoker<TestEventArgs> invoker = new((info) => Task.CompletedTask);
-        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await invoker.InvokeEventAsync(null, ReceivedDataDictionary.EmptyDictionary));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await invoker.InvokeEventAsync(null, ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary));
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class EventInvokerTests
         TestParameterizedEventArgs eventArgs = new(eventData);
 
         EventInvoker<TestParameterizedEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(eventArgs, ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(eventArgs, ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedEventData);
         Assert.Equal("testEventName", capturedEventData.EventName);
@@ -142,9 +142,9 @@ public class EventInvokerTests
 
         EventInvoker<TestEventArgs> invoker = new(action);
 
-        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
-        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
-        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.Equal(3, invocationCount);
     }
@@ -163,7 +163,7 @@ public class EventInvokerTests
         }
 
         EventInvoker<TestEventArgs> invoker = new(action);
-        Task invocationTask = invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        Task invocationTask = invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.False(delegateCompleted);
@@ -184,7 +184,7 @@ public class EventInvokerTests
 
         EventInvoker<TestEventArgs> invoker = new(action);
 
-        Assert.Equal("Test exception from delegate", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary))).Message);
+        Assert.Equal("Test exception from delegate", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary))).Message);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class EventInvokerTests
 
         EventInvoker<TestEventArgs> invoker = new(action);
 
-        Assert.Equal("Async exception from delegate", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary))).Message);
+        Assert.Equal("Async exception from delegate", (await Assert.ThrowsAnyAsync<ArgumentException>(async () => await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary))).Message);
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class EventInvokerTests
         }
 
         EventInvoker<TestEventArgs> invoker = new(action);
-        Task invocationTask = invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        Task invocationTask = invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.False(invocationTask.IsCompleted);
 
@@ -227,7 +227,7 @@ public class EventInvokerTests
         EventInvoker<TestEventArgs> invoker = new((info) => Task.CompletedTask);
 
         WebDriverBiDiException caughtException = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(
-            async () => await invoker.InvokeEventAsync(123, ReceivedDataDictionary.EmptyDictionary));
+            async () => await invoker.InvokeEventAsync(123, ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary));
 
         Assert.Contains("TestEventArgs", caughtException.Message);
         Assert.Contains("cast", caughtException.Message);
@@ -239,7 +239,7 @@ public class EventInvokerTests
         EventInvoker<TestEventArgs> invoker = new((info) => Task.CompletedTask);
         TestParameterizedEventArgs wrongTypeEventArgs = new(new TestValidEventData("test"));
 
-        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await invoker.InvokeEventAsync(wrongTypeEventArgs, ReceivedDataDictionary.EmptyDictionary));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await invoker.InvokeEventAsync(wrongTypeEventArgs, ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary));
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public class EventInvokerTests
         EventInvoker<WebDriverBiDiEventArgs> invoker = new(action);
 
         // TestEventArgs derives from WebDriverBiDiEventArgs, so this should work
-        await invoker.InvokeEventAsync(eventArgs, ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(eventArgs, ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedEventData);
         Assert.IsType<TestEventArgs>(capturedEventData);
@@ -274,7 +274,7 @@ public class EventInvokerTests
 
         TestEventArgs eventArgs = new TestEventArgs();
         EventInvoker<TestEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(eventArgs, ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(eventArgs, ReceivedDataDictionary.EmptyDictionary, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedEventInfo);
         Assert.Same(eventArgs, capturedEventInfo.EventData);
@@ -294,10 +294,24 @@ public class EventInvokerTests
         ReceivedDataDictionary additionalData = new(additionalDataValues);
 
         EventInvoker<TestEventArgs> invoker = new(action);
-        await invoker.InvokeEventAsync(new TestEventArgs(), additionalData);
+        await invoker.InvokeEventAsync(new TestEventArgs(), additionalData, ReceivedDataDictionary.EmptyDictionary);
 
         Assert.NotNull(capturedEventInfo);
         Assert.Same(additionalData, capturedEventInfo.AdditionalData);
         Assert.Equal("testValue", capturedEventInfo.AdditionalData["testKey"]);
+    }
+
+    [Fact]
+    public async Task TestEnvelopePropertiesPassedToDelegate()
+    {
+        ReceivedDataDictionary envelope = new(new Dictionary<string, object?> { ["goog:channel"] = "channel" });
+        ReceivedDataDictionary? receivedEnvelope = null;
+        EventInvoker<TestEventArgs> invoker = new(info =>
+        {
+            receivedEnvelope = info.AdditionalEventProperties;
+            return Task.CompletedTask;
+        });
+        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary, envelope);
+        Assert.Same(envelope, receivedEnvelope);
     }
 }

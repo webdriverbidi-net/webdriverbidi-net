@@ -532,4 +532,63 @@ public class ResponseDataTests
         Assert.Contains("JSON value could not be converted", exception.Message);
         Assert.Contains("headers", exception.Message);
     }
+
+    [Fact]
+    public void CanDeserializeResponseDataWithVendorExtensionData()
+    {
+        string json = """
+                      {
+                        "goog:securityDetails": { "protocol": "TLS 1.3" },
+                        "url": "requestUrl",
+                        "protocol": "http",
+                        "status": 200,
+                        "statusText": "OK",
+                        "fromCache": false,
+                        "headers": [],
+                        "mimeType": "text/html",
+                        "bytesReceived": 400,
+                        "headersSize": 100,
+                        "bodySize": 300,
+                        "content": {
+                          "size": 300 
+                        }
+                      }
+            """;
+
+        ResponseData? data = JsonSerializer.Deserialize<ResponseData>(json);
+        Assert.NotNull(data);
+        Assert.Single(data.AdditionalData);
+        ReceivedDataDictionary? securityDetails = Assert.IsType<ReceivedDataDictionary>(data.AdditionalData["goog:securityDetails"]);
+        Assert.Equal("TLS 1.3", securityDetails["protocol"]);
+
+        // The conversion happens once; subsequent reads return the same converted data.
+        Assert.Same(data.AdditionalData, data.AdditionalData);
+    }
+
+    [Fact]
+    public void AdditionalDataIsEmptyWithoutExtensionProperties()
+    {
+        string json = """
+                      {
+                        "url": "requestUrl",
+                        "protocol": "http",
+                        "status": 200,
+                        "statusText": "OK",
+                        "fromCache": false,
+                        "headers": [],
+                        "mimeType": "text/html",
+                        "bytesReceived": 400,
+                        "headersSize": 100,
+                        "bodySize": 300,
+                        "content": {
+                          "size": 300 
+                        }
+                      }
+            """;
+
+        ResponseData? data = JsonSerializer.Deserialize<ResponseData>(json);
+        Assert.NotNull(data);
+        Assert.Empty(data.AdditionalData);
+        Assert.Same(ReceivedDataDictionary.EmptyDictionary, data.AdditionalData);
+    }
 }

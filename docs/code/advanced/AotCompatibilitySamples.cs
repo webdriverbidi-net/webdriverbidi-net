@@ -189,10 +189,10 @@ public record ModuleBEventArgs : WebDriverBiDiEventArgs
 #region MultipleCustomModulesOptionA
 // Option A: One context for everything
 [JsonSerializable(typeof(ModuleACommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<ModuleACommandResult>))]
+[JsonSerializable(typeof(ModuleACommandResult))]
 [JsonSerializable(typeof(ModuleBCommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<ModuleBCommandResult>))]
-[JsonSerializable(typeof(EventMessage<ModuleBEventArgs>))]
+[JsonSerializable(typeof(ModuleBCommandResult))]
+[JsonSerializable(typeof(ModuleBEventArgs))]
 public partial class AllCustomModulesJsonContext : JsonSerializerContext { }
 #endregion
 

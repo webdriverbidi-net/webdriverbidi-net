@@ -5,7 +5,9 @@
 
 namespace WebDriverBiDi.Network;
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// A network request.
@@ -20,6 +22,7 @@ public record RequestData
     [JsonConstructor]
     internal RequestData()
     {
+        this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
     }
 
     /// <summary>
@@ -116,6 +119,25 @@ public record RequestData
     public FetchTimingInfo Timings { get; internal set; } = FetchTimingInfo.Empty;
 
     /// <summary>
+    /// Gets the read-only dictionary containing extension properties received in this request,
+    /// such as vendor-prefixed fields (for example, Chromium's <c>goog:</c> properties) that are
+    /// not part of the WebDriver BiDi specification.
+    /// </summary>
+    [JsonIgnore]
+    public ReceivedDataDictionary AdditionalData
+    {
+        get
+        {
+            if (this.SerializableAdditionalData.Count > 0 && field.Count == 0)
+            {
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.SerializableAdditionalData);
+            }
+
+            return field;
+        }
+    }
+
+    /// <summary>
     /// Gets or sets the headers of the request for serialization purposes.
     /// </summary>
     [JsonPropertyName("headers")]
@@ -130,4 +152,11 @@ public record RequestData
     [JsonRequired]
     [JsonInclude]
     internal List<Cookie> SerializableCookies { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the extension properties of this request for serialization purposes.
+    /// </summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; set; } = [];
 }

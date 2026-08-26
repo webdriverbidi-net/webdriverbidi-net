@@ -16,7 +16,22 @@ public record CommandResult
     public virtual bool IsError => false;
 
     /// <summary>
-    /// Gets additional data received in the response.
+    /// Gets the extension properties received inside the <c>result</c> object of the response:
+    /// properties beside the result's specified members that the result type does not define.
     /// </summary>
+    /// <remarks>
+    /// This is the receiving-side counterpart of <see cref="CommandParameters.AdditionalData"/>, which
+    /// places properties inside the <c>params</c> object of a command. Properties found on the
+    /// response envelope instead are exposed through <see cref="AdditionalResponseProperties"/>.
+    /// </remarks>
     public ReceivedDataDictionary AdditionalData { get; internal set; } = ReceivedDataDictionary.EmptyDictionary;
+
+    /// <summary>
+    /// Gets the extension properties received on the response envelope: properties beside
+    /// <c>type</c>, <c>id</c> and <c>result</c>, such as Chromium's <c>goog:channel</c>.
+    /// </summary>
+    /// <remarks>
+    /// This is the receiving-side counterpart of <see cref="Protocol.Command.AdditionalCommandProperties"/>.
+    /// </remarks>
+    public ReceivedDataDictionary AdditionalResponseProperties { get; internal set; } = ReceivedDataDictionary.EmptyDictionary;
 }

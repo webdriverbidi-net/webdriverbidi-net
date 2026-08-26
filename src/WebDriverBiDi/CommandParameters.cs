@@ -5,7 +5,9 @@
 
 namespace WebDriverBiDi;
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 /// <summary>
 /// Abstract base class for a set of settings for a command.
@@ -64,4 +66,15 @@ public abstract class CommandParameters
     /// </remarks>
     [JsonExtensionData]
     public Dictionary<string, object?> AdditionalData { get; } = [];
+
+    /// <summary>
+    /// Creates the <see cref="JsonTypeInfo"/> used to deserialize responses to this command, or returns
+    /// <see langword="null"/> to have <see cref="ResponseType"/> resolved through the serializer options.
+    /// </summary>
+    /// <param name="options">The serializer options in effect for the transport.</param>
+    /// <returns>The type info, or <see langword="null"/>.</returns>
+    internal virtual JsonTypeInfo? CreateResponseTypeInfo(JsonSerializerOptions options)
+    {
+        return null;
+    }
 }

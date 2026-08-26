@@ -11,7 +11,17 @@ namespace WebDriverBiDi;
 public record WebDriverBiDiEventArgs
 {
     /// <summary>
-    /// Gets additional extended data sent with the event.
+    /// Gets the extension properties received inside the <c>params</c> object of the event:
+    /// properties beside the event's specified members that the event args type does not define.
     /// </summary>
+    /// <remarks>
+    /// Properties found on the event envelope instead are exposed through <see cref="AdditionalEventProperties"/>.
+    /// </remarks>
     public ReceivedDataDictionary AdditionalData { get; internal set; } = ReceivedDataDictionary.EmptyDictionary;
+
+    /// <summary>
+    /// Gets the extension properties received on the event envelope: properties beside
+    /// <c>type</c>, <c>method</c> and <c>params</c>, such as Chromium's <c>goog:channel</c>.
+    /// </summary>
+    public ReceivedDataDictionary AdditionalEventProperties { get; internal set; } = ReceivedDataDictionary.EmptyDictionary;
 }

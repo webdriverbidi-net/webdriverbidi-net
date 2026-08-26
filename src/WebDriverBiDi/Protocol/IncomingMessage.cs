@@ -161,6 +161,49 @@ public class IncomingMessage : IDisposable
     }
 
     /// <summary>
+    /// Collects the extension properties found at the root of a payload object (the <c>result</c> of a
+    /// command response or the <c>params</c> of an event): every property of that object that the
+    /// payload type does not define.
+    /// </summary>
+    /// <param name="payloadPropertyName">The name of the envelope property holding the payload.</param>
+    /// <param name="payloadTypeInfo">The type info of the type the payload was deserialized to.</param>
+    /// <returns>The extension properties, keyed by name; empty when there are none, or when the payload type
+    /// captures its own extension data.</returns>
+    /// <remarks>
+    /// The payload type's <see cref="JsonTypeInfo.Properties"/> is metadata, so this works identically
+    /// under reflection and under source generation, including for consumer-defined types. A property is
+    /// considered defined by the type only if the serializer can assign it; a member marked
+    /// <see cref="System.Text.Json.Serialization.JsonIgnoreAttribute"/> does not consume a wire property of the same name.
+    /// </remarks>
+    internal Dictionary<string, JsonElement> CollectPayloadExtensionData(string payloadPropertyName, JsonTypeInfo payloadTypeInfo)
+    {
+        // The payload has already been deserialized to the payload type, so it is present and an object.
+        Dictionary<string, JsonElement> extensionData = [];
+        IList<JsonPropertyInfo> definedProperties = payloadTypeInfo.Properties;
+        for (int i = 0; i < definedProperties.Count; i++)
+        {
+            if (definedProperties[i].IsExtensionData)
+            {
+                // The payload type declares its own [JsonExtensionData] member and has kept the leftovers itself.
+                return extensionData;
+            }
+        }
+
+        // Payload objects and their types both have at most a few dozen properties, so a linear scan per
+        // wire property is cheaper than building and caching a lookup, and needs no shared state.
+        foreach (JsonProperty property in this.payloadElement.GetProperty(payloadPropertyName).EnumerateObject())
+        {
+            if (!IsConsumedBy(definedProperties, property.Name))
+            {
+                // Clone so the value outlives this message's pooled buffer.
+                extensionData[property.Name] = property.Value.Clone();
+            }
+        }
+
+        return extensionData;
+    }
+
+    /// <summary>
     /// Attempts to get a command ID from the parsed incoming message payload.
     /// </summary>
     /// <param name="responseId">When this method returns, contains the command ID, if the incoming message payload has one.</param>
@@ -235,6 +278,29 @@ public class IncomingMessage : IDisposable
         }
 
         eventMessage = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether a wire property is consumed by one of a payload type's members. Only members the
+    /// serializer can assign consume a wire property: members marked
+    /// <see cref="System.Text.Json.Serialization.JsonIgnoreAttribute"/>, and getter-only members, have no
+    /// setter, so a wire property carrying their name is not consumed by the type and is extension data.
+    /// </summary>
+    /// <param name="definedProperties">The properties the payload type defines.</param>
+    /// <param name="wirePropertyName">The name of the wire property.</param>
+    /// <returns><see langword="true"/> if a member consumes the property; otherwise <see langword="false"/>.</returns>
+    private static bool IsConsumedBy(IList<JsonPropertyInfo> definedProperties, string wirePropertyName)
+    {
+        for (int i = 0; i < definedProperties.Count; i++)
+        {
+            JsonPropertyInfo definedProperty = definedProperties[i];
+            if (definedProperty.Set is not null && string.Equals(definedProperty.Name, wirePropertyName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
