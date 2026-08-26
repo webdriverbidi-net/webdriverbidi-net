@@ -520,9 +520,10 @@ using WebDriverBiDi.WebExtension;
 [ExcludeFromCodeCoverage]
 public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
 {
-    // Root enum array types for AOT. EnumValueJsonConverter<T> calls
-    // Enum.GetValues(typeof(T)) which requires T[] at runtime.
-    // A static constructor ensures the AOT compiler generates these array types.
+    // Root enum array types for AOT. StringEnumValueConverter<T> (used by
+    // EnumValueJsonConverter<T>) calls Enum.GetValues<T>() on .NET 8 and later,
+    // which requires the T[] array type to exist at runtime. A static constructor
+    // ensures the AOT compiler generates these array types.
     static WebDriverBiDiJsonSerializerContext()
     {
         RuntimeHelpers.RunClassConstructor(typeof(ErrorCode[]).TypeHandle);
