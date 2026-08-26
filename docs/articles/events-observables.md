@@ -387,6 +387,11 @@ any thread.
 Only one capture session may be active at a time. Calling `StartCapturingTasks` when a session is already
 active throws `WebDriverBiDiException`.
 
+Disposing the observer ends any active capture session. A `WaitForCapturedTasksAsync` or
+`WaitForCapturedTasksCompleteAsync` call that is still waiting when the observer is disposed completes with
+`ObjectDisposedException` rather than waiting out its timeout, and any capture method called after disposal
+throws `ObjectDisposedException`. `Unobserve()`, `StopCapturingTasks()` and repeated disposal remain safe no-ops.
+
 ## Async Event Handlers
 
 When event handlers perform async operations or I/O, you must use asynchronous handler execution to avoid blocking the transport thread.
