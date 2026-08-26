@@ -1,26 +1,28 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using System.Text.Json;
+using WebDriverBiDi.TestUtilities;
 
 public class BrowsingContextEventArgsTests
 {
     [Fact]
-    public void TestCanDeserialize()
+    public async Task TestCanDeserialize()
     {
         string json = """
                       {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "originalOpener": "openerContext",
-                        "userContext": "myUserContextId",
-                        "children": []
+                        "type": "event",
+                        "method": "browsingContext.contextCreated",
+                        "params": {
+                          "context": "myContextId",
+                          "clientWindow": "myClientWindowId",
+                          "url": "http://example.com",
+                          "originalOpener": "openerContext",
+                          "userContext": "myUserContextId",
+                          "children": []
+                        }
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
-        Assert.NotNull(info);
-        Assert.IsType<BrowsingContextInfo>(info);
-        BrowsingContextEventArgs eventArgs = new(info);
+        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
         Assert.Equal("http://example.com", eventArgs.Url);
@@ -33,31 +35,33 @@ public class BrowsingContextEventArgsTests
     }
 
     [Fact]
-    public void TestCanDeserializeWithChildren()
+    public async Task TestCanDeserializeWithChildren()
     {
         string json = """
                       {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "originalOpener": "openerContext",
-                        "userContext": "default",
-                        "children": [
-                          {
-                            "context": "childContextId", 
-                            "clientWindow": "myClientWindowId",
-                            "url": "http://example.com/subdirectory",
-                            "originalOpener": null,
-                            "userContext": "default",
-                            "children": []
-                          }
-                        ]
+                        "type": "event",
+                        "method": "browsingContext.contextCreated",
+                        "params": {
+                          "context": "myContextId",
+                          "clientWindow": "myClientWindowId",
+                          "url": "http://example.com",
+                          "originalOpener": "openerContext",
+                          "userContext": "default",
+                          "children": [
+                            {
+                              "context": "childContextId", 
+                              "clientWindow": "myClientWindowId",
+                              "url": "http://example.com/subdirectory",
+                              "originalOpener": null,
+                              "userContext": "default",
+                              "children": []
+                            }
+                          ]
+                        }
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
-        Assert.NotNull(info);
-        Assert.IsType<BrowsingContextInfo>(info);
-        BrowsingContextEventArgs eventArgs = new(info);
+        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
         Assert.Equal("http://example.com", eventArgs.Url);
@@ -69,23 +73,25 @@ public class BrowsingContextEventArgsTests
     }
 
     [Fact]
-    public void TestCanDeserializeWithOptionalParent()
+    public async Task TestCanDeserializeWithOptionalParent()
     {
         string json = """
                       {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "userContext": "myUserContextId",
-                        "originalOpener": "openerContext",
-                        "children": [],
-                        "parent": "parentContextId"
+                        "type": "event",
+                        "method": "browsingContext.contextCreated",
+                        "params":                         {
+                          "context": "myContextId",
+                          "clientWindow": "myClientWindowId",
+                          "url": "http://example.com",
+                          "userContext": "myUserContextId",
+                          "originalOpener": "openerContext",
+                          "children": [],
+                          "parent": "parentContextId"
+                        }
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
-        Assert.NotNull(info);
-        Assert.IsType<BrowsingContextInfo>(info);
-        BrowsingContextEventArgs eventArgs = new(info);
+        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
         Assert.Equal("http://example.com", eventArgs.Url);
@@ -98,22 +104,24 @@ public class BrowsingContextEventArgsTests
     }
 
     [Fact]
-    public void TestCanDeserializeWithNullOriginalOpener()
+    public async Task TestCanDeserializeWithNullOriginalOpener()
     {
         string json = """
                       {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "originalOpener": null,
-                        "userContext": "myUserContextId",
-                        "children": []
+                        "type": "event",
+                        "method": "browsingContext.contextCreated",
+                        "params":                         {
+                          "context": "myContextId",
+                          "clientWindow": "myClientWindowId",
+                          "url": "http://example.com",
+                          "originalOpener": null,
+                          "userContext": "myUserContextId",
+                          "children": []
+                        }
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
-        Assert.NotNull(info);
-        Assert.IsType<BrowsingContextInfo>(info);
-        BrowsingContextEventArgs eventArgs = new(info);
+        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
         Assert.Equal("http://example.com", eventArgs.Url);
@@ -126,22 +134,40 @@ public class BrowsingContextEventArgsTests
     }
 
     [Fact]
-    public void TestCopySemantics()
+    public async Task TestCopySemantics()
     {
         string json = """
                       {
-                        "context": "myContextId",
-                        "clientWindow": "myClientWindowId",
-                        "url": "http://example.com",
-                        "originalOpener": "openerContext",
-                        "userContext": "myUserContextId",
-                        "children": []
+                        "type": "event",
+                        "method": "browsingContext.contextCreated",
+                        "params":                         {
+                          "context": "myContextId",
+                          "clientWindow": "myClientWindowId",
+                          "url": "http://example.com",
+                          "originalOpener": "openerContext",
+                          "userContext": "myUserContextId",
+                          "children": []
+                        }
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
-        Assert.NotNull(info);
-        BrowsingContextEventArgs eventArgs = new(info);
+        BrowsingContextEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
         BrowsingContextEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
+    }
+
+    private async Task<BrowsingContextEventArgs?> GenerateEventArgs(string json)
+    {
+        TestWebSocketConnection connection = new();
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        BrowsingContextEventArgs? eventArgs = null;
+        using EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver(e => eventArgs = e);
+
+        observer.StartCapturingTasks();
+        await connection.RaiseDataReceivedEventAsync(json);
+        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(1));
+        return eventArgs;
     }
 }

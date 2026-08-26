@@ -16,7 +16,7 @@ public record DownloadEndEventArgs : NavigationEventArgs
     /// Initializes a new instance of the <see cref="DownloadEndEventArgs" /> class.
     /// </summary>
     [JsonConstructor]
-    public DownloadEndEventArgs()
+    internal DownloadEndEventArgs()
         : base()
     {
     }

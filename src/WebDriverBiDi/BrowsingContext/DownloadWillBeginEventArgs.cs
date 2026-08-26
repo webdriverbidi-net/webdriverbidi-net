@@ -16,7 +16,7 @@ public record DownloadWillBeginEventArgs : NavigationEventArgs
     /// Initializes a new instance of the <see cref="DownloadWillBeginEventArgs" /> class.
     /// </summary>
     [JsonConstructor]
-    public DownloadWillBeginEventArgs()
+    internal DownloadWillBeginEventArgs()
         : base()
     {
     }

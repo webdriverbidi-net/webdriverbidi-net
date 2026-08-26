@@ -1,23 +1,27 @@
 namespace WebDriverBiDi.Script;
 
-using System.Text.Json;
+using WebDriverBiDi.Protocol;
+using WebDriverBiDi.TestUtilities;
 
 public class RealmCreatedEventArgsTests
 {
     [Fact]
-    public void TestCanCreateWithWindowRealmInfo()
+    public async Task TestCanCreateWithWindowRealmInfo()
     {
         string json = """
                       {
-                        "realm": "myRealm",
-                        "origin": "myOrigin",
-                        "type": "window",
-                        "context": "myContext"
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "window",
+                          "context": "myContext"
+                        }
                       }
                       """;
-        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.NotNull(info);
-        RealmCreatedEventArgs eventArgs = new(info);
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
 
         Assert.Equal("myRealm", eventArgs.RealmId);
         Assert.Equal("myOrigin", eventArgs.Origin);
@@ -25,18 +29,21 @@ public class RealmCreatedEventArgsTests
     }
 
     [Fact]
-    public void TestCanCreateWithNonWindowRealmInfo()
+    public async Task TestCanCreateWithNonWindowRealmInfo()
     {
         string json = """
-                      {
-                        "realm": "myRealm",
-                        "origin": "myOrigin",
-                        "type": "worker"
+                      { 
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "worker"
+                        }
                       }
                       """;
-        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.NotNull(info);
-        RealmCreatedEventArgs eventArgs = new(info);
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
 
         Assert.Equal("myRealm", eventArgs.RealmId);
         Assert.Equal("myOrigin", eventArgs.Origin);
@@ -44,19 +51,22 @@ public class RealmCreatedEventArgsTests
     }
 
     [Fact]
-    public void TestCanCastToSpecificRealmType()
+    public async Task TestCanCastToSpecificRealmType()
     {
         string json = """
                       {
-                        "realm": "myRealm",
-                        "origin": "myOrigin",
-                        "type": "window",
-                        "context": "myContext"
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "window",
+                          "context": "myContext"
+                        }
                       }
                       """;
-        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.NotNull(info);
-        RealmCreatedEventArgs eventArgs = new(info);
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
         WindowRealmInfo castInfo = eventArgs.As<WindowRealmInfo>();
 
         Assert.Equal("myRealm", castInfo.RealmId);
@@ -65,20 +75,38 @@ public class RealmCreatedEventArgsTests
     }
 
     [Fact]
-    public void TestCopySemantics()
+    public async Task TestCopySemantics()
     {
         string json = """
                       {
-                        "realm": "myRealm",
-                        "origin": "myOrigin",
-                        "type": "window",
-                        "context": "myContext"
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "window",
+                          "context": "myContext"
+                        }
                       }
                       """;
-        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.NotNull(info);
-        RealmCreatedEventArgs eventArgs = new(info);
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
         RealmCreatedEventArgs copy = eventArgs with { };
         Assert.Equal(eventArgs, copy);
+    }
+
+    private async Task<RealmCreatedEventArgs?> GenerateEventArgs(string json)
+    {
+        TestWebSocketConnection connection = new();
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        RealmCreatedEventArgs? eventArgs = null;
+        using EventObserver<RealmCreatedEventArgs> observer = driver.Script.OnRealmCreated.AddObserver(e => eventArgs = e);
+
+        observer.StartCapturingTasks();
+        await connection.RaiseDataReceivedEventAsync(json);
+        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+        return eventArgs;
     }
 }
