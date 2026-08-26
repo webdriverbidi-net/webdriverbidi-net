@@ -25,7 +25,8 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
     public override RemoteValueDictionary Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         // Implementation for deserializing RemoteValueDictionary
-        RemoteValueDictionary remoteValueDictionary = this.ProcessMap(JsonDocument.ParseValue(ref reader).RootElement, options);
+        using JsonDocument document = JsonDocument.ParseValue(ref reader);
+        RemoteValueDictionary remoteValueDictionary = this.ProcessMap(document.RootElement, options);
         return remoteValueDictionary;
     }
 
@@ -44,6 +45,7 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
 
     private RemoteValueDictionary ProcessMap(JsonElement mapArray, JsonSerializerOptions options)
     {
+        JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
         Dictionary<object, RemoteValue> remoteValueDictionary = [];
         foreach (JsonElement mapElementToken in mapArray.EnumerateArray())
         {
@@ -63,7 +65,7 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
                 throw new JsonException($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object");
             }
 
-            object pairKey = this.ProcessMapKey(keyToken, options);
+            object pairKey = this.ProcessMapKey(keyToken, typeInfo);
 
             JsonElement valueToken = mapElementToken[1];
             if (valueToken.ValueKind != JsonValueKind.Object)
@@ -73,7 +75,6 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
 
             // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
             // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
-            JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
             RemoteValue pairValue = valueToken.Deserialize(typeInfo)!;
             remoteValueDictionary[pairKey] = pairValue;
         }
@@ -81,7 +82,7 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
         return new RemoteValueDictionary(remoteValueDictionary);
     }
 
-    private object ProcessMapKey(JsonElement keyToken, JsonSerializerOptions options)
+    private object ProcessMapKey(JsonElement keyToken, JsonTypeInfo<RemoteValue> typeInfo)
     {
         object pairKey;
         if (keyToken.ValueKind == JsonValueKind.String)
@@ -98,7 +99,6 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
             // null.
             // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
             // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
-            JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
             RemoteValue keyRemoteValue = keyToken.Deserialize(typeInfo)!;
             pairKey = keyRemoteValue;
         }
