@@ -385,6 +385,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// encountered, such as valid JSON that does not match any protocol data structure. Defaults to
     /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unknown messages will
     /// be caught and logged, but will not cause the driver to stop processing messages from the transport.
+    /// A response that arrives for a command after that command has timed out or been canceled is not
+    /// an unknown message; it is logged and discarded without affecting this behavior.
     /// </summary>
     public virtual TransportErrorBehavior UnknownMessageBehavior { get => this.transport.UnknownMessageBehavior; set => this.transport.UnknownMessageBehavior = value; }
 
@@ -393,6 +395,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// encountered, such as an error response received with no corresponding command. Defaults to
     /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unexpected errors will
     /// be caught and logged but will not cause the driver to stop processing messages from the transport.
+    /// An error response that arrives for a command after that command has timed out or been canceled is
+    /// not an unexpected error; it is logged and discarded without affecting this behavior.
     /// </summary>
     public virtual TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
 
@@ -525,14 +529,20 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             bool commandCompleted = await command.WaitForCompletionAsync(commandTimeout.Value, cancellationToken).ConfigureAwait(false);
             if (!commandCompleted)
             {
-                this.transport.CancelCommand(command);
-                WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(command.CommandId, commandParameters.MethodName, Convert.ToInt64(commandTimeout.Value.TotalMilliseconds));
-                throw new WebDriverBiDiTimeoutException($"Timed out executing command {commandParameters.MethodName} after {commandTimeout.Value.TotalMilliseconds} milliseconds");
+                // The wait expired, but a response can land in the instant before the command is
+                // canceled. CancelCommand reports whether the cancellation actually took effect; if
+                // it did not, the command has already completed and its outcome is handled below
+                // exactly like any other completion.
+                if (this.transport.CancelCommand(command, CommandCancellationReason.TimedOut))
+                {
+                    WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(command.CommandId, commandParameters.MethodName, Convert.ToInt64(commandTimeout.Value.TotalMilliseconds));
+                    throw new WebDriverBiDiTimeoutException($"Timed out executing command {commandParameters.MethodName} after {commandTimeout.Value.TotalMilliseconds} milliseconds");
+                }
             }
         }
         catch (OperationCanceledException)
         {
-            this.transport.CancelCommand(command);
+            this.transport.CancelCommand(command, CommandCancellationReason.Canceled);
             throw;
         }
 

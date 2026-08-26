@@ -93,7 +93,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
         stopwatch.Stop();
 
         Assert.Contains($"{0.2} seconds", exception.Message);
-        Assert.True(stopwatch.Elapsed >= startupTimeout, $"StartAsync returned after {stopwatch.Elapsed}, before the startup timeout elapsed");
+
+        // The per-attempt deadline is a timer, which may fire a few milliseconds before this
+        // test's stopwatch reads the full timeout, so allow a small tolerance on the lower bound.
+        // The important assertion is the upper bound: the hanging attempt must not outlive the timeout.
+        TimeSpan lowerBound = startupTimeout - TimeSpan.FromMilliseconds(50);
+        Assert.True(stopwatch.Elapsed >= lowerBound, $"StartAsync returned after {stopwatch.Elapsed}, well before the startup timeout elapsed");
         Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"StartAsync took {stopwatch.Elapsed}; the hanging connect attempt was not bounded by StartupTimeout");
         Assert.False(connection.IsActive);
     }

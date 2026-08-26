@@ -35,6 +35,15 @@ WebDriverBiDi.NET allows you to configure how transport-layer errors are handled
 - Protocol errors (invalid JSON, malformed messages)
 - Unexpected error responses without matching commands
 
+**Late responses are not errors.** When a command times out or is canceled, the browser does not know
+that you stopped waiting and may still answer. The transport remembers recently canceled commands (up to
+1,024 of them per connection) and, when such a response or error response arrives, discards it after
+logging a `Debug`-level message through `OnLogMessage` and emitting the `CanceledCommandResponseDiscarded`
+EventSource event. It is **not** counted under `UnknownMessageBehavior` or `UnexpectedErrorBehavior`, so
+a slow navigation that times out and then completes does not terminate the session in `Terminate` mode.
+Only a response whose command ID was never issued (or was canceled so long ago that it has been forgotten)
+is treated as an unknown message or unexpected error.
+
 ```csharp
 public enum TransportErrorBehavior
 {

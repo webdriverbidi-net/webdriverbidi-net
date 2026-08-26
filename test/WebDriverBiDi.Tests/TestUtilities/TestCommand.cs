@@ -16,8 +16,15 @@ public class TestCommand : Command
     {
     }
 
+    /// <summary>
+    /// Gets or sets a delegate invoked by <see cref="WaitForCompletionAsync"/> that may manipulate the
+    /// command (for example, set its result) and returns the value the wait should report. When not set,
+    /// the wait reports that the command completed.
+    /// </summary>
+    public Func<TestCommand, bool>? CompletionBehavior { get; set; }
+
     public override Task<bool> WaitForCompletionAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(true);
+        return Task.FromResult(this.CompletionBehavior?.Invoke(this) ?? true);
     }
 }

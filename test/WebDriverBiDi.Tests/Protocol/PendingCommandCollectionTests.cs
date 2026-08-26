@@ -178,4 +178,132 @@ public class PendingCommandCollectionTests
     {
         public void DisposeUnmanaged() => this.Dispose(false);
     }
+
+    [Fact]
+    public void TestDefaultCanceledCommandTrackingCapacity()
+    {
+        using PendingCommandCollection collection = new();
+        Assert.Equal(PendingCommandCollection.DefaultMaxTrackedCanceledCommands, collection.MaxTrackedCanceledCommands);
+        Assert.Equal(1024u, collection.MaxTrackedCanceledCommands);
+        Assert.Equal(0, collection.TrackedCanceledCommandCount);
+    }
+
+    [Fact]
+    public async Task TestCancelPendingCommandRemovesAndTracksCommand()
+    {
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        using PendingCommandCollection collection = new();
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+
+        Assert.True(collection.CancelPendingCommand(testCommand, CommandCancellationReason.TimedOut));
+
+        Assert.True(testCommand.IsCanceled);
+        Assert.Equal(0, collection.PendingCommandCount);
+        Assert.Equal(1, collection.TrackedCanceledCommandCount);
+        Assert.False(collection.RemovePendingCommand(1, out _));
+
+        Assert.True(collection.TryRemoveCanceledCommand(1, out CanceledCommandInfo? canceledCommand));
+        Assert.Equal(1, canceledCommand.CommandId);
+        Assert.Equal("module.command", canceledCommand.CommandName);
+        Assert.Equal(testCommand.ResponseType, canceledCommand.ResponseType);
+        Assert.Equal(CommandCancellationReason.TimedOut, canceledCommand.Reason);
+        Assert.True(canceledCommand.TimeSinceCancellation >= TimeSpan.Zero);
+    }
+
+    [Fact]
+    public void TestCancelPendingCommandForCompletedCommandThatIsNotPendingReportsNoCancellationAndDoesNotTrack()
+    {
+        // A command whose response has already been received (and so is no longer pending)
+        // cannot be canceled, and can never produce a late response, so nothing is remembered.
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        testCommand.SetResult(new TestCommandResult());
+        using PendingCommandCollection collection = new();
+
+        Assert.False(collection.CancelPendingCommand(testCommand, CommandCancellationReason.TimedOut));
+
+        Assert.False(testCommand.IsCanceled);
+        Assert.True(testCommand.TryGetResult(out _));
+        Assert.Equal(0, collection.TrackedCanceledCommandCount);
+        Assert.False(collection.TryRemoveCanceledCommand(1, out CanceledCommandInfo? canceledCommand));
+        Assert.Null(canceledCommand);
+    }
+
+    [Fact]
+    public async Task TestCancelPendingCommandReportsWhetherCancellationTookEffect()
+    {
+        // The return value reports the cancellation outcome, not whether the command was tracked:
+        // a second cancellation of the same command finds nothing to cancel and returns false.
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        using PendingCommandCollection collection = new();
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+
+        Assert.True(collection.CancelPendingCommand(testCommand, CommandCancellationReason.Canceled));
+        Assert.False(collection.CancelPendingCommand(testCommand, CommandCancellationReason.Canceled));
+        Assert.Equal(1, collection.TrackedCanceledCommandCount);
+    }
+
+    [Fact]
+    public async Task TestTryRemoveCanceledCommandIsOneShot()
+    {
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        using PendingCommandCollection collection = new();
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+        collection.CancelPendingCommand(testCommand, CommandCancellationReason.Canceled);
+
+        Assert.True(collection.TryRemoveCanceledCommand(1, out _));
+        Assert.False(collection.TryRemoveCanceledCommand(1, out _));
+        Assert.Equal(0, collection.TrackedCanceledCommandCount);
+    }
+
+    [Fact]
+    public async Task TestCanceledCommandTrackingForgetsOldestBeyondCapacity()
+    {
+        using PendingCommandCollection collection = new(2);
+        for (long id = 1; id <= 3; id++)
+        {
+            Command testCommand = new(id, new TestCommandParameters("module.command"));
+            await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+            collection.CancelPendingCommand(testCommand, CommandCancellationReason.Canceled);
+        }
+
+        Assert.Equal(2, collection.TrackedCanceledCommandCount);
+        Assert.False(collection.TryRemoveCanceledCommand(1, out _));
+        Assert.True(collection.TryRemoveCanceledCommand(2, out _));
+        Assert.True(collection.TryRemoveCanceledCommand(3, out _));
+    }
+
+    [Fact]
+    public async Task TestZeroCapacityDisablesCanceledCommandTracking()
+    {
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        using PendingCommandCollection collection = new(0);
+        await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
+
+        Assert.True(collection.CancelPendingCommand(testCommand, CommandCancellationReason.Canceled));
+
+        Assert.True(testCommand.IsCanceled);
+        Assert.Equal(0, collection.TrackedCanceledCommandCount);
+        Assert.False(collection.TryRemoveCanceledCommand(1, out _));
+    }
+
+    [Fact]
+    public async Task TestClearTracksCanceledCommandsWithConnectionClosedReason()
+    {
+        Command first = new(1, new TestCommandParameters("module.first"));
+        Command second = new(2, new TestCommandParameters("module.second"));
+        using PendingCommandCollection collection = new();
+        await collection.AddPendingCommandAsync(first, TestContext.Current.CancellationToken);
+        await collection.AddPendingCommandAsync(second, TestContext.Current.CancellationToken);
+        await collection.CloseAsync();
+
+        collection.Clear();
+
+        Assert.True(first.IsCanceled);
+        Assert.True(second.IsCanceled);
+        Assert.Equal(0, collection.PendingCommandCount);
+        Assert.Equal(2, collection.TrackedCanceledCommandCount);
+        Assert.True(collection.TryRemoveCanceledCommand(2, out CanceledCommandInfo? canceledCommand));
+        Assert.Equal("module.second", canceledCommand.CommandName);
+        Assert.Equal(CommandCancellationReason.ConnectionClosed, canceledCommand.Reason);
+    }
 }

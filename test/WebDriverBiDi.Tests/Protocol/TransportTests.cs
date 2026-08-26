@@ -2763,4 +2763,130 @@ public class TransportTests
                 : new IncomingMessage(owner, length);
         }
     }
+
+    [Fact]
+    public async Task TestLateSuccessResponseForCanceledCommandIsDiscarded()
+    {
+        // A response that arrives after the local end stopped waiting for the command (here,
+        // because it timed out) is not an unknown message. Under Terminate behavior it must
+        // neither raise OnUnknownMessageReceived nor terminate the transport.
+        TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        bool unknownMessageReceived = false;
+        LogMessageEventArgs? discardLog = null;
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
+        };
+        transport.OnUnknownMessageReceived.AddObserver(e => unknownMessageReceived = true);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.Contains("Discarding late response"))
+            {
+                discardLog = e;
+                discardedTaskCompletionSource.TrySetResult();
+            }
+        });
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Assert.True(transport.CancelCommand(command, CommandCancellationReason.TimedOut));
+        Assert.False(transport.CancelCommand(command, CommandCancellationReason.TimedOut));
+        Assert.Equal(0, transport.PendingCommandCount);
+
+        await connection.RaiseDataReceivedEventAsync($$$"""{"type":"success","id":{{{command.CommandId}}},"result":{"parameterName":"parameterValue"}}""");
+        await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.False(unknownMessageReceived);
+        Assert.True(command.IsCanceled);
+        Assert.False(command.TryGetResult(out _));
+        Assert.NotNull(discardLog);
+        Assert.Equal(WebDriverBiDiLogLevel.Debug, discardLog.Level);
+        Assert.Contains("'module.command'", discardLog.Message);
+        Assert.Contains($"(command ID: {command.CommandId})", discardLog.Message);
+        Assert.Contains("(TimedOut)", discardLog.Message);
+
+        // The transport was not terminated: sending another command succeeds.
+        Command nextCommand = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Assert.NotEqual(command.CommandId, nextCommand.CommandId);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestLateErrorResponseForCanceledCommandIsDiscarded()
+    {
+        TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        bool errorEventReceived = false;
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
+        };
+        transport.OnErrorEventReceived.AddObserver(e => errorEventReceived = true);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.Contains("Discarding late response") && e.Message.Contains("(Canceled)"))
+            {
+                discardedTaskCompletionSource.TrySetResult();
+            }
+        });
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        transport.CancelCommand(command);
+
+        await connection.RaiseDataReceivedEventAsync($$$"""{"type":"error","id":{{{command.CommandId}}},"error":"unknown error","message":"late error"}""");
+        await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.False(errorEventReceived);
+        Assert.True(command.IsCanceled);
+
+        // The transport was not terminated: sending another command succeeds.
+        await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestErrorResponseForUnknownCommandIdIsReportedWithThatId()
+    {
+        TaskCompletionSource errorTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
+        };
+        transport.OnErrorEventReceived.AddObserver(e => errorTaskCompletionSource.TrySetResult());
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{"type":"error","id":999,"error":"unknown error","message":"no such command"}""");
+        await errorTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+        Assert.Contains("Received error for unknown command ID 999", exception.Message);
+        Assert.NotNull(exception.InnerException);
+        Assert.Contains("error for unknown command ID 999: no such command", exception.InnerException.Message);
+    }
+
+    [Fact]
+    public async Task TestLateResponseForForgottenCanceledCommandIsUnknownMessage()
+    {
+        // With a tracker capacity of one, canceling a second command forgets the first, so a
+        // response for the first is indistinguishable from a foreign message and is reported
+        // through the unknown-message pipeline, exactly as before tracking existed.
+        TaskCompletionSource unknownTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.UseCanceledCommandTrackerCapacity(1);
+        transport.OnUnknownMessageReceived.AddObserver(e => unknownTaskCompletionSource.TrySetResult());
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        Command first = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Command second = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        transport.CancelCommand(first, CommandCancellationReason.TimedOut);
+        transport.CancelCommand(second, CommandCancellationReason.TimedOut);
+
+        await connection.RaiseDataReceivedEventAsync($$$"""{"type":"success","id":{{{first.CommandId}}},"result":{"parameterName":"parameterValue"}}""");
+        await unknownTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
 }

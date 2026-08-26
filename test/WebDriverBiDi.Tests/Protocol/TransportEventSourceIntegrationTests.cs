@@ -476,4 +476,41 @@ public class TransportEventSourceIntegrationTests
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         listener.Dispose();
     }
+
+    [Fact]
+    public async Task TestTransportEmitsCanceledCommandResponseDiscardedEvent()
+    {
+        TestEventListener listener = new();
+        TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.Contains("Discarding late response"))
+            {
+                discardedTaskCompletionSource.TrySetResult();
+            }
+        });
+
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        transport.CancelCommand(command, CommandCancellationReason.TimedOut);
+        listener.ClearEvents();
+
+        await connection.RaiseDataReceivedEventAsync($$$"""{"type":"success","id":{{{command.CommandId}}},"result":{"parameterName":"parameterValue"}}""");
+        await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CanceledCommandResponseDiscarded");
+        EventWrittenEventArgs discardedEvent = Assert.Single(events);
+        Assert.Equal(EventLevel.Informational, discardedEvent.Level);
+        ReadOnlyCollection<object?>? payload = discardedEvent.Payload;
+        Assert.NotNull(payload);
+        Assert.Equal(command.CommandId.ToString(), payload[0]);
+        Assert.Equal("module.command", payload[1]);
+        Assert.Equal("TimedOut", payload[2]);
+        Assert.True((long)payload[3]! >= 0);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        listener.Dispose();
+    }
 }
