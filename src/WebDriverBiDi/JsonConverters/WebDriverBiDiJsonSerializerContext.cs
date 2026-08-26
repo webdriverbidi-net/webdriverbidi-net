@@ -46,6 +46,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(uint))]
 [JsonSerializable(typeof(ulong))]
 [JsonSerializable(typeof(double))]
+[JsonSerializable(typeof(decimal))]
 [JsonSerializable(typeof(DateTime))]
 [JsonSerializable(typeof(object))]
 [JsonSerializable(typeof(List<object?>))]
