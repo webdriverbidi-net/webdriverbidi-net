@@ -14,6 +14,7 @@ using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.DigitalCredentials;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
+using WebDriverBiDi.Internal;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Permissions;
@@ -116,8 +117,17 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class with the specified
     /// default command wait timeout and <see cref="Transport" />.
     /// </summary>
-    /// <param name="defaultCommandWaitTimeout">The default timeout to wait for a command to complete.</param>
+    /// <param name="defaultCommandWaitTimeout">
+    /// The default timeout to wait for a command to complete. Must be non-negative and no greater than the
+    /// maximum timer duration supported by the runtime (about 49.7 days; about 24.8 days on .NET Framework),
+    /// or <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.
+    /// </param>
     /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="transport"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="defaultCommandWaitTimeout"/> is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>)
+    /// or exceeds the maximum supported timer duration.
+    /// </exception>
     /// <remarks>
     /// <para>
     /// This constructor is used when you need to provide a custom <see cref="Transport"/> instance,
@@ -140,9 +150,9 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             throw new ArgumentNullException(nameof(transport), "The transport parameter must not be null");
         }
 
-        if (defaultCommandWaitTimeout < TimeSpan.Zero && defaultCommandWaitTimeout != Timeout.InfiniteTimeSpan)
+        if (!TimeoutUtilities.IsValidTimeout(defaultCommandWaitTimeout))
         {
-            throw new ArgumentOutOfRangeException(nameof(defaultCommandWaitTimeout), "Default command wait timeout must be a non-negative TimeSpan value");
+            throw new ArgumentOutOfRangeException(nameof(defaultCommandWaitTimeout), TimeoutUtilities.GetInvalidTimeoutMessage("Default command wait timeout"));
         }
 
         this.DefaultCommandTimeout = defaultCommandWaitTimeout;
@@ -449,9 +459,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
+    /// <param name="commandTimeout">
+    /// The timeout to wait for the command to complete, or <see langword="null"/> to use <see cref="DefaultCommandTimeout"/>.
+    /// Must be non-negative and no greater than the maximum timer duration supported by the runtime, or
+    /// <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.
+    /// </param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="commandTimeout"/> is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.</exception>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown if the connection is interrupted during command execution.</exception>
@@ -470,9 +485,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
+    /// <param name="commandTimeout">
+    /// The timeout to wait for the command to complete, or <see langword="null"/> to use <see cref="DefaultCommandTimeout"/>.
+    /// Must be non-negative and no greater than the maximum timer duration supported by the runtime, or
+    /// <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.
+    /// </param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="commandTimeout"/> is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.</exception>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown if the connection is interrupted during command execution.</exception>
@@ -490,9 +510,9 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         }
 
         commandTimeout ??= this.DefaultCommandTimeout;
-        if (commandTimeout.Value < TimeSpan.Zero && commandTimeout.Value != Timeout.InfiniteTimeSpan)
+        if (!TimeoutUtilities.IsValidTimeout(commandTimeout.Value))
         {
-            throw new ArgumentOutOfRangeException(nameof(commandTimeout), "Command timeout must be a non-negative TimeSpan value");
+            throw new ArgumentOutOfRangeException(nameof(commandTimeout), TimeoutUtilities.GetInvalidTimeoutMessage("Command timeout"));
         }
 
         Command command = await this.transport.SendCommandAsync(commandParameters, cancellationToken).ConfigureAwait(false);

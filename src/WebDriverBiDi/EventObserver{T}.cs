@@ -218,7 +218,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// then returns them. Ownership of the returned tasks transfers to the caller.
     /// </summary>
     /// <param name="count">The number of handler tasks to wait for. Must be at least 1.</param>
-    /// <param name="timeout">How long to wait before giving up.</param>
+    /// <param name="timeout">
+    /// How long to wait before giving up. Must be non-negative and no greater than the maximum timer duration
+    /// supported by the runtime, or <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.
+    /// </param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns>
     /// <para>
@@ -238,7 +241,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// </description></item>
     /// </list>
     /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="count"/> is zero.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="count"/> is zero, or when <paramref name="timeout"/> is negative (other than
+    /// <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.
+    /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <example>
@@ -255,6 +261,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         if (count < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than 0.");
+        }
+
+        if (!TimeoutUtilities.IsValidTimeout(timeout))
+        {
+            throw new ArgumentOutOfRangeException(nameof(timeout), TimeoutUtilities.GetInvalidTimeoutMessage("Timeout"));
         }
 
         Channel<Task> channel;
@@ -375,13 +386,19 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// through the returned task rather than being re-surfaced through transport-level event handler error behavior.
     /// </summary>
     /// <param name="count">The number of handler tasks to wait for. Must be at least 1.</param>
-    /// <param name="timeout">How long to wait for the handler tasks to be captured and for the handlers to complete
-    /// their execution. Pass <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely for both phases.</param>
+    /// <param name="timeout">
+    /// How long to wait for the handler tasks to be captured and for the handlers to complete their execution.
+    /// Must be non-negative and no greater than the maximum timer duration supported by the runtime, or
+    /// <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely for both phases.
+    /// </param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns><see langword="true"/> if the expected number of handler tasks were captured and completed before
     /// the timeout expired; otherwise, <see langword="false"/>. When <see langword="true"/> is returned, the
     /// capture session is automatically ended; a subsequent <see cref="StopCapturingTasks"/> call is a no-op.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="count"/> is zero.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="count"/> is zero, or when <paramref name="timeout"/> is negative (other than
+    /// <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.
+    /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <remarks>
