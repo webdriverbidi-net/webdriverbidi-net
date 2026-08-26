@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Protocol;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Internal;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
@@ -98,12 +99,21 @@ public class Command
     /// <summary>
     /// Waits for the command to complete or until the specified timeout elapses.
     /// </summary>
-    /// <param name="timeout">The timeout to wait for the command to complete.</param>
+    /// <param name="timeout">
+    /// The timeout to wait for the command to complete. Must be non-negative and no greater than the maximum
+    /// timer duration supported by the runtime, or <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.
+    /// </param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns><see langword="true"/> if the command completes before the timeout; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout"/> is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task<bool> WaitForCompletionAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
+        if (!TimeoutUtilities.IsValidTimeout(timeout))
+        {
+            throw new ArgumentOutOfRangeException(nameof(timeout), TimeoutUtilities.GetInvalidTimeoutMessage("Timeout"));
+        }
+
         // Task.WhenAny returns when any of the tasks passed in completes, and
         // returns the task that completes first. If that task is the task from
         // our TaskCompletionSource, the command completed. Otherwise, it timed

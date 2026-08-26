@@ -213,6 +213,41 @@ public class CommandTests
     }
 
     [Fact]
+    public async Task TestWaitForCompletionAsyncWithTimeoutExceedingMaximumThrows()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"));
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(async () => await command.WaitForCompletionAsync(TimeSpan.MaxValue, TestContext.Current.CancellationToken));
+        Assert.Equal("timeout", exception.ParamName);
+        Assert.Contains("no greater than", exception.Message);
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionAsyncWithNegativeTimeoutThrows()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"));
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(async () => await command.WaitForCompletionAsync(TimeSpan.FromSeconds(-1), TestContext.Current.CancellationToken));
+        Assert.Equal("timeout", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionAsyncWithMaximumTimeoutCompletes()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"));
+        Task<bool> waitTask = command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(uint.MaxValue - 1), TestContext.Current.CancellationToken);
+        command.SetResult(new TestCommandResult());
+        Assert.True(await waitTask);
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionAsyncWithInfiniteTimeoutCompletes()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"));
+        Task<bool> waitTask = command.WaitForCompletionAsync(Timeout.InfiniteTimeSpan, TestContext.Current.CancellationToken);
+        command.SetResult(new TestCommandResult());
+        Assert.True(await waitTask);
+    }
+
+    [Fact]
     public async Task TestSettingResultAfterAlreadyCompletedDoesNotThrow()
     {
         string commandName = "module.command";

@@ -1298,6 +1298,18 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestExecuteCommandAsyncWithTimeoutExceedingMaximumThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        CommandParameters command = new TestCommandParameters("module.command");
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.MaxValue, TestContext.Current.CancellationToken));
+        Assert.Equal("commandTimeout", exception.ParamName);
+        Assert.Contains("no greater than", exception.Message);
+    }
+
+    [Fact]
     public async Task TestExecuteCommandAsyncWithZeroTimeoutDoesNotThrowArgumentOutOfRangeException()
     {
         TestWebSocketConnection connection = new();
@@ -1455,6 +1467,26 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         Assert.ThrowsAny<ArgumentOutOfRangeException>(() => new BiDiDriver(TimeSpan.FromSeconds(-1), transport));
+    }
+
+    [Fact]
+    public void TestCreatingWithDefaultCommandTimeoutExceedingMaximumThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        ArgumentOutOfRangeException exception = Assert.ThrowsAny<ArgumentOutOfRangeException>(() => new BiDiDriver(TimeSpan.MaxValue, transport));
+        Assert.Equal("defaultCommandWaitTimeout", exception.ParamName);
+        Assert.Contains("no greater than", exception.Message);
+    }
+
+    [Fact]
+    public async Task TestCreatingWithMaximumDefaultCommandTimeoutDoesNotThrow()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        TimeSpan maximumTimeout = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+        await using BiDiDriver driver = new(maximumTimeout, transport);
+        Assert.Equal(maximumTimeout, driver.DefaultCommandTimeout);
     }
 
     [Fact]

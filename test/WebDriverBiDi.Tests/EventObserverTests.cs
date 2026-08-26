@@ -520,6 +520,43 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestWaitForCapturedTasksAsyncWithTimeoutExceedingMaximumThrows()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.MaxValue, TestContext.Current.CancellationToken));
+        Assert.Equal("timeout", exception.ParamName);
+        Assert.Contains("no greater than", exception.Message);
+        Assert.True(observer.IsCapturing);
+        observer.StopCapturingTasks();
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksAsyncWithNegativeTimeoutThrows()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(-1), TestContext.Current.CancellationToken));
+        Assert.Equal("timeout", exception.ParamName);
+        Assert.True(observer.IsCapturing);
+        observer.StopCapturingTasks();
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncWithTimeoutExceedingMaximumThrows()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAnyAsync<ArgumentOutOfRangeException>(async () => await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.MaxValue, TestContext.Current.CancellationToken));
+        Assert.Equal("timeout", exception.ParamName);
+        Assert.True(observer.IsCapturing);
+        observer.StopCapturingTasks();
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksAsyncPropagatesHandlerException()
     {
         TestEventSource testEventSource = new();
