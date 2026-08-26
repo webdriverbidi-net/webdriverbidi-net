@@ -167,6 +167,14 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
+        // StopAsync() returns the driver to the not-started state; the runtime permits
+        // registration again after a stop, so the tracked state must reflect that.
+        if (methodName == "StopAsync")
+        {
+            DriverVariableState stoppedState = new DriverVariableState { IsStarted = false };
+            updatedVariables = updatedVariables.SetItem(driverVariableName, stoppedState);
+        }
+
         // Check for RegisterEvent after StartAsync. Note that adding an observer to an
         // ObservableEvent<T> (AddObserver) is deliberately not reported: observers may be
         // added or removed at any time, including while the driver is running. Only the

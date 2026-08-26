@@ -37,6 +37,21 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
+        if (diagnostic.Properties.TryGetValue(BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.FormPropertyName, out string? form)
+            && form == BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.AwaitUsingFormValue)
+        {
+            // The diagnostic is on the identifier of an `await using` declaration or statement.
+            SyntaxToken identifierToken = root!.FindToken(diagnosticSpan.Start);
+            string awaitUsingDriverName = identifierToken.ValueText;
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: "Insert StopAsync before the end of the await using scope",
+                    createChangedDocument: c => InsertStopAsyncBeforeImplicitDisposeAsync(context.Document, identifierToken, awaitUsingDriverName, c),
+                    equivalenceKey: "InsertStopAsyncBeforeImplicitDisposeAsync"),
+                diagnostic);
+            return;
+        }
+
         InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
             .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
@@ -67,6 +82,38 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
         StatementSyntax stopAsyncStatement = CreateStopAsyncStatement(driverVariableName);
 
         SyntaxNode newRoot = root.InsertNodesBefore(disposeStatement, new[] { stopAsyncStatement });
+        return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static async Task<Document> InsertStopAsyncBeforeImplicitDisposeAsync(
+        Document document,
+        SyntaxToken identifierToken,
+        string driverVariableName,
+        CancellationToken cancellationToken)
+    {
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
+        StatementSyntax stopAsyncStatement = CreateStopAsyncStatement(driverVariableName);
+
+        // An `await using (...) statement` form: the disposal happens when the embedded statement
+        // finishes, so StopAsync goes at the end of that statement (wrapping it in a block if needed).
+        UsingStatementSyntax? usingStatement = identifierToken.Parent!.FirstAncestorOrSelf<UsingStatementSyntax>();
+        if (usingStatement is not null)
+        {
+            StatementSyntax newBody = usingStatement.Statement is BlockSyntax body
+                ? body.WithStatements(body.Statements.Add(stopAsyncStatement))
+                : SyntaxFactory.Block(usingStatement.Statement, stopAsyncStatement);
+            return document.WithSyntaxRoot(root.ReplaceNode(usingStatement.Statement, newBody));
+        }
+
+        // An `await using var driver = ...;` declaration: the disposal happens at the end of the
+        // enclosing block. Append StopAsync as its last statement, or just before a final
+        // return/throw so that the inserted statement is reachable.
+        LocalDeclarationStatementSyntax declaration = identifierToken.Parent!.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>()!;
+        BlockSyntax enclosingBlock = (BlockSyntax)declaration.Parent!;
+        StatementSyntax lastStatement = enclosingBlock.Statements.Last();
+        SyntaxNode newRoot = lastStatement is ReturnStatementSyntax or ThrowStatementSyntax
+            ? root.InsertNodesBefore(lastStatement, new[] { stopAsyncStatement })
+            : root.ReplaceNode(enclosingBlock, enclosingBlock.WithStatements(enclosingBlock.Statements.Add(stopAsyncStatement)));
         return document.WithSyntaxRoot(newRoot);
     }
 

@@ -168,6 +168,14 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
+        // StopAsync() returns the driver to the not-started state; the runtime permits
+        // registration again after a stop, so the tracked state must reflect that.
+        if (methodName == "StopAsync")
+        {
+            DriverVariableState stoppedState = new DriverVariableState { IsStarted = false };
+            updatedVariables = updatedVariables.SetItem(driverVariableName, stoppedState);
+        }
+
         // Check for RegisterTypeInfoResolverAsync after StartAsync
         if (methodName == "RegisterTypeInfoResolverAsync")
         {

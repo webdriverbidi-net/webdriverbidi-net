@@ -16,11 +16,12 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver004AnalyzerTests
 {
     /// <summary>
-    /// Tests that methods without CancellationToken report an info diagnostic.
+    /// Tests that NavigateAsync without CancellationToken is not reported by BIDI004: that call
+    /// is reported by BIDI013 (long-running operation) instead, so it must not produce two diagnostics.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NavigateAsync_WithoutCancellationToken_ReportsInfo()
+    public async Task NavigateAsync_WithoutCancellationToken_NoDiagnostic_ReportedByBIDI013()
     {
         string test = """
             using System;
@@ -61,23 +62,17 @@ public class BiDiDriver004AnalyzerTests
                     public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
                         var navParams = new NavigateCommandParameters(contextId, "https://example.com");
-                        await {|#0:driver.BrowsingContext.NavigateAsync(navParams)|};
+                        await driver.BrowsingContext.NavigateAsync(navParams);
                     }
                 }
             }
             """;
-
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
-            .WithLocation(0)
-            .WithArguments("NavigateAsync");
 
         CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.ExpectedDiagnostics.Add(expected);
-
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
