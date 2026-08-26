@@ -54,9 +54,15 @@ using WebDriverBiDi.JsonConverters;
 /// <strong>Thread Safety:</strong>
 /// This class is thread-safe. <see cref="SendCommandAsync"/> may be called concurrently from multiple threads. Connection lifecycle operations
 /// (<see cref="ConnectAsync"/>, <see cref="DisconnectAsync(CancellationToken)"/>) are serialized via an internal semaphore.
-/// A fast-path guard before the semaphore prevents deadlock when event handlers invoked during
-/// shutdown attempt to send commands. Event observers may be added or removed concurrently
-/// with message processing.
+/// <see cref="DisconnectAsync(CancellationToken)"/> checks the connected state before taking the
+/// semaphore, so a disconnect that is triggered while another caller already holds the lock
+/// (for example, <see cref="SendCommandAsync"/> tearing down after a terminal error) returns
+/// without deadlocking. <see cref="SendCommandAsync"/> itself takes the semaphore before checking
+/// the connected state; a command sent from a synchronous event handler while
+/// <see cref="DisconnectAsync(CancellationToken)"/> is in progress therefore waits for the
+/// shutdown wait (bounded by <see cref="ShutdownTimeout"/>) to release the semaphore, and then
+/// fails with <see cref="WebDriverBiDiConnectionException"/>. Event observers may be added or
+/// removed concurrently with message processing.
 /// </para>
 /// </remarks>
 public class Transport : IAsyncDisposable
