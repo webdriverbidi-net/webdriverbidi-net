@@ -157,7 +157,7 @@ public static class CommonPitfallsSamples
     }
 
     /// <summary>
-    /// WRONG: Registration after StartAsync throws.
+    /// WRONG: Module registration after StartAsync throws.
     /// </summary>
     public static async Task WrongRegistrationOrder(string webSocketUrl, Module customModule, Action<EntryAddedEventArgs> handler)
     {
@@ -168,7 +168,10 @@ public static class CommonPitfallsSamples
 
         // This will throw InvalidOperationException!
         driver.RegisterModule(new CustomModule(driver));
-        driver.Log.OnEntryAdded.AddObserver(handler);  // May also fail
+
+        // Adding an observer is NOT restricted; this is allowed after StartAsync.
+        // Just be sure to add observers before calling Session.SubscribeAsync.
+        driver.Log.OnEntryAdded.AddObserver(handler);
         #endregion
     }
 

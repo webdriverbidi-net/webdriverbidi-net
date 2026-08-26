@@ -116,7 +116,7 @@ public static class CoreConceptsSamples
     }
 
     /// <summary>
-    /// Timing restrictions - wrong: cannot register after starting.
+    /// Timing restrictions - wrong: cannot register a module after starting.
     /// </summary>
     public static async Task TimingRestrictionsWrong(string webSocketUrl)
     {
@@ -124,8 +124,11 @@ public static class CoreConceptsSamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
 
-        // ❌ WRONG: Cannot register after starting - This will throw an exception!
+        // ❌ WRONG: Cannot register a module after starting - This will throw an exception!
         driver.RegisterModule(new CustomModule(driver));
+
+        // Adding observers is not restricted and works here too; it is shown
+        // before StartAsync in the correct sample only by convention.
         driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
         #endregion
     }

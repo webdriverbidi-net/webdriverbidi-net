@@ -338,9 +338,13 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// Use this property to check driver state before executing commands or during cleanup operations.
     /// </para>
     /// <para>
-    /// <strong>Important timing restriction:</strong> Modules and event handlers must be registered
-    /// <em>before</em> calling <see cref="StartAsync(string, CancellationToken)"/>. Attempting to call
-    /// <see cref="RegisterModule(Module)"/> after the driver has started will throw an <see cref="InvalidOperationException"/>.
+    /// <strong>Important timing restriction:</strong> Modules (<see cref="RegisterModule(Module)"/>),
+    /// custom events (<see cref="RegisterEvent{T}(string, Func{EventInfo{T}, Task})"/>), and type info resolvers
+    /// (<see cref="RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver, CancellationToken)"/>) must be registered
+    /// <em>before</em> calling <see cref="StartAsync(string, CancellationToken)"/>; attempting any of these after the
+    /// driver has started throws an <see cref="InvalidOperationException"/>. Adding observers to an
+    /// <see cref="ObservableEvent{T}"/> with <see cref="ObservableEvent{T}.AddObserver(Func{T, Task}, ObservableEventHandlerOptions, string)"/>
+    /// is not restricted and may be done at any time, before or after the driver has started.
     /// </para>
     /// </remarks>
     public virtual bool IsStarted => this.transport.IsConnected;
