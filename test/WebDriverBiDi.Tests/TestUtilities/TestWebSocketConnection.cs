@@ -39,6 +39,12 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public Func<ReadOnlyMemory<byte>, Task>? SendWebSocketDataOverride { get; set; }
 
+    /// <summary>
+    /// Gets or sets a delegate that replaces the underlying WebSocket connect operation, for example
+    /// to simulate a remote end that never completes the handshake.
+    /// </summary>
+    public Func<Uri, CancellationToken, Task>? ConnectWebSocketOverride { get; set; }
+
     public bool Disposed => this.IsDisposed;
 
     public override bool IsActive
@@ -139,6 +145,17 @@ public class TestWebSocketConnection : WebSocketConnection
         }
 
         return base.SendDataAsync(data, cancellationToken);
+    }
+
+    protected override async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
+    {
+        if (this.ConnectWebSocketOverride is not null)
+        {
+            await this.ConnectWebSocketOverride(websocketUri, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await base.ConnectWebSocketAsync(websocketUri, cancellationToken).ConfigureAwait(false);
     }
 
     protected override async Task SendWebSocketDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)

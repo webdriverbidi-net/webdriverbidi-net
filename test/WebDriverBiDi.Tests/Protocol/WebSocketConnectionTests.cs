@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -71,6 +72,81 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromMilliseconds(50)
         };
         Assert.Contains($"{0.05} seconds", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync($"ws://localhost:{port}", TestContext.Current.CancellationToken))).Message);
+    }
+
+    [Fact]
+    public async Task TestConnectionStartupTimeoutBoundsHangingConnectAttempt()
+    {
+        // ClientWebSocket has no connect timeout of its own. A remote end that accepts the TCP
+        // connection but never completes the handshake (or a black-holed host) must not hold
+        // StartAsync open past StartupTimeout, so each attempt is bounded by the remaining budget.
+        TimeSpan startupTimeout = TimeSpan.FromMilliseconds(200);
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            StartupTimeout = startupTimeout,
+            ConnectWebSocketOverride = (uri, token) => Task.Delay(Timeout.InfiniteTimeSpan, token),
+        };
+
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync("ws://localhost:1", TestContext.Current.CancellationToken));
+        stopwatch.Stop();
+
+        Assert.Contains($"{0.2} seconds", exception.Message);
+        Assert.True(stopwatch.Elapsed >= startupTimeout, $"StartAsync returned after {stopwatch.Elapsed}, before the startup timeout elapsed");
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"StartAsync took {stopwatch.Elapsed}; the hanging connect attempt was not bounded by StartupTimeout");
+        Assert.False(connection.IsActive);
+    }
+
+    [Fact]
+    public async Task TestConnectionCallerCancellationDuringHangingConnectAttemptPropagates()
+    {
+        // Cancellation requested by the caller while a connect attempt is in flight must
+        // surface as OperationCanceledException, not be misreported as a startup timeout.
+        using CancellationTokenSource cancellationTokenSource = new();
+        TaskCompletionSource connectStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            StartupTimeout = TimeSpan.FromSeconds(30),
+            ConnectWebSocketOverride = (uri, token) =>
+            {
+                connectStartedTaskCompletionSource.TrySetResult();
+                return Task.Delay(Timeout.InfiniteTimeSpan, token);
+            },
+        };
+
+        Task startTask = connection.StartAsync("ws://localhost:1", cancellationTokenSource.Token);
+        await connectStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await startTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task TestConnectionStopDuringHangingConnectAttemptPropagatesCancellation()
+    {
+        // Stopping the connection while a connect attempt is in flight cancels the
+        // connection token; that cancellation must propagate rather than being treated
+        // as a startup timeout.
+        TaskCompletionSource connectStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            StartupTimeout = TimeSpan.FromSeconds(30),
+            ConnectWebSocketOverride = (uri, token) =>
+            {
+                connectStartedTaskCompletionSource.TrySetResult();
+                return Task.Delay(Timeout.InfiniteTimeSpan, token);
+            },
+        };
+
+        Task startTask = connection.StartAsync("ws://localhost:1", TestContext.Current.CancellationToken);
+        await connectStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await startTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
     }
 
     [Fact]
