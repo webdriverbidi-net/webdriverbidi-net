@@ -260,7 +260,7 @@ public class WebSocketConnection : Connection
     protected override async Task ReceiveDataAsync()
     {
         CancellationToken connectionCancellationToken = this.ConnectionCancellationToken;
-        MemoryStream? memoryStream = null;
+        using MessageBuffer messageBuffer = new();
         using IMemoryOwner<byte> receivedDataBufferOwner = MemoryPool<byte>.Shared.Rent(this.BufferSize);
         try
         {
@@ -293,21 +293,18 @@ public class WebSocketConnection : Connection
                     {
                         if (!receiveResult.EndOfMessage)
                         {
-                            // Intermediate frame of a multi-frame message; accumulate into a MemoryStream.
-                            memoryStream ??= new MemoryStream(this.BufferSize);
-                            memoryStream.Write(socketFrameBuffer.Array!, 0, receiveResult.Count);
+                            // Intermediate frame of a multi-frame message; accumulate it in pooled memory.
+                            messageBuffer.Append(socketFrameBuffer.AsSpan(0, receiveResult.Count));
                         }
                         else
                         {
-                            if (memoryStream is not null)
+                            if (messageBuffer.HasData)
                             {
-                                // Final frame of a multi-frame message; flush to a pooled owner and fire event.
-                                memoryStream.Write(socketFrameBuffer.Array!, 0, receiveResult.Count);
-                                int messageLength = (int)memoryStream.Length;
-
-                                IMemoryOwner<byte> messageBufferOwner = TakeOwnershipOfReceivedData(memoryStream.GetBuffer(), messageLength);
-                                memoryStream.Dispose();
-                                memoryStream = null;
+                                // Final frame of a multi-frame message. The accumulator's pooled buffer
+                                // becomes the message buffer directly; the IncomingMessage built from it
+                                // returns the buffer to the pool on disposal, so no second copy is needed.
+                                messageBuffer.Append(socketFrameBuffer.AsSpan(0, receiveResult.Count));
+                                IMemoryOwner<byte> messageBufferOwner = messageBuffer.TakeOwnership(out int messageLength);
 
                                 if (this.OnLogMessage.CurrentObserverCount > 0)
                                 {
@@ -347,8 +344,7 @@ public class WebSocketConnection : Connection
                         // is no longer in the Open state or a Close frame arrived.
                         // Discard the partial data to prevent it from corrupting a
                         // subsequent message.
-                        memoryStream?.Dispose();
-                        memoryStream = null;
+                        messageBuffer.Discard();
                     }
                 }
             }
@@ -380,7 +376,6 @@ public class WebSocketConnection : Connection
         }
         finally
         {
-            memoryStream?.Dispose();
             await this.LogAsync($"Ending processing loop in state {this.client.State}").ConfigureAwait(false);
         }
     }

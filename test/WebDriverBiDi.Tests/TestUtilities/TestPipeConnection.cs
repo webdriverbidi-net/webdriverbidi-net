@@ -64,6 +64,13 @@ public class TestPipeConnection : PipeConnection
     /// </remarks>
     public Exception? ReceiveLoopOuterFault { get; set; }
 
+    /// <summary>
+    /// Gets or sets a delegate that replaces the underlying pipe read. It receives the buffer,
+    /// offset, count, and the one-based call number, and returns the number of bytes it wrote
+    /// into the buffer (zero to signal that the pipe was closed).
+    /// </summary>
+    public Func<byte[], int, int, int, Task<int>>? ReadHandler { get; set; }
+
     public bool Disposed => this.IsDisposed;
 
     public async Task RaiseRemoteDisconnectedEventAsync()
@@ -151,6 +158,10 @@ public class TestPipeConnection : PipeConnection
         }
 
         int currentCall = Interlocked.Increment(ref this.receiveCallCount);
+        if (this.ReadHandler is not null)
+        {
+            return this.ReadHandler(buffer, offset, count, currentCall);
+        }
 
         // For exception tests, return fake data on first call to allow second call to happen
         if (currentCall == 1 && (this.ThrowIOExceptionOnReceive || this.ThrowObjectDisposedExceptionOnReceive))

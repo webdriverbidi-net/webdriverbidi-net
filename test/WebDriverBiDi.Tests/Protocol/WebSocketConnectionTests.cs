@@ -1154,6 +1154,62 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionAssemblesFragmentedMessageLargerThanInitialBuffer()
+    {
+        // Three frames, each the size of the receive buffer, force the pooled accumulator to
+        // grow twice while assembling the message; every byte must survive both copies and the
+        // completed message must be delivered as a single contiguous buffer.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource<byte[]> receivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource framesDeliveredTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+        };
+
+        int frameSize = connection.BufferSize;
+        byte[][] frames = new byte[3][];
+        byte[] expected = new byte[frameSize * frames.Length];
+        for (int frameIndex = 0; frameIndex < frames.Length; frameIndex++)
+        {
+            frames[frameIndex] = new byte[frameSize];
+            for (int i = 0; i < frameSize; i++)
+            {
+                frames[frameIndex][i] = (byte)((frameIndex * 31 + i) % 256);
+            }
+
+            frames[frameIndex].CopyTo(expected, frameIndex * frameSize);
+        }
+
+        connection.ReceiveHandler = async (buffer, token, callNum) =>
+        {
+            if (callNum <= frames.Length)
+            {
+                byte[] frame = frames[callNum - 1];
+                frame.CopyTo(buffer.Array!, buffer.Offset);
+                return await Task.FromResult(new WebSocketReceiveResult(frame.Length, WebSocketMessageType.Binary, endOfMessage: callNum == frames.Length));
+            }
+
+            framesDeliveredTaskCompletionSource.TrySetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            throw new OperationCanceledException(token);
+        };
+        connection.OnDataReceived.AddObserver(e => receivedTaskCompletionSource.TrySetResult(e.Data.ToArray()));
+        await connection.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+
+        byte[] received = await receivedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await framesDeliveredTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(expected.Length, received.Length);
+        Assert.True(received.AsSpan().SequenceEqual(expected), "Reassembled message content did not match the frames that were sent");
+    }
+
+    [Fact]
     public async Task TestConnectionDiscardsPartialFragmentedMessageOnClose()
     {
         await using Server server = this.CreateServer();
