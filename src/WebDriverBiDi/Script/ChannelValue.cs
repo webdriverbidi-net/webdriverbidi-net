@@ -17,6 +17,7 @@ public record ChannelValue : LocalValue
     /// </summary>
     /// <param name="value">The properties for this ChannelValue.</param>
     public ChannelValue(ChannelProperties value)
+        : base()
     {
         this.Value = value;
     }

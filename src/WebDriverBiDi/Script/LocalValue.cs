@@ -19,6 +19,14 @@ using System.Text.Json.Serialization;
 public record LocalValue
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="LocalValue"/> class.
+    /// This constructor is protected to prevent instantiation by other consumers.
+    /// </summary>
+    protected LocalValue()
+    {
+    }
+
+    /// <summary>
     /// Gets a LocalValue for "undefined".
     /// </summary>
     public static LocalValue Undefined => new LocalArgumentValue("undefined");
