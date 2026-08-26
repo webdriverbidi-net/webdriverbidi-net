@@ -80,14 +80,24 @@ public class ObservableEventExtensionsTests
             onCompleted: () => completed.TrySetResult(true)));
 
         await testEventSource.RaiseTestEventAsync("before");
+        Assert.Equal(1, testEventSource.TestObservableEvent.CurrentObserverCount);
+
         subscription.Dispose();
+
+        // OnCompleted is raised only after the delivery loop has finished iterating the
+        // collector's event stream, so once it has fired that loop can never call OnNext
+        // again; and disposing the subscription detaches the collector from the source,
+        // so no later event can even be queued. Both facts are observable directly, with
+        // no need to wait for a background task that could still be running.
         await completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(0, testEventSource.TestObservableEvent.CurrentObserverCount);
 
         int countAfterDispose = received.Count;
-        await testEventSource.RaiseTestEventAsync("after");
+        Assert.Equal(["before"], received);
 
-        // Give the background task a moment to deliver any extra items (it should not)
-        await Task.Delay(TimeSpan.FromMicroseconds(50), TestContext.Current.CancellationToken);
+        // NotifyObserversAsync awaits every attached observer, so when this returns any
+        // delivery that could have happened has happened.
+        await testEventSource.RaiseTestEventAsync("after");
         Assert.Equal(countAfterDispose, received.Count);
     }
 
