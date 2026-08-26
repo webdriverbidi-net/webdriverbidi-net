@@ -7,13 +7,13 @@ see [README.md](README.md).
 ## Continuous integration: the regular flow
 
 Day-to-day you usually do not need to run benchmarks locally. The
-[`Benchmarks` workflow](../../.github/workflows/benchmarks.yml) runs on every
+`benchmarks` job of the [CI workflow](../../.github/workflows/ci.yml) runs on every
 pull request that touches:
 
 - `src/WebDriverBiDi/**` — the main library
 - `test/WebDriverBiDi.Benchmarks/**` — the benchmark suite itself
 - `scripts/compare-benchmarks.sh` — the comparator script
-- `.github/workflows/benchmarks.yml` — the workflow
+- `.github/workflows/ci.yml` — the workflow
 
 For each run, the workflow:
 
@@ -46,13 +46,16 @@ more likely to be real.
 
 ### What is the baseline?
 
-The baseline is a pair of `ci-baseline-*.json` files committed to
+The baseline is a set of `ci-baseline-*.json` files committed to
 [`test/WebDriverBiDi.Benchmarks/baselines/`](baselines/), one per benchmark
 class:
 
 ```
 test/WebDriverBiDi.Benchmarks/baselines/
+  ci-baseline-CommandExecutionBenchmarks.json
   ci-baseline-CommandProcessingBenchmarks.json
+  ci-baseline-EventDispatchBenchmarks.json
+  ci-baseline-PendingCommandCollectionBenchmarks.json
   ci-baseline-SerializationBenchmarks.json
 ```
 
@@ -79,12 +82,13 @@ a real baseline:
    against a different branch.
 2. Wait for the run to finish (~2 minutes).
 3. Download the `benchmark-baseline` artifact from the workflow run. It
-   contains two files named exactly:
-   - `ci-baseline-CommandProcessingBenchmarks.json`
-   - `ci-baseline-SerializationBenchmarks.json`
-4. Drop both files into [`test/WebDriverBiDi.Benchmarks/baselines/`](baselines/),
+   contains one `ci-baseline-<BenchmarkClass>.json` file per benchmark class
+   (currently `CommandExecutionBenchmarks`, `CommandProcessingBenchmarks`,
+   `EventDispatchBenchmarks`, `PendingCommandCollectionBenchmarks` and
+   `SerializationBenchmarks`).
+4. Drop the files into [`test/WebDriverBiDi.Benchmarks/baselines/`](baselines/),
    replacing the placeholders.
-5. Open a pull request with just these two file changes and a title like
+5. Open a pull request with just these baseline file changes and a title like
    "Seed initial benchmark baseline."
 
 The next PR that touches the benchmark paths will show real deltas in its

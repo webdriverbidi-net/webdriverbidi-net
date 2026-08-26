@@ -50,6 +50,8 @@ For specific scenarios where the browser and test runner are co-located, pipe co
 - Limited browser support
 - No remote debugging capability
 
+The sample uses `BrowserLauncher` from the repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) to launch Chrome with a pipe connection; see [Browser Setup](../browser-setup.md#implementing-your-own-launcher) for building your own:
+
 [!code-csharp[Pipe Connection](../../code/advanced/PerformanceSamples.cs#PipeConnection)]
 
 **Recommendation**: Use WebSocket connections unless you have specific requirements for pipe-based transport and are using a compatible browser implementation.
@@ -167,7 +169,7 @@ WebDriverBiDi.NET exposes two built-in signals for detecting message-processing 
 
 [!code-csharp[Queue Depth Monitoring](../../code/advanced/PerformanceSamples.cs#QueueDepthMonitoring)]
 
-The property is safe to read concurrently with message production and consumption. It is reset on each call to `ConnectAsync`, and reading it before the first connect or after disconnect returns `0` rather than throwing.
+The property is safe to read concurrently with message production and consumption. It is reset to zero on each call to `ConnectAsync`; reading it before the first connect returns `0`, and reading it after a disconnect returns the depth of the remaining (normally fully drained) queue rather than throwing.
 
 #### In-Flight Async Handler Tasks (AsyncHandlerTaskCount EventSource event)
 

@@ -460,11 +460,11 @@ public class ScriptSamples
     {
         #region AccessingObjects
         string expression = """
-            (
+            ({
                 name: 'John',
                 age: 30,
                 active: true
-            }
+            })
             """;
 
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(

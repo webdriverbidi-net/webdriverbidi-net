@@ -188,7 +188,7 @@ public static class PreloadScriptSamples
     {
         #region WaitforElementPreloadScript
         // This preload script waits for a specific element to appear
-        string waitForElementScript = @"""
+        string waitForElementScript = """
             (channel) => {
                 const checkForElement = () => {
                     const element = document.querySelector('.dynamic-content');
@@ -228,8 +228,14 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("elementWatcher"));
 
+        // Run the preload script in a named sandbox: it still sees the page's DOM, but its
+        // globals (and any it creates) are isolated from the page's own scripts, so neither
+        // side can observe or interfere with the other.
         AddPreloadScriptCommandParameters preloadParams =
-            new AddPreloadScriptCommandParameters(waitForElementScript);
+            new AddPreloadScriptCommandParameters(waitForElementScript)
+            {
+                Sandbox = "elementWatcherSandbox",
+            };
         preloadParams.Arguments.Add(channel);
 
         await driver.Script.AddPreloadScriptAsync(preloadParams);
@@ -252,6 +258,13 @@ public static class PreloadScriptSamples
         {
             Console.WriteLine("❌ Timeout waiting for element");
         }
+
+        // Later evaluations that must see the preload script's globals target the same sandbox.
+        EvaluateResult sandboxState = await driver.Script.EvaluateAsync(
+            new EvaluateCommandParameters(
+                "typeof checkForElement",
+                new ContextTarget(contextId) { Sandbox = "elementWatcherSandbox" },
+                true));
         #endregion
     }
 
@@ -262,7 +275,7 @@ public static class PreloadScriptSamples
     {
         #region SandboxedPreloadScript
         // This preload script waits for a specific element to appear
-        string waitForElementScript = @"""
+        string waitForElementScript = """
             (channel) => {
                 const checkForElement = () => {
                     const element = document.querySelector('.dynamic-content');

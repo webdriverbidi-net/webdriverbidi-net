@@ -15,7 +15,7 @@ This example shows:
 
 [!code-csharp[Complete Form Submission Example](../../code/examples/FormSubmissionSamples.cs#CompleteFormSubmissionExample)]
 
-The example above assumes the driver is already connected. To run a full program, connect to the browser first with `driver.StartAsync(webSocketUrl)`, then call the form submission logic.
+The example is a complete program: it creates the driver, connects with `driver.StartAsync(webSocketUrl)`, performs the submission, and stops the driver. Replace `webSocketUrl` with your browser's WebSocket URL.
 
 ## Step-by-Step Breakdown
 

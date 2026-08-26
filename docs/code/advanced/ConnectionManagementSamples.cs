@@ -11,6 +11,7 @@ namespace WebDriverBiDi.Docs.Code.Advanced;
 using WebDriverBiDi;
 using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Snippets for connection management documentation. Compiled at build time to prevent API drift.
@@ -184,6 +185,70 @@ public static class ConnectionManagementSamples
         if (connection.IsActive)
         {
             // Connection is open and ready
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Reconnecting after StopAsync: the same driver instance can be started again.
+    /// </summary>
+    public static async Task ReconnectAfterStop(string webSocketUrl, string newWebSocketUrl)
+    {
+        #region ReconnectAfterStop
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+        // Observers survive a restart, so add them once.
+        driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
+
+        await driver.StartAsync(webSocketUrl);
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
+        // ... use the session ...
+        await driver.StopAsync();
+
+        // IsStarted is now false. Modules, custom events and type-info resolvers
+        // may be registered again at this point, exactly as before the first start.
+        await driver.StartAsync(newWebSocketUrl);
+
+        // Subscriptions belong to the browser session, not to the driver:
+        // subscribe again after every reconnect.
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
+        #endregion
+    }
+
+    /// <summary>
+    /// Recovering after the remote end closes the connection.
+    /// </summary>
+    public static async Task RecoverFromRemoteDisconnect(string webSocketUrl)
+    {
+        #region RecoverFromRemoteDisconnect
+        WebSocketConnection connection = new WebSocketConnection();
+        Transport transport = new Transport(connection);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+        // Raised when the browser closes the connection; a failed read raises
+        // OnConnectionError instead. Either way the transport is already marked
+        // disconnected by the time the observer runs.
+        connection.OnRemoteDisconnected.AddObserver((ConnectionDisconnectedEventArgs e) =>
+        {
+            Console.WriteLine("Browser closed the connection");
+        });
+
+        await driver.StartAsync(webSocketUrl);
+
+        try
+        {
+            await driver.Session.StatusAsync(new StatusCommandParameters());
+        }
+        catch (WebDriverBiDiConnectionException) when (!driver.IsStarted)
+        {
+            // In-flight commands fail with WebDriverBiDiConnectionException and
+            // IsStarted becomes false. StopAsync is safe to call here; it returns
+            // promptly and also surfaces any errors accumulated under Collect mode.
+            await driver.StopAsync();
+
+            // Then start again. StartAsync waits (up to Transport.ShutdownTimeout) for
+            // the previous connection's message processing to finish before connecting.
+            await driver.StartAsync(webSocketUrl);
         }
         #endregion
     }

@@ -107,7 +107,7 @@ Use Unicode values for special keys: Enter `\uE007`, Tab `\uE004`, Control `\uE0
 
 ## Helper Libraries
 
-The demo project includes an `InputBuilder` helper class that simplifies common input patterns. Consider creating similar helpers for your projects.
+The `WebDriverBiDi.Client` demonstration library (which the demo project uses) includes an `InputBuilder` helper class that simplifies common input patterns. Consider creating similar helpers for your projects.
 
 ## Error Handling
 

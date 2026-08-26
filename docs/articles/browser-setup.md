@@ -166,9 +166,13 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 
 **Example:**
 
-> **Note:** WebDriverBiDi.NET does not ship a browser launcher. You must implement pipe communication yourself. The pattern below is conceptual—create a class that implements `IPipeServerProcessProvider` to launch the browser, capture its stdin/stdout, and pass the resulting `Transport` to `BiDiDriver`:
+> **Note:** The `WebDriverBiDi` NuGet package does not include a browser launcher. The repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) provides a `BrowserLauncher` whose Chromium launcher implements `IPipeServerProcessProvider`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates (file descriptors 3 and 4 on Unix), and pass a `Transport` built over that `PipeConnection` to `BiDiDriver`:
 
 [!code-csharp[Pipe Launcher Pattern](../code/examples/BrowserSetupSamples.cs#PipeLauncherPattern)]
+
+The skeleton of your own `IPipeServerProcessProvider` implementation looks like this; `PipeServerProcess` returns the launched browser `Process`, and `CreateTransport` wraps a `PipeConnection` over `this`:
+
+[!code-csharp[Implementing IPipeServerProcessProvider](../code/examples/BrowserSetupSamples.cs#ImplementingIPipeServerProcessProvider)]
 
 ### Comparison
 
@@ -232,7 +236,7 @@ If you're using Selenium, you can let Selenium Manager handle browser launching:
 
 [!code-csharp[Selenium Manager Integration](../code/examples/BrowserSetupSamples.cs#SeleniumManagerIntegration)]
 
-This is conceptual—WebDriverBiDi.NET doesn't include Selenium. Add `--remote-debugging-port` to Chrome options, launch via ChromeDriver, then fetch the WebSocket URL from `/json/version` and connect BiDiDriver.
+This is conceptual—WebDriverBiDi.NET doesn't include Selenium. Let Selenium's `ChromeDriver` launch the browser, ask the browser for its `webSocketDebuggerUrl` through Selenium's CDP bridge (`ExecuteCdpCommand("Target.getTargets", …)`, as the sample does; fetching `http://localhost:<port>/json/version` works too if you launched with `--remote-debugging-port`), then connect a `BiDiDriver` to that URL.
 
 ## Docker Container
 
@@ -316,17 +320,17 @@ google-chrome \
 
 ## Programmatic Browser Launch
 
-You can launch the browser programmatically before connecting:
+You can launch the browser process yourself, discover its WebSocket URL, and only then connect. The snippet below shows just the connection step; the [WebSocket Launcher Pattern](#websocket-launcher-pattern) further down shows the launch and discovery steps:
 
 [!code-csharp[Programmatic Browser Launch](../code/examples/BrowserSetupSamples.cs#ProgrammaticBrowserLaunch)]
 
 ## Implementing Your Own Launcher
 
-WebDriverBiDi.NET does **not** ship a browser launcher. The library only provides the protocol client. To use pipe connections or automate browser launch, you must implement the launcher yourself.
+The `WebDriverBiDi` NuGet package does **not** ship a browser launcher; the library only provides the protocol client. The repository's `WebDriverBiDi.Client` demonstration library shows one way to do it (see `BrowserLauncher` in `src/WebDriverBiDi.Client/Launchers`), but it is not published, so to automate browser launch in your own project you implement the launcher yourself. The patterns below sketch the two approaches.
 
 ### WebSocket Launcher Pattern
 
-Launch the browser with `--remote-debugging-port`, then discover the WebSocket URL and connect:
+Launch the browser with `--remote-debugging-port`, then discover the WebSocket URL and connect. The snippet fetches `/json/version` but leaves parsing its `webSocketDebuggerUrl` property to you (any JSON library will do); in the example the parsed value is represented by the `webSocketUrl` parameter:
 
 [!code-csharp[WebSocket Launcher Pattern](../code/examples/BrowserSetupSamples.cs#WebSocketLauncherPattern)]
 

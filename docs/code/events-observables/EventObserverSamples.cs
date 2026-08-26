@@ -459,7 +459,7 @@ public static class EventObserverSamples
         Console.WriteLine("Navigation command completed");
 
         // Important: The navigation command completes before handlers finish.
-        // WaitForCapturedTasksAsync waits for events to occur AND handlers to complete.
+        // WaitForCapturedTasksCompleteAsync waits for events to occur AND handlers to complete.
         bool occurred = await observer.WaitForCapturedTasksCompleteAsync(5, TimeSpan.FromSeconds(10));
 
         if (occurred)
@@ -500,7 +500,7 @@ public static class EventObserverSamples
         // Main code continues...
         // Application might exit before handlers finish!
 
-        // ✅ SOLUTION: Use WaitForCapturedTasksAsync to wait for events and their handlers
+        // ✅ SOLUTION: Use WaitForCapturedTasksCompleteAsync to wait for events and their handlers
         EventObserver<BeforeRequestSentEventArgs> goodObserver =
             driver.Network.OnBeforeRequestSent.AddObserver(
                 async (e) =>

@@ -85,7 +85,7 @@ running on localhost. This server can be used programmatically, or as a standalo
 but is designed as a demonstration and is explicitly recommended against production use.
 * src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj - A library that provides support for
 structured logging by providing integration with `Microsoft.Extensions.Logging.ILogger`.
-* test/WebDriverBiDi.Analyzers.Tests/WebDriver.Analyzers.Tests.csproj - Tests for the Roslyn analyzers
+* test/WebDriverBiDi.Analyzers.Tests/WebDriverBiDi.Analyzers.Tests.csproj - Tests for the Roslyn analyzers
 and associated code fix providers.
 * test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application
 used to smoke test proper JSON serialization in ahead-of-time (AOT) compilation scenarios.
@@ -221,8 +221,11 @@ To update the DocFx tooling, you can use the following command:
 
     dotnet tool update -g docfx
 
-To build the documentation, use the following commands:
+To build the documentation, use the following commands. The first step is required because
+`docfx metadata` reads the API surface from the Release `netstandard2.0` build of the main
+library (see `docs/docfx.json`), which the snippets project does not produce by itself:
 
+    dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
     dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
     docfx metadata docs/docfx.json
     docfx build docs/docfx.json

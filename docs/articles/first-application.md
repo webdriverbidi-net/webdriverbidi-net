@@ -51,7 +51,15 @@ google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-profile
 
 ## Step 5: Write the Application
 
-Replace the contents of `Program.cs`:
+Replace the contents of `Program.cs` with the code below, adding these `using` directives at the top of the file:
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Log;
+using WebDriverBiDi.Script;
+using WebDriverBiDi.Session;
+```
 
 [!code-csharp[Full First Application](../code/examples/FirstApplicationSamples.cs#FullFirstApplication)]
 

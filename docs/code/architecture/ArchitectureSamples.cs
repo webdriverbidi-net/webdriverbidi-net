@@ -167,8 +167,9 @@ public static class ArchitectureSamples
         driver.Log.OnEntryAdded.AddObserver(
             async (e) =>
             {
-                // Runs on Task pool
-                // Doesn't block message processing
+                // The handler still starts on the transport's dispatch thread; only the
+                // continuation after the first incomplete await runs elsewhere, and the
+                // transport does not wait for it, so message processing is not blocked.
                 await ProcessLogEntryAsync(e);
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
@@ -297,17 +298,21 @@ public static class ArchitectureSamples
     public static void EventHandlerErrorBehavior(BiDiDriver driver, Action<EntryAddedEventArgs> processLogEntry)
     {
         #region EventHandlerErrorBehavior
-        // Synchronous handler: exceptions bubble up immediately
+        // Exceptions thrown by handlers never reach the code that raised the event; the
+        // transport captures them and applies EventHandlerExceptionBehavior (Ignore by
+        // default: logged and discarded; Collect: thrown from StopAsync; Terminate: thrown
+        // from the next command). This applies to synchronous handlers...
+        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
-            ProcessLogEntry(e);  // If this throws, exception propagates
+            ProcessLogEntry(e);  // If this throws, the transport captures the exception
         });
 
-        // Asynchronous handler: exceptions are captured
+        // ...and to asynchronous handlers, whose faults are reported when the task completes.
         driver.Network.OnBeforeRequestSent.AddObserver(
             async (e) =>
             {
-                await ProcessRequestAsync(e);  // Exceptions captured
+                await ProcessRequestAsync(e);  // A fault here is captured when the task completes
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
@@ -359,14 +364,14 @@ public static class ArchitectureSamples
         // Perform operations...
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Collected errors are thrown when stopping
+        // Collected errors are thrown from StopAsync as a single AggregateException
         try
         {
             await driver.StopAsync();
         }
-        catch (WebDriverBiDiException ex)
+        catch (AggregateException ex)
         {
-            Console.WriteLine($"Protocol errors encountered: {ex.Message}");
+            Console.WriteLine($"Protocol errors encountered: {ex.InnerExceptions.Count}");
         }
         #endregion
     }
@@ -432,15 +437,18 @@ public static class ArchitectureSamples
         // Perform operations...
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Errors with Collect behavior are thrown here
+        // Errors with Collect behavior are thrown here, as one AggregateException
         try
         {
             await driver.StopAsync();
         }
-        catch (WebDriverBiDiException ex)
+        catch (AggregateException ex)
         {
-            Console.WriteLine($"Collected errors: {ex.Message}");
-            // Exception may contain multiple errors as inner exceptions
+            Console.WriteLine($"Collected errors: {ex.InnerExceptions.Count}");
+            foreach (Exception error in ex.InnerExceptions)
+            {
+                Console.WriteLine($"  - {error.Message}");
+            }
         }
         #endregion
     }

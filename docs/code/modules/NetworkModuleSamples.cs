@@ -765,8 +765,8 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        #endregion
     }
-    #endregion
 
     /// <summary>
     /// Basic network interception setup.

@@ -222,7 +222,7 @@ Remote values have a `Type` property indicating their JavaScript type:
 
 ### Accessing Values
 
-Pattern match or use `As<T>()` to cast to the concrete type and access the `Value` property:
+Pattern match or use `ConvertTo<T>()` to cast to the concrete type and access the `Value` property:
 
 [!code-csharp[Accessing Values](../code/core-concepts/CoreConceptsSamples.cs#AccessingValues)]
 
@@ -258,7 +258,7 @@ WebDriver BiDi operations can fail for various reasons.
 
 ### WebDriverBiDiException
 
-All protocol errors are wrapped in `WebDriverBiDiException`:
+Every exception the library throws derives from `WebDriverBiDiException`. An error response from the browser arrives as `WebDriverBiDiCommandException` (with an `ErrorCode`), a missing response as `WebDriverBiDiTimeoutException`, and a lost connection as `WebDriverBiDiConnectionException`; catching the base type covers them all. See [Error Handling — Exception Hierarchy](advanced/error-handling.md#exception-hierarchy) for the full list.
 
 [!code-csharp[WebDriverBiDiException Handling](../code/core-concepts/CoreConceptsSamples.cs#WebDriverBiDiExceptionHandling)]
 

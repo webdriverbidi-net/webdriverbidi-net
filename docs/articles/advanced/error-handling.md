@@ -16,13 +16,47 @@ Understanding how to handle these errors properly is crucial for building robust
 
 ## Exception Types
 
+### Exception Hierarchy
+
+Every exception the library raises derives from `WebDriverBiDiException`, so a single catch clause is always enough to stop a library failure from escaping. The more specific types let you react differently to different failures:
+
+```
+Exception
+└── WebDriverBiDiException
+    ├── WebDriverBiDiErrorResponseException (abstract)
+    │   ├── WebDriverBiDiCommandException
+    │   └── WebDriverBiDiProtocolException
+    ├── WebDriverBiDiTimeoutException
+    ├── WebDriverBiDiConnectionException
+    └── WebDriverBiDiSerializationException
+```
+
+| Type | Thrown when | Where you see it |
+|------|-------------|------------------|
+| `WebDriverBiDiCommandException` | The browser answers a command with an error response | From the command call (`NavigateAsync`, `ExecuteCommandAsync`, ...) |
+| `WebDriverBiDiProtocolException` | The browser sends an error response that matches no pending command | Never from a command call; routed through `UnexpectedErrorBehavior` (logged, collected, or thrown from the next command) |
+| `WebDriverBiDiTimeoutException` | No response arrives within the command timeout; or a connection does not open within its `StartupTimeout` | From the command call, or from `StartAsync` |
+| `WebDriverBiDiConnectionException` | Sending while not connected; starting an already-started driver; the connection drops while a command is in flight; the connection cannot be opened | From the command call, or from `StartAsync` |
+| `WebDriverBiDiSerializationException` | Command parameters cannot be serialized, or a response cannot be deserialized | From the command call. Malformed messages that belong to no command are routed through `ProtocolErrorBehavior` instead |
+| `WebDriverBiDiException` (directly) | A command is canceled or returns no result or a result of the wrong type; a duplicate command ID; a `RemoteValue.ConvertTo<T>()` or `LocalValue` conversion fails; event arguments of an unexpected type | From the call that performed the conversion or command |
+
+`WebDriverBiDiErrorResponseException` is the abstract base of the two types that carry a structured error from the browser. It exposes `ErrorDetails` (the raw `ErrorResult`), `ErrorCode` (the `ErrorCode` enum value, or `ErrorCode.UnsetErrorCode` for an unrecognized error string), `ProtocolErrorType`, `ProtocolErrorMessage`, and `RemoteStackTrace`. Prefer `ErrorCode` over inspecting `Message` when deciding how to react.
+
+Library calls also throw the usual .NET exceptions for caller mistakes: `ArgumentNullException`/`ArgumentOutOfRangeException` (null parameters, negative timeouts), `ObjectDisposedException` (using a disposed driver), `InvalidOperationException` (registering a module, event, or resolver after `StartAsync`), and `OperationCanceledException` (a canceled `CancellationToken`). `StopAsync` throws `AggregateException` when errors were accumulated under `TransportErrorBehavior.Collect`, and the next command throws `AggregateException` under `Terminate` when more than one error accumulated (see [Transport Error Behavior Configuration](#transport-error-behavior-configuration)).
+
+Catching each type:
+
+[!code-csharp[Exception Hierarchy](../../code/error-handling/ErrorHandlingSamples.cs#ExceptionHierarchy)]
+
 ### WebDriverBiDiException
 
-The primary exception type thrown by WebDriverBiDi.NET for protocol-level errors:
+Catching the base type handles every library failure in one place:
 
 [!code-csharp[WebDriverBiDiException](../../code/error-handling/ErrorHandlingSamples.cs#WebDriverBiDiException)]
 
 ### Common Error Scenarios
+
+Use `ErrorCode` on `WebDriverBiDiCommandException` to distinguish the error responses you expect to handle:
 
 [!code-csharp[Common Error Scenarios](../../code/error-handling/ErrorHandlingSamples.cs#CommonErrorScenarios)]
 
@@ -140,7 +174,7 @@ Terminate mode stores exceptions from event handlers and throws them when you se
 
 [!code-csharp[Terminate Mode](../../code/error-handling/ErrorHandlingSamples.cs#TerminateMode)]
 
-**Note:** If an error log event occurs, the exception won't throw immediately because the event handler runs on a separate thread. The exception will be thrown when you send the next command (e.g., `NavigateAsync`), and your catch block will receive it.
+**Note:** If an error log event occurs, the exception won't throw immediately because the event handler runs on a separate thread. The exception will be thrown when you send the next command (e.g., `NavigateAsync`), and your catch block will receive it. With exactly one accumulated error the thrown exception is a `WebDriverBiDiException` wrapping it; if more than one error accumulated before the next command, an `AggregateException` containing all of them is thrown instead, so catch both.
 
 **Why This Matters:**
 - Event handlers execute asynchronously on the transport thread
@@ -162,7 +196,7 @@ Terminate mode stores exceptions from event handlers and throws them when you se
 |------|-------------------------|-----------------|----------------|---------------------|
 | **Ignore (default)** | Discarded and logged, including exceptions from asynchronously run handlers when those tasks are not capture-session-owned | Discarded and logged | Always throws immediately | Never |
 | **Collect** | Stored in list, including exceptions from asynchronously run handlers when those tasks are not capture-session-owned | Stored in list | Always throws immediately | When driver stopped |
-| **Terminate** | Throws on next command, including exceptions from asynchronously run handlers when those tasks are not capture-session-owned | Throws on next command | Always throws immediately | Synchronization point (next command) |
+| **Terminate** | Throws on next command, including exceptions from asynchronously run handlers when those tasks are not capture-session-owned | Throws on next command | Always throws immediately | Synchronization point (next command); `WebDriverBiDiException` for one error, `AggregateException` for several |
 
 When async handler tasks are explicitly owned via a capture session, their exceptions are owned by the caller instead of being routed through the transport behavior above.
 
@@ -417,7 +451,7 @@ When the connection fails or behaves unexpectedly:
 1. **Verify the WebSocket URL**: Ensure the URL matches what your browser provides (e.g., `ws://localhost:9222/devtools/browser/...`).
 2. **Check browser is running**: The remote end must be listening before you connect.
 3. **Use connection events**: Subscribe to `connection.OnConnectionError` and `connection.OnLogMessage` for real-time diagnostics.
-4. **Inspect `UnhandledErrors`**: When using a custom `Transport`, check `transport.UnhandledErrors` for collected protocol or event-handler errors (when using `TransportErrorBehavior.Collect`).
+4. **Inspect `UnhandledErrors`**: `Transport.UnhandledErrors` is `protected`, so it is readable only from within your own `Transport` subclass; from application code, observe collected errors through the `AggregateException` thrown by `StopAsync()` (when using `TransportErrorBehavior.Collect`).
 
 ### Interpreting TransportErrorBehavior
 

@@ -95,7 +95,7 @@ The payload properties vary by event. Common examples:
 | `ConnectionOpening` / `ConnectionOpened` | `connectionId`, `url` |
 | `CommandSending` | `commandId`, `method` |
 | `CommandCompleted` | `commandId`, `method`, `elapsedMilliseconds` |
-| `CommandError` | `commandId`, `method`, `errorType`, `errorMessage` |
+| `CommandError` | `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
 | `CommandTimeout` | `commandId`, `method`, `timeoutMilliseconds` |
 | `EventReceived` | `eventMethod` |
 | `EventHandlerError` | `eventMethod`, `errorMessage` |

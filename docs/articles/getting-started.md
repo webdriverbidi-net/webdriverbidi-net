@@ -206,7 +206,13 @@ dotnet add package WebDriverBiDi
 
 ### 2. Write the Code
 
-Replace the contents of `Program.cs`:
+Replace the contents of `Program.cs` with the code below, adding these `using` directives at the top of the file:
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Script;
+```
 
 [!code-csharp[First Application](../code/examples/GettingStartedSamples.cs#FirstApplication)]
 

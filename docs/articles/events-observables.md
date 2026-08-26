@@ -13,15 +13,16 @@ Browser events allow you to react to things happening in the browser in real-tim
 - DOM mutations
 - And more...
 
-## The Three-Step Process
+## The Two-Step Subscription Process
 
-Working with events involves three steps:
+Receiving an event takes two steps:
 
 1. **Add an observer or data collector** to handle or accumulate the event
 2. **Subscribe to the event** through the Session module
-3. **Wait for events** or let them trigger as they occur
 
-**Important**: Steps 1 and 2 are separate by design to prevent race conditions. Adding an observer or data collector registers your handler locally; subscribing tells the browser to send events. The recommended order is to add observers/collectors first (step 1), then subscribe (step 2).
+After that, events are delivered as they occur; wait for them with the capture API or a data collector if your code needs to synchronize on them.
+
+**Important**: The two steps are separate by design to prevent race conditions. Adding an observer or data collector registers your handler locally; subscribing tells the browser to send events. The recommended order is to add observers/collectors first (step 1), then subscribe (step 2).
 
 ### Complete Example
 
@@ -167,7 +168,7 @@ library diagnostics to your own logging infrastructure.
 
 [!code-csharp[OnLogMessage](../code/events-observables/EventObserverSamples.cs#OnLogMessage)]
 
-`Level` is a `WebDriverBiDiLogLevel` value (`Trace`, `Debug`, `Info`, `Warn`, `Error`, `Fatal`).
+`Level` is a `WebDriverBiDiLogLevel` value (`Trace`, `Debug`, `Info`, `Warn`, `Error`, `Fatal`; the enum also defines `Off`, which is never emitted).
 `ComponentName` identifies the part of the library that emitted the message. `Timestamp` is set to
 `DateTime.UtcNow` at the time the message was created.
 

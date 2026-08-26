@@ -96,35 +96,40 @@ public static class CommonScenariosSamples
                 inputSuccess.Result is NodeRemoteValue inputElement)
             {
                 // Click the input to focus it
-                // PointerSource and KeySource are hypothetical helper classes to build input actions.
                 PerformActionsCommandParameters clickParams = new PerformActionsCommandParameters(contextId);
-                PointerSource mouse = new PointerSource("mouse", PointerType.Mouse);
-                mouse.CreatePointerMoveToElement(inputElement.ToSharedReference(), 0, 0, TimeSpan.Zero);
-                mouse.CreatePointerDown(MouseButton.Left);
-                mouse.CreatePointerUp(MouseButton.Left);
-                clickParams.Actions.Add(mouse.ToSourceActions());
+                PointerSourceActions clickParamsMouse = new PointerSourceActions
+                {
+                    Parameters = new PointerParameters { PointerType = PointerType.Mouse },
+                };
+                clickParamsMouse.Actions.Add(new PointerMoveAction
+                {
+                    X = 0,
+                    Y = 0,
+                    Origin = Origin.Element(inputElement.ToSharedReference()),
+                });
+                clickParamsMouse.Actions.Add(new PointerDownAction(0));
+                clickParamsMouse.Actions.Add(new PointerUpAction(0));
+                clickParams.Actions.Add(clickParamsMouse);
                 await driver.Input.PerformActionsAsync(clickParams);
 
                 // Type into the field
-                PerformActionsCommandParameters typeParams = new PerformActionsCommandParameters(contextId);
-                KeySource keyboard = new KeySource("keyboard");
-
                 string username = "testuser";
+                PerformActionsCommandParameters typeParams = new PerformActionsCommandParameters(contextId);
+                KeySourceActions typeParamsKeyboard = new KeySourceActions();
                 foreach (char c in username)
                 {
-                    keyboard.CreateKeyDown(c.ToString());
-                    keyboard.CreateKeyUp(c.ToString());
+                    typeParamsKeyboard.Actions.Add(new KeyDownAction(c.ToString()));
+                    typeParamsKeyboard.Actions.Add(new KeyUpAction(c.ToString()));
                 }
-
-                typeParams.Actions.Add(keyboard.ToSourceActions());
+                typeParams.Actions.Add(typeParamsKeyboard);
                 await driver.Input.PerformActionsAsync(typeParams);
 
-                // Submit the form (press Enter)
+                // Submit the form by pressing Enter (WebDriver key code \uE007)
                 PerformActionsCommandParameters submitParams = new PerformActionsCommandParameters(contextId);
-                KeySource submitKey = new KeySource("keyboard");
-                submitKey.CreateKeyDown(Keys.Enter);
-                submitKey.CreateKeyUp(Keys.Enter);
-                submitParams.Actions.Add(submitKey.ToSourceActions());
+                KeySourceActions submitKey = new KeySourceActions();
+                submitKey.Actions.Add(new KeyDownAction("\uE007"));
+                submitKey.Actions.Add(new KeyUpAction("\uE007"));
+                submitParams.Actions.Add(submitKey);
                 await driver.Input.PerformActionsAsync(submitParams);
             }
         }
@@ -549,67 +554,5 @@ public static class CommonScenariosSamples
             await driver.StopAsync();
         }
         #endregion
-    }
-}
-
-internal class Keys
-{
-    public static string Enter { get; internal set; }
-}
-
-internal class KeySource
-{
-    private readonly string v;
-
-    public KeySource(string v)
-    {
-        this.v = v;
-    }
-
-    internal void CreateKeyDown(string v)
-    {
-        throw new NotImplementedException();
-    }
-
-    internal void CreateKeyUp(string v)
-    {
-        throw new NotImplementedException();
-    }
-
-    internal SourceActions ToSourceActions()
-    {
-        throw new NotImplementedException();
-    }
-}
-
-internal class MouseButton
-{
-    public static object Left { get; internal set; }
-}
-
-internal class PointerSource
-{
-    public PointerSource(string v, PointerType mouse)
-    {
-    }
-
-    internal void CreatePointerDown(object left)
-    {
-        throw new NotImplementedException();
-    }
-
-    internal void CreatePointerMoveToElement(SharedReference sharedReference, int v1, int v2, TimeSpan zero)
-    {
-        throw new NotImplementedException();
-    }
-
-    internal void CreatePointerUp(object left)
-    {
-        throw new NotImplementedException();
-    }
-
-    internal SourceActions ToSourceActions()
-    {
-        throw new NotImplementedException();
     }
 }

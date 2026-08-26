@@ -122,7 +122,7 @@ public static class Registrar
 /// </summary>
 #region PageUtilitiesModule
 // Command Parameters
-public class WaitForElementCommandParameters : CommandParameters<WaitForElementCommandResult>
+public class WaitForElementCommandParameters : CommandParameters<EvaluateResult>
 {
     public override string MethodName => "script.evaluate";  // Use existing protocol command
 
@@ -144,7 +144,7 @@ public class WaitForElementCommandParameters : CommandParameters<WaitForElementC
                     }
                 };
                 checkElement();
-                setTimeout(() => resolve({ found: false }), {timeoutMs});
+                setTimeout(() => resolve({ found: false }), {{timeoutMs}});
             })
             """;
 
@@ -172,11 +172,6 @@ public class WaitForElementCommandParameters : CommandParameters<WaitForElementC
 }
 
 // Command Result (uses standard EvaluateResult)
-public record WaitForElementCommandResult : CommandResult
-{
-    [JsonPropertyName("result")]
-    public RemoteValue? Result { get; private set; }
-}
 
 // Custom Module
 public class PageUtilitiesModule : Module
@@ -308,7 +303,7 @@ public class PageUtilitiesModule : Module
             result[kvp.Key.ToString() ?? ""] = kvp.Value.Type switch
             {
                 RemoteValueType.String => kvp.Value.ConvertTo<StringRemoteValue>().Value ?? "",
-                RemoteValueType.Number => kvp.Value is NumberRemoteValue number,
+                RemoteValueType.Number => (object?)kvp.Value.ConvertTo<NumberRemoteValue>().Value ?? 0,
                 RemoteValueType.Boolean => kvp.Value.ConvertTo<BooleanRemoteValue>().Value,
                 RemoteValueType.Null or RemoteValueType.Undefined => (object?)null!,
                 _ => (kvp.Value as ValueHoldingRemoteValue)?.ValueObject ?? (object)""

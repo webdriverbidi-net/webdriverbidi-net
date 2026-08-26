@@ -123,6 +123,25 @@ If you need extra properties at the envelope level (a sibling of `id`, `method`,
 
 [!code-csharp[Protocol Extensions via AdditionalData](../../code/api-design/AdditionalDataSamples.cs#ProtocolExtensionsviaAdditionalData)]
 
+### Reading vendor extension data
+
+The same `AdditionalData` name is used on the receiving side. Every command result and every event args
+object exposes unknown properties found on the *message envelope* (siblings of `id`, `type`, `result`,
+`method` and `params`) — for example, Chromium echoes a subscription's `goog:channel` there. In addition,
+types that the protocol marks `Extensible`, or that browsers are known to extend, capture unknown
+properties inside their own payload:
+
+- every `EmptyResult`-derived command result (the protocol defines `EmptyResult` as extensible; when the
+  result object carries extension properties they are exposed in preference to the envelope's);
+- `RequestData` and `ResponseData` on the network events — Chromium adds `goog:postData`,
+  `goog:hasPostData`, `goog:resourceType`, `goog:resourceInitiator` and `goog:securityDetails` here;
+- `Cookie`, `CapabilitiesResult` (whose property is named `AdditionalCapabilities`), and the storage partition types.
+
+Values are exposed as `ReceivedDataDictionary` entries: strings, `bool`, `long` or `double` numbers, nested
+`ReceivedDataDictionary` objects and `ReceivedDataList` arrays, or `null`.
+
+[!code-csharp[Reading Vendor Extension Data](../../code/api-design/AdditionalDataSamples.cs#ReadingVendorExtensionData)]
+
 **Note:** The remote end must support the extension fields you send. Sending unknown properties may be ignored or cause an error depending on the implementation. Consult the protocol specification or your browser/driver documentation for supported extensions.
 
 **AOT and trimming:** Because `AdditionalData` is typed as `Dictionary<string, object?>`, values stored in it are serialized through reflection-based `JsonSerializer` overloads rather than the source-generated context. This is not compatible with native AOT or IL trimming unless every value's runtime type is registered via [`BiDiDriver.RegisterTypeInfoResolverAsync`](../../api/WebDriverBiDi.BiDiDriver.yml) before the command is sent. The [BIDI022](analyzers.md#available-analyzers) analyzer flags every write to `AdditionalData` as a reminder. See [AOT Compatibility](aot-compatibility.md) for the pattern.
@@ -162,7 +181,9 @@ See [Error Handling](error-handling.md) for detailed guidance on when to use eac
 
 ### Package Versioning
 
-WebDriverBiDi.NET follows [Semantic Versioning](https://semver.org/) (SemVer):
+WebDriverBiDi.NET uses [Semantic Versioning](https://semver.org/) (SemVer) version numbers, and is currently in the **0.x** series. SemVer makes no compatibility promise for major version zero, and this project does not make one either: **while the major version is 0, any release — including a patch increment — may change or remove public API.** Removals have already shipped in patch releases (for example, analyzer rule BIDI018 was removed in 0.0.48 and BIDI011/BIDI019 in 0.0.51). Pin an exact package version, and read the release notes before updating.
+
+Once the package reaches 1.0, the usual SemVer contract applies:
 
 - **Major**: Breaking API changes
 - **Minor**: New features, backward compatible

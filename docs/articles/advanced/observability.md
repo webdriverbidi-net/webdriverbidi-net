@@ -23,7 +23,11 @@ The library emits structured diagnostic events that can be consumed by:
 
 ### Console Logging
 
-The simplest way to see diagnostic events is using a console event listener:
+The simplest way to see diagnostic events is a small `EventListener` that enables the `WebDriverBiDi` source and writes each event to the console:
+
+[!code-csharp[Console Event Listener](../../code/advanced/ObservabilitySamples.cs#ConsoleEventListener)]
+
+Create it before the driver so that it sees the source as soon as the library touches it:
 
 [!code-csharp[Console Logging](../../code/advanced/ObservabilitySamples.cs#ConsoleLogging)]
 
@@ -68,7 +72,8 @@ Choose the appropriate level based on your needs:
 | `CommandSending` | Verbose | Command being sent to remote end | `commandId`, `method` |
 | `CommandCompleted` | Info | Command completed successfully | `commandId`, `method`, `elapsedMilliseconds` |
 | `CommandTimeout` | Warning | Command timed out | `commandId`, `method`, `timeoutMilliseconds` |
-| `CommandError` | Error | Command failed with error response | `commandId`, `method`, `errorType`, `errorMessage` |
+| `CommandError` | Error | Command failed with error response | `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
+| `CommandSendFailed` | Warning | Command could not be transmitted to the remote end | `commandId`, `method`, `failureType`, `failureMessage`, `elapsedMilliseconds` |
 | `CanceledCommandResponseDiscarded` | Info | A response arrived for a command the local end had already stopped waiting for (timed out, canceled, or pending at connection close) and was discarded | `commandId`, `method`, `reason`, `millisecondsSinceCancellation` |
 
 ### Event Handling
@@ -130,7 +135,7 @@ This package bridges WebDriverBiDi EventSource events to the standard .NET loggi
 
 [!code-csharp[Basic Console Application](../../code/advanced/ObservabilitySamples.cs#BasicConsoleApplication)]
 
-Logs will show connection lifecycle and command completion events (e.g., `ConnectionOpening`, `ConnectionOpened`, `CommandSending`, `CommandCompleted`).
+Logs will show connection lifecycle and command completion events (e.g., `ConnectionOpening`, `ConnectionOpened`, `CommandCompleted`); `CommandSending` is a Verbose-level event and appears only if you raise the minimum level to `EventLevel.Verbose`.
 
 #### ASP.NET Core Web Application
 
@@ -223,7 +228,7 @@ PerfView.exe /OnlyProviders=*WebDriverBiDi collect
 
 ## OpenTelemetry Integration
 
-For distributed tracing and metrics:
+The library emits `EventSource` events only; it does not define a `System.Diagnostics.ActivitySource`, so subscribing OpenTelemetry to a source named `WebDriverBiDi` collects nothing. Bridge the events into an `ActivitySource` your application owns with an `EventListener`, and subscribe to that:
 
 [!code-csharp[OpenTelemetry Integration](../../code/advanced/ObservabilitySamples.cs#OpenTelemetryIntegration)]
 
@@ -234,7 +239,7 @@ Requires: `OpenTelemetry`, `OpenTelemetry.Trace`, `OpenTelemetry.Exporter.Consol
 ### Production Environments
 
 1. **Use Informational or Warning Level**
-   See `ObservabilityMyEventListener` and `ObservabilityPerformanceMonitor` in the samples—they use `EnableEvents(source, EventLevel.Informational)` in `OnEventSourceCreated`.
+   See `MyEventListener` and `PerformanceMonitor` in the samples—they use `EnableEvents(source, EventLevel.Informational)` in `OnEventSourceCreated`.
 
 2. **Process Events Quickly**
    - `OnEventWritten` is called synchronously

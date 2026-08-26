@@ -279,6 +279,6 @@ public static class PermissionsModuleSamples
             string accessResult = accessValue.Value;
             Console.WriteLine($"Media access: {accessResult}");
         }
+        #endregion
     }
-    #endregion
 }

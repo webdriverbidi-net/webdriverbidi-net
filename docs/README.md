@@ -93,16 +93,20 @@ dotnet tool install -g docfx
 
 ### Build
 
-From the `docs` directory:
+From the repository root:
 
 ```bash
-docfx build docfx.json
+dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
+dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
+docfx metadata docs/docfx.json
+docfx build docs/docfx.json
 ```
 
-This will:
-1. Extract API documentation from XML comments
-2. Process markdown files
-3. Generate the complete documentation site in `_site/`
+These steps:
+1. Build the library in Release (`docfx metadata` reads the API surface from `src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll`)
+2. Compile the documentation code samples in `docs/code/` (every `[!code-csharp]` region must compile)
+3. Extract API documentation from XML comments (`docfx metadata`)
+4. Process markdown files and generate the complete documentation site in `docs/_site/` (`docfx build`)
 
 ### Serve Locally
 
@@ -131,7 +135,10 @@ docfx docfx.json --serve
 
 ### Code Examples
 
-Use complete, runnable examples:
+Do not paste code into markdown. Put it in a `.cs` file under `docs/code/` inside a `#region Name` /
+`#endregion` block and reference it with `[!code-csharp[Title](code/File.cs#Name)]`, so that it compiles
+with the `WebDriverBiDi.DocSnippets` project and `docs/tools/validate-doc-regions.sh` (run in CI) can check
+that every reference points at an existing region. See [code/README.md](code/README.md). For example:
 
 [!code-csharp[Complete Runnable Example](code/DocsReadmeSamples.cs#CompleteRunnableExample)]
 
@@ -170,8 +177,8 @@ API documentation is generated from XML comments in the source code. To improve 
 
 ### Code Examples
 
-- Must be complete and runnable
-- Include necessary using statements
+- Live in `docs/code/` as compiled `#region` snippets, referenced from markdown (see above)
+- Must compile against the current library; a region may be a method body fragment, in which case the prose should say what the reader must add (usings, variables)
 - Handle errors appropriately
 - Show output/results when helpful
 
@@ -205,37 +212,22 @@ Key configuration sections:
 
 - **metadata**: API documentation extraction settings
 - **build.content**: Files to include in build
-- **build.template**: Visual theme (currently "default")
+- **build.template**: Visual theme (currently `default` + `modern` + the custom `templates/webdriverbidi` overrides)
 
 ### Customization
 
 To customize the appearance:
 
-1. Create a custom template in `templates/`
-2. Update `docfx.json` to reference your template
+1. Edit the existing custom template in `templates/webdriverbidi/` (it is already referenced from `docfx.json`)
+2. Add a further template directory to the `template` array in `docfx.json` if you need a separate one
 3. See [DocFX templating docs](https://dotnet.github.io/docfx/tutorial/howto_customize_docfx_flavored_markdown.html)
 
 ## Publishing
 
-To publish documentation to a web server:
-
-1. Build the documentation: `docfx build`
-2. Deploy the `_site` folder to your web host
-3. Ensure proper MIME types for `.json`, `.yml` files
-
-For GitHub Pages:
-
-```bash
-# Build docs
-docfx build
-
-# Commit _site folder
-git add _site -f
-git commit -m "Update documentation"
-
-# Push to gh-pages branch
-git subtree push --prefix docs/_site origin gh-pages
-```
+Documentation is published automatically. Pushing a release tag (`vX.Y.Z`) runs `.github/workflows/release.yml`,
+whose `build-docs` job builds the site exactly as described above and whose `deploy-docs` job publishes it to
+GitHub Pages with `actions/deploy-pages`. The `_site/` directory is gitignored and must not be committed; merges
+to `main` between releases do not change the published site.
 
 ## Troubleshooting
 

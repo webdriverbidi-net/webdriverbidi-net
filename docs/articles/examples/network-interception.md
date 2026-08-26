@@ -9,7 +9,7 @@ This example shows:
 - Blocking specific requests (ad blocking)
 - Providing custom responses (mocking APIs)
 - Modifying request headers
-- Capturing request and response bodies
+- Capturing response bodies
 
 ## Example 1: Basic Network Interception
 
