@@ -44,13 +44,13 @@ Every `RemoteValue` has a `Type` property indicating the JavaScript type as a st
 | `Window` | `"window"` | `WindowProxyRemoteValue` | `WindowProxyProperties` |
 | `Function`, `Promise`, etc. | various | `ObjectReferenceRemoteValue` | _(none; use `Handle`)_ |
 
-`RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].As<SpecificType>().Value` to extract values. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].As<SpecificType>().Value` to extract elements.
+`RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].ConvertTo<SpecificType>().Value` to extract values. String keys are compared by value; keys that are themselves `RemoteValue` objects (JavaScript `Map` entries keyed by objects) are compared by reference, because each denotes a distinct object on the remote end even when two serialize identically — enumerate the dictionary to read those entries. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].ConvertTo<SpecificType>().Value` to extract elements.
 
 ## Accessing Values
 
-### Using As<T>() and Pattern Matching
+### Using ConvertTo<T>() and Pattern Matching
 
-Remote values are deserialized into their concrete types. Use C# pattern matching to check and cast in one step, or use `As<T>()` to perform a casting conversion (throws if the type is wrong) and `TryConvertTo<T>()` for a safe try-pattern:
+Remote values are deserialized into their concrete types. Use C# pattern matching to check and cast in one step, or use `ConvertTo<T>()` to perform a casting conversion (throws if the type is wrong) and `TryConvertTo<T>()` for a safe try-pattern:
 
 [!code-csharp[Number Values](../code/remote-values/RemoteValuesSamples.cs#ValueAsNumber)]
 
