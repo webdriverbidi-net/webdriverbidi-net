@@ -91,7 +91,7 @@ Connections have three timeout properties (default: 10 seconds each):
 
 [!code-csharp[Timeout Settings](../../code/advanced/ConnectionManagementSamples.cs#TimeoutSettings)]
 
-**StartupTimeout**: Connection establishment timeout. WebSocket connections retry every 500ms until timeout.
+**StartupTimeout**: Connection establishment timeout. WebSocket connections retry every 500ms until the timeout elapses, and each individual connect attempt is bounded by the time remaining in the budget, so a host that never completes the handshake cannot hold `StartAsync` open past the timeout. When the budget is exhausted, `StartAsync` throws `WebDriverBiDiTimeoutException`.
 
 **ShutdownTimeout**: Graceful shutdown timeout for the underlying connection (e.g., the WebSocket close handshake). Ensures resources are released properly. Note that this is distinct from `Transport.ShutdownTimeout`, described below.
 

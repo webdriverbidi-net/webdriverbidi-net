@@ -35,7 +35,7 @@ using System.Text;
 /// <item><description>Universal browser support</description></item>
 /// <item><description>Network flexibility (local and remote)</description></item>
 /// <item><description>Low latency (1-3ms per message for local connections)</description></item>
-/// <item><description>Automatic retry on startup (retries every 500ms within StartupTimeout)</description></item>
+/// <item><description>Automatic retry on startup (retries every 500ms within StartupTimeout; each attempt is bounded by the remaining StartupTimeout, so a host that never answers cannot hold startup open past the timeout)</description></item>
 /// <item><description>Supports reconnection after calling StopAsync</description></item>
 /// </list>
 /// </para>
@@ -107,16 +107,36 @@ public class WebSocketConnection : Connection
 
         await this.LogAsync($"Opening connection to URL {url}").ConfigureAwait(false);
         bool connected = false;
+        bool startupTimedOut = false;
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
-        while (!connected && initializationStopwatch.Elapsed <= this.StartupTimeout)
+        while (!connected && !startupTimedOut && initializationStopwatch.Elapsed <= this.StartupTimeout)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            // Calculate time remaining in the budget for startup.
+            TimeSpan remainingStartupTime = this.StartupTimeout - initializationStopwatch.Elapsed;
+            using CancellationTokenSource attemptTimeoutTokenSource = new(remainingStartupTime);
+            using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.ConnectionCancellationToken, attemptTimeoutTokenSource.Token);
             try
             {
-                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.ConnectionCancellationToken);
-                await this.client.ConnectAsync(websocketUri, linkedTokenSource.Token).ConfigureAwait(false);
+                await this.ConnectWebSocketAsync(websocketUri, linkedTokenSource.Token).ConfigureAwait(false);
                 connected = true;
                 this.ConnectionString = url;
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancellation requested by the caller or by StopAsync/Dispose propagates
+                // unchanged. Any other cancellation came from the startup deadline above.
+                if (cancellationToken.IsCancellationRequested || this.ConnectionCancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+
+                // A canceled connect leaves the socket in an unusable (aborted) state, so
+                // discard it. The startup budget is exhausted, so no further attempts are made.
+                this.client.Dispose();
+                this.client = new ClientWebSocket();
+                startupTimedOut = true;
             }
             catch (WebSocketException)
             {
@@ -388,6 +408,24 @@ public class WebSocketConnection : Connection
 
             this.client.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Asynchronously connects the underlying WebSocket of this connection to the remote end.
+    /// </summary>
+    /// <param name="websocketUri">The URI of the WebSocket server to connect to.</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that is canceled when the caller cancels, when the connection is stopped, or when
+    /// the remaining <see cref="Connection.StartupTimeout"/> budget for this attempt elapses.
+    /// </param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// This method is <see langword="protected virtual"/> to allow test doubles to substitute the
+    /// connect operation, for example to simulate a remote end that never completes the handshake.
+    /// </remarks>
+    protected virtual async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
+    {
+        await this.client.ConnectAsync(websocketUri, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
