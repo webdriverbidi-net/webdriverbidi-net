@@ -17,7 +17,7 @@ public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="FileDialogOpenedEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    public FileDialogOpenedEventArgs()
+    internal FileDialogOpenedEventArgs()
     {
     }
 

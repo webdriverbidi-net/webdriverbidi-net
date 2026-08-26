@@ -20,7 +20,7 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     /// <param name="promptType">The type of the user prompt.</param>
     /// <param name="message">The message displayed in the user prompt.</param>
     [JsonConstructor]
-    public UserPromptOpenedEventArgs(string browsingContextId, UserPromptType promptType, string message)
+    internal UserPromptOpenedEventArgs(string browsingContextId, UserPromptType promptType, string message)
     {
         this.BrowsingContextId = browsingContextId;
         this.PromptType = promptType;

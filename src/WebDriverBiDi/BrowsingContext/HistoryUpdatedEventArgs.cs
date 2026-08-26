@@ -19,7 +19,7 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     /// <param name="browsingContextId">The ID of the browsing context corresponding to the history item.</param>
     /// <param name="url">The URL of the history item.</param>
     [JsonConstructor]
-    public HistoryUpdatedEventArgs(string browsingContextId, string url)
+    internal HistoryUpdatedEventArgs(string browsingContextId, string url)
     {
         this.BrowsingContextId = browsingContextId;
         this.Url = url;

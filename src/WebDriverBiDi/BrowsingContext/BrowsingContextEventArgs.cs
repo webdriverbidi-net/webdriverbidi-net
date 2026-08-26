@@ -16,7 +16,7 @@ public record BrowsingContextEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="BrowsingContextEventArgs"/> class.
     /// </summary>
     /// <param name="info">The BrowsingContextInfo used to create the event arguments.</param>
-    public BrowsingContextEventArgs(BrowsingContextInfo info)
+    internal BrowsingContextEventArgs(BrowsingContextInfo info)
     {
         this.info = info;
     }
