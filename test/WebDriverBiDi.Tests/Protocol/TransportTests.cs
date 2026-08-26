@@ -2847,6 +2847,136 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestUnknownMessageCanCollect()
+    {
+        TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+            AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
+        };
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        // Valid JSON that matches no protocol message shape.
+        await connection.RaiseDataReceivedEventAsync("""{"someProperty":"someValue"}""");
+        await captured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Collect mode does not terminate the transport: commands still go through.
+        await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("Normal shutdown", exception.Message);
+        WebDriverBiDiException inner = Assert.IsType<WebDriverBiDiException>(Assert.Single(exception.InnerExceptions));
+        Assert.Contains("Received unknown message from protocol connection", inner.Message);
+        Assert.Contains("someProperty", inner.Message);
+    }
+
+    [Fact]
+    public async Task TestUnknownMessageCanCollectMultiple()
+    {
+        int capturedCount = 0;
+        TaskCompletionSource bothCaptured = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+            AfterUnhandledErrorCaptured = () =>
+            {
+                if (Interlocked.Increment(ref capturedCount) == 2)
+                {
+                    bothCaptured.TrySetResult();
+                }
+            },
+        };
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{"first":"unknown"}""");
+        await connection.RaiseDataReceivedEventAsync("""{"second":"unknown"}""");
+        await bothCaptured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(2, exception.InnerExceptions.Count);
+        Assert.All(exception.InnerExceptions, e => Assert.IsType<WebDriverBiDiException>(e));
+        Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("\"first\""));
+        Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("\"second\""));
+    }
+
+    [Fact]
+    public async Task TestUnknownMessageCanTerminate()
+    {
+        TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
+            AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
+        };
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{"someProperty":"someValue"}""");
+        await captured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Terminate mode surfaces the error on the next command.
+        WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+        Assert.Contains("Unknown message from connection", exception.Message);
+        WebDriverBiDiException inner = Assert.IsType<WebDriverBiDiException>(exception.InnerException);
+        Assert.Contains("Received unknown message from protocol connection", inner.Message);
+    }
+
+    [Fact]
+    public async Task TestProtocolErrorInEventMessageCanCollect()
+    {
+        TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        bool eventReceived = false;
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e => eventReceived = true);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        // Structurally an event, but its params cannot be deserialized as TestEventArgs.
+        await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","params":"not an object"}""");
+        await captured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.False(eventReceived);
+
+        // Collect mode does not terminate the transport: commands still go through.
+        await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("Normal shutdown", exception.Message);
+        Assert.Single(exception.InnerExceptions);
+        Assert.NotNull(exception.InnerException);
+    }
+
+    [Fact]
+    public async Task TestProtocolErrorInEventMessageCanTerminate()
+    {
+        TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Terminate,
+            AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","params":"not an object"}""");
+        await captured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+        Assert.Contains("Invalid JSON in event message", exception.Message);
+        Assert.Contains("protocol.event", exception.Message);
+        Assert.NotNull(exception.InnerException);
+    }
+
+    [Fact]
     public async Task TestErrorResponseForUnknownCommandIdIsReportedWithThatId()
     {
         TaskCompletionSource errorTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
