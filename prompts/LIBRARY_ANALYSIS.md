@@ -119,6 +119,19 @@ deserialization for AOT environments. This is an acknowledged limitation of
 the library, and must not be called out as a defect or area for modification.
 * The `BiDiDriver` class does not implement a builder pattern for configuration.
 Do not recommend one.
+* Protocol enumerations are closed sets defined by the WebDriver BiDi specification (and the
+extension specifications). The library deserializes them strictly: a value received from the
+remote end that is not one of the defined members is a protocol violation, and the correct
+behavior is for that command to fail (`WebDriverBiDiSerializationException`) or for that event
+to be dropped under `ProtocolErrorBehavior`, while the session stays alive. Do **not** recommend
+adding `[StringEnumUnmatchedValue]` sentinels, "Unknown" enum members, raw-string fallbacks, or
+any other lenient handling of out-of-spec enum values. `ErrorCode` is the one deliberate
+exception and must not be cited as a precedent. The forward-compatibility rationale documented
+for the `Ignore` error behavior applies at the *message* level (unknown events, unknown message
+shapes), not at the enum-*value* level. Note also that the `UnmatchedValueType` fallback on
+`RemoteValue` exists for spec-defined `RemoteValueType` members that have no dedicated derived
+class (e.g. `function`, `promise`, `weakmap`); it is not a mechanism for tolerating undefined
+type strings, and must not be described as "unreachable" or "never engaging."
 * This project is not a replacement for higher-level automation libraries like
 Selenium, Puppeteer, or Playwright. Therefore, there is no need for a migration
 guide In the project documentation. Please do not suggest one.
@@ -205,6 +218,19 @@ it entirely. Writing hedged notes like "verify this", "ensure this is
 accurate", or "keep this up to date" without first confirming there is
 actually a discrepancy is prohibited. A finding must be either confirmed or
 dropped, never filed as a vague suggestion.
+
+**Before recommending that deserialization of remote-end data be made more lenient** (tolerating
+unknown enum values, missing required properties, unexpected discriminators, or other
+non-conforming payloads), first confirm from the specification's CDDL that the value is actually
+permitted, and cite the CDDL. If the payload is non-conforming, strict failure is the intended
+behavior and the finding must be withdrawn. Then trace the failure to its containment point in
+`Transport` and confirm it is already governed by one of the four `TransportErrorBehavior`
+properties; if it is, the behavior is by design and documented (see the error-behavior table in
+`docs/articles/advanced/api-design.md`), and must go in the Non-Issues section rather than the
+Action Plan. A finding that a strict client "will break with newer browsers" is only valid if
+you cite a spec change that added the value; do not speculate about future spec additions.
+When you note strict deserialization as a *limitation*, say in the same sentence that it is
+intentional and which `TransportErrorBehavior` property governs it.
 
 **Before recommending that an exception type be changed in a guard clause**,
 identify the operation the guard is protecting and determine what exception the
