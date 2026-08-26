@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Analyzers.Tests;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.CSharp.Testing;
 
 /// <summary>
 /// Tests for the BiDiDriver012 analyzer.
@@ -697,5 +698,354 @@ public class BiDiDriver012AnalyzerTests
             .WithMessage("Call StopAsync on 'second' before calling DisposeAsync; a TransportErrorBehavior is set to Collect, and DisposeAsync discards collected errors without throwing them");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expectedFirst, expectedSecond);
+    }
+
+    [Fact]
+    public async Task AwaitUsingDeclaration_WithoutStopAsync_ReportsInfo()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using BiDiDriver {|#0:driver|} = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task AwaitUsingDeclaration_WithStopAsyncLaterInBlock_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        if (driver.IsStarted)
+                        {
+                            await driver.StopAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AwaitUsingDeclaration_WithCollectBehavior_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using BiDiDriver {|#0:driver|} = new();
+                        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task AwaitUsingDeclaration_OfNonDriverType_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using System.IO.MemoryStream stream = new();
+                        await stream.FlushAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AwaitUsingDeclaration_DirectlyInSwitchSection_IsSkippedWithoutCrashing()
+    {
+        // A using declaration directly inside a switch section is a compile error (CS8647), so the
+        // declaration has no enclosing block and therefore no well-defined disposal scope. The
+        // analyzer must skip it rather than crash; only the compiler error is reported.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        switch (mode)
+                        {
+                            case 1:
+                                await using BiDiDriver driver = new();
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+        testState.ExpectedDiagnostics.Add(DiagnosticResult.CompilerError("CS8647").WithSpan(13, 21, 13, 59));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task UsingStatement_WithoutAwait_NoDiagnostic()
+    {
+        // A synchronous `using` statement does not call DisposeAsync, so it is not this analyzer's concern.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        using (System.IO.MemoryStream stream = new())
+                        {
+                            await stream.FlushAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithDeclaration_WithoutStopAsync_ReportsInfo()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using (BiDiDriver {|#0:driver|} = new())
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithDeclaration_WithStopAsync_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using (BiDiDriver driver = new())
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            await driver.StopAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithDeclarationOfNonDriverType_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using (System.IO.MemoryStream stream = new())
+                        {
+                            await stream.FlushAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithExpression_WithoutStopAsync_ReportsInfo()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using ({|#0:driver|})
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithNonDriverExpression_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        System.IO.MemoryStream stream = new();
+                        await using (stream)
+                        {
+                            await stream.FlushAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithMethodCallExpression_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using (CreateDriver())
+                        {
+                        }
+                    }
+
+                    private static BiDiDriver CreateDriver() => new();
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
     }
 }

@@ -140,6 +140,14 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             return;
         }
 
+        // If this is StopAsync, the driver is no longer started: commands issued after it,
+        // without another StartAsync, fail at runtime with a connection exception.
+        if (methodName == "StopAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        {
+            driverStartedStatus[driverVariableName] = false;
+            return;
+        }
+
         // If the driver hasn't been started yet, check if this is a command that requires a connection
         if (!driverStartedStatus[driverVariableName] && IsCommandMethod(methodSymbol))
         {

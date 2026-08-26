@@ -24,21 +24,21 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 
 | ID | Severity | When It Fires |
 |----|----------|----------------|
-| **BIDI001** | Error | `RegisterModule()` called after `StartAsync()` |
-| **BIDI002** | Error | Custom event registered (via `RegisterEvent()`) after `StartAsync()`. Adding observers with `AddObserver()` is not reported: observers may be added to an observable event at any time, including while the driver is running |
-| **BIDI003** | Error | `RegisterTypeInfoResolverAsync()` called after `StartAsync()` |
-| **BIDI004** | Info | Long-running operation called without `CancellationToken`; suggests passing one |
-| **BIDI005** | Warning | Event observer added but event name not included in `Session.SubscribeAsync()` |
+| **BIDI001** | Error | `RegisterModule()` called after `StartAsync()`. A `StopAsync()` call returns the driver to the not-started state, so registration after a stop is not reported |
+| **BIDI002** | Error | Custom event registered (via `RegisterEvent()`) after `StartAsync()`; not reported after a `StopAsync()`. Adding observers with `AddObserver()` is not reported: observers may be added to an observable event at any time, including while the driver is running |
+| **BIDI003** | Error | `RegisterTypeInfoResolverAsync()` called after `StartAsync()`; not reported after a `StopAsync()` |
+| **BIDI004** | Info | Cancellable operation (`ExecuteCommandAsync`, `EvaluateAsync`, `CallFunctionAsync`, `GetTreeAsync`, `LocateNodesAsync`) called without `CancellationToken`; suggests passing one. `NavigateAsync` is reported by BIDI013 instead, never by both |
+| **BIDI005** | Warning | Event observer added but event name not included in `Session.SubscribeAsync()`. Both the list constructor (`new SubscribeCommandParameters(["a", "b"])`) and the single-event constructor (`new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName)`) are recognized; string literals, constants and `EventName` property accesses all resolve |
 | **BIDI006** | Warning | `EventObserver` not disposed or unobserved |
 | **BIDI007** | Warning | Blocking operation (e.g., `Thread.Sleep`, `.Result`) in event handler. `RunHandlerAsynchronously` suppresses the diagnostic only when the handler actually runs off the dispatching thread: an `Action<T>` handler, an `async` lambda, or an `async` method group. A non-`async` `Task`-returning handler is still reported (with a message saying the option cannot help), because the option detaches the returned `Task` rather than moving where the handler starts |
 | **BIDI008** | Warning | Unsafe cast of `EvaluateResult`; suggests pattern matching |
-| **BIDI009** | Error | Module command called before `StartAsync()` |
+| **BIDI009** | Error | Module command or `driver.ExecuteCommandAsync()` called before `StartAsync()`, or after `StopAsync()` without a new `StartAsync()` |
 | **BIDI010** | Error | Async module command not awaited (fire-and-forget) |
-| **BIDI012** | Info / Warning | `DisposeAsync()` called without `StopAsync()` first; suggests calling `StopAsync`. Reported as a **Warning** when the same method also assigns `TransportErrorBehavior.Collect` to any of the four error-behavior properties, because `DisposeAsync()` logs and discards collected errors—only `StopAsync()` throws them |
+| **BIDI012** | Info / Warning | `DisposeAsync()` called without `StopAsync()` first, including the implicit disposal of `await using var driver = ...` and `await using (driver) { ... }`; suggests calling `StopAsync`. Reported as a **Warning** when the same method also assigns `TransportErrorBehavior.Collect` to any of the four error-behavior properties, because `DisposeAsync()` logs and discards collected errors—only `StopAsync()` throws them |
 | **BIDI013** | Warning | Long-running operation (e.g., `NavigateAsync`) called without `CancellationToken` |
 | **BIDI014** | Warning | Parameterless constructor used for a command with a command-level reset property (i.e., a `public static Reset*` property, declared on the class or inherited from a base class, that returns the constructed `CommandParameters` type or one of its base types — this covers `SetGeolocationOverrideCoordinatesCommandParameters`, whose reset helper lives on `SetGeolocationOverrideCommandParameters`); suggests using `.Reset*`. Does not apply to property-level sentinel classes such as `SetViewportCommandParameters`, whose `Reset*` members return unrelated types. |
-| **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
-| **BIDI016** | Warning | Deadlock-prone pattern (e.g., `.Result`, `.Wait()`) in an `async` event handler (non-`async` handlers are left to BIDI007). `RunHandlerAsynchronously` suppresses the diagnostic |
+| **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName`, in either `SubscribeCommandParameters` constructor form |
+| **BIDI016** | Warning | Deadlock-prone synchronization in an `async` event handler: `lock`, `Monitor.Enter`, `Semaphore`/`SemaphoreSlim.Wait`, `WaitHandle.WaitOne`, `SynchronizationContext.Send`, `Task.WaitAll`/`WaitAny`. Blocking calls such as `.Result` and `.Wait()` are BIDI007. `RunHandlerAsynchronously` suppresses the diagnostic |
 | **BIDI017** | Warning | Adding to nullable list property without `??= new List<T>()` |
 | **BIDI020** | Error | `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()` called without a prior `StartCapturingTasks()` in the same method |
 | **BIDI021** | Warning | `StartCapturingTasks()` called but no read method (`WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`) follows in the same method |
@@ -55,12 +55,12 @@ The following analyzers have code fix providers:
 - **BIDI002** — Moves `RegisterEvent()` call before `StartAsync()`
 - **BIDI003** — Moves `RegisterTypeInfoResolverAsync()` call before `StartAsync()`
 - **BIDI004** — Adds `CancellationToken` parameter to long-running operations
-- **BIDI005** — Adds missing event name to `Session.SubscribeAsync()` call
+- **BIDI005** — Adds missing event name to `Session.SubscribeAsync()` call (a single-event constructor argument is rewritten into a collection expression holding both events)
 - **BIDI006** — Adds a `using` declaration for the `EventObserver`
 - **BIDI007** — For an `Action<T>` handler or an `async` lambda, adds the `ObservableEventHandlerOptions.RunHandlerAsynchronously` option to the `AddObserver` call. For a non-`async` `Task`-returning lambda, converts it to an `async` lambda whose first statement is `await Task.Yield();` (rewriting `return Task.CompletedTask;` / `return <task>;` accordingly) and adds the option if it is missing. No fix is offered when the handler is a method group, because the method declaration itself would have to change
 - **BIDI008** — Replaces unsafe cast with pattern matching
 - **BIDI009** — Adds `await driver.StartAsync()` before command execution
-- **BIDI012** — Adds `await driver.StopAsync()` before `DisposeAsync()`
+- **BIDI012** — Adds `await driver.StopAsync()` before `DisposeAsync()`; for `await using` forms, at the end of the scope that disposes the driver
 - **BIDI014** — Replaces parameterless constructor with `.Reset*` property (qualified by the type that declares it; a local declared with the derived type is retyped to match)
 - **BIDI015** — Replaces string literal with `ObservableEvent.EventName` property
 - **BIDI017** — Adds null-coalescing assignment before adding to nullable list

@@ -103,10 +103,11 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
 
     private static bool ShouldSuggestToken(IMethodSymbol method)
     {
-        // Suggest for potentially long-running operations
+        // Suggest for operations that support cancellation. NavigateAsync is deliberately
+        // absent: it is reported by BIDI013 (long-running operation) at Warning severity,
+        // and reporting it here as well would produce two diagnostics for one call.
         string[] longRunningMethods =
         [
-            "NavigateAsync",
             "ExecuteCommandAsync",
             "EvaluateAsync",
             "CallFunctionAsync",

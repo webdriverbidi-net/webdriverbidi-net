@@ -153,6 +153,11 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                 }
             }
         }
+        else
+        {
+            // Not an array: the single-event constructor, SubscribeCommandParameters(string eventName, ...).
+            AnalyzeStringLiteral(context, expression, driverVariable);
+        }
     }
 
     private static void AnalyzeStringLiteral(

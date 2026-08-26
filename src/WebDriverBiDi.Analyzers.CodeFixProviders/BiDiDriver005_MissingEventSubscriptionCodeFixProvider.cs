@@ -94,7 +94,7 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         if (subscribeCall != null)
         {
             // Add event name to existing SubscribeAsync call
-            SyntaxNode newRoot = root.ReplaceNode(subscribeCall, AddEventNameToSubscribeCall(subscribeCall, eventName));
+            SyntaxNode newRoot = root.ReplaceNode(subscribeCall, AddEventNameToSubscribeCall(subscribeCall, eventName, semanticModel));
             return document.WithSyntaxRoot(newRoot);
         }
         else
@@ -108,7 +108,8 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
 
     private static InvocationExpressionSyntax AddEventNameToSubscribeCall(
         InvocationExpressionSyntax subscribeCall,
-        string eventName)
+        string eventName,
+        SemanticModel semanticModel)
     {
         if (subscribeCall.ArgumentList.Arguments.Count == 0)
         {
@@ -126,7 +127,7 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
             ArgumentSyntax eventsArg = objectCreation.ArgumentList.Arguments[0];
             ExpressionSyntax eventsExpression = eventsArg.Expression;
 
-            ExpressionSyntax newEventsExpression = AddEventNameToArrayExpression(eventsExpression, eventName);
+            ExpressionSyntax newEventsExpression = AddEventNameToArrayExpression(eventsExpression, eventName, semanticModel);
 
             if (newEventsExpression != eventsExpression)
             {
@@ -143,7 +144,7 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         return subscribeCall;
     }
 
-    private static ExpressionSyntax AddEventNameToArrayExpression(ExpressionSyntax arrayExpression, string eventName)
+    private static ExpressionSyntax AddEventNameToArrayExpression(ExpressionSyntax arrayExpression, string eventName, SemanticModel semanticModel)
     {
         LiteralExpressionSyntax newElement = SyntaxFactory.LiteralExpression(
             SyntaxKind.StringLiteralExpression,
@@ -171,6 +172,23 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
             ExpressionElementSyntax newElementSyntax = SyntaxFactory.ExpressionElement(newElement);
             SeparatedSyntaxList<CollectionElementSyntax> newElements = collectionExpression.Elements.Add(newElementSyntax);
             return collectionExpression.WithElements(newElements);
+        }
+
+        // Handle the single-event constructor: new SubscribeCommandParameters("event1") or
+        // new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName). The string-typed
+        // argument becomes a collection expression holding both the existing and the new event.
+        // The comparison goes through SymbolEqualityComparer, which handles an unresolvable
+        // (error-typed) argument without a separate null check.
+        INamedTypeSymbol stringType = semanticModel.Compilation.GetSpecialType(SpecialType.System_String);
+        if (SymbolEqualityComparer.Default.Equals(semanticModel.GetTypeInfo(arrayExpression).Type, stringType))
+        {
+            return SyntaxFactory.CollectionExpression(
+                SyntaxFactory.SeparatedList<CollectionElementSyntax>(new SyntaxNodeOrToken[]
+                {
+                    SyntaxFactory.ExpressionElement(arrayExpression.WithoutTrivia()),
+                    SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space),
+                    SyntaxFactory.ExpressionElement(newElement),
+                }));
         }
 
         // Any other shape — for example a variable holding the event-name array — cannot be

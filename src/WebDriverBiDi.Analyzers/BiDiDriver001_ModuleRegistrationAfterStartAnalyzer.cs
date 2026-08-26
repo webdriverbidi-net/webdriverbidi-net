@@ -141,6 +141,13 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             driverVariables[driverVariableName].IsStarted = true;
         }
 
+        // StopAsync() returns the driver to the not-started state; the runtime permits
+        // registration again after a stop, so the tracked state must reflect that.
+        if (methodName == "StopAsync")
+        {
+            driverVariables[driverVariableName].IsStarted = false;
+        }
+
         // Check if this is RegisterModule() being called AFTER StartAsync()
         if (methodName == "RegisterModule" && driverVariables[driverVariableName].IsStarted)
         {

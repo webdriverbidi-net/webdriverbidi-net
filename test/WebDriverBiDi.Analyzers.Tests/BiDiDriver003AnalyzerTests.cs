@@ -971,4 +971,66 @@ public class BiDiDriver003AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that RegisterTypeInfoResolverAsync called after StopAsync does not report a diagnostic,
+    /// because the driver is no longer started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterStopAsync_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                    Task StopAsync();
+                }
+
+                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                {
+                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
+                }
+
+                public class BiDiDriver : IBiDiDriverConfiguration
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public Task StopAsync() => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Text.Json.Serialization.Metadata;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.StopAsync();
+                        await driver.RegisterTypeInfoResolverAsync(resolver);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

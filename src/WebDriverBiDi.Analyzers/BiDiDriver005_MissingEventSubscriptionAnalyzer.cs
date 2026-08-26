@@ -219,6 +219,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         System.Collections.Generic.HashSet<string> eventNames)
     {
         // Handle: new SubscribeCommandParameters(new[] { "log.entryAdded", "network.beforeRequest" })
+        // and the single-event constructor: new SubscribeCommandParameters("log.entryAdded")
         if (expression is ObjectCreationExpressionSyntax objectCreation && objectCreation.ArgumentList != null)
         {
             if (objectCreation.ArgumentList.Arguments.Count > 0)
@@ -259,6 +260,12 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                     ExtractStringLiteral(context, expressionElement.Expression, eventNames);
                 }
             }
+        }
+        else
+        {
+            // Not an array: the single-event constructor, SubscribeCommandParameters(string eventName, ...),
+            // whose argument is a string literal, a constant, or an ObservableEvent.EventName access.
+            ExtractStringLiteral(context, expression, eventNames);
         }
     }
 

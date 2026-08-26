@@ -55,6 +55,17 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         isEnabledByDefault: true,
         description: Description);
 
+    /// <summary>
+    /// The key of the diagnostic property that marks a diagnostic reported on an <c>await using</c>
+    /// declaration or statement rather than on a <c>DisposeAsync()</c> invocation.
+    /// </summary>
+    public const string FormPropertyName = "Form";
+
+    /// <summary>
+    /// The value of the <see cref="FormPropertyName"/> property for the <c>await using</c> form.
+    /// </summary>
+    public const string AwaitUsingFormValue = "AwaitUsing";
+
     private static readonly string[] ErrorBehaviorPropertyNames =
     [
         "EventHandlerExceptionBehavior",
@@ -112,6 +123,93 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                 context.ReportDiagnostic(diagnostic);
             }
         }
+
+        // The `await using` forms dispose the driver implicitly at the end of the enclosing
+        // scope, so there is no DisposeAsync() invocation to find. A StopAsync() anywhere later
+        // in that scope runs before the implicit disposal and counts as "before".
+        foreach ((Location location, string driverVariableName, IEnumerable<StatementSyntax> scope) in GetAwaitUsingDrivers(methodDeclaration, context.SemanticModel))
+        {
+            if (!ContainsStopAsync(scope, driverVariableName))
+            {
+                hasCollectBehaviorAssignment ??= HasCollectBehaviorAssignment(methodDeclaration, context.SemanticModel);
+                ImmutableDictionary<string, string?> properties = ImmutableDictionary<string, string?>.Empty.Add(FormPropertyName, AwaitUsingFormValue);
+                Diagnostic diagnostic = hasCollectBehaviorAssignment.Value
+                    ? Diagnostic.Create(CollectModeRule, location, DiagnosticSeverity.Warning, additionalLocations: null, properties: properties, driverVariableName)
+                    : Diagnostic.Create(Rule, location, properties, driverVariableName);
+                context.ReportDiagnostic(diagnostic);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finds every driver that is disposed implicitly by an <c>await using</c> declaration
+    /// (<c>await using var driver = ...;</c>) or an <c>await using</c> statement
+    /// (<c>await using (driver) { ... }</c>), together with the statements that run before the
+    /// implicit disposal.
+    /// </summary>
+    /// <param name="method">The method being analyzed.</param>
+    /// <param name="semanticModel">The semantic model for the method.</param>
+    /// <returns>The location to report, the driver variable name, and the statements in scope for each driver.</returns>
+    private static IEnumerable<(Location Location, string DriverVariableName, IEnumerable<StatementSyntax> Scope)> GetAwaitUsingDrivers(
+        MethodDeclarationSyntax method,
+        SemanticModel semanticModel)
+    {
+        foreach (LocalDeclarationStatementSyntax declaration in method.DescendantNodes().OfType<LocalDeclarationStatementSyntax>())
+        {
+            // A using declaration is only permitted directly inside a block (CS8647 otherwise), and
+            // the implicit disposal happens at the end of that block, so every statement after the
+            // declaration in the block runs before it. Code that violates the placement rule has no
+            // well-defined scope and is skipped.
+            if (declaration.AwaitKeyword.IsKind(SyntaxKind.None) || declaration.UsingKeyword.IsKind(SyntaxKind.None) || declaration.Parent is not BlockSyntax block)
+            {
+                continue;
+            }
+
+            // The declared type covers both explicitly typed and `var` declarations.
+            if (!AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(declaration.Declaration.Type).Type))
+            {
+                continue;
+            }
+
+            IEnumerable<StatementSyntax> scope = block.Statements.SkipWhile(s => s != declaration).Skip(1);
+            foreach (VariableDeclaratorSyntax declarator in declaration.Declaration.Variables)
+            {
+                yield return (declarator.Identifier.GetLocation(), declarator.Identifier.Text, scope);
+            }
+        }
+
+        foreach (UsingStatementSyntax usingStatement in method.DescendantNodes().OfType<UsingStatementSyntax>())
+        {
+            if (usingStatement.AwaitKeyword.IsKind(SyntaxKind.None))
+            {
+                continue;
+            }
+
+            if (usingStatement.Declaration is not null)
+            {
+                if (AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(usingStatement.Declaration.Type).Type))
+                {
+                    foreach (VariableDeclaratorSyntax declarator in usingStatement.Declaration.Variables)
+                    {
+                        yield return (declarator.Identifier.GetLocation(), declarator.Identifier.Text, [usingStatement.Statement]);
+                    }
+                }
+            }
+            else if (usingStatement.Expression is IdentifierNameSyntax identifier && AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(identifier).Type))
+            {
+                yield return (identifier.GetLocation(), identifier.Identifier.Text, [usingStatement.Statement]);
+            }
+        }
+    }
+
+    private static bool ContainsStopAsync(IEnumerable<StatementSyntax> statements, string variableName)
+    {
+        return statements.Any(s => s.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                && ma.Name.Identifier.Text == "StopAsync"
+                && ma.Expression is IdentifierNameSyntax id
+                && id.Identifier.Text == variableName));
     }
 
     /// <summary>

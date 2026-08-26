@@ -19,7 +19,7 @@ public class BiDiDriver004CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NavigateAsync_CodeFixAddsCancellationTokenNone()
+    public async Task LocateNodesAsync_CodeFixAddsCancellationTokenNone()
     {
         string testCode = """
             using System;
@@ -36,17 +36,17 @@ public class BiDiDriver004CodeFixProviderTests
 
             namespace WebDriverBiDi.BrowsingContext
             {
-                public class NavigateCommandParameters
+                public class LocateNodesCommandParameters
                 {
-                    public NavigateCommandParameters(string contextId, string url) { }
+                    public LocateNodesCommandParameters(string contextId, string url) { }
                 }
 
-                public class NavigateCommandResult { }
+                public class LocateNodesCommandResult { }
 
                 public class BrowsingContextModule
                 {
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new NavigateCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
                 }
             }
 
@@ -59,8 +59,8 @@ public class BiDiDriver004CodeFixProviderTests
                 {
                     public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
-                        var navParams = new NavigateCommandParameters(contextId, "https://example.com");
-                        await {|#0:driver.BrowsingContext.NavigateAsync(navParams)|};
+                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
+                        await {|#0:driver.BrowsingContext.LocateNodesAsync(locateParams)|};
                     }
                 }
             }
@@ -81,17 +81,17 @@ public class BiDiDriver004CodeFixProviderTests
 
             namespace WebDriverBiDi.BrowsingContext
             {
-                public class NavigateCommandParameters
+                public class LocateNodesCommandParameters
                 {
-                    public NavigateCommandParameters(string contextId, string url) { }
+                    public LocateNodesCommandParameters(string contextId, string url) { }
                 }
 
-                public class NavigateCommandResult { }
+                public class LocateNodesCommandResult { }
 
                 public class BrowsingContextModule
                 {
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new NavigateCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
                 }
             }
 
@@ -104,8 +104,8 @@ public class BiDiDriver004CodeFixProviderTests
                 {
                     public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
-                        var navParams = new NavigateCommandParameters(contextId, "https://example.com");
-                        await driver.BrowsingContext.NavigateAsync(navParams, CancellationToken.None);
+                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
+                        await driver.BrowsingContext.LocateNodesAsync(locateParams, CancellationToken.None);
                     }
                 }
             }
@@ -113,7 +113,7 @@ public class BiDiDriver004CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
             .WithLocation(0)
-            .WithArguments("NavigateAsync");
+            .WithArguments("LocateNodesAsync");
 
         LfCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
         {
@@ -131,7 +131,7 @@ public class BiDiDriver004CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NavigateAsync_CodeFixAddsCancellationTokenParameter()
+    public async Task LocateNodesAsync_CodeFixAddsCancellationTokenParameter()
     {
         string testCode = """
             using System;
@@ -148,17 +148,17 @@ public class BiDiDriver004CodeFixProviderTests
 
             namespace WebDriverBiDi.BrowsingContext
             {
-                public class NavigateCommandParameters
+                public class LocateNodesCommandParameters
                 {
-                    public NavigateCommandParameters(string contextId, string url) { }
+                    public LocateNodesCommandParameters(string contextId, string url) { }
                 }
 
-                public class NavigateCommandResult { }
+                public class LocateNodesCommandResult { }
 
                 public class BrowsingContextModule
                 {
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new NavigateCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
                 }
             }
 
@@ -171,8 +171,8 @@ public class BiDiDriver004CodeFixProviderTests
                 {
                     public async Task TestMethod(BiDiDriver driver, string contextId, CancellationToken cancellationToken)
                     {
-                        var navParams = new NavigateCommandParameters(contextId, "https://example.com");
-                        await {|#0:driver.BrowsingContext.NavigateAsync(navParams)|};
+                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
+                        await {|#0:driver.BrowsingContext.LocateNodesAsync(locateParams)|};
                     }
                 }
             }
@@ -193,17 +193,17 @@ public class BiDiDriver004CodeFixProviderTests
 
             namespace WebDriverBiDi.BrowsingContext
             {
-                public class NavigateCommandParameters
+                public class LocateNodesCommandParameters
                 {
-                    public NavigateCommandParameters(string contextId, string url) { }
+                    public LocateNodesCommandParameters(string contextId, string url) { }
                 }
 
-                public class NavigateCommandResult { }
+                public class LocateNodesCommandResult { }
 
                 public class BrowsingContextModule
                 {
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new NavigateCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
+                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
                 }
             }
 
@@ -216,8 +216,8 @@ public class BiDiDriver004CodeFixProviderTests
                 {
                     public async Task TestMethod(BiDiDriver driver, string contextId, CancellationToken cancellationToken)
                     {
-                        var navParams = new NavigateCommandParameters(contextId, "https://example.com");
-                        await driver.BrowsingContext.NavigateAsync(navParams, cancellationToken);
+                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
+                        await driver.BrowsingContext.LocateNodesAsync(locateParams, cancellationToken);
                     }
                 }
             }
@@ -225,7 +225,7 @@ public class BiDiDriver004CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
             .WithLocation(0)
-            .WithArguments("NavigateAsync");
+            .WithArguments("LocateNodesAsync");
 
         LfCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
         {
