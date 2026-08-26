@@ -485,8 +485,8 @@ public static class NetworkModuleSamples
         {
             Headers =
             [
-                "Authorization: Bearer mytoken",
-                "X-API-Key: my-api-key",
+                new Header("Authorization", "Bearer mytoken"),
+                new Header("X-API-Key", "my-api-key"),
             ],
             Contexts = new List<string> { contextId },
         };

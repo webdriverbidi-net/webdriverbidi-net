@@ -427,7 +427,7 @@ public class NetworkModuleTests
         NetworkModule module = driver.Network;
 
         SetExtraHeadersCommandParameters commandParameters = new();
-        commandParameters.Headers.Add("X-Extra-Header: headerValue");
+        commandParameters.Headers.Add(new Header("X-Extra-Header", "headerValue"));
         SetExtraHeadersCommandResult result = await module.SetExtraHeadersAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
