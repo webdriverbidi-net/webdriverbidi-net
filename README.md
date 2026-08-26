@@ -18,6 +18,7 @@ also included in this library are:
 * [Web Bluetooth](https://webbluetoothcg.github.io/web-bluetooth/)
 * [Prefetch](https://wicg.github.io/nav-speculation/prefetch.html)
 * [User Agent Client Hints](https://wicg.github.io/ua-client-hints/)
+* [Digital Credentials](https://www.w3.org/TR/digital-credentials/)
 
 The library allows a user to automate a browser using WebDriver BiDi, standard protocol developed and maintained
 under the auspices of the World Wide Web Consortium (W3C). The protocol is implemented by browser vendors as part
@@ -65,7 +66,7 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are 15 projects in this repository:
+There are 16 projects in this repository:
 * src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code.
 * src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj - Source code for Roslyn analyzers
 to help users avoid antipatterns when using the main library.
@@ -98,6 +99,8 @@ that acts as a test server for named pipe communication, used by unit tests to v
 application whose main library reference is pinned to its netstandard2.0 build, allowing proper
 smoke testing of netstandard2.0-specific code paths in the main library.
 * test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library.
+* docs/code/WebDriverBiDi.DocSnippets.csproj - The compilable code samples included in the documentation
+articles. Building this project verifies that every documented sample compiles against the current library.
 
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.
 It can be used across multiple operating systems, and there should be nothing platform-specific in the
