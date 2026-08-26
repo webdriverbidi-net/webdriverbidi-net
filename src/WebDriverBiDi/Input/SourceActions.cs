@@ -17,6 +17,15 @@ using System.Text.Json.Serialization;
 public abstract class SourceActions
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="SourceActions"/> class.
+    /// </summary>
+    /// <param name="sourceId">The unique ID of the input source.</param>
+    protected SourceActions(string sourceId)
+    {
+        this.Id = sourceId;
+    }
+
+    /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonPropertyName("type")]
@@ -26,5 +35,5 @@ public abstract class SourceActions
     /// Gets the ID of the device.
     /// </summary>
     [JsonPropertyName("id")]
-    public string Id { get; } = Guid.NewGuid().ToString();
+    public string Id { get; }
 }

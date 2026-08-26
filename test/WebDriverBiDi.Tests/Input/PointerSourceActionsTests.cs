@@ -264,4 +264,33 @@ public class PointerSourceActionsTests
         Assert.Equal(JTokenType.Integer, button.Type);
         Assert.Equal(0, button.Value<long>());
     }
+
+    [Fact]
+    public void TestCanSerializeParametersWithExplicitSourceId()
+    {
+        PointerSourceActions properties = new("my pointer source");
+        Assert.Equal("my pointer source", properties.Id);
+
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("id"));
+        JToken? id = serialized["id"];
+        Assert.NotNull(id);
+        Assert.Equal(JTokenType.String, id.Type);
+        Assert.Equal("my pointer source", id.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        Assert.Equal("pointer", serialized["type"]!.Value<string>());
+    }
+
+    [Fact]
+    public void TestDefaultConstructorGeneratesUniqueSourceIds()
+    {
+        PointerSourceActions first = new();
+        PointerSourceActions second = new();
+        Assert.False(string.IsNullOrEmpty(first.Id));
+        Assert.NotEqual(first.Id, second.Id);
+    }
 }

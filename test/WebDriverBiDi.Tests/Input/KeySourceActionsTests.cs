@@ -81,4 +81,33 @@ public class KeySourceActionsTests
         Assert.Equal(JTokenType.String, value.Type);
         Assert.Equal("a", value.Value<string>());
     }
+
+    [Fact]
+    public void TestCanSerializeParametersWithExplicitSourceId()
+    {
+        KeySourceActions properties = new("my key source");
+        Assert.Equal("my key source", properties.Id);
+
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("id"));
+        JToken? id = serialized["id"];
+        Assert.NotNull(id);
+        Assert.Equal(JTokenType.String, id.Type);
+        Assert.Equal("my key source", id.Value<string>());
+
+        Assert.True(serialized.ContainsKey("type"));
+        Assert.Equal("key", serialized["type"]!.Value<string>());
+    }
+
+    [Fact]
+    public void TestDefaultConstructorGeneratesUniqueSourceIds()
+    {
+        KeySourceActions first = new();
+        KeySourceActions second = new();
+        Assert.False(string.IsNullOrEmpty(first.Id));
+        Assert.NotEqual(first.Id, second.Id);
+    }
 }

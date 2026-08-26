@@ -13,6 +13,23 @@ using System.Text.Json.Serialization;
 public class WheelSourceActions : SourceActions
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="WheelSourceActions"/> class.
+    /// </summary>
+    public WheelSourceActions()
+        : this(Guid.NewGuid().ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WheelSourceActions"/> class.
+    /// </summary>
+    /// <param name="sourceId">The unique ID of the wheel input source.</param>
+    public WheelSourceActions(string sourceId)
+        : base(sourceId)
+    {
+    }
+
+    /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonPropertyName("type")]

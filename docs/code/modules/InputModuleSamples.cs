@@ -161,6 +161,47 @@ public static class InputModuleSamples
     }
 
     /// <summary>
+    /// Reuse an input source across multiple performActions calls by giving it a stable ID.
+    /// </summary>
+    public static async Task ReusingInputSourceIds(BiDiDriver driver, string contextId)
+    {
+        #region ReusingInputSourceIds
+        // The remote end tracks the state of each input source (pressed keys and buttons,
+        // pointer position) by its ID, and that state persists across performActions calls
+        // until ReleaseActionsAsync is called. Giving the source a stable ID lets a later
+        // call continue where an earlier one left off.
+        const string MouseId = "default mouse";
+
+        // First call: move the pointer and press the primary button.
+        PerformActionsCommandParameters pressParameters = new PerformActionsCommandParameters(contextId);
+        PointerSourceActions mouseDown = new PointerSourceActions(MouseId)
+        {
+            Parameters = new PointerParameters { PointerType = PointerType.Mouse },
+        };
+        mouseDown.Actions.Add(new PointerMoveAction { X = 100, Y = 100 });
+        mouseDown.Actions.Add(new PointerDownAction(0));
+        pressParameters.Actions.Add(mouseDown);
+        await driver.Input.PerformActionsAsync(pressParameters);
+
+        // Second call: the same source ID, so the button is still pressed and the
+        // pointer is still at (100, 100); this move performs a drag.
+        PerformActionsCommandParameters dragParameters = new PerformActionsCommandParameters(contextId);
+        PointerSourceActions mouseDrag = new PointerSourceActions(MouseId)
+        {
+            Parameters = new PointerParameters { PointerType = PointerType.Mouse },
+        };
+        mouseDrag.Actions.Add(new PointerMoveAction { X = 300, Y = 200 });
+        mouseDrag.Actions.Add(new PointerUpAction(0));
+        dragParameters.Actions.Add(mouseDrag);
+        await driver.Input.PerformActionsAsync(dragParameters);
+
+        // A source created without an ID gets a new random ID each time, so it never
+        // shares state with sources from earlier calls.
+        PointerSourceActions independentMouse = new PointerSourceActions();
+        #endregion
+    }
+
+    /// <summary>
     /// Release actions.
     /// </summary>
     public static async Task ReleaseActions(BiDiDriver driver, string contextId)

@@ -13,6 +13,23 @@ using System.Text.Json.Serialization;
 public class KeySourceActions : SourceActions
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="KeySourceActions"/> class.
+    /// </summary>
+    public KeySourceActions()
+        : this(Guid.NewGuid().ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KeySourceActions"/> class.
+    /// </summary>
+    /// <param name="sourceId">The unique ID of the key input source.</param>
+    public KeySourceActions(string sourceId)
+        : base(sourceId)
+    {
+    }
+
+    /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonPropertyName("type")]

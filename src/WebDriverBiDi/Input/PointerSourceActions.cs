@@ -13,6 +13,23 @@ using System.Text.Json.Serialization;
 public class PointerSourceActions : SourceActions
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="PointerSourceActions"/> class.
+    /// </summary>
+    public PointerSourceActions()
+        : this(Guid.NewGuid().ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PointerSourceActions"/> class.
+    /// </summary>
+    /// <param name="sourceId">The unique ID of the pointer input source.</param>
+    public PointerSourceActions(string sourceId)
+        : base(sourceId)
+    {
+    }
+
+    /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonPropertyName("type")]
