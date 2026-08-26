@@ -19,6 +19,8 @@ Preload scripts allow you to:
 
 [!code-csharp[Preload Script with Channel](../../code/script/PreloadScriptSamples.cs#PreloadScriptwithChannel)]
 
+The remaining examples add `OnMessage` observers but omit the `Session.SubscribeAsync` call for `script.message` shown in Example 2; it is required once per session.
+
 ## Example 3: Wait for Element with Preload Script
 
 [!code-csharp[Wait for Element Preload Script](../../code/script/PreloadScriptSamples.cs#WaitforElementPreloadScript)]

@@ -8,6 +8,7 @@
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
+using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
@@ -29,8 +30,8 @@ public static class ObservabilitySamples
     public static async Task ConsoleLogging()
     {
         #region ConsoleLogging
-        // Create a simple console event listener
-        using var listener = new ConsoleEventListener();
+        // Create a simple console event listener (see ObservabilityConsoleEventListener below)
+        using var listener = new ObservabilityConsoleEventListener();
 
         // Use WebDriverBiDi normally - events will be logged to console
         await using var driver = new BiDiDriver();
@@ -183,8 +184,9 @@ public static class ObservabilitySamples
         await driver.Session.StatusAsync();
 
         // Logs will show:
-        // [12:34:56 DBG] CommandSending, commandId=1, method=session.status
+        // [12:34:56 INF] TransportStarted
         // [12:34:56 INF] CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
+        // (CommandSending is a Verbose-level event and is not emitted at EventLevel.Informational)
         #endregion
     }
 
@@ -297,12 +299,18 @@ public static class ObservabilitySamples
     public static void OpenTelemetryIntegration()
     {
         #region OpenTelemetryIntegration
+        // WebDriverBiDi emits EventSource events, not System.Diagnostics activities, so there is
+        // nothing for AddSource("WebDriverBiDi") to collect. Bridge the events into an
+        // ActivitySource owned by your application with an EventListener, and subscribe to that.
+        ActivitySource activitySource = new ActivitySource("MyApp.WebDriverBiDi");
+        using ObservabilityActivityBridge bridge = new ObservabilityActivityBridge(activitySource);
+
         var tracerProvider = Sdk.CreateTracerProviderBuilder()
-            .AddSource("WebDriverBiDi")
+            .AddSource("MyApp.WebDriverBiDi")
             .AddConsoleExporter()
             .Build();
 
-        // Now use WebDriverBiDi - traces will be collected
+        // Now use WebDriverBiDi - each diagnostic event is recorded as an activity
         #endregion
     }
 }
@@ -320,20 +328,11 @@ internal interface IBrowserAutomationService
     Task<bool> RunTestAsync();
 }
 
-internal class ConsoleEventListener : IDisposable
-{
-    public ConsoleEventListener()
-    {
-    }
-
-    public void Dispose()
-    {
-    }
-}
 
 /// <summary>
 /// Simple console event listener for WebDriverBiDi.
 /// </summary>
+#region ConsoleEventListener
 public class ObservabilityConsoleEventListener : EventListener
 {
     protected override void OnEventSourceCreated(EventSource source)
@@ -349,6 +348,7 @@ public class ObservabilityConsoleEventListener : EventListener
         Console.WriteLine($"[{eventData.Level}] {eventData.EventName}");
     }
 }
+#endregion
 
 /// <summary>
 /// Custom EventListener with structured payload logging.
@@ -505,3 +505,36 @@ public class CustomWebDriverEventListener : EventListener
     }
 }
 #endregion
+
+/// <summary>
+/// Bridges WebDriverBiDi EventSource events into an ActivitySource so that OpenTelemetry can collect them.
+/// </summary>
+public class ObservabilityActivityBridge : EventListener
+{
+    private readonly ActivitySource activitySource;
+
+    public ObservabilityActivityBridge(ActivitySource activitySource)
+    {
+        this.activitySource = activitySource;
+    }
+
+    protected override void OnEventSourceCreated(EventSource source)
+    {
+        if (source.Name == "WebDriverBiDi")
+        {
+            EnableEvents(source, EventLevel.Informational);
+        }
+    }
+
+    protected override void OnEventWritten(EventWrittenEventArgs eventData)
+    {
+        using Activity? activity = this.activitySource.StartActivity(eventData.EventName ?? "WebDriverBiDi");
+        if (activity is not null && eventData.PayloadNames is not null && eventData.Payload is not null)
+        {
+            for (int i = 0; i < eventData.PayloadNames.Count; i++)
+            {
+                activity.SetTag(eventData.PayloadNames[i], eventData.Payload[i]);
+            }
+        }
+    }
+}

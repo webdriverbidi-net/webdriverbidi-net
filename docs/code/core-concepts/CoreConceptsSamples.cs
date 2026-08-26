@@ -181,9 +181,7 @@ public static class CoreConceptsSamples
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Override with custom timeout for this command
-        await driver.ExecuteCommandAsync<NavigateCommandResult>(
-            navParams,
-            TimeSpan.FromSeconds(60));
+        await driver.BrowsingContext.NavigateAsync(navParams, TimeSpan.FromSeconds(60));
         #endregion
     }
 
@@ -693,10 +691,15 @@ public static class CoreConceptsSamples
         {
             await driver.BrowsingContext.NavigateAsync(@params);
         }
+        catch (WebDriverBiDiCommandException ex)
+        {
+            // The browser answered with an error response; ErrorCode tells you which
+            Console.WriteLine($"Command error {ex.ErrorCode}: {ex.ProtocolErrorMessage}");
+        }
         catch (WebDriverBiDiException ex)
         {
+            // Timeouts, connection loss, serialization failures, and other library errors
             Console.WriteLine($"BiDi error: {ex.Message}");
-            // ex.Message contains the error type and message from the browser
         }
         catch (Exception ex)
         {
@@ -732,13 +735,13 @@ public static class CoreConceptsSamples
         NavigateCommandParameters parameters)
     {
         #region TimeoutHandling
-        // Set a 5-second timeout for this driver
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(5));
+        // The driver's default applies to every command unless overridden
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         try
         {
-            // This will timeout if it takes longer than the driver's configured timeout
-            await driver.BrowsingContext.NavigateAsync(parameters);
+            // This navigation gets a 5-second timeout via the timeoutOverride parameter
+            await driver.BrowsingContext.NavigateAsync(parameters, TimeSpan.FromSeconds(5));
         }
         catch (WebDriverBiDiTimeoutException)
         {

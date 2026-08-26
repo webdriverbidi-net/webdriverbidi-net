@@ -124,15 +124,15 @@ public static class BrowserSetupSamples
     public static async Task SeleniumManagerIntegration(ChromeOptions chromeOptions)
     {
         #region SeleniumManagerIntegration
-        BiDiDriver driver = null;
-
-        // This is conceptual - WebDriverBiDi.NET doesn't include Selenium Manager
-        // But you can use them together
+        // This is conceptual - WebDriverBiDi.NET doesn't include Selenium Manager,
+        // but you can use them together: let Selenium launch the browser, then ask the
+        // browser (via CDP) for the WebSocket URL and connect a BiDiDriver to it.
         var seleniumDriver = new ChromeDriver(chromeOptions);
         string wsUrl = (string)((Dictionary<string, object>)seleniumDriver
             .ExecuteCdpCommand("Target.getTargets", new Dictionary<string, object>()))
             ["webSocketDebuggerUrl"];
 
+        BiDiDriver driver = new BiDiDriver();
         await driver.StartAsync(wsUrl);
         #endregion
     }
@@ -169,13 +169,14 @@ public static class BrowserSetupSamples
 
         // Later: clean up
         chromeProcess.Kill();
+        #endregion
     }
-    #endregion
 }
 
 /// <summary>
 /// Conceptual pipe launcher - implement IPipeServerProcessProvider to launch browser with --remote-debugging-pipe.
 /// </summary>
+#region ImplementingIPipeServerProcessProvider
 public class BrowserSetupPipeLauncher : IPipeServerProcessProvider
 {
     public Process? PipeServerProcess => null; // Implement: launch browser process with pipe flags
@@ -187,3 +188,4 @@ public class BrowserSetupPipeLauncher : IPipeServerProcessProvider
     public Task QuitBrowserAsync() => Task.CompletedTask;
     public Task StopAsync() => Task.CompletedTask;
 }
+#endregion

@@ -49,6 +49,6 @@ public class Wrapper
             await driver.BrowsingContext.CloseAsync(
                 new CloseCommandParameters(sharedContextId));
         }
+        #endregion
     }
-    #endregion
 }

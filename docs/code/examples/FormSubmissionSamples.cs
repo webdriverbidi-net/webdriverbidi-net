@@ -150,12 +150,11 @@ public static class FormSubmissionSamples
     public static async Task SubmitWithEnterKey(BiDiDriver driver, string contextId)
     {
         #region SubmitwithEnterKey
-        // After typing in the last field, press Enter
-        // Keys.Enter is a hypothetical constant representing the Enter key.
-        // In practice, use "\uE007" or appropriate value for your implementation.
+        // After typing in the last field, press Enter. Special keys are sent using their
+        // WebDriver key code; "\uE007" is Enter.
         KeySourceActions keyboard = new KeySourceActions();
-        keyboard.Actions.Add(new KeyDownAction(Keys.Enter));
-        keyboard.Actions.Add(new KeyUpAction(Keys.Enter));
+        keyboard.Actions.Add(new KeyDownAction("\uE007"));
+        keyboard.Actions.Add(new KeyUpAction("\uE007"));
 
         PerformActionsCommandParameters submitParams = new PerformActionsCommandParameters(contextId);
         submitParams.Actions.Add(keyboard);
@@ -196,17 +195,20 @@ public static class FormSubmissionSamples
             checkboxSuccess.Result is NodeRemoteValue checkboxElement)
         {
             // Click to toggle
-            // PointerSource is a hypothetical helper class to build input actions.
-            PerformActionsCommandParameters clickParams =
-                new PerformActionsCommandParameters(contextId);
-            PointerSource mouse = new PointerSource("mouse", PointerType.Mouse);
-            mouse.CreatePointerMoveToElement(
-                checkboxElement.ToSharedReference(),
-                0, 0,
-                TimeSpan.Zero);
-            mouse.CreatePointerDown(MouseButton.Left);
-            mouse.CreatePointerUp(MouseButton.Left);
-            clickParams.Actions.Add(mouse.ToSourceActions());
+            PerformActionsCommandParameters clickParams = new PerformActionsCommandParameters(contextId);
+            PointerSourceActions clickParamsMouse = new PointerSourceActions
+            {
+                Parameters = new PointerParameters { PointerType = PointerType.Mouse },
+            };
+            clickParamsMouse.Actions.Add(new PointerMoveAction
+            {
+                X = 0,
+                Y = 0,
+                Origin = Origin.Element(checkboxElement.ToSharedReference()),
+            });
+            clickParamsMouse.Actions.Add(new PointerDownAction(0));
+            clickParamsMouse.Actions.Add(new PointerUpAction(0));
+            clickParams.Actions.Add(clickParamsMouse);
             await driver.Input.PerformActionsAsync(clickParams);
         }
         #endregion
@@ -284,36 +286,33 @@ public static class FormSubmissionSamples
 
                 // Click the input to focus it
                 Console.WriteLine("Clicking input field...");
-                PerformActionsCommandParameters clickParams =
-                    new PerformActionsCommandParameters(contextId);
-
-                // PointerSource and KeySource are hypothetical helper classes to build input actions.
-                PointerSource mouse = new PointerSource("mouse", PointerType.Mouse);
-                mouse.CreatePointerMoveToElement(
-                    inputElement.ToSharedReference(),
-                    0, 0,
-                    TimeSpan.Zero);
-                mouse.CreatePointerDown(MouseButton.Left);
-                mouse.CreatePointerUp(MouseButton.Left);
-
-                clickParams.Actions.Add(mouse.ToSourceActions());
+                PerformActionsCommandParameters clickParams = new PerformActionsCommandParameters(contextId);
+                PointerSourceActions clickParamsMouse = new PointerSourceActions
+                {
+                    Parameters = new PointerParameters { PointerType = PointerType.Mouse },
+                };
+                clickParamsMouse.Actions.Add(new PointerMoveAction
+                {
+                    X = 0,
+                    Y = 0,
+                    Origin = Origin.Element(inputElement.ToSharedReference()),
+                });
+                clickParamsMouse.Actions.Add(new PointerDownAction(0));
+                clickParamsMouse.Actions.Add(new PointerUpAction(0));
+                clickParams.Actions.Add(clickParamsMouse);
                 await driver.Input.PerformActionsAsync(clickParams);
 
                 // Type the customer name
                 Console.WriteLine("Typing customer name...");
-                PerformActionsCommandParameters typeParams =
-                    new PerformActionsCommandParameters(contextId);
-
-                KeySource keyboard = new KeySource("keyboard");
                 string customerName = "John Doe";
-
+                PerformActionsCommandParameters typeParams = new PerformActionsCommandParameters(contextId);
+                KeySourceActions typeParamsKeyboard = new KeySourceActions();
                 foreach (char c in customerName)
                 {
-                    keyboard.CreateKeyDown(c.ToString());
-                    keyboard.CreateKeyUp(c.ToString());
+                    typeParamsKeyboard.Actions.Add(new KeyDownAction(c.ToString()));
+                    typeParamsKeyboard.Actions.Add(new KeyUpAction(c.ToString()));
                 }
-
-                typeParams.Actions.Add(keyboard.ToSourceActions());
+                typeParams.Actions.Add(typeParamsKeyboard);
                 await driver.Input.PerformActionsAsync(typeParams);
 
                 // Find and fill the telephone number field
@@ -330,31 +329,32 @@ public static class FormSubmissionSamples
                     phoneSuccess.Result.TryConvertTo(out NodeRemoteValue? phoneElement);
 
                     // Click phone field
-                    PerformActionsCommandParameters clickPhoneParams =
-                        new PerformActionsCommandParameters(contextId);
-                    PointerSource mouse2 = new PointerSource("mouse", PointerType.Mouse);
-                    mouse2.CreatePointerMoveToElement(
-                        phoneElement.ToSharedReference(),
-                        0, 0,
-                        TimeSpan.Zero);
-                    mouse2.CreatePointerDown(MouseButton.Left);
-                    mouse2.CreatePointerUp(MouseButton.Left);
-                    clickPhoneParams.Actions.Add(mouse2.ToSourceActions());
+                    PerformActionsCommandParameters clickPhoneParams = new PerformActionsCommandParameters(contextId);
+                    PointerSourceActions clickPhoneParamsMouse = new PointerSourceActions
+                    {
+                        Parameters = new PointerParameters { PointerType = PointerType.Mouse },
+                    };
+                    clickPhoneParamsMouse.Actions.Add(new PointerMoveAction
+                    {
+                        X = 0,
+                        Y = 0,
+                        Origin = Origin.Element(phoneElement.ToSharedReference()),
+                    });
+                    clickPhoneParamsMouse.Actions.Add(new PointerDownAction(0));
+                    clickPhoneParamsMouse.Actions.Add(new PointerUpAction(0));
+                    clickPhoneParams.Actions.Add(clickPhoneParamsMouse);
                     await driver.Input.PerformActionsAsync(clickPhoneParams);
 
                     // Type phone number
-                    PerformActionsCommandParameters typePhoneParams =
-                        new PerformActionsCommandParameters(contextId);
-                    KeySource keyboard2 = new KeySource("keyboard");
                     string phoneNumber = "555-1234";
-
+                    PerformActionsCommandParameters typePhoneParams = new PerformActionsCommandParameters(contextId);
+                    KeySourceActions typePhoneParamsKeyboard = new KeySourceActions();
                     foreach (char c in phoneNumber)
                     {
-                        keyboard2.CreateKeyDown(c.ToString());
-                        keyboard2.CreateKeyUp(c.ToString());
+                        typePhoneParamsKeyboard.Actions.Add(new KeyDownAction(c.ToString()));
+                        typePhoneParamsKeyboard.Actions.Add(new KeyUpAction(c.ToString()));
                     }
-
-                    typePhoneParams.Actions.Add(keyboard2.ToSourceActions());
+                    typePhoneParams.Actions.Add(typePhoneParamsKeyboard);
                     await driver.Input.PerformActionsAsync(typePhoneParams);
                 }
 
@@ -384,16 +384,20 @@ public static class FormSubmissionSamples
 
                     // Click submit button
                     Console.WriteLine("Clicking submit button...");
-                    PerformActionsCommandParameters clickSubmitParams =
-                        new PerformActionsCommandParameters(contextId);
-                    PointerSource mouse3 = new PointerSource("mouse", PointerType.Mouse);
-                    mouse3.CreatePointerMoveToElement(
-                        buttonElement.ToSharedReference(),
-                        0, 0,
-                        TimeSpan.Zero);
-                    mouse3.CreatePointerDown(MouseButton.Left);
-                    mouse3.CreatePointerUp(MouseButton.Left);
-                    clickSubmitParams.Actions.Add(mouse3.ToSourceActions());
+                    PerformActionsCommandParameters clickSubmitParams = new PerformActionsCommandParameters(contextId);
+                    PointerSourceActions clickSubmitParamsMouse = new PointerSourceActions
+                    {
+                        Parameters = new PointerParameters { PointerType = PointerType.Mouse },
+                    };
+                    clickSubmitParamsMouse.Actions.Add(new PointerMoveAction
+                    {
+                        X = 0,
+                        Y = 0,
+                        Origin = Origin.Element(buttonElement.ToSharedReference()),
+                    });
+                    clickSubmitParamsMouse.Actions.Add(new PointerDownAction(0));
+                    clickSubmitParamsMouse.Actions.Add(new PointerUpAction(0));
+                    clickSubmitParams.Actions.Add(clickSubmitParamsMouse);
                     await driver.Input.PerformActionsAsync(clickSubmitParams);
 
                     // Wait for navigation to complete

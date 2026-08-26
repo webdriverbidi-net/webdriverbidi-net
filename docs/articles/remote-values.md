@@ -10,10 +10,10 @@ When you execute JavaScript in the browser, the results are returned as `RemoteV
 
 Every `RemoteValue` has a `Type` property indicating the JavaScript type as a string. The library deserializes each value into a concrete subclass rather than a single generic type:
 
-- **`RemoteValue`** (abstract base) – all remote values expose `Type`, `As<T>()`, `TryConvertTo<T>()`, and `ToLocalValue()`
+- **`RemoteValue`** (abstract base) – all remote values expose `Type`, `ConvertTo<T>()`, `TryConvertTo<T>()`, and `ToLocalValue()`
 - **`ValueHoldingRemoteValue<T>`** – subclass for values that carry a .NET payload; exposes a typed `Value` property
-- **`ObjectReferenceRemoteValue`** – subclass for JavaScript objects that can be referenced by handle; exposes `Handle` and `InternalId`, and `ToRemoteReference()` to build a reference
-- **`NodeRemoteValue`** – extends `ValueHoldingRemoteValue<NodeProperties>` and also implements `IObjectReferenceRemoteValue`, providing `SharedId` and `ToSharedReference()`
+- **`ObjectReferenceRemoteValue`** – subclass for JavaScript objects that can be referenced by handle; exposes `Handle` and `InternalId`, and `ToRemoteObjectReference()` to build a reference
+- **`NodeRemoteValue`** – derives directly from `RemoteValue`, exposes a `NodeProperties? Value` (via `ITypeSafeRemoteValue<NodeProperties?>`), and implements `IObjectReferenceRemoteValue`, providing `SharedId`, `ToSharedReference()` and `ToRemoteObjectReference()`
 
 `NullRemoteValue` and `UndefinedRemoteValue` have no `Value` property — only a `Type`.
 

@@ -444,9 +444,11 @@ public static class NetworkInterceptionSamples
                 // Only intercept requests from specific page
                 if (e.Request.Url.Contains("example.com/api/"))
                 {
-                    // Apply interception logic
+                    // Apply interception logic, then let the request proceed. Every blocked
+                    // request must be continued, failed, or answered, or the page hangs.
                     Console.WriteLine($"🔍 Intercepting API call: {e.Request.Url}");
-                    // ... handle request
+                    await driver.Network.ContinueRequestAsync(
+                        new ContinueRequestCommandParameters(e.Request.RequestId));
                 }
                 else
                 {

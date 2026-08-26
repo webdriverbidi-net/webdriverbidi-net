@@ -195,7 +195,7 @@ When using `RunHandlerAsynchronously`, the handler runs on a background task. Yo
 - Async event handlers run independently on background tasks
 - There's no automatic synchronization between command completion and handler completion
 
-**The Solution - Option 1: Use WaitForCapturedTasksAsync (Recommended):**
+**The Solution - Option 1: Use WaitForCapturedTasksCompleteAsync (Recommended):**
 
 [!code-csharp[Wait For Captured Tasks](../code/common-pitfalls/CommonPitfallsSamples.cs#WaitForCapturedTasks)]
 

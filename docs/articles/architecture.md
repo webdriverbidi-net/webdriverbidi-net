@@ -167,7 +167,7 @@ WebDriverBiDi.NET uses an abstract `Connection` class to support multiple transp
 
 ### Connection Architecture
 
-The `Connection` abstract class defines the contract for all transport implementations. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API, including `IsActive`, `ConnectionKind`, `StartAsync`, `StopAsync`, `SendDataAsync`, observable events (`OnDataReceived`, which transfers buffer ownership and so admits only a single observer — the `Transport`; `OnConnectionError`; and `OnLogMessage`), and configurable timeouts (`StartupTimeout`, `ShutdownTimeout`, `DataTimeout`).
+The `Connection` abstract class defines the contract for all transport implementations. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API, including `IsActive`, `ConnectionKind`, `StartAsync`, `StopAsync`, `SendDataAsync`, observable events (`OnDataReceived`, which transfers buffer ownership and so admits only a single observer — the `Transport`; `OnConnectionError`; `OnRemoteDisconnected`; and `OnLogMessage`), and configurable timeouts (`StartupTimeout`, `ShutdownTimeout`, `DataTimeout`).
 
 ### WebSocket Connection
 
@@ -215,7 +215,7 @@ The browser provides the WebSocket URL in its output or via the `/json/version` 
 
 **Example:**
 
-> **Note:** WebDriverBiDi.NET does not ship a browser launcher. Implement `IPipeServerProcessProvider` yourself to launch the browser and provide a `Transport`:
+> **Note:** The `WebDriverBiDi` package does not ship a browser launcher. The sample uses `BrowserLauncher` from the repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet), whose Chromium launcher implements `IPipeServerProcessProvider`; in your own project, implement `IPipeServerProcessProvider` to launch the browser and build a `Transport` over a `PipeConnection` (see [Browser Setup](browser-setup.md#implementing-your-own-launcher)):
 
 [!code-csharp[Pipe Example](../code/architecture/ArchitectureSamples.cs#PipeExample)]
 
@@ -314,7 +314,7 @@ ObservableEvent<TEventArgs>
 Your Event Handlers
 ```
 
-**Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")` and `NotifyObserversAsync(T eventArgs)`.
+**Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")` and a `protected NotifyObserversAsync(T eventArgs)` that only the producing side (`ObservableEventInvocable<T>`) can call.
 
 **Event Observer:** See `EventObserver<T>` in the WebDriverBiDi namespace—it provides `StartCapturingTasks`, `StopCapturingTasks`, `WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`, and `Unobserve`.
 
@@ -358,7 +358,11 @@ The library includes specialized converters for WebDriver BiDi types:
 
 ### Extension Data
 
-Command results and event args capture unknown properties via `[JsonExtensionData]` and expose them as `AdditionalData`. See the `CommandResult` base class in the WebDriverBiDi namespace. This allows forward compatibility with new protocol versions.
+<<<<<<< HEAD
+Command results and event args expose unknown properties of the response or event *envelope* (siblings of `id`, `type`, `result`, `method` and `params`) as `AdditionalData`; see the `CommandResult` and `WebDriverBiDiEventArgs` base classes. Types that the protocol marks `Extensible`, or that browsers are known to extend, additionally capture unknown properties inside their own payload: every `EmptyResult`-derived command result, `RequestData` and `ResponseData` (Chromium's `goog:`-prefixed request and response fields), `Cookie`, `CapabilitiesResult` (as `AdditionalCapabilities`), and the storage partition types. See [API Design Guide — Reading vendor extension data](advanced/api-design.md#reading-vendor-extension-data). This allows forward compatibility with new protocol versions.
+=======
+Command results and event args expose unknown properties of the response or event *envelope* (siblings of `id`, `type`, `result`, `method` and `params`) as `AdditionalData`; see the `CommandResult` and `WebDriverBiDiEventArgs` base classes. Types that the protocol marks `Extensible`, or that browsers are known to extend, additionally capture unknown properties inside their own payload: every `EmptyResult`-derived command result, `RequestData` and `ResponseData` (Chromium's `goog:`-prefixed request and response fields), `Cookie`, `CapabilitiesResult`, and the storage partition types. See [API Design Guide — Reading vendor extension data](advanced/api-design.md#reading-vendor-extension-data). This allows forward compatibility with new protocol versions.
+>>>>>>> 38218b4 (merge it)
 
 ## Threading Model
 
@@ -444,7 +448,7 @@ Connections provide observable events for error monitoring:
 
 ### Event Handler Error Behavior
 
-Event handlers can also throw exceptions. Control this with `ObservableEventHandlerOptions`:
+Event handlers can also throw exceptions. They never propagate to the code that raised the event; the transport captures them and applies `BiDiDriver.EventHandlerExceptionBehavior` (see [Granular Error Control](#granular-error-control) below). `ObservableEventHandlerOptions` only decides whether the handler's task is awaited, not how its exceptions are handled:
 
 [!code-csharp[Event Handler Error Behavior](../code/architecture/ArchitectureSamples.cs#EventHandlerErrorBehavior)]
 
@@ -551,7 +555,7 @@ Long-running event handlers block message processing:
 
 - **Unsubscribe from events** when no longer needed
 - **Remove observers** to prevent memory leaks
-- **Dispose of driver** to close WebSocket connection
+- **Stop (and dispose) the driver** to close the WebSocket connection
 
 [!code-csharp[Memory Management](../code/architecture/ArchitectureSamples.cs#MemoryManagement)]
 

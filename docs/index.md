@@ -64,6 +64,8 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 - [Storage Module](articles/modules/storage.md)
 - [Emulation Module](articles/modules/emulation.md)
 - [Permissions Module](articles/modules/permissions.md)
+- [Bluetooth Module](articles/modules/bluetooth.md)
+- [WebExtension Module](articles/modules/webextension.md)
 - [Speculation Module](articles/modules/speculation.md)
 - [User Agent Client Hints Module](articles/modules/user-agent-client-hints.md)
 - [Digital Credentials Module](articles/modules/digital-credentials.md)
@@ -77,7 +79,9 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 - [Preload Scripts](articles/examples/preload-scripts.md)
 
 ### Advanced Topics
+- [Roslyn Analyzers](articles/advanced/analyzers.md)
 - [Observability](articles/advanced/observability.md)
+- [Structured Logging (WebDriverBiDi.Logging)](articles/advanced/webdriverbidi-logging.md)
 - [API Design Guide](articles/advanced/api-design.md)
 - [Error Handling](articles/advanced/error-handling.md)
 - [Performance Considerations](articles/advanced/performance.md)

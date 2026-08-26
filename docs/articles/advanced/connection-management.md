@@ -36,7 +36,7 @@ This is sufficient for 95% of use cases. The driver creates a WebSocket connecti
 
 ### Using a Browser Launcher (Best for Local Automation)
 
-For local automation, use a browser launcher to manage the process and connection. **WebDriverBiDi.NET does not ship a launcher**—you must implement one. The pattern:
+For local automation, use a browser launcher to manage the process and connection. **The `WebDriverBiDi` package does not ship a launcher.** The samples in this article use `BrowserLauncher` from the repository's `WebDriverBiDi.Client` demonstration library, which is not published to NuGet; in your own project you implement the equivalent (see [Browser Setup — Implementing Your Own Launcher](../browser-setup.md#implementing-your-own-launcher)). The pattern:
 
 [!code-csharp[Using a Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#UsingaBrowserLauncher)]
 
@@ -110,13 +110,15 @@ Most users never need to tune this. Consider adjusting it only in specialized sc
 
 `Transport.ShutdownTimeout` only affects the message-processing drain; it does not affect the underlying connection's close handshake, which is governed by `Connection.ShutdownTimeout`. Both timeouts may apply during `driver.StopAsync()`, at different stages of teardown.
 
+An event handler that is still running while `StopAsync()` drains the queue may itself try to send a command. Such a command fails immediately with `WebDriverBiDiConnectionException` ("Transport must be connected to a remote end to execute commands") rather than waiting out the shutdown timeout, so a handler cannot deadlock shutdown by sending; it simply observes the exception.
+
 ### Buffer Size
 
 Connection buffer size is fixed at 1 MB (2²⁰ bytes):
 
 [!code-csharp[Buffer Size](../../code/advanced/ConnectionManagementSamples.cs#BufferSize)]
 
-This is suitable for typical WebDriver BiDi messages. Large transfers (screenshots, DOM snapshots) are split across multiple messages.
+This is suitable for typical WebDriver BiDi messages. Larger payloads (screenshots, DOM snapshots) arrive as multiple WebSocket frames of a single message; the connection reassembles the frames and hands the complete message to the transport.
 
 ## Connection Diagnostics
 
@@ -154,7 +156,7 @@ Internal connection logging:
 
 [!code-csharp[OnLogMessage Event](../../code/advanced/ConnectionManagementSamples.cs#OnLogMessageEvent)]
 
-**Levels:** Info (normal operations), Warning (non-critical issues), Error (connection errors).
+**Levels:** `Info` (normal operations), `Warn` (non-critical issues), `Error` (connection errors); `Debug` and `Trace` carry per-message detail.
 
 ## Transport Diagnostics
 
@@ -223,7 +225,7 @@ Use pipes only when:
 
 ### Using Pipes with a Custom Launcher
 
-WebDriverBiDi.NET does not ship a launcher. Implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide the `Transport`:
+The sample below uses the demonstration `BrowserLauncher` (see above); to build your own, implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide the `Transport`:
 
 [!code-csharp[Using Pipes with Launcher](../../code/advanced/ConnectionManagementSamples.cs#UsingPipeswithLauncher)]
 
@@ -239,6 +241,22 @@ Pipes use null-terminated JSON messages:
 **Browser Support:** Only Chromium-based browsers support pipes.
 
 **Deployment:** Browser and tests must be on the same machine. No remote debugging.
+
+## Reconnection and Recovery
+
+### Reconnecting After StopAsync
+
+A `BiDiDriver` is reusable: after `StopAsync()` completes, `IsStarted` is `false` and `StartAsync()` may be called again, with the same or a different connection string. `WebSocketConnection` supports this for any URL. A `PipeConnection` can also be restarted, but only against the browser process it was created for (its pipes are inherited by that process) and only until the connection is disposed; connecting to a different browser process requires a new `PipeConnection` and `Transport`. Between the stop and the restart the driver is in the same state as before its first start, so modules, custom events and type-info resolvers may be registered again. Observers added to `ObservableEvent<T>` properties are kept across the restart, but event subscriptions live in the browser session and must be re-established with `Session.SubscribeAsync` after reconnecting.
+
+[!code-csharp[Reconnect After Stop](../../code/advanced/ConnectionManagementSamples.cs#ReconnectAfterStop)]
+
+### Recovering From a Remote Disconnect
+
+When the browser closes the connection (or a read fails), the connection raises `OnRemoteDisconnected` (or `OnConnectionError`) and the transport immediately marks itself disconnected: every in-flight command fails with `WebDriverBiDiConnectionException`, later commands throw the same exception without waiting, and `driver.IsStarted` becomes `false`. The library does not reconnect automatically.
+
+To recover, call `StopAsync()` — it returns promptly because the transport is already disconnected, clears the driver's started state so that registration is allowed again, and throws the `AggregateException` of any errors accumulated under `TransportErrorBehavior.Collect` — and then call `StartAsync()` again. `StartAsync` waits (bounded by `Transport.ShutdownTimeout`) for the previous connection's message processing to finish before opening the new connection, so a handler that was still running when the connection dropped cannot interleave with the new session.
+
+[!code-csharp[Recover From Remote Disconnect](../../code/advanced/ConnectionManagementSamples.cs#RecoverFromRemoteDisconnect)]
 
 ## Error Handling
 
@@ -277,7 +295,7 @@ Usage: create the custom connection, wrap in transport, and pass to BiDiDriver:
 
 **WebSocket:** Full support, no special considerations. Firewall may prompt.
 
-**Pipes:** Uses named pipes. Process must have matching user privileges.
+**Pipes:** Uses anonymous pipes whose handles the browser process inherits. Process must have matching user privileges.
 
 ### macOS / Linux
 
@@ -301,7 +319,7 @@ Usage: create the custom connection, wrap in transport, and pass to BiDiDriver:
 
 ### 2. Use a Browser Launcher for Local Automation
 
-Implement your own launcher to manage the browser process and connection. Launch with `--remote-debugging-port`, discover the WebSocket URL from `/json/version`, then connect:
+Use a launcher to manage the browser process and connection (the sample uses the demonstration `BrowserLauncher`; your own would launch with `--remote-debugging-port`, discover the WebSocket URL from `/json/version`, then connect):
 
 [!code-csharp[Best Practice Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#BestPracticeBrowserLauncher)]
 

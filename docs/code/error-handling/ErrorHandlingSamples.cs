@@ -47,6 +47,51 @@ public class ErrorHandlingSamples
     }
 
     /// <summary>
+    /// Exception hierarchy - one catch per library exception type.
+    /// </summary>
+    public static async Task ExceptionHierarchy(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams)
+    {
+        #region ExceptionHierarchy
+        try
+        {
+            await driver.BrowsingContext.NavigateAsync(navParams);
+        }
+        catch (WebDriverBiDiCommandException ex)
+        {
+            // The browser answered the command with an error response.
+            Console.WriteLine($"Command failed: {ex.ErrorCode} ({ex.ProtocolErrorType}): {ex.ProtocolErrorMessage}");
+            if (ex.RemoteStackTrace is not null)
+            {
+                Console.WriteLine(ex.RemoteStackTrace);
+            }
+        }
+        catch (WebDriverBiDiTimeoutException ex)
+        {
+            // No response within the command timeout (or the connection did not open in time).
+            Console.WriteLine($"Timed out: {ex.Message}");
+        }
+        catch (WebDriverBiDiConnectionException ex)
+        {
+            // Not connected, already connected, or the connection dropped mid-command.
+            Console.WriteLine($"Connection problem: {ex.Message}");
+        }
+        catch (WebDriverBiDiSerializationException ex)
+        {
+            // Parameters could not be serialized, or the response could not be deserialized.
+            Console.WriteLine($"Serialization problem: {ex.Message}");
+        }
+        catch (WebDriverBiDiException ex)
+        {
+            // Everything else the library raises: canceled command, unexpected result type,
+            // RemoteValue conversion failures, and so on.
+            Console.WriteLine($"Other BiDi error: {ex.Message}");
+        }
+        #endregion
+    }
+
+    /// <summary>
     /// Common error scenarios - multiple catch blocks.
     /// </summary>
     public static async Task CommonErrorScenarios(
@@ -63,14 +108,14 @@ public class ErrorHandlingSamples
             Console.WriteLine("Navigation timeout - page took too long to load");
             // Handle timeout specifically
         }
-        catch (WebDriverBiDiException ex) when (ex.Message.Contains("no such frame"))
+        catch (WebDriverBiDiCommandException ex) when (ex.ErrorCode == ErrorCode.NoSuchFrame)
         {
             Console.WriteLine("Browsing context no longer exists");
             // Handle missing context
         }
-        catch (WebDriverBiDiException ex) when (ex.Message.Contains("invalid argument"))
+        catch (WebDriverBiDiCommandException ex) when (ex.ErrorCode == ErrorCode.InvalidArgument)
         {
-            Console.WriteLine("Invalid command parameters");
+            Console.WriteLine($"Invalid command parameters: {ex.ProtocolErrorMessage}");
             // Handle parameter error
         }
         catch (WebDriverBiDiException ex)
@@ -180,12 +225,15 @@ public class ErrorHandlingSamples
                     .Where(e => e.StackTrace?.Contains("AddObserver") == true)
                     .ToList();
 
+                // WebDriverBiDiProtocolException is raised for error responses that match no
+                // pending command (UnexpectedErrorBehavior); deserialization failures are
+                // collected as WebDriverBiDiSerializationException.
                 var protocolErrors = ex.InnerExceptions
                     .OfType<WebDriverBiDiProtocolException>()
                     .ToList();
 
                 Console.WriteLine($"  Event handler errors: {eventHandlerErrors.Count}");
-                Console.WriteLine($"  Protocol errors: {protocolErrors.Count}");
+                Console.WriteLine($"  Unexpected error responses: {protocolErrors.Count}");
             }
         }
         finally
@@ -233,7 +281,9 @@ public class ErrorHandlingSamples
             // If an error log event occurs, the exception won't throw immediately
             // because the event handler runs on a separate thread
 
-            // The exception will be thrown here when we send the next command
+            // The exception will be thrown here when we send the next command. With exactly
+            // one accumulated error it is a WebDriverBiDiException wrapping it; with more than
+            // one, an AggregateException is thrown instead.
             await driver.BrowsingContext.NavigateAsync(navParams);
         }
         catch (WebDriverBiDiException ex)
@@ -575,7 +625,7 @@ public class ErrorHandlingSamples
                     }
                 };
                 checkElement();
-                setTimeout(() => resolve(false), {timeout.TotalMilliseconds});
+                setTimeout(() => resolve(false), {{timeout.TotalMilliseconds}});
             })
             """;
 
@@ -655,7 +705,7 @@ public class ErrorHandlingSamples
             ProcessLogEntry(e);  // May throw
             // If throws:
             //   Terminate mode: Exception thrown on next command
-            //   Collect mode: Exception stored in transport.Errors
+            //   Collect mode: Exception stored by the transport and thrown from StopAsync()
             //   Ignore mode: Exception discarded
         });
 
@@ -853,6 +903,11 @@ public class ErrorHandlingSamples
 
             await driver.Session.SubscribeAsync(subscribeParams);
 
+            // ... perform the automation ...
+
+            // Collected errors are thrown only by StopAsync; DisposeAsync alone would
+            // log and discard them, so stop explicitly before the finally disposes.
+            await driver.StopAsync();
         }
         catch (AggregateException ex)
         {
@@ -1100,8 +1155,8 @@ public class ErrorHandlingSamples
         {
             // Handle cancellation
         }
+        #endregion
     }
-    #endregion
 
     private static void ProcessLogEntry(EntryAddedEventArgs e)
     {

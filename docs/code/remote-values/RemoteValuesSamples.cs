@@ -114,11 +114,11 @@ public static class RemoteValuesSamples
     {
         #region SimpleObject
         string script = """
-        (
+        ({
             name: 'John',
             age: 30,
             active: true
-        }
+        })
         """;
 
         EvaluateResult result = await driver.Script.EvaluateAsync(
@@ -147,7 +147,7 @@ public static class RemoteValuesSamples
     {
         #region NestedObjects
         string script = """
-            (
+            ({
                 user: {
                     name: 'John',
                     address: {
@@ -155,7 +155,7 @@ public static class RemoteValuesSamples
                         zip: '10001'
                     }
                 }
-            }
+            })
             """;
 
         EvaluateResult result = await driver.Script.EvaluateAsync(
@@ -515,12 +515,12 @@ public static class RemoteValuesSamples
     {
         #region ExtractMultipleValues
         string script = """
-            (
+            ({
                 title: document.title,
                 url: window.location.href,
                 linkCount: document.querySelectorAll('a').length,
                 ready: document.readyState === 'complete'
-            }
+            })
             """;
 
         EvaluateResult result = await driver.Script.EvaluateAsync(
@@ -584,11 +584,11 @@ public static class RemoteValuesSamples
         // Get properties from element
         CallFunctionCommandParameters propsParams = new CallFunctionCommandParameters(
             """
-            (element) => (
+            (element) => ({
                 tag: element.tagName,
                 text: element.textContent,
                 visible: element.offsetParent !== null
-            }
+            })
             """,
             target,
             false);

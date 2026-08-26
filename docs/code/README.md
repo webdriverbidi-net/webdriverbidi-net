@@ -11,8 +11,8 @@ This directory contains C# code snippets that are included in the documentation 
 - `common-pitfalls/` - Snippets for `docs/articles/common-pitfalls.md`
 - `script/` - Snippets for `docs/articles/modules/script.md`, `docs/articles/examples/preload-scripts.md`
 - `remote-values/` - Snippets for `docs/articles/remote-values.md`
-- `examples/` - Snippets for `docs/articles/examples/*.md` (form-submission, console-monitoring, common-scenarios)
-- `modules/` - Snippets for `docs/articles/modules/*.md` (Session, Network, Input)
+- `examples/` - Snippets for `docs/articles/examples/*.md` (common-scenarios, console-monitoring, form-submission, network-interception) and for `getting-started.md`, `first-application.md` and `browser-setup.md`
+- `modules/` - Snippets for every guide in `docs/articles/modules/*.md`
 - `advanced/` - Snippets for the remaining `docs/articles/advanced/*.md` guides (AOT compatibility, connection management, custom modules, observability, performance)
 - `api/` - Snippets for `docs/api/index.md`
 - `architecture/` - Snippets for `docs/articles/architecture.md`
@@ -35,6 +35,9 @@ The main solution build includes this project, so validation runs automatically 
 ## Adding New Snippets
 
 1. Create or add to a `.cs` file in the appropriate subdirectory.
-2. Wrap the snippet in a compilable method (namespace, class, usings).
-3. Reference the snippet in the markdown using `[!code-csharp[Title](path/to/file.cs#Lstart-Lend)]`.
+2. Wrap the snippet in a compilable method (namespace, class, usings), and surround the lines to show with
+   `#region Name` / `#endregion`. Keep `#endregion` inside the method body — placing it after the method's closing
+   brace renders a stray `}` in the article.
+3. Reference the snippet in the markdown using `[!code-csharp[Title](path/to/file.cs#Name)]`, where `Name` is the
+   region name. `docs/tools/validate-doc-regions.sh` (run by CI) fails the build if a referenced region does not exist.
 4. Paths in markdown are relative to the markdown file (e.g., `../../code/error-handling/TimeoutSamples.cs` from `articles/advanced/error-handling.md`).
