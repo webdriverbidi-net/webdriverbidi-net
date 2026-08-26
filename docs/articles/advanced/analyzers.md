@@ -25,7 +25,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | ID | Severity | When It Fires |
 |----|----------|----------------|
 | **BIDI001** | Error | `RegisterModule()` called after `StartAsync()` |
-| **BIDI002** | Error | Event registered (via `AddObserver`) after `StartAsync()` |
+| **BIDI002** | Error | Custom event registered (via `RegisterEvent()`) after `StartAsync()`. Adding observers with `AddObserver()` is not reported: observers may be added to an observable event at any time, including while the driver is running |
 | **BIDI003** | Error | `RegisterTypeInfoResolverAsync()` called after `StartAsync()` |
 | **BIDI004** | Info | Long-running operation called without `CancellationToken`; suggests passing one |
 | **BIDI005** | Warning | Event observer added but event name not included in `Session.SubscribeAsync()` |
@@ -52,7 +52,7 @@ Many analyzers provide automatic code fixes. In Visual Studio or VS Code, use th
 The following analyzers have code fix providers:
 
 - **BIDI001** — Moves `RegisterModule()` call before `StartAsync()`
-- **BIDI002** — Moves `AddObserver()` call before `StartAsync()`
+- **BIDI002** — Moves `RegisterEvent()` call before `StartAsync()`
 - **BIDI003** — Moves `RegisterTypeInfoResolverAsync()` call before `StartAsync()`
 - **BIDI004** — Adds `CancellationToken` parameter to long-running operations
 - **BIDI005** — Adds missing event name to `Session.SubscribeAsync()` call

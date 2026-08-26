@@ -34,16 +34,18 @@ The `IsStarted` property indicates whether the driver is currently connected:
 
 #### Timing Restrictions
 
-**Critical:** Module and event registration must happen BEFORE calling `StartAsync()`:
+**Critical:** Module registration (`RegisterModule`), custom event registration (`RegisterEvent`), and type resolver registration (`RegisterTypeInfoResolverAsync`) must happen BEFORE calling `StartAsync()`. Adding observers with `AddObserver` is not restricted and may be done at any time:
 
 [!code-csharp[Timing Restrictions - Correct](../code/core-concepts/CoreConceptsSamples.cs#TimingRestrictions-Correct)]
 
 [!code-csharp[Timing Restrictions - Wrong](../code/core-concepts/CoreConceptsSamples.cs#TimingRestrictions-Wrong)]
 
 **Why This Restriction Exists:**
-- Ensures all handlers are in place before events start flowing
+- Ensures every event the transport can receive has a registered deserializer before messages start flowing
 - Prevents race conditions
 - Maintains predictable initialization order
+
+Observers are deliberately exempt: `ObservableEvent<T>.AddObserver` is thread-safe with respect to event dispatch, so observers can be added and removed while the driver is running (for example, a temporary observer around a single navigation). The ordering that matters for observers is that they are added before the corresponding `Session.SubscribeAsync()` call, so no events are missed.
 
 **Thread Safety:**
 

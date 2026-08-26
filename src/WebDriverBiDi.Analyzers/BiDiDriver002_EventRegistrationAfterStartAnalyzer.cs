@@ -167,7 +167,11 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
-        // Check for RegisterEvent after StartAsync
+        // Check for RegisterEvent after StartAsync. Note that adding an observer to an
+        // ObservableEvent<T> (AddObserver) is deliberately not reported: observers may be
+        // added or removed at any time, including while the driver is running. Only the
+        // registration of custom protocol events (RegisterEvent) is locked once the driver
+        // has started, and that is the only call the runtime rejects.
         if (methodName == "RegisterEvent")
         {
             DriverVariableState state = updatedVariables[driverVariableName];
@@ -178,48 +182,7 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
             }
         }
 
-        // Check for AddObserver after StartAsync
-        if (methodName == "AddObserver")
-        {
-            // Check if AddObserver is being called on a BiDiDriver or Module observable event
-            if (IsDriverOrModuleObservableEvent(context, memberAccess.Expression))
-            {
-                DriverVariableState state = updatedVariables[driverVariableName];
-                if (state.IsStarted)
-                {
-                    Diagnostic diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), "AddObserver");
-                    context.ReportDiagnostic(diagnostic);
-                }
-            }
-        }
-
         return updatedVariables;
-    }
-
-    private static bool IsDriverOrModuleObservableEvent(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
-    {
-        ITypeSymbol? typeSymbol = context.SemanticModel.GetTypeInfo(expression).Type;
-
-        // Check if the type is ObservableEvent<T>
-        if (typeSymbol is INamedTypeSymbol namedType && namedType.Name == "ObservableEvent")
-        {
-            // Trace back through member accesses to find the root object
-            ExpressionSyntax current = expression;
-            while (current is MemberAccessExpressionSyntax memberAccess)
-            {
-                current = memberAccess.Expression;
-            }
-
-            // Check if the root is a BiDiDriver type (module properties are always accessed
-            // through a driver variable, so IsCommandExecutorType is sufficient here)
-            ITypeSymbol? rootType = context.SemanticModel.GetTypeInfo(current).Type;
-            if (AnalyzerSymbolHelpers.IsCommandExecutorType(rootType))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static string? GetDriverVariableName(MemberAccessExpressionSyntax memberAccess)

@@ -75,21 +75,31 @@ Always add observer first, then subscribe through the Session module:
 
 **The Problem:**
 
-Attempting to register custom modules or add event observers after calling `StartAsync()` will throw an exception.
+Attempting to register custom modules (`RegisterModule`), custom events (`RegisterEvent`), or JSON type
+info resolvers (`RegisterTypeInfoResolverAsync`) after calling `StartAsync()` throws an
+`InvalidOperationException`.
 
 [!code-csharp[Wrong Registration Order](../code/common-pitfalls/CommonPitfallsSamples.cs#WrongRegistrationOrder)]
 
 **Why This Restriction:**
 
 This timing restriction ensures:
-1. All handlers are in place before events start flowing from the browser
+1. Every event the transport can receive has a registered deserializer before messages start flowing
 2. No race conditions between module registration and event dispatch
 3. Predictable initialization order
 4. Thread-safe module setup
 
+**What is *not* restricted:** adding observers with `AddObserver` (or data collectors with
+`AddDataCollector`) is allowed at any time, before or after `StartAsync()`, and is thread-safe with
+respect to event dispatch. The ordering that matters for observers is relative to
+`Session.SubscribeAsync()`: add the observer first so that no events are missed once the browser
+starts sending them (see [Event Subscription](#event-subscription)). Adding observers before
+`StartAsync()` is simply the most convenient place to do it.
+
 **The Solution:**
 
-Always register modules and add observers BEFORE calling `StartAsync()`:
+Register modules, custom events, and type resolvers BEFORE calling `StartAsync()`; add observers before
+subscribing:
 
 [!code-csharp[Correct Registration Order](../code/common-pitfalls/CommonPitfallsSamples.cs#CorrectRegistrationOrder)]
 
@@ -98,13 +108,13 @@ Always register modules and add observers BEFORE calling `StartAsync()`:
 ```
 1. Create BiDiDriver
 2. Register custom modules (if needed)
-3. Add event observers (if needed)
+3. Add event observers (recommended here, but permitted at any time)
 4. Call StartAsync()
 5. Subscribe to events via Session.SubscribeAsync()
 6. Execute commands
 ```
 
-**Key Takeaway:** Think of module registration and observer setup as "configuration" that must happen before "connection" (StartAsync).
+**Key Takeaway:** Think of module, custom event, and type resolver registration as "configuration" that must happen before "connection" (StartAsync). Observers are not part of that restriction; just make sure they are in place before you subscribe.
 
 ---
 
@@ -309,7 +319,7 @@ Before running your WebDriverBiDi.NET code, verify:
 
 - [ ] Event handlers use `RunHandlerAsynchronously` for I/O operations
 - [ ] You've called both `AddObserver()` AND `Session.SubscribeAsync()`
-- [ ] Modules and observers registered BEFORE `StartAsync()`
+- [ ] Modules, custom events, and type resolvers registered BEFORE `StartAsync()`; observers added BEFORE `Session.SubscribeAsync()`
 - [ ] Nullable collections checked for null before adding items
 - [ ] Timeout configured appropriately for your use case
 - [ ] Async handlers synchronized with capture API if needed
