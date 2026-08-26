@@ -11,14 +11,26 @@ namespace WebDriverBiDi.Protocol;
 public record EventReceivedEventArgs : WebDriverBiDiEventArgs
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="EventReceivedEventArgs"/> class for an event whose
+    /// <c>params</c> object carried no extension properties.
+    /// </summary>
+    /// <param name="message">The event message received.</param>
+    public EventReceivedEventArgs(EventMessage message)
+        : this(message, ReceivedDataDictionary.EmptyDictionary)
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="EventReceivedEventArgs"/> class.
     /// </summary>
-    /// <param name="message">The event message containing information about the event.</param>
-    public EventReceivedEventArgs(EventMessage message)
+    /// <param name="message">The event message received.</param>
+    /// <param name="additionalData">The extension properties received inside the event's <c>params</c> object.</param>
+    public EventReceivedEventArgs(EventMessage message, ReceivedDataDictionary additionalData)
     {
         this.EventName = message.EventName;
         this.EventData = message.EventData;
-        this.AdditionalData = message.AdditionalData;
+        this.AdditionalData = additionalData;
+        this.AdditionalEventProperties = message.AdditionalData;
     }
 
     /// <summary>

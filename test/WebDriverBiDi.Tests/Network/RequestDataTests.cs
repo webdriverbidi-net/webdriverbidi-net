@@ -687,4 +687,85 @@ public class RequestDataTests
                       """;
         Assert.Contains("missing required properties including: 'timings", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestData>(json)).Message);
     }
+
+    [Fact]
+    public void CanDeserializeRequestDataWithVendorExtensionData()
+    {
+        string json = """
+                      {
+                        "goog:postData": "a=b",
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "destination": "document",
+                        "initiatorType": "other",
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+            """;
+
+        RequestData? data = JsonSerializer.Deserialize<RequestData>(json);
+        Assert.NotNull(data);
+        Assert.Single(data.AdditionalData);
+        Assert.Equal("a=b", data.AdditionalData["goog:postData"]);
+
+        // The conversion happens once; subsequent reads return the same converted data.
+        Assert.Same(data.AdditionalData, data.AdditionalData);
+        Assert.Equal("a=b", data.AdditionalData["goog:postData"]);
+    }
+
+    [Fact]
+    public void AdditionalDataIsEmptyWithoutExtensionProperties()
+    {
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "destination": "document",
+                        "initiatorType": "other",
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+            """;
+
+        RequestData? data = JsonSerializer.Deserialize<RequestData>(json);
+        Assert.NotNull(data);
+        Assert.Empty(data.AdditionalData);
+        Assert.Same(ReceivedDataDictionary.EmptyDictionary, data.AdditionalData);
+    }
 }

@@ -27,18 +27,19 @@ public class EventInvoker<T> : EventInvoker
     /// </summary>
     /// <param name="eventData">The data to use when invoking the event.</param>
     /// <param name="additionalData">Additional data passed to the event for invocation.</param>
+    /// <param name="additionalEventProperties">The extension properties received on the event envelope.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the type of the event data is not the type associated with this event data class.
     /// </exception>
-    public override async Task InvokeEventAsync(object? eventData, ReceivedDataDictionary additionalData)
+    public override async Task InvokeEventAsync(object? eventData, ReceivedDataDictionary additionalData, ReceivedDataDictionary additionalEventProperties)
     {
         if (eventData is not T typedEventData)
         {
             throw new WebDriverBiDiException($"Unable to cast received event data to {typeof(T)}");
         }
 
-        EventInfo<T> invocationData = new(typedEventData, additionalData);
+        EventInfo<T> invocationData = new(typedEventData, additionalData, additionalEventProperties);
         await this.asyncInvokerDelegate(invocationData).ConfigureAwait(false);
     }
 }

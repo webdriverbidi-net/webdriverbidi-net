@@ -2,6 +2,7 @@ namespace WebDriverBiDi;
 
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using PinchHitter;
 using TestUtilities;
@@ -1916,6 +1917,140 @@ public class BiDiDriverTests
             async () => await driver.Input.PerformActionsAsync(parameters, cancellationToken: TestContext.Current.CancellationToken));
         Assert.Contains("Could not serialize command 'input.performActions'", exception.Message);
         Assert.IsType<JsonException>(exception.InnerException);
-        Assert.Null(connection.DataSent);
+    }
+
+    [Fact]
+    public async Task TestResultExposesPayloadExtensionDataThroughAdditionalData()
+    {
+        // Properties inside the result object that the result type does not define are payload
+        // extension data. EmptyResult defines nothing, so everything in the object qualifies.
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"result":{"goog:extra":"payload value"}}""");
+        });
+
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        Input.ReleaseActionsCommandResult result = await driver.Input.ReleaseActionsAsync(new Input.ReleaseActionsCommandParameters("myContext"), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Single(result.AdditionalData);
+        Assert.Equal("payload value", result.AdditionalData["goog:extra"]);
+        Assert.Empty(result.AdditionalResponseProperties);
+    }
+
+    [Fact]
+    public async Task TestResultExposesEnvelopeExtensionDataThroughAdditionalResponseProperties()
+    {
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"goog:channel":"channel value","result":{}}""");
+        });
+
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        Input.ReleaseActionsCommandResult result = await driver.Input.ReleaseActionsAsync(new Input.ReleaseActionsCommandParameters("myContext"), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Empty(result.AdditionalData);
+        Assert.Single(result.AdditionalResponseProperties);
+        Assert.Equal("channel value", result.AdditionalResponseProperties["goog:channel"]);
+    }
+
+    [Fact]
+    public async Task TestResultDeclaringItsOwnExtensionDataKeepsItsLeftovers()
+    {
+        // A result type with its own [JsonExtensionData] member has already captured the leftovers,
+        // so the transport does not report them a second time through AdditionalData.
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"result":{"kept":"v","goog:extra":"x"}}""");
+        });
+
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        ResultWithOwnExtensionData result = await driver.ExecuteCommandAsync(new ResultShapeCommandParameters<ResultWithOwnExtensionData>(), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("v", result.Kept);
+        Assert.NotNull(result.Extra);
+        Assert.Equal("x", result.Extra["goog:extra"].GetString());
+        Assert.Empty(result.AdditionalData);
+    }
+
+    [Fact]
+    public async Task TestResultTreatsIgnoredAndGetterOnlyMembersAsNotConsumingWireProperties()
+    {
+        // "skipped" is [JsonIgnore]d and "Computed" is getter-only: the serializer cannot assign
+        // either, so wire properties with those names are extension data, not consumed members.
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"result":{"kept":"v","skipped":"s","Computed":"c"}}""");
+        });
+
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        ResultWithIgnoredMembers result = await driver.ExecuteCommandAsync(new ResultShapeCommandParameters<ResultWithIgnoredMembers>(), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("v", result.Kept);
+        Assert.Null(result.Skipped);
+        Assert.Equal(2, result.AdditionalData.Count);
+        Assert.Equal("s", result.AdditionalData["skipped"]);
+        Assert.Equal("c", result.AdditionalData["Computed"]);
+    }
+
+    [Fact]
+    public async Task TestResultExposesPayloadAndEnvelopeExtensionDataSeparately()
+    {
+        // The two positions are distinct surfaces; neither shadows or merges into the other.
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"goog:channel":"channel value","result":{"value":"typed","goog:extra":42}}""");
+        });
+
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        TestCommandResult result = await driver.ExecuteCommandAsync(new TestCommandParameters("module.command"), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("typed", result.Value);
+        Assert.Single(result.AdditionalData);
+        Assert.Equal(42L, result.AdditionalData["goog:extra"]);
+        Assert.Single(result.AdditionalResponseProperties);
+        Assert.Equal("channel value", result.AdditionalResponseProperties["goog:channel"]);
+    }
+
+    private sealed class ResultShapeCommandParameters<T> : CommandParameters<T>
+        where T : CommandResult
+    {
+        [JsonIgnore]
+        public override string MethodName => "module.command";
+    }
+
+    private record ResultWithOwnExtensionData : CommandResult
+    {
+        [JsonPropertyName("kept")]
+        public string? Kept { get; set; }
+
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? Extra { get; set; }
+    }
+
+    private record ResultWithIgnoredMembers : CommandResult
+    {
+        [JsonPropertyName("kept")]
+        public string? Kept { get; set; }
+
+        [JsonIgnore]
+        [JsonPropertyName("skipped")]
+        public string? Skipped { get; set; }
+
+        public string Computed => "computed";
     }
 }

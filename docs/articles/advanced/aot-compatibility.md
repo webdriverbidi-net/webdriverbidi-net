@@ -37,11 +37,11 @@ Suppose you have a custom module with its own command and event types:
 
 ### Step 2: Create a Source-Generated Serializer Context
 
-Add `[JsonSerializable]` attributes for the **protocol wrapper types** that the transport actually serializes and deserializes — not just your raw types. The transport serializes `CommandParameters` subclasses directly, but it deserializes responses as `CommandResponseMessage<T>` and events as `EventMessage<T>`:
+Add a `[JsonSerializable]` attribute for each of **your own types**: every `CommandParameters` subclass, every `CommandResult` subclass, and every event args type:
 
 [!code-csharp[Source-Generated Context](../../code/core-concepts/CoreConceptsCustomModuleSamples.cs#Source-GeneratedContext)]
 
-> **Important:** You must include `CommandResponseMessage<T>` for each command result type, and `EventMessage<T>` for each event args type. These are the closed generic types that the transport deserializes at runtime.
+> **Note:** Do not register the library's envelope types (`CommandResponseMessage<T>`, `EventMessage<T>`). Their members are internal to the library, so a context in your assembly cannot generate working metadata for them; the transport reads the envelopes itself and asks the serializer only for your result and event args types.
 
 ### Step 3: Register the Context with the Driver
 
@@ -78,7 +78,7 @@ Document that consumers should register it:
 If you see errors like `JsonSerializerOptions instance is locked` or types not being serialized correctly:
 
 - Ensure `RegisterTypeInfoResolverAsync` is called **before** `StartAsync`. The transport's serializer options are frozen on first use.
-- Verify that you've included the `CommandResponseMessage<T>` and `EventMessage<T>` wrapper types in your context, not just the inner types.
+- Verify that every custom `CommandParameters`, `CommandResult` and event args type is listed in your context; the library's envelope types (`CommandResponseMessage<T>`, `EventMessage<T>`) must **not** be.
 
 ### Types work in development but fail in AOT
 
@@ -96,7 +96,7 @@ If your custom types use enums with a custom `JsonConverter` (such as `EnumValue
 
 1. **Always create a `JsonSerializerContext` for custom modules** — even if you don't target AOT today, this future-proofs your code and avoids reflection overhead.
 2. **Register resolvers before starting** — `RegisterTypeInfoResolverAsync` must be called before `StartAsync`. Attempting to register after connecting throws an exception.
-3. **Include wrapper types** — remember to include `CommandResponseMessage<T>` and `EventMessage<T>`, not just your raw parameter/result/event types.
+3. **Register your payload types only** — your parameters, results and event args. The transport handles the response and event envelopes itself.
 4. **Test in AOT mode** — publish your application with `dotnet publish -p:PublishAot=true` and verify end-to-end behavior.
 5. **Ship contexts with packages** — if distributing modules as NuGet packages, include the serializer context so consumers can register it.
 

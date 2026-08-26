@@ -856,7 +856,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     {
         if (this.eventInvokers.TryGetValue(e.EventName, out EventInvoker? invoker))
         {
-            await invoker.InvokeEventAsync(e.EventData, e.AdditionalData).ConfigureAwait(false);
+            await invoker.InvokeEventAsync(e.EventData, e.AdditionalData, e.AdditionalEventProperties).ConfigureAwait(false);
         }
 
         await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);

@@ -5,8 +5,6 @@
 
 namespace WebDriverBiDi;
 
-using System.Diagnostics.CodeAnalysis;
-
 /// <summary>
 /// Class containing information used in the invocation of an event invoker.
 /// </summary>
@@ -16,12 +14,14 @@ public class EventInfo<T>
     /// <summary>
     /// Initializes a new instance of the <see cref="EventInfo{T}"/> class.
     /// </summary>
-    /// <param name="eventData">The data for the event invocation.</param>
-    /// <param name="additionalData">Additional data returned for the event.</param>
-    public EventInfo(T eventData, ReceivedDataDictionary additionalData)
+    /// <param name="eventData">The data of the event.</param>
+    /// <param name="additionalData">The extension properties received inside the event's <c>params</c> object.</param>
+    /// <param name="additionalEventProperties">The extension properties received on the event envelope. If omitted or <see langword="null"/>, will set to <see cref="ReceivedDataDictionary.EmptyDictionary"/>.</param>
+    public EventInfo(T eventData, ReceivedDataDictionary additionalData, ReceivedDataDictionary? additionalEventProperties = null)
     {
         this.EventData = eventData;
         this.AdditionalData = additionalData;
+        this.AdditionalEventProperties = additionalEventProperties ?? ReceivedDataDictionary.EmptyDictionary;
     }
 
     /// <summary>
@@ -30,9 +30,14 @@ public class EventInfo<T>
     public T EventData { get; }
 
     /// <summary>
-    /// Gets additional data returned for the event.
+    /// Gets the extension properties received inside the event's <c>params</c> object.
     /// </summary>
     public ReceivedDataDictionary AdditionalData { get; }
+
+    /// <summary>
+    /// Gets the extension properties received on the event envelope.
+    /// </summary>
+    public ReceivedDataDictionary AdditionalEventProperties { get; }
 
     /// <summary>
     /// Creates an object derived from WebDriverBiDiEventArgs using a factory function.
@@ -46,6 +51,7 @@ public class EventInfo<T>
     {
         TEventArgs result = factory(this.EventData);
         result.AdditionalData = this.AdditionalData;
+        result.AdditionalEventProperties = this.AdditionalEventProperties;
         return result;
     }
 
@@ -74,6 +80,7 @@ public class EventInfo<T>
         }
 
         result.AdditionalData = this.AdditionalData;
+        result.AdditionalEventProperties = this.AdditionalEventProperties;
         return result;
     }
 }

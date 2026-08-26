@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System.Text.Json.Serialization;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Launchers;
@@ -46,6 +47,11 @@ try
     Transport transport = launcher.CreateTransport();
     driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
     EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver((e) => Console.WriteLine($"Load event fired for {e.Url}"));
+
+    // A consumer-defined command type is unknown to the library's source-generated context.
+    // Registering our own context is the documented AOT pattern; without it, the command
+    // below fails with "JsonTypeInfo metadata for type ... was not provided".
+    await driver.RegisterTypeInfoResolverAsync(AotTestJsonContext.Default);
     await driver.StartAsync(launcher.WebSocketUrl);
     Console.WriteLine("BiDi connection established.");
 
@@ -108,7 +114,88 @@ try
         throw new InvalidOperationException($"Expected 'Hello, World!' but got: '{greeting}'");
     }
 
-    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, and callFunction.");
+    // A custom command routed through the registered resolver: session.status re-declared
+    // with consumer-defined parameter and result types.
+    AotStatusCommandResult status = await driver.ExecuteCommandAsync(new AotStatusCommandParameters());
+    Console.WriteLine($"Custom status command: ready={status.IsReady}, message='{status.Message}'");
+    if (status.Message is null)
+    {
+        throw new InvalidOperationException("Custom status command returned no message.");
+    }
+
+    // LocalValue.Number(decimal) must serialize under the source-generated context (CQ-3).
+    CallFunctionCommandParameters decimalParams = new("(n) => n * 2", new ContextTarget(contextId), true);
+    decimalParams.Arguments.Add(LocalValue.Number(2.5m));
+    EvaluateResult decimalResult = await driver.Script.CallFunctionAsync(decimalParams);
+    if (decimalResult is not EvaluateResultSuccess decimalSuccess)
+    {
+        throw new InvalidOperationException($"Decimal callFunction failed: result type was {decimalResult.ResultType}");
+    }
+
+    double doubled = decimalSuccess.Result.ConvertTo<NumberRemoteValue>().Value;
+    Console.WriteLine($"Decimal argument doubled: {doubled}");
+    if (doubled != 5)
+    {
+        throw new InvalidOperationException($"Expected 5 but got {doubled}");
+    }
+
+    // Array and map remote values exercise the nested RemoteValue deserialization paths.
+    EvaluateCommandParameters arrayParams = new("[1, 'two', true]", new ContextTarget(contextId), true);
+    EvaluateResult arrayResult = await driver.Script.EvaluateAsync(arrayParams);
+    if (arrayResult is not EvaluateResultSuccess arraySuccess)
+    {
+        throw new InvalidOperationException($"Array evaluate failed: result type was {arrayResult.ResultType}");
+    }
+
+    RemoteValueList array = arraySuccess.Result.ConvertTo<CollectionRemoteValue>().Value
+        ?? throw new InvalidOperationException("Array remote value had no value.");
+    Console.WriteLine($"Array remote value with {array.Count} entries");
+    if (array.Count != 3 || array[0].ConvertTo<NumberRemoteValue>().Value != 1 || array[1].ConvertTo<StringRemoteValue>().Value != "two" || !array[2].ConvertTo<BooleanRemoteValue>().Value)
+    {
+        throw new InvalidOperationException("Array remote value did not round-trip.");
+    }
+
+    EvaluateCommandParameters mapParams = new("new Map([['answer', 42]])", new ContextTarget(contextId), true);
+    EvaluateResult mapResult = await driver.Script.EvaluateAsync(mapParams);
+    if (mapResult is not EvaluateResultSuccess mapSuccess)
+    {
+        throw new InvalidOperationException($"Map evaluate failed: result type was {mapResult.ResultType}");
+    }
+
+    RemoteValueDictionary map = mapSuccess.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value
+        ?? throw new InvalidOperationException("Map remote value had no value.");
+    Console.WriteLine($"Map remote value with {map.Count} entries");
+    if (map.Count != 1 || map["answer"].ConvertTo<NumberRemoteValue>().Value != 42)
+    {
+        throw new InvalidOperationException("Map remote value did not round-trip.");
+    }
+
+    // A script exception deserializes into EvaluateResultException with its details.
+    EvaluateCommandParameters throwParams = new("(() => { throw new Error('boom'); })()", new ContextTarget(contextId), true);
+    EvaluateResult throwResult = await driver.Script.EvaluateAsync(throwParams);
+    if (throwResult is not EvaluateResultException scriptException || !scriptException.ExceptionDetails.Text.Contains("boom"))
+    {
+        throw new InvalidOperationException($"Expected a script exception mentioning 'boom' but got result type {throwResult.ResultType}");
+    }
+
+    Console.WriteLine($"Script exception captured: {scriptException.ExceptionDetails.Text}");
+
+    // An error response deserializes into WebDriverBiDiCommandException with its error code.
+    try
+    {
+        await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("no-such-context", url));
+        throw new InvalidOperationException("Navigating a nonexistent context should have failed.");
+    }
+    catch (WebDriverBiDiCommandException commandException)
+    {
+        Console.WriteLine($"Error response captured: {commandException.ErrorCode} - {commandException.ProtocolErrorMessage}");
+        if (commandException.ErrorCode != ErrorCode.NoSuchFrame)
+        {
+            throw new InvalidOperationException($"Expected ErrorCode.NoSuchFrame but got {commandException.ErrorCode}");
+        }
+    }
+
+    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, callFunction, a custom command through a registered resolver, decimal/array/map values, a script exception and an error response.");
     return 0;
 }
 catch (Exception ex)
@@ -139,4 +226,38 @@ finally
     {
         // Best effort cleanup
     }
+}
+
+/// <summary>
+/// A consumer-defined command: session.status re-declared with the consumer's own types.
+/// </summary>
+public class AotStatusCommandParameters : CommandParameters<AotStatusCommandResult>
+{
+    [JsonIgnore]
+    public override string MethodName => "session.status";
+}
+
+/// <summary>
+/// The consumer-defined result of the command.
+/// </summary>
+public record AotStatusCommandResult : CommandResult
+{
+    [JsonIgnore]
+    public override bool IsError => false;
+
+    [JsonPropertyName("ready")]
+    public bool IsReady { get; set; }
+
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
+}
+
+/// <summary>
+/// The consumer's source-generated context: just the parameters and result types, as the
+/// AOT compatibility guide prescribes. The response envelope is handled by the library.
+/// </summary>
+[JsonSerializable(typeof(AotStatusCommandParameters))]
+[JsonSerializable(typeof(AotStatusCommandResult))]
+internal partial class AotTestJsonContext : JsonSerializerContext
+{
 }

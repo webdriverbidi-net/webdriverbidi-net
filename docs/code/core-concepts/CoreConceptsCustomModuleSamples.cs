@@ -75,9 +75,7 @@ public record CustomEventArgs : WebDriverBiDiEventArgs
 #region CustomJSONTypeResolvers
 [JsonSourceGenerationOptions(WriteIndented = false)]
 [JsonSerializable(typeof(CustomCommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<CustomCommandResult>))]
 [JsonSerializable(typeof(CustomCommandResult))]
-[JsonSerializable(typeof(EventMessage<CustomEventArgs>))]
 [JsonSerializable(typeof(CustomEventArgs))]
 internal partial class CustomJsonContext : JsonSerializerContext
 {
@@ -117,8 +115,8 @@ public record MyEventArgs : WebDriverBiDiEventArgs
 
 #region Source-GeneratedContext
 [JsonSerializable(typeof(MyCommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<MyCommandResult>))]
-[JsonSerializable(typeof(EventMessage<MyEventArgs>))]
+[JsonSerializable(typeof(MyCommandResult))]
+[JsonSerializable(typeof(MyEventArgs))]
 public partial class MyModuleJsonSerializerContext : JsonSerializerContext
 {
 }

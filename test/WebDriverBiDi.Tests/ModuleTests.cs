@@ -500,4 +500,26 @@ public class ModuleTests
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
+
+    [Fact]
+    public async Task TestEventExposesPayloadAndEnvelopeExtensionDataSeparately()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        TestProtocolModule module = new(driver);
+
+        TaskCompletionSource<TestEventArgs> received = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnEventInvoked.AddObserver(e => received.TrySetResult(e));
+
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","goog:channel":"channel value","params":{"paramName":"paramValue","goog:extra":"payload value"}}""");
+        TestEventArgs eventArgs = await received.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.Equal("paramValue", eventArgs.ParamName);
+        Assert.Single(eventArgs.AdditionalData);
+        Assert.Equal("payload value", eventArgs.AdditionalData["goog:extra"]);
+        Assert.Single(eventArgs.AdditionalEventProperties);
+        Assert.Equal("channel value", eventArgs.AdditionalEventProperties["goog:channel"]);
+    }
 }

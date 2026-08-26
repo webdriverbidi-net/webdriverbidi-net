@@ -5,7 +5,9 @@
 
 namespace WebDriverBiDi.Network;
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Data of a network response.
@@ -21,6 +23,7 @@ public record ResponseData
     [JsonConstructor]
     internal ResponseData()
     {
+        this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
     }
 
     /// <summary>
@@ -145,6 +148,25 @@ public record ResponseData
     }
 
     /// <summary>
+    /// Gets the read-only dictionary containing extension properties received in this response,
+    /// such as vendor-prefixed fields (for example, Chromium's <c>goog:</c> properties) that are
+    /// not part of the WebDriver BiDi specification.
+    /// </summary>
+    [JsonIgnore]
+    public ReceivedDataDictionary AdditionalData
+    {
+        get
+        {
+            if (this.SerializableAdditionalData.Count > 0 && field.Count == 0)
+            {
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.SerializableAdditionalData);
+            }
+
+            return field;
+        }
+    }
+
+    /// <summary>
     /// Gets or sets the list of authorization challenges in the response, if any.
     /// </summary>
     [JsonPropertyName("authChallenges")]
@@ -158,4 +180,11 @@ public record ResponseData
     [JsonRequired]
     [JsonInclude]
     internal List<Header> SerializableHeaders { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the extension properties of this response for serialization purposes.
+    /// </summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; set; } = [];
 }

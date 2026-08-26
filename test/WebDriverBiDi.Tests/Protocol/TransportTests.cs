@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Newtonsoft.Json.Linq;
 using PinchHitter;
@@ -137,9 +138,12 @@ public class TransportTests
         TestCommandResult? convertedResult = actualResult as TestCommandResult;
         Assert.NotNull(convertedResult);
 
+        // "extraDataName" sits on the envelope, so it is a response property, not payload data.
+        Assert.Empty(convertedResult.AdditionalData);
+
         Assert.Equal("response value", convertedResult.Value);
-        Assert.Single(convertedResult.AdditionalData);
-        Assert.Equal("extraDataValue", convertedResult.AdditionalData["extraDataName"]);
+        Assert.Single(convertedResult.AdditionalResponseProperties);
+        Assert.Equal("extraDataValue", convertedResult.AdditionalResponseProperties["extraDataName"]);
     }
 
     [Fact]
@@ -2885,6 +2889,43 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestNonGenericCommandParametersFallBackToResolvingResponseTypeThroughOptions()
+    {
+        // A CommandParameters subclass that does not derive from CommandParameters<T> provides no
+        // envelope type info of its own, so the transport resolves ResponseType through the options.
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"result":{"value":"fallback"}}""");
+        });
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(new NonGenericCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("fallback", result.Value);
+    }
+
+    [Fact]
+    public async Task TestEventWithNullParamsHasNoPayloadExtensionData()
+    {
+        TaskCompletionSource<EventReceivedEventArgs> received = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e => received.TrySetResult(e));
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","goog:channel":"c","params":null}""");
+        EventReceivedEventArgs eventArgs = await received.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.Null(eventArgs.EventData);
+        Assert.Empty(eventArgs.AdditionalData);
+        Assert.Equal("c", eventArgs.AdditionalEventProperties["goog:channel"]);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestUnknownMessageCanCollect()
     {
         TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -3381,5 +3422,14 @@ public class TransportTests
         Assert.Contains("Transport must be connected", exception.Message);
         Assert.True(disconnectTriggered);
         Assert.Equal(0, transport.PendingCommandCount);
+    }
+
+    private sealed class NonGenericCommandParameters : CommandParameters
+    {
+        [JsonIgnore]
+        public override string MethodName => "module.command";
+
+        [JsonIgnore]
+        public override Type ResponseType => typeof(CommandResponseMessage<TestCommandResult>);
     }
 }

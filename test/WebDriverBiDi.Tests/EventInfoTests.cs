@@ -53,4 +53,28 @@ public class EventInfoTests
         Assert.Single(eventArgs.AdditionalData);
         Assert.Equal("value", eventArgs.AdditionalData["extra"]);
     }
+
+    [Fact]
+    public void TestEnvelopePropertiesFlowToEventArgs()
+    {
+        ReceivedDataDictionary payload = new(new Dictionary<string, object?> { ["goog:extra"] = "payload" });
+        ReceivedDataDictionary envelope = new(new Dictionary<string, object?> { ["goog:channel"] = "channel" });
+        EventInfo<TestEventArgs> eventInfo = new(new TestEventArgs(), payload, envelope);
+        Assert.Same(envelope, eventInfo.AdditionalEventProperties);
+
+        TestEventArgs direct = eventInfo.ToEventArgs<TestEventArgs>();
+        Assert.Equal("payload", direct.AdditionalData["goog:extra"]);
+        Assert.Equal("channel", direct.AdditionalEventProperties["goog:channel"]);
+
+        TestEventArgs viaFactory = eventInfo.ToEventArgs(data => new TestEventArgs());
+        Assert.Equal("payload", viaFactory.AdditionalData["goog:extra"]);
+        Assert.Equal("channel", viaFactory.AdditionalEventProperties["goog:channel"]);
+    }
+
+    [Fact]
+    public void TestTwoArgumentConstructorHasNoEnvelopeProperties()
+    {
+        EventInfo<TestEventArgs> eventInfo = new(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        Assert.Empty(eventInfo.AdditionalEventProperties);
+    }
 }
