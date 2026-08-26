@@ -209,13 +209,13 @@ public static class NetworkModuleSamples
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
 
         // Optional: limit to specific contexts
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         // Optional: URL patterns to intercept
-        parameters.UrlPatterns = new List<UrlPattern>
-        {
+        parameters.UrlPatterns.AddRange(
+        [
             new UrlPatternPattern { HostName = "example.com" }
-        };
+        ]);
 
         AddInterceptCommandResult result = await driver.Network.AddInterceptAsync(parameters);
         string interceptId = result.InterceptId;
@@ -232,10 +232,10 @@ public static class NetworkModuleSamples
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
 
         // Intercept all .jpg images
-        parameters.UrlPatterns = new List<UrlPattern>
-        {
+        parameters.UrlPatterns.AddRange(
+        [
             new UrlPatternString("*.jpg"),
-        };
+        ]);
 
         await driver.Network.AddInterceptAsync(parameters);
         #endregion
@@ -250,10 +250,10 @@ public static class NetworkModuleSamples
         // Add intercept
         AddInterceptCommandParameters addIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        addIntercept.UrlPatterns = new List<UrlPattern>
-        {
+        addIntercept.UrlPatterns.AddRange(
+        [
             new UrlPatternPattern { HostName = "ads.example.com" },
-        };
+        ]);
         await driver.Network.AddInterceptAsync(addIntercept);
 
         // Handle intercepted requests
@@ -483,11 +483,11 @@ public static class NetworkModuleSamples
         SetExtraHeadersCommandParameters parameters = new SetExtraHeadersCommandParameters
         {
             Headers =
-            [
+            {
                 new Header("Authorization", "Bearer mytoken"),
                 new Header("X-API-Key", "my-api-key"),
-            ],
-            Contexts = new List<string> { contextId },
+            },
+            Contexts = { contextId },
         };
 
         await driver.Network.SetExtraHeadersAsync(parameters);
@@ -516,7 +516,7 @@ public static class NetworkModuleSamples
         SetCacheBehaviorCommandParameters parameters =
             new SetCacheBehaviorCommandParameters(CacheBehavior.Bypass)
             {
-                Contexts = new List<string> { contextId },
+                Contexts = { contextId },
             };
 
         await driver.Network.SetCacheBehaviorAsync(parameters);
@@ -532,7 +532,7 @@ public static class NetworkModuleSamples
         SetCacheBehaviorCommandParameters parameters =
             new SetCacheBehaviorCommandParameters(CacheBehavior.Default)
             {
-                Contexts = new List<string> { contextId },
+                Contexts = { contextId },
             };
 
         await driver.Network.SetCacheBehaviorAsync(parameters);
@@ -786,7 +786,7 @@ public static class NetworkModuleSamples
 
         AddInterceptCommandParameters addIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        addIntercept.Contexts = new List<string> { contextId };
+        addIntercept.Contexts.Add(contextId);
 
         AddInterceptCommandResult interceptResult = await driver.Network.AddInterceptAsync(addIntercept);
 

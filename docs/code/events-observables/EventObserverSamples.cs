@@ -705,7 +705,7 @@ public static class EventObserverSamples
         AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(preloadScript)
             {
-                Arguments = new List<ChannelValue> { channel }
+                Arguments = { channel }
             };
 
         await driver.Script.AddPreloadScriptAsync(preloadParams);

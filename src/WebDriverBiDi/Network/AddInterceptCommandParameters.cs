@@ -43,29 +43,65 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     public List<InterceptPhase> Phases { get; } = [];
 
     /// <summary>
-    /// Gets or sets the list of top-level browsing context IDs for which traffic will be intercepted.
+    /// Gets the list of top-level browsing context IDs for which traffic will be intercepted.
     /// If present, it must contain at least one browsing context ID, and all IDs must represent top-level
     /// browsing contexts, or an error will be thrown by the remote end.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
-    [JsonPropertyName("contexts")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get; set; }
+    [JsonIgnore]
+    public List<string> Contexts { get; } = [];
 
     /// <summary>
-    /// Gets or sets the list of URL patterns for which to intercept network traffic.
+    /// Gets the list of URL patterns for which to intercept network traffic.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
+    /// empty array. An empty list therefore means "not specified": the property is omitted from the
+    /// JSON payload entirely. Add entries to the list to populate it.
     /// </remarks>
+    [JsonIgnore]
+    public List<UrlPattern> UrlPatterns { get; } = [];
+
+    /// <summary>
+    /// Gets the list of top-level browsing context IDs for which traffic will be intercepted, for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("contexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<string>? SerializableContexts
+    {
+        get
+        {
+            if (this.Contexts.Count == 0)
+            {
+                return null;
+            }
+
+            return this.Contexts;
+        }
+    }
+
+    /// <summary>
+    /// Gets the list of URL patterns for which to intercept network traffic, for serialization purposes.
+    /// </summary>
     [JsonPropertyName("urlPatterns")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public List<UrlPattern>? UrlPatterns { get; set; }
+    internal List<UrlPattern>? SerializableUrlPatterns
+    {
+        get
+        {
+            if (this.UrlPatterns.Count == 0)
+            {
+                return null;
+            }
+
+            return this.UrlPatterns;
+        }
+    }
 }

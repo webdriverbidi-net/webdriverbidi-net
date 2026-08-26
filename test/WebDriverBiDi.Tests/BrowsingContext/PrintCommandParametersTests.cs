@@ -432,11 +432,11 @@ public class PrintCommandParametersTests
         PrintCommandParameters properties = new("myContextId")
         {
             PageRanges =
-            [
+            {
                 1,
                 "3-5",
                 10L,
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

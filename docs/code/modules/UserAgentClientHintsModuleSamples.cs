@@ -142,7 +142,7 @@ public static class UserAgentClientHintsModuleSamples
             Brands = new List<BrandVersion> { new BrandVersion("Chromium", "120.0") },
             Mobile = true
         };
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
         #endregion
@@ -161,7 +161,7 @@ public static class UserAgentClientHintsModuleSamples
             Platform = "Linux",
             Architecture = "x86"
         };
-        parameters.UserContexts = new List<string> { userContextId };
+        parameters.UserContexts.Add(userContextId);
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
         #endregion

@@ -985,10 +985,7 @@ public class ElementLocator
         ContextTarget contextTarget = new(this.browsingContextId);
         CallFunctionCommandParameters callParams = new(functionDefinition, contextTarget, false);
         callParams.Arguments.Add(element);
-        foreach (LocalValue arg in additionalArguments)
-        {
-            callParams.Arguments.Add(arg);
-        }
+        callParams.Arguments.AddRange(additionalArguments);
 
         EvaluateResult result = await this.driver.Script.CallFunctionAsync(callParams).ConfigureAwait(false);
         if (result.ResultType == EvaluateResultType.Exception)

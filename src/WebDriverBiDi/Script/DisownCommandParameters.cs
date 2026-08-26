@@ -36,8 +36,8 @@ public class DisownCommandParameters : CommandParameters<DisownCommandResult>
     public Target Target { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of handles to disown.
+    /// Gets the list of handles to disown.
     /// </summary>
     [JsonPropertyName("handles")]
-    public List<string> Handles { get; set; } = [];
+    public List<string> Handles { get; } = [];
 }

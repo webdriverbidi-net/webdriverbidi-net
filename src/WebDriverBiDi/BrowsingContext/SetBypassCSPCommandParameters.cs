@@ -47,28 +47,28 @@ public class SetBypassCSPCommandParameters : CommandParameters<SetBypassCSPComma
     public bool? Bypass { get => this.bypass; set => this.bypass = value; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to bypass content security policies (CSP).
+    /// Gets the browsing contexts for which to bypass content security policies (CSP).
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
-    [JsonPropertyName("contexts")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get; set; }
+    [JsonIgnore]
+    public List<string> Contexts { get; } = [];
 
     /// <summary>
-    /// Gets or sets the user contexts for which to bypass content security policies (CSP).
+    /// Gets the user contexts for which to bypass content security policies (CSP).
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
-    [JsonPropertyName("userContexts")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get; set; }
+    [JsonIgnore]
+    public List<string> UserContexts { get; } = [];
 
     /// <summary>
     /// Gets a value indicating whether to bypass content security policies (CSP)
@@ -86,6 +86,44 @@ public class SetBypassCSPCommandParameters : CommandParameters<SetBypassCSPComma
             }
 
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets the browsing contexts for which to bypass content security policies (CSP), for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("contexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<string>? SerializableContexts
+    {
+        get
+        {
+            if (this.Contexts.Count == 0)
+            {
+                return null;
+            }
+
+            return this.Contexts;
+        }
+    }
+
+    /// <summary>
+    /// Gets the user contexts for which to bypass content security policies (CSP), for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("userContexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<string>? SerializableUserContexts
+    {
+        get
+        {
+            if (this.UserContexts.Count == 0)
+            {
+                return null;
+            }
+
+            return this.UserContexts;
         }
     }
 }

@@ -44,9 +44,12 @@ public static class ScriptModuleExtensions
     {
         AddPreloadScriptCommandParameters parameters = new(functionDeclaration)
         {
-            Arguments = arguments,
             Sandbox = sandbox,
         };
+        if (arguments is not null)
+        {
+            parameters.Arguments.AddRange(arguments);
+        }
 
         AddPreloadScriptCommandResult result = await module.AddPreloadScriptAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
         return result.PreloadScriptId;

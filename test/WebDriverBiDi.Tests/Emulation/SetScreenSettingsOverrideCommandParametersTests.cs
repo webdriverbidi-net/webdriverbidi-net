@@ -101,10 +101,10 @@ public class SetScreenSettingsOverrideCommandParametersTests
         SetScreenSettingsOverrideCommandParameters properties = new()
         {
             Contexts =
-            [
+            {
                 "context1",
                 "context2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -135,10 +135,10 @@ public class SetScreenSettingsOverrideCommandParametersTests
         SetScreenSettingsOverrideCommandParameters properties = new()
         {
             UserContexts =
-            [
+            {
                 "userContext1",
                 "userContext2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -170,8 +170,8 @@ public class SetScreenSettingsOverrideCommandParametersTests
         Assert.NotNull(properties);
 
         Assert.Null(properties.ScreenArea);
-        Assert.Null(properties.Contexts);
-        Assert.Null(properties.UserContexts);
+        Assert.Empty(properties.Contexts);
+        Assert.Empty(properties.UserContexts);
     }
 
     [Fact]

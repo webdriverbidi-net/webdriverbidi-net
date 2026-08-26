@@ -92,7 +92,7 @@ public class EmulationModuleSamples
         SetUserAgentOverrideCommandParameters parameters = new SetUserAgentOverrideCommandParameters
         {
             UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1",
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetUserAgentOverrideAsync(parameters);
@@ -122,7 +122,7 @@ public class EmulationModuleSamples
             new SetUserAgentOverrideCommandParameters
             {
                 UserAgent = iPhoneUA,
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
         #endregion
     }
@@ -135,7 +135,7 @@ public class EmulationModuleSamples
         #region ClearUserAgentOverride
         SetUserAgentOverrideCommandParameters parameters =
             SetUserAgentOverrideCommandParameters.ResetUserAgentOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetUserAgentOverrideAsync(parameters);
         Console.WriteLine("User agent override cleared");
@@ -152,7 +152,7 @@ public class EmulationModuleSamples
             new SetForcedColorsModeThemeOverrideCommandParameters
             {
                 Theme = ForcedColorsModeTheme.Dark,
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             };
 
         await driver.Emulation.SetForcedColorsModeThemeOverrideAsync(parameters);
@@ -181,7 +181,7 @@ public class EmulationModuleSamples
         // Use reset property of command parameters to clear the override
         SetForcedColorsModeThemeOverrideCommandParameters parameters =
             SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetForcedColorsModeThemeOverrideAsync(parameters);
         Console.WriteLine("Forced colors override cleared");
@@ -198,7 +198,7 @@ public class EmulationModuleSamples
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
                 Coordinates = new GeolocationCoordinates(-122.4194, 37.7749) { Accuracy = 100 },
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             };
 
         await driver.Emulation.SetGeolocationOverrideAsync(parameters);
@@ -237,7 +237,7 @@ public class EmulationModuleSamples
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
                 Coordinates = new GeolocationCoordinates(-74.0060, 40.7128) { Accuracy = 100 },
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
 
         // London
@@ -245,7 +245,7 @@ public class EmulationModuleSamples
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
                 Coordinates = new GeolocationCoordinates(-0.1278, 51.5074) { Accuracy = 100 },
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
 
         // Tokyo
@@ -253,7 +253,7 @@ public class EmulationModuleSamples
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
                 Coordinates = new GeolocationCoordinates(139.6503, 35.6762) { Accuracy = 100 },
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
         #endregion
     }
@@ -266,7 +266,7 @@ public class EmulationModuleSamples
         #region ClearGeolocationOverride
         SetGeolocationOverrideCommandParameters parameters =
             SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetGeolocationOverrideAsync(parameters);
         Console.WriteLine("Geolocation override cleared");
@@ -282,7 +282,7 @@ public class EmulationModuleSamples
         SetTimeZoneOverrideCommandParameters parameters = new SetTimeZoneOverrideCommandParameters
         {
             TimeZone = "America/Los_Angeles",
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetTimeZoneOverrideAsync(parameters);
@@ -314,7 +314,7 @@ public class EmulationModuleSamples
             new SetTimeZoneOverrideCommandParameters
             {
                 TimeZone = "America/Los_Angeles",
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
 
         // Eastern Time (US East Coast)
@@ -322,7 +322,7 @@ public class EmulationModuleSamples
             new SetTimeZoneOverrideCommandParameters
             {
                 TimeZone = "America/New_York",
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
 
         // UTC
@@ -330,7 +330,7 @@ public class EmulationModuleSamples
             new SetTimeZoneOverrideCommandParameters
             {
                 TimeZone = "UTC",
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
 
         // Tokyo
@@ -338,7 +338,7 @@ public class EmulationModuleSamples
             new SetTimeZoneOverrideCommandParameters
             {
                 TimeZone = "Asia/Tokyo",
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             });
         #endregion
     }
@@ -351,7 +351,7 @@ public class EmulationModuleSamples
         #region ClearTimezoneOverride
         SetTimeZoneOverrideCommandParameters parameters =
             SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetTimeZoneOverrideAsync(parameters);
         Console.WriteLine("Timezone override cleared");
@@ -367,7 +367,7 @@ public class EmulationModuleSamples
         SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters
         {
             Locale = "fr-FR",
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetLocaleOverrideAsync(parameters);
@@ -396,7 +396,7 @@ public class EmulationModuleSamples
         #region ClearLocaleOverride
         SetLocaleOverrideCommandParameters parameters =
             SetLocaleOverrideCommandParameters.ResetLocaleOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetLocaleOverrideAsync(parameters);
         Console.WriteLine("Locale override cleared");
@@ -412,7 +412,7 @@ public class EmulationModuleSamples
         SetNetworkConditionsCommandParameters parameters = new SetNetworkConditionsCommandParameters
         {
             NetworkConditions = new NetworkConditionsOffline(),
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetNetworkConditionsAsync(parameters);
@@ -428,7 +428,7 @@ public class EmulationModuleSamples
         #region ClearNetworkConditionsOverride
         SetNetworkConditionsCommandParameters parameters =
             SetNetworkConditionsCommandParameters.ResetNetworkConditions;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetNetworkConditionsAsync(parameters);
         Console.WriteLine("Network conditions override cleared");
@@ -447,7 +447,7 @@ public class EmulationModuleSamples
                 ScreenOrientation = new ScreenOrientation(
                     ScreenOrientationNatural.Portrait,
                     ScreenOrientationType.PortraitPrimary),
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             };
 
         await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
@@ -467,7 +467,7 @@ public class EmulationModuleSamples
                 ScreenOrientation = new ScreenOrientation(
                     ScreenOrientationNatural.Landscape,
                     ScreenOrientationType.LandscapePrimary),
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             };
 
         await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
@@ -483,7 +483,7 @@ public class EmulationModuleSamples
         #region ClearScreenOrientationOverride
         SetScreenOrientationOverrideCommandParameters parameters =
             SetScreenOrientationOverrideCommandParameters.ResetScreenOrientationOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
         Console.WriteLine("Screen orientation override cleared");
@@ -500,7 +500,7 @@ public class EmulationModuleSamples
             new SetScreenSettingsOverrideCommandParameters
             {
                 ScreenArea = new ScreenArea { Width = 1920, Height = 1080 },
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             };
 
         await driver.Emulation.SetScreenSettingsOverrideAsync(parameters);
@@ -516,7 +516,7 @@ public class EmulationModuleSamples
         #region ClearScreenSettingsOverride
         SetScreenSettingsOverrideCommandParameters parameters =
             SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetScreenSettingsOverrideAsync(parameters);
         Console.WriteLine("Screen settings override cleared");
@@ -532,7 +532,7 @@ public class EmulationModuleSamples
         SetScriptingEnabledCommandParameters parameters = new SetScriptingEnabledCommandParameters
         {
             IsScriptingEnabled = false,
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetScriptingEnabledAsync(parameters);
@@ -548,7 +548,7 @@ public class EmulationModuleSamples
         #region ClearScriptingOverride
         SetScriptingEnabledCommandParameters parameters =
             SetScriptingEnabledCommandParameters.ResetScriptingEnabled;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetScriptingEnabledAsync(parameters);
         Console.WriteLine("Scripting override cleared");
@@ -565,7 +565,7 @@ public class EmulationModuleSamples
             new SetScrollbarTypeOverrideCommandParameters
             {
                 ScrollbarType = ScrollbarType.Overlay,
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             };
 
         await driver.Emulation.SetScrollbarTypeOverrideAsync(parameters);
@@ -581,7 +581,7 @@ public class EmulationModuleSamples
         #region ClearScrollbarTypeOverride
         SetScrollbarTypeOverrideCommandParameters parameters =
             SetScrollbarTypeOverrideCommandParameters.ResetScrollbarTypeOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetScrollbarTypeOverrideAsync(parameters);
         Console.WriteLine("Scrollbar type override cleared");
@@ -597,7 +597,7 @@ public class EmulationModuleSamples
         SetTouchOverrideCommandParameters parameters = new SetTouchOverrideCommandParameters
         {
             MaxTouchPoints = 5,
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetTouchOverrideAsync(parameters);
@@ -613,7 +613,7 @@ public class EmulationModuleSamples
         #region ClearTouchOverride
         SetTouchOverrideCommandParameters parameters =
             SetTouchOverrideCommandParameters.ResetTouchOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetTouchOverrideAsync(parameters);
         Console.WriteLine("Touch override cleared");
@@ -633,7 +633,7 @@ public class EmulationModuleSamples
                 PrefersColorScheme = PrefersColorSchemeFeatureValue.Dark,
                 PrefersReducedMotion = PrefersReducedMotionMediaFeatureValue.Reduce
             },
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetMediaFeaturesOverrideAsync(parameters);
@@ -649,7 +649,7 @@ public class EmulationModuleSamples
         #region ClearMediaFeaturesOverride
         SetMediaFeaturesOverrideCommandParameters parameters =
             SetMediaFeaturesOverrideCommandParameters.ResetMediaFeaturesOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetMediaFeaturesOverrideAsync(parameters);
         Console.WriteLine("Media features override cleared");
@@ -665,7 +665,7 @@ public class EmulationModuleSamples
         SetViewportMetaOverrideCommandParameters parameters = new SetViewportMetaOverrideCommandParameters
         {
             IsViewportMetaOverridden = true,
-            Contexts = new List<string> { contextId }
+            Contexts = { contextId }
         };
 
         await driver.Emulation.SetViewportMetaOverrideAsync(parameters);
@@ -681,7 +681,7 @@ public class EmulationModuleSamples
         #region ClearViewportMetaOverride
         SetViewportMetaOverrideCommandParameters parameters =
             SetViewportMetaOverrideCommandParameters.ResetViewportMetaOverride;
-        parameters.Contexts = new List<string> { contextId };
+        parameters.Contexts.Add(contextId);
 
         await driver.Emulation.SetViewportMetaOverrideAsync(parameters);
         Console.WriteLine("Viewport meta override cleared");
@@ -712,7 +712,7 @@ public class EmulationModuleSamples
                     new SetUserAgentOverrideCommandParameters
                     {
                         UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1",
-                        Contexts = new List<string> { contextId }
+                        Contexts = { contextId }
                     });
                 break;
 
@@ -729,7 +729,7 @@ public class EmulationModuleSamples
                     new SetUserAgentOverrideCommandParameters
                     {
                         UserAgent = "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36",
-                        Contexts = new List<string> { contextId }
+                        Contexts = { contextId }
                     });
                 break;
 
@@ -815,7 +815,7 @@ public class EmulationModuleSamples
                 new SetForcedColorsModeThemeOverrideCommandParameters
                 {
                     Theme = theme,
-                    Contexts = new List<string> { contextId }
+                    Contexts = { contextId }
                 });
 
             // Navigate to page
@@ -870,7 +870,7 @@ public class EmulationModuleSamples
                 new SetGeolocationOverrideCoordinatesCommandParameters
                 {
                     Coordinates = new GeolocationCoordinates(location.Value.Lng, location.Value.Lat) { Accuracy = 100 },
-                    Contexts = new List<string> { contextId }
+                    Contexts = { contextId }
                 });
 
             // Navigate to location-aware page

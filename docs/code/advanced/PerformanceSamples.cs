@@ -666,10 +666,10 @@ public class PerformanceSamples
         // ✅ Fast: Intercept only what you need
         AddInterceptCommandParameters fastIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        fastIntercept.UrlPatterns = new List<UrlPattern>
-        {
+        fastIntercept.UrlPatterns.AddRange(
+        [
             new UrlPatternPattern { HostName = "api.example.com" }
-        };
+        ]);
         await driver.Network.AddInterceptAsync(fastIntercept);
         #endregion
     }
@@ -683,14 +683,14 @@ public class PerformanceSamples
         // Speed up page loads by blocking images, CSS, fonts
         AddInterceptCommandParameters intercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        intercept.UrlPatterns = new List<UrlPattern>
-        {
+        intercept.UrlPatterns.AddRange(
+        [
             new UrlPatternString("*.jpg"),
             new UrlPatternString("*.png"),
             new UrlPatternString("*.gif"),
             new UrlPatternString("*.css"),
             new UrlPatternString("*.woff*")
-        };
+        ]);
 
         await driver.Network.AddInterceptAsync(intercept);
 

@@ -164,7 +164,7 @@ public class SetViewportCommandParametersTests
     {
         SetViewportCommandParameters properties = new()
         {
-            UserContexts = ["myUserContextId"],
+            UserContexts = {"myUserContextId"},
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

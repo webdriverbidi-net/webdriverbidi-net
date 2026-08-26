@@ -119,11 +119,11 @@ public class SimulateDescriptorResponseCommandParametersTests
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Read, 0)
         {
-            Data = [],
+            Data = {},
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Equal(8, serialized.Count);
+        Assert.Equal(7, serialized.Count);
 
         Assert.True(serialized.ContainsKey("context"));
         JToken? context = serialized["context"];
@@ -167,14 +167,7 @@ public class SimulateDescriptorResponseCommandParametersTests
         Assert.Equal(JTokenType.Integer, code.Type);
         Assert.Equal(0U, code.Value<uint>());
 
-        Assert.True(serialized.ContainsKey("data"));
-        JToken? data = serialized["data"];
-        Assert.NotNull(data);
-        Assert.Equal(JTokenType.Array, data.Type);
-
-        JArray? dataArray = serialized["data"] as JArray;
-        Assert.NotNull(dataArray);
-        Assert.Empty(dataArray);
+        Assert.False(serialized.ContainsKey("data"));
     }
 
     [Fact]
@@ -182,7 +175,7 @@ public class SimulateDescriptorResponseCommandParametersTests
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Read, 0)
         {
-            Data = [123, 456],
+            Data = {123, 456},
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

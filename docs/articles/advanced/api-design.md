@@ -84,12 +84,13 @@ Assigning C# `null` to either property omits it from the JSON payload entirely, 
 
 BIDI014 does **not** apply to property-level sentinel classes. Using `new SetViewportCommandParameters()` without any properties is valid — it sends a command that leaves both viewport and device pixel ratio at their current values.
 
-### Nullable List Properties
+### Optional List Properties
 
-Many `CommandParameters` expose nullable list properties (e.g., `List<string>? Contexts`). This is intentional:
+Optional lists on `CommandParameters` follow the cardinality the protocol gives them:
 
-- **`null`**: Property omitted from the JSON payload (protocol treats as "not specified")
-- **Empty list `[]`**: Explicit empty array sent to the remote end (protocol treats differently)
+- **Optional lists** (`Contexts`, `UserContexts`, `StartNodes`, `Arguments`, `UrlPatterns`, `PageRanges`, ...): the property is read-only and always initialized (`List<string> Contexts { get; }`). Populate it with a collection initializer or `.Add()`. While empty it is omitted from the JSON payload; an empty array is never sent. Where the CDDL is `[+x]` the browser would reject an empty array; where it is `[*x]` the specification treats an absent field and an empty array identically.
+- **The exception** — `Headers` and `Cookies` on `ContinueRequest`, `ContinueResponse` and `ProvideResponse`: the property is nullable and settable, because the protocol gives a present-but-empty array a distinct meaning (`[]` replaces the headers or cookies with none; omission keeps the originals). `null` omits the property; an empty list sends `[]`.
+- **Required lists** (`Phases`, `Actions`, `Handles`, `Headers` on `SetExtraHeaders`, ...): read-only and always initialized, never settable.
 
 Always check the XML documentation on the property for the rationale. See [Core Concepts - Command Parameters](../core-concepts.md#command-parameters) for details.
 

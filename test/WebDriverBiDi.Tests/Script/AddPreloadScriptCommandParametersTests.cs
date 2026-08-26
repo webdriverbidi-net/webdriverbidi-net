@@ -57,9 +57,9 @@ public class AddPreloadScriptCommandParametersTests
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
         {
             Arguments =
-            [
+            {
                 new ChannelValue(new ChannelProperties("myChannel"))
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -106,10 +106,10 @@ public class AddPreloadScriptCommandParametersTests
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
         {
             Contexts =
-            [
+            {
                 "context1",
                 "context2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -140,10 +140,10 @@ public class AddPreloadScriptCommandParametersTests
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
         {
             UserContexts =
-            [
+            {
                 "userContext1",
                 "userContext2",
-            ]
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

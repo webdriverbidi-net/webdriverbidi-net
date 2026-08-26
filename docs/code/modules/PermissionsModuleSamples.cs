@@ -156,7 +156,7 @@ public static class PermissionsModuleSamples
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
                 Coordinates = new GeolocationCoordinates(-122.4194, 37.7749) { Accuracy = 100 },
-                Contexts = new List<string> { contextId }
+                Contexts = { contextId }
             };
         await driver.Emulation.SetGeolocationOverrideAsync(geoParams);
 

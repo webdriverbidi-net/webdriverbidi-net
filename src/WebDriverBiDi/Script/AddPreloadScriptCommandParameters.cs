@@ -34,28 +34,27 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     public string FunctionDeclaration { get; set; }
 
     /// <summary>
-    /// Gets or sets the arguments for the function declaration.
+    /// Gets the arguments for the function declaration.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
+    /// empty array. An empty list therefore means "not specified": the property is omitted from the
+    /// JSON payload entirely. Add entries to the list to populate it.
     /// </remarks>
-    [JsonPropertyName("arguments")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<ChannelValue>? Arguments { get; set; }
+    [JsonIgnore]
+    public List<ChannelValue> Arguments { get; } = [];
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to add the preload script.
+    /// Gets the browsing contexts for which to add the preload script.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
-    [JsonPropertyName("contexts")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get; set; }
+    [JsonIgnore]
+    public List<string> Contexts { get; } = [];
 
     /// <summary>
     /// Gets or sets the sandbox name of the preload script.
@@ -65,14 +64,71 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     public string? Sandbox { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts for which to add the preload script.
+    /// Gets the user contexts for which to add the preload script.
     /// </summary>
     /// <remarks>
-    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
-    /// and sending an empty array (empty list). When null, the property is not included in the command;
-    /// when an empty list, an empty array is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
+    [JsonIgnore]
+    public List<string> UserContexts { get; } = [];
+
+    /// <summary>
+    /// Gets the browsing contexts for which to add the preload script, for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("contexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<string>? SerializableContexts
+    {
+        get
+        {
+            if (this.Contexts.Count == 0)
+            {
+                return null;
+            }
+
+            return this.Contexts;
+        }
+    }
+
+    /// <summary>
+    /// Gets the user contexts for which to add the preload script, for serialization purposes.
+    /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get; set; }
+    [JsonInclude]
+    internal List<string>? SerializableUserContexts
+    {
+        get
+        {
+            if (this.UserContexts.Count == 0)
+            {
+                return null;
+            }
+
+            return this.UserContexts;
+        }
+    }
+
+    /// <summary>
+    /// Gets the arguments for the function declaration, for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("arguments")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<ChannelValue>? SerializableArguments
+    {
+        get
+        {
+            if (this.Arguments.Count == 0)
+            {
+                return null;
+            }
+
+            return this.Arguments;
+        }
+    }
 }

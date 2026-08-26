@@ -120,21 +120,16 @@ subscribing:
 
 ## Null vs Empty Collections
 
-### Pitfall: Not Understanding Nullable Collection Properties
+### Pitfall: Not Knowing Which Shape an Optional List Has
 
 **The Problem:**
 
-Many `CommandParameters` classes have nullable collection properties like `List<string>? Contexts`. Developers often wonder why these aren't initialized to empty lists.
+`CommandParameters` classes expose optional lists in two shapes, and the way you add items differs:
+
+- **Read-only, always initialized** — `List<string> Contexts { get; }`, `UserContexts`, `StartNodes`, `Arguments`, `UrlPatterns`, `PageRanges`, and every other optional list. Add items with a collection initializer or `.Add()`. An empty list means "not specified": the property is omitted from the payload, and an empty array is never sent (for lists the protocol requires to be non-empty, the browser would reject it; for the rest, omission and `[]` mean the same thing).
+- **Nullable and settable** — only `Headers` and `Cookies` on `ContinueRequestCommandParameters`, `ContinueResponseCommandParameters` and `ProvideResponseCommandParameters`. Here the protocol gives a present-but-empty array its own meaning (`[]` replaces the headers or cookies with none; omission keeps the originals), so `null` omits the property and an empty list sends `[]`.
 
 [!code-csharp[Nullable Collection Example](../code/common-pitfalls/CommonPitfallsSamples.cs#NullableCollectionExample)]
-
-**Why Nullable Collections:**
-
-For the WebDriver BiDi protocol, there's an important distinction:
-- **`null`**: The property is **omitted from the JSON payload entirely**
-- **Empty list**: An **empty array `[]` is sent** in the JSON payload
-
-These have **different meanings** in the protocol specification.
 
 **Example Protocol Difference:**
 
@@ -142,11 +137,11 @@ These have **different meanings** in the protocol specification.
 
 **The Solution:**
 
-Always check for null before adding items, or initialize when needed:
+Read-only lists need no initialization. For nullable lists, initialize before adding items (analyzer BIDI017 flags a missing `??=`), or assign the whole list:
 
 [!code-csharp[Handle Nullable Collections](../code/common-pitfalls/CommonPitfallsSamples.cs#HandleNullableCollections)]
 
-**Key Takeaway:** Nullable collections are intentional. They allow distinguishing between "omit this property" (null) and "send an empty array" (empty list), which have different protocol meanings.
+**Key Takeaway:** Optional lists are read-only and omitted while empty. The six network `Headers`/`Cookies` lists are the one exception, nullable so that "omit" (`null`) and "send `[]`" (empty list) stay distinguishable where the protocol tells them apart.
 
 ---
 
@@ -320,7 +315,7 @@ Before running your WebDriverBiDi.NET code, verify:
 - [ ] Event handlers use `RunHandlerAsynchronously` for I/O operations
 - [ ] You've called both `AddObserver()` AND `Session.SubscribeAsync()`
 - [ ] Modules, custom events, and type resolvers registered BEFORE `StartAsync()`; observers added BEFORE `Session.SubscribeAsync()`
-- [ ] Nullable collections checked for null before adding items
+- [ ] Nullable collections (`Headers`/`Cookies` on the network continue/provide commands) checked for null before adding items; every other list populated with `.Add()` or a collection initializer
 - [ ] Timeout configured appropriately for your use case
 - [ ] Async handlers synchronized with capture API if needed
 - [ ] Transport error behavior set for development/production
