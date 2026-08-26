@@ -3094,4 +3094,112 @@ public class TransportTests
             throw this.exception;
         }
     }
+
+    [Fact]
+    public async Task TestCommandSentFromHandlerDuringDisconnectFailsFastWithoutWaitingForShutdownTimeout()
+    {
+        // DisconnectAsync marks the transport disconnected, then holds the connection lock while
+        // it waits (up to ShutdownTimeout) for the message-processing task. A synchronous event
+        // handler that sends a command inside that window must fail immediately with a connection
+        // exception; if it instead blocked on the lock, the handler (and so the processing task,
+        // and so the disconnect) could not finish until the shutdown wait timed out.
+        TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource disconnectReachedConnectionTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Exception? handlerException = null;
+        List<LogMessageEventArgs> logs = [];
+
+        StopSignalingWebSocketConnection connection = new(disconnectReachedConnectionTaskCompletionSource);
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(5),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+        transport.OnEventReceived.AddObserver(async e =>
+        {
+            handlerStartedTaskCompletionSource.TrySetResult();
+
+            // Connection.StopAsync is called by DisconnectAsync only after it has marked the
+            // transport disconnected and while it still holds the connection lock.
+            await disconnectReachedConnectionTaskCompletionSource.Task;
+            try
+            {
+                await transport.SendCommandAsync(new TestCommandParameters("module.command"));
+            }
+            catch (Exception ex)
+            {
+                handlerException = ex;
+            }
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+        await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The disconnect must complete well inside ShutdownTimeout: the handler's send fails at once,
+        // so the processing task finishes as soon as the handler returns.
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+
+        WebDriverBiDiConnectionException connectionException = Assert.IsType<WebDriverBiDiConnectionException>(handlerException);
+        Assert.Contains("Transport must be connected", connectionException.Message);
+        Assert.DoesNotContain(logs, log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown"));
+    }
+
+    private sealed class StopSignalingWebSocketConnection : TestWebSocketConnection
+    {
+        private readonly TaskCompletionSource stopCalledTaskCompletionSource;
+
+        public StopSignalingWebSocketConnection(TaskCompletionSource stopCalledTaskCompletionSource)
+        {
+            this.stopCalledTaskCompletionSource = stopCalledTaskCompletionSource;
+        }
+
+        public override Task StopAsync(CancellationToken cancellationToken = default)
+        {
+            this.stopCalledTaskCompletionSource.TrySetResult();
+            return base.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task TestSendCommandFailsWhenDisconnectedBetweenFastPathCheckAndLockAcquisition()
+    {
+        // The pre-lock connected check in SendCommandAsync is an optimization; the check under
+        // the lock is the guarantee. Disconnect the transport after the fast path has passed
+        // but before the lock is acquired, and verify the command is still rejected.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        bool disconnectTriggered = false;
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            // The callback runs for every lock acquisition, including the one made by the
+            // DisconnectAsync call below; the flag keeps this a one-shot re-entrancy.
+            if (!disconnectTriggered)
+            {
+                disconnectTriggered = true;
+                await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+            }
+        };
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(
+            async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+        Assert.Contains("Transport must be connected", exception.Message);
+        Assert.True(disconnectTriggered);
+        Assert.Equal(0, transport.PendingCommandCount);
+    }
 }

@@ -54,15 +54,14 @@ using WebDriverBiDi.JsonConverters;
 /// <strong>Thread Safety:</strong>
 /// This class is thread-safe. <see cref="SendCommandAsync"/> may be called concurrently from multiple threads. Connection lifecycle operations
 /// (<see cref="ConnectAsync"/>, <see cref="DisconnectAsync(CancellationToken)"/>) are serialized via an internal semaphore.
-/// <see cref="DisconnectAsync(CancellationToken)"/> checks the connected state before taking the
-/// semaphore, so a disconnect that is triggered while another caller already holds the lock
-/// (for example, <see cref="SendCommandAsync"/> tearing down after a terminal error) returns
-/// without deadlocking. <see cref="SendCommandAsync"/> itself takes the semaphore before checking
-/// the connected state; a command sent from a synchronous event handler while
-/// <see cref="DisconnectAsync(CancellationToken)"/> is in progress therefore waits for the
-/// shutdown wait (bounded by <see cref="ShutdownTimeout"/>) to release the semaphore, and then
-/// fails with <see cref="WebDriverBiDiConnectionException"/>. Event observers may be added or
-/// removed concurrently with message processing.
+/// Both <see cref="DisconnectAsync(CancellationToken)"/> and <see cref="SendCommandAsync"/> check
+/// the connected state before taking the semaphore (and again after acquiring it). This prevents a
+/// deadlock when a disconnect is triggered while another caller already holds the lock, and lets a
+/// command sent from a synchronous event handler while
+/// <see cref="DisconnectAsync(CancellationToken)"/> is in progress fail immediately with
+/// <see cref="WebDriverBiDiConnectionException"/> rather than blocking on the semaphore for the
+/// duration of the shutdown wait. Event observers may be added or removed concurrently with message
+/// processing.
 /// </para>
 /// </remarks>
 public class Transport : IAsyncDisposable
@@ -511,6 +510,18 @@ public class Transport : IAsyncDisposable
         {
             await this.DisconnectAsync(false).ConfigureAwait(false);
             throw this.CreateTerminationException(terminationExceptions);
+        }
+
+        // Fast-path guard, mirroring the one in DisconnectAsync: DisconnectAsync marks the
+        // transport disconnected before it starts waiting (up to ShutdownTimeout) for the
+        // message-processing task while holding the connection lock. A command sent from a
+        // synchronous event handler during that window would otherwise block on the lock for
+        // the whole shutdown wait before failing; checking here lets it fail immediately. The
+        // state is re-checked under the lock below, so this is an optimization, not the
+        // correctness guarantee.
+        if (!this.IsConnected)
+        {
+            throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
         }
 
         // Serialize the command immediately. This happens synchronously, as
