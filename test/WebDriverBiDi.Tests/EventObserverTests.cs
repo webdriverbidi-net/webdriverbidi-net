@@ -428,6 +428,98 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncWithInfiniteTimeoutReturnsTrueWhenHandlersAlreadyComplete()
+    {
+        // An infinite timeout must not be treated as an exhausted completion budget: with
+        // synchronous handlers the captured tasks are already complete, so the method must
+        // report success rather than computing a negative remaining time.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, Timeout.InfiniteTimeSpan, TestContext.Current.CancellationToken);
+
+        Assert.True(fulfilled);
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncWithInfiniteTimeoutWaitsForHandlersToComplete()
+    {
+        // Handlers are blocked on a gate so that the completion phase actually has to wait.
+        // With an infinite timeout, the completion race uses an infinite delay, and the
+        // handlers finishing must win that race and yield a true result.
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async e =>
+            {
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    bothStartedTaskCompletionSource.TrySetResult();
+                }
+
+                await gateTaskCompletionSource.Task.ConfigureAwait(false);
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, Timeout.InfiniteTimeSpan, TestContext.Current.CancellationToken);
+        Assert.False(waitTask.IsCompleted);
+
+        gateTaskCompletionSource.TrySetResult();
+
+        bool fulfilled = await waitTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(fulfilled);
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncWithInfiniteTimeoutCanBeCancelledWaitingForTaskCompletion()
+    {
+        // With an infinite timeout the completion phase can only end through handler
+        // completion or cancellation; verify cancellation still unblocks the wait.
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
+        CancellationTokenSource cancellationTokenSource = new();
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async e =>
+            {
+                if (Interlocked.Increment(ref startedCount) == 2)
+                {
+                    bothStartedTaskCompletionSource.TrySetResult();
+                }
+
+                await gateTaskCompletionSource.Task.ConfigureAwait(false);
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, Timeout.InfiniteTimeSpan, cancellationTokenSource.Token);
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await waitTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        Assert.False(observer.IsCapturing);
+
+        // Release the handlers so the test does not leave detached work running.
+        gateTaskCompletionSource.TrySetResult();
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksAsyncPropagatesHandlerException()
     {
         TestEventSource testEventSource = new();
