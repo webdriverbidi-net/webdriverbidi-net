@@ -230,7 +230,9 @@ public class Transport : IAsyncDisposable
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
     /// unknown message is encountered, such as valid JSON that does not match any protocol data
     /// structure. Defaults to ignoring exceptions, in which case, those exceptions will never
-    /// be surfaced to the user.
+    /// be surfaced to the user. A response for a command that has timed out or been canceled is
+    /// not an unknown message; it is recognized, logged, and discarded (see
+    /// <see cref="CancelCommand(Command, CommandCancellationReason)"/>).
     /// </summary>
     public TransportErrorBehavior UnknownMessageBehavior { get => this.UnhandledErrors.UnknownMessageBehavior; set => this.UnhandledErrors.UnknownMessageBehavior = value; }
 
@@ -238,7 +240,9 @@ public class Transport : IAsyncDisposable
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
     /// unexpected error is encountered, meaning an error response received with no corresponding
     /// command. Defaults to ignoring exceptions, in which case, those exceptions will never be
-    /// surfaced to the user.
+    /// surfaced to the user. An error response for a command that has timed out or been canceled is
+    /// not an unexpected error; it is recognized, logged, and discarded (see
+    /// <see cref="CancelCommand(Command, CommandCancellationReason)"/>).
     /// </summary>
     public TransportErrorBehavior UnexpectedErrorBehavior { get => this.UnhandledErrors.UnexpectedErrorBehavior; set => this.UnhandledErrors.UnexpectedErrorBehavior = value; }
 
@@ -541,10 +545,21 @@ public class Transport : IAsyncDisposable
     /// If the command has already completed or been removed, this method is a safe no-op.
     /// </summary>
     /// <param name="command">The command to cancel.</param>
-    public virtual void CancelCommand(Command command)
+    /// <param name="reason">The reason the command is being canceled.</param>
+    /// <returns>
+    /// <see langword="true"/> if the cancellation took effect; <see langword="false"/> if the command
+    /// had already completed with a result or fault, in which case that outcome stands.
+    /// </returns>
+    /// <remarks>
+    /// The remote end does not know that the local end has stopped waiting, so it may still send a
+    /// response for the canceled command. The command is remembered (see
+    /// <see cref="PendingCommandCollection.CancelPendingCommand(Command, CommandCancellationReason)"/>)
+    /// so that such a response is recognized and discarded rather than being reported as an unknown
+    /// message or an unexpected error.
+    /// </remarks>
+    public virtual bool CancelCommand(Command command, CommandCancellationReason reason = CommandCancellationReason.Canceled)
     {
-        command.Cancel();
-        this.PendingCommands.RemovePendingCommand(command.CommandId, out _);
+        return this.PendingCommands.CancelPendingCommand(command, reason);
     }
 
     /// <summary>
@@ -1153,6 +1168,16 @@ public class Transport : IAsyncDisposable
 
                 return true;
             }
+
+            if (this.PendingCommands.TryRemoveCanceledCommand(responseId, out CanceledCommandInfo? canceledCommand))
+            {
+                // The local end stopped waiting for this command (timeout, cancellation, or
+                // shutdown), but the remote end answered anyway. This is not a protocol anomaly,
+                // so it is reported for diagnostics and discarded rather than being routed to the
+                // unknown-message pipeline.
+                await this.ReportDiscardedCanceledCommandResponseAsync(canceledCommand).ConfigureAwait(false);
+                return true;
+            }
         }
 
         return false;
@@ -1180,10 +1205,17 @@ public class Transport : IAsyncDisposable
 
                     executedCommand.SetResult(result);
                 }
+                else if (errorMessage.CommandId.HasValue && this.PendingCommands.TryRemoveCanceledCommand(errorMessage.CommandId.Value, out CanceledCommandInfo? canceledCommand))
+                {
+                    // An error response for a command the local end stopped waiting for; see
+                    // the equivalent branch in ProcessCommandResponseMessageAsync.
+                    await this.ReportDiscardedCanceledCommandResponseAsync(canceledCommand).ConfigureAwait(false);
+                }
                 else
                 {
+                    string commandIdDescription = errorMessage.CommandId.HasValue ? $"for unknown command ID {errorMessage.CommandId.Value}" : "with no command ID";
                     await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result)).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
+                    this.CaptureUnhandledError(UnhandledErrorKind.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error {commandIdDescription}: {result.ErrorMessage}", result), $"Received error {commandIdDescription}");
                 }
             }
 
@@ -1249,6 +1281,16 @@ public class Transport : IAsyncDisposable
         }
 
         return false;
+    }
+
+    private async Task ReportDiscardedCanceledCommandResponseAsync(CanceledCommandInfo canceledCommand)
+    {
+        long millisecondsSinceCancellation = (long)canceledCommand.TimeSinceCancellation.TotalMilliseconds;
+        WebDriverBiDiEventSource.RaiseEvent.CanceledCommandResponseDiscarded(canceledCommand.CommandId, canceledCommand.CommandName, canceledCommand.Reason, millisecondsSinceCancellation);
+        if (this.OnLogMessage.CurrentObserverCount > 0)
+        {
+            await this.LogAsync($"Discarding late response for command '{canceledCommand.CommandName}' (command ID: {canceledCommand.CommandId}); the command was canceled ({canceledCommand.Reason}) {millisecondsSinceCancellation} ms before this response arrived", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+        }
     }
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)

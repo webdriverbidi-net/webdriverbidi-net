@@ -522,15 +522,61 @@ public class BiDiDriverTests
     [Fact]
     public async Task TestTimedOutCommandIgnoresLateResponse()
     {
+        // A response arriving after the command timed out must be discarded quietly: it must
+        // not be reported as an unknown message, and with Terminate behavior configured it must
+        // not terminate the transport, so the next command runs (and here simply times out
+        // again, because the test connection never answers it).
+        TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        bool unknownMessageReceived = false;
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1), transport);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1), transport)
+        {
+            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
+            UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
+        };
+        driver.OnUnknownMessageReceived.AddObserver(e => unknownMessageReceived = true);
+        driver.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.Contains("Discarding late response"))
+            {
+                discardedTaskCompletionSource.TrySetResult();
+            }
+        });
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken));
 
         string lateResponse = """{"type":"success","id":1,"result":{"parameterName":"parameterValue"}}""";
         await connection.RaiseDataReceivedEventAsync(lateResponse);
+        await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.False(unknownMessageReceived);
+        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task TestResponseArrivingBetweenTimeoutAndCancellationIsReturned()
+    {
+        // The command's wait reports a timeout, but the response lands before the driver
+        // cancels the command. Cancellation is then a no-op, and the result must be returned
+        // rather than a spurious timeout being thrown.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ReturnUncompletedCommand = true,
+            UncompletedCommandBehavior = command =>
+            {
+                command.SetResult(new TestCommandResult { Value = "raced in" });
+                return false;
+            },
+        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("raced in", result.Value);
     }
 
     [Fact]

@@ -390,6 +390,24 @@ public sealed class WebDriverBiDiEventSource : EventSource
     }
 
     /// <summary>
+    /// Raises the event indicating that a response was received for a command the local end had
+    /// already stopped waiting for (because it timed out, was canceled, or the connection was closed),
+    /// and that the response was discarded.
+    /// </summary>
+    /// <param name="commandId">The ID of the canceled command.</param>
+    /// <param name="method">The protocol method name of the canceled command.</param>
+    /// <param name="reason">The reason the command was canceled.</param>
+    /// <param name="millisecondsSinceCancellation">The time, in milliseconds, between the cancellation and the arrival of the response.</param>
+    [NonEvent]
+    public void CanceledCommandResponseDiscarded(long commandId, string method, CommandCancellationReason reason, long millisecondsSinceCancellation)
+    {
+        if (this.IsEnabled(EventLevel.Informational, EventKeywords.None))
+        {
+            this.CanceledCommandResponseDiscarded(commandId.ToString(), method, reason.ToString(), millisecondsSinceCancellation);
+        }
+    }
+
+    /// <summary>
     /// Logs when a command is being sent to the remote end.
     /// </summary>
     /// <param name="commandId">The unique identifier for the command.</param>
@@ -461,5 +479,11 @@ public sealed class WebDriverBiDiEventSource : EventSource
     private void CommandSendFailed(string commandId, string method, string failureType, string failureMessage, long elapsedMilliseconds)
     {
         this.WriteEvent(22, [commandId, method, failureType, failureMessage, elapsedMilliseconds]);
+    }
+
+    [Event(24, Level = EventLevel.Informational, Message = "Response for command {0} ({1}) discarded; the command was canceled ({2}) {3}ms earlier")]
+    private void CanceledCommandResponseDiscarded(string commandId, string method, string reason, long millisecondsSinceCancellation)
+    {
+        this.WriteEvent(24, [commandId, method, reason, millisecondsSinceCancellation]);
     }
 }

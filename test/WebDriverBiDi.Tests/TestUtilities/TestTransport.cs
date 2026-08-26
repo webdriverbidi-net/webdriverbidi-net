@@ -31,6 +31,12 @@ public class TestTransport : Transport
 
     public bool ReturnUncompletedCommand { get; set; }
 
+    /// <summary>
+    /// Gets or sets the <see cref="TestCommand.CompletionBehavior"/> applied to the command returned
+    /// when <see cref="ReturnUncompletedCommand"/> is set.
+    /// </summary>
+    public Func<TestCommand, bool>? UncompletedCommandBehavior { get; set; }
+
     public TimeSpan MessageProcessingDelay { get => this.messageProcessingDelay; set => this.messageProcessingDelay = value; }
 
     public CommandResult? CustomReturnValue { get; set; }
@@ -71,7 +77,7 @@ public class TestTransport : Transport
     {
         if (this.ReturnUncompletedCommand)
         {
-            return new TestCommand(this.LastCommandId, commandParameters);
+            return new TestCommand(this.LastCommandId, commandParameters) { CompletionBehavior = this.UncompletedCommandBehavior };
         }
 
         if (this.ShouldCancelCommand)
@@ -97,6 +103,16 @@ public class TestTransport : Transport
         }
 
         return await base.SendCommandAsync(commandParameters, cancellationToken);
+    }
+
+    /// <summary>
+    /// Replaces the pending command collection with one that remembers at most the specified number
+    /// of canceled commands. Must be called before <see cref="Transport.ConnectAsync"/>.
+    /// </summary>
+    /// <param name="maxTrackedCanceledCommands">The maximum number of canceled commands to remember.</param>
+    public void UseCanceledCommandTrackerCapacity(uint maxTrackedCanceledCommands)
+    {
+        this.PendingCommands = new PendingCommandCollection(maxTrackedCanceledCommands);
     }
 
     public Connection GetConnection()

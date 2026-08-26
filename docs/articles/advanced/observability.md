@@ -69,6 +69,7 @@ Choose the appropriate level based on your needs:
 | `CommandCompleted` | Info | Command completed successfully | `commandId`, `method`, `elapsedMilliseconds` |
 | `CommandTimeout` | Warning | Command timed out | `commandId`, `method`, `timeoutMilliseconds` |
 | `CommandError` | Error | Command failed with error response | `commandId`, `method`, `errorType`, `errorMessage` |
+| `CanceledCommandResponseDiscarded` | Info | A response arrived for a command the local end had already stopped waiting for (timed out, canceled, or pending at connection close) and was discarded | `commandId`, `method`, `reason`, `millisecondsSinceCancellation` |
 
 ### Event Handling
 

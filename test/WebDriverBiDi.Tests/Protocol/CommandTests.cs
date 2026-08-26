@@ -369,4 +369,28 @@ public class CommandTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), cts.Token));
     }
+
+    [Fact]
+    public void TestCancelReportsWhetherCancellationTookEffect()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"));
+        Assert.True(command.Cancel());
+        Assert.True(command.IsCanceled);
+
+        // Already canceled: nothing left to cancel.
+        Assert.False(command.Cancel());
+        Assert.True(command.IsCanceled);
+    }
+
+    [Fact]
+    public void TestCancelOnCompletedCommandLeavesResultIntact()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"));
+        command.SetResult(new TestCommandResult { Value = "done" });
+
+        Assert.False(command.Cancel());
+        Assert.False(command.IsCanceled);
+        Assert.True(command.TryGetResult(out CommandResult? result));
+        Assert.Equal("done", Assert.IsType<TestCommandResult>(result).Value);
+    }
 }

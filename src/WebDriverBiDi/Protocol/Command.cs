@@ -176,11 +176,17 @@ public class Command
     }
 
     /// <summary>
-    /// Cancels the task used to wait for completion of this command.
+    /// Cancels the task used to wait for completion of this command, reporting
+    /// whether the cancellation took effect.
     /// </summary>
-    public virtual void Cancel()
+    /// <returns>
+    /// <see langword="true"/> if this call transitioned the command to the canceled state;
+    /// <see langword="false"/> if the command had already completed with a result, faulted, or
+    /// been canceled, in which case the existing outcome stands and this call has no effect.
+    /// </returns>
+    public virtual bool Cancel()
     {
-        this.taskCompletionSource.TrySetCanceled();
+        return this.taskCompletionSource.TrySetCanceled();
     }
 
     /// <summary>
