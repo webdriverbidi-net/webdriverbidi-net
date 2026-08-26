@@ -390,7 +390,8 @@ public class TransportTests
     [Fact]
     public async Task TestTransportErrorEventReceivedWithNullValues()
     {
-        object? receivedData = null;
+        string? receivedData = null;
+        bool errorEventReceived = false;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
@@ -403,6 +404,7 @@ public class TransportTests
         });
         transport.OnErrorEventReceived.AddObserver(e =>
         {
+            errorEventReceived = true;
             return Task.CompletedTask;
         });
         string json = """
@@ -414,6 +416,13 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // An event with a null method is not an error response; it is reported verbatim
+        // as an unknown message and never reaches the error observers.
+        Assert.NotNull(receivedData);
+        Assert.Contains("\"method\": null", receivedData);
+        Assert.False(errorEventReceived);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -1942,12 +1951,26 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        Command oldCommand = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Assert.Equal(1, transport.PendingCommandCount);
 
+        // Disconnecting clears the pending collection, canceling the command it still held.
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        Assert.True(oldCommand.IsCanceled);
+        Assert.Equal(0, transport.PendingCommandCount);
+
+        // A reconnected transport starts with an empty collection and accepts new commands.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Command newCommand = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Assert.False(newCommand.IsCanceled);
+        Assert.Equal(1, transport.PendingCommandCount);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        Assert.True(newCommand.IsCanceled);
+        Assert.Equal(0, transport.PendingCommandCount);
 
+        // Once disposed, the transport accepts no further commands.
         await transport.DisposeAsync();
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -2517,6 +2540,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
         transport.OnErrorEventReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
@@ -2533,7 +2557,13 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        // Ignored means neither effect of the other behaviors: the transport is not
+        // terminated (a command is still accepted) and nothing is collected (disconnect
+        // does not throw).
+        await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Exception? disconnectException = await Record.ExceptionAsync(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Null(disconnectException);
     }
 
     [Fact]
@@ -2608,6 +2638,8 @@ public class TransportTests
         {
             AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
+        Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
+        Assert.Equal(TransportErrorBehavior.Ignore, transport.UnknownMessageBehavior);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             throw new WebDriverBiDiException("Unknown message handler exception");
@@ -2620,7 +2652,13 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        // Ignored means neither effect of the other behaviors: the transport is not
+        // terminated (a command is still accepted) and nothing is collected (disconnect
+        // does not throw).
+        await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Exception? disconnectException = await Record.ExceptionAsync(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Null(disconnectException);
     }
 
     [Fact]
@@ -3010,10 +3048,15 @@ public class TransportTests
         // response for the first is indistinguishable from a foreign message and is reported
         // through the unknown-message pipeline, exactly as before tracking existed.
         TaskCompletionSource unknownTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        string? unknownMessage = null;
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         transport.UseCanceledCommandTrackerCapacity(1);
-        transport.OnUnknownMessageReceived.AddObserver(e => unknownTaskCompletionSource.TrySetResult());
+        transport.OnUnknownMessageReceived.AddObserver(e =>
+        {
+            unknownMessage = e.Message;
+            unknownTaskCompletionSource.TrySetResult();
+        });
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         Command first = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
@@ -3023,6 +3066,13 @@ public class TransportTests
 
         await connection.RaiseDataReceivedEventAsync($$$"""{"type":"success","id":{{{first.CommandId}}},"result":{"parameterName":"parameterValue"}}""");
         await unknownTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(unknownMessage);
+        Assert.Contains($"\"id\":{first.CommandId}", unknownMessage);
+        Assert.True(first.IsCanceled);
+        Assert.True(second.IsCanceled);
+        Assert.False(first.TryGetResult(out _));
+        Assert.Equal(0, transport.PendingCommandCount);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
 

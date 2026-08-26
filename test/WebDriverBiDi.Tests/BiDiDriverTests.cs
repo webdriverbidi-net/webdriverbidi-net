@@ -648,9 +648,12 @@ public class BiDiDriverTests
         await server.StartAsync();
 
         await using BiDiDriver driver = new();
+        Assert.False(driver.IsStarted);
         await driver.StartAsync($"ws://localhost:{server.Port}", TestContext.Current.CancellationToken);
         await connectionTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(driver.IsStarted);
         await driver.StopAsync(TestContext.Current.CancellationToken);
+        Assert.False(driver.IsStarted);
 
         await server.StopAsync();
         dataReceivedObserver.Unobserve();

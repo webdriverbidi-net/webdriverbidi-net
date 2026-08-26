@@ -27,6 +27,10 @@ public class IncomingMessageTests
         bytes.CopyTo(owner.Memory);
         using IncomingMessage message = new(owner, bytes.Length);
         message.Parse();
+
+        Assert.Equal(bytes.Length, message.MessageLength);
+        Assert.Equal("{}", message.MessageText);
+        Assert.Equal(IncomingMessageKind.Unknown, message.MessageKind);
     }
 
     [Fact]
