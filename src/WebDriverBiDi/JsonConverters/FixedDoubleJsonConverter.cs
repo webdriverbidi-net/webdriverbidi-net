@@ -32,8 +32,16 @@ public class FixedDoubleJsonConverter : JsonConverter<double>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The double value to be serialized.</param>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <exception cref="JsonException">Thrown when <paramref name="value"/> is NaN or infinite.</exception>
     public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
     {
+        // JSON has no representation for NaN or the infinities; report a clear error rather than
+        // letting the writer reject the formatted text with a less descriptive exception.
+        if (double.IsNaN(value) || double.IsInfinity(value))
+        {
+            throw new JsonException($"The value {value} cannot be serialized; only finite numbers can be represented in JSON");
+        }
+
         string numberAsString = value.ToString("0.0###########################", CultureInfo.InvariantCulture);
         writer.WriteRawValue(numberAsString);
     }

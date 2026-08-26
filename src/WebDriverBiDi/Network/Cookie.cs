@@ -56,7 +56,8 @@ public record Cookie
     public string Path { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the expiration time of the cookie.
+    /// Gets the expiration time of the cookie. An <see cref="EpochExpires"/> value too large to be
+    /// represented by a <see cref="DateTime"/> is clamped to <see cref="DateTime.MaxValue"/>.
     /// </summary>
     [JsonIgnore]
     public DateTime? Expires { get; internal set; }
@@ -75,7 +76,7 @@ public record Cookie
             field = value;
             if (value.HasValue)
             {
-                this.Expires = DateTimeUtilities.UnixEpoch.AddSeconds(value.Value);
+                this.Expires = DateTimeUtilities.FromUnixEpochSeconds(value.Value);
             }
         }
     }

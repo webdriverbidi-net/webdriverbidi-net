@@ -495,6 +495,7 @@ public class Transport : IAsyncDisposable
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
+    /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData, CancellationToken cancellationToken = default)
@@ -512,7 +513,21 @@ public class Transport : IAsyncDisposable
         // execution and prevent modification of the parameters while the
         // command is being sent.
         Command command = this.CreateCommand(commandData);
-        byte[] commandJson = this.SerializeCommand(command);
+        byte[] commandJson;
+        try
+        {
+            commandJson = this.SerializeCommand(command);
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException)
+        {
+            // A JsonException is raised for values JSON cannot represent (for example, a NaN
+            // double); a NotSupportedException is raised when a value's type has no serialization
+            // metadata (for example, an unregistered AdditionalData value type under AOT). Surface
+            // both through the library's own serialization exception type, as is done for
+            // failures to deserialize a response.
+            throw new WebDriverBiDiSerializationException($"Could not serialize command '{command.CommandName}' (command ID: {command.CommandId}): {ex.Message}", ex);
+        }
+
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
