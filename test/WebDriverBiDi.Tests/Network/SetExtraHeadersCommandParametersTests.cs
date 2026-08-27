@@ -34,7 +34,7 @@ public class SetExtraHeadersCommandParametersTests
     {
         SetExtraHeadersCommandParameters properties = new()
         {
-            Headers = {new Header("X-Extra-Header", "headerValue")},
+            Headers = { new Header("X-Extra-Header", "headerValue") },
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -67,9 +67,9 @@ public class SetExtraHeadersCommandParametersTests
     {
         SetExtraHeadersCommandParameters properties = new()
         {
-            Contexts = {"myContext"}
+            Contexts = { "myContext" }
         };
-        properties.Headers.Add(new Header("X-Extra-Header",  "headerValue"));
+        properties.Headers.Add(new Header("X-Extra-Header", "headerValue"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
 
@@ -110,7 +110,7 @@ public class SetExtraHeadersCommandParametersTests
     {
         SetExtraHeadersCommandParameters properties = new()
         {
-            UserContexts = {"myUserContext"}
+            UserContexts = { "myUserContext" }
         };
         properties.Headers.Add(new Header("X-Extra-Header", "headerValue"));
         string json = JsonSerializer.Serialize(properties);

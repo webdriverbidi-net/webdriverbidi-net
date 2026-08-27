@@ -197,7 +197,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
     {
         SimulateCharacteristicResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", SimulateCharacteristicResponseType.Read, 0)
         {
-            Data = {},
+            Data = { },
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -247,7 +247,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
     {
         SimulateCharacteristicResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", SimulateCharacteristicResponseType.Read, 0)
         {
-            Data = {123, 456},
+            Data = { 123, 456 },
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

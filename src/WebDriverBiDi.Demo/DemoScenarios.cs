@@ -122,7 +122,7 @@ public static class DemoScenarios
         ChannelValue channelValue = new(new ChannelProperties("delayLoadChannel"));
         AddPreloadScriptCommandParameters preloadScriptParameters = new(preloadScriptFunction)
         {
-            Arguments = {channelValue},
+            Arguments = { channelValue },
         };
         await driver.Script.AddPreloadScriptAsync(preloadScriptParameters);
 
@@ -550,7 +550,7 @@ public static class DemoScenarios
         AddInterceptCommandParameters addIntercept = new(InterceptPhase.BeforeRequestSent)
         {
             Contexts = { contextId },
-            UrlPatterns = {new UrlPatternPattern() { PathName = "simpleContent.html" }},
+            UrlPatterns = { new UrlPatternPattern() { PathName = "simpleContent.html" } },
         };
         await driver.Network.AddInterceptAsync(addIntercept);
 

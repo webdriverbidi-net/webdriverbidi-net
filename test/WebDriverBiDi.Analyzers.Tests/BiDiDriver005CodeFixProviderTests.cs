@@ -1424,7 +1424,7 @@ public class BiDiDriver005CodeFixProviderTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
-        
+
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1613,7 +1613,7 @@ public class BiDiDriver005CodeFixProviderTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
-        
+
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
