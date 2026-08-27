@@ -2206,7 +2206,7 @@ public class TransportTests
     public async Task TestConstructionWithConnectionHavingExistingDataReceivedObserverThrows()
     {
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(e => {});
+        connection.OnDataReceived.AddObserver(e => { });
         Assert.Throws<ArgumentException>(() => new Transport(connection));
     }
 
@@ -2214,7 +2214,7 @@ public class TransportTests
     public async Task TestConstructionWithNullConnectionThrows()
     {
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(e => {});
+        connection.OnDataReceived.AddObserver(e => { });
         Assert.Throws<ArgumentNullException>(() => new Transport(null!));
     }
 
