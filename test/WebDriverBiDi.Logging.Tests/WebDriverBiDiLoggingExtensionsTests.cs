@@ -49,6 +49,28 @@ public class WebDriverBiDiLoggingExtensionsTests
     }
 
     [Fact]
+    public void AddWebDriverBiDi_ActivatesListenerWhenLoggingPipelineIsBuilt()
+    {
+        // Regression guard for the bridge doing nothing: building the logging pipeline must activate
+        // the listener (so it subscribes to the EventSource) without the application resolving
+        // WebDriverBiDiEventSourceLogger itself.
+        ServiceCollection services = new();
+        TestLogger fakeLogger = new();
+        services.AddSingleton<ILogger<WebDriverBiDiEventSourceLogger>>(fakeLogger);
+        services.AddLogging(b => b.AddWebDriverBiDi(EventLevel.Verbose));
+        using (ServiceProvider provider = services.BuildServiceProvider())
+        {
+            // Build the logging pipeline and create a category logger (which constructs registered
+            // ILoggerProviders) without ever resolving WebDriverBiDiEventSourceLogger.
+            _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("activation-test");
+
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
+        }
+
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "TransportStarted");
+    }
+
+    [Fact]
     public void AddWebDriverBiDi_RegistersWebDriverBiDiEventSourceLogger()
     {
         ServiceCollection services = new();

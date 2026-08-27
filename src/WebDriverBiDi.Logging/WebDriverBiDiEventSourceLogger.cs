@@ -31,7 +31,7 @@ using Microsoft.Extensions.Logging;
 /// </remarks>
 public sealed class WebDriverBiDiEventSourceLogger : EventListener
 {
-    private readonly ILogger logger;
+    private readonly Lazy<ILogger> logger;
     private readonly EventLevel minimumLevel;
 
     /// <summary>
@@ -41,7 +41,28 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
     /// <param name="minimumLevel">The minimum EventLevel to capture. Defaults to Informational.</param>
     public WebDriverBiDiEventSourceLogger(ILogger logger, EventLevel minimumLevel = EventLevel.Informational)
     {
-        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ILogger resolvedLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.logger = new Lazy<ILogger>(() => resolvedLogger);
+        this.minimumLevel = minimumLevel;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiEventSourceLogger"/> class that
+    /// resolves the target <see cref="ILogger"/> lazily on first use.
+    /// </summary>
+    /// <param name="logger">A factory that resolves the ILogger instance to forward events to.</param>
+    /// <param name="minimumLevel">The minimum EventLevel to capture.</param>
+    /// <remarks>
+    /// The lazy factory lets the listener be constructed (and thereby subscribe to the EventSource)
+    /// during logging-pipeline setup without resolving the <see cref="ILogger"/> from the very
+    /// <see cref="ILoggerFactory"/> that is still being built. The factory is invoked once, on the
+    /// first event forwarded, by which time the pipeline is available.
+    /// </remarks>
+    internal WebDriverBiDiEventSourceLogger(Lazy<ILogger> logger, EventLevel minimumLevel)
+    {
+        // This constructor is internal and is only ever called with a non-null factory (see
+        // WebDriverBiDiLoggingExtensions.AddWebDriverBiDi), so no null guard is needed.
+        this.logger = logger;
         this.minimumLevel = minimumLevel;
     }
 
@@ -65,6 +86,18 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
     protected override void OnEventWritten(EventWrittenEventArgs eventData)
     {
         if (eventData.EventSource.Name != "WebDriverBiDi")
+        {
+            return;
+        }
+
+        // Enforce the configured minimum level here rather than relying solely on EnableEvents.
+        // OnEventSourceCreated runs during the base EventListener constructor, before this instance's
+        // minimum level is assigned, so a WebDriver BiDi EventSource that already exists when the
+        // listener is created is enabled at the default level (everything). This authoritative check
+        // keeps the configured level correct regardless of that ordering. EventLevel.LogAlways is the
+        // "no filtering" level, so it captures every event; otherwise a higher EventLevel value is a
+        // less severe event and is dropped when it exceeds the configured minimum.
+        if (this.minimumLevel != EventLevel.LogAlways && eventData.Level > this.minimumLevel)
         {
             return;
         }
@@ -94,7 +127,7 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         EventId eventId = new(eventData.EventId, eventData.EventName);
 
         // Log with structured state
-        this.logger.Log(logLevel, eventId, state, null, FormatMessage);
+        this.logger.Value.Log(logLevel, eventId, state, null, FormatMessage);
     }
 
     private static LogLevel MapEventLevel(EventLevel level)
