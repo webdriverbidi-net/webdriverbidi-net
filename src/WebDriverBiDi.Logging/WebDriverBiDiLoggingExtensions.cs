@@ -86,12 +86,16 @@ public static class WebDriverBiDiLoggingExtensions
             throw new ArgumentNullException(nameof(builder));
         }
 
-        // Register the EventSource logger as a singleton
-        builder.Services.TryAddSingleton(serviceProvider =>
-        {
-            ILogger<WebDriverBiDiEventSourceLogger> logger = serviceProvider.GetRequiredService<ILogger<WebDriverBiDiEventSourceLogger>>();
-            return new WebDriverBiDiEventSourceLogger(logger, minimumLevel);
-        });
+        // Register the EventSource listener as a singleton. The ILogger it forwards to is resolved
+        // lazily so that constructing the listener does not resolve an ILogger from the ILoggerFactory
+        // that is still being built when the activator below is constructed.
+        builder.Services.TryAddSingleton(serviceProvider => new WebDriverBiDiEventSourceLogger(new Lazy<ILogger>(() => serviceProvider.GetRequiredService<ILogger<WebDriverBiDiEventSourceLogger>>()), minimumLevel));
+
+        // Register an ILoggerProvider whose only job is to force the listener singleton to be
+        // constructed (and thereby subscribe to the EventSource) as soon as the logging pipeline is
+        // built, without the application having to resolve WebDriverBiDiEventSourceLogger itself.
+        // TryAddEnumerable keeps a single activator even if AddWebDriverBiDi is called more than once.
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, WebDriverBiDiLoggerActivator>());
 
         return builder;
     }

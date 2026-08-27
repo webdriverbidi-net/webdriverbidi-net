@@ -128,6 +128,11 @@ public class WebDriverBiDiEventSourceLoggerTests
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandTimeout");
         Assert.Equal("CommandTimeout", entry.EventId.Name);
+
+        // Events below the configured minimum are dropped, regardless of whether the EventSource
+        // already existed when the listener was constructed.
+        Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "ConnectionOpening");
+        Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
     }
 
     [Fact]
@@ -142,6 +147,23 @@ public class WebDriverBiDiEventSourceLoggerTests
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
         Assert.Equal("ConnectionOpening", entry.EventId.Name);
+
+        // The verbose CommandSending event is below the Informational minimum and is dropped.
+        Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
+    }
+
+    [Fact]
+    public void OnEventWritten_CapturesAllLevels_WhenMinimumLevelIsLogAlways()
+    {
+        // EventLevel.LogAlways means "no level filtering": every event, including verbose ones, is
+        // captured.
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.LogAlways))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
+        }
+
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
     }
 
     [Fact]
