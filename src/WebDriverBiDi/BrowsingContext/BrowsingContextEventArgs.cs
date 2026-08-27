@@ -47,9 +47,12 @@ public record BrowsingContextEventArgs : WebDriverBiDiEventArgs
     public string Url => this.info.Url;
 
     /// <summary>
-    /// Gets the list of the child browsing contexts of the browsing context.
+    /// Gets the list of the child browsing contexts of the browsing context, or
+    /// <see langword="null"/> if the child contexts were not enumerated (for example, in a
+    /// <c>browsingContext.contextCreated</c> event). An empty list means the context was
+    /// enumerated and has no children.
     /// </summary>
-    public IList<BrowsingContextInfo> Children => this.info.Children;
+    public IList<BrowsingContextInfo>? Children => this.info.Children;
 
     /// <summary>
     /// Gets the browsing context ID of the parent browsing context.

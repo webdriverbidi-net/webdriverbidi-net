@@ -61,9 +61,14 @@ public record BrowsingContextInfo
     public string UserContextId { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the read-only list of child browsing contexts for this browsing context.
+    /// Gets the read-only list of child browsing contexts for this browsing context, or
+    /// <see langword="null"/> if the child contexts were not enumerated. The protocol returns
+    /// <see langword="null"/> when the tree is not walked to this depth, such as in a
+    /// <c>browsingContext.contextCreated</c> event or a <c>browsingContext.getTree</c> command
+    /// with a maximum depth of zero. An empty list, by contrast, means the context was enumerated
+    /// and has no children.
     /// </summary>
-    public IList<BrowsingContextInfo> Children => this.SerializableChildren.AsReadOnly();
+    public IList<BrowsingContextInfo>? Children => this.SerializableChildren?.AsReadOnly();
 
     /// <summary>
     /// Gets the ID of the parent browsing context of this browsing context.
@@ -73,10 +78,13 @@ public record BrowsingContextInfo
     public string? Parent { get; internal set; }
 
     /// <summary>
-    /// Gets or sets the list of child browsing contexts for this browsing context.
+    /// Gets or sets the list of child browsing contexts for this browsing context, or
+    /// <see langword="null"/> when the protocol did not enumerate them. The <c>children</c>
+    /// property is required by the protocol but its value is nullable
+    /// (<c>browsingContext.InfoList / null</c>).
     /// </summary>
     [JsonPropertyName("children")]
     [JsonRequired]
     [JsonInclude]
-    internal List<BrowsingContextInfo> SerializableChildren { get; set; } = [];
+    internal List<BrowsingContextInfo>? SerializableChildren { get; set; }
 }
