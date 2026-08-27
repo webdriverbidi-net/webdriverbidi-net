@@ -91,6 +91,13 @@ public abstract class Connection : IAsyncDisposable
     /// <summary>
     /// Gets or sets the value of the timeout to wait before throwing an error when starting up the connection.
     /// </summary>
+    /// <remarks>
+    /// The timeout is a single budget for the whole of startup: it bounds each individual connection
+    /// attempt as well as the retries between them, so a remote end that accepts slowly is cut off at
+    /// the deadline rather than allowed to complete late. Name resolution and address fallback (for
+    /// example <c>localhost</c> resolving to an IPv6 address first) count against the budget, so avoid
+    /// sub-second values when connecting by host name.
+    /// </remarks>
     public TimeSpan StartupTimeout { get; set; } = DefaultTimeout;
 
     /// <summary>
