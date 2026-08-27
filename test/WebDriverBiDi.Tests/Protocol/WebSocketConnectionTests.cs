@@ -549,6 +549,82 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionStopBoundsWaitForUnresponsiveReceiveLoop()
+    {
+        // Regression guard for the receive-loop wait in StopAsync being bounded by ShutdownTimeout.
+        // Unlike TestConnectionStopWhileReceiveBlocked, whose ReceiveHandler unblocks on cancellation,
+        // this handler blocks on a test-controlled signal and ignores the connection's cancellation
+        // token, so the receive loop does not finish when StopAsync cancels it. An unbounded
+        // "await this.DataReceiveTask" would hang; a bounded wait returns after ShutdownTimeout and
+        // logs a warning, leaving the receive task to finish on its own later.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource<WebSocketReceiveResult> receiveLoopBlock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveHandlerEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            BypassCloseClientWebSocket = true,
+            ShutdownTimeout = TimeSpan.FromMilliseconds(500),
+            ReceiveHandler = (buffer, cancellationToken, callCount) =>
+            {
+                // Deliberately ignore the cancellation token so the receive loop stays blocked even
+                // after StopAsync cancels the connection.
+                receiveHandlerEntered.TrySetResult();
+                return receiveLoopBlock.Task;
+            },
+        };
+
+        object logLock = new();
+        List<string> connectionLog = [];
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                connectionLog.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        try
+        {
+            await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+            this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+
+            // Ensure the receive loop is actually parked in the (uncancellable) handler before
+            // stopping, so the wait deterministically reaches the ShutdownTimeout bound.
+            await receiveHandlerEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+            Task settledTask = await Task.WhenAny(stopTask, Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            if (settledTask != stopTask)
+            {
+                Assert.Fail("StopAsync did not return within 5 seconds; the wait for the receive loop is not bounded by ShutdownTimeout.");
+            }
+
+            await stopTask;
+
+            string[] logSnapshot;
+            lock (logLock)
+            {
+                logSnapshot = [.. connectionLog];
+            }
+
+            Assert.Contains("Timed out waiting for WebSocket connection receive loop to complete during shutdown", logSnapshot);
+        }
+        finally
+        {
+            // Release the receive loop so it can complete and not leak past the test.
+            receiveLoopBlock.TrySetResult(new WebSocketReceiveResult(0, WebSocketMessageType.Close, true));
+            await connection.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public async Task TestConnectionInitiateWebSocketClose()
     {
         await using Server server = this.CreateServer();

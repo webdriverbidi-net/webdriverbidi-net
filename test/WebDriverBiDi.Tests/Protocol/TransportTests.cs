@@ -10,6 +10,14 @@ using Xunit.Sdk;
 
 public class TransportTests
 {
+    // --- CT-1 (shutdown deadlock) regression tests ---
+    // These verify that a remote close or receive-loop fault occurring while DisconnectAsync holds
+    // the connection lock does not deadlock: DisconnectAsync awaits the receive loop (through
+    // Connection.StopAsync), while the connection-loss handler runs on that loop, so an unfixed
+    // implementation forms a cycle. The 5-second bound below is a deadlock detector, not a timing
+    // assumption; a correct implementation completes effectively immediately.
+    private static readonly TimeSpan DeadlockDetectionTimeout = TimeSpan.FromSeconds(5);
+
     [Fact]
     public async Task TestTransportCanSendCommand()
     {
@@ -2308,9 +2316,11 @@ public class TransportTests
     [Fact]
     public async Task TestConnectionErrorWhenDisconnectRacesHitsInnerReturnBranch()
     {
-        // Covers the inner "if (!this.IsConnected) return" branch (line 609): OnConnectionErrorAsync
-        // passes the fast-path, blocks on the lock, then by the time it acquires the lock
-        // DisconnectAsync has already set IsConnected = false.
+        // Covers the disconnect-ownership signal branch of HandleConnectionDisconnectionAsync:
+        // OnConnectionErrorAsync passes the fast-path, then observes DisconnectAsync's ownership
+        // signal completing before it acquires the lock, and returns without tearing down (handing
+        // the lock back through its completion continuation). The inner "if (!this.IsConnected)
+        // return" branch is covered separately by TestConcurrentConnectionLossEventsHitInnerReturnBranch.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -2444,9 +2454,12 @@ public class TransportTests
     [Fact]
     public async Task TestRemoteDisconnectWhenDisconnectRacesHitsInnerReturnBranch()
     {
-        // Covers the inner "if (!this.IsConnected) return" branch in OnConnectionRemotelyDisconnectedAsync:
-        // the fast-path passes (IsConnected == true), but by the time the lock is acquired
-        // DisconnectAsync has already set IsConnected = false.
+        // Covers the disconnect-ownership signal branch of HandleConnectionDisconnectionAsync: the
+        // remote-disconnect handler passes the fast-path (IsConnected == true), then observes
+        // DisconnectAsync's ownership signal completing before it acquires the lock, and returns
+        // without tearing down (handing the lock back through its completion continuation). The
+        // inner "if (!this.IsConnected) return" branch is covered separately by
+        // TestConcurrentConnectionLossEventsHitInnerReturnBranch.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -2783,6 +2796,182 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new("module.command");
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await transport.SendCommandAsync(commandParameters, cts.Token));
+    }
+
+    [Fact]
+    public async Task TestRemoteDisconnectWhileDisconnectHoldsLockDoesNotDeadlock()
+    {
+        await RunDeadlockScenarioAsync(connection => connection.SignalRemoteClose());
+    }
+
+    [Fact]
+    public async Task TestConnectionErrorWhileDisconnectHoldsLockDoesNotDeadlock()
+    {
+        await RunDeadlockScenarioAsync(connection => connection.SignalConnectionError());
+    }
+
+    /// <summary>
+    /// Guards the per-session reset of the disconnect-ownership state the CT-1 fix introduces: after a
+    /// session is stopped and a new one started, a plain remote disconnect on the new session must
+    /// still perform its teardown and fail in-flight commands.
+    /// </summary>
+    /// <remarks>
+    /// DisconnectAsync raises a per-session ownership signal when it takes over the teardown, and the
+    /// connection-loss handler waits against that signal so it never blocks on the connection lock
+    /// behind the disconnect. A normal stop raises the signal; if it is not replaced when the transport
+    /// reconnects, a later remote disconnect on the new session would short-circuit its teardown and
+    /// silently leave in-flight commands pending forever. The command completes effectively immediately
+    /// on success; the timeout is a stall detector for the short-circuit regression.
+    /// </remarks>
+    [Fact]
+    public async Task TestRemoteDisconnectFailsPendingCommandsOnReconnectedSession()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        TestReceiveLoopWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+
+        // First session: connect and stop cleanly. The fix raises its disconnect-ownership signal
+        // during this stop, so the second session must start from a fresh signal.
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await transport.DisconnectAsync(testCancellationToken);
+
+        // Second session: reconnect and send a command that stays pending (the connection double
+        // never produces a response).
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        TestCommandParameters commandParameters = new("module.command");
+        Command pendingCommand = await transport.SendCommandAsync(commandParameters, testCancellationToken);
+
+        // A plain remote disconnect on the new session, with no concurrent DisconnectAsync: the lock
+        // is free, so the only thing that can stop the handler from failing the command is stale,
+        // un-reset disconnect state carried over from the first session.
+        connection.SignalRemoteClose();
+
+        bool commandCompleted = await pendingCommand.WaitForCompletionAsync(DeadlockDetectionTimeout, testCancellationToken);
+        Assert.True(
+            commandCompleted,
+            "The remote disconnect on the reconnected session did not fail the pending command; " +
+            "per-session disconnect state was not reset on reconnect.");
+        Assert.IsType<WebDriverBiDiConnectionException>(pendingCommand.ThrownException);
+
+        await transport.DisposeAsync();
+    }
+
+    /// <summary>
+    /// Covers the inner <c>if (!this.IsConnected) return</c> re-check in
+    /// <c>HandleConnectionDisconnectionAsync</c> (the path where a connection-loss handler acquires
+    /// the connection lock and finds the transport already disconnected).
+    /// </summary>
+    /// <remarks>
+    /// A <see cref="Transport.DisconnectAsync(CancellationToken)"/> racing a loss handler is resolved
+    /// through the disconnect-ownership signal, so it no longer reaches this inner re-check (that path
+    /// is covered by <c>TestRemoteDisconnectWhenDisconnectRacesHitsInnerReturnBranch</c> and
+    /// <c>TestConnectionErrorWhenDisconnectRacesHitsInnerReturnBranch</c> elsewhere in this class). The
+    /// re-check is now reached only when two connection-loss events race each other: neither raises the
+    /// ownership signal, so the second handler waits for the lock, and by the time it acquires it the
+    /// first handler has already set the transport disconnected. The two acquisitions are choreographed
+    /// deterministically with <see cref="TestTransport.EnableConnectLockConcurrencyTesting"/> so that
+    /// both handlers pass their fast-path check before either takes the lock.
+    /// </remarks>
+    [Fact]
+    public async Task TestConcurrentConnectionLossEventsHitInnerReturnBranch()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+
+        // Choreograph the two connection-lock acquisitions: the first loss handler enters the lock,
+        // and the second is held at its fast-path-passed / pre-lock point until the first has
+        // acquired the lock, guaranteeing both saw IsConnected == true before either tore down.
+        Task firstHandlerEnteredLockAcquisition = transport.EnableConnectLockConcurrencyTesting();
+
+        // First loss event: acquires the lock and performs the teardown.
+        Task firstLossHandler = connection.RaiseConnectionErrorEventAsync(new Exception("first connection loss"));
+        await firstHandlerEnteredLockAcquisition;
+
+        // Second loss event: passes the fast-path while the first still holds the lock, then waits
+        // for the lock and, on acquiring it, hits the inner re-check with IsConnected already false.
+        Task secondLossHandler = connection.RaiseRemoteDisconnectedEventAsync();
+
+        await Task.WhenAll(firstLossHandler, secondLossHandler);
+
+        // The transport tore down exactly once and further commands fail fast.
+        TestCommandParameters commandParameters = new("module.command");
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(
+            async () => await transport.SendCommandAsync(commandParameters, testCancellationToken));
+        Assert.Contains("Transport must be connected", exception.Message);
+
+        await transport.DisposeAsync();
+    }
+
+    private static async Task RunDeadlockScenarioAsync(Action<TestReceiveLoopWebSocketConnection> endReceiveLoop)
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        TestReceiveLoopWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+
+        // Signalled by the connection-loss handler when it enters its connection-lock acquisition,
+        // i.e., once it has passed its fast-path check (IsConnected is still true at that point,
+        // because DisconnectAsync is parked in the after-acquire callback below and has not yet
+        // marked the transport disconnected). This is the moment that makes the deadlock inevitable
+        // on an unfixed implementation, and the moment DisconnectAsync must be released to proceed.
+        TaskCompletionSource connectionLossHandlerWaitingForLock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // AcquireConnectionLockAsync is called twice after setup: first by DisconnectAsync, then by
+        // the connection-loss handler running on the receive loop. Use the second entry to record
+        // that the handler is committed to waiting for the lock.
+        int lockAcquisitionAttempts = 0;
+        transport.BeforeAcquireLockCallback = () =>
+        {
+            if (Interlocked.Increment(ref lockAcquisitionAttempts) == 2)
+            {
+                connectionLossHandlerWaitingForLock.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        };
+
+        // Fires once, immediately after DisconnectAsync has acquired the lock and while it still
+        // holds it. End the receive loop here (which dispatches the remote-disconnect/error event on
+        // that loop), then block DisconnectAsync until the handler is waiting for the lock, so the
+        // interleaving is forced rather than raced.
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            endReceiveLoop(connection);
+            await connectionLossHandlerWaitingForLock.Task;
+        };
+
+        Task disconnectTask = transport.DisconnectAsync(testCancellationToken);
+
+        Task settledTask = await Task.WhenAny(disconnectTask, Task.Delay(DeadlockDetectionTimeout, testCancellationToken));
+        if (settledTask != disconnectTask)
+        {
+            Assert.Fail(
+                $"DisconnectAsync did not complete within {DeadlockDetectionTimeout.TotalSeconds} seconds; " +
+                $"the transport deadlocked against the connection-loss handler (receive-loop task status: {connection.DataReceiveTaskStatusDescription}).");
+        }
+
+        // Surface any fault from the disconnect itself.
+        await disconnectTask;
+
+        // The connection was stopped exactly once (the handler must not have driven a second stop),
+        // and its receive loop drained to completion rather than being abandoned.
+        Assert.Equal(1, connection.StopCallCount);
+        Assert.True(connection.ReceiveLoopCompleted, "The connection's receive loop should have completed once the disconnect finished.");
+
+        // The transport is disconnected AND the connection lock was handed back: a follow-up command
+        // fails fast with a connection exception instead of blocking on a lock that was never released.
+        // (IsConnected is internal to the library, so this is the observable proxy for both facts.)
+        TestCommandParameters commandParameters = new("module.command");
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(
+            async () => await transport.SendCommandAsync(commandParameters, testCancellationToken));
+        Assert.Contains("Transport must be connected", exception.Message);
+
+        await transport.DisposeAsync();
     }
 
     private class FilteringTransport : Transport

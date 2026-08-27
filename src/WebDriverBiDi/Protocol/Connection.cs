@@ -329,6 +329,29 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Waits for the data receive task to complete, bounded by <see cref="ShutdownTimeout"/>. If it does not
+    /// finish in time, logs a warning and returns, leaving the receive task to complete on its own.
+    /// Call after <see cref="CancelConnection"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the state of the asynchronous operation.</returns>
+    protected async Task WaitForReceiveTaskCompletionAsync()
+    {
+        if (this.DataReceiveTask is not null)
+        {
+            using CancellationTokenSource shutdownDelayCancelTokenSource = new();
+            Task completedTask = await Task.WhenAny(this.DataReceiveTask, Task.Delay(this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
+            if (completedTask != this.DataReceiveTask)
+            {
+                await this.LogAsync($"Timed out waiting for {this.ConnectionKind} connection receive loop to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+            }
+            else
+            {
+                shutdownDelayCancelTokenSource.Cancel();
+            }
+        }
+    }
+
+    /// <summary>
     /// Marks this <see cref="Connection"/> as disposed. Use this method to ensure
     /// thread-safe operations for setting object being disposed.
     /// </summary>

@@ -215,24 +215,10 @@ public class PipeConnection : Connection
             return;
         }
 
-        // Signal cancellation to stop the receive loop
+        // Signal cancellation to stop the receive loop, then wait for the receive task
+        // to complete.
         this.CancelConnection();
-
-        // Wait for the receive task to complete, bounded by ShutdownTimeout. See the
-        // remarks on this method for why the wait must not be unconditional here.
-        if (this.DataReceiveTask is not null)
-        {
-            using CancellationTokenSource shutdownDelayCancelTokenSource = new();
-            Task completedTask = await Task.WhenAny(this.DataReceiveTask, Task.Delay(this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
-            if (completedTask != this.DataReceiveTask)
-            {
-                await this.LogAsync("Timed out waiting for pipe receive loop to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-            }
-            else
-            {
-                shutdownDelayCancelTokenSource.Cancel();
-            }
-        }
+        await this.WaitForReceiveTaskCompletionAsync().ConfigureAwait(false);
 
         this.IsConnectionActive = false;
         this.ConnectionString = string.Empty;

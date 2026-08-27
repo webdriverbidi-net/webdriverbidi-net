@@ -164,6 +164,15 @@ public class WebSocketConnection : Connection
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Waiting for the receive loop to finish is bounded by <see cref="Connection.ShutdownTimeout"/>.
+    /// If the receive loop does not finish within the timeout, a warning is logged and this method
+    /// returns anyway; the receive task continues running in the background until the receive loop
+    /// unblocks on its own. Because cancelling the connection's token reliably aborts a pending
+    /// WebSocket receive, this bound is reached only when the receive loop is delayed by its own
+    /// message dispatch (for example, a synchronous event observer that blocks) rather than by
+    /// the socket read itself.
+    /// </remarks>
     public override async Task StopAsync(CancellationToken cancellationToken = default)
     {
         await this.LogAsync($"Closing connection").ConfigureAwait(false);
@@ -176,12 +185,10 @@ public class WebSocketConnection : Connection
             await this.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
+        // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync
+        // to abort the socket, then wait for the receive task to complete.
         this.CancelConnection();
-        if (this.DataReceiveTask is not null)
-        {
-            await this.DataReceiveTask.ConfigureAwait(false);
-        }
+        await this.WaitForReceiveTaskCompletionAsync().ConfigureAwait(false);
 
         this.ConnectionString = string.Empty;
     }

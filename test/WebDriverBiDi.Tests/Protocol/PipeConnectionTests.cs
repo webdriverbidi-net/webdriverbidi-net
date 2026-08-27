@@ -298,7 +298,7 @@ public class PipeConnectionTests
 
         Assert.False(connection.IsActive);
         Assert.Contains(logs, log =>
-            log.Message == "Timed out waiting for pipe receive loop to complete during shutdown"
+            log.Message == "Timed out waiting for Pipes connection receive loop to complete during shutdown"
             && log.Level == WebDriverBiDiLogLevel.Warn
             && log.ComponentName == Connection.LoggerComponentName);
 

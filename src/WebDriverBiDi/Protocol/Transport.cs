@@ -137,6 +137,12 @@ public class Transport : IAsyncDisposable
     private long nextCommandId = 0;
     private string terminationReason = "Normal shutdown";
 
+    // TaskCompletionSource used as a signal that DisconnectAsync owns the attempt
+    // at shutdown of the Transport. This field is refreshed in ConnectAsync when
+    // a new session is created. Used so that a terminated Connection does not
+    // enter a circular lock.
+    private TaskCompletionSource<int> disconnectOwnedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isConnectedTypeSafeFlag = 0;
     private int isDisposedFlag = 0;
@@ -437,6 +443,7 @@ public class Transport : IAsyncDisposable
                 SingleWriter = true,
             });
             Interlocked.Exchange(ref this.incomingQueueDepth, 0);
+            Interlocked.Exchange(ref this.disconnectOwnedSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
 
             this.ResetCollectedErrors();
 
@@ -787,6 +794,11 @@ public class Transport : IAsyncDisposable
             WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.Id, this.TerminationReason);
             this.IsConnected = false;
 
+            // DisconnectAsync owns the shutdown, and we are about to await the completion
+            // of the receive data loop. We release any connection-loss handler awaiting
+            // the lock.
+            this.disconnectOwnedSignal.TrySetResult(1);
+
             // Close the pending command collection to further addition of commands,
             // and stop the connection from receiving further communication traffic.
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
@@ -1136,7 +1148,27 @@ public class Transport : IAsyncDisposable
             return;
         }
 
-        await this.AcquireConnectionLockAsync(CancellationToken.None).ConfigureAwait(false);
+        // This method is running on the connection's receive loop. If DisconnectAsync
+        // already holds the lock, it will await this loop, so waiting for the lock
+        // unconditionally is a cycle. Race the wait against DisconnectAsync's ownership
+        // signal instead.
+        Task disconnectOwnershipTask = Interlocked.CompareExchange(ref this.disconnectOwnedSignal, null!, null!).Task;
+        Task lockAcquisitionTask = this.AcquireConnectionLockAsync(CancellationToken.None);
+        Task firstCompletedTask = await Task.WhenAny(lockAcquisitionTask, disconnectOwnershipTask).ConfigureAwait(false);
+        if (firstCompletedTask != lockAcquisitionTask)
+        {
+            // DisconnectAsync owns the teardown. The pending lock wait completes when
+            // DisconnectAsync releases the lock, which happens only after this loop finishes;
+            // hand the lock straight back at that point so nothing is left acquired.
+            _ = lockAcquisitionTask.ContinueWith(
+                static (_, state) => ((Transport)state!).ReleaseConnectionLock(),
+                this,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+            return;
+        }
+
         try
         {
             // Only process if we were connected (or thought we were).

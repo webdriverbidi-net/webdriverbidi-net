@@ -12,6 +12,7 @@ public class TestTransport : Transport
     private int deserializeThrowCount;
     private int disconnectCallCount;
     private int concurrentConnectLockAcquisitions = 0;
+    private Func<Task>? afterAcquireLockAsyncCallback;
 
     public TestTransport(WebSocketConnection connection) : base(connection)
     {
@@ -58,6 +59,19 @@ public class TestTransport : Transport
     /// Used for precise test synchronization.
     /// </summary>
     public Action? AfterAcquireLockCallback { get; set; }
+
+    /// <summary>
+    /// Optional asynchronous callback invoked once, immediately after the next acquisition of
+    /// the connection lock, and then cleared. Because the lock is held while it runs, the
+    /// callback can deterministically stage work that must overlap the lock holder's critical
+    /// section (for example, ending the connection's receive loop while
+    /// <see cref="Transport.DisconnectAsync(CancellationToken)"/> holds the lock).
+    /// </summary>
+    public Func<Task>? AfterAcquireLockAsyncCallback
+    {
+        get => Interlocked.CompareExchange(ref this.afterAcquireLockAsyncCallback, null, null);
+        set => Interlocked.Exchange(ref this.afterAcquireLockAsyncCallback, value);
+    }
 
     /// <summary>
     /// Optional callback invoked after an unhandled error is captured by the
@@ -232,6 +246,12 @@ public class TestTransport : Transport
         await base.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
 
         this.AfterAcquireLockCallback?.Invoke();
+
+        Func<Task>? afterAcquireAsyncCallback = Interlocked.Exchange(ref this.afterAcquireLockAsyncCallback, null);
+        if (afterAcquireAsyncCallback is not null)
+        {
+            await afterAcquireAsyncCallback().ConfigureAwait(false);
+        }
     }
 
     protected override async ValueTask DisposeAsyncCore()
