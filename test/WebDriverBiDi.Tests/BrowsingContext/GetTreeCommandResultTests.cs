@@ -32,6 +32,31 @@ public class GetTreeCommandResultTests
     }
 
     [Fact]
+    public void TestCanDeserializeWithNullChildrenAtMaxDepthZero()
+    {
+        // getTree with maxDepth 0 returns the root contexts with their children set to null (the tree
+        // is not walked below the roots). Each root must deserialize with a null Children.
+        string json = """
+                      {
+                        "contexts": [
+                          {
+                            "context": "myContextId",
+                            "clientWindow": "myClientWindow",
+                            "url": "http://example.com",
+                            "originalOpener": "openerContext",
+                            "userContext": "default",
+                            "children": null
+                          }
+                        ]
+                      }
+                      """;
+        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, this.options);
+        Assert.NotNull(result);
+        Assert.Single(result.ContextTree);
+        Assert.Null(result.ContextTree[0].Children);
+    }
+
+    [Fact]
     public void TestCanDeserializeWithNoContexts()
     {
         string json = """

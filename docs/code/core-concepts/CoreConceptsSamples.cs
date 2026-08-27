@@ -532,7 +532,10 @@ public static class CoreConceptsSamples
         {
             Console.WriteLine($"Context: {context.BrowsingContextId}");
             Console.WriteLine($"  URL: {context.Url}");
-            Console.WriteLine($"  Children: {context.Children.Count}");
+
+            // Children is null when the tree was not walked to this depth (for example, getTree with
+            // maxDepth 0, or a contextCreated event); an empty list means there are no children.
+            Console.WriteLine($"  Children: {context.Children?.Count ?? 0}");
         }
         #endregion
     }

@@ -348,18 +348,26 @@ public class BrowsingContextInfoTests
     }
 
     [Fact]
-    public void TestDeserializingBrowsingContextInfoWithNullChildrenThrows()
+    public void TestCanDeserializeWithNullChildren()
     {
+        // The protocol sends "children": null when the tree is not walked to this depth (for example
+        // in a contextCreated event, or getTree with maxDepth 0). It must deserialize, exposing a null
+        // Children rather than an empty list.
         string json = """
                       {
                         "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
                         "url": "http://example.com",
                         "originalOpener": "openerContext",
                         "userContext": "myUserContextId",
                         "children": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options));
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, this.options);
+        Assert.NotNull(info);
+        Assert.Equal("myContextId", info.BrowsingContextId);
+        Assert.Equal("myClientWindowId", info.ClientWindowId);
+        Assert.Null(info.Children);
     }
 
     [Fact]

@@ -148,7 +148,9 @@ public class BrowsingContextModuleTests
 
         Assert.Equal("myContext", result.ContextTree[0].BrowsingContextId);
         Assert.Equal("https://example.com", result.ContextTree[0].Url);
-        Assert.Empty(result.ContextTree[0].Children);
+        IList<BrowsingContextInfo>? children = result.ContextTree[0].Children;
+        Assert.NotNull(children);
+        Assert.Empty(children);
     }
 
     [Fact]
@@ -481,6 +483,7 @@ public class BrowsingContextModuleTests
             Assert.Equal("default", e.UserContextId);
             Assert.Equal("openerContext", e.OriginalOpener);
             Assert.Equal("https://example.com", e.Url);
+            Assert.NotNull(e.Children);
             Assert.Empty(e.Children);
             Assert.Null(e.Parent);
 
@@ -506,6 +509,47 @@ public class BrowsingContextModuleTests
     }
 
     [Fact]
+    public async Task TestCanReceiveContextCreatedEventWithNullChildren()
+    {
+        // Every conforming browsingContext.contextCreated event carries "children": null, because the
+        // specification emits it with a max depth of 0. The event must be delivered, not dropped.
+        TestWebSocketConnection connection = new();
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
+        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        BrowsingContextModule module = driver.BrowsingContext;
+
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnContextCreated.AddObserver(e =>
+        {
+            Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal("default", e.UserContextId);
+            Assert.Equal("openerContext", e.OriginalOpener);
+            Assert.Equal("https://example.com", e.Url);
+            Assert.Null(e.Children);
+            Assert.Null(e.Parent);
+
+            taskCompletionSource.TrySetResult();
+        });
+
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "browsingContext.contextCreated",
+                             "params": {
+                               "context": "myContext",
+                               "clientWindow": "myClientWindow",
+                               "url": "https://example.com",
+                               "originalOpener": "openerContext",
+                               "userContext": "default",
+                               "children": null
+                             }
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestCanReceiveContextDestroyedEvent()
     {
         TestWebSocketConnection connection = new();
@@ -518,6 +562,7 @@ public class BrowsingContextModuleTests
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("https://example.com", e.Url);
+            Assert.NotNull(e.Children);
             Assert.Empty(e.Children);
             Assert.Null(e.Parent);
 
