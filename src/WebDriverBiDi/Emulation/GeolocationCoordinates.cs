@@ -67,11 +67,10 @@ public class GeolocationCoordinates
     public double? AltitudeAccuracy { get; set; }
 
     /// <summary>
-    /// Gets or sets the heading of the movement of the geographic position, in degrees. If the device is stationary, should be set to double.NaN.
+    /// Gets or sets the heading of the movement of the geographic position, in degrees, in the range 0.0 to 360.0. If the device is stationary, leave this property unset (<see langword="null"/>).
     /// </summary>
     [JsonPropertyName("heading")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonNumberHandling(JsonNumberHandling.AllowNamedFloatingPointLiterals)]
     public double? Heading { get; set; }
 
     /// <summary>
