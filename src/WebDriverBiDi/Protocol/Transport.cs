@@ -87,14 +87,6 @@ public class Transport : IAsyncDisposable
     private readonly ObservableEventInvocable<EventHandlerErrorOccurredEventArgs> invocableErrorHandlerErrorOccurredObservableEvent;
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent;
 
-    private readonly JsonTypeInfo<Command> commandJsonTypeInfo;
-    private readonly JsonTypeInfo<ErrorResponseMessage> errorResponseJsonTypeInfo;
-    private readonly JsonSerializerOptions options = new()
-    {
-        TypeInfoResolver = CreateTypeInfoResolver(),
-        RespectNullableAnnotations = true,
-    };
-
     private readonly ConcurrentDictionary<string, EventMessageRegistration> eventMessageTypes = [];
     private readonly ConcurrentDictionary<Type, JsonTypeInfo> responseTypeInfoCache = [];
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
@@ -102,6 +94,16 @@ public class Transport : IAsyncDisposable
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
     private readonly EventObserver<ConnectionDisconnectedEventArgs> connectionRemoteDisconnectObserver;
     private readonly EventObserver<LogMessageEventArgs> connectionLogMessageObserver;
+
+    // These are re-derived by RebuildSerializerStateWithResolver when a type info resolver is
+    // registered on a disconnected transport, so they are not readonly.
+    private JsonTypeInfo<Command> commandJsonTypeInfo;
+    private JsonTypeInfo<ErrorResponseMessage> errorResponseJsonTypeInfo;
+    private JsonSerializerOptions options = new()
+    {
+        TypeInfoResolver = CreateTypeInfoResolver(),
+        RespectNullableAnnotations = true,
+    };
 
     // We are using an unbounded channel by design. This decision was
     // carefully considered, as the rate of incoming messages is unlikely
@@ -626,7 +628,8 @@ public class Transport : IAsyncDisposable
     /// Registers an additional <see cref="IJsonTypeInfoResolver"/> for JSON serialization
     /// and deserialization. This allows custom types, such as those from user-defined modules,
     /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
-    /// This method must be called before connecting to the remote end.
+    /// This method must be called while the transport is not connected: before the first
+    /// connection, or after a disconnect. Resolvers registered earlier remain in effect.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
@@ -644,7 +647,7 @@ public class Transport : IAsyncDisposable
                 throw new InvalidOperationException("Cannot register a type info resolver after the transport is connected");
             }
 
-            this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, resolver);
+            this.RebuildSerializerStateWithResolver(resolver);
         }
         finally
         {
@@ -1050,6 +1053,35 @@ public class Transport : IAsyncDisposable
     private void AddEventMessageType(string eventName, Type eventMessageType, Func<JsonSerializerOptions, JsonTypeInfo>? typeInfoFactory)
     {
         this.eventMessageTypes[eventName] = new EventMessageRegistration(eventMessageType, typeInfoFactory);
+    }
+
+    /// <summary>
+    /// Rebuilds the serializer state so that the given <see cref="IJsonTypeInfoResolver"/> participates
+    /// in serialization and deserialization, combined with the resolvers already in effect.
+    /// </summary>
+    /// <param name="resolver">The type info resolver to add.</param>
+    /// <remarks>
+    /// A <see cref="JsonSerializerOptions"/> becomes read-only once it has been used for (de)serialization,
+    /// so a resolver cannot be appended to the options that served a previous connection. This builds a
+    /// fresh, mutable copy that combines the existing resolvers with <paramref name="resolver"/>, then
+    /// re-derives the cached command and error type infos and clears the per-connection response and
+    /// event type info caches so that every subsequent lookup binds to the new options rather than the
+    /// old. This runs only while the transport is disconnected and under the connection lock, so no
+    /// message processing observes the swap.
+    /// </remarks>
+    private void RebuildSerializerStateWithResolver(IJsonTypeInfoResolver resolver)
+    {
+        this.options = new JsonSerializerOptions(this.options)
+        {
+            TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, resolver),
+        };
+        this.commandJsonTypeInfo = (JsonTypeInfo<Command>)this.options.GetTypeInfo(typeof(Command));
+        this.errorResponseJsonTypeInfo = (JsonTypeInfo<ErrorResponseMessage>)this.options.GetTypeInfo(typeof(ErrorResponseMessage));
+        this.responseTypeInfoCache.Clear();
+        foreach (EventMessageRegistration registration in this.eventMessageTypes.Values)
+        {
+            registration.ResetCachedTypeInfo();
+        }
     }
 
     /// <summary>
