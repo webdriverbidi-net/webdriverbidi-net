@@ -612,7 +612,7 @@ public class PartialCookieTests
     public void TestSettingPartialCookieExpirationDate()
     {
         DateTime now = DateTime.UtcNow.AddDays(1);
-        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
+        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond), DateTimeKind.Utc);
         PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
         {
             Expires = expirationDate
@@ -629,5 +629,13 @@ public class PartialCookieTests
             Expires = null
         };
         Assert.Null(properties.Expires);
+    }
+
+    [Fact]
+    public void TestSettingPartialCookieExpirationDateBeforeUnixEpochThrows()
+    {
+        PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain");
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            properties.Expires = new DateTime(1969, 12, 31, 23, 59, 59, DateTimeKind.Utc));
     }
 }

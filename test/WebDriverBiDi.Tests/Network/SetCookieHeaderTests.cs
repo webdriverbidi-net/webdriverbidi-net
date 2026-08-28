@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Network;
 
+using System.Globalization;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
@@ -387,8 +388,24 @@ public class SetCookieHeaderTests
     [Fact]
     public void TestCanSerializeWithExpires()
     {
-        DateTime expirationTime = DateTime.Now.AddDays(3);
-        string expected = $"{expirationTime.ToUniversalTime():ddd, dd MMM yyyy HH:mm:ss} GMT";
+        CultureInfo originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            // Force a culture whose day-of-week and month names differ from the invariant culture.
+            // The serialized RFC 1123 (HTTP-date) value must be culture-independent.
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+            DateTime expirationTime = new(2026, 8, 30, 12, 0, 0, DateTimeKind.Utc);
+            string expected = expirationTime.ToString("R", CultureInfo.InvariantCulture);
+            RunTestCanSerializeWithExpires(expirationTime, expected);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+
+    private static void RunTestCanSerializeWithExpires(DateTime expirationTime, string expected)
+    {
         SetCookieHeader cookieHeader = new("cookieName", "cookieValue")
         {
             Expires = expirationTime

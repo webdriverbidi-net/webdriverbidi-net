@@ -110,6 +110,11 @@ public record LocalValue
     /// </summary>
     /// <param name="dateTimeValue">The DateTime value to wrap as a LocalValue.</param>
     /// <returns>A LocalValue for a DateTime value.</returns>
+    /// <remarks>
+    /// The value is serialized as a UTC date-time string: a <see cref="DateTime"/> with
+    /// <see cref="DateTimeKind.Local"/> is converted to UTC, and one with
+    /// <see cref="DateTimeKind.Unspecified"/> is treated as local time and likewise converted.
+    /// </remarks>
     public static LocalValue Date(DateTime dateTimeValue) => new LocalArgumentValue("date") { Value = dateTimeValue };
 
     /// <summary>

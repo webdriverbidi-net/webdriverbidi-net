@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Script;
 
+using System.Globalization;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
@@ -291,9 +292,13 @@ public class LocalValueTests
     [Fact]
     public void TestCanSerializeDate()
     {
-        DateTime actualValue = DateTime.Now;
-        string expectedValue = actualValue.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        LocalValue value = LocalValue.Date(actualValue);
+        // A Local (or Unspecified) DateTime is normalized to UTC before serialization; assert against
+        // the UTC-converted, invariant-formatted expectation so the test is independent of the machine
+        // time zone and the current culture.
+        DateTime localValue = new(2026, 8, 30, 12, 0, 0, 123, DateTimeKind.Local);
+        string expected = localValue.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
+
+        LocalValue value = LocalValue.Date(localValue);
         Assert.NotNull(((LocalArgumentValue)value).Value);
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
@@ -308,7 +313,10 @@ public class LocalValueTests
         JToken? parsedValue = parsed["value"];
         Assert.NotNull(parsedValue);
         Assert.Equal(JTokenType.Date, parsedValue.Type);
-        Assert.Equal(expectedValue, parsedValue.Value<DateTime>().ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
+
+        // Newtonsoft parses the serialized ISO-8601 string back to a DateTime; normalize to UTC (in
+        // case it is materialized as Local) and reformat with the same invariant pattern to compare.
+        Assert.Equal(expected, parsedValue.Value<DateTime>().ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture));
     }
 
     [Fact]
