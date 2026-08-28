@@ -28,7 +28,7 @@ public class EventMessageJsonConverter<T> : JsonConverter<EventMessage<T>>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
     /// <returns>The deserialized <see cref="EventMessage{T}"/>.</returns>
-    /// <exception cref="JsonException">Thrown when the JSON is not an object, or the <c>type</c> or <c>params</c> property is missing or malformed.</exception>
+    /// <exception cref="JsonException">Thrown when the JSON is not an object, or the <c>type</c>, <c>method</c> or <c>params</c> property is missing or malformed.</exception>
     public override EventMessage<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
@@ -38,7 +38,7 @@ public class EventMessageJsonConverter<T> : JsonConverter<EventMessage<T>>
 
         JsonTypeInfo eventDataTypeInfo = options.GetTypeInfo(typeof(T));
         string? type = null;
-        string eventName = string.Empty;
+        string? eventName = null;
         bool hasEventData = false;
         T? eventData = default;
         Dictionary<string, JsonElement> extensionData = [];
@@ -61,7 +61,7 @@ public class EventMessageJsonConverter<T> : JsonConverter<EventMessage<T>>
                     break;
                 case "params":
                     hasEventData = true;
-                    eventData = (T?)JsonSerializer.Deserialize(ref reader, eventDataTypeInfo);
+                    eventData = (T?)JsonSerializer.Deserialize(ref reader, eventDataTypeInfo) ?? throw new JsonException("Event message 'params' property must not be null");
                     break;
                 default:
                     extensionData[propertyName] = JsonElement.ParseValue(ref reader);
@@ -79,7 +79,7 @@ public class EventMessageJsonConverter<T> : JsonConverter<EventMessage<T>>
         return new EventMessage<T>
         {
             Type = type ?? throw new JsonException("Event message is missing the required 'type' property"),
-            EventName = eventName,
+            EventName = eventName ?? throw new JsonException("Event message is missing the required 'method' property"),
             SerializableData = eventData,
             SerializableAdditionalData = extensionData,
         };

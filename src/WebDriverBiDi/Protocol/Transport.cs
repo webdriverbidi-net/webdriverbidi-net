@@ -1440,10 +1440,10 @@ public class Transport : IAsyncDisposable
                     }
 
                     // As for responses, extension properties inside the params object and on the event
-                    // envelope are exposed separately (AdditionalData and AdditionalEventProperties).
-                    ReceivedDataDictionary payloadExtensionData = eventMessageData.EventData is null
-                        ? ReceivedDataDictionary.EmptyDictionary
-                        : ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("params", this.options.GetTypeInfo(eventMessageData.EventData.GetType())));
+                    // envelope are exposed separately (AdditionalData and AdditionalEventProperties). The
+                    // converter rejects a null or missing 'params', so a deserialized event always carries
+                    // non-null data whose runtime type drives which payload properties are extension data.
+                    ReceivedDataDictionary payloadExtensionData = ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("params", this.options.GetTypeInfo(eventMessageData.EventData!.GetType())));
                     await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData, payloadExtensionData)).ConfigureAwait(false);
                     return true;
                 }
