@@ -738,7 +738,9 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// Registers an additional <see cref="IJsonTypeInfoResolver"/> for JSON serialization
     /// and deserialization. This allows custom types, such as those from user-defined modules,
     /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
-    /// This method must be called before starting the driver.
+    /// This method must be called while the driver is not started: before the first call to
+    /// <see cref="StartAsync(string, CancellationToken)"/>, or after a call to
+    /// <see cref="StopAsync(CancellationToken)"/>. Resolvers registered earlier remain in effect.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>

@@ -44,4 +44,16 @@ internal sealed class EventMessageRegistration
         // Creation is idempotent, so a benign race between message-processing threads is harmless.
         return this.typeInfo ??= this.typeInfoFactory?.Invoke(options) ?? options.GetTypeInfo(this.EventMessageType);
     }
+
+    /// <summary>
+    /// Clears the cached <see cref="JsonTypeInfo"/> so that it is rebuilt from the current serializer
+    /// options on the next call to <see cref="GetTypeInfo(JsonSerializerOptions)"/>. Used when the
+    /// transport's serializer options are replaced (for example, when a type info resolver is
+    /// registered while the transport is disconnected), so a memoized type info bound to the previous
+    /// options is not reused.
+    /// </summary>
+    public void ResetCachedTypeInfo()
+    {
+        this.typeInfo = null;
+    }
 }

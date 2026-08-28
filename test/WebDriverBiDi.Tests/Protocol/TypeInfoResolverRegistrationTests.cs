@@ -83,6 +83,34 @@ public class TypeInfoResolverRegistrationTests
         Assert.Equal("custom.command", sent["method"]!.Value<string>());
         Assert.Equal("hello", sent["params"]!["input"]!.Value<string>());
     }
+
+    [Fact]
+    public async Task TestRegisteredResolverCanBeRegisteredAfterStopAndUsedAfterReconnect()
+    {
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            await connection.RaiseDataReceivedEventAsync("""{"type":"success","id":1,"result":{"output":"HELLO"}}""");
+        });
+
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), transport);
+
+        // First session: start and run a command so the serializer options are used (and thereby
+        // become read-only), then stop.
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        _ = await driver.ExecuteCommandAsync(new CustomCommandParameters("hello"), cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StopAsync(TestContext.Current.CancellationToken);
+
+        // Registration after a stop must succeed (the documented reconnect contract), rather than
+        // throwing from a now read-only JsonSerializerOptions.
+        await driver.RegisterTypeInfoResolverAsync(CustomCommandJsonContext.Default, TestContext.Current.CancellationToken);
+
+        // Reconnect and confirm the rebuilt serializer state still round-trips the custom command.
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        CustomCommandResult result = await driver.ExecuteCommandAsync(new CustomCommandParameters("hello"), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("HELLO", result.Output);
+    }
 }
 
 /// <summary>
