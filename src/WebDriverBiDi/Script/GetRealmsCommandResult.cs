@@ -30,6 +30,7 @@ public record GetRealmsCommandResult : CommandResult
     /// Gets or sets the list of information about the realms for serialization purposes.
     /// </summary>
     [JsonPropertyName("realms")]
+    [JsonRequired]
     [JsonInclude]
     internal List<RealmInfo> SerializableRealms { get; set; } = [];
 }

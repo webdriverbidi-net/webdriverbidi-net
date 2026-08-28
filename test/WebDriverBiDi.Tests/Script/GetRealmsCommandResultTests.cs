@@ -80,4 +80,11 @@ public class GetRealmsCommandResultTests
         Assert.Equal("myOrigin", result.Realms[0].Origin);
         Assert.Equal(RealmType.Worker, result.Realms[0].Type);
     }
+
+    [Fact]
+    public void TestDeserializingWithMissingRealmsThrows()
+    {
+        string json = "{}";
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetRealmsCommandResult>(json));
+    }
 }

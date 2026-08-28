@@ -66,4 +66,16 @@ public class EvaluateResultExceptionTests
         EvaluateResultException copy = exceptionResult with { };
         Assert.Equal(exceptionResult, copy);
     }
+
+    [Fact]
+    public void TestDeserializingWithMissingExceptionDetailsThrows()
+    {
+        string json = """
+                      {
+                        "type": "exception",
+                        "realm": "myRealm"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json));
+    }
 }

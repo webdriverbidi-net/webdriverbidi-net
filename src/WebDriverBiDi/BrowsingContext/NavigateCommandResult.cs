@@ -24,6 +24,7 @@ public record NavigateCommandResult : CommandResult
     /// Gets the ID of the navigation.
     /// </summary>
     [JsonPropertyName("navigation")]
+    [JsonRequired]
     [JsonInclude]
     public string? NavigationId { get; internal set; }
 

@@ -49,6 +49,18 @@ public class EvaluateResultSuccessTests
     }
 
     [Fact]
+    public void TestDeserializingWithMissingResultThrows()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json));
+    }
+
+    [Fact]
     public void TestDeserializingWithMissingRealmValueThrows()
     {
         string json = """

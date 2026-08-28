@@ -25,6 +25,7 @@ public record EvaluateResultException : EvaluateResult
     /// Gets the exception details of the script evaluation.
     /// </summary>
     [JsonPropertyName("exceptionDetails")]
+    [JsonRequired]
     [JsonInclude]
     public ExceptionDetails ExceptionDetails { get; internal set; } = new();
 }
