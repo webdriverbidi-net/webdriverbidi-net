@@ -955,6 +955,56 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestTransportRaisesUnknownMessageEventForEventMessageWithNullParams()
+    {
+        // A registered event whose 'params' is JSON null must be reported as a protocol error
+        // (surfaced here as an unknown message plus an error-level log), not silently handed to the
+        // event dispatch pipeline where it would be misattributed to a user event handler.
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": null
+                      }
+                      """;
+        string loggedEvent = string.Empty;
+        List<LogMessageEventArgs> logs = [];
+        TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        transport.OnUnknownMessageReceived.AddObserver(e =>
+        {
+            loggedEvent = e.Message;
+            unknownMessageTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Level > WebDriverBiDiLogLevel.Trace)
+            {
+                logs.Add(e);
+                logTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
+        await connection.RaiseDataReceivedEventAsync(json);
+        await Task.WhenAll(
+            unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
+            logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+
+        Assert.Equal(json, loggedEvent);
+        Assert.Single(logs);
+        Assert.Contains("Unexpected error parsing event JSON", logs[0].Message);
+        Assert.Equal(WebDriverBiDiLogLevel.Error, logs[0].Level);
+    }
+
+    [Fact]
     public async Task TestTransportRaisesUnknownMessageEventForEventMessageDeserializingToNonEventMessageType()
     {
         string json = """
@@ -3093,25 +3143,6 @@ public class TransportTests
 
         TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(new NonGenericCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("fallback", result.Value);
-    }
-
-    [Fact]
-    public async Task TestEventWithNullParamsHasNoPayloadExtensionData()
-    {
-        TaskCompletionSource<EventReceivedEventArgs> received = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
-        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddObserver(e => received.TrySetResult(e));
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
-
-        await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","goog:channel":"c","params":null}""");
-        EventReceivedEventArgs eventArgs = await received.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        Assert.Null(eventArgs.EventData);
-        Assert.Empty(eventArgs.AdditionalData);
-        Assert.Equal("c", eventArgs.AdditionalEventProperties["goog:channel"]);
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

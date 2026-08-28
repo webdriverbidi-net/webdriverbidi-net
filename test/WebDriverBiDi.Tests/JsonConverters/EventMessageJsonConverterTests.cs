@@ -31,23 +31,14 @@ public class EventMessageJsonConverterTests
         Assert.True(message.AdditionalData.ContainsKey("goog:channel"));
     }
 
-    [Fact]
-    public void TestAllowsMissingMethodAndNullParams()
-    {
-        // Mirrors the attribute-based shape: 'method' was not required, and 'params' could be null.
-        string json = """{"type":"event","params":null}""";
-        EventMessage<TestEventArgs>? message = JsonSerializer.Deserialize(json, EventTypeInfo);
-        Assert.NotNull(message);
-        Assert.Equal(string.Empty, message.EventName);
-        Assert.Null(message.EventData);
-    }
-
     [Theory]
     [InlineData("""42""", "must be a JSON object")]
     [InlineData("""{"method":"protocol.event","params":{"paramName":"v"}}""", "missing the required 'type'")]
     [InlineData("""{"type":null,"method":"protocol.event","params":{"paramName":"v"}}""", "'type' property must be a string")]
     [InlineData("""{"type":"event","method":5,"params":{"paramName":"v"}}""", "'method' property must be a string")]
+    [InlineData("""{"type":"event","params":{"paramName":"v"}}""", "missing the required 'method'")]
     [InlineData("""{"type":"event","method":"protocol.event"}""", "missing the required 'params'")]
+    [InlineData("""{"type":"event","method":"protocol.event","params":null}""", "'params' property must not be null")]
     public void TestRejectsMalformedEnvelopes(string json, string expectedMessage)
     {
         JsonException exception = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(json, EventTypeInfo));
