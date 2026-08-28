@@ -99,7 +99,7 @@ public class RemoteValueDictionaryJsonConverterTests
     public void TestDeserializingNonArrayThrows()
     {
         string json = "\"not-an-array\"";
-        Assert.Contains($"JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
+        Assert.Contains("RemoteValue for dictionary must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
     }
 
     [Fact]

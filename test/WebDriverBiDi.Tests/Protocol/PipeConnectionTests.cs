@@ -7,6 +7,13 @@ using WebDriverBiDi.TestUtilities;
 public class PipeConnectionTests
 {
     [Fact]
+    public void TestConstructorThrowsForNullProcessProvider()
+    {
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => new PipeConnection(null!));
+        Assert.Equal("processProvider", exception.ParamName);
+    }
+
+    [Fact]
     public async Task TestConnectionType()
     {
         TestPipeServer testPipeServer = new();

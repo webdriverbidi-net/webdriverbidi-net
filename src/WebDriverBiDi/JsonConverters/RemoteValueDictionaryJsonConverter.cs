@@ -46,6 +46,11 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
     private RemoteValueDictionary ProcessMap(JsonElement mapArray, JsonSerializerOptions options)
     {
         JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
+        if (mapArray.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException($"RemoteValue for dictionary must be an array");
+        }
+
         Dictionary<object, RemoteValue> remoteValueDictionary = new(RemoteValueKeyComparer.Instance);
         foreach (JsonElement mapElementToken in mapArray.EnumerateArray())
         {

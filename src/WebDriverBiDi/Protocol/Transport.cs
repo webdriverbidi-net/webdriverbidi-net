@@ -81,6 +81,8 @@ public class Transport : IAsyncDisposable
     private const string TransportErrorObserverDescription = "transport error observer";
     private const string TransportUnknownMessageObserverDescription = "transport unknown message observer";
 
+    private const string NormalShutdownReason = "Normal shutdown";
+
     private readonly ObservableEventInvocable<EventReceivedEventArgs> invocableEventReceivedObservableEvent;
     private readonly ObservableEventInvocable<ErrorReceivedEventArgs> invocableErrorReceivedObservableEvent;
     private readonly ObservableEventInvocable<UnknownMessageReceivedEventArgs> invocableUnknownMessageReceivedObservableEvent;
@@ -123,12 +125,12 @@ public class Transport : IAsyncDisposable
     // Channel.CreateUnbounded<T>(new UnboundedChannelOptions { SingleReader = true,
     // SingleWriter = true }) does not support ChannelReader<T>.Count (CanCount is
     // false), so we maintain the depth ourselves: increment after a successful
-    // Writer.WriteAsync, decrement after a successful Reader.TryRead, and reset
+    // Writer.TryWrite, decrement after a successful Reader.TryRead, and reset
     // alongside any channel replacement.
     //
     // This counter is used solely for observability (WebDriverBiDiEventSource
     // PendingCommandCount events) and does not affect correctness. There is a
-    // narrow window during reconnect where a WriteAsync in flight on the old
+    // narrow window during reconnect where a TryWrite in flight on the old
     // channel can apply its increment after the reset-to-zero that accompanies
     // channel replacement, producing a transient over-count. The window closes
     // as soon as that write completes, and the value self-corrects on the next
@@ -137,7 +139,7 @@ public class Transport : IAsyncDisposable
 
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
-    private string terminationReason = "Normal shutdown";
+    private string terminationReason = NormalShutdownReason;
 
     // TaskCompletionSource used as a signal that DisconnectAsync owns the attempt
     // at shutdown of the Transport. This field is refreshed in ConnectAsync when
@@ -294,7 +296,7 @@ public class Transport : IAsyncDisposable
     /// </para>
     /// <para>
     /// <strong>Reconnect transient overcount:</strong> The reset and channel replacement occur
-    /// together under the connect/disconnect semaphore, but a <c>WriteAsync</c> call already
+    /// together under the connect/disconnect semaphore, but a <c>TryWrite</c> call already
     /// in progress on the old channel will increment the counter after the reset. This produces
     /// a brief positive overcount (never a negative value) during reconnect. The effect is
     /// observability-only and resolves on the next message dispatch.
@@ -448,6 +450,10 @@ public class Transport : IAsyncDisposable
             Interlocked.Exchange(ref this.disconnectOwnedSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
 
             this.ResetCollectedErrors();
+
+            // Reset the termination reason to its default so a reason carried over from a prior
+            // Terminate-triggered session is not reported by a subsequent normal shutdown.
+            this.TerminationReason = NormalShutdownReason;
 
             // Reset the command counter for each connection.
             Interlocked.Exchange(ref this.nextCommandId, 0);
