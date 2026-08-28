@@ -25,6 +25,7 @@ public record EvaluateResultSuccess : EvaluateResult
     /// Gets the result of the script evaluation.
     /// </summary>
     [JsonPropertyName("result")]
+    [JsonRequired]
     [JsonInclude]
     public RemoteValue Result { get; internal set; } = new NullRemoteValue();
 }

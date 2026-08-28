@@ -14,7 +14,8 @@ public class NavigationResultTests
     {
         string json = """
                       {
-                        "url": "http://example.com"
+                        "url": "http://example.com",
+                        "navigation": null
                       }
                       """;
         NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options);
@@ -45,13 +46,25 @@ public class NavigationResultTests
     {
         string json = """
                       {
-                        "url": "http://example.com"
+                        "url": "http://example.com",
+                        "navigation": "myNavigationId"
                       }
                       """;
         NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options);
         Assert.NotNull(result);
         NavigateCommandResult copy = result with { };
         Assert.Equal(result, copy);
+    }
+
+    [Fact]
+    public void TestDeserializingWithMissingNavigationThrows()
+    {
+        string json = """
+                      {
+                        "url": "http://example.com"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, this.options));
     }
 
     [Fact]

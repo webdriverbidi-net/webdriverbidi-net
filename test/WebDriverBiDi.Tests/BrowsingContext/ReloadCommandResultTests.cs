@@ -14,7 +14,8 @@ public class ReloadCommandResultTests
     {
         string json = """
                       {
-                        "url": "http://example.com"
+                        "url": "http://example.com",
+                        "navigation": null
                       }
                       """;
         ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json, this.options);
@@ -45,13 +46,25 @@ public class ReloadCommandResultTests
     {
         string json = """
                       {
-                        "url": "http://example.com"
+                        "url": "http://example.com",
+                        "navigation": "myNavigationId"
                       }
                       """;
         ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json, this.options);
         Assert.NotNull(result);
         ReloadCommandResult copy = result with { };
         Assert.Equal(result, copy);
+    }
+
+    [Fact]
+    public void TestDeserializingWithMissingNavigationThrows()
+    {
+        string json = """
+                      {
+                        "url": "http://example.com"
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ReloadCommandResult>(json, this.options));
     }
 
     [Fact]
