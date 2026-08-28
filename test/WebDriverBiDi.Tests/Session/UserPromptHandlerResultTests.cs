@@ -23,7 +23,7 @@ public class UserPromptHandlerResultTests
                           "alert": "accept",
                           "confirm": "dismiss",
                           "prompt": "dismiss",
-                          "beforeunload": "ignore",
+                          "beforeUnload": "ignore",
                           "file": "ignore"
                         }
                       }
@@ -60,7 +60,7 @@ public class UserPromptHandlerResultTests
                           "alert": "accept",
                           "confirm": "dismiss",
                           "prompt": "dismiss",
-                          "beforeunload": "ignore",
+                          "beforeUnload": "ignore",
                           "file": "ignore"
                         }
                       }

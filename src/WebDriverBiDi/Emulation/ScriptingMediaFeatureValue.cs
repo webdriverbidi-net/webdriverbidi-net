@@ -23,7 +23,7 @@ public enum ScriptingMediaFeatureValue
     /// <summary>
     /// The "initial-only" value for the "scripting" CSS media feature.
     /// </summary>
-    [JsonStringEnumMemberName("initial-only")]
+    [StringEnumValue("initial-only")]
     InitialOnly,
 
     /// <summary>

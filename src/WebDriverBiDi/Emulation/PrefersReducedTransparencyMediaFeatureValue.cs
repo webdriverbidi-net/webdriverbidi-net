@@ -18,7 +18,7 @@ public enum PrefersReducedTransparencyMediaFeatureValue
     /// <summary>
     /// The "no-preference" value for the "prefers-reduced-transparency" CSS media feature.
     /// </summary>
-    [JsonStringEnumMemberName("no-preference")]
+    [StringEnumValue("no-preference")]
     NoPreference,
 
     /// <summary>

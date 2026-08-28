@@ -55,8 +55,8 @@ public class UserPromptHandlerTests
         Assert.Equal(JTokenType.String, prompt.Type);
         Assert.Equal("dismiss", prompt.Value<string>());
 
-        Assert.True(serialized.ContainsKey("beforeunload"));
-        JToken? beforeunload = serialized["beforeunload"];
+        Assert.True(serialized.ContainsKey("beforeUnload"));
+        JToken? beforeunload = serialized["beforeUnload"];
         Assert.NotNull(beforeunload);
         Assert.Equal(JTokenType.String, beforeunload.Type);
         Assert.Equal("ignore", beforeunload.Value<string>());
@@ -156,8 +156,8 @@ public class UserPromptHandlerTests
 
         Assert.Single(serialized);
 
-        Assert.True(serialized.ContainsKey("beforeunload"));
-        JToken? beforeunload = serialized["beforeunload"];
+        Assert.True(serialized.ContainsKey("beforeUnload"));
+        JToken? beforeunload = serialized["beforeUnload"];
         Assert.NotNull(beforeunload);
         Assert.Equal(JTokenType.String, beforeunload.Type);
         Assert.Equal("accept", beforeunload.Value<string>());
@@ -215,7 +215,7 @@ public class UserPromptHandlerTests
                         "alert": "accept",
                         "confirm": "dismiss",
                         "prompt": "dismiss",
-                        "beforeunload": "ignore",
+                        "beforeUnload": "ignore",
                         "file": "ignore"
                       }
                       """;
@@ -326,7 +326,7 @@ public class UserPromptHandlerTests
         // so we will go through that mechanism to get the ProxyConfigurationResult.
         string json = """
                       {
-                        "beforeunload": "accept"
+                        "beforeUnload": "accept"
                       }
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);

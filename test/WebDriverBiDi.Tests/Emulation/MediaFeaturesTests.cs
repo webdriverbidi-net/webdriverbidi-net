@@ -560,6 +560,24 @@ public class MediaFeaturesTests
     }
 
     [Fact]
+    public async Task CanSerializeOverflowBlockOptionalPagedValue()
+    {
+        MediaFeatures features = new()
+        {
+            OverflowBlock = OverflowBlockMediaFeatureValue.OptionalPaged,
+        };
+
+        string json = JsonSerializer.Serialize(features);
+        JObject serialized = JObject.Parse(json);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("overflow-block"));
+        JToken? token = serialized["overflow-block"];
+        Assert.NotNull(token);
+        Assert.Equal(JTokenType.String, token.Type);
+        Assert.Equal("optional-paged", token.Value<string>());
+    }
+
+    [Fact]
     public async Task CanSerializeOverflowBlockSentinelNullValue()
     {
         MediaFeatures features = new()
@@ -756,14 +774,14 @@ public class MediaFeaturesTests
     {
         MediaFeatures features = new()
         {
-            PrefersReducedData = PrefersReducedDataMediaFeatureValue.NoPreference,
+            PrefersReducedMotion = PrefersReducedMotionMediaFeatureValue.NoPreference,
         };
 
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
-        Assert.True(serialized.ContainsKey("prefers-reduced-data"));
-        JToken? token = serialized["prefers-reduced-data"];
+        Assert.True(serialized.ContainsKey("prefers-reduced-motion"));
+        JToken? token = serialized["prefers-reduced-motion"];
         Assert.NotNull(token);
         Assert.Equal(JTokenType.String, token.Type);
         Assert.Equal("no-preference", token.Value<string>());
@@ -774,14 +792,14 @@ public class MediaFeaturesTests
     {
         MediaFeatures features = new()
         {
-            PrefersReducedData = PrefersReducedDataMediaFeatureValue.Reset,
+            PrefersReducedMotion = PrefersReducedMotionMediaFeatureValue.Reset,
         };
 
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
-        Assert.True(serialized.ContainsKey("prefers-reduced-data"));
-        JToken? token = serialized["prefers-reduced-data"];
+        Assert.True(serialized.ContainsKey("prefers-reduced-motion"));
+        JToken? token = serialized["prefers-reduced-motion"];
         Assert.NotNull(token);
         Assert.Equal(JTokenType.Null, token.Type);
     }
@@ -791,14 +809,14 @@ public class MediaFeaturesTests
     {
         MediaFeatures features = new()
         {
-            PrefersReducedMotion = PrefersReducedMotionMediaFeatureValue.NoPreference,
+            PrefersReducedTransparency = PrefersReducedTransparencyMediaFeatureValue.NoPreference,
         };
 
         string json = JsonSerializer.Serialize(features);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);
-        Assert.True(serialized.ContainsKey("prefers-reduced-motion"));
-        JToken? token = serialized["prefers-reduced-motion"];
+        Assert.True(serialized.ContainsKey("prefers-reduced-transparency"));
+        JToken? token = serialized["prefers-reduced-transparency"];
         Assert.NotNull(token);
         Assert.Equal(JTokenType.String, token.Type);
         Assert.Equal("no-preference", token.Value<string>());
@@ -872,6 +890,24 @@ public class MediaFeaturesTests
         Assert.NotNull(token);
         Assert.Equal(JTokenType.String, token.Type);
         Assert.Equal("none", token.Value<string>());
+    }
+
+    [Fact]
+    public async Task CanSerializeScriptingInitialOnlyValue()
+    {
+        MediaFeatures features = new()
+        {
+            Scripting = ScriptingMediaFeatureValue.InitialOnly,
+        };
+
+        string json = JsonSerializer.Serialize(features);
+        JObject serialized = JObject.Parse(json);
+        Assert.Single(serialized);
+        Assert.True(serialized.ContainsKey("scripting"));
+        JToken? token = serialized["scripting"];
+        Assert.NotNull(token);
+        Assert.Equal(JTokenType.String, token.Type);
+        Assert.Equal("initial-only", token.Value<string>());
     }
 
     [Fact]
@@ -949,7 +985,7 @@ public class MediaFeaturesTests
     {
         MediaFeatures features = new()
         {
-            VerticalViewportSegments = MediaFeatures.ResetHorizonalViewportSegmentsValue,
+            VerticalViewportSegments = MediaFeatures.ResetVerticalViewportSegmentsValue,
         };
 
         string json = JsonSerializer.Serialize(features);

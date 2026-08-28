@@ -28,7 +28,7 @@ public class SimulateAdvertisementScanEntry
     /// <summary>
     /// Gets or sets the physical address of the simulated Bluetooth device, or a prefix of it.
     /// </summary>
-    [JsonPropertyName("address")]
+    [JsonPropertyName("deviceAddress")]
     public string DeviceAddress { get; set; }
 
     /// <summary>

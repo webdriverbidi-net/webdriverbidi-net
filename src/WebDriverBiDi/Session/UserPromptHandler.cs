@@ -43,7 +43,7 @@ public class UserPromptHandler
     /// <summary>
     /// Gets or sets the type of prompt handler for before unload user prompts.
     /// </summary>
-    [JsonPropertyName("beforeunload")]
+    [JsonPropertyName("beforeUnload")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public UserPromptHandlerType? BeforeUnload { get; set; }
 
