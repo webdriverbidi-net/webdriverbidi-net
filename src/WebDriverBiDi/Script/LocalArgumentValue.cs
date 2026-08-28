@@ -64,8 +64,11 @@ public record LocalArgumentValue : LocalValue
             if (this.Type == "date")
             {
                 // Note that static methods creating DateTime values should
-                // not allow a null value in the argValue member.
-                return ((DateTime)this.Value!).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                // not allow a null value in the argValue member. Normalize to UTC (a Local or
+                // Unspecified DateTime would otherwise be written with a 'Z' suffix denoting the
+                // wrong instant), and format with the invariant culture so the value is not affected
+                // by a non-Gregorian current culture.
+                return ((DateTime)this.Value!).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
             }
 
             if (this.Type == "map" || this.Type == "object")

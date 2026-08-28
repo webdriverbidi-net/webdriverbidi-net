@@ -236,7 +236,7 @@ public class CookieFilterTests
     public void TestSettingCookieFilterExpirationDate()
     {
         DateTime now = DateTime.UtcNow.AddDays(1);
-        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
+        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond), DateTimeKind.Utc);
         CookieFilter properties = new()
         {
             Expires = expirationDate
@@ -253,5 +253,12 @@ public class CookieFilterTests
             Expires = null
         };
         Assert.Null(properties.Expires);
+    }
+
+    [Fact]
+    public void TestSettingCookieFilterExpirationDateBeforeUnixEpochThrows()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new CookieFilter { Expires = new DateTime(1969, 12, 31, 23, 59, 59, DateTimeKind.Utc) });
     }
 }

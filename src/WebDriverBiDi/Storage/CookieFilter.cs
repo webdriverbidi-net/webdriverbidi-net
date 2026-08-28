@@ -100,7 +100,16 @@ public class CookieFilter
         {
             if (value.HasValue)
             {
-                this.EpochExpires = Convert.ToUInt64((value.Value - DateTimeUtilities.UnixEpoch).TotalSeconds);
+                // Normalize to UTC before converting to epoch seconds; a DateTime with Kind Local
+                // (or Unspecified, which ToUniversalTime treats as local) would otherwise be sent as
+                // the wrong instant, offset by the local UTC offset.
+                DateTime utcValue = value.Value.ToUniversalTime();
+                if (utcValue < DateTimeUtilities.UnixEpoch)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Cookie expiration must be at or after the Unix epoch (1 January 1970 00:00:00 UTC).");
+                }
+
+                this.EpochExpires = Convert.ToUInt64((utcValue - DateTimeUtilities.UnixEpoch).TotalSeconds);
             }
             else
             {
