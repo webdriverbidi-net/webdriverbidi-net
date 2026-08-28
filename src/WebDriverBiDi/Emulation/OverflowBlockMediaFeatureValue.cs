@@ -28,7 +28,7 @@ public enum OverflowBlockMediaFeatureValue
     /// <summary>
     /// The "optional-paged" value for the "overflow-block" CSS media feature.
     /// </summary>
-    [JsonStringEnumMemberName("optional-paged")]
+    [StringEnumValue("optional-paged")]
     OptionalPaged,
 
     /// <summary>

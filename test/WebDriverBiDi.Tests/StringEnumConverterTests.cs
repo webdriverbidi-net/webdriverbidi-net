@@ -1,7 +1,54 @@
 namespace WebDriverBiDi;
 
+using System.Reflection;
+using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
+
 public class StringEnumValueConverterTests
 {
+    [Fact]
+    public void NoEnumUsingLibraryConverterCarriesJsonStringEnumMemberName()
+    {
+        // The library's EnumValueJsonConverter honors [StringEnumValue], not System.Text.Json's
+        // [JsonStringEnumMemberName], which it ignores. A member decorated with the latter would
+        // serialize with the wrong (attribute-ignored) string, so no field of an enum that uses the
+        // library converter may carry it.
+        List<string> offenders = new();
+        List<Type> scannedEnums = new();
+        foreach (Type type in typeof(ErrorCode).Assembly.GetTypes())
+        {
+            if (!type.IsEnum)
+            {
+                continue;
+            }
+
+            Type? converterType = type.GetCustomAttribute<JsonConverterAttribute>()?.ConverterType;
+            if (converterType is null || !converterType.IsGenericType || converterType.GetGenericTypeDefinition() != typeof(EnumValueJsonConverter<>))
+            {
+                continue;
+            }
+
+            scannedEnums.Add(type);
+            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>() is not null)
+                {
+                    offenders.Add($"{type.Name}.{field.Name}");
+                }
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            $"Enums using EnumValueJsonConverter must use [StringEnumValue], not [JsonStringEnumMemberName]. Offenders: {string.Join(", ", offenders)}");
+
+        // Guard against the check passing vacuously: the enums whose members were previously
+        // mis-attributed must actually be among those scanned.
+        Assert.Contains(typeof(WebDriverBiDi.Emulation.OverflowBlockMediaFeatureValue), scannedEnums);
+        Assert.Contains(typeof(WebDriverBiDi.Emulation.ScriptingMediaFeatureValue), scannedEnums);
+        Assert.Contains(typeof(WebDriverBiDi.Emulation.PrefersReducedTransparencyMediaFeatureValue), scannedEnums);
+    }
+
     [Fact]
     public void ShouldConvertEnumValue()
     {

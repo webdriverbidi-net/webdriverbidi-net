@@ -15,8 +15,8 @@ public class SimulateAdvertisementScanEntryTests
 
         // ScanRecord serialization is tested in its own set of tests,
         // so its serialized structure need not be fully verified here.
-        Assert.True(serialized.ContainsKey("address"));
-        JToken? address = serialized["address"];
+        Assert.True(serialized.ContainsKey("deviceAddress"));
+        JToken? address = serialized["deviceAddress"];
         Assert.NotNull(address);
         Assert.Equal(JTokenType.String, address.Type);
         Assert.Equal("08:08:08:08:08", address.Value<string>());
