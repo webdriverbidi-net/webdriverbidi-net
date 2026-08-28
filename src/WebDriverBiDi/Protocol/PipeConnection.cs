@@ -68,6 +68,11 @@ public class PipeConnection : Connection
     /// <param name="processProvider">An implementation of <see cref="IPipeServerProcessProvider"/> that provides a <see cref="Process"/> that is able to send and receive messages over pipe connections.</param>
     public PipeConnection(IPipeServerProcessProvider processProvider)
     {
+        if (processProvider is null)
+        {
+            throw new ArgumentNullException(nameof(processProvider), "Pipe server process provider must not be null");
+        }
+
         // PipeDirection.Out means we write to this pipe (browser will read from FD 3)
         this.pipeToProcess = new AnonymousPipeServerStream(PipeDirection.Out, HandleInheritability.Inheritable);
 

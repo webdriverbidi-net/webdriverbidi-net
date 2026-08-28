@@ -70,6 +70,43 @@ public class TransportEventSourceIntegrationTests
     }
 
     [Fact]
+    public async Task TestReconnectResetsTerminationReasonFromPriorTerminate()
+    {
+        TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
+            AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
+        };
+
+        // Session 1: a terminal unknown-message error sets the termination reason to a non-default
+        // value; the next command surfaces the error and forces the terminate teardown.
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync("""{"someProperty":"someValue"}""");
+        await captured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+
+        // The terminate teardown reported the non-default reason.
+        EventWrittenEventArgs terminateStopped = Assert.Single(listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "TransportStopped"));
+        Assert.NotNull(terminateStopped.Payload);
+        Assert.Equal("Unknown message from connection", terminateStopped.Payload[0]);
+        listener.ClearEvents();
+
+        // Session 2: reconnecting resets the termination reason to its default, so a normal shutdown
+        // does not report the stale terminate reason from session 1.
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        EventWrittenEventArgs stopped = Assert.Single(listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "TransportStopped"));
+        Assert.NotNull(stopped.Payload);
+        Assert.Equal("Normal shutdown", stopped.Payload[0]);
+
+        listener.Dispose();
+    }
+
+    [Fact]
     public async Task TestTransportEmitsCommandSendingAndCompletedEvents()
     {
         TestEventListener listener = new();

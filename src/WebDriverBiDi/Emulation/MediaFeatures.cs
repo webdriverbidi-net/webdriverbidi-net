@@ -26,7 +26,7 @@ public class MediaFeatures
     /// <summary>
     /// Value to indicate resetting the emulation of the "grid" CSS media feature.
     /// </summary>
-    public const int ResetGridValue = -1;
+    public const long ResetGridValue = -1;
 
     /// <summary>
     /// Value to indicate resetting the emulation of the "horizontal-viewport-segments" CSS media feature.

@@ -99,8 +99,6 @@ public static class ObservableEventExtensions
                     {
                         observer.OnNext(item);
                     }
-
-                    observer.OnCompleted();
                 }
                 catch (Exception ex)
                 {
@@ -116,7 +114,12 @@ public static class ObservableEventExtensions
                     }
 
                     await collector.DisposeAsync().ConfigureAwait(false);
+                    return;
                 }
+
+                // OnCompleted is invoked outside the try so that if it throws, OnError is not
+                // called after it; the Rx grammar requires OnCompleted to be terminal.
+                observer.OnCompleted();
             });
             return collector;
         }

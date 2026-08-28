@@ -120,6 +120,32 @@ public class ObservableEventExtensionsTests
     }
 
     [Fact]
+    public async Task TestOnErrorNotCalledWhenOnCompletedThrows()
+    {
+        TestEventSource testEventSource = new();
+        IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
+
+        TaskCompletionSource completedInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource errorInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        IDisposable subscription = observable.Subscribe(new DelegateObserver<TestObservableEventArgs>(
+            onCompleted: () =>
+            {
+                completedInvoked.TrySetResult();
+                throw new InvalidOperationException("completion failure");
+            },
+            onError: _ => errorInvoked.TrySetResult()));
+
+        // Disposing the subscription ends the delivery loop, which invokes OnCompleted.
+        subscription.Dispose();
+        await completedInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The Rx grammar requires OnCompleted to be terminal: even though it threw, OnError must
+        // not follow it. Allow a bounded window for an erroneous OnError to surface.
+        Task firstCompleted = await Task.WhenAny(errorInvoked.Task, Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken));
+        Assert.NotSame(errorInvoked.Task, firstCompleted);
+    }
+
+    [Fact]
     public async Task TestMultipleSubscribersEachReceiveAllEvents()
     {
         TestEventSource testEventSource = new();
