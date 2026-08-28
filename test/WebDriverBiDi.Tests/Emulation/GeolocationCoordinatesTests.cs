@@ -131,16 +131,17 @@ public class GeolocationCoordinatesTests
     }
 
     [Fact]
-    public void TestCanSerializeCoordinatesWithStationarySpeedAndHeading()
+    public void TestCanSerializeCoordinatesWithStationarySpeedAndUnsetHeading()
     {
+        // A stationary device has speed 0 and no heading; per the spec the absent heading is
+        // represented by leaving the property unset (null), which omits it from the payload.
         GeolocationCoordinates coordinates = new(123.45, -67.89)
         {
             Speed = 0,
-            Heading = double.NaN,
         };
         string json = JsonSerializer.Serialize(coordinates);
         JObject serialized = JObject.Parse(json);
-        Assert.Equal(4, serialized.Count);
+        Assert.Equal(3, serialized.Count);
 
         Assert.True(serialized.ContainsKey("longitude"));
         JToken? longitude = serialized["longitude"];
@@ -160,10 +161,18 @@ public class GeolocationCoordinatesTests
         Assert.Equal(JTokenType.Integer, speed.Type);
         Assert.Equal(0.0, speed.Value<double>());
 
-        Assert.True(serialized.ContainsKey("heading"));
-        JToken? heading = serialized["heading"];
-        Assert.NotNull(heading);
-        Assert.Equal(JTokenType.String, heading.Type);
-        Assert.Equal("NaN", heading.Value<string>());
+        Assert.False(serialized.ContainsKey("heading"));
+    }
+
+    [Fact]
+    public void TestSerializingCoordinatesWithNaNHeadingThrows()
+    {
+        // The spec models heading as (0.0...360.0) / null; the non-numeric "NaN" literal is not a
+        // valid wire value, so serializing double.NaN must fail rather than emit the string "NaN".
+        GeolocationCoordinates coordinates = new(123.45, -67.89)
+        {
+            Heading = double.NaN,
+        };
+        Assert.ThrowsAny<ArgumentException>(() => JsonSerializer.Serialize(coordinates));
     }
 }
