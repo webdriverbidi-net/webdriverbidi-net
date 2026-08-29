@@ -33,6 +33,14 @@ public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     public string BrowsingContextId { get; internal set; }
 
     /// <summary>
+    /// Gets the type of the user prompt that was closed.
+    /// </summary>
+    [JsonPropertyName("type")]
+    [JsonRequired]
+    [JsonInclude]
+    public UserPromptType PromptType { get; internal set; }
+
+    /// <summary>
     /// Gets a value indicating whether the user prompt was accepted (true), or if it was canceled (false).
     /// </summary>
     [JsonPropertyName("accepted")]

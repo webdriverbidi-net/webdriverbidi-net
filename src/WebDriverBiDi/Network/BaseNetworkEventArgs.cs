@@ -31,6 +31,13 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     public string? BrowsingContextId { get; internal set; }
 
     /// <summary>
+    /// Gets the ID of the user context associated with the request, if any.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
+
+    /// <summary>
     /// Gets the ID of the navigation initiating the request.
     /// </summary>
     [JsonPropertyName("navigation")]

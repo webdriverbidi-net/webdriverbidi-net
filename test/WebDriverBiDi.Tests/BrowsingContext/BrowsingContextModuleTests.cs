@@ -974,6 +974,7 @@ public class BrowsingContextModuleTests
         module.OnUserPromptClosed.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
+            Assert.Equal(UserPromptType.Confirm, e.PromptType);
             Assert.True(e.IsAccepted);
             Assert.Equal("my prompt text", e.UserText);
 
@@ -986,6 +987,7 @@ public class BrowsingContextModuleTests
                              "method": "browsingContext.userPromptClosed",
                              "params": {
                                "context": "myContext",
+                               "type": "confirm",
                                "accepted": true,
                                "userText": "my prompt text"
                              }
