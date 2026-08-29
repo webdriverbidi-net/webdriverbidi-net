@@ -48,15 +48,14 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax method = (MethodDeclarationSyntax)context.Node;
         ImmutableDictionary<string, DriverVariableState> driverVariables = ImmutableDictionary<string, DriverVariableState>.Empty;
 
-        foreach (StatementSyntax statement in method.Body?.Statements ?? [])
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             driverVariables = AnalyzeStatement(context, statement, driverVariables);
         }
@@ -185,12 +184,28 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
             DriverVariableState state = updatedVariables[driverVariableName];
             if (state.IsStarted)
             {
-                Diagnostic diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), "RegisterEvent");
+                Diagnostic diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), GetEventName(context, invocation));
                 context.ReportDiagnostic(diagnostic);
             }
         }
 
         return updatedVariables;
+    }
+
+    private static string GetEventName(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
+    {
+        // RegisterEvent's first argument is the event name; report it in the message rather than the
+        // literal method name. The call has already resolved to RegisterEvent(string, Func<...>), so
+        // the argument is present.
+        ExpressionSyntax firstArgument = invocation.ArgumentList.Arguments[0].Expression;
+        if (context.SemanticModel.GetConstantValue(firstArgument) is { HasValue: true, Value: string eventName })
+        {
+            return eventName;
+        }
+
+        // A non-constant event name (for example a variable) cannot be resolved at compile time, so
+        // fall back to the argument's source text.
+        return firstArgument.ToString();
     }
 
     private static string? GetDriverVariableName(MemberAccessExpressionSyntax memberAccess)

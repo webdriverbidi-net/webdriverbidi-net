@@ -98,7 +98,7 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
 
     private static bool IsBiDiDriverOrModuleType(INamedTypeSymbol? type)
     {
-        return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || type!.Name.EndsWith("Module");
+        return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || AnalyzerSymbolHelpers.IsLibraryModuleType(type);
     }
 
     private static bool ShouldSuggestToken(IMethodSymbol method)

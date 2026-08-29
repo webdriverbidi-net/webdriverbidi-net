@@ -658,4 +658,82 @@ public class BiDiDriver014CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task CodeFix_WithFullyQualifiedConstruction_EmitsQualifiedResetAccess()
+    {
+        // The type is constructed with a fully-qualified name and no using directive, so the reset
+        // property access must be qualified the same way or it would not resolve.
+        string testCode = """
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+            }
+
+            namespace WebDriverBiDi.Emulation
+            {
+                using WebDriverBiDi;
+
+                public class SetTimeZoneOverrideCommandParameters : CommandParameters
+                {
+                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
+                }
+            }
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var parameters = {|#0:new WebDriverBiDi.Emulation.SetTimeZoneOverrideCommandParameters()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters { }
+            }
+
+            namespace WebDriverBiDi.Emulation
+            {
+                using WebDriverBiDi;
+
+                public class SetTimeZoneOverrideCommandParameters : CommandParameters
+                {
+                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
+                }
+            }
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var parameters = WebDriverBiDi.Emulation.SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
+
+        LfCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

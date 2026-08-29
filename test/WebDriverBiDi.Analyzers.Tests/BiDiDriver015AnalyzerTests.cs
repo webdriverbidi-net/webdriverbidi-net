@@ -1736,7 +1736,9 @@ public class BiDiDriver015AnalyzerTests
 
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
 
-                public class LogModule
+                public abstract class Module { }
+
+                public class LogModule : Module
                 {
                     [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new("log.entryAdded");

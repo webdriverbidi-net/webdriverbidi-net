@@ -67,8 +67,11 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
             return;
         }
 
-        // Check if the return value is used (awaited, assigned, or passed as argument)
-        if (IsOperationUsed(invocation))
+        // A call is fire-and-forget only when its result is discarded. Rather than trying to
+        // enumerate every way a result can be consumed (await, assignment, argument, array/collection
+        // element, conditional, and so on), detect the single discard shape: the call stands alone as
+        // an expression statement.
+        if (!IsResultDiscarded(invocation))
         {
             return;
         }
@@ -80,7 +83,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
 
     private static bool IsModuleType(INamedTypeSymbol? type)
     {
-        return type != null && type.Name.EndsWith("Module") && HasModuleBaseClass(type);
+        return type != null && type.Name.EndsWith("Module", System.StringComparison.Ordinal) && HasModuleBaseClass(type);
     }
 
     private static bool HasModuleBaseClass(INamedTypeSymbol type)
@@ -104,47 +107,21 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         return method.ReturnType is INamedTypeSymbol namedType && namedType.Name == "Task" && namedType.IsGenericType;
     }
 
-    private static bool IsOperationUsed(IOperation operation)
+    private static bool IsResultDiscarded(IOperation operation)
     {
         IOperation? parent = operation.Parent;
 
-        // Check if the operation result is awaited
-        if (parent is IAwaitOperation)
+        // Follow chained member calls (for example .ConfigureAwait(false)) and conversions to the
+        // outermost Task-valued expression; the chain is fire-and-forget only if that outer value is
+        // itself discarded.
+        if (parent is IInvocationOperation or IConversionOperation)
         {
-            return true;
+            return IsResultDiscarded(parent);
         }
 
-        // Check if assigned to a variable
-        if (parent is IVariableInitializerOperation or ISimpleAssignmentOperation)
-        {
-            return true;
-        }
-
-        // Check if used as an argument
-        if (parent is IArgumentOperation)
-        {
-            return true;
-        }
-
-        // Check if used as a return value
-        if (parent is IReturnOperation)
-        {
-            return true;
-        }
-
-        // Check if it's part of another invocation (e.g., .ConfigureAwait(false))
-        if (parent is IInvocationOperation)
-        {
-            // Recursively check if that invocation is used
-            return IsOperationUsed(parent);
-        }
-
-        // Check if used in a conversion
-        if (parent is IConversionOperation)
-        {
-            return IsOperationUsed(parent);
-        }
-
-        return false;
+        // The result is discarded when the (outer) expression stands alone as a statement. Every other
+        // context — await, assignment, argument, array/collection element, conditional, return —
+        // consumes the value.
+        return parent is IExpressionStatementOperation;
     }
 }

@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -47,7 +48,17 @@ internal static class AnalyzerSymbolHelpers
         foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
         {
             ITypeSymbol? argType = context.SemanticModel.GetTypeInfo(argument.Expression).Type;
-            if (argType?.Name == "ObservableEventHandlerOptions" && argument.Expression.ToString().Contains("RunHandlerAsynchronously"))
+            if (argType?.Name != "ObservableEventHandlerOptions")
+            {
+                continue;
+            }
+
+            // Resolve the option value semantically rather than by source text, which fails when the
+            // option is passed through a variable. RunHandlerAsynchronously has the underlying value 1.
+            // A non-constant argument (for example a variable) cannot be resolved at compile time, so
+            // treat it as present to avoid a false positive on code that does opt in.
+            Optional<object?> constantValue = context.SemanticModel.GetConstantValue(argument.Expression);
+            if (!constantValue.HasValue || constantValue.Value is int and 1)
             {
                 return true;
             }
@@ -107,6 +118,146 @@ internal static class AnalyzerSymbolHelpers
             MemberAccessExpressionSyntax memberAccess => GetMethodBodyFromSymbol(context, memberAccess),
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// Determines whether a type is a library module: its name ends in <c>"Module"</c> and it either
+    /// derives from the abstract <c>Module</c> base class or is declared within the
+    /// <c>WebDriverBiDi</c> namespace. Requiring more than the <c>"*Module"</c> name avoids matching
+    /// unrelated user types that merely end in <c>"Module"</c> (they neither derive from <c>Module</c>
+    /// nor live in the library's namespace).
+    /// </summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> if the type is a library module; otherwise <see langword="false"/>.</returns>
+    internal static bool IsLibraryModuleType(ITypeSymbol? type)
+    {
+        return type is INamedTypeSymbol named
+            && named.Name.EndsWith("Module", System.StringComparison.Ordinal)
+            && (IsModuleSubclass(named) || IsInWebDriverBiDiNamespace(named));
+    }
+
+    /// <summary>
+    /// Determines whether a type belongs to the WebDriverBiDi library (declared within the
+    /// <c>WebDriverBiDi</c> namespace). Used both to recognize library modules and to avoid matching a
+    /// user's own type that happens to share a member name or shape with a library type.
+    /// </summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> if the type is declared in the WebDriverBiDi namespace; otherwise <see langword="false"/>.</returns>
+    internal static bool IsInWebDriverBiDiNamespace(INamedTypeSymbol type)
+    {
+        // A named type always has a containing namespace (the global namespace at worst).
+        return type.ContainingNamespace!.ToString().StartsWith("WebDriverBiDi", System.StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The syntax kinds that carry an executable body the intra-procedural analyzers examine: a method
+    /// declaration, a constructor declaration, and a compilation unit (whose global statements form the
+    /// body of a top-level program). Registering an analyzer for all three lets it fire in constructors
+    /// and top-level programs, not only in methods.
+    /// </summary>
+    internal static readonly SyntaxKind[] ExecutableBodyKinds =
+    [
+        SyntaxKind.MethodDeclaration,
+        SyntaxKind.ConstructorDeclaration,
+        SyntaxKind.CompilationUnit,
+    ];
+
+    /// <summary>
+    /// Gets the block containing a member's executable statements: a method's or constructor's body.
+    /// Returns <see langword="null"/> for a compilation unit (its statements are global statements) or
+    /// a body-less member.
+    /// </summary>
+    /// <param name="node">The declaration node.</param>
+    /// <returns>The body block, or <see langword="null"/>.</returns>
+    internal static BlockSyntax? GetBodyBlock(SyntaxNode node)
+    {
+        return node switch
+        {
+            MethodDeclarationSyntax method => method.Body,
+            ConstructorDeclarationSyntax constructor => constructor.Body,
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Gets the top-level executable statements of a method or constructor body, or the global
+    /// statements of a top-level program, in source order.
+    /// </summary>
+    /// <param name="node">The declaration or compilation-unit node.</param>
+    /// <returns>The top-level statements.</returns>
+    internal static IReadOnlyList<StatementSyntax> GetTopLevelStatements(SyntaxNode node)
+    {
+        if (GetBodyBlock(node) is { } body)
+        {
+            return body.Statements;
+        }
+
+        if (node is CompilationUnitSyntax compilationUnit)
+        {
+            return compilationUnit.Members.OfType<GlobalStatementSyntax>().Select(globalStatement => globalStatement.Statement).ToArray();
+        }
+
+        return [];
+    }
+
+    /// <summary>
+    /// Gets every executable statement (including nested statements) of a method or constructor body,
+    /// or of a top-level program's global statements, in source order.
+    /// </summary>
+    /// <param name="node">The declaration or compilation-unit node.</param>
+    /// <returns>The statements.</returns>
+    internal static IEnumerable<StatementSyntax> GetAllStatements(SyntaxNode node)
+    {
+        if (GetBodyBlock(node) is { } body)
+        {
+            return body.DescendantNodes().OfType<StatementSyntax>();
+        }
+
+        if (node is CompilationUnitSyntax compilationUnit)
+        {
+            return compilationUnit.Members
+                .OfType<GlobalStatementSyntax>()
+                .SelectMany(globalStatement => globalStatement.Statement.DescendantNodesAndSelf().OfType<StatementSyntax>());
+        }
+
+        return [];
+    }
+
+    /// <summary>
+    /// Gets every descendant node of a method or constructor body, or of a top-level program's global
+    /// statements, in source order. Used by analyzers that search the whole body for specific node
+    /// kinds (invocations, declarations, and so on) rather than iterating statements.
+    /// </summary>
+    /// <param name="node">The declaration or compilation-unit node.</param>
+    /// <returns>The descendant nodes.</returns>
+    internal static IEnumerable<SyntaxNode> GetBodyDescendantNodes(SyntaxNode node)
+    {
+        if (GetBodyBlock(node) is { } body)
+        {
+            return body.DescendantNodes();
+        }
+
+        // Expression-bodied members: the single arrow expression is the executable body.
+        ArrowExpressionClauseSyntax? expressionBody = node switch
+        {
+            MethodDeclarationSyntax method => method.ExpressionBody,
+            ConstructorDeclarationSyntax constructor => constructor.ExpressionBody,
+            _ => null,
+        };
+
+        if (expressionBody is not null)
+        {
+            return expressionBody.Expression.DescendantNodesAndSelf();
+        }
+
+        if (node is CompilationUnitSyntax compilationUnit)
+        {
+            return compilationUnit.Members
+                .OfType<GlobalStatementSyntax>()
+                .SelectMany(globalStatement => globalStatement.Statement.DescendantNodesAndSelf());
+        }
+
+        return [];
     }
 
     /// <summary>

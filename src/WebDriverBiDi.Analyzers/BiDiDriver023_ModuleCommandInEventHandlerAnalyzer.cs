@@ -87,7 +87,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        if (((INamedTypeSymbol)methodSymbol.ReturnType).Name != "EventObserver")
+        if (methodSymbol.ReturnType is not INamedTypeSymbol { Name: "EventObserver" })
         {
             return;
         }

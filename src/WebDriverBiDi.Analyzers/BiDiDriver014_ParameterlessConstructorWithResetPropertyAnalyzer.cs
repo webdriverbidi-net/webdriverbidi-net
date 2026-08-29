@@ -52,19 +52,18 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         context.EnableConcurrentExecution();
 
         // Register for method body analysis
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax)context.Node;
         SemanticModel semanticModel = context.SemanticModel;
 
         // Track variables created with parameterless constructor and whether properties are set
         Dictionary<string, VariableState> trackedVariables = [];
 
-        // Walk through all statements in the method
-        foreach (StatementSyntax statement in methodDeclaration.DescendantNodes().OfType<StatementSyntax>())
+        // Walk through all statements in the method, constructor, or top-level program.
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetAllStatements(context.Node))
         {
             // Check for variable declaration: var params = new CommandParameters()
             if (statement is LocalDeclarationStatementSyntax localDecl)
@@ -99,15 +98,15 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         //   await driver.Emulation.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters())
         // An inline constructor has no variable to assign properties to afterward, so any
         // parameterless constructor with a Reset property used inline is always a diagnostic.
-        AnalyzeInlineConstructors(methodDeclaration, context, semanticModel);
+        AnalyzeInlineConstructors(context.Node, context, semanticModel);
     }
 
     private static void AnalyzeInlineConstructors(
-        MethodDeclarationSyntax methodDeclaration,
+        SyntaxNode node,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel)
     {
-        foreach (ArgumentSyntax argument in methodDeclaration.DescendantNodes().OfType<ArgumentSyntax>())
+        foreach (ArgumentSyntax argument in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<ArgumentSyntax>())
         {
             if (argument.Expression is not ObjectCreationExpressionSyntax objectCreation)
             {
@@ -210,30 +209,44 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         SemanticModel semanticModel,
         Dictionary<string, VariableState> trackedVariables)
     {
-        // Check for assignment expressions: variable.Property = value
-        if (expressionStmt.Expression is not AssignmentExpressionSyntax assignment)
+        // Property assignment: variable.Property = value
+        if (expressionStmt.Expression is AssignmentExpressionSyntax assignment)
         {
+            if (assignment.Left is not MemberAccessExpressionSyntax memberAccess)
+            {
+                return;
+            }
+
+            // Get the variable name
+            string? variableName = GetVariableName(memberAccess.Expression);
+            if (variableName == null || !trackedVariables.ContainsKey(variableName))
+            {
+                return;
+            }
+
+            // Check if the member being assigned is a property
+            ISymbol? symbol = semanticModel.GetSymbolInfo(memberAccess).Symbol;
+            if (symbol is IPropertySymbol)
+            {
+                // Mark that this variable has property assignments
+                trackedVariables[variableName].HasPropertyAssignment = true;
+            }
+
             return;
         }
 
-        if (assignment.Left is not MemberAccessExpressionSyntax memberAccess)
+        // Method call through a member of the variable: variable.Collection.Add(...) or
+        // variable.SomeMethod(...). This configures the object just as a property assignment does — and
+        // for a get-only collection property (for example SetExtraHeadersCommandParameters.Headers) it
+        // is the only way to populate it — so the parameterless constructor is not a bare reset.
+        if (expressionStmt.Expression is InvocationExpressionSyntax invocation &&
+            invocation.Expression is MemberAccessExpressionSyntax invocationTarget)
         {
-            return;
-        }
-
-        // Get the variable name
-        string? variableName = GetVariableName(memberAccess.Expression);
-        if (variableName == null || !trackedVariables.ContainsKey(variableName))
-        {
-            return;
-        }
-
-        // Check if the member being assigned is a property
-        ISymbol? symbol = semanticModel.GetSymbolInfo(memberAccess).Symbol;
-        if (symbol is IPropertySymbol)
-        {
-            // Mark that this variable has property assignments
-            trackedVariables[variableName].HasPropertyAssignment = true;
+            string? variableName = GetVariableName(invocationTarget.Expression);
+            if (variableName != null && trackedVariables.ContainsKey(variableName))
+            {
+                trackedVariables[variableName].HasPropertyAssignment = true;
+            }
         }
     }
 
@@ -282,7 +295,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
 
             foreach (IPropertySymbol property in properties)
             {
-                if (property.Name.StartsWith("Reset") && IsSameTypeOrBaseTypeOf(property.Type, type))
+                if (property.Name.StartsWith("Reset", System.StringComparison.Ordinal) && IsSameTypeOrBaseTypeOf(property.Type, type))
                 {
                     return new ResetPropertyInfo(property.Name, current.Name);
                 }

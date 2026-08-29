@@ -94,6 +94,16 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // For inline casts (not in variable declarations), wrap just that expression
         StatementSyntax statement = castExpression.FirstAncestorOrSelf<StatementSyntax>()!;
 
+        // Wrapping the enclosing statement in an if block is only valid when that statement neither
+        // transfers control out of the containing member nor produces a required value: wrapping a
+        // return/throw/yield (or any other non-expression, non-declaration statement) would leave a
+        // code path that no longer returns or assigns (CS0161/CS0165). Leave such casts unchanged
+        // rather than emitting code that does not compile.
+        if (statement is not (ExpressionStatementSyntax or LocalDeclarationStatementSyntax))
+        {
+            return document;
+        }
+
         // Generate a variable name based on the type
         string variableName = GenerateVariableName(targetType.Name);
 
@@ -138,24 +148,25 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Get semantic model to find references
         SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Find all statements after the declaration that reference the variable
-        List<StatementSyntax> dependentStatements = [];
+        // Find the last statement after the declaration that references the variable, then move every
+        // statement through it (including any intervening statements that do not reference it) into the
+        // if block. Stopping at the first non-referencing statement would leave a later reference
+        // outside the pattern variable's scope (CS0103/CS0165).
         ISymbol? variableSymbol = semanticModel.GetDeclaredSymbol(variableDeclarator, cancellationToken);
 
+        int lastReferencingIndex = -1;
         for (int i = declarationIndex + 1; i < containingBlock.Statements.Count; i++)
         {
-            StatementSyntax statement = containingBlock.Statements[i];
+            if (StatementReferencesVariable(containingBlock.Statements[i], existingVariableName, semanticModel, variableSymbol, cancellationToken))
+            {
+                lastReferencingIndex = i;
+            }
+        }
 
-            // Check if this statement references the variable
-            if (StatementReferencesVariable(statement, existingVariableName, semanticModel, variableSymbol, cancellationToken))
-            {
-                dependentStatements.Add(statement);
-            }
-            else
-            {
-                // Stop at the first statement that doesn't use the variable
-                break;
-            }
+        List<StatementSyntax> dependentStatements = [];
+        for (int i = declarationIndex + 1; i <= lastReferencingIndex; i++)
+        {
+            dependentStatements.Add(containingBlock.Statements[i]);
         }
 
         // Create the pattern matching if statement
@@ -298,24 +309,25 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Get semantic model to find references
         SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Find all statements after the declaration that reference the variable
-        List<StatementSyntax> dependentStatements = [];
+        // Find the last statement after the declaration that references the variable, then move every
+        // statement through it (including any intervening statements that do not reference it) into the
+        // if block. Stopping at the first non-referencing statement would leave a later reference
+        // outside the pattern variable's scope (CS0103/CS0165).
         ISymbol? variableSymbol = semanticModel.GetDeclaredSymbol(variableDeclarator, cancellationToken);
 
+        int lastReferencingIndex = -1;
         for (int i = declarationIndex + 1; i < containingBlock.Statements.Count; i++)
         {
-            StatementSyntax statement = containingBlock.Statements[i];
+            if (StatementReferencesVariable(containingBlock.Statements[i], existingVariableName, semanticModel, variableSymbol, cancellationToken))
+            {
+                lastReferencingIndex = i;
+            }
+        }
 
-            // Check if this statement references the variable
-            if (StatementReferencesVariable(statement, existingVariableName, semanticModel, variableSymbol, cancellationToken))
-            {
-                dependentStatements.Add(statement);
-            }
-            else
-            {
-                // Stop at the first statement that doesn't use the variable
-                break;
-            }
+        List<StatementSyntax> dependentStatements = [];
+        for (int i = declarationIndex + 1; i <= lastReferencingIndex; i++)
+        {
+            dependentStatements.Add(containingBlock.Statements[i]);
         }
 
         // Create: if (result is EvaluateResultSuccess success) instead of var success = result as ...

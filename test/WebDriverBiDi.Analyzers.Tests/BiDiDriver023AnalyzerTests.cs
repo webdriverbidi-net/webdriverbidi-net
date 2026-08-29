@@ -1597,4 +1597,40 @@ public class BiDiDriver023AnalyzerTests
             }
         }
         """;
+
+    [Fact]
+    public async Task AddObserver_WithNonNamedReturnType_NoDiagnostic()
+    {
+        // A method named AddObserver whose return type is not a named type (here an array) must not
+        // crash the analyzer (an unchecked cast to INamedTypeSymbol would surface as AD0001); it is
+        // simply not the library's EventObserver-returning AddObserver, so nothing is reported.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class Widget
+                {
+                    public int[] AddObserver(Func<int, Task> handler) => new int[0];
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(Widget widget)
+                    {
+                        var result = widget.AddObserver(async x => { await Task.CompletedTask; });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

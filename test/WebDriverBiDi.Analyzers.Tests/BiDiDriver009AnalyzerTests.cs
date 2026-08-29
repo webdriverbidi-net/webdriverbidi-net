@@ -850,4 +850,68 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task CommandInEventHandlerLambdaBeforeStartAsync_NoDiagnostic()
+    {
+        // A command issued inside an event-handler lambda runs when the event fires (after the
+        // connection is started), not at the point the handler is registered. The analyzer must not
+        // descend into the lambda body and flag it as executing before StartAsync.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        driver.BrowsingContext.OnLoad.AddObserver(async args =>
+                        {
+                            await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        });
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandInLocalFunctionBeforeStartAsync_NoDiagnostic()
+    {
+        // A command issued inside a local function runs only when the function is called, not where it
+        // is declared, so a declaration before StartAsync must not be flagged.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+
+                        async Task RunCommandAsync()
+                        {
+                            await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        }
+
+                        await driver.StartAsync("ws://localhost:9222");
+                        await RunCommandAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

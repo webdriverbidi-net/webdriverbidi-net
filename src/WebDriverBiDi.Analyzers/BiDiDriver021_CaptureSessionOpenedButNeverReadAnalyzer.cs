@@ -52,17 +52,11 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        if (methodDeclaration.Body == null)
-        {
-            return;
-        }
-
         SemanticModel semanticModel = context.SemanticModel;
 
         // For each local EventObserver<T> variable, record the location of the most recent
@@ -72,7 +66,7 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
         // Track whether any read was seen after the most recent StartCapturingTasks.
         Dictionary<string, bool> hasRead = [];
 
-        foreach (StatementSyntax statement in methodDeclaration.Body.Statements)
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             // Register newly declared EventObserver<T> local variables.
             if (statement is LocalDeclarationStatementSyntax localDecl)

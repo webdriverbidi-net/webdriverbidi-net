@@ -1528,4 +1528,88 @@ public class BiDiDriver010AnalyzerTests
             }
         }
         """;
+
+    [Fact]
+    public async Task ModuleCommandsPassedToTaskWhenAll_NoDiagnostic()
+    {
+        // Passing module command Tasks to Task.WhenAll consumes them (through the params array), so
+        // they are not fire-and-forget.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Script;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await Task.WhenAll(driver.BrowsingContext.GetTreeAsync(), driver.Script.GetRealmsAsync());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task ModuleCommandsInCollectionExpression_NoDiagnostic()
+    {
+        // Elements of a collection expression are consumed by the collection, not fire-and-forget.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Script;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        Task[] tasks = [driver.BrowsingContext.GetTreeAsync(), driver.Script.GetRealmsAsync()];
+                        await Task.WhenAll(tasks);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task ModuleCommandsInArrayInitializer_NoDiagnostic()
+    {
+        // Elements of an array initializer are consumed by the array, not fire-and-forget.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Script;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        Task[] tasks = new Task[] { driver.BrowsingContext.GetTreeAsync(), driver.Script.GetRealmsAsync() };
+                        await Task.WhenAll(tasks);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
 }

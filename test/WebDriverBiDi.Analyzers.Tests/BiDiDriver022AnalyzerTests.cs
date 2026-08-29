@@ -361,18 +361,24 @@ public class BiDiDriver022AnalyzerTests
     [Fact]
     public async Task IndexerAssignment_OnAdditionalDataWithWrongValueType_NoDiagnostic()
     {
-        // An "AdditionalData" property that returns Dictionary<string, string> (not object?)
-        // should NOT fire — the value type does not match.
-        // This exercises the IsDictionaryStringObject returning false.
+        // A WebDriverBiDi type whose "AdditionalData" property returns Dictionary<string, string>
+        // (not object?) should NOT fire — the value type does not match. Declaring the type in the
+        // WebDriverBiDi namespace ensures the declaring-type check passes so this exercises
+        // IsDictionaryStringObject returning false.
         string testCode = """
             using System.Collections.Generic;
 
-            namespace TestNamespace
+            namespace WebDriverBiDi.Fakes
             {
                 public class MyClass
                 {
                     public Dictionary<string, string> AdditionalData { get; } = new Dictionary<string, string>();
                 }
+            }
+
+            namespace TestNamespace
+            {
+                using WebDriverBiDi.Fakes;
 
                 public class TestClass
                 {
@@ -429,9 +435,9 @@ public class BiDiDriver022AnalyzerTests
     [Fact]
     public async Task AdditionalData_PropertyWithArrayReturnType_DoesNotReportDiagnostic()
     {
-        // Define a CommandParameters subclass with an "AdditionalData" property returning
-        // a plain array type (not a named generic type). IsAdditionalDataProperty will
-        // hit the "property.Type is not INamedTypeSymbol" guard and return false.
+        // A WebDriverBiDi type with an "AdditionalData" property returning a plain array type (not a
+        // named generic type). Mutating it reaches IsAdditionalDataProperty, which hits the
+        // "property.Type is not INamedTypeSymbol" guard and returns false, so nothing is reported.
         string testCode = """
             using System.Collections.Generic;
 
@@ -440,7 +446,7 @@ public class BiDiDriver022AnalyzerTests
                 public abstract class CommandParameters
                 {
                     // AdditionalData returning an array — not an INamedTypeSymbol path
-                    public string[]? AdditionalData { get; }
+                    public string[] AdditionalData { get; } = new string[4];
                 }
 
                 public class GetTreeCommandParameters : CommandParameters
@@ -457,7 +463,7 @@ public class BiDiDriver022AnalyzerTests
                     public void TestMethod()
                     {
                         GetTreeCommandParameters cmd = new GetTreeCommandParameters();
-                        string[]? data = cmd.AdditionalData;
+                        cmd.AdditionalData[0] = "value";
                     }
                 }
             }
@@ -631,6 +637,36 @@ public class BiDiDriver022AnalyzerTests
                     {
                         NotCommandParameters parameters = new NotCommandParameters();
                         parameters.AdditionalData[0] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task IndexerAssignment_OnUserTypeAdditionalData_NoDiagnostic()
+    {
+        // A user's own type that merely has an AdditionalData property of the same shape is not a
+        // WebDriverBiDi received-data type, so mutating it must not be flagged.
+        string testCode = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace TestNamespace
+            {
+                public class MyType
+                {
+                    public Dictionary<string, object?> AdditionalData { get; } = new();
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var thing = new MyType();
+                        thing.AdditionalData["ext"] = "value";
                     }
                 }
             }

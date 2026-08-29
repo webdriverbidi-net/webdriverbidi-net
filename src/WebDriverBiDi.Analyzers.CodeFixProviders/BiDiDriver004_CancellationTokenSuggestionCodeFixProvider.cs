@@ -67,12 +67,16 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Add CancellationToken.None as last argument
+        // Add CancellationToken.None as a named argument. The target methods declare an optional
+        // parameter (for example a TimeSpan? timeout) before the trailing cancellationToken, so a
+        // positional append would bind to that parameter and fail to compile; naming the argument
+        // targets the token parameter regardless of the intervening optional parameters.
         ArgumentSyntax tokenArgument = SyntaxFactory.Argument(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName("CancellationToken"),
-                SyntaxFactory.IdentifierName("None")));
+                SyntaxFactory.IdentifierName("None")))
+            .WithNameColon(SyntaxFactory.NameColon("cancellationToken"));
 
         ArgumentListSyntax newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
         InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);
@@ -88,9 +92,13 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Add a cancellationToken variable reference
+        // Add a cancellationToken variable reference as a named argument. The target methods declare
+        // an optional parameter (for example a TimeSpan? timeout) before the trailing
+        // cancellationToken, so a positional append would bind to that parameter and fail to compile;
+        // naming the argument targets the token parameter regardless of the intervening parameters.
         ArgumentSyntax tokenArgument = SyntaxFactory.Argument(
-            SyntaxFactory.IdentifierName("cancellationToken"));
+            SyntaxFactory.IdentifierName("cancellationToken"))
+            .WithNameColon(SyntaxFactory.NameColon("cancellationToken"));
 
         ArgumentListSyntax newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
         InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);

@@ -858,4 +858,145 @@ public class BiDiDriver008CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task CodeFix_DirectCast_WithInterveningStatement_KeepsVariableInScope()
+    {
+        // A statement that does not reference 'success' appears between the declaration and a later
+        // statement that does. The fix must move every statement through the last reference into the
+        // if block so 'success' remains in scope; stopping at the first non-referencing statement
+        // would strand the later reference (CS0103/CS0165).
+        string testCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = {|#0:(EvaluateResultSuccess)result|};
+                        var unrelated = 42;
+                        var value = success.Value;
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            var unrelated = 42;
+                            var value = success.Value;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task CodeFix_InlineCastInReturn_IsNoOp()
+    {
+        // A cast inside a return statement cannot be wrapped in an if without leaving a code path
+        // that does not return a value (CS0161), so the fix leaves such casts unchanged.
+        string testCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult { }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public EvaluateResultSuccess GetSuccess(EvaluateResult result)
+                    {
+                        return {|#0:(EvaluateResultSuccess)result|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+            NumberOfIncrementalIterations = 1,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

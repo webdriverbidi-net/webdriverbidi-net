@@ -1599,4 +1599,41 @@ public class BiDiDriver014AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task ParameterlessConstructor_WithCollectionAddCall_NoDiagnostic()
+    {
+        // SetExtraHeadersCommandParameters.Headers is a get-only list; the only way to populate it is
+        // parameters.Headers.Add(...). That is genuine configuration, so the parameterless constructor
+        // must not be flagged even though there is no 'parameters.X = value' assignment.
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Network;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        var parameters = new SetExtraHeadersCommandParameters();
+                        parameters.Headers.Add(new Header("name", "value"));
+
+                        // Unrelated statements: a member call on a non-tracked receiver, a bare call,
+                        // and a non-invocation expression statement must not affect the tracked
+                        // variable's configuration state.
+                        System.Console.WriteLine("unrelated");
+                        LocalHelper();
+                        await Task.CompletedTask;
+
+                        void LocalHelper()
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test);
+    }
 }

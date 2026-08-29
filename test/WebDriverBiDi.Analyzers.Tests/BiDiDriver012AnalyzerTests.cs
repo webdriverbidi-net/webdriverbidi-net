@@ -1048,4 +1048,64 @@ public class BiDiDriver012AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task DisposeAsync_InTopLevelProgram_ReportsInfo()
+    {
+        // The analysis must run over a top-level program's global statements: GetContainingBlock walks
+        // up to the compilation unit, and the body statements come from the global statements.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            BiDiDriver driver = new();
+            await driver.StartAsync("ws://localhost:9222");
+            await {|#0:driver.DisposeAsync()|};
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        CSharpAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task DisposeAsync_InExpressionBodiedConstructor_ReportsInfo()
+    {
+        // An expression-bodied constructor: GetContainingBlock walks up to the constructor, and the
+        // executable body is the arrow expression.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public TestClass(BiDiDriver driver) =>
+                        driver.DisposeAsync().AsTask();
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithSpan(9, 13, 9, 34)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
+    }
 }

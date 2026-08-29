@@ -3096,4 +3096,114 @@ public class BiDiDriver007AnalyzerTests
             }
         }
         """;
+
+    [Fact]
+    public async Task AddObserver_WithNonNamedReturnType_NoDiagnostic()
+    {
+        // A method named AddObserver whose return type is not a named type (here an array) must not
+        // crash the analyzer (an unchecked cast to INamedTypeSymbol would surface as AD0001); it is
+        // simply not the library's EventObserver-returning AddObserver, so nothing is reported.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class Widget
+                {
+                    public int[] AddObserver(Func<int, Task> handler) => new int[0];
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(Widget widget)
+                    {
+                        var result = widget.AddObserver(async x => { await Task.CompletedTask; });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task EventHandler_AsyncWithOptionViaVariable_NoDiagnostic()
+    {
+        // The RunHandlerAsynchronously option is passed through a local variable rather than a direct
+        // member reference. The analyzer must still recognize the option (resolving it semantically,
+        // not by source text) so an async handler is not falsely reported.
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public enum ObservableEventHandlerOptions
+                {
+                    None = 0,
+                    RunHandlerAsynchronously = 1
+                }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var options = ObservableEventHandlerOptions.RunHandlerAsynchronously;
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            Thread.Sleep(1000);
+                            await Task.CompletedTask;
+                        }, options);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -51,20 +51,19 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        // Register for method body analysis
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        // Register for method, constructor, and top-level-program body analysis.
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax)context.Node;
         SemanticModel semanticModel = context.SemanticModel;
 
         // Track BiDiDriver variables and their states
         Dictionary<string, DriverState> driverVariables = [];
 
-        // Walk through all statements in the method
-        foreach (StatementSyntax statement in methodDeclaration.DescendantNodes().OfType<StatementSyntax>())
+        // Walk through all statements in the method, constructor, or top-level program.
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetAllStatements(context.Node))
         {
             // Check for driver creation: var driver = new BiDiDriver(...)
             if (statement is LocalDeclarationStatementSyntax localDecl)
@@ -109,9 +108,23 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         }
         else if (expressionStmt.Expression is InvocationExpressionSyntax directInvocation)
         {
-            // Handle: driver.StartAsync(...).Wait() or driver.RegisterModule(...)
-            CheckForDriverMethodCall(directInvocation, context, semanticModel, driverVariables);
+            // Handle: driver.StartAsync(...).Wait() or driver.RegisterModule(...). A blocking
+            // .Wait() is unwrapped so the underlying StartAsync call is recognized as starting the
+            // driver rather than the Task.Wait() wrapper being analyzed (and ignored).
+            CheckForDriverMethodCall(UnwrapBlockingWait(directInvocation), context, semanticModel, driverVariables);
         }
+    }
+
+    private static InvocationExpressionSyntax UnwrapBlockingWait(InvocationExpressionSyntax invocation)
+    {
+        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
+            memberAccess.Name.Identifier.Text == "Wait" &&
+            memberAccess.Expression is InvocationExpressionSyntax innerInvocation)
+        {
+            return innerInvocation;
+        }
+
+        return invocation;
     }
 
     private static void CheckForDriverMethodCall(InvocationExpressionSyntax invocation, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, DriverState> driverVariables)
