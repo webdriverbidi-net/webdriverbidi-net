@@ -124,4 +124,110 @@ public class BiDiDriver001CodeFixProviderTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+
+    [Fact]
+    public async Task RegisterModule_AfterBlockingStartWithWait_CodeFixMovesItBefore()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiDriver { }
+
+                public class BiDiDriver : IBiDiDriver
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public void RegisterModule(Module module) { }
+                }
+
+                public abstract class Module
+                {
+                    protected Module(IBiDiDriver driver) { }
+                    public abstract string ModuleName { get; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.StartAsync("ws://localhost:9222").Wait();
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiDriver driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiDriver { }
+
+                public class BiDiDriver : IBiDiDriver
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public void RegisterModule(Module module) { }
+                }
+
+                public abstract class Module
+                {
+                    protected Module(IBiDiDriver driver) { }
+                    public abstract string ModuleName { get; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.RegisterModule(new CustomModule(driver));
+                        driver.StartAsync("ws://localhost:9222").Wait();
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiDriver driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("new CustomModule(driver)");
+
+        LfCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

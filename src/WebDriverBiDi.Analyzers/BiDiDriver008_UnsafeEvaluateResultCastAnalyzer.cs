@@ -102,11 +102,16 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
 
     private static bool IsEvaluateResultBaseType(ITypeSymbol? type)
     {
-        return type!.Name == "EvaluateResult" && type.ContainingNamespace!.ToString() == "WebDriverBiDi.Script";
+        // The operand of a cast or 'as' can have no type (for example a null literal), so guard
+        // against a null symbol rather than dereferencing it (which would surface as AD0001).
+        return type is not null && type.Name == "EvaluateResult" && type.ContainingNamespace!.ToString() == "WebDriverBiDi.Script";
     }
 
     private static bool IsEvaluateResultDerivedType(ITypeSymbol? type)
     {
+        // Unlike the cast/'as' operand handled by IsEvaluateResultBaseType, the target type passed
+        // here comes from a type-name syntax and always resolves to a (possibly error) symbol, so no
+        // null guard is required.
         if (type!.Name is "EvaluateResultSuccess" or "EvaluateResultException")
         {
             return type.ContainingNamespace!.ToString() == "WebDriverBiDi.Script";

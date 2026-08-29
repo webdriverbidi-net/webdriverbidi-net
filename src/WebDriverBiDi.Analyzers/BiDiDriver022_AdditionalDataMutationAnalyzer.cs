@@ -81,6 +81,13 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        // Require the declaring type to be a WebDriverBiDi type so a user's own type with an
+        // AdditionalData property of the same shape is not matched.
+        if (!AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(property.ContainingType))
+        {
+            return false;
+        }
+
         return property.Type is INamedTypeSymbol returnType && IsDictionaryStringObject(returnType);
     }
 

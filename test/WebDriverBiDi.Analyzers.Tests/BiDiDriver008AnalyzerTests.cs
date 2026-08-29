@@ -1504,4 +1504,35 @@ public class BiDiDriver008AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task DirectCast_FromNullLiteral_DoesNotCrashAnalyzer()
+    {
+        // (EvaluateResultSuccess)null! has a resolvable target type in WebDriverBiDi.Script but a
+        // null operand type; the analyzer must not dereference a null ITypeSymbol (which would throw
+        // and surface as AD0001, disabling the rule for the whole compilation).
+        string test = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        EvaluateResultSuccess success = (EvaluateResultSuccess)null!;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

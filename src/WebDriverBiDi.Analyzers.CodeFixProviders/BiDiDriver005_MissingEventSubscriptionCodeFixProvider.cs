@@ -47,7 +47,19 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
             .OfType<InvocationExpressionSyntax>()
             .First();
 
-        // Get the event name from the diagnostic message
+        // Only offer the fix when the enclosing method already has a Session.SubscribeAsync call to
+        // amend. Creating a brand-new subscription statement is out of scope, and registering an action
+        // that leaves the document unchanged would be misleading. The diagnostic is only reported
+        // inside a block-bodied method (the analyzer requires method.Body), so the enclosing method and
+        // its body are always present here.
+        MethodDeclarationSyntax method = addObserverCall.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
+        SemanticModel semanticModel = (await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false))!;
+        if (FindSubscribeCall(method, semanticModel, context.CancellationToken) is null)
+        {
+            return;
+        }
+
+        // Get the event name from the diagnostic message for the code action title.
         string diagnosticMessage = diagnostic.GetMessage();
         int startIndex = diagnosticMessage.IndexOf('\'') + 1;
         int endIndex = diagnosticMessage.IndexOf('\'', startIndex);
@@ -57,58 +69,59 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: $"Add '{eventName}' to Session.SubscribeAsync",
-                createChangedDocument: c => AddEventToSubscribeAsync(context.Document, root, addObserverCall, eventName, c),
+                createChangedDocument: c => AddEventToSubscribeAsync(context.Document, root, addObserverCall, c),
                 equivalenceKey: nameof(BiDiDriver005_MissingEventSubscriptionCodeFixProvider)),
             diagnostic);
+    }
+
+    private static InvocationExpressionSyntax? FindSubscribeCall(
+        MethodDeclarationSyntax method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (InvocationExpressionSyntax invocation in method.Body!.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.Expression is MemberAccessExpressionSyntax
+                && semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol methodSymbol
+                && methodSymbol.Name == "SubscribeAsync"
+                && methodSymbol.ContainingType.Name == "SessionModule")
+            {
+                return invocation;
+            }
+        }
+
+        return null;
     }
 
     private static async Task<Document> AddEventToSubscribeAsync(
         Document document,
         SyntaxNode root,
         InvocationExpressionSyntax addObserverCall,
-        string eventName,
         CancellationToken cancellationToken)
     {
-        // Find the containing method
         MethodDeclarationSyntax method = addObserverCall.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
-
-        // Get semantic model once
         SemanticModel semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Find existing Session.SubscribeAsync call
-        InvocationExpressionSyntax? subscribeCall = null;
-        foreach (InvocationExpressionSyntax invocation in method.Body!.DescendantNodes().OfType<InvocationExpressionSyntax>())
-        {
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
-            {
-                if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol methodSymbol
-                    && methodSymbol.Name == "SubscribeAsync"
-                    && methodSymbol.ContainingType.Name == "SessionModule")
-                {
-                    subscribeCall = invocation;
-                    break;
-                }
-            }
-        }
+        // RegisterCodeFixesAsync only offers the fix when a SubscribeAsync call is present, so this is
+        // guaranteed to be found.
+        InvocationExpressionSyntax subscribeCall = FindSubscribeCall(method, semanticModel, cancellationToken)!;
 
-        if (subscribeCall != null)
-        {
-            // Add event name to existing SubscribeAsync call
-            SyntaxNode newRoot = root.ReplaceNode(subscribeCall, AddEventNameToSubscribeCall(subscribeCall, eventName, semanticModel));
-            return document.WithSyntaxRoot(newRoot);
-        }
-        else
-        {
-            // Create a new Session.SubscribeAsync call
-            // This is more complex - for now, just return the original document
-            // TODO: Implement creating new SubscribeAsync call
-            return document;
-        }
+        // Reference the event through its ObservableEvent's EventName property rather than inserting a
+        // hardcoded string literal, so the added argument does not itself trigger BIDI015. The receiver
+        // of the AddObserver call is exactly that ObservableEvent (for example driver.Log.OnEntryAdded).
+        ExpressionSyntax observableEvent = ((MemberAccessExpressionSyntax)addObserverCall.Expression).Expression;
+        ExpressionSyntax eventNameExpression = SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            observableEvent.WithoutTrivia(),
+            SyntaxFactory.IdentifierName("EventName"));
+
+        SyntaxNode newRoot = root.ReplaceNode(subscribeCall, AddEventNameToSubscribeCall(subscribeCall, eventNameExpression, semanticModel));
+        return document.WithSyntaxRoot(newRoot);
     }
 
     private static InvocationExpressionSyntax AddEventNameToSubscribeCall(
         InvocationExpressionSyntax subscribeCall,
-        string eventName,
+        ExpressionSyntax eventNameExpression,
         SemanticModel semanticModel)
     {
         if (subscribeCall.ArgumentList.Arguments.Count == 0)
@@ -127,7 +140,7 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
             ArgumentSyntax eventsArg = objectCreation.ArgumentList.Arguments[0];
             ExpressionSyntax eventsExpression = eventsArg.Expression;
 
-            ExpressionSyntax newEventsExpression = AddEventNameToArrayExpression(eventsExpression, eventName, semanticModel);
+            ExpressionSyntax newEventsExpression = AddEventNameToArrayExpression(eventsExpression, eventNameExpression, semanticModel);
 
             if (newEventsExpression != eventsExpression)
             {
@@ -144,12 +157,8 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         return subscribeCall;
     }
 
-    private static ExpressionSyntax AddEventNameToArrayExpression(ExpressionSyntax arrayExpression, string eventName, SemanticModel semanticModel)
+    private static ExpressionSyntax AddEventNameToArrayExpression(ExpressionSyntax arrayExpression, ExpressionSyntax newElement, SemanticModel semanticModel)
     {
-        LiteralExpressionSyntax newElement = SyntaxFactory.LiteralExpression(
-            SyntaxKind.StringLiteralExpression,
-            SyntaxFactory.Literal(eventName));
-
         // Handle: new[] { "event1", "event2" }
         if (arrayExpression is ImplicitArrayCreationExpressionSyntax implicitArray)
         {

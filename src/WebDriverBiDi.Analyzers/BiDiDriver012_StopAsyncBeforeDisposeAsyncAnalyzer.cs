@@ -83,20 +83,13 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax)context.Node;
-
-        if (methodDeclaration.Body == null && methodDeclaration.ExpressionBody == null)
-        {
-            return;
-        }
-
-        // Find all DisposeAsync invocations in the method
-        IEnumerable<InvocationExpressionSyntax> disposeAsyncCalls = GetDisposeAsyncInvocations(methodDeclaration, context.SemanticModel);
+        // Find all DisposeAsync invocations in the method, constructor, or top-level program.
+        IEnumerable<InvocationExpressionSyntax> disposeAsyncCalls = GetDisposeAsyncInvocations(context.Node, context.SemanticModel);
 
         // Computed lazily: only needed once a DisposeAsync call without a preceding StopAsync is found.
         bool? hasCollectBehaviorAssignment = null;
@@ -112,11 +105,11 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             }
 
             // Check if StopAsync was called on the same variable before DisposeAsync
-            bool hasStopAsyncBefore = HasStopAsyncBefore(methodDeclaration, driverVariableName, disposeAsyncCall);
+            bool hasStopAsyncBefore = HasStopAsyncBefore(context.Node, driverVariableName, disposeAsyncCall);
 
             if (!hasStopAsyncBefore)
             {
-                hasCollectBehaviorAssignment ??= HasCollectBehaviorAssignment(methodDeclaration, context.SemanticModel);
+                hasCollectBehaviorAssignment ??= HasCollectBehaviorAssignment(context.Node, context.SemanticModel);
                 Diagnostic diagnostic = hasCollectBehaviorAssignment.Value
                     ? Diagnostic.Create(CollectModeRule, disposeAsyncCall.GetLocation(), DiagnosticSeverity.Warning, additionalLocations: null, properties: null, driverVariableName)
                     : Diagnostic.Create(Rule, disposeAsyncCall.GetLocation(), driverVariableName);
@@ -127,11 +120,11 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         // The `await using` forms dispose the driver implicitly at the end of the enclosing
         // scope, so there is no DisposeAsync() invocation to find. A StopAsync() anywhere later
         // in that scope runs before the implicit disposal and counts as "before".
-        foreach ((Location location, string driverVariableName, IEnumerable<StatementSyntax> scope) in GetAwaitUsingDrivers(methodDeclaration, context.SemanticModel))
+        foreach ((Location location, string driverVariableName, IEnumerable<StatementSyntax> scope) in GetAwaitUsingDrivers(context.Node, context.SemanticModel))
         {
             if (!ContainsStopAsync(scope, driverVariableName))
             {
-                hasCollectBehaviorAssignment ??= HasCollectBehaviorAssignment(methodDeclaration, context.SemanticModel);
+                hasCollectBehaviorAssignment ??= HasCollectBehaviorAssignment(context.Node, context.SemanticModel);
                 ImmutableDictionary<string, string?> properties = ImmutableDictionary<string, string?>.Empty.Add(FormPropertyName, AwaitUsingFormValue);
                 Diagnostic diagnostic = hasCollectBehaviorAssignment.Value
                     ? Diagnostic.Create(CollectModeRule, location, DiagnosticSeverity.Warning, additionalLocations: null, properties: properties, driverVariableName)
@@ -151,10 +144,10 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     /// <param name="semanticModel">The semantic model for the method.</param>
     /// <returns>The location to report, the driver variable name, and the statements in scope for each driver.</returns>
     private static IEnumerable<(Location Location, string DriverVariableName, IEnumerable<StatementSyntax> Scope)> GetAwaitUsingDrivers(
-        MethodDeclarationSyntax method,
+        SyntaxNode node,
         SemanticModel semanticModel)
     {
-        foreach (LocalDeclarationStatementSyntax declaration in method.DescendantNodes().OfType<LocalDeclarationStatementSyntax>())
+        foreach (LocalDeclarationStatementSyntax declaration in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<LocalDeclarationStatementSyntax>())
         {
             // A using declaration is only permitted directly inside a block (CS8647 otherwise), and
             // the implicit disposal happens at the end of that block, so every statement after the
@@ -178,7 +171,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             }
         }
 
-        foreach (UsingStatementSyntax usingStatement in method.DescendantNodes().OfType<UsingStatementSyntax>())
+        foreach (UsingStatementSyntax usingStatement in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<UsingStatementSyntax>())
         {
             if (usingStatement.AwaitKeyword.IsKind(SyntaxKind.None))
             {
@@ -221,9 +214,9 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     /// <param name="method">The method being analyzed.</param>
     /// <param name="semanticModel">The semantic model for the method.</param>
     /// <returns><see langword="true"/> if a <c>Collect</c> assignment is present; otherwise <see langword="false"/>.</returns>
-    private static bool HasCollectBehaviorAssignment(MethodDeclarationSyntax method, SemanticModel semanticModel)
+    private static bool HasCollectBehaviorAssignment(SyntaxNode node, SemanticModel semanticModel)
     {
-        foreach (AssignmentExpressionSyntax assignment in method.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        foreach (AssignmentExpressionSyntax assignment in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<AssignmentExpressionSyntax>())
         {
             if (!IsErrorBehaviorProperty(assignment.Left))
             {
@@ -255,10 +248,10 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     }
 
     private static IEnumerable<InvocationExpressionSyntax> GetDisposeAsyncInvocations(
-        MethodDeclarationSyntax method,
+        SyntaxNode node,
         SemanticModel semanticModel)
     {
-        IEnumerable<InvocationExpressionSyntax>? invocations = method.DescendantNodes()
+        IEnumerable<InvocationExpressionSyntax>? invocations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(node)
             .OfType<InvocationExpressionSyntax>()
             .Where(invocation =>
             {
@@ -289,7 +282,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     }
 
     private static bool HasStopAsyncBefore(
-        MethodDeclarationSyntax method,
+        SyntaxNode node,
         string variableName,
         InvocationExpressionSyntax disposeAsyncCall)
     {
@@ -300,8 +293,8 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             return true;
         }
 
-        // Fall back to checking at the method level
-        IEnumerable<StatementSyntax>? statements = GetStatements(method);
+        // Fall back to checking at the member level (method, constructor, or top-level program).
+        IEnumerable<StatementSyntax>? statements = AnalyzerSymbolHelpers.GetTopLevelStatements(node);
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
     }
 
@@ -310,7 +303,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         SyntaxNode? current = node.Parent;
         while (true)
         {
-            if (current is BlockSyntax or MethodDeclarationSyntax)
+            if (current is BlockSyntax or MethodDeclarationSyntax or ConstructorDeclarationSyntax or CompilationUnitSyntax)
             {
                 return current!;
             }
@@ -323,7 +316,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     {
         IEnumerable<StatementSyntax> statements = block is BlockSyntax blockSyntax
             ? blockSyntax.Statements
-            : GetStatements((MethodDeclarationSyntax)block);
+            : AnalyzerSymbolHelpers.GetTopLevelStatements(block);
 
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
     }
@@ -351,8 +344,4 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                     && id.Identifier.Text == variableName));
     }
 
-    private static IEnumerable<StatementSyntax> GetStatements(MethodDeclarationSyntax method)
-    {
-        return method.Body?.Statements ?? Enumerable.Empty<StatementSyntax>();
-    }
 }

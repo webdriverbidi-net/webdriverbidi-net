@@ -6,114 +6,65 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
-/// Tests for the BiDiDriver004 code fix provider.
+/// Tests for the BiDiDriver004 code fix provider. These compile against the real
+/// <c>WebDriverBiDi.dll</c> so the fixed code is verified against the actual method signatures,
+/// which place an optional <see cref="System.TimeSpan"/> parameter before the trailing
+/// <see cref="System.Threading.CancellationToken"/>. A positionally appended token would bind to
+/// that parameter and fail to compile (CS1503); the fix must therefore use a named argument.
 /// </summary>
 public class BiDiDriver004CodeFixProviderTests
 {
     /// <summary>
-    /// Tests that the code fix adds CancellationToken.None.
+    /// Tests that the code fix adds CancellationToken.None as a named argument.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task LocateNodesAsync_CodeFixAddsCancellationTokenNone()
+    public async Task GetTreeAsync_CodeFixAddsCancellationTokenNone()
     {
         string testCode = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class LocateNodesCommandParameters
-                {
-                    public LocateNodesCommandParameters(string contextId, string url) { }
-                }
-
-                public class LocateNodesCommandResult { }
-
-                public class BrowsingContextModule
-                {
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver, string contextId)
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
-                        await {|#0:driver.BrowsingContext.LocateNodesAsync(locateParams)|};
+                        await {|#0:driver.BrowsingContext.GetTreeAsync()|};
                     }
                 }
             }
             """;
 
         string fixedCode = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class LocateNodesCommandParameters
-                {
-                    public LocateNodesCommandParameters(string contextId, string url) { }
-                }
-
-                public class LocateNodesCommandResult { }
-
-                public class BrowsingContextModule
-                {
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver, string contextId)
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
-                        await driver.BrowsingContext.LocateNodesAsync(locateParams, CancellationToken.None);
+                        await driver.BrowsingContext.GetTreeAsync(cancellationToken: CancellationToken.None);
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, DiagnosticSeverity.Info)
             .WithLocation(0)
-            .WithArguments("LocateNodesAsync");
+            .WithArguments("GetTreeAsync");
 
         LfCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
         {
@@ -121,111 +72,58 @@ public class BiDiDriver004CodeFixProviderTests
             FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
-    /// Tests that the code fix adds cancellationToken parameter.
+    /// Tests that the code fix adds a cancellationToken named argument referencing an in-scope token.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task LocateNodesAsync_CodeFixAddsCancellationTokenParameter()
+    public async Task GetTreeAsync_CodeFixAddsCancellationTokenParameter()
     {
         string testCode = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class LocateNodesCommandParameters
-                {
-                    public LocateNodesCommandParameters(string contextId, string url) { }
-                }
-
-                public class LocateNodesCommandResult { }
-
-                public class BrowsingContextModule
-                {
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver, string contextId, CancellationToken cancellationToken)
+                    public async Task TestMethod(BiDiDriver driver, CancellationToken cancellationToken)
                     {
-                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
-                        await {|#0:driver.BrowsingContext.LocateNodesAsync(locateParams)|};
+                        await {|#0:driver.BrowsingContext.GetTreeAsync()|};
                     }
                 }
             }
             """;
 
         string fixedCode = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class LocateNodesCommandParameters
-                {
-                    public LocateNodesCommandParameters(string contextId, string url) { }
-                }
-
-                public class LocateNodesCommandResult { }
-
-                public class BrowsingContextModule
-                {
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters) => Task.FromResult(new LocateNodesCommandResult());
-                    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new LocateNodesCommandResult());
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver, string contextId, CancellationToken cancellationToken)
+                    public async Task TestMethod(BiDiDriver driver, CancellationToken cancellationToken)
                     {
-                        var locateParams = new LocateNodesCommandParameters(contextId, "https://example.com");
-                        await driver.BrowsingContext.LocateNodesAsync(locateParams, cancellationToken);
+                        await driver.BrowsingContext.GetTreeAsync(cancellationToken: cancellationToken);
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, DiagnosticSeverity.Info)
             .WithLocation(0)
-            .WithArguments("LocateNodesAsync");
+            .WithArguments("GetTreeAsync");
 
         LfCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
         {
@@ -234,6 +132,7 @@ public class BiDiDriver004CodeFixProviderTests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
             CodeActionEquivalenceKey = "AddCancellationTokenParameter",
         };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

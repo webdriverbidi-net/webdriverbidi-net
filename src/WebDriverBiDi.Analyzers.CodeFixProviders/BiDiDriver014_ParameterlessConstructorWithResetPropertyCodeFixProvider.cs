@@ -68,10 +68,19 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Create the replacement: DeclaringTypeName.ResetPropertyName
+        // Create the replacement: DeclaringTypeName.ResetPropertyName. When the reset property is
+        // declared on the constructed type itself, reuse that type's original syntax (for example a
+        // fully-qualified or aliased name) as written at the construction site, so the replacement
+        // resolves in the same way the `new` expression did. When the reset property is inherited from
+        // a base type, fall back to the base type's simple name (which is in scope whenever the derived
+        // type is, as they share a namespace).
+        ExpressionSyntax resetPropertyReceiver = typeName == declaringTypeName
+            ? SyntaxFactory.ParseExpression(objectCreation.Type.ToString())
+            : SyntaxFactory.IdentifierName(declaringTypeName);
+
         MemberAccessExpressionSyntax resetPropertyAccess = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
-            SyntaxFactory.IdentifierName(declaringTypeName),
+            resetPropertyReceiver,
             SyntaxFactory.IdentifierName(resetPropertyName));
 
         // Preserve the trivia from the original expression

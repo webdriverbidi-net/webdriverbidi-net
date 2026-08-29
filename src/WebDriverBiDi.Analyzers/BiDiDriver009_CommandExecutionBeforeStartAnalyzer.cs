@@ -50,19 +50,18 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax)context.Node;
         SemanticModel semanticModel = context.SemanticModel;
 
         // Track BiDiDriver variables and whether StartAsync has been called
         Dictionary<string, bool> driverStartedStatus = [];
 
         // Walk through all statements in the method
-        IEnumerable<StatementSyntax>? statements = methodDeclaration.Body?.Statements ?? Enumerable.Empty<StatementSyntax>();
+        IEnumerable<StatementSyntax> statements = AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node);
 
         foreach (StatementSyntax statement in statements)
         {
@@ -103,8 +102,18 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus)
     {
-        // Find all invocations in this statement
-        IEnumerable<InvocationExpressionSyntax>? invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        // Find all invocations in this statement, but do not descend into the bodies of nested
+        // functions (lambdas, anonymous methods, local functions). Code in those bodies runs when the
+        // delegate is invoked or the local function is called — for example when an event handler
+        // fires after the connection is started — not at the textual position where it is declared, so
+        // it must not be judged against the driver's started state at this point in the method.
+        IEnumerable<InvocationExpressionSyntax>? invocations = statement
+            .DescendantNodes(descendIntoChildren: node => node is not (
+                SimpleLambdaExpressionSyntax or
+                ParenthesizedLambdaExpressionSyntax or
+                AnonymousMethodExpressionSyntax or
+                LocalFunctionStatementSyntax))
+            .OfType<InvocationExpressionSyntax>();
 
         foreach (InvocationExpressionSyntax invocation in invocations)
         {
@@ -209,7 +218,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // Module command methods typically:
         // 1. Return Task<T> where T is a CommandResult
         // 2. Are named with "Async" suffix
-        if (!method.Name.EndsWith("Async"))
+        if (!method.Name.EndsWith("Async", System.StringComparison.Ordinal))
         {
             return false;
         }

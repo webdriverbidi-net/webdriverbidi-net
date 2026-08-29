@@ -49,15 +49,14 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax method = (MethodDeclarationSyntax)context.Node;
         ImmutableDictionary<string, DriverVariableState> driverVariables = ImmutableDictionary<string, DriverVariableState>.Empty;
 
-        foreach (StatementSyntax statement in method.Body?.Statements ?? [])
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             driverVariables = AnalyzeStatement(context, statement, driverVariables);
         }

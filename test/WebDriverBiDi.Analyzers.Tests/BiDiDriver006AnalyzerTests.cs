@@ -1416,5 +1416,228 @@ public class BiDiDriver006AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-}
 
+    [Fact]
+    public async Task EventObserver_ReleasedViaRemoveObserver_NoDiagnostic()
+    {
+        // Releasing the observer through ObservableEvent.RemoveObserver(observer.Id) unregisters it, so it is not leaked.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public string Id { get; } = "id";
+                    public void Unobserve() { }
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public void RemoveObserver(string observerId) { }
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        driver.Log.OnEntryAdded.RemoveObserver(observer.Id);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task EventObserver_Returned_NoDiagnostic()
+    {
+        // Returning the observer transfers ownership to the caller, which is responsible for disposing it.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public string Id { get; } = "id";
+                    public void Unobserve() { }
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public void RemoveObserver(string observerId) { }
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public EventObserver<LogEntryAddedEventArgs> TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return observer;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task EventObserver_StoredInField_NoDiagnostic()
+    {
+        // Storing the observer in a field transfers ownership to the field's owner, which disposes it later.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public string Id { get; } = "id";
+                    public void Unobserve() { }
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public void RemoveObserver(string observerId) { }
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private EventObserver<LogEntryAddedEventArgs> observerField;
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        this.observerField = observer;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AddObserver_WithNonNamedReturnType_NoDiagnostic()
+    {
+        // A method named AddObserver whose return type is not a named type (here an array) must not
+        // crash the analyzer (an unchecked cast to INamedTypeSymbol would surface as AD0001); it is
+        // simply not the library's EventObserver-returning AddObserver, so nothing is reported.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class Widget
+                {
+                    public int[] AddObserver(Func<int, Task> handler) => new int[0];
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(Widget widget)
+                    {
+                        var result = widget.AddObserver(async x => { await Task.CompletedTask; });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+}

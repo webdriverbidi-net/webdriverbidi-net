@@ -57,7 +57,19 @@ internal static class CodeFixHelpers
         IMethodSymbol addObserverMethod = (IMethodSymbol)semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol!;
         bool boundToAction = addObserverMethod.Parameters[0].Type.Name == "Action";
         bool convertToAsync = !boundToAction && !lambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword);
-        bool optionPresent = invocation.ArgumentList.Arguments.Any(argument => argument.Expression.ToString().Contains(RunHandlerAsynchronouslyName));
+        bool optionPresent = invocation.ArgumentList.Arguments.Any(argument =>
+        {
+            // Resolve the option semantically rather than by source text, which fails when the option
+            // is passed through a variable. RunHandlerAsynchronously has the underlying value 1; a
+            // non-constant argument cannot be resolved, so treat it as present.
+            if (semanticModel.GetTypeInfo(argument.Expression, context.CancellationToken).Type?.Name != OptionsTypeName)
+            {
+                return false;
+            }
+
+            Optional<object?> constantValue = semanticModel.GetConstantValue(argument.Expression, context.CancellationToken);
+            return !constantValue.HasValue || constantValue.Value is int and 1;
+        });
         string title = convertToAsync
             ? (optionPresent ? "Make handler async" : "Make handler async and add RunHandlerAsynchronously option")
             : "Add RunHandlerAsynchronously option";

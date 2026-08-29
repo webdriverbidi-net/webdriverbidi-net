@@ -92,7 +92,7 @@ public class BiDiDriver002CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver002_EventRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("RegisterEvent");
+            .WithArguments("test.event");
 
         LfCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider> testState = new()
         {
@@ -193,7 +193,7 @@ public class BiDiDriver002CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver002_EventRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("RegisterEvent");
+            .WithArguments("test.event");
 
         LfCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider> testState = new()
         {

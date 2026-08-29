@@ -52,24 +52,18 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        if (methodDeclaration.Body == null)
-        {
-            return;
-        }
-
         SemanticModel semanticModel = context.SemanticModel;
 
         // Track whether StartCapturingTasks has been seen for each local EventObserver<T> variable.
         // Only locally-declared variables are tracked; parameter-passed observers are not.
         Dictionary<string, bool> capturingState = [];
 
-        foreach (StatementSyntax statement in methodDeclaration.Body.Statements)
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             // Register newly declared EventObserver<T> local variables.
             if (statement is LocalDeclarationStatementSyntax localDecl)

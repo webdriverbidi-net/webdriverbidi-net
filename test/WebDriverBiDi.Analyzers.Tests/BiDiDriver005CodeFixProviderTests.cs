@@ -162,7 +162,7 @@ public class BiDiDriver005CodeFixProviderTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "network.beforeRequestSent", "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "network.beforeRequestSent", driver.Log.OnEntryAdded.EventName }));
                     }
                 }
             }
@@ -328,7 +328,7 @@ public class BiDiDriver005CodeFixProviderTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new string[] { "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new string[] { driver.Log.OnEntryAdded.EventName }));
                     }
                 }
             }
@@ -578,7 +578,7 @@ public class BiDiDriver005CodeFixProviderTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(["network.beforeRequestSent", "log.entryAdded"]));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(["network.beforeRequestSent", driver.Log.OnEntryAdded.EventName]));
                     }
                 }
             }
@@ -774,12 +774,13 @@ public class BiDiDriver005CodeFixProviderTests
     }
 
     /// <summary>
-    /// Tests that when no SubscribeAsync call exists in the method, the code fix is a
-    /// no-op (returns document unchanged) — exercises the TODO path (line 118).
+    /// Tests that when no SubscribeAsync call exists in the method, the code fix registers no action
+    /// at all rather than an action that leaves the document unchanged. Amending a subscription
+    /// requires an existing call to amend; creating one is out of scope.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_NoSubscribeAsyncInMethod_IsNoOp()
+    public async Task CodeFix_NoSubscribeAsyncInMethod_OffersNoFix()
     {
         string testCode = """
             using System;
@@ -829,29 +830,15 @@ public class BiDiDriver005CodeFixProviderTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         using EventObserver<LogEntryAddedEventArgs> observer =
-                            {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
-                        // No SubscribeAsync call here — code fix returns document unchanged.
+                            driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        // No SubscribeAsync call here — the code fix offers no action.
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("log.entryAdded");
-
-        LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
-        {
-            TestCode = testCode,
-            FixedCode = testCode,
-            NumberOfIncrementalIterations = 1,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
-        };
-        testState.ExpectedDiagnostics.Add(expected);
-
-        await testState.RunAsync(TestContext.Current.CancellationToken);
+        (IReadOnlyList<CodeAction> actions, _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(testCode);
+        Assert.Empty(actions);
     }
 
     /// <summary>
@@ -1405,7 +1392,7 @@ public class BiDiDriver005CodeFixProviderTests
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
                         driver.Network.OnBeforeRequestSent.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(["log.entryAdded", "network.beforeRequestSent"]));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(["log.entryAdded", driver.Network.OnBeforeRequestSent.EventName]));
                     }
                 }
             }
@@ -1594,7 +1581,7 @@ public class BiDiDriver005CodeFixProviderTests
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
                         driver.Network.OnBeforeRequestSent.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.Log.OnEntryAdded.EventName, "network.beforeRequestSent"]));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.Log.OnEntryAdded.EventName, driver.Network.OnBeforeRequestSent.EventName]));
                     }
                 }
             }

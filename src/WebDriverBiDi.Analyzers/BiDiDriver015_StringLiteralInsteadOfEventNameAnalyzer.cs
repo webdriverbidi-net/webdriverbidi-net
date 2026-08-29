@@ -49,27 +49,20 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax method = (MethodDeclarationSyntax)context.Node;
-
-        if (method.Body == null)
-        {
-            return;
-        }
-
         // Find the driver variable (if any)
-        (string Name, ITypeSymbol Type)? driverVariable = FindDriverVariable(context, method);
+        (string Name, ITypeSymbol Type)? driverVariable = FindDriverVariable(context, context.Node);
         if (driverVariable == null)
         {
             return;
         }
 
         // Find all Session.SubscribeAsync calls
-        foreach (StatementSyntax statement in method.Body.Statements)
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             System.Collections.Generic.IEnumerable<InvocationExpressionSyntax> invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
 
@@ -243,10 +236,10 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         return null;
     }
 
-    private static (string Name, ITypeSymbol Type)? FindDriverVariable(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method)
+    private static (string Name, ITypeSymbol Type)? FindDriverVariable(SyntaxNodeAnalysisContext context, SyntaxNode node)
     {
         // Look for BiDiDriver variable declarations
-        foreach (StatementSyntax statement in method.Body!.Statements)
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(node))
         {
             if (statement is LocalDeclarationStatementSyntax localDecl)
             {
@@ -269,7 +262,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private static bool IsModuleType(ITypeSymbol type)
     {
-        return type.Name.EndsWith("Module");
+        return AnalyzerSymbolHelpers.IsLibraryModuleType(type);
     }
 
     private static bool IsSessionModule(ITypeSymbol type)

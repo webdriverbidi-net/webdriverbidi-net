@@ -50,22 +50,15 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodDeclaration, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax methodDeclaration = (MethodDeclarationSyntax)context.Node;
-
-        if (methodDeclaration.Body == null && methodDeclaration.ExpressionBody == null)
-        {
-            return;
-        }
-
         // Find all local variable declarations that store AddObserver() results
         Dictionary<string, LocalDeclarationStatementSyntax> observerVariables = [];
 
-        IEnumerable<LocalDeclarationStatementSyntax> localDeclarations = methodDeclaration.DescendantNodes()
+        IEnumerable<LocalDeclarationStatementSyntax> localDeclarations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node)
             .OfType<LocalDeclarationStatementSyntax>();
 
         foreach (LocalDeclarationStatementSyntax localDeclaration in localDeclarations)
@@ -99,8 +92,8 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Check if Unobserve() or Dispose() is called on this variable
-            if (HasDisposalCall(context, methodDeclaration, variableName))
+            // Skip when the observer is disposed, released by id, returned, or stored elsewhere.
+            if (IsObserverHandled(context.Node, variableName))
             {
                 continue;
             }
@@ -131,7 +124,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        return ((INamedTypeSymbol)methodSymbol.ReturnType).Name == "EventObserver";
+        return methodSymbol.ReturnType is INamedTypeSymbol { Name: "EventObserver" };
     }
 
     private static bool IsInUsingStatement(LocalDeclarationStatementSyntax declaration)
@@ -145,10 +138,20 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool HasDisposalCall(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodDeclaration, string variableName)
+    private static bool IsObserverHandled(SyntaxNode node, string variableName)
+    {
+        // The observer is not leaked when it is disposed directly, released through
+        // ObservableEvent.RemoveObserver(observer.Id), returned to the caller, or stored elsewhere
+        // (for example assigned to a field) so another owner disposes it later.
+        return HasDisposalCall(node, variableName)
+            || IsReleasedViaRemoveObserver(node, variableName)
+            || IsReturnedOrStored(node, variableName);
+    }
+
+    private static bool HasDisposalCall(SyntaxNode node, string variableName)
     {
         // Look for method invocations on the variable
-        IEnumerable<InvocationExpressionSyntax> invocations = methodDeclaration.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        IEnumerable<InvocationExpressionSyntax> invocations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>();
 
         foreach (InvocationExpressionSyntax invocation in invocations)
         {
@@ -169,6 +172,56 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
                         return true;
                     }
                 }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsReleasedViaRemoveObserver(SyntaxNode node, string variableName)
+    {
+        // Look for a RemoveObserver call whose argument is the observer's Id (for example
+        // driver.Log.OnEntryAdded.RemoveObserver(observer.Id)).
+        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
+                memberAccess.Name.Identifier.Text != "RemoveObserver")
+            {
+                continue;
+            }
+
+            foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
+            {
+                if (argument.Expression is MemberAccessExpressionSyntax argumentAccess &&
+                    argumentAccess.Name.Identifier.Text == "Id" &&
+                    argumentAccess.Expression is IdentifierNameSyntax argumentIdentifier &&
+                    argumentIdentifier.Identifier.Text == variableName)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsReturnedOrStored(SyntaxNode node, string variableName)
+    {
+        // Returned to the caller: return observer;
+        foreach (ReturnStatementSyntax returnStatement in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<ReturnStatementSyntax>())
+        {
+            if (returnStatement.Expression is IdentifierNameSyntax returned && returned.Identifier.Text == variableName)
+            {
+                return true;
+            }
+        }
+
+        // Assigned to another target (for example a field): this.observer = observer;
+        foreach (AssignmentExpressionSyntax assignment in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<AssignmentExpressionSyntax>())
+        {
+            if (assignment.Right is IdentifierNameSyntax assigned && assigned.Identifier.Text == variableName)
+            {
+                return true;
             }
         }
 

@@ -64,13 +64,16 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         // Find the method containing this statement
         MethodDeclarationSyntax method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
 
-        // Find the StartAsync call on the same driver variable as the command.
+        // Find the StartAsync statement on the same driver variable as the command. This resolves to
+        // the statement that directly contains the StartAsync call, which may be nested inside a block
+        // (for example a try block) rather than a top-level statement of the method body.
         string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
-        StatementSyntax startAsyncStatement = method.Body!.Statements
-            .First(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                    && ma.Name.Identifier.Text == "StartAsync"
-                    && GetRootIdentifierName(ma) == driverVariableName));
+        StatementSyntax startAsyncStatement = method.Body!.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .First(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                && ma.Name.Identifier.Text == "StartAsync"
+                && GetRootIdentifierName(ma) == driverVariableName)
+            .FirstAncestorOrSelf<StatementSyntax>()!;
 
         // Track both statements through the transformation
         SyntaxNode trackedMethod = method.TrackNodes(commandStatement, startAsyncStatement);
@@ -82,10 +85,18 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         // Get the current tracked StartAsync statement
         StatementSyntax updatedStartAsyncStatement = methodWithoutCommand.GetCurrentNode(startAsyncStatement)!;
 
-        BlockSyntax block = ((MethodDeclarationSyntax)methodWithoutCommand).Body!;
+        // Insert the command into StartAsync's own enclosing block so that, when StartAsync is nested
+        // (for example inside a try block), the command lands immediately after it rather than after
+        // the whole nested statement.
+        BlockSyntax block = (BlockSyntax)updatedStartAsyncStatement.Parent!;
         int startAsyncIndex = block.Statements.IndexOf(updatedStartAsyncStatement);
 
-        StatementSyntax commandStatementCopy = trackedCommandStatement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
+        // Indent the moved command to match the StartAsync statement it now follows, which matters
+        // when StartAsync is nested more deeply than the command's original position (for example
+        // inside a try block).
+        StatementSyntax commandStatementCopy = trackedCommandStatement
+            .WithLeadingTrivia(updatedStartAsyncStatement.GetLeadingTrivia())
+            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
         SyntaxNode newMethod;
 
         if (startAsyncIndex < block.Statements.Count - 1)

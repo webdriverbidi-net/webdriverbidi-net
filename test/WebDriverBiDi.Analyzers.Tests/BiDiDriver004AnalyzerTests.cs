@@ -763,4 +763,41 @@ public class BiDiDriver004AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task UserTypeNamedModule_OutsideWebDriverBiDiNamespace_NoDiagnostic()
+    {
+        // A user's own type whose name merely ends in "Module" is not a library module: it neither
+        // derives from the Module base class nor lives in the WebDriverBiDi namespace. The analyzer
+        // must not treat it as a module and suggest a CancellationToken.
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace UserApp
+            {
+                public class MyHelperModule
+                {
+                    public Task EvaluateAsync(string script) => Task.CompletedTask;
+                    public Task EvaluateAsync(string script, CancellationToken cancellationToken) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(MyHelperModule helper)
+                    {
+                        await helper.EvaluateAsync("document.title");
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -49,22 +49,15 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, SyntaxKind.MethodDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethodBody, AnalyzerSymbolHelpers.ExecutableBodyKinds);
     }
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        MethodDeclarationSyntax method = (MethodDeclarationSyntax)context.Node;
-
-        if (method.Body == null)
-        {
-            return;
-        }
-
         // Find all AddObserver calls on module events
         System.Collections.Generic.List<(InvocationExpressionSyntax Invocation, string EventName)> addObserverCalls = [];
 
-        foreach (StatementSyntax statement in method.Body.Statements)
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             System.Collections.Generic.IEnumerable<InvocationExpressionSyntax> invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
 
@@ -95,17 +88,30 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         }
 
         // Get all subscribed event names from Session.SubscribeAsync calls
-        System.Collections.Generic.HashSet<string> subscribedEvents = GetSubscribedEventNames(context, method);
+        System.Collections.Generic.HashSet<string> subscribedEvents = GetSubscribedEventNames(context, context.Node);
 
         // Report diagnostics for AddObserver calls without matching Subscribe
         foreach ((InvocationExpressionSyntax invocation, string eventName) in addObserverCalls)
         {
-            if (!subscribedEvents.Contains(eventName))
+            if (!IsEventSubscribed(eventName, subscribedEvents))
             {
                 Diagnostic diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), eventName);
                 context.ReportDiagnostic(diagnostic);
             }
         }
+    }
+
+    private static bool IsEventSubscribed(string eventName, System.Collections.Generic.HashSet<string> subscribedEvents)
+    {
+        if (subscribedEvents.Contains(eventName))
+        {
+            return true;
+        }
+
+        // A subscription to a bare module name (for example "log") subscribes to every event in that
+        // module, so it covers a fully-qualified event such as "log.entryAdded".
+        int dotIndex = eventName.IndexOf('.');
+        return dotIndex > 0 && subscribedEvents.Contains(eventName.Substring(0, dotIndex));
     }
 
     private static bool IsModuleObservableEvent(
@@ -176,11 +182,11 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static System.Collections.Generic.HashSet<string> GetSubscribedEventNames(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method)
+    private static System.Collections.Generic.HashSet<string> GetSubscribedEventNames(SyntaxNodeAnalysisContext context, SyntaxNode node)
     {
         System.Collections.Generic.HashSet<string> subscribedEvents = [];
 
-        foreach (StatementSyntax statement in method.Body!.Statements)
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(node))
         {
             System.Collections.Generic.IEnumerable<InvocationExpressionSyntax> invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
 
@@ -297,7 +303,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
 
     private static bool IsModuleType(ITypeSymbol type)
     {
-        return type.Name.EndsWith("Module");
+        return AnalyzerSymbolHelpers.IsLibraryModuleType(type);
     }
 
     private static bool IsSessionModule(ITypeSymbol type)

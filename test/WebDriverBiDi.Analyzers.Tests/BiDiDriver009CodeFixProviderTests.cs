@@ -196,4 +196,79 @@ public class BiDiDriver009CodeFixProviderTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    [Fact]
+    public async Task CommandBeforeStart_WithStartAsyncInTryBlock_InsertsInsideTryAfterStartAsync()
+    {
+        // When StartAsync is nested inside a try block, the moved command must be placed immediately
+        // after StartAsync within that same block, not after the whole try/finally statement.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await {|#0:driver.BrowsingContext.GetTreeAsync()|};
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        finally
+                        {
+                            await driver.StopAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            await driver.BrowsingContext.GetTreeAsync();
+                        }
+                        finally
+                        {
+                            await driver.StopAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("GetTreeAsync");
+
+        LfCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

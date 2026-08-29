@@ -87,7 +87,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (((INamedTypeSymbol)methodSymbol.ReturnType).Name != "EventObserver")
+        if (methodSymbol.ReturnType is not INamedTypeSymbol { Name: "EventObserver" })
         {
             return;
         }
