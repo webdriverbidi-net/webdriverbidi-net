@@ -38,7 +38,7 @@ public class CookieTests
         Assert.False(cookie.Secure);
         Assert.False(cookie.HttpOnly);
         Assert.Equal(CookieSameSiteValue.Strict, cookie.SameSite);
-        Assert.Equal(100, cookie.Size);
+        Assert.Equal(100ul, cookie.Size);
         Assert.Null(cookie.Expires);
         Assert.Null(cookie.EpochExpires);
         Assert.Empty(cookie.AdditionalData);
@@ -76,7 +76,7 @@ public class CookieTests
         Assert.False(cookie.Secure);
         Assert.False(cookie.HttpOnly);
         Assert.Equal(CookieSameSiteValue.Lax, cookie.SameSite);
-        Assert.Equal(100, cookie.Size);
+        Assert.Equal(100ul, cookie.Size);
         Assert.Null(cookie.Expires);
         Assert.Null(cookie.EpochExpires);
         Assert.Empty(cookie.AdditionalData);
@@ -114,7 +114,7 @@ public class CookieTests
         Assert.False(cookie.Secure);
         Assert.False(cookie.HttpOnly);
         Assert.Equal(CookieSameSiteValue.None, cookie.SameSite);
-        Assert.Equal(100, cookie.Size);
+        Assert.Equal(100ul, cookie.Size);
         Assert.Null(cookie.Expires);
         Assert.Null(cookie.EpochExpires);
         Assert.Empty(cookie.AdditionalData);
@@ -151,7 +151,7 @@ public class CookieTests
         Assert.False(cookie.Secure);
         Assert.False(cookie.HttpOnly);
         Assert.Equal(CookieSameSiteValue.Lax, cookie.SameSite);
-        Assert.Equal(100, cookie.Size);
+        Assert.Equal(100ul, cookie.Size);
         Assert.Null(cookie.Expires);
         Assert.Null(cookie.EpochExpires);
         Assert.Empty(cookie.AdditionalData);
@@ -190,7 +190,7 @@ public class CookieTests
         Assert.False(cookie.Secure);
         Assert.False(cookie.HttpOnly);
         Assert.Equal(CookieSameSiteValue.Lax, cookie.SameSite);
-        Assert.Equal(100, cookie.Size);
+        Assert.Equal(100ul, cookie.Size);
         Assert.Equal(expireTime, cookie.Expires);
         Assert.Equal(milliseconds, cookie.EpochExpires);
         Assert.Empty(cookie.AdditionalData);
@@ -226,7 +226,7 @@ public class CookieTests
         Assert.False(cookie.Secure);
         Assert.False(cookie.HttpOnly);
         Assert.Equal(CookieSameSiteValue.Strict, cookie.SameSite);
-        Assert.Equal(100, cookie.Size);
+        Assert.Equal(100ul, cookie.Size);
         Assert.Null(cookie.Expires);
         Assert.Null(cookie.EpochExpires);
         Assert.Single(cookie.AdditionalData);

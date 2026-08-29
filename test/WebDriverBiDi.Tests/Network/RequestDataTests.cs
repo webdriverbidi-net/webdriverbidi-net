@@ -194,7 +194,7 @@ public class RequestDataTests
         Assert.True(request.Cookies[0].Secure);
         Assert.True(request.Cookies[0].HttpOnly);
         Assert.Equal(CookieSameSiteValue.Lax, request.Cookies[0].SameSite);
-        Assert.Equal(100, request.Cookies[0].Size);
+        Assert.Equal(100ul, request.Cookies[0].Size);
         Assert.Null(request.Cookies[0].Expires);
         Assert.Null(request.Cookies[0].EpochExpires);
         Assert.Equal("document", request.Destination);

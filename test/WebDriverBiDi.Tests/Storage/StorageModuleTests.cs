@@ -60,7 +60,7 @@ public class StorageModuleTests()
         Assert.Equal("cookieValue", result.Cookies[0].Value.Value);
         Assert.Equal("cookieDomain", result.Cookies[0].Domain);
         Assert.Equal("cookiePath", result.Cookies[0].Path);
-        Assert.Equal(123, result.Cookies[0].Size);
+        Assert.Equal(123ul, result.Cookies[0].Size);
         Assert.True(result.Cookies[0].Secure);
         Assert.False(result.Cookies[0].HttpOnly);
         Assert.Equal(CookieSameSiteValue.Lax, result.Cookies[0].SameSite);

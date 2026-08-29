@@ -87,7 +87,7 @@ public record Cookie
     [JsonPropertyName("size")]
     [JsonRequired]
     [JsonInclude]
-    public long Size { get; internal set; } = 0;
+    public ulong Size { get; internal set; } = 0;
 
     /// <summary>
     /// Gets a value indicating whether the cookie is secure, delivered via an

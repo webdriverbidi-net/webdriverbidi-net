@@ -36,7 +36,7 @@ public class WheelInputSource : InputSource
     /// <param name="origin">Optional origin point for the wheel scroll. Defaults to <see langword="null"/>, which implies the origin is the browser view port.</param>
     /// <param name="duration">Optional duration for the wheel scroll. Defaults to <see langword="null"/>, which implies a zero duration.</param>
     /// <returns>The <see cref="InputAction"/> representing the action.</returns>
-    public InputAction CreateScroll(ulong x, ulong y, long deltaX, long deltaY, Origin? origin = null, TimeSpan? duration = null)
+    public InputAction CreateScroll(long x, long y, long deltaX, long deltaY, Origin? origin = null, TimeSpan? duration = null)
     {
         WheelScrollAction action = new()
         {

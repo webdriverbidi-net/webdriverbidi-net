@@ -342,7 +342,7 @@ public class ClientWindowsInfoTests
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidXValueThrows()
+    public void TestDeserializingWithNegativeXValueSucceeds()
     {
         string json = """
                       {
@@ -355,7 +355,9 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+        ClientWindowInfo? info = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
+        Assert.NotNull(info);
+        Assert.Equal(-1, info.X);
     }
 
     [Fact]
@@ -409,7 +411,7 @@ public class ClientWindowsInfoTests
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidYValueThrows()
+    public void TestDeserializingWithNegativeYValueSucceeds()
     {
         string json = """
                       {
@@ -422,7 +424,9 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options));
+        ClientWindowInfo? info = JsonSerializer.Deserialize<ClientWindowInfo>(json, this.options);
+        Assert.NotNull(info);
+        Assert.Equal(-1, info.Y);
     }
 
     [Fact]

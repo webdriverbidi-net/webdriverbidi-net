@@ -515,4 +515,21 @@ public class SetCookieHeaderTests
         Assert.Equal(expireTime, header.Expires);
         Assert.Null(header.MaxAge);
     }
+
+    [Fact]
+    public void TestCanSerializeWithNonPositiveMaxAge()
+    {
+        // maxAge is spec js-int; a non-positive value (used to expire/delete a cookie) must serialize.
+        SetCookieHeader header = new()
+        {
+            Name = "cookieName",
+            Value = BytesValue.FromString("cookieValue"),
+            MaxAge = -1,
+        };
+        string json = JsonSerializer.Serialize(header);
+        JObject serialized = JObject.Parse(json);
+
+        Assert.True(serialized.ContainsKey("maxAge"));
+        Assert.Equal(-1L, serialized["maxAge"]!.Value<long>());
+    }
 }

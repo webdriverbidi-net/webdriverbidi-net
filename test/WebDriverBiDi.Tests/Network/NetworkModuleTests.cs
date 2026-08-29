@@ -469,7 +469,7 @@ public class NetworkModuleTests
             Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
             Assert.False(e.Request.Cookies[0].Secure);
             Assert.True(e.Request.Cookies[0].HttpOnly);
-            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Equal(10ul, e.Request.Cookies[0].Size);
             Assert.Null(e.Request.Cookies[0].Expires);
             Assert.Equal(100u, e.Request.HeadersSize);
             Assert.Equal(300u, e.Request.BodySize);
@@ -547,7 +547,7 @@ public class NetworkModuleTests
             Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
             Assert.False(e.Request.Cookies[0].Secure);
             Assert.True(e.Request.Cookies[0].HttpOnly);
-            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Equal(10ul, e.Request.Cookies[0].Size);
             Assert.Null(e.Request.Cookies[0].Expires);
             Assert.Equal(100u, e.Request.HeadersSize);
             Assert.Equal(300u, e.Request.BodySize);
@@ -615,7 +615,7 @@ public class NetworkModuleTests
             Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
             Assert.False(e.Request.Cookies[0].Secure);
             Assert.True(e.Request.Cookies[0].HttpOnly);
-            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Equal(10ul, e.Request.Cookies[0].Size);
             Assert.Null(e.Request.Cookies[0].Expires);
             Assert.Equal(100u, e.Request.HeadersSize);
             Assert.Equal(300u, e.Request.BodySize);
@@ -680,7 +680,7 @@ public class NetworkModuleTests
             Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
             Assert.False(e.Request.Cookies[0].Secure);
             Assert.True(e.Request.Cookies[0].HttpOnly);
-            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Equal(10ul, e.Request.Cookies[0].Size);
             Assert.Null(e.Request.Cookies[0].Expires);
             Assert.Equal(100u, e.Request.HeadersSize);
             Assert.Equal(300u, e.Request.BodySize);
@@ -758,7 +758,7 @@ public class NetworkModuleTests
             Assert.Equal(CookieSameSiteValue.Strict, e.Request.Cookies[0].SameSite);
             Assert.False(e.Request.Cookies[0].Secure);
             Assert.True(e.Request.Cookies[0].HttpOnly);
-            Assert.Equal(10, e.Request.Cookies[0].Size);
+            Assert.Equal(10ul, e.Request.Cookies[0].Size);
             Assert.Null(e.Request.Cookies[0].Expires);
             Assert.Equal(100u, e.Request.HeadersSize);
             Assert.Equal(300u, e.Request.BodySize);

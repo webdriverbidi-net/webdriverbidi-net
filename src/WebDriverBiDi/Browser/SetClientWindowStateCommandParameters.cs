@@ -48,7 +48,7 @@ public class SetClientWindowStateCommandParameters : CommandParameters<SetClient
     /// </summary>
     [JsonPropertyName("x")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? X { get => this.State == ClientWindowState.Normal ? field : null; set; }
+    public long? X { get => this.State == ClientWindowState.Normal ? field : null; set; }
 
     /// <summary>
     /// Gets or sets the value in CSS pixels of the top edge of the client window.
@@ -57,7 +57,7 @@ public class SetClientWindowStateCommandParameters : CommandParameters<SetClient
     /// </summary>
     [JsonPropertyName("y")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? Y { get => this.State == ClientWindowState.Normal ? field : null; set; }
+    public long? Y { get => this.State == ClientWindowState.Normal ? field : null; set; }
 
     /// <summary>
     /// Gets or sets the value in CSS pixels of the width of the client window.
