@@ -38,6 +38,12 @@ public class SetViewportMetaOverrideCommandParameters : CommandParameters<SetVie
     /// <summary>
     /// Gets or sets a value indicating whether the &lt;meta name=viewport&gt; tag is overridden.
     /// </summary>
+    /// <remarks>
+    /// The protocol only supports enabling the override: the valid values are <see langword="true"/>
+    /// to override the &lt;meta name=viewport&gt; tag, or <see langword="null"/> to clear the override.
+    /// Sending <see langword="false"/> is not defined by the protocol, and the remote end is expected
+    /// to reject it.
+    /// </remarks>
     [JsonPropertyName("viewportMeta")]
     [JsonInclude]
     public bool? IsViewportMetaOverridden { get; set; }

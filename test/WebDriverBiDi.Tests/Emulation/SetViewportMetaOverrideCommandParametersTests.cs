@@ -46,24 +46,6 @@ public class SetViewportMetaOverrideCommandParametersTests
     }
 
     [Fact]
-    public void TestCanSerializeParametersWithOverrideFalse()
-    {
-        SetViewportMetaOverrideCommandParameters properties = new()
-        {
-            IsViewportMetaOverridden = false,
-        };
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.Single(serialized);
-
-        Assert.True(serialized.ContainsKey("viewportMeta"));
-        JToken? viewportMeta = serialized["viewportMeta"];
-        Assert.NotNull(viewportMeta);
-        Assert.Equal(JTokenType.Boolean, viewportMeta.Type);
-        Assert.False(viewportMeta.Value<bool?>());
-    }
-
-    [Fact]
     public void TestCanSerializePropertiesWithContexts()
     {
         SetViewportMetaOverrideCommandParameters properties = new()
