@@ -53,13 +53,6 @@ public class PartialCookie
     public string? Path { get; set; }
 
     /// <summary>
-    /// Gets or sets the byte length of the cookie when serialized in an HTTP cookie header.
-    /// </summary>
-    [JsonPropertyName("size")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? Size { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether the cookie is only available via HTTP headers.
     /// </summary>
     [JsonPropertyName("httpOnly")]

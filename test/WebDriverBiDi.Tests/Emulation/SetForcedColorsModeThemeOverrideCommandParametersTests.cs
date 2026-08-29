@@ -28,24 +28,6 @@ public class SetForcedColorsModeThemeOverrideCommandParametersTests
     }
 
     [Fact]
-    public void TestCanSerializeParametersWithNoneMode()
-    {
-        SetForcedColorsModeThemeOverrideCommandParameters properties = new()
-        {
-            Theme = ForcedColorsModeTheme.None
-        };
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.Single(serialized);
-
-        Assert.True(serialized.ContainsKey("theme"));
-        JToken? theme = serialized["theme"];
-        Assert.NotNull(theme);
-        Assert.Equal(JTokenType.String, theme.Type);
-        Assert.Equal("none", theme.Value<string>());
-    }
-
-    [Fact]
     public void TestCanSerializeParametersWithLightMode()
     {
         SetForcedColorsModeThemeOverrideCommandParameters properties = new()

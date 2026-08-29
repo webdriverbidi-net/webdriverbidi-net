@@ -100,57 +100,6 @@ public class PartialCookieTests
     }
 
     [Fact]
-    public void TestCanSerializePartialCookieWithSize()
-    {
-        PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
-        {
-            Size = 123
-        };
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-
-        Assert.Equal(4, serialized.Count);
-
-        Assert.True(serialized.ContainsKey("name"));
-        JToken? name = serialized["name"];
-        Assert.NotNull(name);
-        Assert.Equal(JTokenType.String, name.Type);
-        Assert.Equal("myCookieName", name.Value<string>());
-
-        Assert.True(serialized.ContainsKey("value"));
-        JToken? value = serialized["value"];
-        Assert.NotNull(value);
-        Assert.Equal(JTokenType.Object, value.Type);
-        JObject? partialCookieValueObject = value.Value<JObject>();
-        Assert.NotNull(partialCookieValueObject);
-        Assert.Equal(2, partialCookieValueObject.Count);
-
-        Assert.True(partialCookieValueObject.ContainsKey("type"));
-        JToken? valueType = partialCookieValueObject["type"];
-        Assert.NotNull(valueType);
-        Assert.Equal(JTokenType.String, valueType.Type);
-        Assert.Equal("string", valueType.Value<string>());
-
-        Assert.True(partialCookieValueObject.ContainsKey("value"));
-        JToken? valueValue = partialCookieValueObject["value"];
-        Assert.NotNull(valueValue);
-        Assert.Equal(JTokenType.String, valueValue.Type);
-        Assert.Equal("myCookieValue", valueValue.Value<string>());
-
-        Assert.True(serialized.ContainsKey("domain"));
-        JToken? domain = serialized["domain"];
-        Assert.NotNull(domain);
-        Assert.Equal(JTokenType.String, domain.Type);
-        Assert.Equal("myCookieDomain", domain.Value<string>());
-
-        Assert.True(serialized.ContainsKey("size"));
-        JToken? size = serialized["size"];
-        Assert.NotNull(size);
-        Assert.Equal(JTokenType.Integer, size.Type);
-        Assert.Equal(123UL, size.Value<ulong>());
-    }
-
-    [Fact]
     public void TestCanSerializePartialCookieWithHttpOnlyTrue()
     {
         PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
