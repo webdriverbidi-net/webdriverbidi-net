@@ -30,13 +30,13 @@ public class WheelScrollAction : IWheelSourceAction
     /// Gets or sets the horizontal position of the action.
     /// </summary>
     [JsonPropertyName("x")]
-    public ulong X { get; set; } = 0;
+    public long X { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the vertical position of the action.
     /// </summary>
     [JsonPropertyName("y")]
-    public ulong Y { get; set; } = 0;
+    public long Y { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the horizontal change for the action.

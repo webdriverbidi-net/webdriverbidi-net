@@ -100,7 +100,7 @@ public record RequestData
     [JsonPropertyName("headersSize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? HeadersSize { get; internal set; }
+    public ulong HeadersSize { get; internal set; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the request.

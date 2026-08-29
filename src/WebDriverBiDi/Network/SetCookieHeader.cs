@@ -86,7 +86,7 @@ public class SetCookieHeader
     /// </summary>
     [JsonPropertyName("maxAge")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? MaxAge { get; set; }
+    public long? MaxAge { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie is secure, delivered via an

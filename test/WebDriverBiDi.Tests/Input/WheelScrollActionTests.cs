@@ -273,4 +273,21 @@ public class WheelScrollActionTests
         Assert.Equal(JTokenType.String, sharedId.Type);
         Assert.Equal("testSharedId", sharedId.Value<string>());
     }
+
+    [Fact]
+    public void TestCanSerializeNegativeCoordinates()
+    {
+        // x and y are spec js-int, so a scroll starting from a negative position (for example on a
+        // secondary monitor left of the primary) must serialize.
+        WheelScrollAction properties = new()
+        {
+            X = -100,
+            Y = -200,
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+
+        Assert.Equal(-100L, serialized["x"]!.Value<long>());
+        Assert.Equal(-200L, serialized["y"]!.Value<long>());
+    }
 }

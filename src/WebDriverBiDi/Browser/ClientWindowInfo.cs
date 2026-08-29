@@ -50,7 +50,7 @@ public record ClientWindowInfo
     [JsonPropertyName("x")]
     [JsonInclude]
     [JsonRequired]
-    public ulong X { get; internal set; } = 0;
+    public long X { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the top edge of the client window.
@@ -58,7 +58,7 @@ public record ClientWindowInfo
     [JsonPropertyName("y")]
     [JsonInclude]
     [JsonRequired]
-    public ulong Y { get; internal set; } = 0;
+    public long Y { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the width of the client window.

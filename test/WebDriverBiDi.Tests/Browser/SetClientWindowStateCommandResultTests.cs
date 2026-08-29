@@ -343,7 +343,7 @@ public class SetClientWindowStateCommandResultTests
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidXValueThrows()
+    public void TestDeserializingWithNegativeXValueSucceeds()
     {
         string json = """
                       {
@@ -356,7 +356,9 @@ public class SetClientWindowStateCommandResultTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json, this.options));
+        SetClientWindowStateCommandResult? result = JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json, this.options);
+        Assert.NotNull(result);
+        Assert.Equal(-1, result.X);
     }
 
     [Fact]
@@ -410,7 +412,7 @@ public class SetClientWindowStateCommandResultTests
     }
 
     [Fact]
-    public void TestDeserializingWithInvalidYValueThrows()
+    public void TestDeserializingWithNegativeYValueSucceeds()
     {
         string json = """
                       {
@@ -423,7 +425,9 @@ public class SetClientWindowStateCommandResultTests
                         "height": 400
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json, this.options));
+        SetClientWindowStateCommandResult? result = JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json, this.options);
+        Assert.NotNull(result);
+        Assert.Equal(-1, result.Y);
     }
 
     [Fact]

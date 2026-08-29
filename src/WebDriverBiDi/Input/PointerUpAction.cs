@@ -16,7 +16,7 @@ public class PointerUpAction : IPointerSourceAction
     /// Initializes a new instance of the <see cref="PointerUpAction"/> class.
     /// </summary>
     /// <param name="button">The button used for the pointer up.</param>
-    public PointerUpAction(long button)
+    public PointerUpAction(ulong button)
         : base()
     {
         this.Button = button;
@@ -32,5 +32,5 @@ public class PointerUpAction : IPointerSourceAction
     /// Gets or sets the button to be released.
     /// </summary>
     [JsonPropertyName("button")]
-    public long Button { get; set; }
+    public ulong Button { get; set; }
 }

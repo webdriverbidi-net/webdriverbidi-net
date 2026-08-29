@@ -16,7 +16,7 @@ public class PointerDownAction : PointerAction, IPointerSourceAction
     /// Initializes a new instance of the <see cref="PointerDownAction"/> class.
     /// </summary>
     /// <param name="button">The button used for the pointer down.</param>
-    public PointerDownAction(long button)
+    public PointerDownAction(ulong button)
         : base()
     {
         this.Button = button;
@@ -32,5 +32,5 @@ public class PointerDownAction : PointerAction, IPointerSourceAction
     /// Gets or sets the button to be pressed down.
     /// </summary>
     [JsonPropertyName("button")]
-    public long Button { get; set; }
+    public ulong Button { get; set; }
 }

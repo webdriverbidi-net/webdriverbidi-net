@@ -46,7 +46,7 @@ public class PointerInputSource : InputSource
             throw new ArgumentException($"Button for pointer down actions of touch pointer types must be PointerButton.Left", nameof(button));
         }
 
-        PointerDownAction action = new((long)button);
+        PointerDownAction action = new((ulong)button);
         if (additionalProperties is not null)
         {
             action.Width = additionalProperties.Width;
@@ -76,7 +76,7 @@ public class PointerInputSource : InputSource
             throw new ArgumentException($"Button for pointer up actions of touch pointer types must be PointerButton.Left", nameof(button));
         }
 
-        PointerUpAction action = new((long)button);
+        PointerUpAction action = new((ulong)button);
         return new InputAction(this.SourceId, action);
     }
 
