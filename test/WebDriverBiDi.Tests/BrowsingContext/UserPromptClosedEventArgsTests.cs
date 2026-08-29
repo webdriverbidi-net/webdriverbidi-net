@@ -15,6 +15,7 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": true
                       }
                       """;
@@ -22,6 +23,7 @@ public class UserPromptClosedEventArgsTests
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
+        Assert.Equal(UserPromptType.Confirm, eventArgs.PromptType);
         Assert.True(eventArgs.IsAccepted);
         Assert.Null(eventArgs.UserText);
     }
@@ -32,6 +34,7 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": false
                       }
                       """;
@@ -49,6 +52,7 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": true,
                         "userText": "some text"
                       }
@@ -67,6 +71,7 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": true,
                         "userContext": "myUserContextId"
                       }
@@ -85,6 +90,7 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": true
                       }
                       """;
@@ -146,6 +152,7 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": "some value"
                       }
                       """;
@@ -158,6 +165,7 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": null
                       }
                       """;
@@ -170,8 +178,21 @@ public class UserPromptClosedEventArgsTests
         string json = """
                       {
                         "context": "myContextId",
+                        "type": "confirm",
                         "accepted": true,
                         "userText": {}
+                      }
+                      """;
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestDeserializeWithMissingTypeValueThrows()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "accepted": true
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json, this.options));

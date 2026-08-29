@@ -484,4 +484,23 @@ public class BaseNetworkEventArgsTests
                            """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, this.options));
     }
+
+    [Fact]
+    public void TestCanDeserializeWithUserContext()
+    {
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId",
+                             "userContext": "myUserContextId",
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": 1,
+                             "request": {{this.requestDataJson}}
+                           }
+                           """;
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, this.options);
+        Assert.NotNull(eventArgs);
+        Assert.Equal("myUserContextId", eventArgs.UserContextId);
+    }
 }

@@ -74,4 +74,22 @@ public class SimulateAdapterCommandParametersTests
         Assert.Equal(JTokenType.String, state.Type);
         Assert.Equal("powered-on", state.Value<string>());
     }
+
+    [Fact]
+    public void TestCanSerializeParametersWithLowEnergySupported()
+    {
+        SimulateAdapterCommandParameters properties = new("myContext", AdapterState.PoweredOn)
+        {
+            IsLowEnergySupported = true,
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Equal(3, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("leSupported"));
+        JToken? leSupported = serialized["leSupported"];
+        Assert.NotNull(leSupported);
+        Assert.Equal(JTokenType.Boolean, leSupported.Type);
+        Assert.True(leSupported.Value<bool>());
+    }
 }

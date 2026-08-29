@@ -40,4 +40,12 @@ public class SimulateAdapterCommandParameters : CommandParameters<SimulateAdapte
     /// </summary>
     [JsonPropertyName("state")]
     public AdapterState State { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the simulated Bluetooth adapter supports Low Energy.
+    /// When <see langword="null"/>, the property is omitted and the remote end applies its default.
+    /// </summary>
+    [JsonPropertyName("leSupported")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsLowEnergySupported { get; set; }
 }
