@@ -131,10 +131,13 @@ public class PointerDownActionTests
     }
 
     [Fact]
-    public void TestSettingTwistPropertyToInvalidValueThrows()
+    public void TestSettingTwistPropertyToOutOfRangeValueIsAccepted()
     {
-        PointerDownAction properties = new(0);
-        Assert.Contains("Twist value must be between 0 and 359", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Twist = 360).Message);
+        PointerDownAction properties = new(0)
+        {
+            Twist = 360,
+        };
+        Assert.Equal(360UL, properties.Twist);
     }
 
     [Fact]
@@ -175,13 +178,14 @@ public class PointerDownActionTests
     }
 
     [Fact]
-    public void TestSettingAnglePropertiesToInvalidValueThrows()
+    public void TestSettingAnglePropertiesToOutOfRangeValuesIsAccepted()
     {
-        PointerDownAction properties = new(0);
-
-        Assert.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AltitudeAngle = -0.01).Message);
-        Assert.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AltitudeAngle = 1.58).Message);
-        Assert.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AzimuthAngle = -0.01).Message);
-        Assert.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.AzimuthAngle = 6.29).Message);
+        PointerDownAction properties = new(0)
+        {
+            AltitudeAngle = 1.58,
+            AzimuthAngle = 6.29,
+        };
+        Assert.Equal(1.58, properties.AltitudeAngle);
+        Assert.Equal(6.29, properties.AzimuthAngle);
     }
 }

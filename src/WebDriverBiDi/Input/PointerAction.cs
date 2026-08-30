@@ -51,66 +51,32 @@ public class PointerAction
     public double? TangentialPressure { get; set; }
 
     /// <summary>
-    /// Gets or sets the twist of the pointer in degrees, between 0 and 359, on the surface. If omitted, defaults to 0.
+    /// Gets or sets the twist of the pointer in degrees on the surface. If omitted, defaults to 0.
+    /// The protocol constrains this to the range 0 to 359 inclusive; values outside that range are
+    /// sent as-is and rejected by the remote end.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the value is greater than 359.</exception>
     [JsonPropertyName("twist")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? Twist
-    {
-        get;
-        set
-        {
-            if (value > 359)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Twist value must be between 0 and 359");
-            }
-
-            field = value;
-        }
-    }
+    public ulong? Twist { get; set; }
 
     /// <summary>
-    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device.
-    /// Must be between 0 and 1.5707963267948966 (pi / 2). If omitted, defaults to 0.0.
+    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device. If omitted,
+    /// defaults to 0.0. The protocol constrains this to the range 0 to 1.5707963267948966 (pi / 2)
+    /// inclusive; values outside that range are sent as-is and rejected by the remote end.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the value is not between 0 and pi / 2 inclusive.</exception>
     [JsonPropertyName("altitudeAngle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? AltitudeAngle
-    {
-        get;
-        set
-        {
-            if (value < 0 || value > Math.PI / 2)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive");
-            }
-
-            field = value;
-        }
-    }
+    public double? AltitudeAngle { get; set; }
 
     /// <summary>
     /// Gets or sets the azimuth angle (angle from "north," or a line directly up from the point of contact)
-    /// of the pointer device. Must be between 0 and 6.283185307179586 (2 *pi) If omitted, defaults to 0.0.
+    /// of the pointer device. If omitted, defaults to 0.0. The protocol constrains this to the range 0 to
+    /// 6.283185307179586 (2 * pi) inclusive; values outside that range are sent as-is and rejected by the
+    /// remote end.
     /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the value is not between 0 and 2 * pi inclusive.</exception>
     [JsonPropertyName("azimuthAngle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? AzimuthAngle
-    {
-        get;
-        set
-        {
-            if (value < 0 || value > Math.PI * 2)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive");
-            }
-
-            field = value;
-        }
-    }
+    public double? AzimuthAngle { get; set; }
 }
