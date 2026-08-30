@@ -127,6 +127,13 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus)
     {
+        // Nothing to report until a driver variable is being tracked; skip the expensive semantic bind
+        // for every invocation seen before the first driver is declared.
+        if (driverStartedStatus.Count == 0)
+        {
+            return;
+        }
+
         IMethodSymbol? methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
         if (methodSymbol == null)
         {

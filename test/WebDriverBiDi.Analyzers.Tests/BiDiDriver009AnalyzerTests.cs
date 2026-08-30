@@ -914,4 +914,56 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task DynamicInvocationWithDriverTracked_NoDiagnostic()
+    {
+        // With a driver tracked, a dynamic invocation does not bind to a method symbol; the analyzer
+        // must ignore it (and report nothing) rather than misclassify it as a command call.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        dynamic value = "text";
+                        value.ToLowerInvariant();
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task InvocationsWithNoDriverDeclared_NoDiagnostic()
+    {
+        // A method containing invocations but no BiDiDriver variable has nothing to track; the analyzer
+        // must produce no diagnostics (and skips the semantic bind for these invocations).
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        Console.WriteLine("no driver here");
+                        await Task.Delay(1);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

@@ -101,20 +101,20 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
         return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || AnalyzerSymbolHelpers.IsLibraryModuleType(type);
     }
 
+    // Operations that support cancellation. NavigateAsync is deliberately absent: it is reported by
+    // BIDI013 (long-running operation) at Warning severity, and reporting it here as well would produce
+    // two diagnostics for one call. Hoisted to a static field to avoid allocating on every invocation.
+    private static readonly string[] LongRunningMethods =
+    [
+        "ExecuteCommandAsync",
+        "EvaluateAsync",
+        "CallFunctionAsync",
+        "GetTreeAsync",
+        "LocateNodesAsync",
+    ];
+
     private static bool ShouldSuggestToken(IMethodSymbol method)
     {
-        // Suggest for operations that support cancellation. NavigateAsync is deliberately
-        // absent: it is reported by BIDI013 (long-running operation) at Warning severity,
-        // and reporting it here as well would produce two diagnostics for one call.
-        string[] longRunningMethods =
-        [
-            "ExecuteCommandAsync",
-            "EvaluateAsync",
-            "CallFunctionAsync",
-            "GetTreeAsync",
-            "LocateNodesAsync",
-        ];
-
-        return longRunningMethods.Contains(method.Name);
+        return LongRunningMethods.Contains(method.Name);
     }
 }

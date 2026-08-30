@@ -68,8 +68,16 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
+                // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
+                // whose member name is not the one this pass cares about. The bound symbol's name is
+                // therefore already known, so only the null (unresolved) case needs re-checking.
+                if (memberAccess.Name.Identifier.Text != "AddObserver")
+                {
+                    continue;
+                }
+
                 IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                if (methodSymbol == null || methodSymbol.Name != "AddObserver")
+                if (methodSymbol == null)
                 {
                     continue;
                 }
@@ -197,6 +205,14 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
+                // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
+                // whose member name is not the one this pass cares about. The bound symbol's name is
+                // therefore already known, so only its containing type needs checking below.
+                if (memberAccess.Name.Identifier.Text != "SubscribeAsync")
+                {
+                    continue;
+                }
+
                 IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
                 if (methodSymbol == null)
                 {
@@ -204,7 +220,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                 }
 
                 // Check if this is Session.SubscribeAsync
-                if (methodSymbol.Name == "SubscribeAsync" && IsSessionModule(methodSymbol.ContainingType))
+                if (IsSessionModule(methodSymbol.ContainingType))
                 {
                     // Extract event names from the SubscribeCommandParameters argument
                     if (invocation.ArgumentList.Arguments.Count > 0)
