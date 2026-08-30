@@ -46,10 +46,12 @@ public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
     public string? UserContextId { get; internal set; }
 
     /// <summary>
-    /// Gets the reference to the element that invoked the file dialog, if present.
+    /// Gets the reference to the element that invoked the file dialog, if present. Call
+    /// <see cref="SharedReferenceInfo.ToSharedReference"/> on the returned value to obtain a mutable
+    /// <see cref="SharedReference"/> for use as an argument to subsequent commands.
     /// </summary>
     [JsonPropertyName("element")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public SharedReference? Element { get; internal set; }
+    public SharedReferenceInfo? Element { get; internal set; }
 }

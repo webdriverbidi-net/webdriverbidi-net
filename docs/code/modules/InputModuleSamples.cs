@@ -250,7 +250,7 @@ public static class InputModuleSamples
             {
                 SetFilesCommandParameters parameters = new SetFilesCommandParameters(
                     e.BrowsingContextId,
-                    e.Element);
+                    e.Element.ToSharedReference());
 
                 parameters.Files.Add("/path/to/upload.txt");
                 await driver.Input.SetFilesAsync(parameters);
