@@ -105,19 +105,20 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
         return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || AnalyzerSymbolHelpers.IsLibraryModuleType(type) || type is { Name: "EventObserver", IsGenericType: true };
     }
 
+    // Operations known to be potentially long-running. Hoisted to a static field to avoid allocating
+    // on every invocation.
+    private static readonly string[] LongRunningOperations =
+    [
+        "NavigateAsync",
+        "PrintAsync",
+        "ReloadAsync",
+        "StartAsync",
+        "WaitForCapturedTasksAsync",
+        "WaitForCapturedTasksCompleteAsync",
+    ];
+
     private static bool IsLongRunningMethod(IMethodSymbol method)
     {
-        // These operations are known to be potentially long-running
-        string[] longRunningOperations =
-        [
-            "NavigateAsync",
-            "PrintAsync",
-            "ReloadAsync",
-            "StartAsync",
-            "WaitForCapturedTasksAsync",
-            "WaitForCapturedTasksCompleteAsync",
-        ];
-
-        return longRunningOperations.Contains(method.Name);
+        return LongRunningOperations.Contains(method.Name);
     }
 }

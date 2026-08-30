@@ -1418,6 +1418,159 @@ public class BiDiDriver006AnalyzerTests
     }
 
     [Fact]
+    public async Task EventObserver_RemoveObserverWithNonMatchingArgumentsThenMatch_NoDiagnostic()
+    {
+        // A series of RemoveObserver calls whose arguments do not match the observer's Id (a plain string,
+        // a member access with a different name, an Id read off a non-identifier receiver, and a different
+        // variable's Id) are skipped; the final matching call releases the observer, so no leak is reported.
+        // This exercises every partial-match branch and loop back-edge in the RemoveObserver recognition.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public string Id { get; } = "id";
+                    public void Unobserve() { }
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public void RemoveObserver(string observerId) { }
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class Other
+                {
+                    public string Id { get; } = "x";
+                    public string Name { get; } = "y";
+                }
+
+                public class TestClass
+                {
+                    private Other Get() => new Other();
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        string s = "id";
+                        Other other = new Other();
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        driver.Log.OnEntryAdded.RemoveObserver(s);
+                        driver.Log.OnEntryAdded.RemoveObserver(other.Name);
+                        driver.Log.OnEntryAdded.RemoveObserver(Get().Id);
+                        driver.Log.OnEntryAdded.RemoveObserver(other.Id);
+                        driver.Log.OnEntryAdded.RemoveObserver(observer.Id);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task EventObserver_WithNonMatchingReturns_ReportsWarning()
+    {
+        // The observer is neither disposed nor returned/stored: the preceding return of a non-identifier
+        // (null) and of a different observer variable do not count as handling it, so a leak is reported.
+        // This exercises the non-matching branches and loop back-edge of the returned-or-stored recognition.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public string Id { get; } = "id";
+                    public void Unobserve() { }
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public EventObserver<LogEntryAddedEventArgs> TestMethod(BiDiDriver driver, bool flag)
+                    {
+                        var {|#0:observer|} = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        var otherObserver = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        if (flag)
+                        {
+                            return null;
+                        }
+
+                        return otherObserver;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task EventObserver_ReleasedViaRemoveObserver_NoDiagnostic()
     {
         // Releasing the observer through ObservableEvent.RemoveObserver(observer.Id) unregisters it, so it is not leaked.
