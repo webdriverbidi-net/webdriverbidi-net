@@ -73,18 +73,10 @@ public record RequestData
     {
         get
         {
-            // Safe without a lock: RequestData instances are only ever accessed on the
-            // single message-processing loop thread; all setters are internal.
-            this.readOnlyHeaders ??= [];
-            if (this.readOnlyHeaders.Count == 0 && this.SerializableHeaders.Count != 0)
-            {
-                foreach (Header header in this.SerializableHeaders)
-                {
-                    this.readOnlyHeaders.Add(new ReadOnlyHeader(header));
-                }
-            }
-
-            return this.readOnlyHeaders.AsReadOnly();
+            // Project once, atomically: the read-only list is built and assigned in a single step so a
+            // concurrent first read (for example from a RunHandlerAsynchronously handler on the thread
+            // pool) can never observe a half-populated list.
+            return (this.readOnlyHeaders ??= this.SerializableHeaders.ConvertAll(header => new ReadOnlyHeader(header))).AsReadOnly();
         }
     }
 
