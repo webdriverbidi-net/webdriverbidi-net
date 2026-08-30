@@ -31,7 +31,7 @@ public class MediaFeatures
     /// <summary>
     /// Value to indicate resetting the emulation of the "horizontal-viewport-segments" CSS media feature.
     /// </summary>
-    public const long ResetHorizonalViewportSegmentsValue = -1;
+    public const long ResetHorizontalViewportSegmentsValue = -1;
 
     /// <summary>
     /// Value to indicate resetting the emulation of the "monochrome" CSS media feature.
@@ -139,7 +139,7 @@ public class MediaFeatures
 
     /// <summary>
     /// Gets or sets the value to emulate for the "horizontal-viewport-segments" CSS media feature.
-    /// Use <see cref="ResetHorizonalViewportSegmentsValue"/> to reset the emulation.
+    /// Use <see cref="ResetHorizontalViewportSegmentsValue"/> to reset the emulation.
     /// </summary>
     [JsonPropertyName("horizontal-viewport-segments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

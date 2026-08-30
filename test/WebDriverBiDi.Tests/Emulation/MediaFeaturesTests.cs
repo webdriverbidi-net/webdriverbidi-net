@@ -389,7 +389,7 @@ public class MediaFeaturesTests
     {
         MediaFeatures features = new()
         {
-            HorizontalViewportSegments = MediaFeatures.ResetHorizonalViewportSegmentsValue,
+            HorizontalViewportSegments = MediaFeatures.ResetHorizontalViewportSegmentsValue,
         };
 
         string json = JsonSerializer.Serialize(features);
