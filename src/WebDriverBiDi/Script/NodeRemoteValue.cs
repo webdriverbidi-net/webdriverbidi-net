@@ -91,7 +91,7 @@ public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeS
     /// Converts this RemoteValue into a RemoteObjectReference.
     /// </summary>
     /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
-    /// <exception cref="WebDriverBiDiException">Thrown when there is no shared ID set.</exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when there is no handle set.</exception>
     public RemoteObjectReference ToRemoteObjectReference()
     {
         if (this.Handle is null)

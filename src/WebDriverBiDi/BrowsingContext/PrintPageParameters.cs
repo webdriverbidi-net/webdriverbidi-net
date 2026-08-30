@@ -22,7 +22,8 @@ public class PrintPageParameters
 
     /// <summary>
     /// Gets or sets the width in centimeters of the page for printing.
-    /// The value must be greater than or equal to zero, and if omitted, defaults to 21.59.
+    /// The value must be greater than or equal to zero; the protocol further requires a minimum of
+    /// 0.0352 cm (1 point), which the remote end enforces. If omitted, defaults to 21.59.
     /// </summary>
     [JsonPropertyName("width")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -43,7 +44,8 @@ public class PrintPageParameters
 
     /// <summary>
     /// Gets or sets the height in centimeters of the page for printing.
-    /// The value must be greater than or equal to zero, and if omitted, defaults to 27.94.
+    /// The value must be greater than or equal to zero; the protocol further requires a minimum of
+    /// 0.0352 cm (1 point), which the remote end enforces. If omitted, defaults to 27.94.
     /// </summary>
     [JsonPropertyName("height")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

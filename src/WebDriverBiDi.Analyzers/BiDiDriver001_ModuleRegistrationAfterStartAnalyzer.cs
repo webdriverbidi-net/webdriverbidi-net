@@ -40,7 +40,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
         description: Description,
-        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/core-concepts.html#timing-restrictions");
+        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi001");
 
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);

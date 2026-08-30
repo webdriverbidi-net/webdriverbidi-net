@@ -219,6 +219,7 @@ Remote values have a `Type` property indicating their JavaScript type:
 - `object`, `array`, `function`, `promise`
 - `node` (DOM elements)
 - `window`, `regexp`, `date`, `map`, `set`
+- `nodelist`, `htmlcollection` (also surfaced as `CollectionRemoteValue`)
 
 ### Accessing Values
 

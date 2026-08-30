@@ -21,7 +21,7 @@ public enum ScanMediaFeatureValue
     Interlace,
 
     /// <summary>
-    /// The "prgressvie" value for the "scan" CSS media feature.
+    /// The "progressive" value for the "scan" CSS media feature.
     /// </summary>
     Progressive,
 

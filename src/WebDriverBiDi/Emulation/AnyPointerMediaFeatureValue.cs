@@ -31,7 +31,7 @@ public enum AnyPointerMediaFeatureValue
     Fine,
 
     /// <summary>
-    /// A value to reset the emulation of the "any-hover" CSS media feature.
+    /// A value to reset the emulation of the "any-pointer" CSS media feature.
     /// </summary>
     Reset,
 }

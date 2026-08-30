@@ -95,6 +95,14 @@ Network interception allows you to block, modify, or replace network requests.
 
 [!code-csharp[Provide Custom Response](../../code/modules/NetworkModuleSamples.cs#ProvideCustomResponse)]
 
+### Continue Responses
+
+`ContinueResponseAsync` continues a response that the browser has intercepted after it was received
+from the server but before it is presented to the browser, optionally overriding the status code,
+reason phrase, headers, cookies, or authentication credentials first. It complements
+`ProvideResponseAsync` (which supplies a complete response) and `ContinueRequestAsync` (which continues
+a paused request before it is sent).
+
 ### Remove Intercept
 
 [!code-csharp[Remove Intercept](../../code/modules/NetworkModuleSamples.cs#RemoveIntercept)]

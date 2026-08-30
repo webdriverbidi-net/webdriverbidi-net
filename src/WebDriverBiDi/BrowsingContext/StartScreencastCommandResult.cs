@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result from starting a screenshot.
+/// Result from starting a screencast.
 /// </summary>
 public record StartScreencastCommandResult : CommandResult
 {

@@ -161,6 +161,13 @@ To restore default CSP behavior, use `SetBypassCSPCommandParameters.ResetBypassC
 
 [!code-csharp[PDF with Custom Settings](../../code/modules/BrowsingContextModuleSamples.cs#PDFwithCustomSettings)]
 
+## Screencasting
+
+`StartScreencastAsync` begins a screencast of a browsing context, and `StopScreencastAsync` ends it.
+Pass a `StartScreencastCommandParameters` (configuring the target context and frame options) to start
+the capture and a `StopScreencastCommandParameters` to stop it. Screencast frames are delivered by the
+remote end for the duration of the capture.
+
 ## Handling User Prompts
 
 ### Accept Alert/Confirm
@@ -184,6 +191,10 @@ To restore default CSP behavior, use `SetBypassCSPCommandParameters.ResetBypassC
 ## Events
 
 ### Navigation Events
+
+The browsing context module raises navigation events, each carrying `NavigationEventArgs`:
+`OnNavigationStarted`, `OnNavigationCommitted`, `OnFragmentNavigated` (a same-document navigation to a
+URL fragment), `OnDomContentLoaded`, `OnLoad`, `OnNavigationFailed`, and `OnNavigationAborted`.
 
 [!code-csharp[Navigation Events](../../code/modules/BrowsingContextModuleSamples.cs#NavigationEvents)]
 

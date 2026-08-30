@@ -40,7 +40,8 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi017");
 
     private static readonly HashSet<string> AddMethodNames = new(StringComparer.Ordinal)
     {

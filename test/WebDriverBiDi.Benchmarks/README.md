@@ -58,6 +58,9 @@ multiple observer counts:
   specified number of registered no-op observers. The single-observer case
   is the typical production scenario; 4 and 16 reveal the scaling behavior
   of the observer-snapshot lock and per-observer dispatch loop.
+- **NotifyAsyncObservers**: Fires one event to an observer registered with
+  `ObservableEventHandlerOptions.RunHandlerAsynchronously`, measuring the
+  cost of the asynchronous dispatch path relative to the synchronous one.
 
 ### CommandExecutionBenchmarks
 Measures the end-to-end cost of `BiDiDriver.ExecuteCommandAsync` against an
@@ -147,21 +150,20 @@ To compare against a previous run:
 
 4. **Manual comparison**: Compare the Mean/Allocated columns in console output
 
-5. **Automated comparison** (using BenchmarkDotNet.ResultsComparer or custom scripts):
+5. **Automated comparison** (the same script CI uses):
    ```bash
-   # Compare JSON files programmatically
-   # Or use: dotnet tool install -g BenchmarkDotNet.Tool
-   # Then: dotnet-benchmark compare baseline.json current.json
+   # Compare a fresh JSON run against the committed baselines
+   scripts/compare-benchmarks.sh BenchmarkDotNet.Artifacts/results test/WebDriverBiDi.Benchmarks/baselines
    ```
 
 ## What to Look For
 
 When reviewing benchmark results, focus on:
 
-1. **Regression thresholds**:
-   - 🟢 <10% change: Normal variance
-   - 🟡 10-25% slower: Investigate if critical path
-   - 🔴 >25% slower: Likely regression, needs attention
+1. **Regression thresholds** (these match `scripts/compare-benchmarks.sh` and the CI comment legend):
+   - 🟢 <25% slower (mean time): Normal variance
+   - 🟡 +25% mean time or +10% allocations: Investigate if critical path
+   - 🔴 +50% mean time or +25% allocations: Likely regression, needs attention
 
 2. **Memory allocations**:
    - 🟢 No increase or reduction: Good
@@ -189,14 +191,12 @@ Before tagging a release:
 
 3. Document any significant changes (>20%) in release notes
 
-4. Save baseline for this release:
-   ```bash
-   mkdir -p test/WebDriverBiDi.Benchmarks/baselines
-   cp BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
-      test/WebDriverBiDi.Benchmarks/baselines/v<VERSION>-baseline.json
-   ```
+4. Refresh the committed baselines: run the **Produce benchmark baseline** workflow
+   (`.github/workflows/benchmark-baseline.yml`), download the `benchmark-baseline` artifact, and drop its
+   `ci-baseline-<ClassName>.json` files into `test/WebDriverBiDi.Benchmarks/baselines/`. Baselines are
+   produced on a CI runner so they match the hardware the comparison runs on.
 
-5. Consider adding baseline to git if it represents a stable reference point
+5. Commit the refreshed baselines so future PRs compare against a stable reference point.
 
 ## Tips for Accurate Results
 
