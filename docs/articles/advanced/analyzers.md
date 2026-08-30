@@ -18,6 +18,10 @@ Or add to your `.csproj`:
 
 The analyzer package is marked as a development dependency, so it will not be included in your application's output.
 
+### Minimum SDK
+
+The package ships builds of the analyzers for multiple Roslyn versions (under `analyzers/dotnet/roslyn<version>/cs`), and your compiler automatically loads the highest build at or below its own Roslyn version. The lowest build targets Roslyn 4.8, which ships with the .NET 8.0 SDK (and the corresponding Visual Studio 2022 17.8 / VS Code C# tooling). Any SDK from .NET 8.0 onward — including newer SDKs used to target `net8.0`, `net9.0`, or `net10.0` — loads a matching build and runs the analyzers. Toolchains older than the .NET 8.0 SDK match no build and silently skip the analyzers (`CS9057` if they see a newer-only build); upgrade the SDK to enable them.
+
 ## Available Analyzers
 
 When an analyzer fires, your IDE will show a diagnostic with a suggestion or code fix where applicable. The following analyzers are available:

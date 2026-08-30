@@ -43,7 +43,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/core-concepts.html#timing-restrictions");
 
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)

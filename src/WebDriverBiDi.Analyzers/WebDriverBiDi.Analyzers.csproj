@@ -31,22 +31,21 @@
     <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- The Roslyn version this build compiles against. Defaults to the compatibility floor (4.8.0,
+         shipped with the .NET 8 SDK) for normal builds and for the assembly consumed by the test
+         project; the packaging target below overrides it per shipped variant. An analyzer loads only
+         on compilers at or above the Roslyn version it was built against (older compilers raise CS9057
+         and silently skip it), so the floor determines the minimum supported SDK. -->
+    <RoslynVersion Condition="'$(RoslynVersion)' == ''">4.8.0</RoslynVersion>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <!-- Package the analyzer and code fixes into the correct folder structure.
-       Code fixes are in a separate assembly to satisfy RS1038 (no Workspaces in analyzer assembly). -->
-  <PropertyGroup>
-    <_CodeFixesOutputPath>$(MSBuildThisFileDirectory)../WebDriverBiDi.Analyzers.CodeFixProviders/bin/$(Configuration)/netstandard2.0/WebDriverBiDi.Analyzers.CodeFixProviders.dll</_CodeFixesOutputPath>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="$(_CodeFixesOutputPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(_CodeFixesOutputPath)')" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,12 +53,53 @@
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
 
-  <!-- Build CodeFixes before packing so its DLL is available to include in the package.
-       Skip when DLL already exists (e.g. after solution build with no-build).
-       Pass NoBuild=false to override parent's NoBuild when we must build. -->
-  <Target Name="BuildCodeFixesBeforePack" BeforeTargets="GenerateNuspec" Condition="!Exists('$(_CodeFixesOutputPath)')">
-    <MSBuild Projects="$(MSBuildThisFileDirectory)..\WebDriverBiDi.Analyzers.CodeFixProviders\WebDriverBiDi.Analyzers.CodeFixProviders.csproj" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
+  <!-- Roslyn variants to ship. The lowest is the compatibility floor; a consumer's compiler selects the
+       highest analyzers/dotnet/roslyn<major.minor>/cs folder that is at or below its own Roslyn version.
+       Two variants suffice because the sources are Roslyn-4.8-clean: compilers between 4.8 and the latest
+       use the 4.8 build, the newest use the latest build. Bump the latest entry as new Roslyn ships; the
+       floor moves only when the library drops an older target framework. -->
+  <ItemGroup>
+    <AnalyzerRoslynVariant Include="4.8.0">
+      <Folder>roslyn4.8</Folder>
+    </AnalyzerRoslynVariant>
+    <AnalyzerRoslynVariant Include="5.9.0">
+      <Folder>roslyn5.9</Folder>
+    </AnalyzerRoslynVariant>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <_AnalyzerVariantStaging>$(MSBuildThisFileDirectory)obj/roslyn-variants/</_AnalyzerVariantStaging>
+    <_CodeFixesProject>$(MSBuildThisFileDirectory)../WebDriverBiDi.Analyzers.CodeFixProviders/WebDriverBiDi.Analyzers.CodeFixProviders.csproj</_CodeFixesProject>
+  </PropertyGroup>
+
+  <!-- Build the analyzer and code-fix assemblies once per Roslyn variant into per-variant staging dirs
+       before packing. Runs even when packing without a rebuild (NoBuild=false override). Code fixes are
+       in a separate assembly to satisfy RS1038 (no Workspaces in the analyzer assembly). -->
+  <Target Name="BuildAnalyzerRoslynVariantsBeforePack" BeforeTargets="GenerateNuspec">
+    <!-- Building the code-fix project pulls in the analyzer via its ProjectReference, so a single build
+         per variant produces both assemblies into the same per-variant staging folder (the OutputPath
+         override flows to the referenced analyzer), keeping their Roslyn versions consistent. The build
+         runs in a separate process via Exec rather than the MSBuild task: this project is itself on the
+         build stack while packing, and an in-process build of a project that references it back triggers
+         MSBuild reentrancy that resolves the analyzer at the wrong Roslyn version (MSB3277). -->
+    <Exec Command="dotnet build &quot;$(_CodeFixesProject)&quot; -c $(Configuration) -p:RoslynVersion=%(AnalyzerRoslynVariant.Identity) -p:OutputPath=&quot;$(_AnalyzerVariantStaging)%(AnalyzerRoslynVariant.Folder)/&quot; -p:AppendTargetFrameworkToOutputPath=false" />
   </Target>
+
+  <!-- Pack each variant's analyzer and code-fix assemblies into their Roslyn-version folder. Only the two
+       WebDriverBiDi assemblies are packed; the Roslyn assemblies in the staging dir are provided by the
+       compiler host and must never ship. These paths are listed explicitly (rather than transformed from
+       AnalyzerRoslynVariant) because per-item PackagePath cannot be batched from another item's metadata;
+       keep them in sync with the AnalyzerRoslynVariant list above. -->
+  <ItemGroup>
+    <None Include="$(_AnalyzerVariantStaging)roslyn4.8/WebDriverBiDi.Analyzers.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs" Visible="false" />
+    <None Include="$(_AnalyzerVariantStaging)roslyn4.8/WebDriverBiDi.Analyzers.CodeFixProviders.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn4.8/cs" Visible="false" />
+    <None Include="$(_AnalyzerVariantStaging)roslyn5.9/WebDriverBiDi.Analyzers.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn5.9/cs" Visible="false" />
+    <None Include="$(_AnalyzerVariantStaging)roslyn5.9/WebDriverBiDi.Analyzers.CodeFixProviders.dll"
+          Pack="true" PackagePath="analyzers/dotnet/roslyn5.9/cs" Visible="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <AdditionalFiles Include="../../WebDriverBiDi.snk" />
