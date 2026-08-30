@@ -19,7 +19,7 @@ public record GetUserContextsCommandResult : CommandResult
     public IList<UserContextInfo> UserContexts => this.SerializableUserContexts.AsReadOnly();
 
     /// <summary>
-    /// Gets or sets the ID of the user context for serialization purposes.
+    /// Gets or sets the list of user contexts for serialization purposes.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonRequired]

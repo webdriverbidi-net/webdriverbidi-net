@@ -84,7 +84,7 @@ public class MediaFeatures
     public ColorGamutMediaFeatureValue? ColorGamut { get; set; }
 
     /// <summary>
-    /// Gets or sets the value to emulate for the "color" CSS media feature.
+    /// Gets or sets the value to emulate for the "color-index" CSS media feature.
     /// Use <see cref="ResetColorIndexValue"/> to reset the emulation.
     /// </summary>
     [JsonPropertyName("color-index")]

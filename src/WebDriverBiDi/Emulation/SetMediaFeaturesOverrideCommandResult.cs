@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Emulation;
 
 /// <summary>
-/// Result of setting the network conditions override using the emulation.setNetworkConditions command.
+/// Result of setting the media features override using the emulation.setMediaFeaturesOverride command.
 /// </summary>
 public record SetMediaFeaturesOverrideCommandResult : EmptyResult
 {

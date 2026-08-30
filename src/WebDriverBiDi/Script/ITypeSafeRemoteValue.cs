@@ -17,8 +17,9 @@ public interface ITypeSafeRemoteValue<T>
     /// Gets the value of this remote value converted to the native .NET type.
     /// </summary>
     /// <remarks>
-    /// This value is guaranteed to be non-null, even if the type T allows null
-    /// values.
+    /// Implementations whose type parameter <typeparamref name="T"/> is non-nullable return a non-null
+    /// value; implementations that use a nullable <typeparamref name="T"/> (for example the collection
+    /// and node remote values) may return <see langword="null"/>.
     /// </remarks>
     T Value { get; }
 }

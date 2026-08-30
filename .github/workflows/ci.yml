@@ -41,10 +41,14 @@ jobs:
         with:
           filters: |
             docs:
-              # Scope matches what validate-docs checks: markdown articles
-              # and their C# code-sample counterparts. Library source is not
-              # referenced by the validation script.
+              # Scope matches what validate-docs checks: markdown articles and
+              # the top-level docs pages that embed code regions, plus their C#
+              # code-sample counterparts. Library source is not referenced by
+              # the validation script.
               - 'docs/articles/**'
+              - 'docs/api/**'
+              - 'docs/index.md'
+              - 'docs/README.md'
               - 'docs/code/**'
               - 'docs/tools/validate-doc-regions.sh'
             benchmarks:

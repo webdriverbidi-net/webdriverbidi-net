@@ -66,10 +66,11 @@ public class ContinueResponseCommandParameters : CommandParameters<ContinueRespo
     /// <remarks>
     /// <para>
     /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
-    /// settable, because the protocol gives a present-but-empty array its own meaning. The remote end steps
-    /// for <c>network.continueResponse</c> state: "If command parameters contains "cookies": Let cookies be an empty
-    /// cookie list" and then append each entry, so sending <c>[]</c> replaces the cookie list with none, while
-    /// omitting the field keeps the original cookie list.
+    /// settable, because the protocol gives a present-but-empty array its own meaning. In the remote end steps
+    /// for <c>network.continueResponse</c>, when the command contains "cookies" the response's header list is
+    /// rebuilt without its existing <c>Set-Cookie</c> headers and one <c>Set-Cookie</c> header is appended per
+    /// supplied cookie, so sending <c>[]</c> replaces the response cookies with none, while omitting the field
+    /// keeps the original cookies.
     /// </para>
     /// <para>
     /// When <see langword="null"/>, the property is not included in the command; when an empty list, an

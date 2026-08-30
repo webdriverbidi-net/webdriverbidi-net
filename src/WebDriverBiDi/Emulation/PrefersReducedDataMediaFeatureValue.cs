@@ -22,7 +22,7 @@ public enum PrefersReducedDataMediaFeatureValue
     NoPreference,
 
     /// <summary>
-    /// The "redice" value for the "prefers-reduced-data" CSS media feature.
+    /// The "reduce" value for the "prefers-reduced-data" CSS media feature.
     /// </summary>
     Reduce,
 

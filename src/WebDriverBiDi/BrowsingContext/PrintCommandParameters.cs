@@ -89,15 +89,12 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     public bool? ShrinkToFit { get; set; }
 
     /// <summary>
-    /// Gets the list of page ranges to print in the resulting output.
-    /// The objects of the list must be strings or longs. Other value types
-    /// will cause an error when sending the browsingContext.print command.
+    /// Gets the list of page ranges to print in the resulting output. Each entry is a
+    /// <see cref="PageRange"/> representing a single page or an inclusive range of pages.
     /// </summary>
     /// <remarks>
-    /// This property uses an internal serializable property to distinguish between omitting
-    /// the property from the JSON payload (empty list) and sending an empty array.
-    /// When the list is empty, the property is not included in the command; when populated,
-    /// the list is sent to the remote end.
+    /// When the list is empty, the property is omitted from the JSON payload entirely; an empty
+    /// array is never sent. Add entries to restrict the output to specific pages.
     /// </remarks>
     [JsonIgnore]
     public List<PageRange> PageRanges { get; } = [];

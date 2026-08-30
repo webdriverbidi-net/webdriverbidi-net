@@ -42,9 +42,21 @@ fi
 echo "Extracting region anchors from markdown references..."
 # DocFX reference syntax: [!code-csharp[DISPLAY TITLE](PATH#REGION_NAME)]
 # The region name is the fragment after '#' in the path, not the display title.
-# Scans only docs/articles/ to avoid picking up example syntax inside docs/code/README.md.
+# Scans docs/articles/ plus the top-level docs pages that also embed code regions
+# (docs/index.md, docs/README.md, docs/api/**), while avoiding the example syntax inside
+# docs/code/README.md.
 REFERENCES_FILE=$(mktemp)
-find "$ARTICLES_DIR" -name "*.md" -type f -exec grep -h "\[!code-csharp\[" {} \; | \
+{
+  find "$ARTICLES_DIR" -name "*.md" -type f
+  find "$DOCS_DIR/api" -name "*.md" -type f 2>/dev/null
+  [ -f "$DOCS_DIR/index.md" ] && printf '%s\n' "$DOCS_DIR/index.md"
+  [ -f "$DOCS_DIR/README.md" ] && printf '%s\n' "$DOCS_DIR/README.md"
+} | sort -u | while IFS= read -r mdfile; do
+  # Match only references that begin their own line (optionally indented). This ignores the syntax
+  # examples that appear inline in prose (for example the placeholder in docs/README.md), which are
+  # wrapped in backticks rather than written as standalone block references.
+  grep -h "^[[:space:]]*\[!code-csharp\[" "$mdfile" || true
+done | \
   sed -n 's/.*\[!code-csharp\[[^]]*\](\([^)]*\)).*/\1/p' | \
   grep '#' | \
   sed 's/.*#\([^)]*\)$/\1/' | \

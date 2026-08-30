@@ -51,7 +51,7 @@ public class WheelScrollAction : IWheelSourceAction
     public long DeltaY { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets the duration, in milliseconds, of the move.
+    /// Gets or sets the duration of the move.
     /// </summary>
     [JsonIgnore]
     public TimeSpan? Duration { get; set; }

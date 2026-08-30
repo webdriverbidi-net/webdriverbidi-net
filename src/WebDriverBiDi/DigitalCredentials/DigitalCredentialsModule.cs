@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.DigitalCredentials;
 
 /// <summary>
-/// The DigitalCredentials module contains commands and events relating to digital credentials
+/// The DigitalCredentials module contains commands relating to digital credentials
 /// as defined in the W3C Digital Credentials specification (https://www.w3.org/TR/digital-credentials/).
 /// </summary>
 public sealed class DigitalCredentialsModule : Module

@@ -266,7 +266,7 @@ public sealed class BrowsingContextModule : Module
     }
 
     /// <summary>
-    /// Reloads a browsing context to a new URL.
+    /// Reloads the current document of a browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>

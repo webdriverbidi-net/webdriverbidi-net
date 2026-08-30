@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Permissions;
 
 /// <summary>
-/// The Permissions module contains commands and events relating to browser permissions
+/// The Permissions module contains commands relating to browser permissions
 /// as defined in the W3C Permissions specification (https://www.w3.org/TR/permissions/).
 /// </summary>
 public sealed class PermissionsModule : Module

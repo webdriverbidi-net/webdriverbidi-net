@@ -108,7 +108,7 @@ render_class_table() {
     | . as $cur
     | ($b | map(select(.FullName == $cur.FullName)) | first) as $base
     | [
-        ($cur.Method // $cur.MethodTitle),
+        ($cur.DisplayInfo // $cur.Method // $cur.MethodTitle),
         ($cur.Statistics.Mean | tostring),
         (if $base then (($cur.Statistics.Mean - $base.Statistics.Mean) / $base.Statistics.Mean | tostring) else "new" end),
         ($cur.Memory.BytesAllocatedPerOperation | tostring),

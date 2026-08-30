@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the emulation.setNetworkConditions command.
+/// Provides parameters for the emulation.setMediaFeaturesOverride command.
 /// </summary>
 public class SetMediaFeaturesOverrideCommandParameters : CommandParameters<SetMediaFeaturesOverrideCommandResult>
 {
@@ -22,7 +22,7 @@ public class SetMediaFeaturesOverrideCommandParameters : CommandParameters<SetMe
     /// <summary>
     /// Gets a pre-initialized instance of <see cref="SetMediaFeaturesOverrideCommandParameters"/>
     /// with the <see cref="Features"/> property set to <see langword="null"/> to clear
-    /// any existing media features conditions. Returns a new instance on each access to allow fo
+    /// any existing media features conditions. Returns a new instance on each access to allow for
     /// modification of the properties without affecting other uses. Functionally equivalent to
     /// using the parameterless constructor, but provided as a named property to make the intent
     /// of clearing the override more explicit in code that uses this property.

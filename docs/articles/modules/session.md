@@ -65,6 +65,13 @@ Prefer the `EventName` property from observable events to avoid typos:
 
 [!code-csharp[Unsubscribe by Event Names](../../code/events-observables/SubscribeSamples.cs#UnsubscribebyEventNames)]
 
+## Ending a Session
+
+`EndAsync` ends the current session, closing the associated browsing contexts on the remote end. The
+`EndCommandParameters` argument is optional; call `EndAsync()` with no arguments to end the session with
+default parameters. Ending the session is distinct from calling `BiDiDriver.StopAsync`, which closes the
+local transport connection without issuing a `session.end` command.
+
 ## Best Practices
 
 1. **Subscribe early**: Subscribe to events before triggering actions that produce them

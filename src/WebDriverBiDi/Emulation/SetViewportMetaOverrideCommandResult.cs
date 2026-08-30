@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Emulation;
 
 /// <summary>
-/// Result of setting scripting enabled using the emulation.setScriptingEnabled command.
+/// Result of setting the viewport meta override using the emulation.setViewportMetaOverride command.
 /// </summary>
 public record SetViewportMetaOverrideCommandResult : EmptyResult
 {

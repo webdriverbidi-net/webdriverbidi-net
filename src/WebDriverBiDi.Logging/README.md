@@ -125,7 +125,7 @@ using ILoggerFactory factory = LoggerFactory.Create(builder =>
 });
 ```
 
-For comprehensive examples including Serilog, Application Insights, custom filtering, and performance monitoring, see the [Observability Documentation](../../docs/observability.md#integration-with-microsoftextensionslogging).
+For comprehensive examples including Serilog, Application Insights, custom filtering, and performance monitoring, see the [Observability Documentation](../../docs/articles/advanced/observability.md#integration-with-microsoftextensionslogging).
 
 ## Available Events
 
@@ -136,7 +136,7 @@ WebDriverBiDi emits events for:
 - **Protocol processing**: UnknownMessage, ProtocolError
 - **Transport lifecycle**: Started, Stopped
 
-See the [observability documentation](../../docs/observability.md) for complete event reference.
+See the [observability documentation](../../docs/articles/advanced/observability.md) for complete event reference.
 
 ## Performance
 
@@ -149,5 +149,5 @@ The EventSource bridge has minimal overhead:
 ## See Also
 
 - [WebDriverBiDi Package](https://www.nuget.org/packages/WebDriverBiDi)
-- [Observability Documentation](../../docs/observability.md)
+- [Observability Documentation](../../docs/articles/advanced/observability.md)
 - [Microsoft.Extensions.Logging Documentation](https://docs.microsoft.com/en-us/dotnet/core/extensions/logging)

@@ -38,6 +38,8 @@ Every `RemoteValue` has a `Type` property indicating the JavaScript type as a st
 | `Map` | `"map"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary` |
 | `Array` | `"array"` | `CollectionRemoteValue` | `RemoteValueList` |
 | `Set` | `"set"` | `CollectionRemoteValue` | `RemoteValueList` |
+| `NodeList` | `"nodelist"` | `CollectionRemoteValue` | `RemoteValueList` |
+| `HTMLCollection` | `"htmlcollection"` | `CollectionRemoteValue` | `RemoteValueList` |
 | `Date` | `"date"` | `DateRemoteValue` | `DateTime` |
 | `RegExp` | `"regexp"` | `RegExpRemoteValue` | `RegularExpressionValue` |
 | `DOM Element` | `"node"` | `NodeRemoteValue` | `NodeProperties` |

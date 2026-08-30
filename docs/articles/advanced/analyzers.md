@@ -39,7 +39,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI009** | Error | Module command or `driver.ExecuteCommandAsync()` called before `StartAsync()`, or after `StopAsync()` without a new `StartAsync()` |
 | **BIDI010** | Error | Async module command not awaited (fire-and-forget) |
 | **BIDI012** | Info / Warning | `DisposeAsync()` called without `StopAsync()` first, including the implicit disposal of `await using var driver = ...` and `await using (driver) { ... }`; suggests calling `StopAsync`. Reported as a **Warning** when the same method also assigns `TransportErrorBehavior.Collect` to any of the four error-behavior properties, because `DisposeAsync()` logs and discards collected errors—only `StopAsync()` throws them |
-| **BIDI013** | Warning | Long-running operation (e.g., `NavigateAsync`) called without `CancellationToken` |
+| **BIDI013** | Warning | Long-running operation (`NavigateAsync`, `PrintAsync`, `ReloadAsync`, `StartAsync`, `WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`) called without `CancellationToken` |
 | **BIDI014** | Warning | Parameterless constructor used for a command with a command-level reset property (i.e., a `public static Reset*` property, declared on the class or inherited from a base class, that returns the constructed `CommandParameters` type or one of its base types — this covers `SetGeolocationOverrideCoordinatesCommandParameters`, whose reset helper lives on `SetGeolocationOverrideCommandParameters`); suggests using `.Reset*`. Does not apply to property-level sentinel classes such as `SetViewportCommandParameters`, whose `Reset*` members return unrelated types. |
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName`, in either `SubscribeCommandParameters` constructor form |
 | **BIDI016** | Warning | Deadlock-prone synchronization in an `async` event handler: `lock`, `Monitor.Enter`, `Semaphore`/`SemaphoreSlim.Wait`, `WaitHandle.WaitOne`, `SynchronizationContext.Send`, `Task.WaitAll`/`WaitAny`. Blocking calls such as `.Result` and `.Wait()` are BIDI007. `RunHandlerAsynchronously` suppresses the diagnostic |
@@ -70,6 +70,128 @@ The following analyzers have code fix providers:
 - **BIDI017** — Adds null-coalescing assignment before adding to nullable list
 - **BIDI020** — Inserts `observer.StartCapturingTasks()` before the offending `WaitForCapturedTasksAsync` or `WaitForCapturedTasksCompleteAsync` call
 - **BIDI023** — Same fix as BIDI007: adds `ObservableEventHandlerOptions.RunHandlerAsynchronously` to the `AddObserver` call, converting a non-`async` `Task`-returning lambda to an `async` one first; no fix for method-group handlers
+
+## Configuration and Suppression
+
+The analyzers ship with the severities listed above. Several rules are **Error** severity and will fail the build, so you may need to downgrade or suppress a rule in code you cannot change or that the analyzer flags as a false positive (see [Known Limitations](#known-limitations)).
+
+**Change a rule's severity project-wide** in an `.editorconfig` file:
+
+```ini
+# Downgrade BIDI009 from error to warning for the whole project
+[*.cs]
+dotnet_diagnostic.BIDI009.severity = warning
+
+# Turn a rule off entirely
+dotnet_diagnostic.BIDI004.severity = none
+```
+
+**Suppress a single occurrence** with a pragma:
+
+```csharp
+#pragma warning disable BIDI009 // command executed before StartAsync (set up in a helper)
+driver.BrowsingContext.NavigateAsync(navParams);
+#pragma warning restore BIDI009
+```
+
+**Suppress on a member** with an attribute:
+
+```csharp
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BIDI006:EventObserver should be disposed", Justification = "Observer lifetime is managed by the test fixture.")]
+public void RegisterObserver() { /* ... */ }
+```
+
+**Disable one or more rules for a whole project** with `NoWarn` in the `.csproj`:
+
+```xml
+<PropertyGroup>
+  <NoWarn>$(NoWarn);BIDI004;BIDI013</NoWarn>
+</PropertyGroup>
+```
+
+## Rule Reference
+
+Each rule below is addressable by anchor (for example `#bidi004`) so its diagnostic can link here. See the [Available Analyzers](#available-analyzers) table for the full firing conditions and the [Code Fixes](#code-fixes) list for which rules offer an automatic fix.
+
+### BIDI001
+
+**Error.** `RegisterModule()` called after `StartAsync()`. See [Common Pitfalls — Module Registration Timing](../common-pitfalls.md#module-registration-timing) and [Core Concepts — Timing Restrictions](../core-concepts.md#timing-restrictions).
+
+### BIDI002
+
+**Error.** A custom event registered via `RegisterEvent()` after `StartAsync()`. See [Common Pitfalls — Module Registration Timing](../common-pitfalls.md#module-registration-timing).
+
+### BIDI003
+
+**Error.** `RegisterTypeInfoResolverAsync()` called after `StartAsync()`. See [Common Pitfalls — Module Registration Timing](../common-pitfalls.md#module-registration-timing).
+
+### BIDI004
+
+**Info.** A cancellable operation is called without a `CancellationToken`. See [API Design Guide](api-design.md).
+
+### BIDI005
+
+**Warning.** An event observer is added but its event name is not included in `Session.SubscribeAsync()`. See [Common Pitfalls — Event Subscription](../common-pitfalls.md#event-subscription).
+
+### BIDI006
+
+**Warning.** An `EventObserver` is neither disposed nor unobserved. See [Common Pitfalls — Resource Cleanup](../common-pitfalls.md#resource-cleanup).
+
+### BIDI007
+
+**Warning.** A blocking operation appears in an event handler. See [Common Pitfalls — Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers).
+
+### BIDI008
+
+**Warning.** An `EvaluateResult` is cast unsafely; pattern matching is suggested.
+
+### BIDI009
+
+**Error.** A module command or `ExecuteCommandAsync()` is called before `StartAsync()` (or after `StopAsync()` without a new `StartAsync()`).
+
+### BIDI010
+
+**Error.** An async module command is not awaited (fire-and-forget).
+
+### BIDI012
+
+**Info / Warning.** `DisposeAsync()` is called without a prior `StopAsync()`. See [Error Handling — Collect Mode](error-handling.md#collect-mode).
+
+### BIDI013
+
+**Warning.** A long-running operation (`NavigateAsync`, `PrintAsync`, `ReloadAsync`, `StartAsync`, `WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`) is called without a `CancellationToken`.
+
+### BIDI014
+
+**Warning.** A parameterless constructor is used for a command that exposes a `.Reset*` property. See [API Design Guide — Required vs Optional Parameters](api-design.md#required-vs-optional-parameters).
+
+### BIDI015
+
+**Warning.** A string literal is used for an event name instead of `ObservableEvent.EventName`.
+
+### BIDI016
+
+**Warning.** Deadlock-prone synchronization appears in an `async` event handler. See [Common Pitfalls — Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers).
+
+### BIDI017
+
+**Warning.** A value is added to a nullable list property without a `??=` initializer. See [Common Pitfalls — Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections).
+
+### BIDI020
+
+**Error.** `WaitForCapturedTasksAsync()` / `WaitForCapturedTasksCompleteAsync()` is called without a prior `StartCapturingTasks()`. See [Events and Observables — Event Synchronization](../events-observables.md#event-synchronization).
+
+### BIDI021
+
+**Warning.** `StartCapturingTasks()` is called but no read method follows. See [Events and Observables — Event Synchronization](../events-observables.md#event-synchronization).
+
+### BIDI022
+
+**Warning.** A value is written into `CommandParameters.AdditionalData`, which is not AOT/trimming safe unless every value's type is registered. See [API Design Guide — Protocol Extensions via AdditionalData](api-design.md#protocol-extensions-via-additionaldata) and [AOT Compatibility](aot-compatibility.md).
+
+### BIDI023
+
+**Warning.** A module command is called inside an `AddObserver` handler without `RunHandlerAsynchronously`. See [Common Pitfalls — Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers).
 
 ## Related Documentation
 

@@ -5,12 +5,12 @@
 #    against the desired ref (typically main).
 # 2. The workflow runs the benchmark suite and uploads renamed JSON files
 #    as a `benchmark-baseline` artifact.
-# 3. Maintainer downloads the artifact, drops the two JSON files into
-#    test/WebDriverBiDi.Benchmarks/baselines/, and opens a follow-up PR.
+# 3. Maintainer downloads the artifact, drops the JSON files (one per benchmark
+#    class) into test/WebDriverBiDi.Benchmarks/baselines/, and opens a follow-up PR.
 #
 # The baseline must be produced on a GitHub-hosted runner (not locally) because
 # absolute benchmark numbers are hardware-dependent, and the comparison in
-# benchmarks.yml runs on ubuntu-latest. A locally-produced baseline would show
+# ci.yml runs on ubuntu-latest. A locally-produced baseline would show
 # every subsequent CI run as a large "regression".
 #
 # This workflow does not commit or open a PR on its own. Keeping the human in
@@ -60,7 +60,7 @@ jobs:
     - name: Rename baseline JSON files
       # BenchmarkDotNet emits files named
       #   WebDriverBiDi.Benchmarks.<ClassName>-report-full-compressed.json
-      # The comparison script in benchmarks.yml expects
+      # The comparison script in ci.yml expects
       #   test/WebDriverBiDi.Benchmarks/baselines/ci-baseline-<ClassName>.json
       # This step renames artifacts into the expected shape so the human
       # committing the baseline just drops them into baselines/.

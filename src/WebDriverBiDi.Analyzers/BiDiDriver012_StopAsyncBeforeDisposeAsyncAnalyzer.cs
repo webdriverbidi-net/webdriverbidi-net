@@ -41,7 +41,8 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         Category,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi012");
 
     // Same ID, category, and default severity as Rule (so release tracking is unchanged), but a
     // message that explains the concrete consequence. It is reported with an effective severity of
@@ -53,7 +54,8 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         Category,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi012");
 
     /// <summary>
     /// The key of the diagnostic property that marks a diagnostic reported on an <c>await using</c>

@@ -71,8 +71,8 @@ User input simulation including mouse, keyboard, touch, and wheel events.
 **Key Classes:**
 - `InputModule` - Input module implementation
 - `PerformActionsCommandParameters` - Action parameters
-- `PointerSource` - Mouse/touch action source
-- `KeySource` - Keyboard action source
+- `PointerSourceActions` - Mouse/touch action source
+- `KeySourceActions` - Keyboard action source
 
 ### WebDriverBiDi.Log
 
@@ -173,8 +173,16 @@ To generate the full API documentation locally:
 # Install DocFX if not already installed
 dotnet tool install -g docfx
 
-# Generate documentation
+# Build the library in Release; docfx metadata reads the API surface from
+# src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll
+dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
+
+# Compile the documentation code samples (every [!code-csharp] region must compile)
+dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release
+
+# Extract API metadata from XML comments, then generate the site
 cd docs
+docfx metadata docfx.json
 docfx build docfx.json
 
 # Serve locally
@@ -245,9 +253,12 @@ Events use the observable pattern:
 
 ### Error Handling
 
-- Protocol errors throw `WebDriverBiDiException`
+- Command errors throw `WebDriverBiDiCommandException`
+- Timeouts throw `WebDriverBiDiTimeoutException`
+- Protocol errors (error responses matching no pending command) surface as `WebDriverBiDiProtocolException`, routed through `UnexpectedErrorBehavior`
 - Script errors return `EvaluateResultException`
-- Timeouts throw `WebDriverBiDiException`
+
+See [Error Handling](../articles/advanced/error-handling.md) for the full exception hierarchy and when each type is thrown.
 
 ## Examples
 

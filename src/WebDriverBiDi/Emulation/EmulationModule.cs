@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Emulation;
 
 /// <summary>
-/// The Emulation module contains commands and events relating to emulating various conditions in the browser.
+/// The Emulation module contains commands relating to emulating various conditions in the browser.
 /// </summary>
 public sealed class EmulationModule : Module
 {

@@ -42,7 +42,8 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: Description);
+        description: Description,
+        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi022");
 
     // Methods on Dictionary<TKey, TValue> that add new values (and therefore introduce
     // potentially non-AOT-safe objects that will be serialized later).
