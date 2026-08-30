@@ -124,6 +124,84 @@ public class NumberRemoteValueTests
         Assert.Equal(42, longValue);
     }
 
+    [Theory]
+    [InlineData(2.7, 2)]
+    [InlineData(-2.7, -2)]
+    [InlineData(2.5, 2)]
+    [InlineData(3.5, 3)]
+    public void TestConvertToLongTruncatesTowardZero(double value, long expected)
+    {
+        string json = $$"""
+                      {
+                        "type": "number",
+                        "value": {{value}}
+                      }
+                      """;
+
+        NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(expected, result.ToLong());
+    }
+
+    [Theory]
+    [InlineData(2.7, 2)]
+    [InlineData(-2.7, -2)]
+    [InlineData(2.5, 2)]
+    [InlineData(3.5, 3)]
+    public void TestConvertToIntTruncatesTowardZero(double value, int expected)
+    {
+        string json = $$"""
+                      {
+                        "type": "number",
+                        "value": {{value}}
+                      }
+                      """;
+
+        NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(expected, result.ToInt());
+    }
+
+    [Theory]
+    [InlineData("NaN", 0L)]
+    [InlineData("Infinity", long.MaxValue)]
+    [InlineData("-Infinity", long.MinValue)]
+    public void TestConvertToLongSaturatesForSpecialValues(string specialValue, long expected)
+    {
+        string json = $$"""
+                      {
+                        "type": "number",
+                        "value": "{{specialValue}}"
+                      }
+                      """;
+
+        NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(expected, result.ToLong());
+    }
+
+    [Theory]
+    [InlineData("NaN", 0)]
+    [InlineData("Infinity", int.MaxValue)]
+    [InlineData("-Infinity", int.MinValue)]
+    public void TestConvertToIntSaturatesForSpecialValues(string specialValue, int expected)
+    {
+        string json = $$"""
+                      {
+                        "type": "number",
+                        "value": "{{specialValue}}"
+                      }
+                      """;
+
+        NumberRemoteValue? result = JsonSerializer.Deserialize<NumberRemoteValue>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(expected, result.ToInt());
+    }
+
     [Fact]
     public void TestCanUseImplicitConversionToDouble()
     {
