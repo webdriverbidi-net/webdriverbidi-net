@@ -451,6 +451,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(SerializationOptions))]
 [JsonSerializable(typeof(ShadowRootMode))]
 [JsonSerializable(typeof(SharedReference))]
+[JsonSerializable(typeof(SharedReferenceInfo))]
 [JsonSerializable(typeof(Source))]
 [JsonSerializable(typeof(StackFrame))]
 [JsonSerializable(typeof(StackTrace))]
