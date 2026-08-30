@@ -42,14 +42,16 @@ public record NumberRemoteValue : ValueHoldingRemoteValue<double>
 
     /// <summary>
     /// Defines an implicit conversion from a NumberRemoteValue to a long, allowing
-    /// for easy access to the numeric value of this remote value.
+    /// for easy access to the numeric value of this remote value. See <see cref="ToLong"/>
+    /// for the narrowing behavior.
     /// </summary>
     /// <param name="value">The value to convert.</param>
     public static implicit operator long(NumberRemoteValue value) => value.ToLong();
 
     /// <summary>
     /// Defines an implicit conversion from a NumberRemoteValue to an integer, allowing
-    /// for easy access to the numeric value of this remote value.
+    /// for easy access to the numeric value of this remote value. See <see cref="ToInt"/>
+    /// for the narrowing behavior.
     /// </summary>
     /// <param name="value">The value to convert.</param>
     public static implicit operator int(NumberRemoteValue value) => value.ToInt();
@@ -64,11 +66,31 @@ public record NumberRemoteValue : ValueHoldingRemoteValue<double>
     /// Gets the numeric value of this remote value as an integer, converting from double to integer as needed.
     /// </summary>
     /// <returns>The numeric value as an integer.</returns>
-    public int ToInt() => Convert.ToInt32(this.Value);
+    /// <remarks>
+    /// A JavaScript number is a double, so this conversion is narrowing and never throws. The fractional
+    /// part is truncated toward zero (for example, <c>2.7</c> becomes <c>2</c> and <c>-2.7</c> becomes
+    /// <c>-2</c>). Values that have no <see cref="int"/> representation are mapped as follows: <c>NaN</c>
+    /// becomes <c>0</c>, and any value greater than <see cref="int.MaxValue"/> (including <c>Infinity</c>)
+    /// or less than <see cref="int.MinValue"/> (including <c>-Infinity</c>) saturates to
+    /// <see cref="int.MaxValue"/> or <see cref="int.MinValue"/> respectively. Read
+    /// <see cref="ValueHoldingRemoteValue{T}.Value"/> when the exact value must be preserved, including
+    /// detecting <c>NaN</c> or an infinity.
+    /// </remarks>
+    public int ToInt() => (int)this.Value;
 
     /// <summary>
     /// Gets the numeric value of this remote value as a long, converting from double to long as needed.
     /// </summary>
     /// <returns>The numeric value as a long.</returns>
-    public long ToLong() => Convert.ToInt64(this.Value);
+    /// <remarks>
+    /// A JavaScript number is a double, so this conversion is narrowing and never throws. The fractional
+    /// part is truncated toward zero (for example, <c>2.7</c> becomes <c>2</c> and <c>-2.7</c> becomes
+    /// <c>-2</c>). Values that have no <see cref="long"/> representation are mapped as follows: <c>NaN</c>
+    /// becomes <c>0</c>, and any value greater than <see cref="long.MaxValue"/> (including <c>Infinity</c>)
+    /// or less than <see cref="long.MinValue"/> (including <c>-Infinity</c>) saturates to
+    /// <see cref="long.MaxValue"/> or <see cref="long.MinValue"/> respectively. Read
+    /// <see cref="ValueHoldingRemoteValue{T}.Value"/> when the exact value must be preserved, including
+    /// detecting <c>NaN</c> or an infinity.
+    /// </remarks>
+    public long ToLong() => (long)this.Value;
 }
