@@ -16,9 +16,15 @@
     <RootNamespace>WebDriverBiDi.Analyzers</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Built once per Roslyn variant by WebDriverBiDi.Analyzers.csproj's packaging target; defaults to
+         the compatibility floor (4.8.0, .NET 8 SDK). See the note in WebDriverBiDi.Analyzers.csproj. -->
+    <RoslynVersion Condition="'$(RoslynVersion)' == ''">4.8.0</RoslynVersion>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

@@ -64,7 +64,7 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
     };
 
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
