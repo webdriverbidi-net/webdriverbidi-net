@@ -954,6 +954,66 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Processes a single incoming message read from the connection.
+    /// </summary>
+    /// <param name="packet">The incoming message to process.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// This method is <see langword="protected virtual"/> to allow test doubles to observe or delay the
+    /// processing of individual messages (for example to create a backlog of pending messages while the
+    /// transport disconnects).
+    /// </remarks>
+    protected virtual async Task ProcessMessageAsync(IncomingMessage packet)
+    {
+        bool isProcessed = false;
+        using (packet)
+        {
+            try
+            {
+                packet.Parse();
+            }
+            catch (JsonException e)
+            {
+                // JSON parsing errors are regarded as "unknown message" errors, rather than
+                // "protocol errors." Protocol errors are defined as valid JSON messages that
+                // resemble protocol data structures, but do not fit the payload definitions
+                // of the protocol. Here, we just log the error; the error will be processed
+                // to be added to the proper unhandled error collection in the "if (!isProcessed)"
+                // block below.
+                await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+            }
+
+            if (packet.MessageKind == IncomingMessageKind.Filtered)
+            {
+                isProcessed = true;
+            }
+            else if (packet.MessageKind == IncomingMessageKind.CommandResponse)
+            {
+                isProcessed = await this.ProcessCommandResponseMessageAsync(packet).ConfigureAwait(false);
+                Interlocked.Increment(ref this.commandResponseMessagesReceived);
+            }
+            else if (packet.MessageKind == IncomingMessageKind.ErrorResponse)
+            {
+                isProcessed = await this.ProcessErrorMessageAsync(packet).ConfigureAwait(false);
+                Interlocked.Increment(ref this.errorMessagesReceived);
+            }
+            else if (packet.MessageKind == IncomingMessageKind.Event)
+            {
+                isProcessed = await this.ProcessEventMessageAsync(packet).ConfigureAwait(false);
+                Interlocked.Increment(ref this.eventMessagesReceived);
+            }
+
+            if (!isProcessed)
+            {
+                string message = packet.MessageText;
+                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(packet.MessageKind, packet.MessageLength);
+                await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
+                this.CaptureUnhandledError(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
+            }
+        }
+    }
+
+    /// <summary>
     /// Captures an unhandled error in the protocol.
     /// </summary>
     /// <param name="errorType">The <see cref="UnhandledErrorKind"/> describing the type of error.</param>
@@ -1260,56 +1320,6 @@ public class Transport : IAsyncDisposable
         // for symmetry with per-message failures in ReadIncomingMessagesAsync.
         WebDriverBiDiEventSource.RaiseEvent.ProtocolError(exception.Message, "Message processing loop faulted");
         this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, exception, "Message processing loop faulted");
-    }
-
-    private async Task ProcessMessageAsync(IncomingMessage packet)
-    {
-        bool isProcessed = false;
-        using (packet)
-        {
-            try
-            {
-                packet.Parse();
-            }
-            catch (JsonException e)
-            {
-                // JSON parsing errors are regarded as "unknown message" errors, rather than
-                // "protocol errors." Protocol errors are defined as valid JSON messages that
-                // resemble protocol data structures, but do not fit the payload definitions
-                // of the protocol. Here, we just log the error; the error will be processed
-                // to be added to the proper unhandled error collection in the "if (!isProcessed)"
-                // block below.
-                await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            }
-
-            if (packet.MessageKind == IncomingMessageKind.Filtered)
-            {
-                isProcessed = true;
-            }
-            else if (packet.MessageKind == IncomingMessageKind.CommandResponse)
-            {
-                isProcessed = await this.ProcessCommandResponseMessageAsync(packet).ConfigureAwait(false);
-                Interlocked.Increment(ref this.commandResponseMessagesReceived);
-            }
-            else if (packet.MessageKind == IncomingMessageKind.ErrorResponse)
-            {
-                isProcessed = await this.ProcessErrorMessageAsync(packet).ConfigureAwait(false);
-                Interlocked.Increment(ref this.errorMessagesReceived);
-            }
-            else if (packet.MessageKind == IncomingMessageKind.Event)
-            {
-                isProcessed = await this.ProcessEventMessageAsync(packet).ConfigureAwait(false);
-                Interlocked.Increment(ref this.eventMessagesReceived);
-            }
-
-            if (!isProcessed)
-            {
-                string message = packet.MessageText;
-                WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(packet.MessageKind, packet.MessageLength);
-                await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
-                this.CaptureUnhandledError(UnhandledErrorKind.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
-            }
-        }
     }
 
     private async Task<bool> ProcessCommandResponseMessageAsync(IncomingMessage packet)

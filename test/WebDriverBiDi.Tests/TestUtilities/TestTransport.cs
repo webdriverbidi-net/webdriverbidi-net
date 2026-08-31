@@ -215,6 +215,18 @@ public class TestTransport : Transport
         return new TestIncomingMessage(owner, length, throwOnDeserialization);
     }
 
+    protected override async Task ProcessMessageAsync(IncomingMessage packet)
+    {
+        if (this.messageProcessingDelay > TimeSpan.Zero)
+        {
+            // Delay processing so a caller can leave a message pending on the reader loop while it
+            // disconnects, exercising the "process pending incoming messages during shutdown" path.
+            await Task.Delay(this.messageProcessingDelay).ConfigureAwait(false);
+        }
+
+        await base.ProcessMessageAsync(packet).ConfigureAwait(false);
+    }
+
     protected override async Task DisconnectAsync(bool throwCollectedExceptions, CancellationToken cancellationToken = default)
     {
         if (this.ThrowOnDisconnect)
