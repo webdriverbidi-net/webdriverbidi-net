@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// A header from a request.
+/// A request header describing a cookie.
 /// </summary>
 public class CookieHeader
 {

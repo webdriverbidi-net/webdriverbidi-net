@@ -8,9 +8,9 @@ namespace WebDriverBiDi.Script;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// Interface for a remote value for a specific type, providing type-safe access to the
-/// value and the ability to convert to a local value for use as an argument for script
-/// execution on the remote end.
+/// Abstract base record for a remote value for a specific type, providing type-safe access
+/// to the value and the ability to convert to a local value for use as an argument for
+/// script execution on the remote end.
 /// </summary>
 /// <typeparam name="T">The native .NET type of the remote value.</typeparam>
 public abstract record ValueHoldingRemoteValue<T> : ValueHoldingRemoteValue, ITypeSafeRemoteValue<T>

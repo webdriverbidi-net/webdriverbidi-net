@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 /// <summary>
-/// Interface for a remote value providing access to the underlying .NET value of the
+/// Abstract base record for a remote value providing access to the underlying .NET value of the
 /// remote value.
 /// </summary>
 public abstract record ValueHoldingRemoteValue : RemoteValue

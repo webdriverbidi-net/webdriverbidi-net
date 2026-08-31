@@ -38,7 +38,7 @@ public class ProxyConfiguration
     public ProxyType ProxyType { get; internal set; }
 
     /// <summary>
-    /// Gets the read-only dictionary of additional properties deserialized with this message.
+    /// Gets the dictionary of additional properties deserialized with this message.
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
