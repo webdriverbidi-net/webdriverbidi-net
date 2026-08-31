@@ -1411,6 +1411,39 @@ public static class EventObserverSamples
         _ = driver.Script.OnRealmDestroyed;
         #endregion
     }
+
+    /// <summary>
+    /// Input module observable events.
+    /// </summary>
+    public static void InputEvents(BiDiDriver driver)
+    {
+        #region InputEvents
+        _ = driver.Input.OnFileDialogOpened;
+        #endregion
+    }
+
+    /// <summary>
+    /// Speculation module observable events.
+    /// </summary>
+    public static void SpeculationEvents(BiDiDriver driver)
+    {
+        #region SpeculationEvents
+        _ = driver.Speculation.OnPrefetchStatusUpdated;
+        #endregion
+    }
+
+    /// <summary>
+    /// Bluetooth module observable events.
+    /// </summary>
+    public static void BluetoothEvents(BiDiDriver driver)
+    {
+        #region BluetoothEvents
+        _ = driver.Bluetooth.OnCharacteristicGenerated;
+        _ = driver.Bluetooth.OnDescriptorGenerated;
+        _ = driver.Bluetooth.OnGattConnectionAttempted;
+        _ = driver.Bluetooth.OnRequestDevicePromptUpdated;
+        #endregion
+    }
 }
 
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

@@ -85,11 +85,39 @@ driver.Script.OnRealmCreated          // New execution realm
 driver.Script.OnRealmDestroyed        // Realm destroyed
 ```
 
-#### Session Module
+#### Input Module
+
+[!code-csharp[Input Events](../code/events-observables/EventObserverSamples.cs#InputEvents)]
 
 ```csharp
-// Session module has no observable events
+driver.Input.OnFileDialogOpened       // File selection dialog opened
 ```
+
+#### Speculation Module
+
+[!code-csharp[Speculation Events](../code/events-observables/EventObserverSamples.cs#SpeculationEvents)]
+
+```csharp
+driver.Speculation.OnPrefetchStatusUpdated   // Prefetch status of a resource updated
+```
+
+#### Bluetooth Module
+
+[!code-csharp[Bluetooth Events](../code/events-observables/EventObserverSamples.cs#BluetoothEvents)]
+
+```csharp
+driver.Bluetooth.OnCharacteristicGenerated      // GATT characteristic event generated
+driver.Bluetooth.OnDescriptorGenerated          // GATT descriptor event generated
+driver.Bluetooth.OnGattConnectionAttempted      // GATT connection attempted
+driver.Bluetooth.OnRequestDevicePromptUpdated   // Device request prompt updated
+```
+
+#### Modules Without Observable Events
+
+The remaining modules define commands only, and expose no observable events: `Browser`,
+`DigitalCredentials`, `Emulation`, `Permissions`, `Session`, `Storage`, `UserAgentClientHints`,
+and `WebExtension`. Together with the seven modules listed above, this accounts for all 29
+observable events in the library.
 
 ### Driver-Level Observable Events
 
