@@ -8,7 +8,7 @@ using WebDriverBiDi.TestUtilities;
 public class CommandJsonConverterTests
 {
     [Fact]
-    public void TestReadThrowsNotImplementedException()
+    public void TestReadThrowsNotSupportedException()
     {
         string json = """
                       {
