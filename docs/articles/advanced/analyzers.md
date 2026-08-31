@@ -48,6 +48,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI021** | Warning | `StartCapturingTasks()` called but no read method (`WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`) follows in the same method |
 | **BIDI022** | Warning | Writing a value into `CommandParameters.AdditionalData` (via `Add`, `TryAdd`, or indexer assignment). The `Dictionary<string, object?>` values are serialized through reflection-based `JsonSerializer` overloads, which are not compatible with native AOT or IL trimming unless every value's runtime type is registered via `BiDiDriver.RegisterTypeInfoResolverAsync` |
 | **BIDI023** | Warning | Module command (e.g., `NavigateAsync`, `EvaluateAsync`) called inside an `AddObserver` event handler without `RunHandlerAsynchronously`. The driver's command pipeline dispatches events synchronously by default; calling a module command from within the handler can deadlock or produce unexpected behavior. As with BIDI007, the option only suppresses the diagnostic for an `Action<T>` handler, an `async` lambda, or an `async` method group; a non-`async` `Task`-returning handler is still reported |
+| **BIDI024** | Error | `StartAsync()` called a second time on the same driver without an intervening `StopAsync()`. The transport is already connected, so the second call throws `WebDriverBiDiConnectionException`. Tracked per local variable within a method, constructor, or top-level program; a `StopAsync()` returns the driver to the not-started state, so a start / stop / start sequence is not reported |
 
 ## Code Fixes
 
@@ -192,6 +193,10 @@ Each rule below is addressable by anchor (for example `#bidi004`) so its diagnos
 ### BIDI023
 
 **Warning.** A module command is called inside an `AddObserver` handler without `RunHandlerAsynchronously`. See [Common Pitfalls — Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers).
+
+### BIDI024
+
+**Error.** `StartAsync()` is called a second time on the same driver without an intervening `StopAsync()`. The transport is already connected, so the call throws `WebDriverBiDiConnectionException`. Call `StopAsync()` before starting again.
 
 ## Related Documentation
 
