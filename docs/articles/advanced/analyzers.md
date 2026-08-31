@@ -50,6 +50,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI023** | Warning | Module command (e.g., `NavigateAsync`, `EvaluateAsync`) called inside an `AddObserver` event handler without `RunHandlerAsynchronously`. The driver's command pipeline dispatches events synchronously by default; calling a module command from within the handler can deadlock or produce unexpected behavior. As with BIDI007, the option only suppresses the diagnostic for an `Action<T>` handler, an `async` lambda, or an `async` method group; a non-`async` `Task`-returning handler is still reported |
 | **BIDI024** | Error | `StartAsync()` called a second time on the same driver without an intervening `StopAsync()`. The transport is already connected, so the second call throws `WebDriverBiDiConnectionException`. Tracked per local variable within a method, constructor, or top-level program; a `StopAsync()` returns the driver to the not-started state, so a start / stop / start sequence is not reported |
 | **BIDI025** | Warning | An `async void` method is passed as an `AddObserver` handler. It binds to the `Action<T>` overload (not `Func<T, Task>`), so it runs fire-and-forget: exceptions thrown after its first `await` are unobserved async-void faults that can crash the process, and the observer is considered complete before the handler's async work finishes. An `async` lambda or `async Task` method group binds to `Func<T, Task>` and is not reported |
+| **BIDI026** | Error | An explicit `ExecuteCommandAsync<T>` type argument disagrees with the command's result type (e.g., `ExecuteCommandAsync<WrongResult>(new StatusCommandParameters())`). The generic `CommandParameters<T>` overload no longer applies, so the call binds to the non-generic `CommandParameters` overload, compiles, and then throws `WebDriverBiDiException` at runtime because the response cannot be converted to `T`. A matching or base type argument, or an inferred one, is not reported. Skipped when either type is an open generic type parameter |
 
 ## Code Fixes
 
@@ -72,6 +73,7 @@ The following analyzers have code fix providers:
 - **BIDI017** — Adds null-coalescing assignment before adding to nullable list
 - **BIDI020** — Inserts `observer.StartCapturingTasks()` before the offending `WaitForCapturedTasksAsync` or `WaitForCapturedTasksCompleteAsync` call
 - **BIDI023** — Same fix as BIDI007: adds `ObservableEventHandlerOptions.RunHandlerAsynchronously` to the `AddObserver` call, converting a non-`async` `Task`-returning lambda to an `async` one first; no fix for method-group handlers
+- **BIDI026** — Two fixes: changes the `ExecuteCommandAsync<T>` type argument to the command's result type, or removes the explicit type argument so it is inferred
 
 ## Configuration and Suppression
 
@@ -202,6 +204,10 @@ Each rule below is addressable by anchor (for example `#bidi004`) so its diagnos
 ### BIDI025
 
 **Warning.** An `async void` method is passed as an `AddObserver` handler, binding it to the `Action<T>` overload. Its exceptions become unobserved async-void faults and its asynchronous work is not tracked. Declare the handler as `async Task` so it binds to the `Func<T, Task>` overload.
+
+### BIDI026
+
+**Error.** An explicit `ExecuteCommandAsync<T>` type argument does not match the result type of the supplied parameters object. The call binds to the non-generic `ExecuteCommandAsync(CommandParameters)` overload and throws `WebDriverBiDiException` at runtime because the response cannot be converted to `T`. Match the type argument to the command's result type, or let it be inferred.
 
 ## Related Documentation
 
