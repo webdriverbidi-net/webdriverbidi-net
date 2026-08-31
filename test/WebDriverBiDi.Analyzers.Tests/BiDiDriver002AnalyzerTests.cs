@@ -25,34 +25,15 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                    void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         {|#0:driver.RegisterEvent<string>("test.event", async (e) => { })|};
                     }
@@ -64,10 +45,9 @@ public class BiDiDriver002AnalyzerTests
             .WithLocation(0)
             .WithArguments("test.event");
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -84,25 +64,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -115,10 +80,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -135,37 +99,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new ObservableEvent<LogMessageEventArgs>("driver.logMessage");
-                }
-
-                public class WebDriverBiDiEventArgs { }
-                public class LogMessageEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public ObservableEvent(string eventName) { }
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -178,10 +115,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -197,37 +133,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new ObservableEvent<LogMessageEventArgs>("driver.logMessage");
-                }
-
-                public class WebDriverBiDiEventArgs { }
-                public class LogMessageEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public ObservableEvent(string eventName) { }
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -240,10 +149,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -260,49 +168,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public LogModule Log { get; } = new LogModule();
-                    public NetworkModule Network { get; } = new NetworkModule();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
-                }
-
-                public class NetworkModule
-                {
-                    public ObservableEvent<BeforeRequestEventArgs> OnBeforeRequest { get; } = new ObservableEvent<BeforeRequestEventArgs>("network.beforeRequest");
-                }
-
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-                public class BeforeRequestEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public ObservableEvent(string eventName) { }
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -310,16 +179,15 @@ public class BiDiDriver002AnalyzerTests
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        driver.Network.OnBeforeRequest.AddObserver(async (e) => { });
+                        driver.Network.OnBeforeRequestSent.AddObserver(async (e) => { });
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -335,25 +203,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public abstract class TestClass
                 {
                     public abstract Task TestMethod();
@@ -361,10 +214,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -422,25 +274,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -459,10 +296,9 @@ public class BiDiDriver002AnalyzerTests
             .WithLocation(0)
             .WithArguments("test.event");
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -479,22 +315,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -508,10 +332,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -527,22 +350,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -555,10 +366,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -610,25 +420,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -652,10 +447,9 @@ public class BiDiDriver002AnalyzerTests
             .WithLocation(0)
             .WithArguments("test.event");
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -672,25 +466,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -703,10 +482,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -722,25 +500,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     private BiDiDriver fieldDriver = new BiDiDriver(TimeSpan.FromSeconds(30));
@@ -754,10 +517,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -773,22 +535,10 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -802,10 +552,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -823,39 +572,20 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
+            using WebDriverBiDi;
 
-            namespace WebDriverBiDi
+            namespace TestApp
             {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                    void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-
                 public static class DriverFactory
                 {
                     public static BiDiDriver Create() => new BiDiDriver(TimeSpan.FromSeconds(30));
                 }
-            }
-
-            namespace TestApp
-            {
-                using WebDriverBiDi;
 
                 public class TestClass
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         // RegisterEvent called on a method-call result, not a simple variable —
                         // GetDriverVariableName cannot extract a name, so no diagnostic.
@@ -865,10 +595,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -885,30 +614,15 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         // An if-statement is neither LocalDeclaration nor ExpressionStatement.
                         if (true) { }
@@ -917,10 +631,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -937,30 +650,15 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         // Await a variable (not an invocation expression).
                         Task t = Task.CompletedTask;
@@ -970,10 +668,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -990,26 +687,10 @@ public class BiDiDriver002AnalyzerTests
         string testCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task StopAsync() => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -1023,10 +704,9 @@ public class BiDiDriver002AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1040,34 +720,15 @@ public class BiDiDriver002AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                    void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(string eventName)
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         {|#0:driver.RegisterEvent<string>(eventName, async (e) => { })|};
                     }
@@ -1079,10 +740,9 @@ public class BiDiDriver002AnalyzerTests
             .WithLocation(0)
             .WithArguments("eventName");
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 

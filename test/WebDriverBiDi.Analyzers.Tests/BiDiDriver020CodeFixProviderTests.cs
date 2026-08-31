@@ -66,13 +66,11 @@ public class BiDiDriver020CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("WaitForCapturedTasksAsync", "observer");
 
-        LfCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -128,13 +126,11 @@ public class BiDiDriver020CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("WaitForCapturedTasksCompleteAsync", "observer");
 
-        LfCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -196,13 +192,11 @@ public class BiDiDriver020CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("WaitForCapturedTasksAsync", "observer");
 
-        LfCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -15,74 +14,16 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver014CodeFixProviderTests
 {
     /// <summary>
-    /// Stub types mirroring the real geolocation command parameters: the Reset property is declared
-    /// on the base class and returns the base type; the derived class has the public constructor.
+    /// Runs a code-fix verification against the real geolocation command-parameters types, where the
+    /// Reset property (<c>ResetGeolocationOverride</c>) is declared on the base
+    /// <c>SetGeolocationOverrideCommandParameters</c> and returns the base type, and the public
+    /// parameterless constructor lives on the derived
+    /// <c>SetGeolocationOverrideCoordinatesCommandParameters</c>.
     /// </summary>
-    private const string InheritedResetStubTypes = """
-        using System;
-        using System.Collections.Generic;
-        using System.Text.Json.Serialization;
-        using System.Threading.Tasks;
-
-        namespace WebDriverBiDi
-        {
-            public abstract class CommandParameters
-            {
-                [JsonIgnore]
-                public abstract string MethodName { get; }
-
-                [JsonIgnore]
-                public abstract Type ResponseType { get; }
-            }
-
-            public abstract class CommandParameters<T> : CommandParameters
-                where T : CommandResult
-            {
-                [JsonIgnore]
-                public override Type ResponseType => typeof(T);
-            }
-
-            public class CommandResult { }
-        }
-
-        namespace WebDriverBiDi.Emulation
-        {
-            using System.Text.Json.Serialization;
-            using WebDriverBiDi;
-
-            public class SetGeolocationOverrideCommandResult : CommandResult { }
-
-            public class GeolocationCoordinates { }
-
-            public class SetGeolocationOverrideCommandParameters : CommandParameters<SetGeolocationOverrideCommandResult>
-            {
-                protected SetGeolocationOverrideCommandParameters() { }
-
-                public static SetGeolocationOverrideCommandParameters ResetGeolocationOverride => new SetGeolocationOverrideCoordinatesCommandParameters();
-
-                [JsonIgnore]
-                public override string MethodName => "emulation.setGeolocationOverride";
-            }
-
-            public class SetGeolocationOverrideCoordinatesCommandParameters : SetGeolocationOverrideCommandParameters
-            {
-                public SetGeolocationOverrideCoordinatesCommandParameters() : base() { }
-
-                [JsonPropertyName("coordinates")]
-                [JsonInclude]
-                public GeolocationCoordinates? Coordinates { get; set; }
-            }
-        }
-
-        """;
-
-    /// <summary>
-    /// Runs a code-fix verification for the inherited-Reset stub types with the given TestApp bodies.
-    /// </summary>
-    /// <param name="testBody">The TestApp namespace body containing the marked diagnostic.</param>
-    /// <param name="fixedBody">The TestApp namespace body after the fix.</param>
+    /// <param name="testCode">The source containing the marked diagnostic.</param>
+    /// <param name="fixedCode">The source after the fix.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous verification.</returns>
-    private static async Task VerifyInheritedResetFixAsync(string testBody, string fixedBody)
+    private static async Task VerifyInheritedResetFixAsync(string testCode, string fixedCode)
     {
         DiagnosticResult expected = new DiagnosticResult(
             BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
@@ -90,11 +31,10 @@ public class BiDiDriver014CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("SetGeolocationOverrideCoordinatesCommandParameters", "ResetGeolocationOverride");
 
-        LfCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
         {
-            TestCode = InheritedResetStubTypes + testBody,
-            FixedCode = InheritedResetStubTypes + fixedBody,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            TestCode = testCode,
+            FixedCode = fixedCode,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -345,62 +285,10 @@ public class BiDiDriver014CodeFixProviderTests
     public async Task CodeFix_ReplacesParameterlessConstructorWithResetProperty()
     {
         string testCode = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -413,62 +301,10 @@ public class BiDiDriver014CodeFixProviderTests
             """;
 
         string fixedCode = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -484,11 +320,10 @@ public class BiDiDriver014CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        LfCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -503,58 +338,10 @@ public class BiDiDriver014CodeFixProviderTests
     public async Task CodeFix_WithMultipleVariables_FixesOnlyFlaggedOne()
     {
         string testCode = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -574,58 +361,10 @@ public class BiDiDriver014CodeFixProviderTests
             """;
 
         string fixedCode = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -648,11 +387,10 @@ public class BiDiDriver014CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        LfCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -665,21 +403,6 @@ public class BiDiDriver014CodeFixProviderTests
         // The type is constructed with a fully-qualified name and no using directive, so the reset
         // property access must be qualified the same way or it would not resolve.
         string testCode = """
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters
-                {
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-                }
-            }
-
             namespace TestApp
             {
                 public class TestClass
@@ -693,21 +416,6 @@ public class BiDiDriver014CodeFixProviderTests
             """;
 
         string fixedCode = """
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters
-                {
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-                }
-            }
-
             namespace TestApp
             {
                 public class TestClass
@@ -726,11 +434,10 @@ public class BiDiDriver014CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        LfCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 

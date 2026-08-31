@@ -22,61 +22,33 @@ public class BiDiDriver003CodeFixProviderTests
     public async Task RegisterTypeInfoResolverAsync_CodeFixMovesBeforeStartAsync()
     {
         string testCode = """
-                using System;
-                using System.Text.Json.Serialization.Metadata;
-                using System.Threading.Tasks;
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
 
-                namespace WebDriverBiDi
+            namespace TestApp
+            {
+                public class TestClass
                 {
-                    public interface IBiDiDriver { }
-
-                    public class BiDiDriver : IBiDiDriver
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
-                        public BiDiDriver(TimeSpan timeout) { }
-                        public Task StartAsync(string url) => Task.CompletedTask;
-                        public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
                     }
                 }
-
-                namespace TestApp
-                {
-                    using System.Text.Json.Serialization.Metadata;
-                    using WebDriverBiDi;
-
-                    public class TestClass
-                    {
-                        public async Task TestMethod(IJsonTypeInfoResolver resolver)
-                        {
-                            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-                            await driver.StartAsync("ws://localhost:9222");
-                            {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
-                        }
-                    }
-                }
-                """;
+            }
+            """;
 
         string fixedCode = """
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -92,15 +64,13 @@ public class BiDiDriver003CodeFixProviderTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0);
 
-        LfCodeFixTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
 }

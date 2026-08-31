@@ -17,6 +17,10 @@ using Microsoft.CodeAnalysis.Testing;
 /// </summary>
 public class BiDiDriver023CodeFixProviderTests
 {
+    // Self-contained stand-in types used only by the method-group test below, which drives the code
+    // fix provider through AnalyzerTestHelpers.GetCodeActionsAsync. That helper builds its own ad-hoc
+    // compilation and does not reference the real WebDriverBiDi assembly, so the analyzed source must
+    // declare the driver, module, and observable-event types it uses in-source.
     private const string CommonStubs = """
         namespace WebDriverBiDi
         {
@@ -76,17 +80,17 @@ public class BiDiDriver023CodeFixProviderTests
     /// <summary>
     /// Tests that the code fix adds RunHandlerAsynchronously when it is not yet present.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EventHandler_WithModuleCommand_CodeFixAddsRunHandlerAsynchronously()
     {
-        string testCode = $$"""
-            {{CommonStubs}}
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -100,14 +104,13 @@ public class BiDiDriver023CodeFixProviderTests
             }
             """;
 
-        string fixedCode = $$"""
-            {{CommonStubs}}
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -127,11 +130,10 @@ public class BiDiDriver023CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("NavigateAsync");
 
-        LfCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -141,17 +143,17 @@ public class BiDiDriver023CodeFixProviderTests
     /// <summary>
     /// Tests that the code fix replaces an existing options argument with RunHandlerAsynchronously.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task EventHandler_WithExistingNoneOption_CodeFixReplacesWithRunHandlerAsynchronously()
+    public async Task EventHandler_WithExistingSynchronousOption_CodeFixReplacesWithRunHandlerAsynchronously()
     {
-        string testCode = $$"""
-            {{CommonStubs}}
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -159,20 +161,19 @@ public class BiDiDriver023CodeFixProviderTests
                         var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
                         {
                             await {|#0:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|};
-                        }, ObservableEventHandlerOptions.None);
+                        }, ObservableEventHandlerOptions.RunHandlerSynchronously);
                     }
                 }
             }
             """;
 
-        string fixedCode = $$"""
-            {{CommonStubs}}
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -192,11 +193,10 @@ public class BiDiDriver023CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("NavigateAsync");
 
-        LfCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -238,14 +238,13 @@ public class BiDiDriver023CodeFixProviderTests
     [Fact]
     public async Task EventHandler_NonAsyncExpressionLambda_WithRunHandlerAsynchronously_CodeFixMakesHandlerAsync()
     {
-        string testCode = $$"""
-            {{CommonStubs}}
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -258,14 +257,13 @@ public class BiDiDriver023CodeFixProviderTests
             }
             """;
 
-        string fixedCode = $$"""
-            {{CommonStubs}}
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -288,11 +286,10 @@ public class BiDiDriver023CodeFixProviderTests
             .WithLocation(0)
             .WithMessage("Module command 'NavigateAsync' is called inside an event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' so the command is issued from a continuation rather than on the dispatching thread.");
 
-        LfCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 

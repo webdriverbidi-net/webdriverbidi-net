@@ -23,59 +23,17 @@ public class BiDiDriver017CodeFixProviderTests
     {
         string testCode = """
             #nullable enable
-            using System;
             using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Session;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        SetTimeZoneOverrideCommandParameters parameters = new();
-                        {|#0:parameters.Contexts|}.Add("context1");
+                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
+                        {|#0:parameters.NoProxyAddresses|}.Add("proxy1");
                     }
                 }
             }
@@ -83,59 +41,17 @@ public class BiDiDriver017CodeFixProviderTests
 
         string fixedCode = """
             #nullable enable
-            using System;
             using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Session;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        SetTimeZoneOverrideCommandParameters parameters = new();
-                        (parameters.Contexts ??= new List<string>()).Add("context1");
+                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
+                        (parameters.NoProxyAddresses ??= new List<string>()).Add("proxy1");
                     }
                 }
             }
@@ -143,13 +59,12 @@ public class BiDiDriver017CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver017_NullableListAddAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("string", "Contexts");
+            .WithArguments("string", "NoProxyAddresses");
 
-        LfCodeFixTest<BiDiDriver017_NullableListAddAnalyzer, BiDiDriver017_NullableListAddCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver017_NullableListAddAnalyzer, BiDiDriver017_NullableListAddCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 

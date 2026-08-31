@@ -6,8 +6,6 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -24,28 +22,16 @@ public class BiDiDriver008CodeFixProviderTests
     public async Task CodeFixProvider_RegisteredForDirectCast()
     {
         string testCode = """
-            using System;
-
-            namespace WebDriverBiDi { public record CommandResult { } }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult { public string V { get; set; } = ""; }
-                public class ScriptModule { public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess(); }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = {|#0:(EvaluateResultSuccess)result|};
-                        var value = success.V;
+                        var value = success.RealmId;
                     }
                 }
             }
@@ -55,10 +41,9 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
             CodeActionValidationMode = Microsoft.CodeAnalysis.Testing.CodeActionValidationMode.None,
         };
         testState.ExpectedDiagnostics.Add(expected);
@@ -75,30 +60,18 @@ public class BiDiDriver008CodeFixProviderTests
     public async Task CodeFixProvider_RegisteredForAsCast()
     {
         string testCode = """
-            using System;
-
-            namespace WebDriverBiDi { public record CommandResult { } }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult { public string V { get; set; } = ""; }
-                public class ScriptModule { public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess(); }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = {|#0:result as EvaluateResultSuccess|};
                         if (success != null)
                         {
-                            var value = success.V;
+                            var value = success.RealmId;
                         }
                     }
                 }
@@ -109,10 +82,9 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
             CodeActionValidationMode = Microsoft.CodeAnalysis.Testing.CodeActionValidationMode.None,
         };
         testState.ExpectedDiagnostics.Add(expected);
@@ -128,33 +100,16 @@ public class BiDiDriver008CodeFixProviderTests
     public async Task CodeFix_DirectCast_AppliesPatternMatching()
     {
         string testCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = {|#0:(EvaluateResultSuccess)result|};
-                        var value = success.Value;
+                        var value = success.RealmId;
                     }
                 }
             }
@@ -162,34 +117,17 @@ public class BiDiDriver008CodeFixProviderTests
 
         // Expected output: code fix converts cast to pattern matching
         string fixedCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         if (result is EvaluateResultSuccess success)
                         {
-                            var value = success.Value;
+                            var value = success.RealmId;
                         }
                     }
                 }
@@ -200,11 +138,10 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -219,81 +156,38 @@ public class BiDiDriver008CodeFixProviderTests
     public async Task CodeFix_AsCast_AppliesPatternMatching()
     {
         string testCode = """
-            using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = {|#0:result as EvaluateResultSuccess|};
                         if (success != null)
                         {
-                            var value = success.Value;
+                            var value = success.RealmId;
                         }
                     }
                 }
             }
             """;
 
-        // Use CRLF line endings to match Roslyn formatter output on this platform
         string fixedCode = """
-            using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         if (result is EvaluateResultSuccess success)
                         {
                             if (success != null)
                             {
-                                var value = success.Value;
+                                var value = success.RealmId;
                             }
                         }
                     }
@@ -305,11 +199,10 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -323,33 +216,16 @@ public class BiDiDriver008CodeFixProviderTests
         // ConvertCastInVariableDeclarationAsync: a statement after the dependent block
         // that does NOT reference 'success' stays outside the if block.
         string testCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = {|#0:(EvaluateResultSuccess)result|};
-                        var value = success.Value;
+                        var value = success.RealmId;
                         var unrelated = 42;
                     }
                 }
@@ -357,34 +233,17 @@ public class BiDiDriver008CodeFixProviderTests
             """;
 
         string fixedCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         if (result is EvaluateResultSuccess success)
                         {
-                            var value = success.Value;
+                            var value = success.RealmId;
                         }
                         var unrelated = 42;
                     }
@@ -396,11 +255,10 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -414,39 +272,18 @@ public class BiDiDriver008CodeFixProviderTests
         // ConvertAsInVariableDeclarationAsync, plus the else { break; } path when
         // the statement after the null-check doesn't reference 'success'.
         string testCode = """
-            using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = {|#0:result as EvaluateResultSuccess|};
                         if (success != null)
                         {
-                            var value = success.Value;
+                            var value = success.RealmId;
                         }
                         var unrelated = 42;
                     }
@@ -455,40 +292,19 @@ public class BiDiDriver008CodeFixProviderTests
             """;
 
         string fixedCode = """
-            using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         if (result is EvaluateResultSuccess success)
                         {
                             if (success != null)
                             {
-                                var value = success.Value;
+                                var value = success.RealmId;
                             }
                         }
                         var unrelated = 42;
@@ -501,11 +317,10 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -519,66 +334,32 @@ public class BiDiDriver008CodeFixProviderTests
         // the cast is not in a variable declaration (parent is not EqualsValueClauseSyntax),
         // so the fix generates a fresh variable name and wraps the statement in an if block.
         string testCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
-                        var value = ({|#0:(EvaluateResultSuccess)result|}).Value;
+                        var value = ({|#0:(EvaluateResultSuccess)result|}).RealmId;
                     }
                 }
             }
             """;
 
         string fixedCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         if (result is EvaluateResultSuccess success)
                         {
-                            var value = (success).Value;
+                            var value = (success).RealmId;
                         }
                     }
                 }
@@ -589,11 +370,10 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -634,14 +414,12 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
             NumberOfIncrementalIterations = 1,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -665,6 +443,7 @@ public class BiDiDriver008CodeFixProviderTests
                 {
                     public void TestMethod(EvaluateResult result)
                     {
+                        int before = 1;
                         var success = {|#0:(EvaluateResultSuccess)result|};
                     }
                 }
@@ -680,6 +459,7 @@ public class BiDiDriver008CodeFixProviderTests
                 {
                     public void TestMethod(EvaluateResult result)
                     {
+                        int before = 1;
                         if (result is EvaluateResultSuccess success)
                         {
                         }
@@ -694,13 +474,11 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -724,6 +502,7 @@ public class BiDiDriver008CodeFixProviderTests
                 {
                     public void TestMethod(EvaluateResult result)
                     {
+                        int before = 1;
                         var success = {|#0:result as EvaluateResultSuccess|};
                     }
                 }
@@ -739,6 +518,7 @@ public class BiDiDriver008CodeFixProviderTests
                 {
                     public void TestMethod(EvaluateResult result)
                     {
+                        int before = 1;
                         if (result is EvaluateResultSuccess success)
                         {
                         }
@@ -753,13 +533,11 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -776,21 +554,10 @@ public class BiDiDriver008CodeFixProviderTests
     {
         string testCode = """
             using System;
-
-            namespace WebDriverBiDi.Script
-            {
-                public class EvaluateResult { }
-
-                public class EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; } = string.Empty;
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
                     private string success = string.Empty;
@@ -809,21 +576,10 @@ public class BiDiDriver008CodeFixProviderTests
 
         string fixedCode = """
             using System;
-
-            namespace WebDriverBiDi.Script
-            {
-                public class EvaluateResult { }
-
-                public class EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; } = string.Empty;
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
                     private string success = string.Empty;
@@ -844,15 +600,14 @@ public class BiDiDriver008CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(
             BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0);
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
             NumberOfIncrementalIterations = 1,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -867,69 +622,35 @@ public class BiDiDriver008CodeFixProviderTests
         // if block so 'success' remains in scope; stopping at the first non-referencing statement
         // would strand the later reference (CS0103/CS0165).
         string testCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = {|#0:(EvaluateResultSuccess)result|};
                         var unrelated = 42;
-                        var value = success.Value;
+                        var value = success.RealmId;
                     }
                 }
             }
             """;
 
         string fixedCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public string Value { get; set; } = "";
-                }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         if (result is EvaluateResultSuccess success)
                         {
                             var unrelated = 42;
-                            var value = success.Value;
+                            var value = success.RealmId;
                         }
                     }
                 }
@@ -940,11 +661,10 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -957,23 +677,10 @@ public class BiDiDriver008CodeFixProviderTests
         // A cast inside a return statement cannot be wrapped in an if without leaving a code path
         // that does not return a value (CS0161), so the fix leaves such casts unchanged.
         string testCode = """
-            using System;
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-                public record EvaluateResultSuccess : EvaluateResult { }
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
                 public class TestClass
                 {
                     public EvaluateResultSuccess GetSuccess(EvaluateResult result)
@@ -988,12 +695,11 @@ public class BiDiDriver008CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        LfCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
             NumberOfIncrementalIterations = 1,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 

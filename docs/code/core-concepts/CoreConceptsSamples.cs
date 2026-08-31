@@ -120,6 +120,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task TimingRestrictionsWrong(string webSocketUrl)
     {
+#pragma warning disable BIDI001 // This sample intentionally demonstrates the anti-pattern the analyzer catches.
         #region TimingRestrictions-Wrong
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
@@ -131,6 +132,7 @@ public static class CoreConceptsSamples
         // before StartAsync in the correct sample only by convention.
         driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
         #endregion
+#pragma warning restore BIDI001
     }
 
     /// <summary>

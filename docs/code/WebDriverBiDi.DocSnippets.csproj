@@ -6,13 +6,27 @@
     <OutputType>Library</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <NoWarn>$(NoWarn);CS1998</NoWarn>
+    <!-- The advisory analyzers (Info/Warning severity) suggest best practices that focused
+         documentation snippets deliberately omit for brevity — passing a CancellationToken to every
+         call (BIDI004/013), pairing every AddObserver with a Session.SubscribeAsync (BIDI005), disposing
+         every observer (BIDI006), etc. BIDI009 is intra-procedural and cannot see StartAsync when a
+         sample receives an already-started driver as a parameter (the common doc pattern), so it
+         false-positives here. These are suppressed for the samples; the remaining Error-level rules
+         (BIDI001/002/003/010/020) stay active so a genuine lifecycle mistake in a sample still fails
+         the build. -->
+    <NoWarn>$(NoWarn);CS1998;BIDI004;BIDI005;BIDI006;BIDI007;BIDI008;BIDI009;BIDI013;BIDI014;BIDI015;BIDI016;BIDI017;BIDI021;BIDI022;BIDI023</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/WebDriverBiDi/WebDriverBiDi.csproj" />
     <ProjectReference Include="../../src/WebDriverBiDi.Client/WebDriverBiDi.Client.csproj" />
     <ProjectReference Include="../../src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj" />
+
+    <!-- Run the library's own analyzers over the documentation code samples so the canonical usage
+         shown in the docs is validated at build time and cannot drift from what the analyzers expect. -->
+    <ProjectReference Include="../../src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

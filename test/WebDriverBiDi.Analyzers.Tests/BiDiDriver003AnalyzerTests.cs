@@ -26,37 +26,15 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                }
-
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
-                {
-                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
-                }
-
-                public class BiDiDriver : IBiDiDriverConfiguration
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
-                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
                     }
@@ -67,10 +45,9 @@ public class BiDiDriver003AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0);
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -88,24 +65,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -118,10 +81,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -138,24 +100,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public abstract class TestClass
                 {
                     public abstract Task TestMethod(IJsonTypeInfoResolver resolver);
@@ -163,10 +111,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -225,24 +172,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver1, IJsonTypeInfoResolver resolver2)
@@ -262,10 +195,9 @@ public class BiDiDriver003AnalyzerTests
         DiagnosticResult expected2 = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(1);
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected1);
         testState.ExpectedDiagnostics.Add(expected2);
@@ -284,37 +216,15 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                }
-
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
-                {
-                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
-                }
-
-                public class BiDiDriver : IBiDiDriverConfiguration
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
-                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         Task result;
                         result = {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
@@ -326,10 +236,9 @@ public class BiDiDriver003AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0);
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -347,24 +256,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -378,10 +273,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -398,24 +292,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -428,10 +308,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -448,24 +327,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -478,10 +343,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -498,24 +362,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     private BiDiDriver fieldDriver = new BiDiDriver(TimeSpan.FromSeconds(30));
@@ -529,10 +379,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -549,24 +398,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -589,10 +424,9 @@ public class BiDiDriver003AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0);
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -610,24 +444,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -641,10 +461,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -661,24 +480,10 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
@@ -691,10 +496,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -704,6 +508,13 @@ public class BiDiDriver003AnalyzerTests
     /// Tests that chained member access expressions are tracked correctly.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly because the real
+    /// <c>BiDiDriver</c> exposes <c>RegisterTypeInfoResolverAsync</c> directly and has no property
+    /// whose type in turn exposes that method. A chained <c>driver.Self.RegisterTypeInfoResolverAsync(...)</c>
+    /// call whose base identifier is still the tracked driver variable cannot be expressed against the
+    /// real API, so a stub <c>Self</c> property is required to exercise the analyzer's member-access walk.
+    /// </remarks>
     [Fact]
     public async Task ChainedMemberAccess_AfterStartAsync_ReportsError()
     {
@@ -806,34 +617,21 @@ public class BiDiDriver003AnalyzerTests
         // The driver variable is of type MyCustomDriver, whose name is NOT "BiDiDriver" or
         // "IBiDiDriverConfiguration". AnalyzerSymbolHelpers.IsDriverConfigurationType must
         // walk to the AllInterfaces check (line 45-47 in AnalyzerSymbolHelpers.cs) to
-        // recognise the type.
+        // recognise the type. MyCustomDriver implements the real IBiDiDriverConfiguration interface.
         string test = """
             using System;
             using System.Text.Json.Serialization.Metadata;
+            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                }
-
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
-                {
-                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class MyCustomDriver : IBiDiDriverConfiguration
                 {
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                    public void RegisterModule(Module module) { }
+                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default) => Task.CompletedTask;
                 }
 
                 public class TestClass
@@ -853,10 +651,9 @@ public class BiDiDriver003AnalyzerTests
             Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             .WithLocation(0);
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -874,32 +671,15 @@ public class BiDiDriver003AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                    Task RegisterTypeInfoResolverAsync(object resolver);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(object resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         // An if-statement exercises the neither-branch path.
                         if (true) { }
@@ -908,10 +688,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -928,32 +707,15 @@ public class BiDiDriver003AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                    Task RegisterTypeInfoResolverAsync(object resolver);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(object resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         // Awaiting a variable exercises the non-invocation await path.
                         Task t = Task.CompletedTask;
@@ -963,10 +725,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -984,39 +745,15 @@ public class BiDiDriver003AnalyzerTests
             using System;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                    Task StopAsync();
-                }
-
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
-                {
-                    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
-                }
-
-                public class BiDiDriver : IBiDiDriverConfiguration
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task StopAsync() => Task.CompletedTask;
-                    public Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Text.Json.Serialization.Metadata;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
-                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         await driver.StopAsync();
                         await driver.RegisterTypeInfoResolverAsync(resolver);
@@ -1025,10 +762,9 @@ public class BiDiDriver003AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
