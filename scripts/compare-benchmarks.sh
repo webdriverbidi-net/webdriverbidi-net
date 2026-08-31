@@ -19,7 +19,11 @@
 #   missing-from-baseline benchmarks render as (new)
 #
 # Exit codes:
-#   0 — always. The report is advisory; callers decide policy.
+#   0 — comparison ran; the report is advisory, so a benchmark regression does
+#       not fail the script. Callers decide policy from the report contents.
+#   2 — usage error (wrong number of arguments).
+#   Note: `set -euo pipefail` means an unexpected internal error also aborts
+#   with a non-zero status; it is not a graceful exit code.
 
 set -euo pipefail
 
