@@ -3,9 +3,11 @@ namespace WebDriverBiDi.TestUtilities;
 using System.Diagnostics;
 using WebDriverBiDi.Protocol;
 
-public class TestPipeServer : IPipeServerProcessProvider
+public class TestPipeServer : IPipeServerProcessProvider, IDisposable
 {
     private static readonly string TestPipeServerPath = GetTestPipeServerPath();
+
+    private bool disposed;
 
     public Process? ServerProcess { get; private set; }
 
@@ -94,5 +96,56 @@ public class TestPipeServer : IPipeServerProcessProvider
         }
 
         return string.Empty;
+    }
+
+    public void Dispose()
+    {
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (this.disposed)
+        {
+            return;
+        }
+
+        if (disposing && this.ServerProcess is Process process)
+        {
+            // Force the child process down even when a test bails out (an assertion failure) before
+            // calling Stop(), so the dotnet child process is never leaked. Unlike Stop(), this is a
+            // best-effort safety net and never throws.
+            try
+            {
+                if (!process.HasExited)
+                {
+                    try
+                    {
+                        process.StandardInput.Write('\n');
+                    }
+                    catch (IOException)
+                    {
+                    }
+
+                    if (!process.WaitForExit(TimeSpan.FromSeconds(5)))
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // The process was never started or has already been released; nothing to clean up.
+            }
+            finally
+            {
+                process.Dispose();
+            }
+
+            this.ServerProcess = null;
+        }
+
+        this.disposed = true;
     }
 }

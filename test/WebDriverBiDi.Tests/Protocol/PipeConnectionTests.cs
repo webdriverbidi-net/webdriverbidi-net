@@ -16,7 +16,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestConnectionType()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         Assert.Equal(ConnectionKind.Pipes, connection.ConnectionKind);
     }
@@ -24,7 +24,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanSendData()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
 
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
@@ -43,7 +43,7 @@ public class PipeConnectionTests
     public async Task TestCanReceiveData()
     {
         TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         testPipeServer.Responses.Add("Acknowledged!");
 
         List<string> receivedData = [];
@@ -71,7 +71,7 @@ public class PipeConnectionTests
     public async Task TestReceivedDataTerminatedWithNullCharacter()
     {
         TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         testPipeServer.Responses.Add("Acknowledged!\\0More data");
 
         List<string> receivedData = [];
@@ -103,7 +103,7 @@ public class PipeConnectionTests
         // null terminator finally arrives.
         TaskCompletionSource<byte[]> receivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer);
 
         int readSize = connection.BufferSize;
@@ -165,7 +165,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestStartingWithoutStoppingThrows()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -176,7 +176,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestRemoteEndClosingMarksConnectionAsInactive()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -188,7 +188,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanStop()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -226,7 +226,7 @@ public class PipeConnectionTests
     {
         List<string> receivedData = [];
         TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         connection.OnLogMessage.AddObserver(e => receivedData.Add(e.Message));
         connection.OnRemoteDisconnected.AddObserver(e =>
@@ -269,7 +269,7 @@ public class PipeConnectionTests
         TaskCompletionSource<int> receiveBlockSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource receiveBlockEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
             ReceiveBlockSignal = receiveBlockSignal,
@@ -321,7 +321,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanOnlySendOneMessageAtATime()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestPipeConnection connection = new(testPipeServer)
         {
@@ -381,7 +381,7 @@ public class PipeConnectionTests
 
         static async Task StartAndDisposeFaultingConnectionAsync()
         {
-            TestPipeServer testPipeServer = new();
+            using TestPipeServer testPipeServer = new();
             TestPipeConnection connection = new(testPipeServer)
             {
                 ReceiveLoopOuterFault = new InvalidOperationException("simulated receive loop fault"),
@@ -412,7 +412,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestDoubleDisposeAsyncAfterStartDoesNotThrow()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -433,7 +433,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanDisposeAsyncAfterStop()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -445,7 +445,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanDisposeAsyncWithoutStopping()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -458,7 +458,7 @@ public class PipeConnectionTests
     public async Task TestDisposeLogsExceptionFromStop()
     {
         List<LogMessageEventArgs> logs = [];
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer);
         connection.OnLogMessage.AddObserver(e =>
         {
@@ -482,7 +482,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanDisposeAsyncStartedConnectionAfterStop()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -497,7 +497,7 @@ public class PipeConnectionTests
     public async Task TestSendDataThrowsWhenConnectionBecomesInactiveAfterSemaphoreAcquired()
     {
         int isActiveCallCount = 0;
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
             IsActiveOverride = () =>
@@ -532,7 +532,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestSendDataWithDefaultCancellationTokenUsesConnectionToken()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
             IsActiveOverride = () => true,
@@ -550,7 +550,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestStartAfterDisposeThrows()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -563,7 +563,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestStartAfterServerProcessExitThrows()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -591,7 +591,7 @@ public class PipeConnectionTests
         // IsActive reaches the process check. Flipping the provider to
         // return null exercises the null branch of IsProcessRunning
         // without tearing down the underlying pipe server.
-        TestPipeServer realServer = new();
+        using TestPipeServer realServer = new();
         MutableProcessPipeProvider wrapper = new(realServer);
         PipeConnection connection = new(wrapper);
         realServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
@@ -614,7 +614,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestSendDataWrapsIOExceptionInConnectionException()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
             IsActiveOverride = () => true,
@@ -634,7 +634,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestSendDataWrapsObjectDisposedExceptionInConnectionException()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
             IsActiveOverride = () => true,
@@ -654,7 +654,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestPipeHandlesReturnEmptyStringAfterDisposal()
     {
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -673,7 +673,7 @@ public class PipeConnectionTests
     {
         ConnectionErrorEventArgs? receivedErrorArgs = null;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
 
         TestPipeConnection connection = new(testPipeServer)
         {
@@ -702,7 +702,7 @@ public class PipeConnectionTests
     {
         ConnectionErrorEventArgs? receivedErrorArgs = null;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
 
         TestPipeConnection connection = new(testPipeServer)
         {
@@ -737,7 +737,7 @@ public class PipeConnectionTests
 
         ConnectionErrorEventArgs? receivedErrorArgs = null;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeServer testPipeServer = new();
+        using TestPipeServer testPipeServer = new();
         testPipeServer.Responses.Add("Acknowledged!");
 
         PipeConnection connection = new(testPipeServer);
