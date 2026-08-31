@@ -2714,6 +2714,162 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestExceptionInLogMessageHandlerIsIgnoredByDefault()
+    {
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
+        };
+        Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            throw new WebDriverBiDiException("Log message handler exception");
+        });
+
+        // The command emits a log message before sending its data. A throwing log observer must
+        // not fail the command that happened to emit the log message.
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Assert.NotNull(command);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Ignored means neither effect of the other behaviors: the transport is not terminated
+        // and nothing is collected, so disconnect does not throw.
+        Exception? disconnectException = await Record.ExceptionAsync(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Null(disconnectException);
+    }
+
+    [Fact]
+    public async Task TestExceptionInLogMessageHandlerCanCollect()
+    {
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
+        };
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            throw new WebDriverBiDiException("Log message handler exception");
+        });
+        await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("Normal shutdown", exception.Message);
+        Assert.Contains(exception.InnerExceptions, innerException => innerException is WebDriverBiDiException && innerException.Message.Contains("Log message handler exception"));
+    }
+
+    [Fact]
+    public async Task TestExceptionInLogMessageHandlerCanTerminate()
+    {
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
+        };
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            throw new WebDriverBiDiException("Log message handler exception");
+        });
+        await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        TestCommandParameters commandParameters = new("module.command");
+        WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken));
+        Assert.Contains("transport.logMessage", exception.Message);
+    }
+
+    [Fact]
+    public async Task TestExceptionInLogMessageHandlerIsReportedAsEventHandlerError()
+    {
+        TaskCompletionSource<EventHandlerErrorOccurredEventArgs> taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        transport.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            taskCompletionSource.TrySetResult(e);
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            throw new WebDriverBiDiException("Log message handler exception");
+        });
+        await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
+
+        EventHandlerErrorOccurredEventArgs eventArgs = await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal("transport.logMessage", eventArgs.ErrorInfo.ObservableEventName);
+        Assert.Equal("transport log message observer", eventArgs.ErrorInfo.ObserverDescription);
+        Assert.IsType<WebDriverBiDiException>(eventArgs.ErrorInfo.Exception);
+        Assert.Contains("Log message handler exception", eventArgs.ErrorInfo.Exception.Message);
+    }
+
+    [Fact]
+    public async Task TestExceptionInLogMessageHandlerDuringMessageProcessingIsNotProtocolError()
+    {
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+
+        // Collecting protocol errors while ignoring event handler exceptions proves the
+        // categorization of the failure: were the log observer's exception captured as a
+        // protocol error, the disconnect below would throw it.
+        TestTransport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Ignore,
+            AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
+        };
+
+        // Add the log observer after the connect to prevent capturing connection diagnostic messages.
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            throw new WebDriverBiDiException("Log message handler exception");
+        });
+
+        // Processing a command response emits a log message from inside the message processing
+        // loop. The loop must survive the throwing observer and complete the command.
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        string json = """
+                      {
+                        "type": "success",
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        }
+                      }
+                      """;
+        await connection.RaiseDataReceivedEventAsync(json);
+        bool commandCompleted = await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(commandCompleted);
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Exception? disconnectException = await Record.ExceptionAsync(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Null(disconnectException);
+    }
+
+    [Fact]
     public async Task TestTransportSilentlyDiscardsFilteredMessages()
     {
         bool unknownMessageRaised = false;

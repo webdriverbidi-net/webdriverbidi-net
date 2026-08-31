@@ -80,6 +80,7 @@ public class Transport : IAsyncDisposable
     private const string TransportEventObserverDescription = "transport event observer";
     private const string TransportErrorObserverDescription = "transport error observer";
     private const string TransportUnknownMessageObserverDescription = "transport unknown message observer";
+    private const string TransportLogMessageObserverDescription = "transport log message observer";
 
     private const string NormalShutdownReason = "Normal shutdown";
 
@@ -1201,7 +1202,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        await this.NotifyLogMessageObserversAsync(e).ConfigureAwait(false);
     }
 
     private Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
@@ -1488,7 +1489,24 @@ public class Transport : IAsyncDisposable
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.NotifyLogMessageObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+    }
+
+    private async Task NotifyLogMessageObserversAsync(LogMessageEventArgs e)
+    {
+        // Without this, a synchronously throwing log observer would propagate into
+        // whatever operation happened to emit the log message. Routing the exception
+        // here keeps it governed by EventHandlerExceptionBehavior, the same as a
+        // fault raised by any other event handler. Note that ReportEventObserverErrorAsync
+        // does not emit log messages, so this action cannot recurse.
+        try
+        {
+            await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            await this.ReportEventObserverErrorAsync(this.OnLogMessage.EventName, TransportLogMessageObserverDescription, ex).ConfigureAwait(false);
+        }
     }
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)
