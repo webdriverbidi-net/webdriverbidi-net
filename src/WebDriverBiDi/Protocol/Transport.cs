@@ -812,53 +812,66 @@ public class Transport : IAsyncDisposable
             // Close the pending command collection to further addition of commands,
             // and stop the connection from receiving further communication traffic.
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
-            await this.Connection.StopAsync(cancellationToken).ConfigureAwait(false);
-
-            using CancellationTokenSource timeoutCancelTokenSource = new();
-            Task timeoutTask = Task.Delay(this.ShutdownTimeout, timeoutCancelTokenSource.Token);
-            bool shutdownTimedOut = false;
-
-            // Mark the incoming message queue as complete for writing, indicating
-            // no further messages will be written to the queue. Existing messages
-            // currently in the queue, however should still be processed. Then,
-            // wait for the incoming message queue to consume the remaining messages
-            // already in the queue. Note that having all items consumed from the
-            // queue does not imply that processing of all items has completed; that
-            // must be awaited separately. TryComplete is used rather than Complete
-            // because the queue may already have been completed by a remote disconnect
-            // or connection error that raced with this call.
-            this.incomingMessageQueue.Writer.TryComplete();
-            Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.Reader.Completion, timeoutTask).ConfigureAwait(false);
-            if (messageQueueReaderCompleteTask != this.incomingMessageQueue.Reader.Completion)
+            try
             {
-                shutdownTimedOut = true;
-                await this.LogAsync("Timed out waiting for message writer to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-            }
+                await this.Connection.StopAsync(cancellationToken).ConfigureAwait(false);
 
-            // Clear the pending command collection. This will also cancel any tasks
-            // associated with the remaining pending commands. Then wait for the
-            // message processor to complete processing of the messages received from
-            // the message queue, but with a timeout to prevent hanging if an
-            // in-process event handler is stuck.
-            this.PendingCommands.Clear();
-            Task messageProcessingShutdownCompletedTask = await Task.WhenAny(this.messageQueueProcessingTask, timeoutTask).ConfigureAwait(false);
-            if (messageProcessingShutdownCompletedTask != this.messageQueueProcessingTask)
+                using CancellationTokenSource timeoutCancelTokenSource = new();
+                Task timeoutTask = Task.Delay(this.ShutdownTimeout, timeoutCancelTokenSource.Token);
+                bool shutdownTimedOut = false;
+
+                // Mark the incoming message queue as complete for writing, indicating
+                // no further messages will be written to the queue. Existing messages
+                // currently in the queue, however should still be processed. Then,
+                // wait for the incoming message queue to consume the remaining messages
+                // already in the queue. Note that having all items consumed from the
+                // queue does not imply that processing of all items has completed; that
+                // must be awaited separately. TryComplete is used rather than Complete
+                // because the queue may already have been completed by a remote disconnect
+                // or connection error that raced with this call.
+                this.incomingMessageQueue.Writer.TryComplete();
+                Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.Reader.Completion, timeoutTask).ConfigureAwait(false);
+                if (messageQueueReaderCompleteTask != this.incomingMessageQueue.Reader.Completion)
+                {
+                    shutdownTimedOut = true;
+                    await this.LogAsync("Timed out waiting for message writer to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                }
+
+                // Clear the pending command collection. This will also cancel any tasks
+                // associated with the remaining pending commands. Then wait for the
+                // message processor to complete processing of the messages received from
+                // the message queue, but with a timeout to prevent hanging if an
+                // in-process event handler is stuck.
+                this.PendingCommands.Clear();
+                Task messageProcessingShutdownCompletedTask = await Task.WhenAny(this.messageQueueProcessingTask, timeoutTask).ConfigureAwait(false);
+                if (messageProcessingShutdownCompletedTask != this.messageQueueProcessingTask)
+                {
+                    shutdownTimedOut = true;
+                    await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                }
+
+                if (!shutdownTimedOut)
+                {
+                    timeoutCancelTokenSource.Cancel();
+                }
+
+                WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
+                WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
+                WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
+                await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
+
+                this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
+            }
+            finally
             {
-                shutdownTimedOut = true;
-                await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+                // Completing the queue writer and clearing the pending commands must happen even
+                // when the Connection.StopAsync throws (which could happen for a custom Connection
+                // implementation). Both of these statements are no-ops if the try block completed
+                // successfully, allowing a subsequent ConnectAsync to not wait for the full shutdown
+                // timeout before reconnecting.
+                this.incomingMessageQueue.Writer.TryComplete();
+                this.PendingCommands.Clear();
             }
-
-            if (!shutdownTimedOut)
-            {
-                timeoutCancelTokenSource.Cancel();
-            }
-
-            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
-            WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
-            await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
-
-            this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
         }
         finally
         {
