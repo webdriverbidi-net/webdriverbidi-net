@@ -137,8 +137,12 @@ public class TransportEventSourceIntegrationTests
             },
             TestContext.Current.CancellationToken);
 
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
+        // CommandCompleted is raised on the reader task; block for it (the signalled listener wakes as
+        // soon as it fires) so the snapshot below deterministically contains it and the preceding
+        // CommandSending rather than racing the reader task.
+        listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "CommandCompleted");
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CommandSending", "PendingCommandCount", "CommandCompleted");
         Assert.True(events.Count >= 2); // At least CommandSending and CommandCompleted
 
@@ -190,9 +194,11 @@ public class TransportEventSourceIntegrationTests
             },
             TestContext.Current.CancellationToken);
 
-        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CommandError");
+        // CommandError is raised on the reader task; block for it (the signalled listener wakes as soon
+        // as it fires) rather than snapshotting immediately and racing.
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "CommandError");
         Assert.Single(events);
 
         EventWrittenEventArgs errorEvent = events[0];
@@ -338,7 +344,7 @@ public class TransportEventSourceIntegrationTests
         string json = """{"type": "unknown", "data": "some data"}""";
         await connection.RaiseDataReceivedEventAsync(json);
 
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "UnknownMessageReceived");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "UnknownMessageReceived");
         Assert.Single(events);
 
         EventWrittenEventArgs unknownEvent = events[0];
@@ -366,7 +372,7 @@ public class TransportEventSourceIntegrationTests
         string json = """{"type": null, "data": "some data"}""";
         await connection.RaiseDataReceivedEventAsync(json);
 
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "UnknownMessageReceived");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "UnknownMessageReceived");
         Assert.Single(events);
 
         EventWrittenEventArgs unknownEvent = events[0];
@@ -403,7 +409,7 @@ public class TransportEventSourceIntegrationTests
                       """;
         await connection.RaiseDataReceivedEventAsync(json);
 
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "ProtocolError");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "ProtocolError");
         Assert.True(events.Count >= 1);
 
         EventWrittenEventArgs protocolError = events[0];
@@ -453,7 +459,7 @@ public class TransportEventSourceIntegrationTests
         // Simulate connection error
         await connection.RaiseConnectionErrorEventAsync(new InvalidOperationException("Connection lost"));
 
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "ConnectionError");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "ConnectionError");
         Assert.Single(events);
 
         EventWrittenEventArgs connectionError = events[0];
@@ -479,7 +485,7 @@ public class TransportEventSourceIntegrationTests
         // ConnectionError event must still be emitted for observability.
         await connection.RaiseConnectionErrorEventAsync(new InvalidOperationException("Connection lost during shutdown"));
 
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "ConnectionError");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "ConnectionError");
         Assert.Single(events);
 
         ReadOnlyCollection<object?>? errorPayload = events[0].Payload;
