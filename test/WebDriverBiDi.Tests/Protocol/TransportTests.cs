@@ -2714,6 +2714,51 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestDisconnectCompletesTeardownWhenConnectionStopThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            // Keep the reconnect wait short so that a regression fails fast rather than
+            // stalling for the default ten-second shutdown timeout.
+            ShutdownTimeout = TimeSpan.FromMilliseconds(500),
+        };
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Assert.False(command.IsCanceled);
+
+        // Stopping the connection fails partway through the teardown sequence.
+        connection.ThrowOnStop = true;
+        connection.BypassStop = false;
+        WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("Simulated stop failure", exception.Message);
+
+        // The teardown steps that make the transport reusable must still have run: the pending
+        // command is canceled rather than left to wait out its timeout, and the message queue
+        // writer is completed so the message processing task can finish.
+        Assert.True(command.IsCanceled);
+
+        List<LogMessageEventArgs> reconnectLogs = [];
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            reconnectLogs.Add(e);
+            return Task.CompletedTask;
+        });
+
+        connection.ThrowOnStop = false;
+        connection.BypassStop = true;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        // Had the writer been left uncompleted, the message processing task of the previous
+        // connection could never finish, and this reconnect would have waited out the whole
+        // shutdown timeout before logging that it gave up waiting.
+        Assert.DoesNotContain(reconnectLogs, log => log.Message.Contains("Timed out waiting for message processing of the previous connection"));
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestExceptionInLogMessageHandlerIsIgnoredByDefault()
     {
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
