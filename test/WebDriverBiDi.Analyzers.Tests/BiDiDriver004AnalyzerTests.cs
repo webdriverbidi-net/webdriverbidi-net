@@ -24,55 +24,28 @@ public class BiDiDriver004AnalyzerTests
     public async Task NavigateAsync_WithoutCancellationToken_NoDiagnostic_ReportedByBIDI013()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-                }
-
-                namespace WebDriverBiDi.BrowsingContext
-                {
-                public class NavigateCommandParameters
-                {
-                    public NavigateCommandParameters(string contextId, string url) { }
-                }
-
-                public class NavigateCommandResult { }
-
-                public class BrowsingContextModule
-                {
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new NavigateCommandResult());
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
                     public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
-                        var navParams = new NavigateCommandParameters(contextId, "https://example.com");
+                        NavigateCommandParameters navParams = new NavigateCommandParameters(contextId, "https://example.com");
                         await driver.BrowsingContext.NavigateAsync(navParams);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
+
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
@@ -84,54 +57,27 @@ public class BiDiDriver004AnalyzerTests
     public async Task NavigateAsync_WithCancellationToken_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class NavigateCommandParameters
-                {
-                    public NavigateCommandParameters(string contextId, string url) { }
-                }
-
-                public class NavigateCommandResult { }
-
-                public class BrowsingContextModule
-                {
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters, CancellationToken cancellationToken) => Task.FromResult(new NavigateCommandResult());
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
                     public async Task TestMethod(BiDiDriver driver, string contextId, CancellationToken cancellationToken)
                     {
-                        var navParams = new NavigateCommandParameters(contextId, "https://example.com");
-                        await driver.BrowsingContext.NavigateAsync(navParams, cancellationToken);
+                        NavigateCommandParameters navParams = new NavigateCommandParameters(contextId, "https://example.com");
+                        await driver.BrowsingContext.NavigateAsync(navParams, cancellationToken: cancellationToken);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -167,62 +113,44 @@ public class BiDiDriver004AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
-    /// Tests that methods not in the suggestion list do not report a diagnostic.
+    /// Tests that methods not in the suggestion list do not report a diagnostic. ActivateAsync is a
+    /// real BrowsingContext module method with a CancellationToken overload, but it is absent from the
+    /// BIDI004 suggestion list, so the analyzer must not flag it.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task NonSuggestedMethod_WithoutCancellationToken_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class BrowsingContextModule
-                {
-                    public Task SomeOtherMethodAsync() => Task.CompletedTask;
-                    public Task SomeOtherMethodAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver)
+                    public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
-                        await driver.BrowsingContext.SomeOtherMethodAsync();
+                        ActivateCommandParameters activateParams = new ActivateCommandParameters(contextId);
+                        await driver.BrowsingContext.ActivateAsync(activateParams);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -237,23 +165,11 @@ public class BiDiDriver004AnalyzerTests
     public async Task StartAsync_WithoutCancellationToken_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public Task StartAsync(string url, CancellationToken cancellationToken) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(BiDiDriver driver)
@@ -264,10 +180,9 @@ public class BiDiDriver004AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -281,36 +196,18 @@ public class BiDiDriver004AnalyzerTests
     public async Task EvaluateAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public Script.ScriptModule Script { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public class ScriptModule
-                {
-                    public Task EvaluateAsync(string script) => Task.CompletedTask;
-                    public Task EvaluateAsync(string script, CancellationToken cancellationToken) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver)
+                    public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
-                        await {|#0:driver.Script.EvaluateAsync("document.title")|};
+                        EvaluateCommandParameters evalParams = new EvaluateCommandParameters("document.title", new ContextTarget(contextId), true);
+                        await {|#0:driver.Script.EvaluateAsync(evalParams)|};
                     }
                 }
             }
@@ -320,10 +217,9 @@ public class BiDiDriver004AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateAsync");
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -331,9 +227,16 @@ public class BiDiDriver004AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that methods without overload that takes CancellationToken do not report a diagnostic.
+    /// Tests that a method in the suggestion list without an overload that takes CancellationToken
+    /// does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly because every real suggested
+    /// method (here <c>GetTreeAsync</c>) exposes a trailing <see cref="System.Threading.CancellationToken"/>
+    /// overload. Declaring a suggested method with no token overload is the only way to exercise the
+    /// analyzer's <c>hasTokenOverload == false</c> branch, so it cannot be reproduced against the real API.
+    /// </remarks>
     [Fact]
     public async Task MethodWithoutTokenOverload_NoDiagnostic()
     {
@@ -351,30 +254,23 @@ public class BiDiDriver004AnalyzerTests
 
             namespace WebDriverBiDi.BrowsingContext
             {
-                public class NavigateCommandParameters
-                {
-                    public NavigateCommandParameters(string contextId, string url) { }
-                }
-
-                public class NavigateCommandResult { }
-
                 public class BrowsingContextModule
                 {
-                    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
+                    // GetTreeAsync is in the BIDI004 suggestion list, but this stub declares no
+                    // CancellationToken overload, so no suggestion is possible.
+                    public Task GetTreeAsync() => Task.CompletedTask;
                 }
             }
 
             namespace TestApp
             {
                 using WebDriverBiDi;
-                using WebDriverBiDi.BrowsingContext;
 
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver, string contextId)
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        var navParams = new NavigateCommandParameters(contextId, "https://example.com");
-                        await driver.BrowsingContext.NavigateAsync(navParams);
+                        await driver.BrowsingContext.GetTreeAsync();
                     }
                 }
             }
@@ -397,28 +293,11 @@ public class BiDiDriver004AnalyzerTests
     public async Task UnresolvedMethodSymbol_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class BrowsingContextModule
-                {
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(BiDiDriver driver)
@@ -429,10 +308,9 @@ public class BiDiDriver004AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -462,10 +340,9 @@ public class BiDiDriver004AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -515,36 +392,18 @@ public class BiDiDriver004AnalyzerTests
     public async Task CallFunctionAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public Script.ScriptModule Script { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public class ScriptModule
-                {
-                    public Task CallFunctionAsync(string function) => Task.CompletedTask;
-                    public Task CallFunctionAsync(string function, CancellationToken cancellationToken) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver)
+                    public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
-                        await {|#0:driver.Script.CallFunctionAsync("myFunction")|};
+                        CallFunctionCommandParameters callParams = new CallFunctionCommandParameters("() => document.title", new ContextTarget(contextId), false);
+                        await {|#0:driver.Script.CallFunctionAsync(callParams)|};
                     }
                 }
             }
@@ -554,10 +413,9 @@ public class BiDiDriver004AnalyzerTests
             .WithLocation(0)
             .WithArguments("CallFunctionAsync");
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -572,28 +430,17 @@ public class BiDiDriver004AnalyzerTests
     public async Task ExecuteCommandAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public Task ExecuteCommandAsync(string command) => Task.CompletedTask;
-                    public Task ExecuteCommandAsync(string command, CancellationToken cancellationToken) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(BiDiDriver driver)
                     {
-                        await {|#0:driver.ExecuteCommandAsync("session.new")|};
+                        await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
                     }
                 }
             }
@@ -603,10 +450,9 @@ public class BiDiDriver004AnalyzerTests
             .WithLocation(0)
             .WithArguments("ExecuteCommandAsync");
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -621,31 +467,11 @@ public class BiDiDriver004AnalyzerTests
     public async Task GetTreeAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class BrowsingContextModule
-                {
-                    public Task GetTreeAsync() => Task.CompletedTask;
-                    public Task GetTreeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod(BiDiDriver driver)
@@ -660,10 +486,9 @@ public class BiDiDriver004AnalyzerTests
             .WithLocation(0)
             .WithArguments("GetTreeAsync");
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -678,36 +503,18 @@ public class BiDiDriver004AnalyzerTests
     public async Task LocateNodesAsync_WithoutCancellationToken_ReportsInfo()
     {
         string test = """
-            using System;
-            using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class BiDiDriver
-                {
-                    public BrowsingContext.BrowsingContextModule BrowsingContext { get; }
-                }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                public class BrowsingContextModule
-                {
-                    public Task LocateNodesAsync(string locator) => Task.CompletedTask;
-                    public Task LocateNodesAsync(string locator, CancellationToken cancellationToken) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    public async Task TestMethod(BiDiDriver driver)
+                    public async Task TestMethod(BiDiDriver driver, string contextId)
                     {
-                        await {|#0:driver.BrowsingContext.LocateNodesAsync("css:button")|};
+                        LocateNodesCommandParameters locateParams = new LocateNodesCommandParameters(contextId, new CssLocator("button"));
+                        await {|#0:driver.BrowsingContext.LocateNodesAsync(locateParams)|};
                     }
                 }
             }
@@ -717,10 +524,9 @@ public class BiDiDriver004AnalyzerTests
             .WithLocation(0)
             .WithArguments("LocateNodesAsync");
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -755,10 +561,9 @@ public class BiDiDriver004AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -792,10 +597,9 @@ public class BiDiDriver004AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

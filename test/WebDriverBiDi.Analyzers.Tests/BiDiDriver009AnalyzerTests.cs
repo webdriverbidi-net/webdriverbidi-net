@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -432,27 +433,10 @@ public class BiDiDriver009AnalyzerTests
     public async Task UnresolvableMethodCall_DoesNotReportDiagnostic()
     {
         string testCode = """
-            using System;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -519,7 +503,16 @@ public class BiDiDriver009AnalyzerTests
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+        // Kept as a hand-written stub: every real module method ends in "Async", so a non-async
+        // module method (needed to exercise the !EndsWith("Async") branch) cannot be reproduced
+        // against the real API.
+        CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -575,7 +568,16 @@ public class BiDiDriver009AnalyzerTests
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+        // Kept as a hand-written stub: every real module method ends in "Async", so a non-async
+        // module method called before StartAsync (needed to exercise the !EndsWith("Async") early
+        // return) cannot be reproduced against the real API.
+        CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -631,7 +633,16 @@ public class BiDiDriver009AnalyzerTests
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+        // Kept as a hand-written stub: every real module command method returns a generic
+        // Task<TCommandResult>, so a module Async method returning a non-generic Task (needed to
+        // exercise the non-generic-Task early return) cannot be reproduced against the real API.
+        CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -687,7 +698,16 @@ public class BiDiDriver009AnalyzerTests
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+        // Kept as a hand-written stub: every real module command method returns Task<TCommandResult>,
+        // so a module Async method returning Task<string> (needed to exercise the
+        // InheritsFromCommandResult false branch) cannot be reproduced against the real API.
+        CSharpAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -701,35 +721,10 @@ public class BiDiDriver009AnalyzerTests
         string testCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandResult { }
-                public class EmptyResult : CommandResult { }
-                public abstract class Module { }
-
-                public interface IBiDiCommandExecutor
-                {
-                    Task StartAsync(string url);
-                }
-
-                public class BiDiDriver : IBiDiCommandExecutor
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public BrowserModule Browser { get; } = new BrowserModule();
-                }
-
-                public class BrowserModule : Module
-                {
-                    public Task<EmptyResult> CloseAsync() => Task.FromResult(new EmptyResult());
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()

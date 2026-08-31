@@ -23,59 +23,17 @@ public class BiDiDriver017AnalyzerTests
     {
         string test = """
             #nullable enable
-            using System;
             using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Session;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        SetTimeZoneOverrideCommandParameters parameters = new();
-                        {|#0:parameters.Contexts|}.Add("context1");
+                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
+                        {|#0:parameters.NoProxyAddresses|}.Add("proxy1");
                     }
                 }
             }
@@ -83,12 +41,11 @@ public class BiDiDriver017AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver017_NullableListAddAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("string", "Contexts");
+            .WithArguments("string", "NoProxyAddresses");
 
-        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -104,68 +61,25 @@ public class BiDiDriver017AnalyzerTests
     {
         string test = """
             #nullable enable
-            using System;
             using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Session;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        SetTimeZoneOverrideCommandParameters parameters = new();
-                        (parameters.Contexts ??= new List<string>()).Add("context1");
+                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
+                        (parameters.NoProxyAddresses ??= new List<string>()).Add("proxy1");
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1130,38 +1044,26 @@ public class BiDiDriver017AnalyzerTests
     public async Task NullableListAdd_WithNullConditionalOperator_DoesNotReportDiagnostic()
     {
         string test = """
-            using System.Collections.Generic;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-
-                public class TestCommandParameters : CommandParameters
-                {
-                    public List<string>? Items { get; set; }
-                }
-            }
+            #nullable enable
+            using WebDriverBiDi.Session;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        TestCommandParameters p = new TestCommandParameters();
+                        ManualProxyConfiguration p = new ManualProxyConfiguration();
                         // null-conditional ?.Add — should be suppressed (line 84)
-                        p.Items?.Add("item");
+                        p.NoProxyAddresses?.Add("item");
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1177,38 +1079,27 @@ public class BiDiDriver017AnalyzerTests
     public async Task NullableListAdd_InsideNullCoalescingAssignment_DoesNotReportDiagnostic()
     {
         string test = """
+            #nullable enable
             using System.Collections.Generic;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-
-                public class TestCommandParameters : CommandParameters
-                {
-                    public List<string>? Items { get; set; }
-                }
-            }
+            using WebDriverBiDi.Session;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        TestCommandParameters p = new TestCommandParameters();
-                        // (p.Items ??= new List<string>()).Add(...) — suppressed (line 90)
-                        (p.Items ??= new List<string>()).Add("item");
+                        ManualProxyConfiguration p = new ManualProxyConfiguration();
+                        // (p.NoProxyAddresses ??= new List<string>()).Add(...) — suppressed (line 90)
+                        (p.NoProxyAddresses ??= new List<string>()).Add("item");
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1289,6 +1180,10 @@ public class BiDiDriver017AnalyzerTests
     [Fact]
     public async Task NullableICollectionAdd_WithoutInitialization_ReportsWarning()
     {
+        // Kept synthetic: no public WebDriverBiDi type exposes a nullable ICollection<T>? property,
+        // so the metadata-backed shape this branch needs cannot be reproduced against the real
+        // assembly. The interface-typed nullable collection path is also covered against ordinary
+        // user code in AddToNullableICollectionProperty_ReportsDiagnostic.
         string test = """
             #nullable enable
             using System.Collections.Generic;
@@ -1342,40 +1237,28 @@ public class BiDiDriver017AnalyzerTests
     [Fact]
     public async Task NonNullableListAdd_DoesNotReportWarning()
     {
+        // The real SetTimeZoneOverrideCommandParameters.Contexts is a non-nullable List<string>,
+        // so IsNullableType returns false and BIDI017 does not report.
         string test = """
             #nullable enable
-            using System.Collections.Generic;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-
-                public class TestCommandParameters : CommandParameters
-                {
-                    // Non-nullable List — IsNullableType returns false.
-                    public List<string> Items { get; set; } = new List<string>();
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        TestCommandParameters p = new TestCommandParameters();
-                        p.Items.Add("item");
+                        SetTimeZoneOverrideCommandParameters p = new SetTimeZoneOverrideCommandParameters();
+                        p.Contexts.Add("item");
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1389,6 +1272,10 @@ public class BiDiDriver017AnalyzerTests
     [Fact]
     public async Task NullableIListAdd_WithoutInitialization_ReportsWarning()
     {
+        // Kept synthetic: no public WebDriverBiDi type exposes a nullable IList<T>? property, so the
+        // metadata-backed shape this branch needs cannot be reproduced against the real assembly.
+        // The interface-typed nullable list path is also covered against ordinary user code in
+        // AddToNullableIListProperty_ReportsDiagnostic.
         string test = """
             #nullable enable
             using System.Collections.Generic;

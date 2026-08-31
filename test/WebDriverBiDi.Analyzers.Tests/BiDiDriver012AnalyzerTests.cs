@@ -840,12 +840,10 @@ public class BiDiDriver012AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(DiagnosticResult.CompilerError("CS8647").WithSpan(13, 21, 13, 59));
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1069,13 +1067,11 @@ public class BiDiDriver012AnalyzerTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        CSharpAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
             TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

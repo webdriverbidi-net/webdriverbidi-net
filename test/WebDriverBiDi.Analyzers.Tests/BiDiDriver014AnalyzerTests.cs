@@ -15,112 +15,21 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver014AnalyzerTests
 {
     /// <summary>
-    /// Stub types mirroring the real geolocation command parameters: an abstract-style base with a
-    /// protected constructor that declares the static Reset property (returning the base type), and a
-    /// public derived class with a parameterless constructor. Also includes a property-level-sentinel
-    /// class whose Reset* members return unrelated types.
-    /// </summary>
-    private const string InheritedResetStubTypes = """
-        using System;
-        using System.Collections.Generic;
-        using System.Text.Json.Serialization;
-        using System.Threading.Tasks;
-
-        namespace WebDriverBiDi
-        {
-            public abstract class CommandParameters
-            {
-                [JsonIgnore]
-                public abstract string MethodName { get; }
-
-                [JsonIgnore]
-                public abstract Type ResponseType { get; }
-            }
-
-            public abstract class CommandParameters<T> : CommandParameters
-                where T : CommandResult
-            {
-                [JsonIgnore]
-                public override Type ResponseType => typeof(T);
-            }
-
-            public class CommandResult { }
-        }
-
-        namespace WebDriverBiDi.Emulation
-        {
-            using System.Text.Json.Serialization;
-            using WebDriverBiDi;
-
-            public class SetGeolocationOverrideCommandResult : CommandResult { }
-
-            public class GeolocationCoordinates { }
-
-            public class SetGeolocationOverrideCommandParameters : CommandParameters<SetGeolocationOverrideCommandResult>
-            {
-                protected SetGeolocationOverrideCommandParameters() { }
-
-                public static SetGeolocationOverrideCommandParameters ResetGeolocationOverride => new SetGeolocationOverrideCoordinatesCommandParameters();
-
-                [JsonIgnore]
-                public override string MethodName => "emulation.setGeolocationOverride";
-
-                [JsonPropertyName("contexts")]
-                [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                public List<string>? Contexts { get; set; }
-            }
-
-            public class SetGeolocationOverrideCoordinatesCommandParameters : SetGeolocationOverrideCommandParameters
-            {
-                public SetGeolocationOverrideCoordinatesCommandParameters() : base() { }
-
-                [JsonPropertyName("coordinates")]
-                [JsonInclude]
-                public GeolocationCoordinates? Coordinates { get; set; }
-            }
-        }
-
-        namespace WebDriverBiDi.BrowsingContext
-        {
-            using System.Text.Json.Serialization;
-            using WebDriverBiDi;
-
-            public class SetViewportCommandResult : CommandResult { }
-
-            public class Viewport { }
-
-            public class SetViewportCommandParameters : CommandParameters<SetViewportCommandResult>
-            {
-                public SetViewportCommandParameters() { }
-
-                public static Viewport ResetToDefaultViewport => new();
-
-                public static double ResetToDefaultDevicePixelRatio => -1;
-
-                [JsonIgnore]
-                public override string MethodName => "browsingContext.setViewport";
-
-                [JsonPropertyName("viewport")]
-                [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                public Viewport? Viewport { get; set; }
-            }
-        }
-
-        """;
-
-    /// <summary>
     /// Tests that a parameterless constructor of a derived class is reported when the Reset
-    /// property is declared on its base class and returns the base type.
+    /// property is declared on its base class and returns the base type. Uses the real
+    /// <c>SetGeolocationOverrideCommandParameters</c> (protected constructor, declares
+    /// <c>ResetGeolocationOverride</c> returning the base type) and its derived
+    /// <c>SetGeolocationOverrideCoordinatesCommandParameters</c> (public parameterless constructor).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task DerivedParameterlessConstructor_WithInheritedResetProperty_ReportsDiagnostic()
     {
-        string test = InheritedResetStubTypes + """
+        string test = """
+            using WebDriverBiDi.Emulation;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -148,11 +57,11 @@ public class BiDiDriver014AnalyzerTests
     [Fact]
     public async Task DerivedInlineParameterlessConstructor_WithInheritedResetProperty_ReportsDiagnostic()
     {
-        string test = InheritedResetStubTypes + """
+        string test = """
+            using WebDriverBiDi.Emulation;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void Use(SetGeolocationOverrideCommandParameters parameters) { }
@@ -182,17 +91,17 @@ public class BiDiDriver014AnalyzerTests
     [Fact]
     public async Task DerivedParameterlessConstructor_WithPropertyAssignment_NoDiagnostic()
     {
-        string test = InheritedResetStubTypes + """
+        string test = """
+            using WebDriverBiDi.Emulation;
+
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
                         SetGeolocationOverrideCoordinatesCommandParameters parameters = new SetGeolocationOverrideCoordinatesCommandParameters();
-                        parameters.Coordinates = new GeolocationCoordinates();
+                        parameters.Coordinates = new GeolocationCoordinates(0.0, 0.0);
                     }
                 }
             }
@@ -210,11 +119,11 @@ public class BiDiDriver014AnalyzerTests
     [Fact]
     public async Task ResetPropertyReturningUnrelatedType_NoDiagnostic()
     {
-        string test = InheritedResetStubTypes + """
+        string test = """
+            using WebDriverBiDi.BrowsingContext;
+
             namespace TestApp
             {
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
                     public void Use(SetViewportCommandParameters parameters) { }
@@ -239,62 +148,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task ParameterlessConstructor_WithoutPropertyAssignment_ReportsDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -310,10 +167,9 @@ public class BiDiDriver014AnalyzerTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -328,62 +184,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task ParameterlessConstructor_WithPropertyAssignment_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -396,10 +200,9 @@ public class BiDiDriver014AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -413,62 +216,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task UsingResetProperty_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -480,10 +231,9 @@ public class BiDiDriver014AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -521,90 +271,42 @@ public class BiDiDriver014AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
-    /// Tests that CommandParameters without a Reset property do not report a diagnostic.
+    /// Tests that CommandParameters without a Reset property do not report a diagnostic. Uses the
+    /// real <c>NavigateCommandParameters</c>, which takes constructor arguments and has no Reset
+    /// property.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CommandParametersWithoutResetProperty_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.BrowsingContext
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class NavigateCommandResult : CommandResult { }
-
-                public class NavigateCommandParameters : CommandParameters<NavigateCommandResult>
-                {
-                    public NavigateCommandParameters(string url)
-                    {
-                        this.Url = url;
-                    }
-
-                    [JsonIgnore]
-                    public override string MethodName => "browsingContext.navigate";
-
-                    [JsonPropertyName("url")]
-                    public string Url { get; set; }
-                }
-            }
+            using WebDriverBiDi.BrowsingContext;
 
             namespace TestApp
             {
-                using WebDriverBiDi.BrowsingContext;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
                         // This should not trigger BIDI014 (no Reset property)
-                        var parameters = new NavigateCommandParameters("https://example.com");
+                        var parameters = new NavigateCommandParameters("myContext", "https://example.com");
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -618,58 +320,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task MultipleVariables_IndependentTracking()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -692,10 +346,9 @@ public class BiDiDriver014AnalyzerTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -703,85 +356,34 @@ public class BiDiDriver014AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that setting any property suppresses the diagnostic.
+    /// Tests that populating a property suppresses the diagnostic. The real
+    /// <c>SetTimeZoneOverrideCommandParameters.Contexts</c> is a get-only list, so it is configured
+    /// with <c>Add</c>; the analyzer treats a member call on the tracked variable as configuration.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task ParameterlessConstructor_WithContextsPropertyAssignment_NoDiagnostic()
+    public async Task ParameterlessConstructor_WithContextsPopulated_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        // This is correct - setting Contexts property
+                        // This is correct - populating the Contexts list
                         var parameters = new SetTimeZoneOverrideCommandParameters();
-                        parameters.Contexts = new List<string> { "context1" };
+                        parameters.Contexts.Add("context1");
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -795,62 +397,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task ParameterlessConstructor_WithObjectInitializer_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -865,10 +415,9 @@ public class BiDiDriver014AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -882,58 +431,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task VariableWithoutInitializer_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -945,10 +446,9 @@ public class BiDiDriver014AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -962,58 +462,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task InlineParameterlessConstructor_AsMethodArgument_ReportsDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void Execute(SetTimeZoneOverrideCommandParameters p) { }
@@ -1031,10 +483,9 @@ public class BiDiDriver014AnalyzerTests
             .WithLocation(0)
             .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1049,58 +500,10 @@ public class BiDiDriver014AnalyzerTests
     public async Task InlineConstructor_WithObjectInitializer_AsMethodArgument_NoDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Emulation
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetTimeZoneOverrideCommandResult : CommandResult { }
-
-                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
-                {
-                    public SetTimeZoneOverrideCommandParameters() { }
-
-                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "emulation.setTimezoneOverride";
-
-                    [JsonPropertyName("timezone")]
-                    [JsonInclude]
-                    public string? TimeZone { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Emulation;
-
                 public class TestClass
                 {
                     public void Execute(SetTimeZoneOverrideCommandParameters p) { }
@@ -1114,10 +517,9 @@ public class BiDiDriver014AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1125,68 +527,19 @@ public class BiDiDriver014AnalyzerTests
 
     /// <summary>
     /// Tests that a parameterless constructor without property assignment reports a diagnostic
-    /// for a CommandParameters class that has a list property with a public setter and a
-    /// command-level Reset property.
+    /// for a CommandParameters class that has a list property and a command-level Reset property.
+    /// Uses the real <c>SetExtraHeadersCommandParameters</c> (get-only <c>Headers</c> list and
+    /// <c>ResetExtraHeaders</c>).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ParameterlessConstructor_WithListPropertyAndResetProperty_ReportsDiagnostic()
     {
         string test = """
-            using System;
-            using System.Collections.Generic;
-            using System.Text.Json.Serialization;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters
-                {
-                    [JsonIgnore]
-                    public abstract string MethodName { get; }
-
-                    [JsonIgnore]
-                    public abstract Type ResponseType { get; }
-                }
-
-                public abstract class CommandParameters<T> : CommandParameters
-                    where T : CommandResult
-                {
-                    [JsonIgnore]
-                    public override Type ResponseType => typeof(T);
-                }
-
-                public class CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Network
-            {
-                using System.Text.Json.Serialization;
-                using WebDriverBiDi;
-
-                public class SetExtraHeadersCommandResult : CommandResult { }
-
-                public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeadersCommandResult>
-                {
-                    public static SetExtraHeadersCommandParameters ResetExtraHeaders => new();
-
-                    [JsonIgnore]
-                    public override string MethodName => "network.setExtraHeaders";
-
-                    [JsonPropertyName("headers")]
-                    [JsonInclude]
-                    public List<string> Headers { get; set; } = new List<string>();
-
-                    [JsonPropertyName("contexts")]
-                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-                    public List<string>? Contexts { get; set; }
-                }
-            }
+            using WebDriverBiDi.Network;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Network;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -1202,10 +555,9 @@ public class BiDiDriver014AnalyzerTests
             .WithLocation(0)
             .WithArguments("SetExtraHeadersCommandParameters", "ResetExtraHeaders");
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1213,11 +565,18 @@ public class BiDiDriver014AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that a parameterless constructor with the Headers list property assigned via
-    /// object initializer does not report a diagnostic, confirming the public setter resolves
-    /// the previous false positive that occurred when only .Add() was available.
+    /// Tests that a parameterless constructor with a settable list property assigned via object
+    /// initializer does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly. It exercises assigning a
+    /// list property (with a public setter) through an object initializer, but every real
+    /// command-parameters list property that has a Reset sibling (for example
+    /// <c>SetExtraHeadersCommandParameters.Headers</c>) is get-only and can only be populated with
+    /// <c>Add</c>, so this specific shape cannot be reproduced against the real API. The get-only
+    /// population path is covered by <see cref="ParameterlessConstructor_WithCollectionAddCall_NoDiagnostic"/>.
+    /// </remarks>
     [Fact]
     public async Task ParameterlessConstructor_WithListPropertyAssignedViaObjectInitializer_NoDiagnostic()
     {
@@ -1311,40 +670,25 @@ public class BiDiDriver014AnalyzerTests
         // Assignment to an array element — not a simple identifier or member access,
         // so GetVariableName hits the _ => null arm.
         string test = """
-            using System;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-
-                public class GetCookiesCommandParameters : CommandParameters
-                {
-                    public GetCookiesCommandParameters() { }
-                    public static GetCookiesCommandParameters ResetCookies => new();
-                    public string? Filter { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
                     {
-                        GetCookiesCommandParameters[] arr = [new GetCookiesCommandParameters()];
+                        SetTimeZoneOverrideCommandParameters[] arr = [new SetTimeZoneOverrideCommandParameters()];
                         // Assignment to array element — GetVariableName hits _ => null
-                        arr[0].Filter = "test";
+                        arr[0].TimeZone = "America/New_York";
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1360,27 +704,13 @@ public class BiDiDriver014AnalyzerTests
     public async Task PropertyAssignment_OnChainedMemberAccess_DoesNotReportDiagnostic()
     {
         string test = """
-            using System;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-
-                public class GetCookiesCommandParameters : CommandParameters
-                {
-                    public GetCookiesCommandParameters() { }
-                    public static GetCookiesCommandParameters ResetCookies => new();
-                    public string? Filter { get; set; }
-                }
-            }
+            using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class Holder
                 {
-                    public GetCookiesCommandParameters Params { get; set; } = new GetCookiesCommandParameters();
+                    public SetTimeZoneOverrideCommandParameters Params { get; set; } = new SetTimeZoneOverrideCommandParameters();
                 }
 
                 public class TestClass
@@ -1389,16 +719,15 @@ public class BiDiDriver014AnalyzerTests
                     {
                         Holder holder = new Holder();
                         // Chained member access: GetVariableName recurses through MemberAccessExpressionSyntax
-                        holder.Params.Filter = "test";
+                        holder.Params.TimeZone = "America/New_York";
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1407,31 +736,18 @@ public class BiDiDriver014AnalyzerTests
     /// <summary>
     /// Tests that a CommandParameters type with a parameterless constructor but NO Reset*
     /// static property does not report a diagnostic — exercises GetResetPropertyName
-    /// returning null (line 285).
+    /// returning null (line 285). Uses the real <c>GetCookiesCommandParameters</c>, which has a
+    /// parameterless constructor and no Reset property.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ParameterlessConstructor_WithNoResetProperty_DoesNotReportDiagnostic()
     {
         string test = """
-            using System;
-
-            namespace WebDriverBiDi
-            {
-                public abstract class CommandParameters { }
-
-                public class GetCookiesCommandParameters : CommandParameters
-                {
-                    // Has parameterless constructor but NO Reset* static property
-                    public GetCookiesCommandParameters() { }
-                    public string? Filter { get; set; }
-                }
-            }
+            using WebDriverBiDi.Storage;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -1442,10 +758,9 @@ public class BiDiDriver014AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1457,6 +772,12 @@ public class BiDiDriver014AnalyzerTests
     /// symbol is not IPropertySymbol path (line 231).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly because the analyzer branch
+    /// under test — an assignment to a public <em>field</em> (not a property) on a resettable
+    /// command-parameters type — cannot be reproduced against the real API: every real
+    /// command-parameters type exposes its data through properties, never public fields.
+    /// </remarks>
     [Fact]
     public async Task FieldAssignment_DoesNotMarkVariableAsPropertyAssigned()
     {
@@ -1514,6 +835,12 @@ public class BiDiDriver014AnalyzerTests
     /// not begin with "Reset" and one that does but returns a different type.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly because it depends on
+    /// specially-shaped types to hit specific rejection branches: a command-parameters type that
+    /// exposes a public static property whose name does not begin with "Reset" does not exist in the
+    /// real API, so that branch of <c>GetResetProperty</c> cannot be reproduced against it.
+    /// </remarks>
     [Fact]
     public async Task InlineConstructors_ThatAreNotResettableParameters_DoNotReportDiagnostic()
     {

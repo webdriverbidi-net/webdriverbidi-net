@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -24,29 +23,10 @@ public class BiDiDriver001CodeFixProviderTests
         string testCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterModule(Module module) { }
-                }
-
-                public abstract class Module
-                {
-                    protected Module(IBiDiDriver driver) { }
-                    public abstract string ModuleName { get; }
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -59,7 +39,7 @@ public class BiDiDriver001CodeFixProviderTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiDriver driver) : base(driver) { }
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -68,29 +48,10 @@ public class BiDiDriver001CodeFixProviderTests
         string fixedCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterModule(Module module) { }
-                }
-
-                public abstract class Module
-                {
-                    protected Module(IBiDiDriver driver) { }
-                    public abstract string ModuleName { get; }
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -103,7 +64,7 @@ public class BiDiDriver001CodeFixProviderTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiDriver driver) : base(driver) { }
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -113,17 +74,15 @@ public class BiDiDriver001CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("new CustomModule(driver)");
 
-        LfCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
 
     [Fact]
     public async Task RegisterModule_AfterBlockingStartWithWait_CodeFixMovesItBefore()
@@ -131,29 +90,10 @@ public class BiDiDriver001CodeFixProviderTests
         string testCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterModule(Module module) { }
-                }
-
-                public abstract class Module
-                {
-                    protected Module(IBiDiDriver driver) { }
-                    public abstract string ModuleName { get; }
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -166,7 +106,7 @@ public class BiDiDriver001CodeFixProviderTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiDriver driver) : base(driver) { }
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -175,29 +115,10 @@ public class BiDiDriver001CodeFixProviderTests
         string fixedCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterModule(Module module) { }
-                }
-
-                public abstract class Module
-                {
-                    protected Module(IBiDiDriver driver) { }
-                    public abstract string ModuleName { get; }
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -210,7 +131,7 @@ public class BiDiDriver001CodeFixProviderTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiDriver driver) : base(driver) { }
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -220,11 +141,10 @@ public class BiDiDriver001CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("new CustomModule(driver)");
 
-        LfCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 

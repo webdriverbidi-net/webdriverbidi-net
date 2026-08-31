@@ -25,25 +25,10 @@ public class BiDiDriver002CodeFixProviderTests
         string testCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -59,25 +44,10 @@ public class BiDiDriver002CodeFixProviderTests
         string fixedCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task TestMethod()
@@ -94,11 +64,10 @@ public class BiDiDriver002CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("test.event");
 
-        LfCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -110,6 +79,13 @@ public class BiDiDriver002CodeFixProviderTests
     /// chain (driver.Events.RegisterEvent) before StartAsync on the root driver variable.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly because the real
+    /// <c>BiDiDriver</c> exposes <c>RegisterEvent</c> directly; it has no property whose type in turn
+    /// exposes a <c>RegisterEvent</c> method. A nested <c>driver.Events.RegisterEvent(...)</c> chain
+    /// whose base identifier is still the tracked driver variable cannot be expressed against the real
+    /// API, so a stub intermediate type is required to exercise the code fix's member-access walk.
+    /// </remarks>
     [Fact]
     public async Task RegisterEvent_ThroughNestedMemberAccess_CodeFixMovesBeforeStartAsync()
     {

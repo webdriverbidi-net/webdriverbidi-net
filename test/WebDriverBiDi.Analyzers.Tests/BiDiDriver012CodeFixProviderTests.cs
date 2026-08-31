@@ -61,13 +61,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -128,13 +126,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithMessage("Call StopAsync on 'driver' before calling DisposeAsync; a TransportErrorBehavior is set to Collect, and DisposeAsync discards collected errors without throwing them");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -194,13 +190,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -260,13 +254,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver2");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -316,13 +308,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -374,13 +364,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -434,13 +422,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -494,13 +480,11 @@ public class BiDiDriver012CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("driver");
 
-        LfCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

@@ -26,42 +26,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task LockStatement_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new object();
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:lock (lockObj)
                             {
@@ -79,10 +54,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("lock statement");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -97,43 +71,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task MonitorEnter_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new object();
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:Monitor.Enter(lockObj)|};
                             try
@@ -154,10 +103,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("Monitor.Enter");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -172,43 +120,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task SemaphoreSlimWait_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1);
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        SemaphoreSlim semaphore = new SemaphoreSlim(1);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:semaphore.Wait()|};
                             try
@@ -229,10 +152,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("SemaphoreSlim.Wait");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -247,43 +169,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task SemaphoreSlimWaitAsync_InAsyncEventHandler_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1);
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        SemaphoreSlim semaphore = new SemaphoreSlim(1);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             await semaphore.WaitAsync();
                             try
@@ -300,10 +197,9 @@ public class BiDiDriver016AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -317,42 +213,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task LockStatement_InNonAsyncEventHandler_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new object();
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver((e) =>
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver((e) =>
                         {
                             lock (lockObj)
                             {
@@ -365,10 +236,9 @@ public class BiDiDriver016AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -382,49 +252,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task LockStatement_WithRunHandlerAsynchronously_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                [Flags]
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options = ObservableEventHandlerOptions.None) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new object();
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             lock (lockObj)
                             {
@@ -438,10 +276,9 @@ public class BiDiDriver016AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -455,43 +292,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task ManualResetEventWaitOne_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly ManualResetEvent resetEvent = new ManualResetEvent(false);
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        ManualResetEvent resetEvent = new ManualResetEvent(false);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:resetEvent.WaitOne()|};
                             await Task.Delay(100);
@@ -505,10 +317,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("WaitHandle.WaitOne");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -523,41 +334,16 @@ public class BiDiDriver016AnalyzerTests
     public async Task TaskWaitAll_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             var task1 = Task.Delay(100);
                             var task2 = Task.Delay(200);
@@ -573,10 +359,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("Task.WaitAll");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -591,44 +376,19 @@ public class BiDiDriver016AnalyzerTests
     public async Task MultipleDeadlockPatterns_InAsyncEventHandler_ReportsMultipleWarnings()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new object();
-                    private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1);
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        object lockObj = new object();
+                        SemaphoreSlim semaphore = new SemaphoreSlim(1);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:lock (lockObj)
                             {
@@ -659,10 +419,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(1)
             .WithArguments("SemaphoreSlim.Wait");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected1);
         testState.ExpectedDiagnostics.Add(expected2);
@@ -678,40 +437,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task MonitorTryEnter_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new();
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        object lockObj = new();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             if ({|#0:Monitor.TryEnter(lockObj)|})
                             {
@@ -728,10 +465,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("Monitor.TryEnter");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -746,38 +482,16 @@ public class BiDiDriver016AnalyzerTests
     public async Task TaskWaitAny_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             var t1 = Task.Delay(100);
                             var t2 = Task.Delay(200);
@@ -793,10 +507,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("Task.WaitAny");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -811,40 +524,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task MutexWaitOne_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly Mutex mutex = new();
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        Mutex mutex = new();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:mutex.WaitOne()|};
                             await Task.Delay(1);
@@ -859,10 +550,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("WaitHandle.WaitOne");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -877,40 +567,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task AutoResetEventWaitOne_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly AutoResetEvent resetEvent = new(false);
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        AutoResetEvent resetEvent = new(false);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:resetEvent.WaitOne()|};
                             await Task.Delay(1);
@@ -924,10 +592,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("WaitHandle.WaitOne");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -942,39 +609,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task SynchronizationContextSend_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             var ctx = SynchronizationContext.Current;
                             if (ctx != null)
@@ -992,10 +637,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("SynchronizationContext.Send");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1010,40 +654,18 @@ public class BiDiDriver016AnalyzerTests
     public async Task SemaphoreWaitOne_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly Semaphore semaphore = new(1, 1);
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        Semaphore semaphore = new(1, 1);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:semaphore.WaitOne()|};
                             await Task.Delay(1);
@@ -1058,10 +680,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("WaitHandle.WaitOne");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1076,39 +697,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task LockStatement_InSyncLambdaHandler_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new();
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver((e) =>
+                        object lockObj = new();
+                        driver.Log.OnEntryAdded.AddObserver((e) =>
                         {
                             lock (lockObj)
                             {
@@ -1121,10 +720,9 @@ public class BiDiDriver016AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1134,6 +732,13 @@ public class BiDiDriver016AnalyzerTests
     /// Tests that invocations that are not AddObserver are ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly. The real observable-event
+    /// type exposes no <c>Func&lt;T, Task&gt;</c>-taking method other than <c>AddObserver</c>, so a
+    /// differently-named subscribe method (here <c>Subscribe</c>) is the only way to exercise the
+    /// analyzer's <c>Name != "AddObserver"</c> early-return branch and cannot be reproduced against
+    /// the real API.
+    /// </remarks>
     [Fact]
     public async Task NonAddObserverInvocation_NoDiagnostic()
     {
@@ -1191,6 +796,12 @@ public class BiDiDriver016AnalyzerTests
     /// Tests that invocations without member access are ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// Uses a local function named <c>AddObserver</c> (no member-access receiver) to exercise the
+    /// analyzer's <c>invocation.Expression is not MemberAccessExpressionSyntax</c> early-return
+    /// branch; the real API is always invoked through a member access, so this pure-syntax scenario
+    /// cannot be reproduced against it.
+    /// </remarks>
     [Fact]
     public async Task InvocationWithoutMemberAccess_NoDiagnostic()
     {
@@ -1229,6 +840,13 @@ public class BiDiDriver016AnalyzerTests
     /// Tests that AddObserver that doesn't return EventObserver is ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly. The real <c>AddObserver</c>
+    /// always returns <c>EventObserver&lt;T&gt;</c>, so an <c>AddObserver</c> whose return type is
+    /// something else (here <c>string</c>) is the only way to exercise the analyzer's
+    /// <c>ReturnType is not EventObserver</c> early-return branch and cannot be reproduced against the
+    /// real API.
+    /// </remarks>
     [Fact]
     public async Task AddObserverWithDifferentReturnType_NoDiagnostic()
     {
@@ -1286,6 +904,11 @@ public class BiDiDriver016AnalyzerTests
     /// Tests that AddObserver with non-EventObserver return type is ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// Uses a user type whose <c>AddObserver</c> returns <c>void</c> to exercise the analyzer's
+    /// <c>ReturnType is not EventObserver</c> early-return branch; the real <c>AddObserver</c> always
+    /// returns <c>EventObserver&lt;T&gt;</c>, so this cannot be reproduced against the real API.
+    /// </remarks>
     [Fact]
     public async Task AddObserverWithWrongReturnType_NoDiagnostic()
     {
@@ -1329,6 +952,12 @@ public class BiDiDriver016AnalyzerTests
     /// Tests that AddObserver with no arguments is ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly. The real <c>AddObserver</c>
+    /// always takes a handler argument, so a no-argument overload is the only way to exercise the
+    /// analyzer's empty-argument-list early-return branch and cannot be reproduced against the real
+    /// API.
+    /// </remarks>
     [Fact]
     public async Task AddObserverWithNoArguments_NoDiagnostic()
     {
@@ -1380,56 +1009,34 @@ public class BiDiDriver016AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that handler without body (null body) is ignored.
+    /// Tests that handler without body (method group) is ignored.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task HandlerWithoutBody_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly LogModule log = new();
-
                     public async Task HandleEventAsync(EntryAddedEventArgs e) => await Task.Delay(1);
 
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(HandleEventAsync);
+                        driver.Log.OnEntryAdded.AddObserver(HandleEventAsync);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1443,35 +1050,15 @@ public class BiDiDriver016AnalyzerTests
     public async Task MethodReference_WithLockStatement_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     private readonly object lockObj = new();
-                    private readonly LogModule log = new();
 
                     public async Task HandleEventAsync(EntryAddedEventArgs e)
                     {
@@ -1482,18 +1069,17 @@ public class BiDiDriver016AnalyzerTests
                         await Task.Delay(1);
                     }
 
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(HandleEventAsync);
+                        driver.Log.OnEntryAdded.AddObserver(HandleEventAsync);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1507,37 +1093,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task LocalFunctionReference_WithLockStatement_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     private readonly object lockObj = new();
-                    private readonly LogModule log = new();
 
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
                         async Task HandleEventAsync(EntryAddedEventArgs e)
                         {
@@ -1548,16 +1114,15 @@ public class BiDiDriver016AnalyzerTests
                             await Task.Delay(1);
                         }
 
-                        log.OnEntryAdded.AddObserver(HandleEventAsync);
+                        driver.Log.OnEntryAdded.AddObserver(HandleEventAsync);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1571,39 +1136,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task WaitHandleWaitOne_InAsyncEventHandler_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             WaitHandle handle = new ManualResetEvent(false);
                             {|#0:handle.WaitOne()|};
@@ -1618,10 +1161,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("WaitHandle.WaitOne");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1636,39 +1178,17 @@ public class BiDiDriver016AnalyzerTests
     public async Task SimpleLambdaAsync_WithLockStatement_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new();
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async e =>
+                        object lockObj = new();
+                        driver.Log.OnEntryAdded.AddObserver(async e =>
                         {
                             {|#0:lock (lockObj) { }|}
                             await Task.Delay(1);
@@ -1682,10 +1202,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("lock statement");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1693,64 +1212,39 @@ public class BiDiDriver016AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that AddObserver with RunHandlerAsynchronously option does not report diagnostics.
+    /// Tests that AddObserver with a non-constant RunHandlerAsynchronously option does not report
+    /// diagnostics — exercises the non-constant option path of HasRunHandlerAsynchronouslyOption,
+    /// where the argument cannot be resolved to a compile-time constant and is treated as present.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task AddObserver_WithRunHandlerAsynchronously_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions? options = null) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class ObservableEventHandlerOptions
-                {
-                    public bool RunHandlerAsynchronously { get; set; }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new();
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        object lockObj = new();
+                        ObservableEventHandlerOptions options = ObservableEventHandlerOptions.RunHandlerAsynchronously;
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             lock (lockObj) { }
                             await Task.Delay(1);
-                        }, new ObservableEventHandlerOptions { RunHandlerAsynchronously = true });
+                        }, options);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1766,47 +1260,26 @@ public class BiDiDriver016AnalyzerTests
         string test = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly LogModule log = new();
-
                     public Func<EntryAddedEventArgs, Task> Handler { get; } = async (e) => await Task.Delay(1);
 
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(Handler);
+                        driver.Log.OnEntryAdded.AddObserver(Handler);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1820,38 +1293,16 @@ public class BiDiDriver016AnalyzerTests
     public async Task UnresolvedInvocationInHandlerBody_NoDiagnostic()
     {
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly LogModule log = new();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|CS0103:UndefinedMethod|}();
                             await Task.Delay(1);
@@ -1861,71 +1312,42 @@ public class BiDiDriver016AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that a lock in an async handler still reports even when a non-RunHandlerAsynchronously
+    /// option (RunHandlerSynchronously) is present — exercises the HasRunHandlerAsynchronouslyOption
+    /// fallthrough when the option argument is present but is not RunHandlerAsynchronously.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task LockStatement_WithObservableEventHandlerOptionsNone_ReportsWarning()
+    public async Task LockStatement_WithObservableEventHandlerOptionsSynchronous_ReportsWarning()
     {
-        // Exercises the HasRunHandlerAsynchronouslyOption fallthrough when
-        // ObservableEventHandlerOptions is present but does NOT contain "RunHandlerAsynchronously".
         string test = """
-            using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                [Flags]
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options = ObservableEventHandlerOptions.None) => null!;
-                }
-
-                public class EventObserver<T> where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
-                    private readonly object lockObj = new object();
-                    private readonly LogModule log = new LogModule();
-
-                    public void TestMethod()
+                    public void TestMethod(BiDiDriver driver)
                     {
-                        log.OnEntryAdded.AddObserver(async (e) =>
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
                         {
                             {|#0:lock (lockObj)
                             {
                                 var x = 1 + 1;
                             }|}
                             await Task.Delay(100);
-                        }, ObservableEventHandlerOptions.None);
+                        }, ObservableEventHandlerOptions.RunHandlerSynchronously);
                     }
                 }
             }
@@ -1935,10 +1357,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("lock statement");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1951,6 +1372,12 @@ public class BiDiDriver016AnalyzerTests
     /// method has no syntax references (AnalyzerSymbolHelpers line 114 / BIDI016 line 101).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test compiles a separate fake assembly so the handler method has no
+    /// <c>DeclaringSyntaxReferences</c>; that "method symbol with no source syntax" scenario cannot be
+    /// reproduced against the real WebDriverBiDi assembly through an in-source stub, so it keeps its
+    /// own compiled stand-in.
+    /// </remarks>
     [Fact]
     public async Task AddObserver_WithCompiledAssemblyAsyncMethodRef_DoesNotReportDiagnostic()
     {
@@ -2036,54 +1463,26 @@ public class BiDiDriver016AnalyzerTests
 
     /// <summary>
     /// Tests that Mutex.WaitOne inside an event handler reports a diagnostic —
-    /// exercises the Mutex.WaitOne detection branch (line 186).
+    /// exercises the WaitHandle.WaitOne detection branch for a Mutex receiver.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task AddObserver_WithMutexWaitOne_ReportsWarning()
     {
         string test = """
-            using System;
             using System.Threading;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new();
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     private static Mutex mutex = new Mutex();
 
                     public void TestMethod(BiDiDriver driver)
                     {
-                        using EventObserver<LogEntryAddedEventArgs> observer =
+                        using EventObserver<EntryAddedEventArgs> observer =
                             driver.Log.OnEntryAdded.AddObserver(async (e) =>
                             {
                                 {|#0:mutex.WaitOne()|};
@@ -2101,10 +1500,9 @@ public class BiDiDriver016AnalyzerTests
             .WithLocation(0)
             .WithArguments("WaitHandle.WaitOne");
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -2119,12 +1517,13 @@ public class BiDiDriver016AnalyzerTests
     [Fact]
     public async Task DynamicInvocationInHandler_DoesNotReportDiagnostic()
     {
-        string test = EventHandlerFakeSource + """
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void Setup(BiDiDriver driver)
@@ -2142,57 +1541,29 @@ public class BiDiDriver016AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
     /// <summary>
-    /// In-source stand-ins for the driver, log module, and observable-event types used by the
-    /// handler-body tests above.
+    /// Tests that a method named AddObserver whose return type is not a named type (here an array)
+    /// does not report a diagnostic.
     /// </summary>
-    private const string EventHandlerFakeSource = """
-        using System;
-        using System.Threading.Tasks;
-
-        namespace WebDriverBiDi
-        {
-            public class WebDriverBiDiEventArgs { }
-
-            public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-            public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-            {
-                public void Dispose() { }
-            }
-
-            public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-            {
-                public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-            }
-
-            public class LogModule
-            {
-                public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new();
-            }
-
-            public class BiDiDriver
-            {
-                public LogModule Log { get; } = new();
-            }
-        }
-        """;
-
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// A method named AddObserver whose return type is not a named type (here an array) must not
+    /// crash the analyzer (an unchecked cast to INamedTypeSymbol would surface as AD0001); it is
+    /// simply not the library's EventObserver-returning AddObserver, so nothing is reported. The real
+    /// <c>AddObserver</c> always returns the named <c>EventObserver&lt;T&gt;</c>, so this array-return
+    /// lookalike cannot be reproduced against the real API.
+    /// </remarks>
     [Fact]
     public async Task AddObserver_WithNonNamedReturnType_NoDiagnostic()
     {
-        // A method named AddObserver whose return type is not a named type (here an array) must not
-        // crash the analyzer (an unchecked cast to INamedTypeSymbol would surface as AD0001); it is
-        // simply not the library's EventObserver-returning AddObserver, so nothing is reported.
         string test = """
             using System;
             using System.Threading.Tasks;

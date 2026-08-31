@@ -7,7 +7,6 @@ namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -1409,12 +1408,12 @@ public class BiDiDriver010AnalyzerTests
     [Fact]
     public async Task ConvertedResultInEveryUsedPosition_DoesNotReportDiagnostic()
     {
-        string test = ModuleFakeSource + """
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     private static void Consume(Task task) { }
@@ -1452,10 +1451,9 @@ public class BiDiDriver010AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1469,65 +1467,42 @@ public class BiDiDriver010AnalyzerTests
     [Fact]
     public async Task ConfigureAwaitResultStoredInLocal_DoesNotReportDiagnostic()
     {
-        string test = ModuleFakeSource + """
+        string test = """
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Browser;
 
             namespace TestApp
             {
-                using System.Runtime.CompilerServices;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public async Task VariableInitializerAsync(BiDiDriver driver)
                     {
-                        ConfiguredTaskAwaitable<string> awaitable =
+                        ConfiguredTaskAwaitable<CloseCommandResult> awaitable =
                             driver.Browser.CloseAsync().ConfigureAwait(false);
-                        string result = await awaitable;
+                        CloseCommandResult result = await awaitable;
                         System.Console.WriteLine(result);
                     }
 
                     public async Task SimpleAssignmentAsync(BiDiDriver driver)
                     {
-                        ConfiguredTaskAwaitable<string> awaitable;
+                        ConfiguredTaskAwaitable<CloseCommandResult> awaitable;
                         awaitable = driver.Browser.CloseAsync().ConfigureAwait(false);
-                        string result = await awaitable;
+                        CloseCommandResult result = await awaitable;
                         System.Console.WriteLine(result);
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
-    /// <summary>
-    /// In-source stand-ins for the driver and module types used by the conversion tests above.
-    /// </summary>
-    private const string ModuleFakeSource = """
-        using System;
-        using System.Threading.Tasks;
-
-        namespace WebDriverBiDi
-        {
-            public abstract class Module { }
-
-            public class BrowserModule : Module
-            {
-                public Task<string> CloseAsync() => Task.FromResult("closed");
-            }
-
-            public class BiDiDriver
-            {
-                public BrowserModule Browser { get; } = new();
-            }
-        }
-        """;
 
     [Fact]
     public async Task ModuleCommandsPassedToTaskWhenAll_NoDiagnostic()

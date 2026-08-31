@@ -28,46 +28,10 @@ public class BiDiDriver007CodeFixProviderTests
             using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new LogModule();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Threading;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -86,46 +50,10 @@ public class BiDiDriver007CodeFixProviderTests
             using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new LogModule();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Threading;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -144,11 +72,10 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Sleep()");
 
-        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -166,46 +93,10 @@ public class BiDiDriver007CodeFixProviderTests
             using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new LogModule();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Threading;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -214,7 +105,7 @@ public class BiDiDriver007CodeFixProviderTests
                         {
                             {|#0:Thread.Sleep(1000)|};
                             return Task.CompletedTask;
-                        }, ObservableEventHandlerOptions.None);
+                        }, ObservableEventHandlerOptions.RunHandlerSynchronously);
                     }
                 }
             }
@@ -224,46 +115,10 @@ public class BiDiDriver007CodeFixProviderTests
             using System;
             using System.Threading;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new LogModule();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Threading;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -282,11 +137,10 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Sleep()");
 
-        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -303,46 +157,10 @@ public class BiDiDriver007CodeFixProviderTests
         string testCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new LogModule();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -361,46 +179,10 @@ public class BiDiDriver007CodeFixProviderTests
         string fixedCode = """
             using System;
             using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public class WebDriverBiDiEventArgs { }
-
-                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
-
-                public enum ObservableEventHandlerOptions
-                {
-                    None = 0,
-                    RunHandlerAsynchronously = 1
-                }
-
-                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-                {
-                    public void Dispose() { }
-                }
-
-                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-                {
-                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
-                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
-                }
-
-                public class LogModule
-                {
-                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
-                }
-
-                public class BiDiDriver
-                {
-                    public LogModule Log { get; } = new LogModule();
-                }
-            }
+            using WebDriverBiDi;
 
             namespace TestApp
             {
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -420,11 +202,10 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Wait()");
 
-        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -439,14 +220,14 @@ public class BiDiDriver007CodeFixProviderTests
     [Fact]
     public async Task EventHandler_NonAsyncTaskLambda_WithRunHandlerAsynchronously_CodeFixMakesHandlerAsync()
     {
-        string testCode = BothOverloadStubs + """
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
             namespace TestApp
             {
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -461,14 +242,14 @@ public class BiDiDriver007CodeFixProviderTests
             }
             """;
 
-        string fixedCode = BothOverloadStubs + """
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
             namespace TestApp
             {
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -487,11 +268,10 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithMessage("Blocking operation 'Sleep()' detected in event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' and await before the blocking work, or move the work into Task.Run.");
 
-        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -506,14 +286,14 @@ public class BiDiDriver007CodeFixProviderTests
     [Fact]
     public async Task EventHandler_ActionLambda_CodeFixAddsRunHandlerAsynchronously()
     {
-        string testCode = BothOverloadStubs + """
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
             namespace TestApp
             {
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -527,14 +307,14 @@ public class BiDiDriver007CodeFixProviderTests
             }
             """;
 
-        string fixedCode = BothOverloadStubs + """
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
             namespace TestApp
             {
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -552,18 +332,15 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Sleep()");
 
-        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
-
-
 
     /// <summary>
     /// Tests that the async conversion rewrites nested 'return Task.CompletedTask;' to 'return;', nested
@@ -574,14 +351,14 @@ public class BiDiDriver007CodeFixProviderTests
     [Fact]
     public async Task EventHandler_NonAsyncTaskLambdaWithNestedReturns_CodeFixRewritesReturns()
     {
-        string testCode = BothOverloadStubs + """
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
             namespace TestApp
             {
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -608,14 +385,14 @@ public class BiDiDriver007CodeFixProviderTests
             }
             """;
 
-        string fixedCode = BothOverloadStubs + """
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
             namespace TestApp
             {
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod(BiDiDriver driver)
@@ -650,11 +427,10 @@ public class BiDiDriver007CodeFixProviderTests
             .WithLocation(0)
             .WithArguments("Sleep()");
 
-        LfCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -667,6 +443,11 @@ public class BiDiDriver007CodeFixProviderTests
     /// AddObserver invocation; the provider is invoked directly because the diagnostic is non-local.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// Synthetic by necessity: this drives the code fix through <see cref="AnalyzerTestHelpers.GetCodeActionsAsync{TAnalyzer, TCodeFix}"/>,
+    /// which builds an ad-hoc workspace that references only the base framework assemblies (not the real
+    /// <c>WebDriverBiDi</c> assembly), so the analyzed source must supply its own stub types.
+    /// </remarks>
     [Fact]
     public async Task EventHandler_AsyncMethodGroup_OffersNoCodeFix()
     {
@@ -705,6 +486,11 @@ public class BiDiDriver007CodeFixProviderTests
     /// would have to change.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// Synthetic by necessity: this drives the code fix through <see cref="AnalyzerTestHelpers.GetCodeActionsAsync{TAnalyzer, TCodeFix}"/>,
+    /// which builds an ad-hoc workspace that references only the base framework assemblies (not the real
+    /// <c>WebDriverBiDi</c> assembly), so the analyzed source must supply its own stub types.
+    /// </remarks>
     [Fact]
     public async Task EventHandler_NonAsyncTaskMethodGroup_OffersNoCodeFix()
     {
@@ -737,6 +523,12 @@ public class BiDiDriver007CodeFixProviderTests
         Assert.Empty(actions);
     }
 
+    /// <summary>
+    /// In-source stand-ins for the driver, log module, and observable-event types used by the code-fix
+    /// tests that run through <see cref="AnalyzerTestHelpers.GetCodeActionsAsync{TAnalyzer, TCodeFix}"/>.
+    /// That helper builds an ad-hoc workspace referencing only the base framework assemblies, so those
+    /// tests cannot use the real <c>WebDriverBiDi</c> assembly and rely on these stubs instead.
+    /// </summary>
     private const string BothOverloadStubs = """
         using System;
         using System.Threading;
@@ -777,5 +569,4 @@ public class BiDiDriver007CodeFixProviderTests
         }
 
         """;
-
 }

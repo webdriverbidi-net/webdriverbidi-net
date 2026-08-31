@@ -161,6 +161,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task WrongRegistrationOrder(string webSocketUrl, Module customModule, Action<EntryAddedEventArgs> handler)
     {
+#pragma warning disable BIDI001 // This sample intentionally demonstrates the anti-pattern the analyzer catches.
         #region WrongRegistrationOrder
         // ❌ WRONG: Registration after starting
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
@@ -173,6 +174,7 @@ public static class CommonPitfallsSamples
         // Just be sure to add observers before calling Session.SubscribeAsync.
         driver.Log.OnEntryAdded.AddObserver(handler);
         #endregion
+#pragma warning restore BIDI001
     }
 
     /// <summary>

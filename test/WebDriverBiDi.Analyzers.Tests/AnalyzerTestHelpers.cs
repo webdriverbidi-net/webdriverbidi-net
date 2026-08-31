@@ -36,7 +36,7 @@ using WebDriverBiDi;
 /// provider's own logic and cannot be worked around from within a provider. Injecting an explicit
 /// <c>end_of_line = lf</c> EditorConfig here makes the comparison consistent across platforms.
 /// </remarks>
-public sealed class LfCodeFixTest<TAnalyzer, TCodeFix> : CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
+public class LfCodeFixTest<TAnalyzer, TCodeFix> : CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
     where TAnalyzer : DiagnosticAnalyzer, new()
     where TCodeFix : CodeFixProvider, new()
 {
@@ -53,6 +53,45 @@ public sealed class LfCodeFixTest<TAnalyzer, TCodeFix> : CSharpCodeFixTest<TAnal
         // omit FixedCode (relying on the framework's "no explicit fixed state" skip of full output
         // comparison), it defeats that skip by giving FixedState explicit content.
         this.TestState.AnalyzerConfigFiles.Add(("/.editorconfig", LfEditorConfig));
+    }
+}
+
+/// <summary>
+/// A <see cref="CSharpAnalyzerTest{TAnalyzer, TVerifier}"/> that references the real
+/// <c>WebDriverBiDi</c> assembly so tests exercise the analyzer against the library's actual public API
+/// rather than hand-written stubs; this makes signature drift in the analyzed types visible.
+/// </summary>
+/// <typeparam name="TAnalyzer">The type of analyzer under test.</typeparam>
+public sealed class RealAssemblyAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>
+    where TAnalyzer : DiagnosticAnalyzer, new()
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RealAssemblyAnalyzerTest{TAnalyzer}"/> class.
+    /// </summary>
+    public RealAssemblyAnalyzerTest()
+    {
+        this.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        this.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
+    }
+}
+
+/// <summary>
+/// A <see cref="LfCodeFixTest{TAnalyzer, TCodeFix}"/> that additionally references the real
+/// <c>WebDriverBiDi</c> assembly so code-fix tests run against the library's actual public API.
+/// </summary>
+/// <typeparam name="TAnalyzer">The type of analyzer under test.</typeparam>
+/// <typeparam name="TCodeFix">The type of code fix provider under test.</typeparam>
+public sealed class RealAssemblyCodeFixTest<TAnalyzer, TCodeFix> : LfCodeFixTest<TAnalyzer, TCodeFix>
+    where TAnalyzer : DiagnosticAnalyzer, new()
+    where TCodeFix : CodeFixProvider, new()
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RealAssemblyCodeFixTest{TAnalyzer, TCodeFix}"/> class.
+    /// </summary>
+    public RealAssemblyCodeFixTest()
+    {
+        this.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        this.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
     }
 }
 

@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -24,40 +23,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         var success = {|#0:(EvaluateResultSuccess)result|};
                         var title = success.Result;
                     }
@@ -69,10 +42,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -88,40 +60,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         var success = {|#0:result as EvaluateResultSuccess|};
                         if (success != null)
                         {
@@ -136,10 +82,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -155,40 +100,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         if (result is EvaluateResultSuccess success)
                         {
                             var title = success.Result;
@@ -198,10 +117,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -216,40 +134,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult { }
-
-                public record EvaluateResultException : EvaluateResult
-                {
-                    public ExceptionDetails ExceptionDetails { get; set; } = new ExceptionDetails();
-                }
-
-                public class ExceptionDetails { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultException();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("throw new Error()");
                         var exception = {|#0:(EvaluateResultException)result|};
                         var details = exception.ExceptionDetails;
                     }
@@ -261,10 +153,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultException");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -280,40 +171,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         try
                         {
                             var success = (EvaluateResultSuccess)result;
@@ -328,10 +193,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -346,51 +210,25 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public class RemoteValue { }
-
-                public record OtherResult : CommandResult { }
-
-                public class ScriptModule
-                {
-                    public CommandResult Evaluate(string script) => new OtherResult();
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(CommandResult result)
                     {
-                        CommandResult result = script.Evaluate("document.title");
-                        var other = (OtherResult)result;
+                        // Target GetRealmsCommandResult is a CommandResult, not an EvaluateResult subtype.
+                        var other = (GetRealmsCommandResult)result;
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -405,51 +243,25 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public class RemoteValue { }
-
-                public record OtherResult : CommandResult { }
-
-                public class ScriptModule
-                {
-                    public OtherResult Evaluate(string script) => new OtherResult();
-                }
-            }
+            using WebDriverBiDi;
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(GetRealmsCommandResult result)
                     {
-                        OtherResult result = script.Evaluate("document.title");
+                        // The immediate operand of the cast is typed CommandResult, not EvaluateResult.
                         var success = (EvaluateResultSuccess)(CommandResult)result;
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -464,41 +276,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
-
                         void ProcessResult()
                         {
                             try
@@ -518,10 +303,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -536,40 +320,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         var success = {|#0:result as EvaluateResultSuccess|};
                         if (success != null)
                         {
@@ -588,10 +346,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -607,48 +364,23 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public class RemoteValue { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         var type = result.GetType();
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -663,45 +395,16 @@ public class BiDiDriver008AnalyzerTests
     {
         string testCode = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue
-                {
-                    public string Value { get; set; } = string.Empty;
-                }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         var success = {|#0:(EvaluateResultSuccess)result|};
-                        var title = success.Result.Value;
+                        var title = success.Result.Type;
                     }
                 }
             }
@@ -711,10 +414,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -730,47 +432,18 @@ public class BiDiDriver008AnalyzerTests
     {
         string testCode = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue
-                {
-                    public string Value { get; set; } = string.Empty;
-                }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         var success = {|#0:result as EvaluateResultSuccess|};
                         if (success != null)
                         {
-                            var title = success.Result.Value;
+                            var title = success.Result.Type;
                         }
                     }
                 }
@@ -781,10 +454,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -800,43 +472,14 @@ public class BiDiDriver008AnalyzerTests
     {
         string testCode = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult { }
-
-                public record EvaluateResultException : EvaluateResult
-                {
-                    public ExceptionDetails ExceptionDetails { get; set; } = new ExceptionDetails();
-                }
-
-                public class ExceptionDetails
-                {
-                    public string Text { get; set; } = string.Empty;
-                }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultException();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("throw new Error()");
                         var exception = {|#0:(EvaluateResultException)result|};
                         var text = exception.ExceptionDetails.Text;
                     }
@@ -848,10 +491,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultException");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -867,49 +509,19 @@ public class BiDiDriver008AnalyzerTests
     {
         string testCode = """
             using System;
-
-            namespace WebDriverBiDi
-            {
-                public record CommandResult { }
-            }
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult : CommandResult { }
-
-                public record EvaluateResultSuccess : EvaluateResult
-                {
-                    public RemoteValue Result { get; set; } = new RemoteValue();
-                }
-
-                public record EvaluateResultException : EvaluateResult { }
-
-                public class RemoteValue
-                {
-                    public string Value { get; set; } = string.Empty;
-                    public string Type { get; set; } = string.Empty;
-                }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResultSuccess();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("document.title");
                         var success = {|#0:(EvaluateResultSuccess)result|};
-                        var value = success.Result.Value;
-                        var type = success.Result.Type;
+                        var value = success.Result.Type;
+                        var realm = success.RealmId;
                         Console.WriteLine(value);
-                        Console.WriteLine(type);
+                        Console.WriteLine(realm);
                     }
                 }
             }
@@ -919,10 +531,9 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = testCode,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -951,36 +562,23 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResult();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = ({|CS0246:UnknownType|})result;
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -995,17 +593,10 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult { }
-                public record EvaluateResultSuccess : EvaluateResult { }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -1016,10 +607,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1034,36 +624,23 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult { }
-
-                public class ScriptModule
-                {
-                    public EvaluateResult Evaluate(string script) => new EvaluateResult();
-                }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
-                    public void TestMethod(ScriptModule script)
+                    public void TestMethod(EvaluateResult result)
                     {
-                        EvaluateResult result = script.Evaluate("test");
                         var success = result as {|CS0246:UnknownType|};
                     }
                 }
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1078,17 +655,10 @@ public class BiDiDriver008AnalyzerTests
     {
         string test = """
             using System;
-
-            namespace WebDriverBiDi.Script
-            {
-                public record EvaluateResult { }
-                public record EvaluateResultSuccess : EvaluateResult { }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -1099,10 +669,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1155,10 +724,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1185,10 +753,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1203,16 +770,10 @@ public class BiDiDriver008AnalyzerTests
     public async Task CastExpression_WithUnresolvableSourceType_DoesNotReportDiagnostic()
     {
         string test = """
-            namespace WebDriverBiDi
-            {
-                public abstract record EvaluateResult { }
-                public record EvaluateResultSuccess : EvaluateResult { }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -1223,10 +784,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1241,16 +801,10 @@ public class BiDiDriver008AnalyzerTests
     public async Task AsExpression_WithUnresolvableSourceType_DoesNotReportDiagnostic()
     {
         string test = """
-            namespace WebDriverBiDi
-            {
-                public abstract record EvaluateResult { }
-                public record EvaluateResultSuccess : EvaluateResult { }
-            }
+            using WebDriverBiDi.Script;
 
             namespace TestApp
             {
-                using WebDriverBiDi;
-
                 public class TestClass
                 {
                     public void TestMethod()
@@ -1261,10 +815,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1280,16 +833,8 @@ public class BiDiDriver008AnalyzerTests
     public async Task CastToUnrelatedType_DoesNotReportDiagnostic()
     {
         string test = """
-            namespace WebDriverBiDi.Script
-            {
-                public abstract record EvaluateResult { }
-                public record EvaluateResultSuccess : EvaluateResult { }
-            }
-
             namespace TestApp
             {
-                using WebDriverBiDi.Script;
-
                 public class TestClass
                 {
                     public void TestMethod(object value)
@@ -1301,10 +846,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1315,6 +859,13 @@ public class BiDiDriver008AnalyzerTests
     /// exercises the ContainingNamespace check in IsEvaluateResultBaseType (line 105).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    /// <remarks>
+    /// This test keeps a hand-written stub rather than the real assembly because it deliberately
+    /// declares <c>EvaluateResult</c>/<c>EvaluateResultSuccess</c> in a namespace other than
+    /// <c>WebDriverBiDi.Script</c>. The real library types always live in <c>WebDriverBiDi.Script</c>,
+    /// so the namespace-mismatch branch of <c>IsEvaluateResultBaseType</c> cannot be reproduced
+    /// against the real API.
+    /// </remarks>
     [Fact]
     public async Task CastFromEvaluateResultInWrongNamespace_DoesNotReportDiagnostic()
     {
@@ -1351,7 +902,7 @@ public class BiDiDriver008AnalyzerTests
 
     /// <summary>
     /// Tests that casting a non-EvaluateResult source to EvaluateResultSuccess does not
-    /// fire — exercises the IsEvaluateResultBaseType false branch (line 109 &&amp; short-circuit).
+    /// fire — exercises the IsEvaluateResultBaseType false branch (line 109 &amp;&amp; short-circuit).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -1373,12 +924,10 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1404,10 +953,9 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1447,12 +995,10 @@ public class BiDiDriver008AnalyzerTests
             .WithLocation(0)
             .WithArguments("EvaluateResultSuccess");
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
@@ -1495,12 +1041,10 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1526,12 +1070,10 @@ public class BiDiDriver008AnalyzerTests
             }
             """;
 
-        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
         {
             TestCode = test,
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(AnalyzerTestHelpers.GetWebDriverBiDiAssemblyPath()));
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
