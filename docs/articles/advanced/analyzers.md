@@ -49,6 +49,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI022** | Warning | Writing a value into `CommandParameters.AdditionalData` (via `Add`, `TryAdd`, or indexer assignment). The `Dictionary<string, object?>` values are serialized through reflection-based `JsonSerializer` overloads, which are not compatible with native AOT or IL trimming unless every value's runtime type is registered via `BiDiDriver.RegisterTypeInfoResolverAsync` |
 | **BIDI023** | Warning | Module command (e.g., `NavigateAsync`, `EvaluateAsync`) called inside an `AddObserver` event handler without `RunHandlerAsynchronously`. The driver's command pipeline dispatches events synchronously by default; calling a module command from within the handler can deadlock or produce unexpected behavior. As with BIDI007, the option only suppresses the diagnostic for an `Action<T>` handler, an `async` lambda, or an `async` method group; a non-`async` `Task`-returning handler is still reported |
 | **BIDI024** | Error | `StartAsync()` called a second time on the same driver without an intervening `StopAsync()`. The transport is already connected, so the second call throws `WebDriverBiDiConnectionException`. Tracked per local variable within a method, constructor, or top-level program; a `StopAsync()` returns the driver to the not-started state, so a start / stop / start sequence is not reported |
+| **BIDI025** | Warning | An `async void` method is passed as an `AddObserver` handler. It binds to the `Action<T>` overload (not `Func<T, Task>`), so it runs fire-and-forget: exceptions thrown after its first `await` are unobserved async-void faults that can crash the process, and the observer is considered complete before the handler's async work finishes. An `async` lambda or `async Task` method group binds to `Func<T, Task>` and is not reported |
 
 ## Code Fixes
 
@@ -197,6 +198,10 @@ Each rule below is addressable by anchor (for example `#bidi004`) so its diagnos
 ### BIDI024
 
 **Error.** `StartAsync()` is called a second time on the same driver without an intervening `StopAsync()`. The transport is already connected, so the call throws `WebDriverBiDiConnectionException`. Call `StopAsync()` before starting again.
+
+### BIDI025
+
+**Warning.** An `async void` method is passed as an `AddObserver` handler, binding it to the `Action<T>` overload. Its exceptions become unobserved async-void faults and its asynchronous work is not tracked. Declare the handler as `async Task` so it binds to the `Func<T, Task>` overload.
 
 ## Related Documentation
 
