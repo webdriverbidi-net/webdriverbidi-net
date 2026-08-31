@@ -57,7 +57,23 @@ public class ExtensionDataConventionTests
 
     private static bool DeclaresExtensionData(Type type)
     {
-        return type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Any(property => property.GetCustomAttribute<JsonExtensionDataAttribute>() is not null);
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+
+        // Walk the full type hierarchy so an extension-data member declared on a base payload type — for
+        // example BaseNetworkEventArgs or NavigationEventArgs, from which the concrete event payloads
+        // derive — is also caught, and scan both properties and fields (the attribute is valid on either).
+        for (Type? current = type; current is not null && current != typeof(object); current = current.BaseType)
+        {
+            bool onProperty = current.GetProperties(flags)
+                .Any(member => member.GetCustomAttribute<JsonExtensionDataAttribute>() is not null);
+            bool onField = current.GetFields(flags)
+                .Any(member => member.GetCustomAttribute<JsonExtensionDataAttribute>() is not null);
+            if (onProperty || onField)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
