@@ -13,6 +13,14 @@ using System.Text.Json.Serialization;
 public record CreateUserContextCommandResult : CommandResult
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="CreateUserContextCommandResult"/> class.
+    /// </summary>
+    [JsonConstructor]
+    internal CreateUserContextCommandResult()
+    {
+    }
+
+    /// <summary>
     /// Gets the ID of the user context.
     /// </summary>
     [JsonPropertyName("userContext")]

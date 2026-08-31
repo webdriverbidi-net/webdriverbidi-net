@@ -13,6 +13,14 @@ using System.Text.Json.Serialization;
 public record GetUserContextsCommandResult : CommandResult
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="GetUserContextsCommandResult"/> class.
+    /// </summary>
+    [JsonConstructor]
+    internal GetUserContextsCommandResult()
+    {
+    }
+
+    /// <summary>
     /// Gets a read-only list of all of the user contexts open for the current browser.
     /// </summary>
     [JsonIgnore]
