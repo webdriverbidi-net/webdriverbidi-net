@@ -3,6 +3,7 @@
 
 ### New Rules
 
-Rule ID | Category | Severity | Notes
---------|----------|----------|--------------------
-BIDI024 | Usage    | Error    | BiDiDriver024_DuplicateStartAsyncAnalyzer
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI024 | Usage       | Error    | BiDiDriver024_DuplicateStartAsyncAnalyzer
+BIDI025 | Reliability | Warning  | BiDiDriver025_AsyncVoidEventHandlerAnalyzer
