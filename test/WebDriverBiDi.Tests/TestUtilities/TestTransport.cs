@@ -46,8 +46,6 @@ public class TestTransport : Transport
 
     public int ConcurrentConnectLockAcquisitions => this.concurrentConnectLockAcquisitions;
 
-    public TimeSpan DisconnectDelay { get; set; } = TimeSpan.Zero;
-
     /// <summary>
     /// Optional callback invoked before acquiring the connection lock.
     /// Used for precise test synchronization.
@@ -222,11 +220,6 @@ public class TestTransport : Transport
         if (this.ThrowOnDisconnect)
         {
             throw new WebDriverBiDiException("Simulated disconnect failure");
-        }
-
-        if (this.DisconnectDelay > TimeSpan.Zero)
-        {
-            await Task.Delay(this.DisconnectDelay, cancellationToken).ConfigureAwait(false);
         }
 
         await base.DisconnectAsync(throwCollectedExceptions, cancellationToken).ConfigureAwait(false);

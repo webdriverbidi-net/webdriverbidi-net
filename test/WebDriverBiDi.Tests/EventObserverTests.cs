@@ -277,15 +277,36 @@ public class EventObserverTests
         TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int startedCount = 0;
         CancellationTokenSource cancellationTokenSource = new();
+
+        // The handler bodies stay pending (on a cancellable delay) so the completion wait is genuinely
+        // waiting when it is cancelled. Their tasks are stored so the test can drain them at the end
+        // instead of leaving them running past the test — a leaked handler's completion decrements the
+        // process-global async-handler counter and leaks an AsyncHandlerTaskCount event into a later
+        // test in this serialized collection.
+        using CancellationTokenSource handlerCancellationTokenSource = new();
+        List<Task> handlerTasks = [];
+        object handlerTasksLock = new();
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async e =>
+            e =>
             {
-                if (Interlocked.Increment(ref startedCount) == 2)
+                Task body = HandlerBodyAsync();
+                lock (handlerTasksLock)
                 {
-                    bothStartedTaskCompletionSource.TrySetResult();
+                    handlerTasks.Add(body);
                 }
-                await Task.Delay(TimeSpan.FromSeconds(2));
+
+                return body;
+
+                async Task HandlerBodyAsync()
+                {
+                    if (Interlocked.Increment(ref startedCount) == 2)
+                    {
+                        bothStartedTaskCompletionSource.TrySetResult();
+                    }
+
+                    await Task.Delay(Timeout.InfiniteTimeSpan, handlerCancellationTokenSource.Token);
+                }
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
@@ -303,6 +324,8 @@ public class EventObserverTests
         // WaitForAsync auto-closes the channel once count tasks are collected, so
         // IsCapturing is false by the time the task-completion wait is cancelled.
         Assert.False(observer.IsCapturing);
+
+        await DrainHandlerTasksAsync(handlerCancellationTokenSource, handlerTasks, handlerTasksLock);
     }
 
     [Fact]
@@ -333,15 +356,35 @@ public class EventObserverTests
     {
         TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int startedCount = 0;
+
+        // The handler bodies stay pending (on a cancellable delay) so the completion wait times out while
+        // they are still running. Their tasks are stored so the test can drain them at the end rather than
+        // leaving them running past the test and leaking an AsyncHandlerTaskCount decrement into a later
+        // test in this serialized collection.
+        using CancellationTokenSource handlerCancellationTokenSource = new();
+        List<Task> handlerTasks = [];
+        object handlerTasksLock = new();
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async e =>
+            e =>
             {
-                if (Interlocked.Increment(ref startedCount) == 2)
+                Task body = HandlerBodyAsync();
+                lock (handlerTasksLock)
                 {
-                    bothStartedTaskCompletionSource.TrySetResult();
+                    handlerTasks.Add(body);
                 }
-                await Task.Delay(TimeSpan.FromSeconds(5));
+
+                return body;
+
+                async Task HandlerBodyAsync()
+                {
+                    if (Interlocked.Increment(ref startedCount) == 2)
+                    {
+                        bothStartedTaskCompletionSource.TrySetResult();
+                    }
+
+                    await Task.Delay(Timeout.InfiniteTimeSpan, handlerCancellationTokenSource.Token);
+                }
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
@@ -358,6 +401,8 @@ public class EventObserverTests
 
         // Capture session is auto-closed once count tasks are collected.
         Assert.False(observer.IsCapturing);
+
+        await DrainHandlerTasksAsync(handlerCancellationTokenSource, handlerTasks, handlerTasksLock);
     }
 
     [Fact]
@@ -1442,5 +1487,31 @@ public class EventObserverTests
         observer.StopCapturingTasks();
         observer.Unobserve();
         observer.Dispose();
+    }
+
+    // Cancels the pending handler bodies and awaits their tasks so their in-flight decrement runs before
+    // the test returns. The decrement runs in an ExecuteSynchronously continuation attached to each handler
+    // task before this await's continuation, so once these awaits complete the process-global async-handler
+    // counter is settled and cannot leak an AsyncHandlerTaskCount event into a later test in the collection.
+    private static async Task DrainHandlerTasksAsync(CancellationTokenSource handlerCancellationTokenSource, List<Task> handlerTasks, object handlerTasksLock)
+    {
+        await handlerCancellationTokenSource.CancelAsync();
+
+        Task[] tasksToDrain;
+        lock (handlerTasksLock)
+        {
+            tasksToDrain = [.. handlerTasks];
+        }
+
+        foreach (Task handlerTask in tasksToDrain)
+        {
+            try
+            {
+                await handlerTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
     }
 }
