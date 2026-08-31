@@ -147,7 +147,12 @@ jobs:
             echo "__BENCHMARK_EOF__"
           } >> "$GITHUB_OUTPUT"
 
+      # Commenting needs a write-scoped GITHUB_TOKEN, which pull_request events
+      # from forks do not receive (the token is read-only there). Guard the two
+      # comment steps to the same-repo case so fork PRs still run the benchmarks
+      # and upload artifacts without failing on a forbidden comment API call.
       - name: Find existing benchmark comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: peter-evans/find-comment@v4
         id: find-comment
         with:
@@ -156,6 +161,7 @@ jobs:
           body-includes: '## Benchmark results'
 
       - name: Post or update PR comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
