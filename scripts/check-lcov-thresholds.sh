@@ -92,15 +92,19 @@ printf "Branches: %s / %s  (%s%%)  — threshold %s%%\n"    "$BRH" "$BRF" "$BRAN
 printf "Methods:  %s / %s  (%s%%)  — threshold %s%%\n"    "$FNH" "$FNF" "$METHOD_PCT" "$MIN_METHOD"
 echo ""
 
-# Compare a percentage string (or "-") to a threshold. "-" is ignored (nothing
-# to gate). Returns 0 if pct >= threshold or pct is "-", 1 otherwise.
+# Compare exact coverage (hit/found) to a threshold. found==0 is ignored (nothing
+# to gate). The comparison uses the unrounded ratio, not the 2-decimal display
+# percentage, so a value like 94.995% does not pass a 95% threshold. Returns 0 if
+# the ratio meets the threshold or is not applicable, 1 otherwise.
 meets_threshold() {
-  local label="$1" pct="$2" threshold="$3"
-  if [ "$pct" = "-" ]; then
+  local label="$1" hit="$2" found="$3" threshold="$4"
+  if [ "$found" -eq 0 ]; then
     echo "ℹ️  $label: not applicable (no instrumented items), skipping"
     return 0
   fi
-  if awk -v p="$pct" -v t="$threshold" 'BEGIN { exit !(p >= t) }'; then
+  local pct
+  pct=$(calc_percent "$hit" "$found")
+  if awk -v h="$hit" -v f="$found" -v t="$threshold" 'BEGIN { exit !((h * 100.0) / f >= t) }'; then
     echo "✅ $label: $pct% >= $threshold%"
     return 0
   else
@@ -110,9 +114,9 @@ meets_threshold() {
 }
 
 FAIL=0
-meets_threshold "Lines"    "$LINE_PCT"   "$MIN_LINE"   || FAIL=1
-meets_threshold "Branches" "$BRANCH_PCT" "$MIN_BRANCH" || FAIL=1
-meets_threshold "Methods"  "$METHOD_PCT" "$MIN_METHOD" || FAIL=1
+meets_threshold "Lines"    "$LH"  "$LF"  "$MIN_LINE"   || FAIL=1
+meets_threshold "Branches" "$BRH" "$BRF" "$MIN_BRANCH" || FAIL=1
+meets_threshold "Methods"  "$FNH" "$FNF" "$MIN_METHOD" || FAIL=1
 
 echo ""
 if [ "$FAIL" -eq 0 ]; then

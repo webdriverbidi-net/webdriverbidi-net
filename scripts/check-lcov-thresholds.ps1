@@ -83,24 +83,28 @@ Write-Host ("Branches: {0} / {1}  ({2})  — threshold {3}%" -f $brh, $brf, (For
 Write-Host ("Methods:  {0} / {1}  ({2})  — threshold {3}%" -f $fnh, $fnf, (Format-Pct $methodPct), $MinMethod)
 Write-Host ''
 
+# Compares exact coverage (Hit/Found) to a threshold using the unrounded ratio,
+# not the 2-decimal display percentage, so a value like 94.995% does not pass a
+# 95% threshold. Found==0 is "not applicable" and is skipped.
 function Test-Threshold {
-    param([string]$Label, $Pct, [double]$Threshold)
-    if ($null -eq $Pct) {
+    param([string]$Label, [long]$Hit, [long]$Found, [double]$Threshold)
+    if ($Found -eq 0) {
         Write-Host "i  ${Label}: not applicable (no instrumented items), skipping"
         return $true
     }
-    if ($Pct -ge $Threshold) {
-        Write-Host "v  ${Label}: ${Pct}% >= ${Threshold}%"
+    $pct = Format-Pct (Get-Percent $Hit $Found)
+    if ((($Hit * 100.0) / $Found) -ge $Threshold) {
+        Write-Host "v  ${Label}: ${pct} >= ${Threshold}%"
         return $true
     }
-    Write-Host "x  ${Label}: ${Pct}% < ${Threshold}%"
+    Write-Host "x  ${Label}: ${pct} < ${Threshold}%"
     return $false
 }
 
 $pass = $true
-if (-not (Test-Threshold 'Lines'    $linePct   $MinLine))   { $pass = $false }
-if (-not (Test-Threshold 'Branches' $branchPct $MinBranch)) { $pass = $false }
-if (-not (Test-Threshold 'Methods'  $methodPct $MinMethod)) { $pass = $false }
+if (-not (Test-Threshold 'Lines'    $lh  $lf  $MinLine))   { $pass = $false }
+if (-not (Test-Threshold 'Branches' $brh $brf $MinBranch)) { $pass = $false }
+if (-not (Test-Threshold 'Methods'  $fnh $fnf $MinMethod)) { $pass = $false }
 
 Write-Host ''
 if ($pass) {
