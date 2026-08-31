@@ -13,6 +13,14 @@ using System.Text.Json.Serialization;
 public record GetClientWindowsCommandResult : CommandResult
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="GetClientWindowsCommandResult"/> class.
+    /// </summary>
+    [JsonConstructor]
+    internal GetClientWindowsCommandResult()
+    {
+    }
+
+    /// <summary>
     /// Gets a read-only list of information about all of the client windows open for the current browser.
     /// </summary>
     [JsonIgnore]
