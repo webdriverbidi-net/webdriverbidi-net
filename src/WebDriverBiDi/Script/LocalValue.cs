@@ -146,10 +146,11 @@ public record LocalValue
     public static LocalValue Map(Dictionary<LocalValue, LocalValue> mapValue) => new LocalArgumentValue("map") { Value = mapValue };
 
     /// <summary>
-    /// Creates a LocalValue for a map with LocalValue keys.
+    /// Creates a LocalValue for a map with keys that may be either strings or LocalValues.
     /// </summary>
-    /// <param name="mapValue">The dictionary with LocalValues for keys and LocalValues for values to wrap as a map LocalValue.</param>
+    /// <param name="mapValue">The dictionary with strings or LocalValues for keys and LocalValues for values to wrap as a map LocalValue.</param>
     /// <returns>A LocalValue for a map.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when any of the keys of the provided dictionary is neither a string nor a LocalValue.</exception>
     public static LocalValue Map(Dictionary<object, LocalValue> mapValue)
     {
         foreach (object key in mapValue.Keys)
@@ -178,10 +179,11 @@ public record LocalValue
     public static LocalValue Object(Dictionary<LocalValue, LocalValue> mapValue) => new LocalArgumentValue("object") { Value = mapValue };
 
     /// <summary>
-    /// Creates a LocalValue for an object with LocalValue keys.
+    /// Creates a LocalValue for an object with keys that may be either strings or LocalValues.
     /// </summary>
-    /// <param name="mapValue">The dictionary with LocalValues for keys and LocalValues for values to wrap as an object LocalValue.</param>
+    /// <param name="mapValue">The dictionary with strings or LocalValues for keys and LocalValues for values to wrap as an object LocalValue.</param>
     /// <returns>A LocalValue for an object.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when any of the keys of the provided dictionary is neither a string nor a LocalValue.</exception>
     public static LocalValue Object(Dictionary<object, LocalValue> mapValue)
     {
         foreach (object key in mapValue.Keys)

@@ -35,6 +35,7 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// <param name="events">The list of events to which to subscribe or unsubscribe.</param>
     /// <param name="contexts">The list of browsing context IDs for which to subscribe to the specified events.</param>
     /// <param name="userContexts">The list of user context IDs for which to subscribe to the specified events.</param>
+    /// <exception cref="ArgumentException">Thrown when no events are specified in the events list.</exception>
     public SubscribeCommandParameters(IList<string> events, IList<string>? contexts = null, IList<string>? userContexts = null)
     {
         if (events.Count == 0)

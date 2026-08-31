@@ -77,7 +77,7 @@ public abstract record RemoteValue
     /// Attempts to convert this <see cref="RemoteValue"/> to the specified type-specific RemoteValue type.
     /// </summary>
     /// <typeparam name="T">The type-specific RemoteValue type to convert to.</typeparam>
-    /// <returns><see langword="true"/> if the conversion was successful; otherwise, <see langword="false"/>.</returns>
+    /// <returns>This RemoteValue, converted to the specified type-specific RemoteValue type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if this RemoteValue cannot be converted to the specified type.</exception>
     public T ConvertTo<T>()
         where T : RemoteValue
