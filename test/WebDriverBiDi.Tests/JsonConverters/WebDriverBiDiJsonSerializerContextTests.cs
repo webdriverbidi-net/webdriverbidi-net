@@ -34,7 +34,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.Empty(missingTypes);
+        Assert.True(missingTypes.Count == 0, FormatMissingMessage("command parameter", missingTypes));
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.Empty(missingTypes);
+        Assert.True(missingTypes.Count == 0, FormatMissingMessage("command result response message", missingTypes));
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.Empty(missingTypes);
+        Assert.True(missingTypes.Count == 0, FormatMissingMessage("event message", missingTypes));
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.Empty(missingTypes);
+        Assert.True(missingTypes.Count == 0, FormatMissingMessage("serializable enum", missingTypes));
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.Empty(missingTypes);
+        Assert.True(missingTypes.Count == 0, FormatMissingMessage("custom converter", missingTypes));
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public class WebDriverBiDiJsonSerializerContextTests
                 }
             }
 
-            foreach (DiscriminatedDerivedTypeAttribute discriminatedDerivedTypeAttribute in assembly.GetCustomAttributes<DiscriminatedDerivedTypeAttribute>())
+            foreach (DiscriminatedDerivedTypeAttribute discriminatedDerivedTypeAttribute in assemblyType.GetCustomAttributes<DiscriminatedDerivedTypeAttribute>())
             {
                 if (!coveredTypes.Contains(discriminatedDerivedTypeAttribute.DerivedType) && !missingTypes.Contains(discriminatedDerivedTypeAttribute.DerivedType))
                 {
@@ -219,7 +219,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.Empty(missingTypes);
+        Assert.True(missingTypes.Count == 0, FormatMissingMessage("derived", missingTypes));
     }
 
     [Fact]
@@ -276,7 +276,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         }
 
         // There should be no missing types.
-        Assert.Empty(missingTypes);
+        Assert.True(missingTypes.Count == 0, FormatMissingMessage("referenced property", missingTypes));
     }
 
     private static HashSet<Type> GetRegisteredSerializableTypes()

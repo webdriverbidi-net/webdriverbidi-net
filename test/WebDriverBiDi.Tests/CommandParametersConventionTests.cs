@@ -58,6 +58,8 @@ public class CommandParametersConventionTests
             }
         }
 
+        // This test enforces the non-nullable annotation; initialization is enforced separately by the
+        // compiler, which treats CS8618 (uninitialized non-nullable member) as an error in the library.
         Assert.True(offenders.Count == 0, $"Read-only list properties must be non-nullable and initialized. Offenders: {string.Join(", ", offenders)}");
     }
 
