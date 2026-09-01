@@ -27,7 +27,8 @@ public class FixedDoubleJsonConverter : JsonConverter<double>
     }
 
     /// <summary>
-    /// Serializes a double value to a JSON string, preserving decimal places for integer values.
+    /// Serializes a double value to a JSON string, emitting text that parses back to the exact
+    /// same value and preserving a decimal point for integer values.
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The double value to be serialized.</param>
@@ -42,7 +43,27 @@ public class FixedDoubleJsonConverter : JsonConverter<double>
             throw new JsonException($"The value {value} cannot be serialized; only finite numbers can be represented in JSON");
         }
 
-        string numberAsString = value.ToString("0.0###########################", CultureInfo.InvariantCulture);
+        // The formatted text must parse back to the exact same double: a fixed-precision format
+        // rounds to 15 significant digits, which can alter an in-range value into an out-of-range
+        // one (e.g., pi / 2, the inclusive maximum for a pointer altitude angle). The "R"
+        // specifier produces the shortest exact representation on .NET Core 3.0 and later, but
+        // is documented as unreliable for doubles on .NET Framework, so the netstandard2.0
+        // build uses "G17", which always round-trips there.
+#if NETSTANDARD2_0
+        string numberAsString = value.ToString("G17", CultureInfo.InvariantCulture);
+#else
+        string numberAsString = value.ToString("R", CultureInfo.InvariantCulture);
+#endif
+
+        // An integer-valued double must keep a decimal point on the wire so it reads as a
+        // JSON float rather than a JSON int. Exponent notation (e.g., 1E-30) already reads
+        // as a float and needs no suffix; the uppercase format specifiers above always emit
+        // an uppercase 'E' for the exponent.
+        if (numberAsString.IndexOf('.') < 0 && numberAsString.IndexOf('E') < 0)
+        {
+            numberAsString += ".0";
+        }
+
         writer.WriteRawValue(numberAsString);
     }
 }
