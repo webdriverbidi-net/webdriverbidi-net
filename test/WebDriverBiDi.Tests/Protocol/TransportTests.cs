@@ -3923,6 +3923,122 @@ public class TransportTests
         Assert.Equal(1, transport.PendingCommandCount);
     }
 
+    [Fact]
+    public async Task TestAsynchronousObserverFaultOnConnectionEventIsReported()
+    {
+        // A fault raised after an asynchronously-run handler has already returned cannot propagate
+        // to a caller. For the connection's own events it was previously observed and then
+        // discarded; the transport now routes it through the same pipeline as a fault in an
+        // observer of a transport or module event.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        EventHandlerErrorOccurredEventArgs? reportedError = null;
+        TaskCompletionSource errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            reportedError = e;
+            errorReported.TrySetResult();
+        });
+
+        // Declared explicitly as Action<T> so the handler binds to the overload that queues the
+        // whole handler to the thread pool, making the throw a post-return fault of that task.
+        Action<LogMessageEventArgs> throwingHandler = e => throw new InvalidOperationException("connection log observer failure");
+        EventObserver<LogMessageEventArgs> observer = connection.OnLogMessage.AddObserver(
+            throwingHandler,
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+        await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(reportedError);
+        Assert.Equal(observer.Id, reportedError.ErrorInfo.ObserverId);
+        Assert.Equal(connection.OnLogMessage.EventName, reportedError.ErrorInfo.ObservableEventName);
+        Assert.True(reportedError.ErrorInfo.IsAsynchronousHandler);
+        Assert.True(reportedError.ErrorInfo.FaultOccurredAfterHandlerReturned);
+        InvalidOperationException exception = Assert.IsType<InvalidOperationException>(reportedError.ErrorInfo.Exception);
+        Assert.Equal("connection log observer failure", exception.Message);
+    }
+
+    [Fact]
+    public async Task TestAsynchronousObserverFaultOnConnectionEventIsReportedForObserverAddedBeforeTransport()
+    {
+        // The reporter is installed by the Transport constructor, which can run after a caller has
+        // already added observers to the connection's events. Because the reporter is read when a
+        // fault is reported rather than captured when an observer is added, an observer added
+        // first is still covered.
+        TestWebSocketConnection connection = new();
+
+        Action<LogMessageEventArgs> throwingHandler = e => throw new InvalidOperationException("pre-existing observer failure");
+        EventObserver<LogMessageEventArgs> observer = connection.OnLogMessage.AddObserver(
+            throwingHandler,
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        Transport transport = new(connection);
+
+        EventHandlerErrorOccurredEventArgs? reportedError = null;
+        TaskCompletionSource errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            reportedError = e;
+            errorReported.TrySetResult();
+        });
+
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+        await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(reportedError);
+        Assert.Equal(observer.Id, reportedError.ErrorInfo.ObserverId);
+        InvalidOperationException exception = Assert.IsType<InvalidOperationException>(reportedError.ErrorInfo.Exception);
+        Assert.Equal("pre-existing observer failure", exception.Message);
+    }
+
+    [Fact]
+    public async Task TestAsynchronousObserverFaultOnConnectionEventIsCollected()
+    {
+        // Being routed through the unhandled-error pipeline means the fault is governed by
+        // EventHandlerExceptionBehavior, exactly as for transport and module events.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+        };
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        Action<LogMessageEventArgs> throwingHandler = e => throw new WebDriverBiDiException("collected connection observer failure");
+        connection.OnLogMessage.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+        Assert.True(await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect));
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(
+            async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Contains(exception.InnerExceptions, inner => inner.Message.Contains("collected connection observer failure"));
+    }
+
+    [Fact]
+    public async Task TestAsynchronousObserverFaultOnConnectionEventIsDiscardedWhenIgnored()
+    {
+        // Ignore is the default, so the fault is still observed (no UnobservedTaskException) but
+        // is neither collected nor surfaced by the disconnect.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        TaskCompletionSource errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.OnEventHandlerErrorOccurred.AddObserver(e => errorReported.TrySetResult());
+
+        Action<LogMessageEventArgs> throwingHandler = e => throw new WebDriverBiDiException("ignored connection observer failure");
+        connection.OnLogMessage.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+
+        // The event still fires for observability; only the unhandled-error collection is skipped.
+        await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
     private sealed class NonGenericCommandParameters : CommandParameters
     {
         [JsonIgnore]

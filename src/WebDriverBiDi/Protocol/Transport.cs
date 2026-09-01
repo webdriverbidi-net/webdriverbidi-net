@@ -197,6 +197,14 @@ public class Transport : IAsyncDisposable
         this.invocableErrorHandlerErrorOccurredObservableEvent = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
         this.invocableLogMessageObservableEvent = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
 
+        // Route failures of observers of the connection's own events through this transport's
+        // unhandled-error pipeline, so that a fault in a user's asynchronously-run observer of
+        // (for example) Connection.OnLogMessage is governed by EventHandlerExceptionBehavior
+        // exactly like a fault in an observer of a transport or module event, rather than being
+        // observed and then discarded. This applies to observers the connection already carries,
+        // because the reporter is read when a fault is reported, not when an observer is added.
+        connection.SetObserverErrorReporter(this.ReportEventObserverErrorAsync);
+
         this.connectionDataReceivedObserver = connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         this.connectionErrorObserver = connection.OnConnectionError.AddObserver(this.OnConnectionErrorAsync);
         this.connectionRemoteDisconnectObserver = connection.OnRemoteDisconnected.AddObserver(this.OnConnectionRemotelyDisconnectedAsync);
