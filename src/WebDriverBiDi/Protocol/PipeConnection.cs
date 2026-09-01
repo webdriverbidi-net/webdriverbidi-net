@@ -351,7 +351,13 @@ public class PipeConnection : Connection
                 int bytesRead = await this.ReadPipeDataAsync(readArray, 0, this.BufferSize, connectionCancellationToken).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
-                    // Pipe closed
+                    // Pipe closed. The remote end can reach end-of-file while its process is
+                    // still running, so the process check in IsActive cannot be relied upon
+                    // to report the connection as inactive. Clear the flag here, before any
+                    // observers are notified, so that a disconnection handler (and a
+                    // subsequent Transport.ConnectAsync, which skips Connection.StartAsync
+                    // for an active connection) sees the connection as no longer active.
+                    this.IsConnectionActive = false;
                     await this.LogAsync("Pipe closed by remote end").ConfigureAwait(false);
                     break;
                 }
@@ -401,15 +407,23 @@ public class PipeConnection : Connection
         }
         catch (OperationCanceledException)
         {
-            // An OperationCanceledException is normal upon task/token cancellation, so disregard it
+            // An OperationCanceledException is normal upon task/token cancellation, so disregard it.
+            // The flag is deliberately left alone here: cancellation means StopAsync is running,
+            // and StopAsync owns clearing the flag on that path.
         }
         catch (IOException e)
         {
+            // The receive loop is exiting and no further data can be received, so the connection
+            // is no longer active regardless of the state of the pipe or the server process.
+            // Clear the flag before notifying observers, for the same reason as the end-of-file
+            // path above.
+            this.IsConnectionActive = false;
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         catch (ObjectDisposedException e)
         {
+            this.IsConnectionActive = false;
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
@@ -420,6 +434,7 @@ public class PipeConnection : Connection
             // is a separate case than the simple case of no further data being received. For
             // pending commands, this would look like a command that never returns a response
             // rather than the loop ending due to the observer exception.
+            this.IsConnectionActive = false;
             await this.LogAsync($"Unexpected error processing received data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }

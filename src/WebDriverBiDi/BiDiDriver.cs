@@ -453,12 +453,23 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
-
-        // The transport supports reconnect, and registration is legal again after
-        // StopAsync (IsStarted is false). Preserve that by clearing the flag once the
-        // disconnect has completed.
-        this.SetIsStartRequestedValue(false);
+        try
+        {
+            await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            // The transport supports reconnect, and registration is legal again after
+            // StopAsync (IsStarted is false). Preserve that by clearing the flag once the
+            // disconnect has completed. DisconnectAsync throws after a fully completed
+            // teardown when Collect-mode errors were gathered during the session, so the
+            // flag must be cleared on that path too; only when the transport is still
+            // connected (the wait was canceled mid-teardown) does the flag remain set.
+            if (!this.transport.IsConnected)
+            {
+                this.SetIsStartRequestedValue(false);
+            }
+        }
     }
 
     /// <summary>

@@ -186,6 +186,43 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestRemoteEndOfFileWhileProcessRunningMarksConnectionInactiveAndAllowsRestart()
+    {
+        // The remote end can close its end of the pipe while its process keeps running, so
+        // IsActive cannot rely on the process check alone; the end-of-file must clear the
+        // connection's active flag, and a subsequent StartAsync must be able to begin a
+        // new session.
+        TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<int> secondSessionReadBlock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            ReadHandler = (buffer, offset, count, callNumber) =>
+                callNumber == 1 ? Task.FromResult(0) : secondSessionReadBlock.Task,
+        };
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            remoteDisconnectedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The server process is still running; only the pipe reached end-of-file.
+        Assert.False(testPipeServer.PipeServerProcess!.HasExited);
+        Assert.False(connection.IsActive);
+
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        Assert.True(connection.IsActive);
+
+        secondSessionReadBlock.SetResult(0);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+    }
+
+    [Fact]
     public async Task TestCanStop()
     {
         using TestPipeServer testPipeServer = new();
@@ -258,7 +295,10 @@ public class PipeConnectionTests
             "Pipe closed by remote end",
             "Ending pipe receive loop",
             "Closing pipe connection",
-            "Pipe connection closed",
+
+            // The end-of-file already marked the connection inactive, so StopAsync
+            // takes its already-closed early return.
+            "Pipe connection already closed",
         }, receivedData);
     }
 
@@ -691,6 +731,10 @@ public class PipeConnectionTests
 
         // Wait for error event (TestPipeConnection returns fake data on first read, then throws on second)
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The receive loop has exited, so the connection must report inactive even though
+        // the server process is still running.
+        Assert.False(connection.IsActive);
         testPipeServer.Stop();
 
         Assert.NotNull(receivedErrorArgs);
@@ -720,6 +764,10 @@ public class PipeConnectionTests
 
         // Wait for error event (TestPipeConnection returns fake data on first read, then throws on second)
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The receive loop has exited, so the connection must report inactive even though
+        // the server process is still running.
+        Assert.False(connection.IsActive);
         testPipeServer.Stop();
 
         Assert.NotNull(receivedErrorArgs);
@@ -754,6 +802,10 @@ public class PipeConnectionTests
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("hello"), TestContext.Current.CancellationToken);
 
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The receive loop has exited, so the connection must report inactive even though
+        // the server process is still running.
+        Assert.False(connection.IsActive);
         testPipeServer.Stop();
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
