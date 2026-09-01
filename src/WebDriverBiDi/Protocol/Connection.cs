@@ -226,6 +226,35 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Installs the reporter used to surface failures of observers of this connection's events
+    /// that occur after the observer's handler has already returned to the caller.
+    /// </summary>
+    /// <param name="reporter">The reporter callback.</param>
+    /// <remarks>
+    /// <para>
+    /// A failure of that kind cannot propagate to a caller, because the handler has already
+    /// returned. Without a reporter it is observed (so it never surfaces as a
+    /// <see cref="TaskScheduler.UnobservedTaskException"/>) but is otherwise discarded.
+    /// <see cref="Transport"/> calls this so that such a failure is instead routed through the
+    /// same unhandled-error pipeline as a failure in an observer of a transport, driver, or
+    /// module event, and is therefore governed by
+    /// <see cref="Transport.EventHandlerExceptionBehavior"/>.
+    /// </para>
+    /// <para>
+    /// The reporter applies to observers added before this call as well as after it, because
+    /// <see cref="EventObserver{T}"/> reads it when a fault is reported rather than capturing it
+    /// when the observer is created.
+    /// </para>
+    /// </remarks>
+    internal void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
+    {
+        this.InvocableConnectionDataReceivedObservableEvent.InvokeSetObserverErrorReporter(reporter);
+        this.InvocableConnectionErrorObservableEvent.InvokeSetObserverErrorReporter(reporter);
+        this.InvocableRemoteDisconnectedObservableEvent.InvokeSetObserverErrorReporter(reporter);
+        this.InvocableLogMessageObservableEvent.InvokeSetObserverErrorReporter(reporter);
+    }
+
+    /// <summary>
     /// Takes ownership of byte array containing data for a completed message, copying it into a local pool-based memory block.
     /// </summary>
     /// <param name="messageDataBuffer">A reference to the byte array containing the message data.</param>

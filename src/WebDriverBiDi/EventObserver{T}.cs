@@ -58,7 +58,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
-    private readonly Func<EventObserverErrorInfo, Task>? observerErrorReporter;
     private readonly TimeProvider timeProvider;
     private Channel<Task>? capturedTaskQueue;
     private int waitingReaderCount;
@@ -72,16 +71,20 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <param name="handlerOptions">The options to use when executing the event handler.</param>
     /// <param name="description">The optional description of this observer.</param>
     /// <param name="timeProvider">The <see cref="TimeProvider"/> used to calculate timeouts.</param>
-    /// <param name="observerErrorReporter">The callback used to report late observer execution errors, if any.</param>
     /// <param name="sequence">The sequence in which the observer is added to the observable event.</param>
     /// <param name="priority">The priority with which the observer will be executed relative to other observers.</param>
-    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, TimeProvider timeProvider, Func<EventObserverErrorInfo, Task>? observerErrorReporter, uint sequence, EventObserverPriority priority = EventObserverPriority.NormalObserverPriority)
+    /// <remarks>
+    /// The callback used to report late observer execution errors is deliberately not captured
+    /// here; it is read from <see cref="ObservableEvent{T}.ObserverErrorReporter"/> when a fault
+    /// is actually reported, so that a reporter installed after this observer was added still
+    /// applies to it.
+    /// </remarks>
+    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, TimeProvider timeProvider, uint sequence, EventObserverPriority priority = EventObserverPriority.NormalObserverPriority)
     {
         this.observableEvent = observableEvent;
         this.handler = handler;
         this.handlerOptions = handlerOptions;
         this.timeProvider = timeProvider;
-        this.observerErrorReporter = observerErrorReporter;
         this.Priority = priority;
         this.Sequence = sequence;
         if (string.IsNullOrEmpty(description))
@@ -781,7 +784,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 return;
             }
 
-            Task? reportingTask = this.observerErrorReporter?.Invoke(new EventObserverErrorInfo()
+            // Read the error reporter from the event itself. Note carefully that a producer
+            // may install the reporter after this observer was added, so a reference to the
+            // reporter cannot be tracked at construction time.
+            Task? reportingTask = this.observableEvent.ObserverErrorReporter?.Invoke(new EventObserverErrorInfo()
             {
                 ObservableEventName = state.ReportedEventName,
                 ObserverId = this.Id,

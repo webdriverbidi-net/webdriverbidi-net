@@ -28,7 +28,6 @@ public class ObservableEvent<T>
 {
     private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
-    private Func<EventObserverErrorInfo, Task>? observerErrorReporter;
     private int observerCount = 0;
     private uint observerSequence = 0;
 
@@ -58,6 +57,19 @@ public class ObservableEvent<T>
     /// Gets the current number of observers, including data collectors, that are observing this event.
     /// </summary>
     public int CurrentObserverCount => Interlocked.CompareExchange(ref this.observerCount, 0, 0);
+
+    /// <summary>
+    /// Gets the reporter used to surface observer failures that occur after the handler has
+    /// already returned to the caller, or <see langword="null"/> if no reporter is installed.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="EventObserver{T}"/> reads this at the moment it reports a fault, rather than
+    /// capturing it when the observer is created, so that a producer which installs its reporter
+    /// after an observer has already been added still has that observer's faults reported. A
+    /// <see cref="Protocol.Transport"/> constructed around a <see cref="Protocol.Connection"/>
+    /// that already carries observers of its events is the case that requires this.
+    /// </remarks>
+    internal Func<EventObserverErrorInfo, Task>? ObserverErrorReporter { get; private set; }
 
     /// <summary>
     /// Gets or sets the <see cref="TimeProvider"/> used for time comparisons in observers.
@@ -210,7 +222,7 @@ public class ObservableEvent<T>
     /// <param name="reporter">The reporter callback.</param>
     protected void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
     {
-        this.observerErrorReporter = reporter;
+        this.ObserverErrorReporter = reporter;
     }
 
     /// <summary>
@@ -330,7 +342,7 @@ public class ObservableEvent<T>
             }
 
             this.observerSequence += 1;
-            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerErrorReporter, this.observerSequence, priority);
+            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerSequence, priority);
             this.observers.Add(observer.Id, observer);
             Interlocked.Increment(ref this.observerCount);
             return observer;
