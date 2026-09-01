@@ -3,7 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Integration.Tests;
+namespace WebDriverBiDi.Compatibility.Tests;
+
+using WebDriverBiDi.TestUtilities;
 
 public class NetStandardCompatibilityFixture : IAsyncLifetime
 {
@@ -31,7 +33,8 @@ public class NetStandardCompatibilityFixture : IAsyncLifetime
             "dotnet",
             $"build \"{SmokeAppProjectDir}\" -c Release -o \"{this.BuildDir}\" -p:TreatWarningsAsErrors=true",
             workingDirectory: SmokeAppProjectDir,
-            timeout: TimeSpan.FromMinutes(3));
+            timeout: TimeSpan.FromMinutes(3),
+            diagnosticReporter: (output) => TestContext.Current.SendDiagnosticMessage(output));
 
         Assert.Equal(0, buildExit.ExitCode);
 

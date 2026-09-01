@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Integration.Tests;
 
 using PinchHitter;
+using WebDriverBiDi.TestUtilities;
 
 public class AotCompilationEnvironmentTests : IClassFixture<AotCompilationEnvironmentFixture>
 {
@@ -36,7 +37,9 @@ public class AotCompilationEnvironmentTests : IClassFixture<AotCompilationEnviro
             this.fixture.ExecutablePath,
             testUrl,
             workingDirectory: this.fixture.PublishDir,
-            timeout: TimeSpan.FromMinutes(2));
+            timeout: TimeSpan.FromMinutes(2),
+            diagnosticReporter: (output) => TestContext.Current.SendDiagnosticMessage(output));
+
 
         Assert.Equal(0, runExit.ExitCode);
     }

@@ -3,10 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Integration.Tests;
+namespace WebDriverBiDi.Compatibility.Tests;
 
 using System.Text.Json;
 using PinchHitter;
+using WebDriverBiDi.TestUtilities;
 
 public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibilityFixture>
 {
@@ -112,7 +113,9 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
             "dotnet",
             $"\"{this.fixture.DllPath}\" ws://localhost:{server.Port}",
             workingDirectory: this.fixture.BuildDir,
-            timeout: TimeSpan.FromSeconds(30));
+            timeout: TimeSpan.FromSeconds(30),
+            diagnosticReporter: (output) => TestContext.Current.SendDiagnosticMessage(output));
+
 
         await server.StopAsync();
 
