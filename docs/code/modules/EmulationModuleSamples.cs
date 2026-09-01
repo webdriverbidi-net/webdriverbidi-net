@@ -52,38 +52,6 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
-    /// Common device viewports.
-    /// </summary>
-    public static async Task CommonDeviceViewports(BiDiDriver driver, string contextId)
-    {
-        #region CommonDeviceViewports
-        // iPhone 12/13
-        await driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters
-        {
-            BrowsingContextId = contextId,
-            Viewport = new Viewport { Width = 390, Height = 844 },
-            DevicePixelRatio = 3.0
-        });
-
-        // iPad Pro
-        await driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters
-        {
-            BrowsingContextId = contextId,
-            Viewport = new Viewport { Width = 1024, Height = 1366 },
-            DevicePixelRatio = 2.0
-        });
-
-        // Desktop HD
-        await driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters
-        {
-            BrowsingContextId = contextId,
-            Viewport = new Viewport { Width = 1920, Height = 1080 },
-            DevicePixelRatio = 1.0
-        });
-        #endregion
-    }
-
-    /// <summary>
     /// Set custom user agent.
     /// </summary>
     public static async Task SetCustomUserAgent(BiDiDriver driver, string contextId)

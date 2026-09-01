@@ -640,34 +640,6 @@ public static class EventObserverSamples
     }
 
     /// <summary>
-    /// Pattern 2: Collect network responses.
-    /// </summary>
-    public static async Task Pattern2CollectNetworkResponses(
-        BiDiDriver driver,
-        NavigateCommandParameters navParams)
-    {
-        #region Pattern2-CollectNetworkResponses
-        List<ResponseData> responses = new List<ResponseData>();
-
-        driver.Network.OnResponseCompleted.AddObserver((e) =>
-        {
-            responses.Add(e.Response);
-        });
-
-        SubscribeCommandParameters subscribe =
-            new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
-        await driver.Session.SubscribeAsync(subscribe);
-
-        await driver.BrowsingContext.NavigateAsync(navParams);
-
-        // Wait a bit for all responses
-        await Task.Delay(2000);
-
-        Console.WriteLine($"Collected {responses.Count} responses");
-        #endregion
-    }
-
-    /// <summary>
     /// Pattern 3: Wait for specific condition with preload script.
     /// </summary>
     public static async Task Pattern3WaitForSpecificCondition(
