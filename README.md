@@ -66,7 +66,7 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are 16 projects in this repository:
+There are 18 projects in this repository:
 * src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code.
 * src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj - Source code for Roslyn analyzers
 to help users avoid antipatterns when using the main library.
@@ -90,6 +90,11 @@ and associated code fix providers.
 * test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application
 used to smoke test proper JSON serialization in ahead-of-time (AOT) compilation scenarios.
 * test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj - Performance benchmarks for the library.
+* test/WebDriverBiDi.Compatibility.Tests/WebDriverBiDi.Compatibility.Tests.csproj - Tests that verify
+the main library works when consumed from a particular build configuration. Each test builds a
+separate console application that pins its reference to the configuration under test, then runs that
+application out of process against a scripted WebSocket server. No browser is involved, which is what
+separates these from the integration tests.
 * test/WebDriverBiDi.Integration.Tests/WebDriverBiDi.Integration.Tests.csproj - Integration tests for
 the main library. These tests use actual browsers to test WebDriver BiDi functionality.
 * test/WebDriverBiDi.Logging.Tests/WebDriverBiDi.Logging.Tests.csproj - Tests for the structured logging extension project.
@@ -97,8 +102,13 @@ the main library. These tests use actual browsers to test WebDriver BiDi functio
 that acts as a test server for named pipe communication, used by unit tests to validate pipe-based connections.
 * test/WebDriverBiDi.NetStandardTestApplication/WebDriverBiDi.NetStandardTestApplication.csproj - A console
 application whose main library reference is pinned to its netstandard2.0 build, allowing proper
-smoke testing of netstandard2.0-specific code paths in the main library.
+smoke testing of netstandard2.0-specific code paths in the main library. It is driven by the
+compatibility tests.
 * test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library.
+* test/WebDriverBiDi.TestUtilities/WebDriverBiDi.TestUtilities.csproj - A small library of helpers
+shared between test projects, rather than a test project itself. It currently holds the plumbing for
+launching a console application as a child process and collecting its exit code and console output,
+which the compatibility and integration tests both rely on.
 * docs/code/WebDriverBiDi.DocSnippets.csproj - The compilable code samples included in the documentation
 articles. Building this project verifies that every documented sample compiles against the current library.
 

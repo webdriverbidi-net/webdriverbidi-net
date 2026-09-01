@@ -35,7 +35,10 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        # -warnaserror enforces the project's "PRs should contain no warnings" convention
+        # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
+        # warning-free today, so this gate only fails on a newly introduced warning.
+        run: dotnet build --configuration Release --no-restore -warnaserror
 
   unit-tests:
     name: Unit tests
@@ -56,7 +59,10 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        # -warnaserror enforces the project's "PRs should contain no warnings" convention
+        # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
+        # warning-free today, so this gate only fails on a newly introduced warning.
+        run: dotnet build --configuration Release --no-restore -warnaserror
 
       # Note that each coverage report is scoped only to the assemblies being tested
       - name: Test WebDriverBiDi library (with coverage)
@@ -125,7 +131,10 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        # -warnaserror enforces the project's "PRs should contain no warnings" convention
+        # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
+        # warning-free today, so this gate only fails on a newly introduced warning.
+        run: dotnet build --configuration Release --no-restore -warnaserror
 
       # Running tests on Windows will deliberately not produce code coverage metrics
       - name: Test WebDriverBiDi library
@@ -136,6 +145,47 @@ jobs:
 
       - name: Test structured logging library
         run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
+
+  # Compatibility tests build and run a separate consumer application against a specific build of
+  # the library (currently the netstandard2.0 one) over a scripted WebSocket server. They need no
+  # browser, so they run once per operating system here rather than once per browser per operating
+  # system inside the integration matrices.
+  compatibility-tests:
+    name: Compatibility tests (${{ matrix.os.display }})
+    needs: build
+    runs-on: ${{ matrix.os.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - image: ubuntu-latest
+            display: Linux
+          - image: windows-latest
+            display: Windows
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        # -warnaserror enforces the project's "PRs should contain no warnings" convention
+        # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
+        # warning-free today, so this gate only fails on a newly introduced warning.
+        run: dotnet build --configuration Release --no-restore -warnaserror
+
+      - name: Run compatibility tests
+        run: dotnet test --project test/WebDriverBiDi.Compatibility.Tests --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
 
   integration-tests:
     name: Integration tests (${{ matrix.browser.display }})
@@ -166,7 +216,10 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        # -warnaserror enforces the project's "PRs should contain no warnings" convention
+        # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
+        # warning-free today, so this gate only fails on a newly introduced warning.
+        run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Create local browser directory
         run: mkdir -p "$GITHUB_WORKSPACE/browsers"
@@ -228,7 +281,10 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        # -warnaserror enforces the project's "PRs should contain no warnings" convention
+        # (README.md) in CI rather than leaving it to reviewer diligence. The solution builds
+        # warning-free today, so this gate only fails on a newly introduced warning.
+        run: dotnet build --configuration Release --no-restore -warnaserror
 
       - name: Create local browser directory
         run: New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\browsers" | Out-Null

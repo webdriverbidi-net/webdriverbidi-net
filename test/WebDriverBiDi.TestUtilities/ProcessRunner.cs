@@ -3,10 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Integration.Tests;
+namespace WebDriverBiDi.TestUtilities;
 
 using System.Diagnostics;
-using Xunit.Sdk;
 
 public static class ProcessRunner
 {
@@ -15,7 +14,7 @@ public static class ProcessRunner
     // that somehow escaped the kill can cost us the console output but never the test run.
     private static readonly TimeSpan ConsoleDrainTimeout = TimeSpan.FromSeconds(5);
 
-    public static async Task<RunProcessResult> RunProcessAsync(string fileName, string arguments, string workingDirectory, TimeSpan timeout)
+    public static async Task<RunProcessResult> RunProcessAsync(string fileName, string arguments, string workingDirectory, TimeSpan timeout, Action<string>? diagnosticReporter = null)
     {
         using Process process = new();
         process.StartInfo.FileName = fileName;
@@ -43,11 +42,11 @@ public static class ProcessRunner
             // The process must be killed before its output can be collected, for the reason
             // given above.
             process.Kill(entireProcessTree: true);
-            await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask);
-            throw new XunitException($"Process '{fileName}' timed out after {timeout.TotalSeconds}s.");
+            await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask, diagnosticReporter);
+            throw new TimeoutException($"Process '{fileName}' timed out after {timeout.TotalSeconds}s.");
         }
 
-        ConsoleOutputs outputs = await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask);
+        ConsoleOutputs outputs = await ReportConsoleContentAsync(fileName, stdoutTask, stderrTask, diagnosticReporter);
 
         return new RunProcessResult()
         {
@@ -58,15 +57,15 @@ public static class ProcessRunner
         };
     }
 
-    private static async Task<ConsoleOutputs> ReportConsoleContentAsync(string fileName, Task<string> stdoutTask, Task<string> stderrTask)
+    private static async Task<ConsoleOutputs> ReportConsoleContentAsync(string fileName, Task<string> stdoutTask, Task<string> stderrTask, Action<string>? diagnosticReporter)
     {
         string stdout = await DrainAsync(stdoutTask);
         string stderr = await DrainAsync(stderrTask);
 
-        TestContext.Current.SendDiagnosticMessage($"[{Path.GetFileName(fileName)}] stdout:\n{stdout}");
+        diagnosticReporter?.Invoke($"[{Path.GetFileName(fileName)}] stdout:\n{stdout}");
         if (!string.IsNullOrWhiteSpace(stderr))
         {
-            TestContext.Current.SendDiagnosticMessage($"[{Path.GetFileName(fileName)}] stderr:\n{stderr}");
+            diagnosticReporter?.Invoke($"[{Path.GetFileName(fileName)}] stderr:\n{stderr}");
         }
 
         return new ConsoleOutputs(stdout, stderr);

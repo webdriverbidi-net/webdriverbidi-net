@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Integration.Tests;
 
 using System.Runtime.InteropServices;
+using WebDriverBiDi.TestUtilities;
 
 public class AotCompilationEnvironmentFixture : IAsyncLifetime
 {
@@ -33,7 +34,8 @@ public class AotCompilationEnvironmentFixture : IAsyncLifetime
             "dotnet",
             $"publish \"{SmokeTestProjectDir}\" -c Release -o \"{this.PublishDir}\" -p:TreatWarningsAsErrors=true",
             workingDirectory: SmokeTestProjectDir,
-            timeout: TimeSpan.FromMinutes(5));
+            timeout: TimeSpan.FromMinutes(5),
+            diagnosticReporter: (output) => TestContext.Current.SendDiagnosticMessage(output));
 
         Assert.Equal(0, publishExit.ExitCode);
 

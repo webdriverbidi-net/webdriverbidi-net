@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
+    <RootNamespace>WebDriverBiDi.Compatibility.Tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -13,13 +14,17 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.0" />
-    <PackageReference Include="coverlet.MTP" Version="10.0.1" />
     <PackageReference Include="PinchHitter" Version="0.0.19" />
   </ItemGroup>
 
+  <!-- These tests build and run a separate consumer application out of process; they do not
+       reference the library themselves, which is the point. That application pins its own
+       reference to the exact build under test (here, netstandard2.0), so a ProjectReference from
+       this project would only obscure which build is actually being exercised. -->
+
+  <!-- Process plumbing shared with the integration test project, which drives the same kind of
+       out-of-process application against a real browser. -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\WebDriverBiDi\WebDriverBiDi.csproj" />
-    <ProjectReference Include="..\..\src\WebDriverBiDi.Client\WebDriverBiDi.Client.csproj" />
     <ProjectReference Include="..\WebDriverBiDi.TestUtilities\WebDriverBiDi.TestUtilities.csproj" />
   </ItemGroup>
 
