@@ -70,7 +70,7 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
                 TrackDriverDeclarations(localDecl, semanticModel, driverStartedStatus);
             }
 
-            AnalyzeStatementForStartStopCalls(statement, context, driverStartedStatus);
+            ProcessNode(statement, context, driverStartedStatus);
         }
     }
 
@@ -94,26 +94,106 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static void AnalyzeStatementForStartStopCalls(
-        StatementSyntax statement,
+    private static void ProcessNode(
+        SyntaxNode node,
         SyntaxNodeAnalysisContext context,
         Dictionary<string, bool> driverStartedStatus)
     {
-        // Do not descend into the bodies of nested functions (lambdas, anonymous methods, local
-        // functions): their code runs when the delegate is invoked, not at the textual position where
-        // it is declared, so a StartAsync there must not be judged against the driver's started state
-        // at this point in the method.
-        IEnumerable<InvocationExpressionSyntax> invocations = statement
-            .DescendantNodes(descendIntoChildren: node => node is not (
-                SimpleLambdaExpressionSyntax or
-                ParenthesizedLambdaExpressionSyntax or
-                AnonymousMethodExpressionSyntax or
-                LocalFunctionStatementSyntax))
-            .OfType<InvocationExpressionSyntax>();
-
-        foreach (InvocationExpressionSyntax invocation in invocations)
+        // Walk the node's descendants in document order, checking each invocation against the
+        // tracked started state. The walk does not descend into the bodies of nested functions
+        // (lambdas, anonymous methods, local functions): their code runs when the delegate is
+        // invoked, not at the textual position where it is declared, so a StartAsync there must
+        // not be judged against the driver's started state at this point in the method. It also
+        // stops at if and switch statements — including one that is itself the root, which the
+        // barrier yields without descending into — and processes them recursively below with a
+        // forked copy of the state for each mutually exclusive branch.
+        foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
+            AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            child is not IfStatementSyntax &&
+            child is not SwitchStatementSyntax))
         {
-            CheckInvocation(invocation, context, driverStartedStatus);
+            if (descendant is IfStatementSyntax ifStatement)
+            {
+                ProcessIfStatement(ifStatement, context, driverStartedStatus);
+            }
+            else if (descendant is SwitchStatementSyntax switchStatement)
+            {
+                ProcessSwitchStatement(switchStatement, context, driverStartedStatus);
+            }
+            else if (descendant is InvocationExpressionSyntax invocation)
+            {
+                CheckInvocation(invocation, context, driverStartedStatus);
+            }
+        }
+    }
+
+    private static void ProcessIfStatement(
+        IfStatementSyntax ifStatement,
+        SyntaxNodeAnalysisContext context,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        // Invocations in the condition execute unconditionally, before either branch.
+        ProcessNode(ifStatement.Condition, context, driverStartedStatus);
+
+        // The branches are mutually exclusive: a StartAsync in one arm is never a duplicate of a
+        // StartAsync in the other, so each arm is walked against its own copy of the state at the
+        // branch point. An else-if chain arrives here as an else clause whose statement is itself
+        // an if statement, which ProcessNode routes back into this method.
+        Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
+        ProcessNode(ifStatement.Statement, context, thenBranchStatus);
+
+        Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
+        if (ifStatement.Else is not null)
+        {
+            ProcessNode(ifStatement.Else.Statement, context, elseBranchStatus);
+        }
+
+        // After the branch, a driver counts as started only when every path through the branch
+        // leaves it started. Treating "started in some path" as started would flag correct
+        // conditional stop/restart patterns as duplicates.
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            driverStartedStatus[driverName] = thenBranchStatus[driverName] && elseBranchStatus[driverName];
+        }
+    }
+
+    private static void ProcessSwitchStatement(
+        SwitchStatementSyntax switchStatement,
+        SyntaxNodeAnalysisContext context,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        // The governing expression executes unconditionally, before any section.
+        ProcessNode(switchStatement.Expression, context, driverStartedStatus);
+
+        // Sections are mutually exclusive in the same way if/else branches are. When no default
+        // section exists, the switch may match nothing, so the unchanged state at the switch is
+        // one of the possible paths.
+        bool hasDefaultSection = false;
+        List<Dictionary<string, bool>> sectionStatuses = [];
+        foreach (SwitchSectionSyntax section in switchStatement.Sections)
+        {
+            if (section.Labels.Any(label => label is DefaultSwitchLabelSyntax))
+            {
+                hasDefaultSection = true;
+            }
+
+            Dictionary<string, bool> sectionStatus = new(driverStartedStatus);
+            foreach (StatementSyntax sectionStatement in section.Statements)
+            {
+                ProcessNode(sectionStatement, context, sectionStatus);
+            }
+
+            sectionStatuses.Add(sectionStatus);
+        }
+
+        if (!hasDefaultSection)
+        {
+            sectionStatuses.Add(new Dictionary<string, bool>(driverStartedStatus));
+        }
+
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            driverStartedStatus[driverName] = sectionStatuses.All(sectionStatus => sectionStatus[driverName]);
         }
     }
 

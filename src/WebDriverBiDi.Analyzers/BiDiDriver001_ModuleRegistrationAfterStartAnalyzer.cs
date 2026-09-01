@@ -63,7 +63,10 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         Dictionary<string, DriverState> driverVariables = [];
 
         // Walk through all statements in the method, constructor, or top-level program.
-        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetAllStatements(context.Node))
+        // Statements inside nested functions are excluded: a StartAsync declared inside a
+        // lambda runs when the delegate is invoked, not at its textual position, so it must
+        // not mark the driver as started for the statements that follow the declaration.
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetAllStatementsExcludingNestedFunctions(context.Node))
         {
             // Check for driver creation: var driver = new BiDiDriver(...)
             if (statement is LocalDeclarationStatementSyntax localDecl)

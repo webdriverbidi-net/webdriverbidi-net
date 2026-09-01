@@ -42,6 +42,27 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
             .OfType<InvocationExpressionSyntax>()
             .First();
 
+        // The fix relocates the command after an existing StartAsync call on the same driver
+        // in the same block-bodied method. The analyzer also fires in constructors and
+        // top-level programs, and when no StartAsync call exists at all; no fix is possible
+        // in those cases, so none is offered.
+        MethodDeclarationSyntax? method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (method?.Body is null)
+        {
+            return;
+        }
+
+        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
+        bool startAsyncExists = method.Body.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                && ma.Name.Identifier.Text == "StartAsync"
+                && GetRootIdentifierName(ma) == driverVariableName);
+        if (!startAsyncExists)
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Move command execution after StartAsync",
@@ -125,6 +146,8 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
             current = nestedAccess.Expression;
         }
 
-        return ((IdentifierNameSyntax)current).Identifier.Text;
+        // The receiver chain may not end in a simple identifier (for example, a driver held in
+        // a field accessed through `this`); such receivers are not fixable and yield no name.
+        return (current as IdentifierNameSyntax)?.Identifier.Text;
     }
 }

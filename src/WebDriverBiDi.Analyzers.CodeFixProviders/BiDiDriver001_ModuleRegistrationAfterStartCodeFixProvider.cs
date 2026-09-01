@@ -43,6 +43,20 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
             .OfType<InvocationExpressionSyntax>()
             .First();
 
+        // The fix moves the registration before an existing StartAsync call in the same
+        // method. The analyzer also fires in constructors and top-level programs, where the
+        // rearrangement below has no method to operate on; no fix is possible there, so none
+        // is offered.
+        MethodDeclarationSyntax? method = invocation.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+        bool startAsyncExists = method is not null && method.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Name.Identifier.Text == "StartAsync");
+        if (!startAsyncExists)
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Move RegisterModule() before StartAsync()",

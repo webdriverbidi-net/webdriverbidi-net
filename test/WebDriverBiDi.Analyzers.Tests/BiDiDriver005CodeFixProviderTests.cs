@@ -18,6 +18,41 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver005CodeFixProviderTests
 {
     /// <summary>
+    /// Tests that no fix is offered in a top-level program: the fix rewrites a SubscribeAsync call
+    /// found in the enclosing method declaration, which does not exist in that context, even when
+    /// an amendable SubscribeAsync call is present.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_InTopLevelProgram_NoFixOffered()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+            {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+            await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "network.beforeRequestSent" }));
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        RealAssemblyCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+            TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+            FixedState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that the code fix adds the missing event name to SubscribeAsync.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

@@ -14,6 +14,56 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver001CodeFixProviderTests
 {
     /// <summary>
+    /// Tests that no fix is offered when the diagnostic is reported in a constructor: the fix
+    /// rearranges statements of a method declaration, which does not exist in that context
+    /// (previously the provider threw while building the fix).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncInConstructor_NoFixOffered()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public TestClass()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.StartAsync("ws://localhost:9222").Wait();
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("new CustomModule(driver)");
+
+        RealAssemblyCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that the code fix moves RegisterModule() before StartAsync().
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

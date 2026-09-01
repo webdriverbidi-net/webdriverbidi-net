@@ -16,6 +16,147 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver009CodeFixProviderTests
 {
     [Fact]
+    public async Task ExecuteCommandAsync_NoStartAsyncInMethod_NoFixOffered()
+    {
+        // The fix relocates the command after an existing StartAsync call. When no StartAsync
+        // exists anywhere in the method, the diagnostic still fires but no fix can be built,
+        // so none may be offered (previously the provider threw while building the fix).
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ExecuteCommandAsync_InTopLevelProgram_NoFixOffered()
+    {
+        // The fix rearranges statements of a method declaration, which does not exist in a
+        // top-level program; the diagnostic still fires there, but no fix may be offered.
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            BiDiDriver driver = new();
+            await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+            await driver.StartAsync("ws://localhost:9222");
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+            TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+            FixedState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ExecuteCommandAsync_StartAsyncOnFieldReceiverIgnored_CodeFixMovesAfterMatchingStartAsync()
+    {
+        // A StartAsync whose receiver chain does not end in a simple identifier (a driver held
+        // in a field accessed through `this`) yields no variable name and must not be treated
+        // as the start of the local driver; the fix moves the command after the matching
+        // StartAsync on the local variable.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver other = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                        await this.other.StartAsync("ws://otherhost:9222");
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver other = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await this.other.StartAsync("ws://otherhost:9222");
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task ExecuteCommandAsync_CodeFixMovesAfterStartAsync()
     {
         string testCode = """

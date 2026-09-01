@@ -295,9 +295,41 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             return true;
         }
 
+        // A DisposeAsync inside a finally clause runs after the associated try block, so a
+        // StopAsync anywhere in that try block executes before it even though the two calls
+        // share no containing block. A StopAsync that appears only in a catch block is
+        // deliberately not counted: it runs only on the exceptional path, so the normal path
+        // would still dispose a driver that was never stopped.
+        for (SyntaxNode? ancestor = disposeAsyncCall.Parent; ancestor is not null; ancestor = ancestor.Parent)
+        {
+            if (!AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(ancestor))
+            {
+                // The DisposeAsync call runs when the enclosing delegate is invoked, not at its
+                // textual position, so an outer try block's timing does not apply to it.
+                break;
+            }
+
+            if (ancestor is FinallyClauseSyntax finallyClause &&
+                finallyClause.Parent is TryStatementSyntax tryStatement &&
+                ContainsStopAsyncForVariable(tryStatement.Block, variableName))
+            {
+                return true;
+            }
+        }
+
         // Fall back to checking at the member level (method, constructor, or top-level program).
         IEnumerable<StatementSyntax>? statements = AnalyzerSymbolHelpers.GetTopLevelStatements(node);
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
+    }
+
+    private static bool ContainsStopAsyncForVariable(SyntaxNode scope, string variableName)
+    {
+        return scope.DescendantNodes(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
+            .OfType<InvocationExpressionSyntax>()
+            .Any(invocation => invocation.Expression is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Name.Identifier.Text == "StopAsync"
+                && memberAccess.Expression is IdentifierNameSyntax identifier
+                && identifier.Identifier.Text == variableName);
     }
 
     private static SyntaxNode GetContainingBlock(SyntaxNode node)

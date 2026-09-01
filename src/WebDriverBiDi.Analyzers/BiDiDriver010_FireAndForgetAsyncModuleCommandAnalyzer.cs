@@ -112,12 +112,22 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
     {
         IOperation? parent = operation.Parent;
 
-        // Follow chained member calls (for example .ConfigureAwait(false)) and conversions to the
-        // outermost Task-valued expression; the chain is fire-and-forget only if that outer value is
-        // itself discarded.
-        if (parent is IInvocationOperation or IConversionOperation)
+        // Follow conversions unconditionally: they preserve the value.
+        if (parent is IConversionOperation)
         {
             return IsResultDiscarded(parent);
+        }
+
+        // Follow a chained member call only when it still yields an awaitable wrapper of the
+        // command's task (a Task-returning continuation, or the ConfiguredTaskAwaitable from
+        // .ConfigureAwait(false)); the chain is fire-and-forget only if that outer value is
+        // itself discarded. A chained call that consumes the task — such as the void-returning
+        // .Wait(), which blocks until completion and propagates exceptions — is not
+        // fire-and-forget and must end the chain without a diagnostic.
+        if (parent is IInvocationOperation parentInvocation)
+        {
+            return parentInvocation.TargetMethod.ReturnType.Name is "Task" or "ConfiguredTaskAwaitable"
+                && IsResultDiscarded(parent);
         }
 
         // The result is discarded when the (outer) expression stands alone as a statement. Every other

@@ -102,6 +102,138 @@ public class BiDiDriver012AnalyzerTests
     }
 
     [Fact]
+    public async Task DisposeAsync_InFinallyWithStopAsyncInTryBlock_NoDiagnostic()
+    {
+        // A DisposeAsync in a finally clause runs after the associated try block, so a
+        // StopAsync inside that try block precedes it even though the two calls share no
+        // containing block.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.StopAsync();
+                        }
+                        finally
+                        {
+                            await driver.DisposeAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task DisposeAsync_InFinallyWithStopAsyncOnlyInCatchBlock_ReportsInfo()
+    {
+        // A StopAsync that appears only in a catch block runs only on the exceptional path;
+        // on the normal path the driver is disposed without being stopped, so the
+        // diagnostic still applies.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (Exception)
+                        {
+                            await driver.StopAsync();
+                        }
+                        finally
+                        {
+                            await {|#0:driver.DisposeAsync()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task DisposeAsync_InsideLambdaInsideFinally_ReportsInfo()
+    {
+        // A DisposeAsync inside a nested function runs when the delegate is invoked, not at
+        // its textual position, so the enclosing try block's ordering guarantees do not apply
+        // to it; the ancestor walk stops at the nested-function boundary and the diagnostic
+        // stands.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StopAsync();
+                        }
+                        finally
+                        {
+                            Func<Task> disposeLater = async () => await {|#0:driver.DisposeAsync()|};
+                            await disposeLater();
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task DisposeAsync_WithStopAsyncAfter_ReportsInfo()
     {
         string testCode = """
