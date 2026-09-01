@@ -104,6 +104,49 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionSkipsRetryPauseWhenFailedAttemptConsumesStartupBudget()
+    {
+        // The pause between connection attempts is charged against StartupTimeout rather than
+        // added to it. When an attempt fails only after the whole budget has been spent, there is
+        // nothing left to charge the pause to, so StartAsync must give up immediately instead of
+        // sleeping for the retry interval first.
+        TimeSpan startupTimeout = TimeSpan.FromMilliseconds(100);
+        TimeSpan attemptDuration = TimeSpan.FromMilliseconds(150);
+        int attemptCount = 0;
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            StartupTimeout = startupTimeout,
+            ConnectWebSocketOverride = async (uri, token) =>
+            {
+                Interlocked.Increment(ref attemptCount);
+
+                // Deliberately ignores the attempt's own cancellation token, so the attempt
+                // outlives the startup budget and then fails the way a remote end that is not
+                // listening does, rather than being canceled by its deadline.
+                await Task.Delay(attemptDuration, TestContext.Current.CancellationToken);
+                throw new WebSocketException("Simulated connection failure after the startup budget elapsed");
+            },
+        };
+
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(
+            async () => await connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken));
+        stopwatch.Stop();
+
+        Assert.Contains($"{0.1} seconds", exception.Message);
+        Assert.Equal(1, attemptCount);
+
+        // The attempt itself takes 150ms. An unclamped retry pause would add a further 500ms
+        // before the loop noticed the budget was gone, so the bound below separates the two
+        // outcomes with generous room for a slow machine on either side.
+        Assert.True(
+            stopwatch.Elapsed < TimeSpan.FromMilliseconds(450),
+            $"StartAsync took {stopwatch.Elapsed}; the retry pause was not skipped once the startup budget was exhausted");
+        Assert.False(connection.IsActive);
+    }
+
+    [Fact]
     public async Task TestConnectionCallerCancellationDuringHangingConnectAttemptPropagates()
     {
         // Cancellation requested by the caller while a connect attempt is in flight must
