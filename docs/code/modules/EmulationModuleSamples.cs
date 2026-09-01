@@ -30,28 +30,6 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
-    /// Set viewport size. Note: SetViewport is on BrowsingContext module.
-    /// </summary>
-    public static async Task SetViewportSize(BiDiDriver driver, string contextId)
-    {
-        #region SetViewportSize
-        SetViewportCommandParameters parameters = new SetViewportCommandParameters
-        {
-            BrowsingContextId = contextId,
-            Viewport = new Viewport
-            {
-                Width = 375,    // iPhone width
-                Height = 667    // iPhone height
-            },
-            DevicePixelRatio = 2.0
-        };
-
-        await driver.BrowsingContext.SetViewportAsync(parameters);
-        Console.WriteLine("Viewport set to mobile size");
-        #endregion
-    }
-
-    /// <summary>
     /// Set custom user agent.
     /// </summary>
     public static async Task SetCustomUserAgent(BiDiDriver driver, string contextId)

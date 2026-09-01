@@ -8,7 +8,6 @@
 
 namespace WebDriverBiDi.Docs.Code.Modules;
 
-using System.Collections.Generic;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Emulation;

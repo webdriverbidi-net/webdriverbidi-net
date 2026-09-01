@@ -10,14 +10,10 @@
 namespace WebDriverBiDi.Docs.Code.Modules;
 
 using System.Collections.Generic;
-using System.Security.Policy;
 using WebDriverBiDi;
-using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
-using BrowserCloseParams = WebDriverBiDi.Browser.CloseCommandParameters;
-using CloseCommandParameters = WebDriverBiDi.BrowsingContext.CloseCommandParameters;
 
 /// <summary>
 /// Snippets for BrowsingContext module documentation. Compiled at build time to prevent API drift.
@@ -105,22 +101,6 @@ public static class BrowsingContextModuleSamples
         CreateCommandResult result = await driver.BrowsingContext.CreateAsync(parameters);
 
         string newWindowId = result.BrowsingContextId;
-        #endregion
-    }
-
-    public static async Task CreateContextInUserContext(BiDiDriver driver)
-    {
-        #region CreateContextinUserContext
-        // First create a user context
-        CreateUserContextCommandResult userContext =
-            await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
-
-        // Create tab in that user context
-        CreateCommandParameters parameters = new CreateCommandParameters(CreateType.Tab)
-        {
-            UserContextId = userContext.UserContextId
-        };
-        CreateCommandResult result = await driver.BrowsingContext.CreateAsync(parameters);
         #endregion
     }
 

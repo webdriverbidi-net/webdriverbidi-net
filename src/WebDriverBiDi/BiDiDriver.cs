@@ -139,6 +139,13 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </list>
     /// </para>
     /// <para>
+    /// <strong>Ownership:</strong> a driver takes ownership of the transport passed to it.
+    /// <see cref="DisposeAsync"/> disposes the transport, which in turn disposes its
+    /// <see cref="Connection"/>. A transport shared between drivers is therefore torn down for
+    /// every one of them as soon as the first is disposed, so a shared transport must outlive all
+    /// of its drivers, or the drivers must not be disposed.
+    /// </para>
+    /// <para>
     /// Most users should use the simpler <see cref="BiDiDriver(TimeSpan)"/> constructor instead,
     /// which creates a default WebSocket-based transport automatically.
     /// </para>
@@ -324,15 +331,17 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
     /// <summary>
     /// Gets a value indicating whether the driver has started communication with the remote end of the WebDriver BiDi protocol.
-    /// This property delegates to the underlying <see cref="Transport.IsConnected"/>, which in turn
-    /// checks the <see cref="Connection.IsActive"/> state.
     /// </summary>
     /// <remarks>
     /// <para>
     /// This property returns <see langword="true"/> after <see cref="StartAsync(string, CancellationToken)"/> completes successfully
     /// and remains <see langword="true"/> until <see cref="StopAsync(CancellationToken)"/> is called or the connection is lost.
-    /// For WebSocket connections, this returns true when the WebSocket is in the Open state.
-    /// For pipe connections, this returns true when both pipes are connected and the browser process is running.
+    /// </para>
+    /// <para>
+    /// The value reflects the state the transport itself tracks across its own connect and disconnect
+    /// operations; it is not a live query of the underlying <see cref="Connection.IsActive"/>. The two
+    /// can therefore disagree briefly: a connection that reaches end-of-file, for example, reports
+    /// itself inactive before the transport's disconnection handling has run and cleared this value.
     /// </para>
     /// <para>
     /// Use this property to check driver state before executing commands or during cleanup operations.

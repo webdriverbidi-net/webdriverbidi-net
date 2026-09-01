@@ -175,12 +175,13 @@ Fired when the page reads or writes a descriptor. Use this to respond with `Simu
 
 ### Chrome/Edge
 
-Launch browser with experimental web platform features:
+The Bluetooth module requires Chromium's experimental web platform features, which are enabled by a browser command-line switch supplied when the browser process is started:
 
-```csharp
-// Enable experimental features when launching browser
-// This is browser-specific and may require custom launch options
+```text
+--enable-experimental-web-platform-features
 ```
+
+This library does not launch browsers (see [Browser Setup](../browser-setup.md)), so supply the switch through whatever starts the browser: the driver executable's capabilities, your own launcher, or the browser command line directly.
 
 ## Best Practices
 

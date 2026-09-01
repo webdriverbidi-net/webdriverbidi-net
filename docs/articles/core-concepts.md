@@ -149,7 +149,7 @@ Some commands can reset a value on the remote end to its original state. These c
 
 **Commands with optional parameters** include: `Browser.CloseAsync`, `Browser.CreateUserContextAsync`, `Browser.GetClientWindowsAsync`, `Browser.GetUserContextsAsync`, `BrowsingContext.GetTreeAsync`, `Script.GetRealmsAsync`, `Session.EndAsync`, `Session.NewSessionAsync`, `Session.StatusAsync`, `Storage.DeleteCookiesAsync`, `Storage.GetCookiesAsync`.
 
-**Commands that require parameters** (because they have reset properties) include: `UserAgentClientHints.SetClientHintsOverrideAsync`, `Browser.SetDownloadBehaviorAsync`, `BrowsingContext.SetViewportAsync`, and all Emulation `Set*OverrideAsync` commands (e.g., `SetUserAgentOverrideAsync`, `SetGeolocationOverrideAsync`).
+**Commands that require parameters** (because they have reset properties) include: `UserAgentClientHints.SetClientHintsOverrideAsync`, `Browser.SetDownloadBehaviorAsync`, `BrowsingContext.SetViewportAsync`, `BrowsingContext.SetBypassCSPAsync`, `Network.SetExtraHeadersAsync`, and every command on the Emulation module — both the `Set*OverrideAsync` commands (e.g., `SetUserAgentOverrideAsync`, `SetGeolocationOverrideAsync`) and `SetNetworkConditionsAsync` and `SetScriptingEnabledAsync`. See [API Design Principles](advanced/api-design.md#required-vs-optional-parameters) for the complete table.
 
 ### Command Results
 
@@ -213,13 +213,15 @@ JavaScript values are represented as `RemoteValue` objects when returned from th
 
 ### Value Types
 
-Remote values have a `Type` property indicating their JavaScript type:
+Remote values have a `Type` property indicating their JavaScript type. It is a `RemoteValueType` enumeration value rather than a string, so compare it against enum members (`remoteValue.Type == RemoteValueType.Node`):
 
-- `string`, `number`, `boolean`, `undefined`, `null`
-- `object`, `array`, `function`, `promise`
-- `node` (DOM elements)
-- `window`, `regexp`, `date`, `map`, `set`
-- `nodelist`, `htmlcollection` (also surfaced as `CollectionRemoteValue`)
+- `String`, `Number`, `Boolean`, `Undefined`, `Null`
+- `Object`, `Array`, `Function`, `Promise`
+- `Node` (DOM elements)
+- `Window`, `RegExp`, `Date`, `Map`, `Set`
+- `NodeList`, `HtmlCollection` (both surfaced as `CollectionRemoteValue`)
+
+See [Working with Remote Values](remote-values.md) for the full type mapping.
 
 ### Accessing Values
 

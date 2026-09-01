@@ -12,8 +12,6 @@ using System.Collections.Generic;
 using WebDriverBiDi;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Permissions;
-using WebDriverBiDi.Session;
-using WebDriverBiDi.Speculation;
 using WebDriverBiDi.UserAgentClientHints;
 using WebDriverBiDi.WebExtension;
 
@@ -97,24 +95,6 @@ public static class AdditionalModulesSamples
         };
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-        #endregion
-    }
-
-    /// <summary>
-    /// Subscribe to prefetch status updates from the Speculation module.
-    /// </summary>
-    public static async Task SubscribeToPrefetchStatus(BiDiDriver driver)
-    {
-        #region SubscribetoPrefetchStatus
-        // Subscribe to prefetch status updates
-        driver.Speculation.OnPrefetchStatusUpdated.AddObserver((e) =>
-        {
-            Console.WriteLine($"Prefetch: {e.Url} -> {e.Status}");
-        });
-
-        SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
-            driver.Speculation.OnPrefetchStatusUpdated.EventName);
-        await driver.Session.SubscribeAsync(subscribe);
         #endregion
     }
 }

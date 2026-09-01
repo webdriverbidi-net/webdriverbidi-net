@@ -8,7 +8,6 @@
 
 namespace WebDriverBiDi.Docs.Code.Modules;
 
-using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using WebDriverBiDi;
