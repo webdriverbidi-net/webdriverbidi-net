@@ -43,4 +43,14 @@ public class PauseActionTests
         Assert.Equal(JTokenType.Integer, duration.Type);
         Assert.Equal(1L, duration.Value<long>());
     }
+
+    [Fact]
+    public void TestSettingNegativeDurationThrows()
+    {
+        // The protocol transmits duration as an unsigned integer, so a negative TimeSpan cannot be
+        // represented on the wire. The setter rejects it with a message naming the property rather
+        // than letting an OverflowException surface later from inside serialization.
+        PauseAction properties = new();
+        Assert.Contains("Duration must not be negative", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Duration = TimeSpan.FromMilliseconds(-1)).Message);
+    }
 }

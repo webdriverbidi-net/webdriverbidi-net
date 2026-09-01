@@ -19,10 +19,24 @@ public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAc
     public string Type { get; } = "pause";
 
     /// <summary>
-    /// Gets or sets the duration of the pause.
+    /// Gets or sets the duration of the pause. If specified, must not be negative, as the
+    /// protocol transmits the duration as an unsigned integer number of milliseconds.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative <see cref="TimeSpan"/>.</exception>
     [JsonIgnore]
-    public TimeSpan? Duration { get; set; }
+    public TimeSpan? Duration
+    {
+        get;
+        set
+        {
+            if (value is not null && value.Value < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Duration must not be negative.");
+            }
+
+            field = value;
+        }
+    }
 
     /// <summary>
     /// Gets the duration of the pause for serialization purposes.

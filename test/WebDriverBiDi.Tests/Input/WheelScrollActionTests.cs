@@ -290,4 +290,14 @@ public class WheelScrollActionTests
         Assert.Equal(-100L, serialized["x"]!.Value<long>());
         Assert.Equal(-200L, serialized["y"]!.Value<long>());
     }
+
+    [Fact]
+    public void TestSettingNegativeDurationThrows()
+    {
+        // The protocol transmits duration as an unsigned integer, so a negative TimeSpan cannot be
+        // represented on the wire. The setter rejects it with a message naming the property rather
+        // than letting an OverflowException surface later from inside serialization.
+        WheelScrollAction properties = new();
+        Assert.Contains("Duration must not be negative", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Duration = TimeSpan.FromMilliseconds(-1)).Message);
+    }
 }

@@ -462,4 +462,14 @@ public class PointerMoveActionTests
         Assert.Equal(1.58, properties.AltitudeAngle);
         Assert.Equal(6.29, properties.AzimuthAngle);
     }
+
+    [Fact]
+    public void TestSettingNegativeDurationThrows()
+    {
+        // The protocol transmits duration as an unsigned integer, so a negative TimeSpan cannot be
+        // represented on the wire. The setter rejects it with a message naming the property rather
+        // than letting an OverflowException surface later from inside serialization.
+        PointerMoveAction properties = new();
+        Assert.Contains("Duration must not be negative", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Duration = TimeSpan.FromMilliseconds(-1)).Message);
+    }
 }
