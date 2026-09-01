@@ -1882,6 +1882,47 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestRegistrationIsAllowedAgainAfterStopThrowsCollectedErrors()
+    {
+        // With a Collect-mode error behavior, StopAsync surfaces the collected errors by
+        // throwing an AggregateException after the transport teardown has fully completed.
+        // The driver must still end up stopped on that path: IsStarted false and
+        // registration legal again.
+        TaskCompletionSource eventReceivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
+        driver.OnEventReceived.AddObserver(e =>
+        {
+            eventReceivedTaskCompletionSource.TrySetResult();
+            throw new WebDriverBiDiException("This is an unexpected exception");
+        });
+
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "module.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await connection.RaiseDataReceivedEventAsync(json);
+        await eventReceivedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(() => driver.StopAsync(TestContext.Current.CancellationToken));
+        Assert.IsType<WebDriverBiDiException>(exception.InnerException);
+        Assert.False(driver.IsStarted);
+
+        driver.RegisterModule(new TestProtocolModule(driver, 0, false));
+        driver.RegisterEvent<TestEventArgs>("module.otherEvent", (e) => Task.CompletedTask);
+        Assert.IsType<TestProtocolModule>(driver.GetModule<TestProtocolModule>("protocol"));
+    }
+
+    [Fact]
     public async Task TestRegistrationIsRejectedWhenTransportWasConnectedExternally()
     {
         // The driver never observed StartAsync, so its start-requested flag is false; the
