@@ -117,9 +117,17 @@ public static class ObservableEventExtensions
                     return;
                 }
 
-                // OnCompleted is invoked outside the try so that if it throws, OnError is not
-                // called after it; the Rx grammar requires OnCompleted to be terminal.
-                observer.OnCompleted();
+                // OnCompleted is invoked outside the try above so that if it throws, OnError is
+                // not called after it; the Rx grammar requires OnCompleted to be terminal.
+                try
+                {
+                    observer.OnCompleted();
+                }
+                catch (Exception)
+                {
+                    // OnCompleted throwing an exception violates the contract
+                    // of IObserver<T>, so we will swallow all exceptions here.
+                }
             });
             return collector;
         }
