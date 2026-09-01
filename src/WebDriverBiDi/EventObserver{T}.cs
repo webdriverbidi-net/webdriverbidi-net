@@ -431,7 +431,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <item><description>
     /// All <paramref name="count"/> events arrived but one or more handlers had not finished executing
     /// before the remaining timeout budget was exhausted (the completion phase timed out). The capture
-    /// session is automatically ended in this case.
+    /// session is automatically ended in this case, and a handler fault occurring after the timeout is
+    /// observed and discarded rather than surfacing as
+    /// <see cref="TaskScheduler.UnobservedTaskException"/>.
     /// </description></item>
     /// </list>
     /// <para>
@@ -473,6 +475,17 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
                 if (completedTask == cancellationTask)
                 {
+                    // The WhenAll wrapper is a distinct task holding its own aggregate of
+                    // any handler faults; the individual handler tasks are observed by the
+                    // continuations attached during notification, but abandoning the wrapper
+                    // unobserved here would raise TaskScheduler.UnobservedTaskException if a
+                    // handler faults after this method has given up waiting. Observe the
+                    // wrapper before abandoning the wait.
+                    _ = whenAllTask.ContinueWith(
+                        static t => _ = t.Exception,
+                        CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
                     cancellationToken.ThrowIfCancellationRequested();
                     return false;
                 }
@@ -622,16 +635,19 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         }
 
         bool isCaptured = this.CaptureTask(executingTask);
-        if (isHandlerRunAsynchronously && !executingTask.IsCompleted)
+        if (isHandlerRunAsynchronously && !isSynchronouslyFaulted)
         {
-            // Track this still-running handler task so operators can observe backlog
-            // via WebDriverBiDiEventSource.AsyncHandlerTaskCount. The increment must
+            // Track this handler task so operators can observe backlog via
+            // WebDriverBiDiEventSource.AsyncHandlerTaskCount. The increment must
             // precede attaching the decrement continuation: if the task completes
             // between this line and ContinueWith, the continuation still runs (it
             // schedules on already-completed tasks), so the counter remains balanced.
             // The continuation also will observe the task if it is faulted, preventing
             // an UnobservedTaskException, and forwarding the exception to the higher-
-            // level error reporting pipeline.
+            // level error reporting pipeline. The continuation must be attached even
+            // when the task has already completed: gating on completion would let a
+            // handler that faults between the synchronous-fault check above and this
+            // point escape both fault observation and error reporting.
             AsyncHandlerTaskMetrics.IncrementInFlight();
             string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
             this.AttachCompletionContinuation(executingTask, reportedEventName, !isCaptured, decrementInFlightCount: true);
