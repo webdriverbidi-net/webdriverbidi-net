@@ -5,12 +5,23 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Enforces the shape rules for list-typed properties on every <see cref="CommandParameters"/> type:
-/// lists are never settable, optional lists are omitted while empty through an internal
+/// Enforces conventions that hold across the whole library and that no compiler check can express.
+/// </summary>
+/// <remarks>
+/// <para>
+/// The shape rules for list-typed properties on every <see cref="CommandParameters"/> type: lists
+/// are never settable, optional lists are omitted while empty through an internal
 /// <c>Serializable*</c> property, and the only nullable-settable lists are the ones for which the
 /// protocol gives a present-but-empty array a meaning distinct from omission.
-/// </summary>
-public class CommandParametersConventionTests
+/// </para>
+/// <para>
+/// The declaration rules for module events: every observable event a module exposes carries an
+/// <see cref="ObservableEventNameAttribute"/> naming the protocol event it corresponds to, and that
+/// name agrees both with the event's own <see cref="ObservableEvent{T}.EventName"/> and with the
+/// module it belongs to.
+/// </para>
+/// </remarks>
+public class WebDriverBiDiConventionTests
 {
     /// <summary>
     /// The optional lists that are deliberately nullable and settable. An entry belongs here only when the
@@ -144,9 +155,106 @@ public class CommandParametersConventionTests
         Assert.True(offenders.Count == 0, $"Allow-listed lists must be nullable, settable, and omitted only when null. Offenders: {string.Join(", ", offenders)}");
     }
 
+    [Fact]
+    public void TestModuleObservableEventsCarryMatchingObservableEventNameAttribute()
+    {
+        // The attribute is what the BIDI005, BIDI015, and BIDI027 analyzers read to know which
+        // protocol event a property corresponds to, so an event that lacks it, or carries a name
+        // that disagrees with the event itself, silently degrades those diagnostics rather than
+        // failing anything. Nothing else checks it.
+        List<string> offenders = [];
+        foreach ((Module module, PropertyInfo property) in GetModuleObservableEventProperties())
+        {
+            string key = Key(property);
+            ObservableEventNameAttribute? attribute = property.GetCustomAttribute<ObservableEventNameAttribute>();
+            if (attribute is null)
+            {
+                offenders.Add($"{key} (no [ObservableEventName])");
+                continue;
+            }
+
+            // The runtime name is the one the transport actually dispatches on, so the attribute is
+            // only useful insofar as it agrees with it.
+            object? observableEvent = property.GetValue(module);
+            Assert.NotNull(observableEvent);
+            string runtimeEventName = (string)observableEvent.GetType().GetProperty("EventName")!.GetValue(observableEvent)!;
+            if (attribute.EventName != runtimeEventName)
+            {
+                offenders.Add($"{key} ([ObservableEventName(\"{attribute.EventName}\")] but EventName is \"{runtimeEventName}\")");
+                continue;
+            }
+
+            // Every event name in the protocol is qualified by the module that raises it. The
+            // module-name constants are public, so a copy-paste that builds one module's event name
+            // from another module's constant compiles cleanly; this is what catches it.
+            string expectedPrefix = $"{module.ModuleName}.";
+            if (!runtimeEventName.StartsWith(expectedPrefix, StringComparison.Ordinal))
+            {
+                offenders.Add($"{key} (\"{runtimeEventName}\" is not qualified by its own module, \"{module.ModuleName}\")");
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"Observable events on modules must carry an [ObservableEventName] whose value matches the event's own EventName and is qualified by the declaring module. Offenders: {string.Join(", ", offenders)}");
+    }
+
+    [Fact]
+    public void TestEveryModuleObservableEventIsCoveredByTheAttributeSweep()
+    {
+        // The sweep above reaches events through the driver's module properties, so a module the
+        // driver does not expose would be skipped silently and its events would go unchecked.
+        // Comparing against the modules actually declared in the library closes that hole.
+        HashSet<Type> sweptModuleTypes = [.. GetDriverModules().Select(module => module.GetType())];
+        List<string> unreachable = [];
+        foreach (Type type in typeof(Module).Assembly.GetTypes())
+        {
+            if (type.IsAbstract || !typeof(Module).IsAssignableFrom(type))
+            {
+                continue;
+            }
+
+            if (!sweptModuleTypes.Contains(type))
+            {
+                unreachable.Add(type.FullName!);
+            }
+        }
+
+        Assert.True(unreachable.Count == 0, $"Every module in the library must be reachable from BiDiDriver, or its observable events escape the [ObservableEventName] sweep. Unreachable: {string.Join(", ", unreachable)}");
+    }
+
     private static string Key(PropertyInfo property)
     {
         return $"{property.DeclaringType!.FullName}.{property.Name}";
+    }
+
+    /// <summary>
+    /// Gets the module instances a <see cref="BiDiDriver"/> constructs. The driver is the only place
+    /// they can be taken from: constructing a second instance of a module against the same driver
+    /// throws, because the module registers its event names with the driver as it is built.
+    /// </summary>
+    private static IEnumerable<Module> GetDriverModules()
+    {
+        BiDiDriver driver = new();
+        foreach (PropertyInfo property in typeof(BiDiDriver).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (typeof(Module).IsAssignableFrom(property.PropertyType) && property.GetValue(driver) is Module module)
+            {
+                yield return module;
+            }
+        }
+    }
+
+    private static IEnumerable<(Module Module, PropertyInfo Property)> GetModuleObservableEventProperties()
+    {
+        foreach (Module module in GetDriverModules())
+        {
+            foreach (PropertyInfo property in module.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(ObservableEvent<>))
+                {
+                    yield return (module, property);
+                }
+            }
+        }
     }
 
     private static IEnumerable<PropertyInfo> GetListProperties()

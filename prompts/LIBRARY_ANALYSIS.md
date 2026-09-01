@@ -89,7 +89,7 @@ exception. The rule, keyed to the WebDriver BiDi CDDL of the member being serial
   `network.provideResponse`). Steps of the form *"Let X be the "X" field if present, or an
   empty list otherwise"* mean absent ≡ empty, and the list is read-only. The current members
   of the exception are enumerated in the allow list in
-  `test/WebDriverBiDi.Tests/CommandParametersConventionTests.cs`, and each carries XML remarks
+  `test/WebDriverBiDi.Tests/WebDriverBiDiConventionTests.cs`, and each carries XML remarks
   quoting the step; re-derive membership from the specification rather than trusting either.
   That test also enforces every rule in this bullet on every `CommandParameters` type, so a
   declaration that violates them cannot merge — a finding about list shape must therefore
