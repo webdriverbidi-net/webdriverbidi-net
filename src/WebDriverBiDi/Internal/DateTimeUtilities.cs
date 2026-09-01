@@ -43,4 +43,16 @@ internal static class DateTimeUtilities
     {
         return seconds > MaxUnixEpochSeconds ? DateTime.MaxValue : UnixEpoch.AddSeconds(seconds);
     }
+
+    /// <summary>
+    /// Converts a number of milliseconds since the Unix epoch to a UTC <see cref="DateTime"/>, clamping
+    /// values beyond the representable range to <see cref="DateTime.MaxValue"/> rather than throwing.
+    /// The protocol's <c>js-uint</c> type permits values far larger than <see cref="DateTime"/> can hold.
+    /// </summary>
+    /// <param name="milliseconds">The number of milliseconds since the Unix epoch.</param>
+    /// <returns>The corresponding <see cref="DateTime"/>, or <see cref="DateTime.MaxValue"/> if out of range.</returns>
+    public static DateTime FromUnixEpochMilliseconds(ulong milliseconds)
+    {
+        return milliseconds > (MaxUnixEpochSeconds * 1000) + 999 ? DateTime.MaxValue : UnixEpoch.AddMilliseconds(milliseconds);
+    }
 }

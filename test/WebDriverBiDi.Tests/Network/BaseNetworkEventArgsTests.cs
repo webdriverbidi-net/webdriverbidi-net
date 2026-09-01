@@ -503,4 +503,46 @@ public class BaseNetworkEventArgsTests
         Assert.NotNull(eventArgs);
         Assert.Equal("myUserContextId", eventArgs.UserContextId);
     }
+
+    [Theory]
+    [InlineData(253402300800000UL)]
+    [InlineData(ulong.MaxValue)]
+    public void TestTimestampBeyondDateTimeRangeIsClampedToMaxValue(ulong timestamp)
+    {
+        // The protocol's js-uint permits values far beyond what DateTime can represent; a
+        // conforming remote end must not cause the event to fail to deserialize.
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId",
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": {{timestamp}},
+                             "request": {{this.requestDataJson}}
+                           }
+                           """;
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, this.options);
+        Assert.NotNull(eventArgs);
+        Assert.Equal(timestamp, eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.MaxValue, eventArgs.Timestamp);
+    }
+
+    [Fact]
+    public void TestTimestampAtLastRepresentableMillisecondIsConverted()
+    {
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId",
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": 253402300799999,
+                             "request": {{this.requestDataJson}}
+                           }
+                           """;
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, this.options);
+        Assert.NotNull(eventArgs);
+        Assert.Equal(253402300799999UL, eventArgs.EpochTimestamp);
+        Assert.Equal(new DateTime(9999, 12, 31, 23, 59, 59, 999, DateTimeKind.Utc), eventArgs.Timestamp);
+    }
 }
