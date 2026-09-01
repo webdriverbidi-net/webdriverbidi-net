@@ -67,7 +67,7 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
         internal set
         {
             field = value;
-            this.Timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
+            this.Timestamp = DateTimeUtilities.FromUnixEpochMilliseconds(value);
         }
     }
 }

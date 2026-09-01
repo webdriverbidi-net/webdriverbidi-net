@@ -137,4 +137,48 @@ public class GenericLogEntryTests
         Assert.Equal(epochTimestamp, entry.EpochTimestamp);
         Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), entry.Timestamp);
     }
+
+    [Theory]
+    [InlineData(253402300800000UL)]
+    [InlineData(ulong.MaxValue)]
+    public void TestTimestampBeyondDateTimeRangeIsClampedToMaxValue(ulong timestamp)
+    {
+        // The protocol's js-uint permits values far beyond what DateTime can represent; a
+        // conforming remote end must not cause the log entry to fail to deserialize.
+        string json = $$"""
+                      {
+                        "type": "generic",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId"
+                        },
+                        "text": "my log message",
+                        "timestamp": {{timestamp}}
+                      }
+                      """;
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
+        Assert.NotNull(entry);
+        Assert.Equal(timestamp, entry.EpochTimestamp);
+        Assert.Equal(DateTime.MaxValue, entry.Timestamp);
+    }
+
+    [Fact]
+    public void TestTimestampAtLastRepresentableMillisecondIsConverted()
+    {
+        string json = """
+                      {
+                        "type": "generic",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId"
+                        },
+                        "text": "my log message",
+                        "timestamp": 253402300799999
+                      }
+                      """;
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
+        Assert.NotNull(entry);
+        Assert.Equal(253402300799999UL, entry.EpochTimestamp);
+        Assert.Equal(new DateTime(9999, 12, 31, 23, 59, 59, 999, DateTimeKind.Utc), entry.Timestamp);
+    }
 }

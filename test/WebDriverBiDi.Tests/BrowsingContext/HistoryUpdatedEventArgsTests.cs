@@ -208,4 +208,40 @@ public class HistoryUpdatedEventArgsTests
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options));
     }
+
+    [Theory]
+    [InlineData(253402300800000UL)]
+    [InlineData(ulong.MaxValue)]
+    public void TestTimestampBeyondDateTimeRangeIsClampedToMaxValue(ulong timestamp)
+    {
+        // The protocol's js-uint permits values far beyond what DateTime can represent; a
+        // conforming remote end must not cause the event to fail to deserialize.
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": {{timestamp}}
+                      }
+                      """;
+        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options);
+        Assert.NotNull(eventArgs);
+        Assert.Equal(timestamp, eventArgs.EpochTimestamp);
+        Assert.Equal(DateTime.MaxValue, eventArgs.Timestamp);
+    }
+
+    [Fact]
+    public void TestTimestampAtLastRepresentableMillisecondIsConverted()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": 253402300799999
+                      }
+                      """;
+        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json, this.options);
+        Assert.NotNull(eventArgs);
+        Assert.Equal(253402300799999UL, eventArgs.EpochTimestamp);
+        Assert.Equal(new DateTime(9999, 12, 31, 23, 59, 59, 999, DateTimeKind.Utc), eventArgs.Timestamp);
+    }
 }
