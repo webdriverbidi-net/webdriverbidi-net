@@ -35,7 +35,7 @@ using System.Text;
 /// <item><description>Universal browser support</description></item>
 /// <item><description>Network flexibility (local and remote)</description></item>
 /// <item><description>Low latency (1-3ms per message for local connections)</description></item>
-/// <item><description>Automatic retry on startup (retries every 500ms within StartupTimeout; each attempt is bounded by the remaining StartupTimeout, so a host that never answers cannot hold startup open past the timeout)</description></item>
+/// <item><description>Automatic retry on startup (retries every 500ms within StartupTimeout; both each attempt and the pause between attempts are bounded by the remaining StartupTimeout, so neither a host that never answers nor one that refuses immediately can hold startup open past the timeout)</description></item>
 /// <item><description>Supports reconnection after calling StopAsync</description></item>
 /// </list>
 /// </para>
@@ -46,6 +46,10 @@ using System.Text;
 /// </remarks>
 public class WebSocketConnection : Connection
 {
+    // How long to wait before retrying a connection attempt that failed because the remote end
+    // was not yet listening. The pause is charged against StartupTimeout, never added to it.
+    private static readonly TimeSpan ConnectionRetryInterval = TimeSpan.FromMilliseconds(500);
+
     private ClientWebSocket client = new();
 
     /// <summary>
@@ -109,12 +113,23 @@ public class WebSocketConnection : Connection
         bool connected = false;
         bool startupTimedOut = false;
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
-        while (!connected && !startupTimedOut && initializationStopwatch.Elapsed <= this.StartupTimeout)
+        while (!connected && !startupTimedOut)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Calculate time remaining in the budget for startup.
+            // Calculate the time remaining in the budget for startup. This is the only place the
+            // elapsed time is sampled, so the value that bounds an attempt cannot disagree with the
+            // value that decided to make it. Sampling once for a loop condition and again for the
+            // deadline allows the budget to lapse between the two, which hands the
+            // CancellationTokenSource constructor a negative delay: an ArgumentOutOfRangeException
+            // escaping StartAsync in place of the documented WebDriverBiDiTimeoutException or, at
+            // exactly -1 millisecond, an attempt that is never bounded at all.
             TimeSpan remainingStartupTime = this.StartupTimeout - initializationStopwatch.Elapsed;
+            if (remainingStartupTime <= TimeSpan.Zero)
+            {
+                break;
+            }
+
             using CancellationTokenSource attemptTimeoutTokenSource = new(remainingStartupTime);
             using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.ConnectionCancellationToken, attemptTimeoutTokenSource.Token);
             try
@@ -143,9 +158,23 @@ public class WebSocketConnection : Connection
                 // If the server-side socket is not yet ready, it leaves the client socket in a closed state,
                 // which sees the object as disposed, so we must create a new one to try again. Note that
                 // we will also explicitly call Dispose on the object, to make sure resources are disposed.
-                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
+                // Replacing the socket before the retry delay rather than after it means every exit from
+                // this loop, including a canceled delay, leaves a usable client behind.
                 this.client.Dispose();
                 this.client = new ClientWebSocket();
+
+                // The pause before retrying comes out of the startup budget rather than being added
+                // to it, so it is clamped to whatever remains. Left unclamped, a remote end that
+                // refuses connections immediately holds startup open for the full retry interval
+                // past StartupTimeout.
+                TimeSpan remainingRetryTime = this.StartupTimeout - initializationStopwatch.Elapsed;
+                if (remainingRetryTime <= TimeSpan.Zero)
+                {
+                    break;
+                }
+
+                TimeSpan retryDelay = remainingRetryTime < ConnectionRetryInterval ? remainingRetryTime : ConnectionRetryInterval;
+                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
             }
         }
 
