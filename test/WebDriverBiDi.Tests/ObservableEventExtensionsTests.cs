@@ -146,6 +146,46 @@ public class ObservableEventExtensionsTests
     }
 
     [Fact]
+    public async Task TestOnCompletedThrowingDoesNotLeaveAnUnobservedTaskException()
+    {
+        // The delivery loop runs on a discarded task, so an exception escaping it is never
+        // awaited by anyone: it would sit on the task until the finalizer raised
+        // TaskScheduler.UnobservedTaskException, surfacing in whatever code happened to be
+        // running when the garbage collector ran. A contract-violating OnCompleted must
+        // therefore be swallowed rather than allowed to fault the loop.
+        using UnobservedTaskExceptionMonitor monitor = new("unobserved completion failure");
+
+        TestEventSource testEventSource = new();
+        IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
+
+        TaskCompletionSource completedInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        IDisposable subscription = observable.Subscribe(new DelegateObserver<TestObservableEventArgs>(
+            onCompleted: () =>
+            {
+                completedInvoked.TrySetResult();
+                throw new InvalidOperationException("unobserved completion failure");
+            }));
+
+        // Disposing the subscription ends the delivery loop, which invokes OnCompleted.
+        subscription.Dispose();
+        await completedInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The signal above is raised from inside OnCompleted, so the delivery loop has not
+        // necessarily finished unwinding yet. Give it a moment to reach its final state before
+        // collecting, or the collection races the fault and the assertion below passes for the
+        // wrong reason.
+        await Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+
+        // Force garbage collection to trigger UnobservedTaskException
+        // for any task whose exception was not observed.
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        Assert.False(monitor.Raised, monitor.Exception?.ToString());
+    }
+
+    [Fact]
     public async Task TestMultipleSubscribersEachReceiveAllEvents()
     {
         TestEventSource testEventSource = new();
