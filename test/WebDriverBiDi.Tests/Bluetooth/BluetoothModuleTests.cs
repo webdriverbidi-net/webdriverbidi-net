@@ -338,7 +338,7 @@ public class BluetoothModuleTests
         BluetoothModule module = driver.Bluetooth;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnCharacteristicGenerated.AddObserver(e =>
+        module.OnCharacteristicEventGenerated.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myAddress", e.Address);
@@ -376,7 +376,7 @@ public class BluetoothModuleTests
         BluetoothModule module = driver.Bluetooth;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        module.OnDescriptorGenerated.AddObserver(e =>
+        module.OnDescriptorEventGenerated.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
             Assert.Equal("myAddress", e.Address);

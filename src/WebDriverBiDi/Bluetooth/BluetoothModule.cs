@@ -20,7 +20,7 @@ public sealed class BluetoothModule : Module
     private const string CharacteristicEventGeneratedEventName = $"{BluetoothModuleName}.characteristicEventGenerated";
     private const string DescriptorEventGeneratedEventName = $"{BluetoothModuleName}.descriptorEventGenerated";
 
-    private readonly ObservableEventInvocable<CharacteristicEventGeneratedEventArgs> invocableCharacteristicGeneratedObservableEvent = new(CharacteristicEventGeneratedEventName);
+    private readonly ObservableEventInvocable<CharacteristicEventGeneratedEventArgs> invocableCharacteristicEventGeneratedObservableEvent = new(CharacteristicEventGeneratedEventName);
     private readonly ObservableEventInvocable<DescriptorEventGeneratedEventArgs> invocableDescriptorEventGeneratedObservableEvent = new(DescriptorEventGeneratedEventName);
     private readonly ObservableEventInvocable<GattConnectionAttemptedEventArgs> invocableGattConnectionAttemptedObservableEvent = new(GattConnectionAttemptedEventName);
     private readonly ObservableEventInvocable<RequestDevicePromptUpdatedEventArgs> invocableRequestDevicePromptUpdatedObservableEvent = new(RequestDevicePromptUpdatedEventName);
@@ -34,7 +34,7 @@ public sealed class BluetoothModule : Module
     {
         this.RegisterObservableEvent(this.invocableRequestDevicePromptUpdatedObservableEvent);
         this.RegisterObservableEvent(this.invocableGattConnectionAttemptedObservableEvent);
-        this.RegisterObservableEvent(this.invocableCharacteristicGeneratedObservableEvent);
+        this.RegisterObservableEvent(this.invocableCharacteristicEventGeneratedObservableEvent);
         this.RegisterObservableEvent(this.invocableDescriptorEventGeneratedObservableEvent);
     }
 
@@ -42,13 +42,13 @@ public sealed class BluetoothModule : Module
     /// Gets an observable event that notifies when a Bluetooth device generates a characteristic event.
     /// </summary>
     [ObservableEventName(CharacteristicEventGeneratedEventName)]
-    public ObservableEvent<CharacteristicEventGeneratedEventArgs> OnCharacteristicGenerated => this.invocableCharacteristicGeneratedObservableEvent;
+    public ObservableEvent<CharacteristicEventGeneratedEventArgs> OnCharacteristicEventGenerated => this.invocableCharacteristicEventGeneratedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device generates a descriptor event.
     /// </summary>
     [ObservableEventName(DescriptorEventGeneratedEventName)]
-    public ObservableEvent<DescriptorEventGeneratedEventArgs> OnDescriptorGenerated => this.invocableDescriptorEventGeneratedObservableEvent;
+    public ObservableEvent<DescriptorEventGeneratedEventArgs> OnDescriptorEventGenerated => this.invocableDescriptorEventGeneratedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device attempts a GATT connection.

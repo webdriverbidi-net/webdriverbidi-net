@@ -1438,8 +1438,8 @@ public static class EventObserverSamples
     public static void BluetoothEvents(BiDiDriver driver)
     {
         #region BluetoothEvents
-        _ = driver.Bluetooth.OnCharacteristicGenerated;
-        _ = driver.Bluetooth.OnDescriptorGenerated;
+        _ = driver.Bluetooth.OnCharacteristicEventGenerated;
+        _ = driver.Bluetooth.OnDescriptorEventGenerated;
         _ = driver.Bluetooth.OnGattConnectionAttempted;
         _ = driver.Bluetooth.OnRequestDevicePromptUpdated;
         #endregion
