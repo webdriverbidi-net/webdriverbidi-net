@@ -34,6 +34,20 @@ public class IncomingMessageTests
     }
 
     [Fact]
+    public async Task TestCanParseValidNonObjectJson()
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes("[1,2]");
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length);
+        message.Parse();
+
+        Assert.Equal(bytes.Length, message.MessageLength);
+        Assert.Equal("[1,2]", message.MessageText);
+        Assert.Equal(IncomingMessageKind.Unknown, message.MessageKind);
+    }
+
+    [Fact]
     public async Task TestCanRepeatParseWithoutThrowing()
     {
         byte[] bytes = Encoding.UTF8.GetBytes("{}");
