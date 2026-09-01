@@ -543,7 +543,7 @@ public class BiDiDriver005AnalyzerTests
             {
                 public class TestClass
                 {
-                    public async Task TestMethod(FakeLib.BiDiDriver driver)
+                    public async Task TestMethod(WebDriverBiDi.BiDiDriver driver)
                     {
                         {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
                     }
@@ -616,10 +616,10 @@ public class BiDiDriver005AnalyzerTests
             {
                 public class TestClass
                 {
-                    public async Task TestMethod(FakeLib.BiDiDriver driver)
+                    public async Task TestMethod(WebDriverBiDi.BiDiDriver driver)
                     {
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new FakeLib.SubscribeCommandParameters(new[] { driver.Log.OnEntryAdded.EventName }));
+                        await driver.Session.SubscribeAsync(new WebDriverBiDi.SubscribeCommandParameters(new[] { driver.Log.OnEntryAdded.EventName }));
                     }
                 }
             }
@@ -650,10 +650,10 @@ public class BiDiDriver005AnalyzerTests
             {
                 public class TestClass
                 {
-                    public async Task TestMethod(FakeLib.BiDiDriver driver)
+                    public async Task TestMethod(WebDriverBiDi.BiDiDriver driver)
                     {
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new FakeLib.SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new WebDriverBiDi.SubscribeCommandParameters(new[] { "log.entryAdded" }));
                     }
                 }
             }
@@ -1252,6 +1252,60 @@ public class BiDiDriver005AnalyzerTests
     }
 
     /// <summary>
+    /// Tests that a <c>SubscribeAsync</c> on a user type coincidentally named <c>SessionModule</c> in
+    /// a namespace other than <c>WebDriverBiDi</c> is not treated as the library's session, so it does
+    /// not count as a subscription; a proper library subscription still covers the observer, so no
+    /// diagnostic is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SubscribeAsync_OnSameNamedSessionModuleInOtherNamespace_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class SessionModule
+                {
+                    public Task SubscribeAsync(string eventName) => Task.CompletedTask;
+                }
+
+                public class NotASession
+                {
+                    public Task SubscribeAsync(string eventName) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+
+                        SessionModule fakeSession = new SessionModule();
+                        await fakeSession.SubscribeAsync("some.other.event");
+
+                        NotASession other = new NotASession();
+                        await other.SubscribeAsync("some.other.event");
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Compiles a fake WebDriverBiDi-shaped library in memory so that its types appear as
     /// metadata-backed symbols in analyzer tests, matching the real-world package-consumer scenario.
     /// </summary>
@@ -1261,7 +1315,7 @@ public class BiDiDriver005AnalyzerTests
             using System;
             using System.Threading.Tasks;
 
-            namespace FakeLib
+            namespace WebDriverBiDi
             {
                 [AttributeUsage(AttributeTargets.Property)]
                 public sealed class ObservableEventNameAttribute : Attribute

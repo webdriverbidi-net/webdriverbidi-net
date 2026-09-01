@@ -53,6 +53,43 @@ public class BiDiDriver006AnalyzerTests
     }
 
     /// <summary>
+    /// Tests that an observer handed off to a collection (the CompositeDisposable pattern,
+    /// disposables.Add(observer)) is treated as an ownership transfer and not reported as a leak.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_AddedToDisposablesCollection_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly List<IDisposable> disposables = new List<IDisposable>();
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        this.disposables.Add(observer);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Tests that EventObserver with using statement does not report a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

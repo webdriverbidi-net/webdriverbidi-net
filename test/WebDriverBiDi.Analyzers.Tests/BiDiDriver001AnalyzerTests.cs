@@ -1089,4 +1089,212 @@ public class BiDiDriver001AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that starting the driver in one branch of an if/else does not mark it started for the
+    /// other branch, so a RegisterModule in the branch that did not start is not flagged.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_InBranchThatDidNotStart_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool condition)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        if (condition)
+                        {
+                            driver.RegisterModule(new CustomModule(driver));
+                        }
+                        else
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a driver started on every path through an if/else is considered started after the
+    /// branch, so a RegisterModule following the if is flagged.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartOnAllBranches_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool condition)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        if (condition)
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        else
+                        {
+                            await driver.StartAsync("ws://localhost:9333");
+                        }
+
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("new CustomModule(driver)");
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a RegisterModule after a StartAsync, both inside the same if branch, is flagged;
+    /// this exercises the per-branch walk detecting a violation within a nested block.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncWithinSameBranch_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool condition)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        if (condition)
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                        }
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("new CustomModule(driver)");
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a user type coincidentally named <c>BiDiDriver</c> (implementing an interface named
+    /// <c>IBiDiDriverConfiguration</c>) in a namespace other than <c>WebDriverBiDi</c> is not treated
+    /// as the library driver, so RegisterModule after StartAsync on it is not flagged.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_OnSameNamedTypeInOtherNamespace_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace NotBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                {
+                    void RegisterModule(object module);
+                }
+
+                public class BiDiDriver : IBiDiDriverConfiguration
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public void RegisterModule(object module) { }
+                }
+            }
+
+            namespace TestApp
+            {
+                using NotBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        driver.RegisterModule(new object());
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

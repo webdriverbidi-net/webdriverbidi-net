@@ -59,30 +59,73 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
     {
         SemanticModel semanticModel = context.SemanticModel;
 
-        // Track BiDiDriver variables and their states
-        Dictionary<string, DriverState> driverVariables = [];
+        // Track BiDiDriver variables and whether StartAsync is currently in effect for each.
+        Dictionary<string, bool> driverVariables = [];
 
-        // Walk through all statements in the method, constructor, or top-level program.
-        // Statements inside nested functions are excluded: a StartAsync declared inside a
-        // lambda runs when the delegate is invoked, not at its textual position, so it must
-        // not mark the driver as started for the statements that follow the declaration.
-        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetAllStatementsExcludingNestedFunctions(context.Node))
+        // Walk the top-level statements; ProcessNode descends into nested blocks while forking
+        // driver state per if/else branch so a StartAsync in one arm does not mark the driver as
+        // started for the other arm.
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            // Check for driver creation: var driver = new BiDiDriver(...)
-            if (statement is LocalDeclarationStatementSyntax localDecl)
+            ProcessNode(statement, context, semanticModel, driverVariables);
+        }
+    }
+
+    private static void ProcessNode(SyntaxNode node, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
+    {
+        // Walk the node's statements in document order. The walk does not descend into the bodies
+        // of nested functions (lambdas, anonymous methods, local functions): their code runs when
+        // the delegate is invoked, not at the textual position where it is declared, so a StartAsync
+        // there must not mark the driver as started for the statements that follow the declaration.
+        // It also stops at if statements — including one that is itself the root, which the barrier
+        // yields without descending into — and processes them below with a forked copy of the state
+        // for each mutually exclusive branch.
+        foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
+            AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            child is not IfStatementSyntax))
+        {
+            if (descendant is IfStatementSyntax ifStatement)
+            {
+                ProcessIfStatement(ifStatement, context, semanticModel, driverVariables);
+            }
+            else if (descendant is LocalDeclarationStatementSyntax localDecl)
             {
                 AnalyzeLocalDeclaration(localDecl, semanticModel, driverVariables);
             }
-
-            // Check for await driver.StartAsync(...) or driver.RegisterModule(...)
-            if (statement is ExpressionStatementSyntax expressionStmt)
+            else if (descendant is ExpressionStatementSyntax expressionStmt)
             {
                 AnalyzeExpressionStatement(expressionStmt, context, semanticModel, driverVariables);
             }
         }
     }
 
-    private static void AnalyzeLocalDeclaration(LocalDeclarationStatementSyntax localDecl, SemanticModel semanticModel, Dictionary<string, DriverState> driverVariables)
+    private static void ProcessIfStatement(IfStatementSyntax ifStatement, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
+    {
+        // Statements in the condition execute unconditionally, before either branch.
+        ProcessNode(ifStatement.Condition, context, semanticModel, driverVariables);
+
+        // The branches are mutually exclusive, so each arm is walked against its own copy of the
+        // state at the branch point. An else-if chain arrives here as an else clause whose statement
+        // is itself an if statement, which ProcessNode routes back into this method.
+        Dictionary<string, bool> thenBranch = new(driverVariables);
+        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranch);
+
+        Dictionary<string, bool> elseBranch = new(driverVariables);
+        if (ifStatement.Else is not null)
+        {
+            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranch);
+        }
+
+        // After the branch, a driver counts as started only when every path through the branch
+        // leaves it started; otherwise a RegisterModule after the if on a path that never started
+        // would be falsely flagged.
+        foreach (string driverName in driverVariables.Keys.ToList())
+        {
+            driverVariables[driverName] = thenBranch[driverName] && elseBranch[driverName];
+        }
+    }
+
+    private static void AnalyzeLocalDeclaration(LocalDeclarationStatementSyntax localDecl, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
     {
         foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
         {
@@ -94,15 +137,12 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             TypeInfo typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value);
             if (AnalyzerSymbolHelpers.IsDriverConfigurationType(typeInfo.Type))
             {
-                driverVariables[variable.Identifier.Text] = new DriverState
-                {
-                    IsStarted = false,
-                };
+                driverVariables[variable.Identifier.Text] = false;
             }
         }
     }
 
-    private static void AnalyzeExpressionStatement(ExpressionStatementSyntax expressionStmt, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, DriverState> driverVariables)
+    private static void AnalyzeExpressionStatement(ExpressionStatementSyntax expressionStmt, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
     {
         if (expressionStmt.Expression is AwaitExpressionSyntax awaitExpr && awaitExpr.Expression is InvocationExpressionSyntax invocation)
         {
@@ -130,7 +170,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         return invocation;
     }
 
-    private static void CheckForDriverMethodCall(InvocationExpressionSyntax invocation, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, DriverState> driverVariables)
+    private static void CheckForDriverMethodCall(InvocationExpressionSyntax invocation, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
@@ -154,18 +194,18 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         // Check if this is StartAsync() being called
         if (methodName == "StartAsync")
         {
-            driverVariables[driverVariableName].IsStarted = true;
+            driverVariables[driverVariableName] = true;
         }
 
         // StopAsync() returns the driver to the not-started state; the runtime permits
         // registration again after a stop, so the tracked state must reflect that.
         if (methodName == "StopAsync")
         {
-            driverVariables[driverVariableName].IsStarted = false;
+            driverVariables[driverVariableName] = false;
         }
 
         // Check if this is RegisterModule() being called AFTER StartAsync()
-        if (methodName == "RegisterModule" && driverVariables[driverVariableName].IsStarted)
+        if (methodName == "RegisterModule" && driverVariables[driverVariableName])
         {
             // Get module parameter for better error message
             string moduleName = "module";
@@ -189,10 +229,5 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             MemberAccessExpressionSyntax member => GetDriverVariableName(member.Expression),
             _ => null,
         };
-    }
-
-    private class DriverState
-    {
-        public bool IsStarted { get; set; }
     }
 }

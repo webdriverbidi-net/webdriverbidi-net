@@ -170,7 +170,7 @@ public class BiDiDriver017AnalyzerTests
             using System;
             using System.Collections.Generic;
 
-            namespace TestApp
+            namespace WebDriverBiDi
             {
                 public class TestClass
                 {
@@ -210,7 +210,7 @@ public class BiDiDriver017AnalyzerTests
             using System;
             using System.Collections.Generic;
 
-            namespace TestApp
+            namespace WebDriverBiDi
             {
                 public class TestClass
                 {
@@ -250,7 +250,7 @@ public class BiDiDriver017AnalyzerTests
             using System;
             using System.Collections.Generic;
 
-            namespace TestApp
+            namespace WebDriverBiDi
             {
                 public class TestClass
                 {
@@ -290,7 +290,7 @@ public class BiDiDriver017AnalyzerTests
             using System;
             using System.Collections.Generic;
 
-            namespace TestApp
+            namespace WebDriverBiDi
             {
                 public class TestClass
                 {
@@ -330,7 +330,7 @@ public class BiDiDriver017AnalyzerTests
             using System;
             using System.Collections.Generic;
 
-            namespace TestApp
+            namespace WebDriverBiDi
             {
                 public class TestClass
                 {
@@ -1333,7 +1333,7 @@ public class BiDiDriver017AnalyzerTests
             #nullable enable
             using System.Collections.Generic;
 
-            namespace TestApp
+            namespace WebDriverBiDi
             {
                 public class Parameters
                 {
@@ -1372,6 +1372,84 @@ public class BiDiDriver017AnalyzerTests
         };
         testState.ExpectedDiagnostics.Add(contexts);
         testState.ExpectedDiagnostics.Add(names);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a nullable list property on a type outside the WebDriverBiDi namespace is NOT
+    /// flagged: the BiDi-branded warning must not appear on unrelated user code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddToNullableListProperty_OnNonWebDriverBiDiType_NoDiagnostic()
+    {
+        string test = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace TestApp
+            {
+                public class MyOptions
+                {
+                    public List<int>? Numbers { get; set; }
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        MyOptions options = new MyOptions();
+                        options.Numbers.Add(1);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a real WebDriverBiDi nullable-settable list property
+    /// (<c>ContinueRequestCommandParameters.Headers</c>) is still flagged when <c>.Add(...)</c> is
+    /// called without a null-guard.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddToNullableListProperty_OnRealWebDriverBiDiType_ReportsDiagnostic()
+    {
+        string test = """
+            #nullable enable
+            using WebDriverBiDi.Network;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ContinueRequestCommandParameters parameters = new ContinueRequestCommandParameters("requestId");
+                        {|#0:parameters.Headers|}.Add(new Header("name", "value"));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver017_NullableListAddAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Header", "Headers");
+
+        RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }

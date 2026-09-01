@@ -47,11 +47,16 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
         // method. The analyzer also fires in constructors and top-level programs, where the
         // rearrangement below has no method to operate on; no fix is possible there, so none
         // is offered.
+        // Filter the StartAsync search to the same driver variable as the flagged RegisterModule;
+        // otherwise the fix could move the registration before an unrelated receiver's StartAsync,
+        // possibly ahead of the flagged driver's own declaration (CS0841).
+        string? driverVariableName = GetRootIdentifierName(invocation.Expression);
         MethodDeclarationSyntax? method = invocation.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
         bool startAsyncExists = method is not null && method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.Text == "StartAsync");
+                && memberAccess.Name.Identifier.Text == "StartAsync"
+                && GetRootIdentifierName(memberAccess) == driverVariableName);
         if (!startAsyncExists)
         {
             return;
@@ -81,11 +86,13 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
             .OfType<StatementSyntax>()
             .First();
 
-        // Find the StartAsync call
+        // Find the StartAsync call on the same driver variable as the flagged RegisterModule.
+        string driverVariableName = GetRootIdentifierName(registerModuleInvocation.Expression)!;
         InvocationExpressionSyntax startAsyncInvocation = method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .First(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.Text == "StartAsync");
+                && memberAccess.Name.Identifier.Text == "StartAsync"
+                && GetRootIdentifierName(memberAccess) == driverVariableName);
 
         StatementSyntax startAsyncStatement = startAsyncInvocation.Ancestors()
             .OfType<StatementSyntax>()
@@ -109,5 +116,19 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
 
         SyntaxNode newRoot = root.ReplaceNode(method, newMethod);
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static string? GetRootIdentifierName(ExpressionSyntax expression)
+    {
+        // expression is always a MemberAccessExpressionSyntax when called from this provider
+        // (driver.RegisterModule / driver.StartAsync).
+        ExpressionSyntax current = ((MemberAccessExpressionSyntax)expression).Expression;
+        while (current is MemberAccessExpressionSyntax nestedAccess)
+        {
+            current = nestedAccess.Expression;
+        }
+
+        // The receiver chain may not end in a simple identifier; such receivers yield no name.
+        return (current as IdentifierNameSyntax)?.Identifier.Text;
     }
 }

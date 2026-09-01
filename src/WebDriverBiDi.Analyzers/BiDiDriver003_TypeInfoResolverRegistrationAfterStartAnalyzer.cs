@@ -59,27 +59,70 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            driverVariables = AnalyzeStatement(context, statement, driverVariables);
+            driverVariables = ProcessNode(context, statement, driverVariables);
         }
     }
 
-    private static ImmutableDictionary<string, DriverVariableState> AnalyzeStatement(
+    private static ImmutableDictionary<string, DriverVariableState> ProcessNode(
         SyntaxNodeAnalysisContext context,
-        StatementSyntax statement,
+        SyntaxNode node,
         ImmutableDictionary<string, DriverVariableState> driverVariables)
     {
-        ImmutableDictionary<string, DriverVariableState> updatedVariables = driverVariables;
+        ImmutableDictionary<string, DriverVariableState> state = driverVariables;
 
-        if (statement is LocalDeclarationStatementSyntax localDeclaration)
+        // Walk the node's statements in document order. The walk does not descend into the bodies of
+        // nested functions (lambdas, anonymous methods, local functions): their code runs when the
+        // delegate is invoked, not at the textual position where it is declared. It also stops at if
+        // statements — including one that is itself the root, which the barrier yields without
+        // descending into — and processes them below with a forked copy of the state per branch.
+        foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
+            AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            child is not IfStatementSyntax))
         {
-            updatedVariables = AnalyzeLocalDeclaration(context, localDeclaration, updatedVariables);
-        }
-        else if (statement is ExpressionStatementSyntax expressionStatement)
-        {
-            updatedVariables = AnalyzeExpressionStatement(context, expressionStatement, updatedVariables);
+            if (descendant is IfStatementSyntax ifStatement)
+            {
+                state = ProcessIfStatement(context, ifStatement, state);
+            }
+            else if (descendant is LocalDeclarationStatementSyntax localDeclaration)
+            {
+                state = AnalyzeLocalDeclaration(context, localDeclaration, state);
+            }
+            else if (descendant is ExpressionStatementSyntax expressionStatement)
+            {
+                state = AnalyzeExpressionStatement(context, expressionStatement, state);
+            }
         }
 
-        return updatedVariables;
+        return state;
+    }
+
+    private static ImmutableDictionary<string, DriverVariableState> ProcessIfStatement(
+        SyntaxNodeAnalysisContext context,
+        IfStatementSyntax ifStatement,
+        ImmutableDictionary<string, DriverVariableState> driverVariables)
+    {
+        // Statements in the condition execute unconditionally, before either branch.
+        ImmutableDictionary<string, DriverVariableState> state = ProcessNode(context, ifStatement.Condition, driverVariables);
+
+        // The branches are mutually exclusive, so each arm is walked against its own copy of the
+        // state at the branch point. An else-if chain arrives here as an else clause whose statement
+        // is itself an if statement, which ProcessNode routes back into this method.
+        ImmutableDictionary<string, DriverVariableState> thenState = ProcessNode(context, ifStatement.Statement, state);
+        ImmutableDictionary<string, DriverVariableState> elseState = ifStatement.Else is not null
+            ? ProcessNode(context, ifStatement.Else.Statement, state)
+            : state;
+
+        // After the branch, a driver counts as started only when every path through the branch
+        // leaves it started; otherwise a RegisterTypeInfoResolverAsync after the if on a path that
+        // never started would be falsely flagged.
+        ImmutableDictionary<string, DriverVariableState> merged = state;
+        foreach (string driverName in state.Keys)
+        {
+            bool started = thenState[driverName].IsStarted && elseState[driverName].IsStarted;
+            merged = merged.SetItem(driverName, new DriverVariableState { IsStarted = started });
+        }
+
+        return merged;
     }
 
     private static ImmutableDictionary<string, DriverVariableState> AnalyzeLocalDeclaration(
