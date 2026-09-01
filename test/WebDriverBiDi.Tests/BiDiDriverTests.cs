@@ -1923,6 +1923,71 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestAsyncFaultingObserverOfDriverEventHandlerErrorOccurredDoesNotCauseFeedbackLoop()
+    {
+        // The driver forwards the transport's error-occurred event into its own
+        // OnEventHandlerErrorOccurred, so a failure in an observer of the driver's error
+        // event must be captured without re-raising; re-raising would re-invoke the same
+        // failing observer again in an unbounded feedback loop of error events.
+        int errorObserverInvocationCount = 0;
+        int capturedErrorCount = 0;
+        TaskCompletionSource secondCaptureTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            AfterUnhandledErrorCaptured = () =>
+            {
+                if (Interlocked.Increment(ref capturedErrorCount) == 2)
+                {
+                    secondCaptureTaskCompletionSource.TrySetResult();
+                }
+            },
+        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
+        driver.OnEventReceived.AddObserver(
+            async e =>
+            {
+                await Task.Yield();
+                throw new WebDriverBiDiException("original handler failure");
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        driver.OnEventHandlerErrorOccurred.AddObserver(
+            async e =>
+            {
+                Interlocked.Increment(ref errorObserverInvocationCount);
+                await Task.Yield();
+                throw new WebDriverBiDiException("error observer failure");
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "module.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await connection.RaiseDataReceivedEventAsync(json);
+        await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Negative check: a feedback loop would keep re-invoking the error observer and
+        // capturing further errors, so after this delay neither count may have grown.
+        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
+        Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(() => driver.StopAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(2, exception.InnerExceptions.Count);
+        Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("original handler failure"));
+        Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("error observer failure"));
+    }
+
+    [Fact]
     public async Task TestRegistrationIsRejectedWhenTransportWasConnectedExternally()
     {
         // The driver never observed StartAsync, so its start-requested flag is false; the
