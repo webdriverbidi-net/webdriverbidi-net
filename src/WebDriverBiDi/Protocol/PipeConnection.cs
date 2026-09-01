@@ -151,7 +151,11 @@ public class PipeConnection : Connection
     /// <param name="connectionString">The connection string used to connect to the remote end.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the external application is not yet running, or the pipe connection is already connected.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">
+    /// Thrown when the external application is not yet running, the pipe connection is already
+    /// connected, or the receive loop from a previous session is still running after a bounded
+    /// wait (see the remarks on <see cref="StopAsync(CancellationToken)"/>).
+    /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
@@ -174,6 +178,18 @@ public class PipeConnection : Connection
         if (this.IsConnectionActive)
         {
             throw new WebDriverBiDiConnectionException($"The pipe connection is already active for {this.ConnectionString}; call the Stop method to disconnect before calling Start");
+        }
+
+        // StopAsync may have abandoned the previous session's receive loop still blocked in
+        // a pipe read that did not honor cancellation (see the remarks on StopAsync).
+        // Starting a second loop over the same pipe would interleave the two loops' reads
+        // arbitrarily, corrupting message framing and routing stale data into the new
+        // session. Give a loop that is still unwinding a bounded chance to finish, and
+        // refuse to start while it runs.
+        await this.WaitForReceiveTaskCompletionAsync().ConfigureAwait(false);
+        if (this.DataReceiveTask is not null && !this.DataReceiveTask.IsCompleted)
+        {
+            throw new WebDriverBiDiConnectionException("Cannot start the pipe connection: the receive loop from a previous session has not yet completed, most likely because it is blocked in a pipe read that did not honor cancellation; the connection cannot be restarted until that read completes");
         }
 
         await this.LogAsync($"Starting pipe connection: {connectionString}").ConfigureAwait(false);
@@ -208,7 +224,10 @@ public class PipeConnection : Connection
     /// a pending receive, cancelling the pipe connection's token does not guarantee that an in-progress
     /// pipe read unblocks promptly on every supported target framework. If the receive loop does not
     /// finish within the timeout, a warning is logged and this method returns anyway; the receive task
-    /// continues running in the background until the pipe unblocks on its own.
+    /// continues running in the background until the pipe unblocks on its own. While that abandoned
+    /// loop is still running, <see cref="StartAsync(string, CancellationToken)"/> refuses to begin a
+    /// new session, and any data the abandoned read eventually returns is discarded rather than
+    /// dispatched.
     /// </remarks>
     public override async Task StopAsync(CancellationToken cancellationToken = default)
     {
@@ -349,6 +368,15 @@ public class PipeConnection : Connection
             while (!connectionCancellationToken.IsCancellationRequested)
             {
                 int bytesRead = await this.ReadPipeDataAsync(readArray, 0, this.BufferSize, connectionCancellationToken).ConfigureAwait(false);
+                if (connectionCancellationToken.IsCancellationRequested)
+                {
+                    // The session was canceled while the read was blocked (pipe reads do not
+                    // reliably honor cancellation on every target framework). Data returned
+                    // by such a read belongs to no session; dispatching it would deliver
+                    // stale bytes to observers of a connection that has been stopped.
+                    break;
+                }
+
                 if (bytesRead == 0)
                 {
                     // Pipe closed. The remote end can reach end-of-file while its process is

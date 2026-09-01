@@ -303,6 +303,63 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestStartAsyncRefusesSecondReceiveLoopWhileAbandonedLoopStillRuns()
+    {
+        // StopAsync abandons a receive loop that does not respond to cancellation (see its
+        // remarks). Restarting while that loop is still blocked must be refused: a second
+        // loop reading the same pipe would interleave reads arbitrarily and corrupt message
+        // framing. Once the abandoned loop finally exits — discarding its stale read result
+        // rather than dispatching it — a new session can start.
+        TaskCompletionSource<int> receiveBlockSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveBlockEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        List<string> receivedData = [];
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            ReceiveBlockSignal = receiveBlockSignal,
+            ReceiveBlockEnteredSignal = receiveBlockEnteredSignal,
+            ShutdownTimeout = TimeSpan.FromMilliseconds(50),
+        };
+        connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message == "Ending pipe receive loop")
+            {
+                receiveLoopEndedSignal.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await receiveBlockEnteredSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // StopAsync times out waiting for the blocked read and abandons the loop.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        Assert.False(connection.IsActive);
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(
+            () => connection.StartAsync("pipe://local", TestContext.Current.CancellationToken));
+        Assert.Contains("receive loop from a previous session", exception.Message);
+
+        // Release the blocked read. The loop observes its canceled token and exits without
+        // dispatching the read result.
+        receiveBlockSignal.SetResult(0);
+        await receiveLoopEndedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Empty(receivedData);
+
+        // With the previous loop finished, a new session can start against the real pipe.
+        connection.ReceiveBlockSignal = null;
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        Assert.True(connection.IsActive);
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+    }
+
+    [Fact]
     public async Task TestStopHonorsShutdownTimeoutWhenReceiveLoopDoesNotRespondToCancellation()
     {
         List<LogMessageEventArgs> logs = [];
