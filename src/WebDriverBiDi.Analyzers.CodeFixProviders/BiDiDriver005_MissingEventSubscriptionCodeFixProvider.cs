@@ -47,12 +47,17 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
             .OfType<InvocationExpressionSyntax>()
             .First();
 
-        // Only offer the fix when the enclosing method already has a Session.SubscribeAsync call to
-        // amend. Creating a brand-new subscription statement is out of scope, and registering an action
-        // that leaves the document unchanged would be misleading. The diagnostic is only reported
-        // inside a block-bodied method (the analyzer requires method.Body), so the enclosing method and
-        // its body are always present here.
-        MethodDeclarationSyntax method = addObserverCall.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
+        // Only offer the fix when the enclosing member is a block-bodied method that already has a
+        // Session.SubscribeAsync call to amend. The analyzer also fires in constructors and
+        // top-level programs, where there is no method to rewrite; and creating a brand-new
+        // subscription statement is out of scope, so registering an action that leaves the
+        // document unchanged would be misleading.
+        MethodDeclarationSyntax? method = addObserverCall.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (method?.Body is null)
+        {
+            return;
+        }
+
         SemanticModel semanticModel = (await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false))!;
         if (FindSubscribeCall(method, semanticModel, context.CancellationToken) is null)
         {

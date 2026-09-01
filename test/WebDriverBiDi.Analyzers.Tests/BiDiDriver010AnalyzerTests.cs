@@ -359,6 +359,33 @@ public class BiDiDriver010AnalyzerTests
     }
 
     [Fact]
+    public async Task ModuleCommandWithBlockingWait_NoDiagnostic()
+    {
+        // A chained .Wait() blocks until the command completes and propagates its
+        // exceptions; the command is synchronously waited on, not fire-and-forget.
+        // (Blocking waits are BIDI007/BIDI016 territory, not BIDI010's.)
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("contextId", "https://example.com")).Wait();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    [Fact]
     public async Task ModuleCommandWithConfigureAwaitNotAwaited_ReportsError()
     {
         string testCode = """

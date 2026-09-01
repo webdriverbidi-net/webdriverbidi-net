@@ -16,6 +16,46 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver001AnalyzerTests
 {
     /// <summary>
+    /// Tests that a StartAsync() inside a nested function does not count as starting the driver
+    /// at the function's textual position: the delegate runs only when invoked, so a
+    /// RegisterModule() after the declaration but before the invocation is legal.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncDeclaredInsideLambda_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        Func<Task> starter = async () => await driver.StartAsync("ws://localhost:9222");
+
+                        // The driver is not started yet; the lambda has only been declared.
+                        driver.RegisterModule(new CustomModule(driver));
+                        await starter();
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(test);
+    }
+
+    /// <summary>
     /// Tests that RegisterModule() called after StartAsync() reports a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

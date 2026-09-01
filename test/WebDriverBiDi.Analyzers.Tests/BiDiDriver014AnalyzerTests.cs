@@ -15,6 +15,29 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver014AnalyzerTests
 {
     /// <summary>
+    /// Tests that an expression-bodied method produces no diagnostic: the statement walk sees no
+    /// statements in a member without a block body, so the object creation is not examined.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_InExpressionBodiedMethod_NoDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public SetGeolocationOverrideCoordinatesCommandParameters Create() => new SetGeolocationOverrideCoordinatesCommandParameters();
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test);
+    }
+
+    /// <summary>
     /// Tests that a parameterless constructor of a derived class is reported when the Reset
     /// property is declared on its base class and returns the base type. Uses the real
     /// <c>SetGeolocationOverrideCommandParameters</c> (protected constructor, declares

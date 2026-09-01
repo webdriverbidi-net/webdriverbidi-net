@@ -43,6 +43,22 @@ public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixP
             .OfType<InvocationExpressionSyntax>()
             .First();
 
+        // The fix moves the registration before a top-level statement of the same
+        // block-bodied method that calls StartAsync on the same driver. The analyzer also
+        // fires in constructors and top-level programs, where that shape is absent; no fix
+        // is possible there, so none is offered.
+        MethodDeclarationSyntax? method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
+        bool startAsyncStatementExists = method?.Body is not null && method.Body.Statements
+            .Any(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                    && ma.Name.Identifier.Text == "StartAsync"
+                    && GetRootIdentifierName(ma) == driverVariableName));
+        if (!startAsyncStatementExists)
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Move event registration before StartAsync",
@@ -100,6 +116,8 @@ public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixP
             current = nestedAccess.Expression;
         }
 
-        return ((IdentifierNameSyntax)current).Identifier.Text;
+        // The receiver chain may not end in a simple identifier (for example, a driver held in
+        // a field accessed through `this`); such receivers are not fixable and yield no name.
+        return (current as IdentifierNameSyntax)?.Identifier.Text;
     }
 }
