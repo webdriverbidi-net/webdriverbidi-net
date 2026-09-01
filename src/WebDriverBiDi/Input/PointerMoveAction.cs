@@ -39,10 +39,24 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     public double Y { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets the duration of the move.
+    /// Gets or sets the duration of the move. If specified, must not be negative, as the
+    /// protocol transmits the duration as an unsigned integer number of milliseconds.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative <see cref="TimeSpan"/>.</exception>
     [JsonIgnore]
-    public TimeSpan? Duration { get; set; }
+    public TimeSpan? Duration
+    {
+        get;
+        set
+        {
+            if (value is not null && value.Value < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Duration must not be negative.");
+            }
+
+            field = value;
+        }
+    }
 
     /// <summary>
     /// Gets or sets the origin of the move.
