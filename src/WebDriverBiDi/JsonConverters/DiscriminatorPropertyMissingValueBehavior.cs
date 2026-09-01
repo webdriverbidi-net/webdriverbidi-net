@@ -8,18 +8,17 @@ namespace WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Defines the behavior to use when deserializing a JSON payload into a base
 /// class with multiple derived types based on the value of a specific property
-/// in the JSON payload, when the value of that property does not match any
-/// known derived types.
+/// in the JSON payload, and the named property is missing from the payload.
 /// </summary>
 public enum DiscriminatorPropertyMissingValueBehavior
 {
     /// <summary>
-    /// Throw an exception when the value of the type property does not match any known derived types.
+    /// Throw an exception when the property is missing from the JSON payload.
     /// </summary>
     ThrowException,
 
     /// <summary>
-    /// Use the base type when the value of the type property does not match any known derived types.
+    /// Return <see langword="null"/> when the property is missing from the JSON payload.
     /// </summary>
     ReturnNull,
 }
