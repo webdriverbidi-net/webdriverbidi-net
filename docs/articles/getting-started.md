@@ -134,6 +134,7 @@ Replace the contents of `Program.cs` with the code below, adding these `using` d
 ```csharp
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 ```
 

@@ -54,6 +54,7 @@ Replace the contents of `Program.cs` with the code below, adding these `using` d
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Log;
+using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 ```
