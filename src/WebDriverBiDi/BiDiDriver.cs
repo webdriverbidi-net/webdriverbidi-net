@@ -854,7 +854,13 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
     private Task ReportObservableEventObserverError(EventObserverErrorInfo errorInfo)
     {
-        return this.transport.ReportEventObserverErrorAsync(errorInfo);
+        // A failure in an observer of the driver's own OnEventHandlerErrorOccurred must not be
+        // reported by raising the transport's error-occurred event: the driver forwards that
+        // event back into its own OnEventHandlerErrorOccurred, which would re-invoke the same
+        // failing observer in an unbounded feedback loop. Capture such a failure without
+        // notifying. The transport applies the same guard for its own error-occurred event.
+        bool notifyObservers = errorInfo.ObservableEventName != EventHandlerErrorOccurredEventName;
+        return this.transport.ReportEventObserverErrorAsync(errorInfo, notifyObservers);
     }
 
     private ObservableEventInvocable<T> CreateObservableEvent<T>(string eventName)

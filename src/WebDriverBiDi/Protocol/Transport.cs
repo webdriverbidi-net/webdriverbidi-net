@@ -685,14 +685,25 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
-    /// Reports a late observer execution error to this transport's unhandled-error pipeline.
+    /// Reports a late observer execution error to this transport's unhandled-error pipeline,
+    /// optionally without raising <see cref="OnEventHandlerErrorOccurred"/>.
     /// </summary>
     /// <param name="errorInfo">The details of the observer failure.</param>
+    /// <param name="notifyObservers">
+    /// <see langword="true"/> to raise <see cref="OnEventHandlerErrorOccurred"/> for the failure;
+    /// <see langword="false"/> to capture the failure without raising the event, which callers
+    /// use when the failing observer belongs to an error-occurred event and re-raising would
+    /// re-invoke that same observer in a feedback loop.
+    /// </param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo)
+    internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo, bool notifyObservers)
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
-        await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
+        if (notifyObservers)
+        {
+            await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
+        }
+
         this.CaptureUnhandledError(UnhandledErrorKind.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
     }
 
@@ -1597,5 +1608,16 @@ public class Transport : IAsyncDisposable
             IsAsynchronousHandler = false,
             FaultOccurredAfterHandlerReturned = false,
         }).ConfigureAwait(false);
+    }
+
+    private async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo)
+    {
+        // A failure in an observer of OnEventHandlerErrorOccurred itself must not be reported
+        // by re-raising OnEventHandlerErrorOccurred: that would invoke the same failing
+        // observer again, and for an asynchronously faulting observer would produce an
+        // unbounded feedback loop of error events. Capture such a failure without notifying
+        // the event that produced it.
+        bool notifyObservers = errorInfo.ObservableEventName != EventHandlerErrorOccurredEventName;
+        await this.ReportEventObserverErrorAsync(errorInfo, notifyObservers).ConfigureAwait(false);
     }
 }
