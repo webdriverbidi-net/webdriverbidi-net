@@ -139,7 +139,7 @@ public class EventObserverTests
 
         await testEventSource.RaiseTestEventAsync("myValue");
         Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
-        Assert.Single(tasks);
+        _ = Assert.Single(tasks);
         Assert.False(observer.IsCapturing);
     }
 
