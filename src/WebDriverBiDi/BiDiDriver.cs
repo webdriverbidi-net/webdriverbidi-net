@@ -882,12 +882,43 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
     private async Task OnTransportEventReceivedAsync(EventReceivedEventArgs e)
     {
+        // The module-level dispatch (to typed events such as Log.OnEntryAdded) and the
+        // driver-level OnEventReceived dispatch are independent. A fault in a module event
+        // observer must not prevent OnEventReceived observers from being notified, so a fault
+        // from the first stage is captured and the second stage is always run. Faults from
+        // both stages are then surfaced together, so each remains governed by the transport's
+        // EventHandlerExceptionBehavior exactly as it would if raised in isolation.
+        Exception? invokerException = null;
         if (this.eventInvokers.TryGetValue(e.EventName, out EventInvoker? invoker))
         {
-            await invoker.InvokeEventAsync(e.EventData, e.AdditionalData, e.AdditionalEventProperties).ConfigureAwait(false);
+            try
+            {
+                await invoker.InvokeEventAsync(e.EventData, e.AdditionalData, e.AdditionalEventProperties).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                invokerException = ex;
+            }
         }
 
-        await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        try
+        {
+            await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+        }
+        catch (Exception observableException)
+        {
+            if (invokerException is not null)
+            {
+                throw new AggregateException(invokerException, observableException);
+            }
+
+            throw;
+        }
+
+#pragma warning disable IDE0011, SA1503
+        if (invokerException is not null)
+            ExceptionDispatchInfo.Capture(invokerException).Throw();
+#pragma warning restore IDE0011, SA1503
     }
 
     private async Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
