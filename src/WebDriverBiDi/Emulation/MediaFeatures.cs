@@ -129,12 +129,14 @@ public class MediaFeatures
     /// Use <see cref="ResetGridValue"/> to reset the emulation.
     /// </summary>
     /// <remarks>
-    /// Note carefully that the only valid values of this property are zero (0)
-    /// and one (1). Values other than those will result in an error at runtime.
+    /// The only valid values for this property are zero (0) and one (1) (or <see cref="ResetGridValue"/>
+    /// to reset the emulation). This property does not validate its value; a value other than those is
+    /// sent as-is, and a conforming remote end rejects it when the command is executed.
     /// </remarks>
     [JsonPropertyName("grid")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, 1.0, HasSentinel = true, SentinelValue = ResetGridValue)]
     public long? Grid { get; set; }
 
     /// <summary>

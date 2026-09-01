@@ -219,19 +219,24 @@ does not reveal a real absence, withdraw the item.
 **Before claiming that specific lines, branches, or code paths lack test coverage,**
 run the project's coverage tool and cite the lcov output as evidence. Reading
 test files, counting test methods, and grepping for feature names reveals what
-tests exist, not what code they execute. The authoritative source for any
-coverage-gap claim is:
+tests exist, not what code they execute. The `WebDriverBiDi`,
+`WebDriverBiDi.Logging`, and `WebDriverBiDi.Analyzers` (with
+`WebDriverBiDi.Analyzers.CodeFixProviders`) projects maintain 100% line, branch,
+and method coverage in **both** the Debug and Release configurations, so a
+genuine gap shows up as less than 100% in a coverage run. Generate coverage for
+the relevant test project in **both** configurations, for example:
 ```shell
-dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --coverlet --coverlet-output-format lcov
+dotnet test --project test/WebDriverBiDi.Tests --configuration Release --coverlet --coverlet-output-format lcov
+dotnet test --project test/WebDriverBiDi.Tests --configuration Debug --coverlet --coverlet-output-format lcov
 ```
-Note that `--configuration Release` is mandatory. A Debug build instruments more
-synthetic branches than a Release build and will produce false negatives.
-The coverage run must match the CI configuration in `_tests.yml`. A coverage
-result from a Debug build is not authoritative and must not be cited. Cite
-specific uncovered line numbers from the resulting .info file as evidence.
-A coverage-gap finding filed without citing line numbers from an actual coverage
-run is a false positive of the same severity as a documentation gap filed without
-reading the docs tree.
+Both configurations must show 100%. Debug and Release instrument different
+numbers of sequence points and branches, so a branch that is covered in one
+configuration but not the other is a real, un-exercised path — a difference
+between the two is not a "synthetic branch" to be excused, and both must be
+checked. Cite specific uncovered line numbers from the resulting .info file as
+evidence. A coverage-gap finding filed without citing line numbers from an actual
+coverage run is a false positive of the same severity as a documentation gap
+filed without reading the docs tree.
 
 **Before flagging any code as a defect, performance concern, or improvement opportunity**,
 read the relevant implementation. Do not rely on assumptions about lock
@@ -366,12 +371,14 @@ recommend after verification.
 
 If you are asked to make changes to this library, keep the following concepts
 in mind:
-* The unit test for the primary WebDriverBiDi library project currently provide
-100% code coverage for lines, branches, and methods. If you are asked to make
-changes to this library, you should maintain that level of code coverage. Note
-that this level of code coverage is not provided for the Roslyn analyzers
-project (`WebDriverBiDi.Analyzers`). This is not a deficiency in that library,
-and should not be flagged as such.
+* The unit tests for the primary `WebDriverBiDi` library, the
+`WebDriverBiDi.Logging` structured-logging integration, and the
+`WebDriverBiDi.Analyzers` project (together with its
+`WebDriverBiDi.Analyzers.CodeFixProviders`) currently provide 100% code coverage
+for lines, branches, and methods, under **both** the Debug and Release build
+configurations. If you are asked to make changes to any of these projects, you
+must maintain that 100% coverage for lines, branches, and methods in both
+configurations.
 * The convention for code in this project is to avoid the use of the `var`
 keyword in the C# language. You should adhere to this convention for any code
 you generate. **IMPORTANT**: While this convention applies to code within the

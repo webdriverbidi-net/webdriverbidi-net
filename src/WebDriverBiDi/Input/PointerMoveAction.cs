@@ -39,9 +39,14 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     public double Y { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets the duration of the move. If specified, must not be negative, as the
-    /// protocol transmits the duration as an unsigned integer number of milliseconds.
+    /// Gets or sets the duration of the move.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero, as the protocol transmits the
+    /// duration as an unsigned integer number of milliseconds. Unlike properties whose range the remote
+    /// end enforces, a negative value is rejected by this property, because a negative duration cannot be
+    /// represented on the wire.
+    /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative <see cref="TimeSpan"/>.</exception>
     [JsonIgnore]
     public TimeSpan? Duration

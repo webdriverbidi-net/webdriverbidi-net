@@ -26,21 +26,15 @@ public class ImageFormat
     public string Type { get; set; } = "image/png";
 
     /// <summary>
-    /// Gets or sets the quality of the image format. If specified, must be between 0 and 1 inclusive.
+    /// Gets or sets the quality of the image format.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property range from 0.0 to 1.0, inclusive. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("quality")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Quality
-    {
-        get;
-        set
-        {
-            if (value is not null && (value < 0 || value > 1))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Quality must be between 0 and 1 inclusive.");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.0, 1.0)]
+    public double? Quality { get; set; }
 }

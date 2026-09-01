@@ -46,8 +46,14 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// Gets or sets the maximum number of nodes to be returned by the command.
     /// When omitted or <see langword="null"/>, the command returns all located nodes.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 1. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("maxNodeCount")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [SpecRange(1.0, double.PositiveInfinity)]
     public ulong? MaxNodeCount { get; set; }
 
     /// <summary>

@@ -99,6 +99,14 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// <summary>
     /// Gets or sets the device pixel ratio of the viewport.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than 0.0. This property does not validate its value;
+    /// a value outside this range is sent as-is, and a conforming remote end rejects it when the command
+    /// is executed. Assigning <see cref="ResetToDefaultDevicePixelRatio"/> (any negative value) instead
+    /// signals the remote end to reset the device pixel ratio to its default. This property carries no
+    /// <see cref="SpecRangeAttribute"/> because the negative reset sentinel makes a single valid range
+    /// inexpressible.
+    /// </remarks>
     [JsonPropertyName("devicePixelRatio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<double, NegativeDoubleSentinelChecker>))]
