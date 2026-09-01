@@ -83,7 +83,11 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                 }
             }
 
-            foreach (InvocationExpressionSyntax invocation in statement.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            // The walk does not descend into the bodies of nested functions (lambdas, anonymous
+            // methods, local functions): their code runs when the delegate is invoked, not at its
+            // textual position, so a call there must not be judged against the capturing state at
+            // that position.
+            foreach (InvocationExpressionSyntax invocation in statement.DescendantNodes(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<InvocationExpressionSyntax>())
             {
                 if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
                 {

@@ -224,34 +224,6 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
-    /// Gets every executable statement of a method or constructor body, or of a top-level program's
-    /// global statements, in source order, excluding statements inside nested functions (lambdas,
-    /// anonymous methods, and local functions). Analyzers that track temporal state (for example,
-    /// "was StartAsync called before this line?") must use this rather than
-    /// <see cref="GetAllStatements(SyntaxNode)"/>: code inside a nested function runs when the
-    /// delegate is invoked, not at the textual position where it is declared, so its statements
-    /// must not be judged against — or update — the state at that position.
-    /// </summary>
-    /// <param name="node">The declaration or compilation-unit node.</param>
-    /// <returns>The statements.</returns>
-    internal static IEnumerable<StatementSyntax> GetAllStatementsExcludingNestedFunctions(SyntaxNode node)
-    {
-        if (GetBodyBlock(node) is { } body)
-        {
-            return body.DescendantNodes(descendIntoChildren: DoesNotBeginNestedFunction).OfType<StatementSyntax>();
-        }
-
-        if (node is CompilationUnitSyntax compilationUnit)
-        {
-            return compilationUnit.Members
-                .OfType<GlobalStatementSyntax>()
-                .SelectMany(globalStatement => globalStatement.Statement.DescendantNodesAndSelf(descendIntoChildren: DoesNotBeginNestedFunction).OfType<StatementSyntax>());
-        }
-
-        return [];
-    }
-
-    /// <summary>
     /// Determines whether descending into the children of the given node stays within the code that
     /// executes at the node's textual position; returns <see langword="false"/> for nodes that begin
     /// a nested function (lambdas, anonymous methods, and local functions), whose bodies run only
@@ -350,12 +322,15 @@ internal static class AnalyzerSymbolHelpers
     {
         for (ITypeSymbol? current = type; current != null; current = current.BaseType)
         {
-            if (typeNames.Contains(current.Name))
+            // Require the matched type to be declared in the WebDriverBiDi namespace so a user's own
+            // type that merely shares a name (for example a class named BiDiDriver, or an interface
+            // named IBiDiCommandExecutor, in another namespace) is not treated as the library type.
+            if (current is INamedTypeSymbol namedCurrent && typeNames.Contains(namedCurrent.Name) && IsInWebDriverBiDiNamespace(namedCurrent))
             {
                 return true;
             }
 
-            if (current is INamedTypeSymbol namedType && namedType.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name)))
+            if (current is INamedTypeSymbol namedType && namedType.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name) && IsInWebDriverBiDiNamespace(interfaceType)))
             {
                 return true;
             }

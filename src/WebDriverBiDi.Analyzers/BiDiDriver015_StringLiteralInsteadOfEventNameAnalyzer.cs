@@ -266,9 +266,11 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         return AnalyzerSymbolHelpers.IsLibraryModuleType(type);
     }
 
-    private static bool IsSessionModule(ITypeSymbol type)
+    private static bool IsSessionModule(INamedTypeSymbol type)
     {
-        return type.Name == "SessionModule";
+        // Require the type to be declared in the WebDriverBiDi namespace so a user's own type named
+        // SessionModule in another namespace is not treated as the library's session module.
+        return type.Name == "SessionModule" && AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(type);
     }
 
     private static bool IsObservableEventType(ITypeSymbol type)

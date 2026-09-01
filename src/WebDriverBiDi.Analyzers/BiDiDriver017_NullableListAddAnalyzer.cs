@@ -114,6 +114,13 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // Require the property's containing type to be a WebDriverBiDi type so an unrelated user
+        // type with a nullable list property is not flagged with this BiDi-branded warning.
+        if (!AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(propertySymbol.ContainingType))
+        {
+            return;
+        }
+
         string propertyName = propertySymbol.Name;
         string elementTypeName = elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 

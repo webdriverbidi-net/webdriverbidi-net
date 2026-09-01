@@ -326,9 +326,9 @@ public class BiDiDriver015AnalyzerTests
                 {
                     public async Task TestMethod()
                     {
-                        FakeLib.BiDiDriver driver = new FakeLib.BiDiDriver();
+                        WebDriverBiDi.BiDiDriver driver = new WebDriverBiDi.BiDiDriver();
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new FakeLib.SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
+                        await driver.Session.SubscribeAsync(new WebDriverBiDi.SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
                     }
                 }
             }
@@ -366,9 +366,9 @@ public class BiDiDriver015AnalyzerTests
                 {
                     public async Task TestMethod()
                     {
-                        FakeLib.BiDiDriver driver = new FakeLib.BiDiDriver();
+                        WebDriverBiDi.BiDiDriver driver = new WebDriverBiDi.BiDiDriver();
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new FakeLib.SubscribeCommandParameters(new[] { driver.Log.OnEntryAdded.EventName }));
+                        await driver.Session.SubscribeAsync(new WebDriverBiDi.SubscribeCommandParameters(new[] { driver.Log.OnEntryAdded.EventName }));
                     }
                 }
             }
@@ -962,6 +962,54 @@ public class BiDiDriver015AnalyzerTests
     }
 
     /// <summary>
+    /// Tests that a string literal passed to <c>SubscribeAsync</c> on a user type coincidentally named
+    /// <c>SessionModule</c> in a namespace other than <c>WebDriverBiDi</c> is not flagged, because that
+    /// type is not the library's session module.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StringLiteral_InSubscribeAsyncOnSameNamedSessionModuleInOtherNamespace_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class SessionModule
+                {
+                    public Task SubscribeAsync(string eventName) => Task.CompletedTask;
+                }
+
+                public class NotASession
+                {
+                    public Task SubscribeAsync(string eventName) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        SessionModule fakeSession = new SessionModule();
+                        await fakeSession.SubscribeAsync("log.entryAdded");
+                        NotASession other = new NotASession();
+                        await other.SubscribeAsync("log.entryAdded");
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
     /// Compiles a fake WebDriverBiDi-shaped library in memory so that its types appear as
     /// metadata-backed symbols in analyzer tests, matching the real-world package-consumer scenario.
     /// </summary>
@@ -971,7 +1019,7 @@ public class BiDiDriver015AnalyzerTests
             using System;
             using System.Threading.Tasks;
 
-            namespace FakeLib
+            namespace WebDriverBiDi
             {
                 [AttributeUsage(AttributeTargets.Property)]
                 public sealed class ObservableEventNameAttribute : Attribute

@@ -226,6 +226,20 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        // Handed off to a method that takes ownership, for example a CompositeDisposable:
+        // disposables.Add(observer). Passing the observer itself as an argument to any invocation
+        // transfers responsibility for its disposal to the callee, so it is not a leak here.
+        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
+        {
+            foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
+            {
+                if (argument.Expression is IdentifierNameSyntax argumentIdentifier && argumentIdentifier.Identifier.Text == variableName)
+                {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 }

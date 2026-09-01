@@ -378,4 +378,36 @@ public class BiDiDriver020AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task WaitForCapturedTasksAsync_InsideLambdaDeclaredBeforeStartCapturing_NoDiagnostic()
+    {
+        // The WaitForCapturedTasksAsync call lives inside a lambda whose body runs only when the
+        // delegate is invoked, after StartCapturingTasks has been called. Because the walk must not
+        // descend into nested-function bodies, the call is not judged against the textual position of
+        // the lambda declaration (which precedes StartCapturingTasks), so no diagnostic is reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        Func<Task> waiter = async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        await waiter();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
 }

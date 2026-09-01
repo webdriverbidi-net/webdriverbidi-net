@@ -82,8 +82,11 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             // Walk all invocations in this statement (including those inside nested blocks).
             // DescendantNodes visits in source order, so a StartCapturingTasks inside an
             // if-block that precedes a WaitForCapturedTasksAsync outside it is correctly
-            // seen first.
-            foreach (InvocationExpressionSyntax invocation in statement.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            // seen first. The walk does not descend into the bodies of nested functions
+            // (lambdas, anonymous methods, local functions): their code runs when the delegate
+            // is invoked, not at its textual position, so a call there must not be judged
+            // against the capturing state at that position.
+            foreach (InvocationExpressionSyntax invocation in statement.DescendantNodes(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<InvocationExpressionSyntax>())
             {
                 if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
                 {
