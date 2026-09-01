@@ -33,6 +33,12 @@ public class Viewport
     /// <summary>
     /// Gets a <see cref="Viewport"/> object that indicates the viewport should be reset to the default.
     /// </summary>
+    /// <remarks>
+    /// The returned instance is a sentinel: it serializes as <see langword="null"/> to request the
+    /// default viewport, so any value assigned to <see cref="Height"/> or <see cref="Width"/> on it
+    /// is ignored rather than sent. To set an explicit size, construct a <see cref="Viewport"/> with
+    /// the parameterless constructor instead.
+    /// </remarks>
     public static Viewport ResetToDefaultViewport => new(true);
 
     /// <summary>

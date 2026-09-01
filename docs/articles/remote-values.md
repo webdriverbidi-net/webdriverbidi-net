@@ -8,7 +8,18 @@ When you execute JavaScript in the browser, the results are returned as `RemoteV
 
 ## RemoteValue Class Hierarchy
 
-Every `RemoteValue` has a `Type` property indicating the JavaScript type as a string. The library deserializes each value into a concrete subclass rather than a single generic type:
+Every `RemoteValue` has a `Type` property indicating the JavaScript type. It is a `RemoteValueType` enumeration value, not a string, so compare it against enum members:
+
+```csharp
+if (remoteValue.Type == RemoteValueType.Node)
+{
+    // ...
+}
+```
+
+Each enum member corresponds to the protocol's wire value for that type, which is the member name in lower case (`RemoteValueType.HtmlCollection` is sent as `"htmlcollection"`). The tables below list those wire values; the equivalent enum member is the same word in Pascal case.
+
+The library deserializes each value into a concrete subclass rather than a single generic type:
 
 - **`RemoteValue`** (abstract base) – all remote values expose `Type`, `ConvertTo<T>()`, `TryConvertTo<T>()`, and `ToLocalValue()`
 - **`ValueHoldingRemoteValue<T>`** – subclass for values that carry a .NET payload; exposes a typed `Value` property
@@ -21,8 +32,8 @@ Every `RemoteValue` has a `Type` property indicating the JavaScript type as a st
 
 ### Primitive Types
 
-| JavaScript Type | `Type` string | Concrete Class | `Value` Property Type |
-|----------------|---------------|----------------|-----------------------|
+| JavaScript Type | Protocol `type` value | Concrete Class | `Value` Property Type |
+|----------------|-----------------------|----------------|-----------------------|
 | `string` | `"string"` | `StringRemoteValue` | `string` |
 | `number` | `"number"` | `NumberRemoteValue` | `double` |
 | `boolean` | `"boolean"` | `BooleanRemoteValue` | `bool` |
@@ -32,8 +43,8 @@ Every `RemoteValue` has a `Type` property indicating the JavaScript type as a st
 
 ### Complex Types
 
-| JavaScript Type | `Type` string | Concrete Class | `Value` Property Type |
-|----------------|---------------|----------------|-----------------------|
+| JavaScript Type | Protocol `type` value | Concrete Class | `Value` Property Type |
+|----------------|-----------------------|----------------|-----------------------|
 | `Object` | `"object"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary` |
 | `Map` | `"map"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary` |
 | `Array` | `"array"` | `CollectionRemoteValue` | `RemoteValueList` |

@@ -30,7 +30,10 @@ After registration, retrieve a module by name using `GetModule<T>`:
 MyCustomModule myModule = driver.GetModule<MyCustomModule>("myCustom");
 ```
 
-This is particularly useful when you have only an `IBiDiCommandExecutor` reference rather than a concrete `BiDiDriver` — for example, inside another module or a helper that accepts the executor interface. `GetModule<T>` throws `InvalidCastException` if the registered module cannot be cast to `T`, and `ArgumentException` if no module with that name has been registered.
+This is useful for reaching a module by name when you hold a reference to the driver but not to the module instance you registered. `GetModule<T>` throws `InvalidCastException` if the registered module cannot be cast to `T`, and `ArgumentException` if no module with that name has been registered.
+
+> [!NOTE]
+> `GetModule<T>` is declared on `BiDiDriver`, not on `IBiDiCommandExecutor`. The `Module` base class stores the executor as `IBiDiCommandExecutor` (see the note under [Module Events](#module-events)), so calling `GetModule<T>` from inside a module requires a cast to `BiDiDriver`. Prefer passing any module a custom module depends on into its constructor instead.
 
 ## Creating Commands
 

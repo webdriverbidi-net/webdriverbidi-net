@@ -6,7 +6,7 @@ Welcome to the official documentation for **WebDriverBiDi.NET**, a comprehensive
 
 WebDriverBiDi.NET is a low-level .NET implementation of the [W3C WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). It provides a robust foundation for browser automation by enabling bidirectional communication between your .NET application and web browsers.
 
-The library is built on .NET Standard 2.0, ensuring broad compatibility across .NET Framework, .NET Core, and modern .NET versions.
+The library targets .NET Standard 2.0 for broad compatibility across .NET Framework, .NET Core, and modern .NET versions, and additionally ships .NET 8, .NET 9, and .NET 10 assemblies. Those modern targets are the ones marked AOT-compatible; see [AOT Compatibility](articles/advanced/aot-compatibility.md).
 
 ## Key Features
 

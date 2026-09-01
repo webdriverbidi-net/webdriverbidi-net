@@ -176,6 +176,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// The caller is responsible for observing the result of each task, including any exceptions, to
     /// avoid unobserved task exceptions.
     /// </para>
+    /// <para>
+    /// One kind of invocation does not produce a captured task: a failing handler registered with
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerSynchronously"/>. Notification awaits such
+    /// a handler, so its exception propagates out of the notification to the producer instead of
+    /// being captured, and a wait for a fixed number of tasks is never satisfied by it. A handler
+    /// registered with <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> is
+    /// captured whether it succeeds or fails.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code>
