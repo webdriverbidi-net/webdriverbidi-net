@@ -22,6 +22,13 @@ public class TestTransport : Transport
 
     public int TestPendingCommandCount => this.PendingCommands.PendingCommandCount;
 
+    /// <summary>
+    /// Gets the ID of the current pending command collection, which changes when the collection
+    /// is replaced by a reconnect. Used to assert that a reconnect actually replaced the
+    /// collection that <see cref="Transport.SendCommandAsync"/> compares against.
+    /// </summary>
+    public string TestPendingCommandCollectionId => this.PendingCommands.Id;
+
     public bool IsDisposed { get; private set; }
 
     public bool ThrowOnDisconnect { get; set; }

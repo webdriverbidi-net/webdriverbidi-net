@@ -3835,6 +3835,94 @@ public class TransportTests
         Assert.Equal(0, transport.PendingCommandCount);
     }
 
+    [Fact]
+    public async Task TestSendCommandFailsWhenReconnectedBetweenFastPathCheckAndLockAcquisition()
+    {
+        // A command draws its ID from the command counter of the session that is current when it
+        // is created, but that ID is not registered until the connection lock is acquired. If the
+        // transport disconnects and reconnects in between, the connected check under the lock
+        // passes (the transport really is connected) while the command's ID belongs to the
+        // session that has since ended. The command must be rejected rather than registered
+        // against the new session's collection.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        string initialCollectionId = transport.TestPendingCommandCollectionId;
+
+        bool reconnectTriggered = false;
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            // The callback runs for every lock acquisition, including those made by the
+            // DisconnectAsync and ConnectAsync calls below; the flag keeps this a one-shot
+            // re-entrancy.
+            if (!reconnectTriggered)
+            {
+                reconnectTriggered = true;
+                await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+                await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+            }
+        };
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(
+            async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+
+        // The message distinguishes the two guards inside the lock: the transport is connected
+        // again after the reconnect, so this rejection came from the collection identity check
+        // rather than from the connected check immediately above it.
+        Assert.Contains("The connection was replaced while the command was being prepared", exception.Message);
+        Assert.True(reconnectTriggered);
+        Assert.NotEqual(initialCollectionId, transport.TestPendingCommandCollectionId);
+        Assert.Equal(0, transport.PendingCommandCount);
+    }
+
+    [Fact]
+    public async Task TestSendCommandAfterRejectedReconnectRaceDoesNotCollideOnCommandId()
+    {
+        // Regression test for the consequence of registering a stale command: ConnectAsync resets
+        // the command counter, so a command carried over from the previous session occupies an ID
+        // the new session will issue again. The victim is then the later, unrelated command, which
+        // fails with "Could not add command with id 1, as id already exists". Rejecting the stale
+        // command keeps the new session's first ID free.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        bool reconnectTriggered = false;
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            if (!reconnectTriggered)
+            {
+                reconnectTriggered = true;
+                await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+                await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+            }
+        };
+
+        // Deliberately tolerant: the rejection itself is asserted by the sibling test above. Here
+        // the raced command is only the setup, so that a regression surfaces on the command it
+        // would collide with rather than on this one.
+        bool racedCommandRejected = false;
+        try
+        {
+            await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        }
+        catch (WebDriverBiDiConnectionException)
+        {
+            racedCommandRejected = true;
+        }
+
+        // The raced command drew ID 1 from the previous session, and the reconnect reset the
+        // counter, so the new session numbers this command 1 as well. Without the identity check
+        // the raced command already occupies that ID, and this unrelated command is the one that
+        // fails, with "Could not add command with id 1, as id already exists".
+        transport.BeforeAcquireLockCallback = null;
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+
+        Assert.True(racedCommandRejected);
+        Assert.Equal(1, command.CommandId);
+        Assert.Equal(1, transport.PendingCommandCount);
+    }
+
     private sealed class NonGenericCommandParameters : CommandParameters
     {
         [JsonIgnore]

@@ -67,6 +67,11 @@ public class PendingCommandCollection : IDisposable
     }
 
     /// <summary>
+    /// Gets the unique ID of this collection.
+    /// </summary>
+    public string Id { get; } = Guid.NewGuid().ToString();
+
+    /// <summary>
     /// Gets a value indicating whether this collection is accepting commands.
     /// </summary>
     public bool IsAcceptingCommands => Interlocked.CompareExchange(ref this.isAcceptingCommands, 0, 0) == 1;

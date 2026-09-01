@@ -368,7 +368,11 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Gets the ID of the last command to be added.
     /// </summary>
-    protected long LastCommandId => this.nextCommandId;
+    /// <remarks>
+    /// This method uses <c>Interlocked.Read</c> for downlevel compatibility
+    /// with legacy and 32-bit framework implementations.
+    /// </remarks>
+    protected long LastCommandId => Interlocked.Read(ref this.nextCommandId);
 
     /// <summary>
     /// Gets the connection used to communicate with the browser.
@@ -417,6 +421,11 @@ public class Transport : IAsyncDisposable
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, websocketUri);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
+            // SendCommandAsync requires that the pending commands collection be
+            // replaced whenever the nextCommandId is reset, to prevent potentially
+            // adding commands with colliding IDs to the collection. Every path for
+            // disconnection closes the collection, marking it as not accepting
+            // commands, so we must replace it here.
             if (!this.PendingCommands.IsAcceptingCommands)
             {
                 this.PendingCommands.Dispose();
@@ -542,6 +551,11 @@ public class Transport : IAsyncDisposable
             throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
         }
 
+        // Capture the current pending command collection ID to allow us to detect
+        // if the connection has been disconnected and reconnected before we actuall
+        // send the command down the wire.
+        string currentPendingCommandCollectionId = this.PendingCommands.Id;
+
         // Serialize the command immediately. This happens synchronously, as
         // we are doing it before the first async call in this method. We do
         // this to make the command parameters immutable for this command
@@ -569,6 +583,11 @@ public class Transport : IAsyncDisposable
             if (!this.IsConnected)
             {
                 throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
+            }
+
+            if (currentPendingCommandCollectionId != this.PendingCommands.Id)
+            {
+                throw new WebDriverBiDiConnectionException("The connection was replaced while the command was being prepared; the command was not sent. Retry the command on the current connection.");
             }
 
             await this.PendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
