@@ -124,6 +124,26 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestWaitForCapturedTasksAsyncAllocationFailureDoesNotLeakReaderCount()
+    {
+        // A count large enough to make the result-array allocation fail exercises the path
+        // where WaitForCapturedTasksAsync throws before beginning to wait. That failure must
+        // not leave the internal waiting-reader count incremented; if it did, a subsequent
+        // fulfilled sole-reader wait would see more than one reader and would not auto-close
+        // the capture session. IsCapturing being false afterward proves the count was not leaked.
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(e => { });
+        observer.StartCapturingTasks();
+
+        await Assert.ThrowsAnyAsync<OverflowException>(async () => await observer.WaitForCapturedTasksAsync(uint.MaxValue, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken));
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        Assert.Single(tasks);
+        Assert.False(observer.IsCapturing);
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksAsyncCanTimeout()
     {
         TimeSpan timeout = TimeSpan.FromSeconds(1);

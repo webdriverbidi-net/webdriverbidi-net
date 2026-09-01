@@ -290,6 +290,18 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             throw new ArgumentOutOfRangeException(nameof(timeout), TimeoutUtilities.GetInvalidTimeoutMessage("Timeout"));
         }
 
+        // Allocate everything that can throw (the result array and the cancellation token
+        // sources) before taking the lock that increments waitingReaderCount.
+        Task[] collectedTasks = new Task[count];
+        int currentCaptureCount = 0;
+
+#if NETSTANDARD2_0
+        using CancellationTokenSource timeoutCancellationTokenSource = this.timeProvider.CreateCancellationTokenSource(timeout);
+#else
+        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout, this.timeProvider);
+#endif
+        using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
+
         Channel<Task> channel;
         lock (this.captureLock)
         {
@@ -302,16 +314,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             channel = this.capturedTaskQueue;
             this.waitingReaderCount++;
         }
-
-        Task[] collectedTasks = new Task[count];
-        int currentCaptureCount = 0;
-
-#if NETSTANDARD2_0
-        using CancellationTokenSource timeoutCancellationTokenSource = this.timeProvider.CreateCancellationTokenSource(timeout);
-#else
-        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout, this.timeProvider);
-#endif
-        using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
         try
         {
