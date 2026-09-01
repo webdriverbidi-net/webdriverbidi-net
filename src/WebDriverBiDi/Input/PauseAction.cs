@@ -30,7 +30,7 @@ public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAc
     [JsonPropertyName("duration")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal ulong? SerializedDuration
+    internal ulong? SerializableDuration
     {
         get
         {
