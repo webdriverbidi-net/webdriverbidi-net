@@ -306,4 +306,29 @@ public class PendingCommandCollectionTests
         Assert.Equal("module.second", canceledCommand.CommandName);
         Assert.Equal(CommandCancellationReason.ConnectionClosed, canceledCommand.Reason);
     }
+
+    [Fact]
+    public void TestIdIsStableForTheLifetimeOfTheCollection()
+    {
+        using PendingCommandCollection collection = new();
+
+        Assert.True(Guid.TryParse(collection.Id, out _));
+        Assert.Equal(collection.Id, collection.Id);
+    }
+
+    [Fact]
+    public void TestIdIsUniqueAcrossCollections()
+    {
+        // Transport.SendCommandAsync compares this ID before and after acquiring the connection
+        // lock to detect that the collection was replaced by a reconnect, so two collections
+        // must never share an ID. Command IDs are unique only within the collection that
+        // issued them.
+        using PendingCommandCollection first = new();
+        using PendingCommandCollection second = new();
+        using PendingCommandCollection third = new(16);
+
+        Assert.NotEqual(first.Id, second.Id);
+        Assert.NotEqual(second.Id, third.Id);
+        Assert.NotEqual(first.Id, third.Id);
+    }
 }
