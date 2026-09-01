@@ -14,7 +14,7 @@ public record DirectProxyConfigurationResult : ProxyConfigurationResult
     /// Initializes a new instance of the <see cref="DirectProxyConfigurationResult"/> class.
     /// </summary>
     /// <param name="proxy">The direct proxy configuration.</param>
-    public DirectProxyConfigurationResult(DirectProxyConfiguration proxy)
+    internal DirectProxyConfigurationResult(DirectProxyConfiguration proxy)
         : base(proxy)
     {
     }

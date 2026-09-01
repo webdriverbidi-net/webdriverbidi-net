@@ -14,7 +14,7 @@ public record PacProxyConfigurationResult : ProxyConfigurationResult
     /// Initializes a new instance of the <see cref="PacProxyConfigurationResult"/> class.
     /// </summary>
     /// <param name="proxy">The proxy autoconfig proxy configuration.</param>
-    public PacProxyConfigurationResult(PacProxyConfiguration proxy)
+    internal PacProxyConfigurationResult(PacProxyConfiguration proxy)
         : base(proxy)
     {
     }

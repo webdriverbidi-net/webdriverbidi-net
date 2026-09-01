@@ -14,7 +14,7 @@ public record ManualProxyConfigurationResult : ProxyConfigurationResult
     /// Initializes a new instance of the <see cref="ManualProxyConfigurationResult"/> class.
     /// </summary>
     /// <param name="proxy">The manual proxy configuration.</param>
-    public ManualProxyConfigurationResult(ManualProxyConfiguration proxy)
+    internal ManualProxyConfigurationResult(ManualProxyConfiguration proxy)
         : base(proxy)
     {
     }

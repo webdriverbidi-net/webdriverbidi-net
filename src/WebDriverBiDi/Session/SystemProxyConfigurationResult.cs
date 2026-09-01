@@ -14,7 +14,7 @@ public record SystemProxyConfigurationResult : ProxyConfigurationResult
     /// Initializes a new instance of the <see cref="SystemProxyConfigurationResult"/> class.
     /// </summary>
     /// <param name="proxy">The system proxy configuration.</param>
-    public SystemProxyConfigurationResult(SystemProxyConfiguration proxy)
+    internal SystemProxyConfigurationResult(SystemProxyConfiguration proxy)
         : base(proxy)
     {
     }
