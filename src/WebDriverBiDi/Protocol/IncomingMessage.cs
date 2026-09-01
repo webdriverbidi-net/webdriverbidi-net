@@ -87,7 +87,7 @@ public class IncomingMessage : IDisposable
                     // property in the root element, and, if its value is a string,
                     // capture that value as the message type. Otherwise, the packet
                     // type is "unknown".
-                    if (this.payloadElement.ValueKind != JsonValueKind.Undefined && this.payloadElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String && messageTypeToken.GetString() is string value)
+                    if (this.payloadElement.ValueKind == JsonValueKind.Object && this.payloadElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String && messageTypeToken.GetString() is string value)
                     {
                         this.messagePacketType = MapMessagePacketType(value);
                     }
