@@ -67,7 +67,7 @@ The following analyzers have code fix providers:
 - **BIDI006** — Adds a `using` declaration for the `EventObserver`
 - **BIDI007** — For an `Action<T>` handler or an `async` lambda, adds the `ObservableEventHandlerOptions.RunHandlerAsynchronously` option to the `AddObserver` call. For a non-`async` `Task`-returning lambda, converts it to an `async` lambda whose first statement is `await Task.Yield();` (rewriting `return Task.CompletedTask;` / `return <task>;` accordingly) and adds the option if it is missing. No fix is offered when the handler is a method group, because the method declaration itself would have to change
 - **BIDI008** — Replaces unsafe cast with pattern matching
-- **BIDI009** — Adds `await driver.StartAsync()` before command execution
+- **BIDI009** — Moves the command execution after the existing `StartAsync` call on the same driver
 - **BIDI012** — Adds `await driver.StopAsync()` before `DisposeAsync()`; for `await using` forms, at the end of the scope that disposes the driver
 - **BIDI014** — Replaces parameterless constructor with `.Reset*` property (qualified by the type that declares it; a local declared with the derived type is retyped to match)
 - **BIDI015** — Replaces string literal with `ObservableEvent.EventName` property
@@ -240,7 +240,7 @@ No analyzer performs whole-program flow analysis; none of them correlate data ac
 | **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024 |
 | **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017, BIDI022, BIDI025, BIDI026, BIDI027 |
 | **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast) in isolation. | BIDI008 |
-| **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), the analyzer resolves the reference and walks that method body too. It does not continue transitively into further methods that handler body calls. | BIDI007, BIDI016, BIDI023 |
+| **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), BIDI007 and BIDI023 resolve the reference and walk that method body too; BIDI016 inspects only inline `async` lambda handlers and does not follow method references. None of them continue transitively into further methods that the handler body calls. | BIDI007, BIDI016, BIDI023 |
 
 ### What this means in practice
 
@@ -254,7 +254,7 @@ async Task SetupAsync() { driver = new BiDiDriver(); await driver.StartAsync(...
 async Task TestAsync() { driver.RegisterModule(new CustomModule(driver)); } // no diagnostic
 ```
 
-BIDI007, BIDI016, and BIDI023 are the exceptions: they will follow a single hop from an `AddObserver(...)` call to a method reference used as the handler, but they will not walk further than that.
+BIDI007 and BIDI023 are the exceptions: they will follow a single hop from an `AddObserver(...)` call to a method reference used as the handler, but they will not walk further than that. BIDI016 analyzes only inline `async` lambda handlers; a handler passed as a method reference is not analyzed.
 
 **Runtime enforcement remains correct.** The library still throws `InvalidOperationException` or `ObjectDisposedException` at runtime when these patterns are violated. The analyzers provide compile-time guidance where they can; they do not replace runtime validation.
 
