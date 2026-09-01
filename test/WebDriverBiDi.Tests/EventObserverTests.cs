@@ -934,6 +934,61 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestWaitForCapturedTasksCompleteTimeoutWithLateFaultDoesNotCauseUnobservedTaskException()
+    {
+        // When the completion phase times out, WaitForCapturedTasksCompleteAsync abandons
+        // the Task.WhenAll wrapper it built over the captured tasks. The wrapper holds its
+        // own aggregate of any handler faults, so it must be observed before abandonment;
+        // otherwise a handler faulting after the timeout raises UnobservedTaskException.
+        using UnobservedTaskExceptionMonitor monitor = new("late fault after completion timeout");
+
+        TaskCompletionSource allowFaultTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async _ =>
+            {
+                try
+                {
+                    await allowFaultTaskCompletionSource.Task;
+                }
+                finally
+                {
+                    handlerFaultedTaskCompletionSource.TrySetResult();
+                }
+
+                throw new InvalidOperationException("late fault after completion timeout");
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        // The event is captured but the handler is still blocked, so the completion phase
+        // times out and the method returns false, abandoning the WhenAll wrapper.
+        bool completed = await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        Assert.False(completed);
+
+        // Let the handler fault after the wait has been abandoned.
+        allowFaultTaskCompletionSource.TrySetResult();
+        await handlerFaultedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // handlerFaultedTaskCompletionSource fires from the finally block, which runs
+        // before the async state machine calls SetException to transition the task to
+        // Faulted. Give the faulting thread a scheduler quantum to finish SetException
+        // and run the wrapper's ExecuteSynchronously fault continuation before GC runs.
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        // Force garbage collection to trigger UnobservedTaskException
+        // for any task whose exception was not observed.
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        Assert.False(monitor.Raised, monitor.Exception?.ToString());
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksAsyncDoesNotRemovePendingTasksWhenConcurrentWaiterIsActive()
     {
         // When two WaitForAsync callers are both active (waitingReaderCount == 2),
@@ -1236,8 +1291,13 @@ public class EventObserverTests
     }
 
     [Fact]
-    public async Task TestSynchronouslyCompletedAsyncHandlerDoesNotRaiseCounterEvents()
+    public async Task TestSynchronouslyCompletedAsyncHandlerRaisesBalancedCounterEvents()
     {
+        // The completion continuation is attached even when the handler task has already
+        // completed by the time the observer processes it, so that a handler faulting in
+        // that window cannot escape fault observation and error reporting (see
+        // EventObserver{T}.NotifyAsync). A synchronously completed handler therefore
+        // raises a balanced increment/decrement pair of counter events.
         using TestEventListener listener = new();
         TestEventSource testEventSource = new();
         testEventSource.TestObservableEvent.AddObserver(
@@ -1246,10 +1306,20 @@ public class EventObserverTests
 
         await testEventSource.RaiseTestEventAsync("myValue");
 
-        // Give any would-be continuation a chance to fire.
-        await Task.Delay(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
+        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count < 2; i++)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(20), TestContext.Current.CancellationToken);
+        }
 
-        Assert.Empty(listener.GetEventsForEventName("AsyncHandlerTaskCount"));
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        Assert.Equal(2, allEvents.Count);
+        ReadOnlyCollection<object?>? firstPayload = allEvents[0].Payload;
+        Assert.NotNull(firstPayload);
+        int firstValue = Assert.IsType<int>(firstPayload[0]);
+        ReadOnlyCollection<object?>? lastPayload = allEvents[1].Payload;
+        Assert.NotNull(lastPayload);
+        int lastValue = Assert.IsType<int>(lastPayload[0]);
+        Assert.Equal(firstValue - 1, lastValue);
     }
 
     [Fact]
