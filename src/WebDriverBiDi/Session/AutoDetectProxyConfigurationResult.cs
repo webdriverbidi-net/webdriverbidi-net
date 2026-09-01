@@ -14,7 +14,7 @@ public record AutoDetectProxyConfigurationResult : ProxyConfigurationResult
     /// Initializes a new instance of the <see cref="AutoDetectProxyConfigurationResult"/> class.
     /// </summary>
     /// <param name="proxy">The autodetect proxy configuration.</param>
-    public AutoDetectProxyConfigurationResult(AutoDetectProxyConfiguration proxy)
+    internal AutoDetectProxyConfigurationResult(AutoDetectProxyConfiguration proxy)
         : base(proxy)
     {
     }
