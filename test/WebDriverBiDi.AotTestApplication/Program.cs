@@ -13,24 +13,39 @@ using WebDriverBiDi.Session;
 
 string browser = args.Length > 0 ? args[0].ToLowerInvariant() : "firefox";
 string url = args.Length > 1 ? args[1].ToLowerInvariant() : "https://github.com";
+string browserExecutable = args.Length > 2 ? args[2] : string.Empty;
 Console.WriteLine($"Browser: {browser}");
 
 BrowserLauncher launcher;
 switch (browser)
 {
     case "firefox":
-        launcher = BrowserLauncher.Configure(BrowserKind.Firefox)
+        BrowserLauncherBuilder firefoxBuilder = BrowserLauncher.Configure(BrowserKind.Firefox)
             .WithReleaseChannel(BrowserReleaseChannel.Alpha)
-            .AtAutomaticallyDownloadedLocation()
-            .WithHeadlessOption()
-            .Build();
+            .WithHeadlessOption();
+        if (string.IsNullOrEmpty(browserExecutable))
+        {
+            firefoxBuilder.AtAutomaticallyDownloadedLocation();
+        }
+        else
+        {
+            firefoxBuilder.AtLocation(browserExecutable);
+        }
+        launcher = firefoxBuilder.Build();
         break;
     case "chrome":
-        launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
+        BrowserLauncherBuilder chromeBuilder = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Alpha)
-            .AtAutomaticallyDownloadedLocation()
-            .WithHeadlessOption()
-            .Build();
+            .WithHeadlessOption();
+        if (string.IsNullOrEmpty(browserExecutable))
+        {
+            chromeBuilder.AtAutomaticallyDownloadedLocation();
+        }
+        else
+        {
+            chromeBuilder.AtLocation(browserExecutable);
+        }
+        launcher = chromeBuilder.Build();
         break;
     default:
         Console.Error.WriteLine($"Unknown browser: {browser}. Use 'firefox' or 'chrome'.");
