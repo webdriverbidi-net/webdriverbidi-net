@@ -1988,6 +1988,78 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestFaultingModuleEventDispatchStillNotifiesEventReceivedObservers()
+    {
+        // The module-level event dispatch and the driver-level OnEventReceived dispatch are
+        // independent: a synchronous fault in the module dispatch must not prevent
+        // OnEventReceived observers from being notified, and the fault is still surfaced
+        // through EventHandlerExceptionBehavior.
+        TaskCompletionSource eventReceivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.RegisterEvent<TestEventArgs>("module.event", (e) => throw new WebDriverBiDiException("module dispatch failure"));
+        driver.OnEventReceived.AddObserver(e => eventReceivedTaskCompletionSource.TrySetResult());
+
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "module.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await connection.RaiseDataReceivedEventAsync(json);
+
+        // The OnEventReceived observer completing proves the second dispatch stage ran even
+        // though the module dispatch faulted.
+        await eventReceivedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(() => driver.StopAsync(TestContext.Current.CancellationToken));
+        Assert.Contains(exception.Flatten().InnerExceptions, e => e.Message.Contains("module dispatch failure"));
+    }
+
+    [Fact]
+    public async Task TestFaultsInBothEventDispatchStagesAreBothSurfaced()
+    {
+        // When both the module-level dispatch and the driver-level OnEventReceived dispatch
+        // fault for the same event, both faults are surfaced together rather than one masking
+        // the other.
+        TaskCompletionSource eventReceivedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.RegisterEvent<TestEventArgs>("module.event", (e) => throw new WebDriverBiDiException("module dispatch failure"));
+        driver.OnEventReceived.AddObserver(e =>
+        {
+            eventReceivedTaskCompletionSource.TrySetResult();
+            throw new WebDriverBiDiException("event received observer failure");
+        });
+
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "module.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await connection.RaiseDataReceivedEventAsync(json);
+        await eventReceivedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(() => driver.StopAsync(TestContext.Current.CancellationToken));
+        AggregateException flattened = exception.Flatten();
+        Assert.Contains(flattened.InnerExceptions, e => e.Message.Contains("module dispatch failure"));
+        Assert.Contains(flattened.InnerExceptions, e => e.Message.Contains("event received observer failure"));
+    }
+
+    [Fact]
     public async Task TestRegistrationIsRejectedWhenTransportWasConnectedExternally()
     {
         // The driver never observed StartAsync, so its start-requested flag is false; the
