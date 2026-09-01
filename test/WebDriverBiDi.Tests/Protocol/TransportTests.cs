@@ -2251,6 +2251,27 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestRegisterNullTypeInfoThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await transport.RegisterTypeInfoResolverAsync(null!, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task TestRegisterTypeInfoOnDisposedTranportThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.DisposeAsync();
+        ObjectDisposedException exception = await Assert.ThrowsAsync<ObjectDisposedException>(async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), TestContext.Current.CancellationToken));
+
+        // Asserting the exception type alone would not test the guard, so let's
+        // also assert the type of the object disposed.
+        Assert.Equal(transport.GetType().FullName, exception.ObjectName);
+    }
+
+    [Fact]
     public async Task TestConstructionWithConnectionHavingExistingDataReceivedObserverThrows()
     {
         WebSocketConnection connection = new();

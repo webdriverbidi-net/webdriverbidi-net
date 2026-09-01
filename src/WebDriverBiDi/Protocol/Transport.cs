@@ -673,6 +673,12 @@ public class Transport : IAsyncDisposable
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default)
     {
+        this.ThrowIfDisposed();
+        if (resolver is null)
+        {
+            throw new ArgumentNullException(nameof(resolver), "The type info resolver must not be null");
+        }
+
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
