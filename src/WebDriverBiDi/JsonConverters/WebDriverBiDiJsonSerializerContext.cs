@@ -573,6 +573,7 @@ public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
         RuntimeHelpers.RunClassConstructor(typeof(PrefersColorSchemeFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(PrefersContrastMediaFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedDataMediaFeatureValue[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedMotionMediaFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedTransparencyMediaFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScanMediaFeatureValue[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationNatural[]).TypeHandle);

@@ -18,13 +18,16 @@ using System.Text.Json.Serialization;
 /// <see cref="CommandParameters{T}"/> to express the expected response type for a command.
 /// </para>
 /// <para>
-/// Authors of third-party extension libraries that add new protocol commands must annotate their
-/// own <see cref="System.Text.Json.Serialization.JsonSerializerContext"/> with
-/// <c>[JsonSerializable(typeof(CommandResponseMessage&lt;TResult&gt;))]</c> for each of their
-/// custom result types, then register the context via
-/// <see cref="WebDriverBiDi.Protocol.Transport.RegisterTypeInfoResolverAsync"/>. This pattern mirrors
-/// how the library itself registers all built-in command response types in
-/// <see cref="WebDriverBiDi.JsonConverters.WebDriverBiDiJsonSerializerContext"/>.
+/// Authors of third-party extension libraries that add new protocol commands must not register
+/// this envelope type in their own
+/// <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>: its serializable members
+/// are internal to this library, so a context in another assembly cannot generate working
+/// metadata for it. The transport builds the envelope's type info itself (see
+/// <see cref="CommandParameters{T}"/>) and asks the serializer options only for the
+/// <typeparamref name="T"/> result type. Annotate your context with
+/// <c>[JsonSerializable(typeof(TResult))]</c> for each custom result type, then register the
+/// context via <see cref="WebDriverBiDi.Protocol.Transport.RegisterTypeInfoResolverAsync"/>.
+/// See the AOT compatibility article in the library documentation for the full pattern.
 /// </para>
 /// </remarks>
 public class CommandResponseMessage<T> : CommandResponseMessage
