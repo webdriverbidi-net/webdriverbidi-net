@@ -23,6 +23,7 @@ public record GetTreeCommandResult : CommandResult
     /// <summary>
     /// Gets the read-only tree of browsing contexts.
     /// </summary>
+    [JsonIgnore]
     public IList<BrowsingContextInfo> ContextTree => this.SerializableContextTree.AsReadOnly();
 
     /// <summary>
