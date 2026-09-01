@@ -279,6 +279,100 @@ public class WebDriverBiDiJsonSerializerContextTests
         Assert.True(missingTypes.Count == 0, FormatMissingMessage("referenced property", missingTypes));
     }
 
+    [Fact]
+    public void TestAllSerializableEnumArrayTypesAreRootedInStaticConstructor()
+    {
+        // The static constructor of the context roots T[] for every enum serialized
+        // through StringEnumValueConverter<T>, because Enum.GetValues<T>() requires the
+        // array type to exist under Native AOT. The roots must be literal typeof(T[])
+        // references so the AOT compiler sees them, which means the list is hand-written
+        // and can drift. Extract the rooted array types from the constructor's IL and
+        // verify that no serializable enum is missing from the list.
+        ConstructorInfo? staticConstructor = typeof(WebDriverBiDiJsonSerializerContext).TypeInitializer;
+        Assert.NotNull(staticConstructor);
+
+        HashSet<Type> rootedElementTypes = [];
+        foreach (Type tokenType in GetLoadedTokenTypes(staticConstructor))
+        {
+            if (tokenType.IsArray && tokenType.GetElementType() is Type elementType)
+            {
+                rootedElementTypes.Add(elementType);
+            }
+        }
+
+        List<Type> missingTypes = [];
+        foreach (Type assemblyType in typeof(BiDiDriver).Assembly.GetTypes())
+        {
+            if (assemblyType.IsEnum && IsLibraryNamespace(assemblyType) &&
+                assemblyType.GetCustomAttribute<JsonConverterAttribute>() is not null &&
+                !rootedElementTypes.Contains(assemblyType))
+            {
+                missingTypes.Add(assemblyType);
+            }
+        }
+
+        Assert.True(
+            missingTypes.Count == 0,
+            $"The following serializable enum types are missing array-type rooting entries "
+            + $"in the static constructor of {nameof(WebDriverBiDiJsonSerializerContext)}:\n"
+            + string.Join("\n", missingTypes.Select(t => $"  - {t.FullName}")));
+    }
+
+    private static List<Type> GetLoadedTokenTypes(MethodBase method)
+    {
+        // Walk the method's IL and resolve the type of every ldtoken instruction.
+        // A full opcode table is required to advance past other instructions correctly,
+        // because a naive byte scan could misread an operand byte as an opcode.
+        Dictionary<short, System.Reflection.Emit.OpCode> opCodesByValue = [];
+        foreach (FieldInfo opCodeField in typeof(System.Reflection.Emit.OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static))
+        {
+            if (opCodeField.GetValue(null) is System.Reflection.Emit.OpCode knownOpCode)
+            {
+                opCodesByValue[knownOpCode.Value] = knownOpCode;
+            }
+        }
+
+        MethodBody? body = method.GetMethodBody();
+        Assert.NotNull(body);
+        byte[]? instructions = body.GetILAsByteArray();
+        Assert.NotNull(instructions);
+
+        List<Type> result = [];
+        int position = 0;
+        while (position < instructions.Length)
+        {
+            short opCodeValue = instructions[position];
+            position++;
+            if (opCodeValue == 0xFE)
+            {
+                opCodeValue = unchecked((short)((opCodeValue << 8) | instructions[position]));
+                position++;
+            }
+
+            System.Reflection.Emit.OpCode opCode = opCodesByValue[opCodeValue];
+            if (opCode == System.Reflection.Emit.OpCodes.Ldtoken)
+            {
+                int metadataToken = BitConverter.ToInt32(instructions, position);
+                result.Add(method.Module.ResolveType(metadataToken));
+            }
+
+            position += opCode.OperandType switch
+            {
+                System.Reflection.Emit.OperandType.InlineNone => 0,
+                System.Reflection.Emit.OperandType.ShortInlineBrTarget
+                    or System.Reflection.Emit.OperandType.ShortInlineI
+                    or System.Reflection.Emit.OperandType.ShortInlineVar => 1,
+                System.Reflection.Emit.OperandType.InlineVar => 2,
+                System.Reflection.Emit.OperandType.InlineI8
+                    or System.Reflection.Emit.OperandType.InlineR => 8,
+                System.Reflection.Emit.OperandType.InlineSwitch => 4 + (BitConverter.ToInt32(instructions, position) * 4),
+                _ => 4,
+            };
+        }
+
+        return result;
+    }
+
     private static HashSet<Type> GetRegisteredSerializableTypes()
     {
         // return [.. typeof(WebDriverBiDiJsonSerializerContext)
