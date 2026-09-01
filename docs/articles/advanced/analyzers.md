@@ -52,6 +52,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI025** | Warning | An `async void` method is passed as an `AddObserver` handler. It binds to the `Action<T>` overload (not `Func<T, Task>`), so it runs fire-and-forget: exceptions thrown after its first `await` are unobserved async-void faults that can crash the process, and the observer is considered complete before the handler's async work finishes. An `async` lambda or `async Task` method group binds to `Func<T, Task>` and is not reported |
 | **BIDI026** | Error | An explicit `ExecuteCommandAsync<T>` type argument disagrees with the command's result type (e.g., `ExecuteCommandAsync<WrongResult>(new StatusCommandParameters())`). The generic `CommandParameters<T>` overload no longer applies, so the call binds to the non-generic `CommandParameters` overload, compiles, and then throws `WebDriverBiDiException` at runtime because the response cannot be converted to `T`. A matching or base type argument, or an inferred one, is not reported. Skipped when either type is an open generic type parameter |
 | **BIDI027** | Error | `RegisterEvent()` called with a built-in protocol event name (e.g., `RegisterEvent<T>("log.entryAdded", …)`). Modules register those names in their constructors, so `RegisterEvent` throws `ArgumentException` at runtime. The built-in names are read from the library's `[ObservableEventName]` attributes. Only a compile-time-constant name argument is checked; observe a built-in event through its `ObservableEvent` property instead |
+| **BIDI028** | Warning | A compile-time-constant value assigned to a command-parameter property is outside the WebDriver BiDi specification range declared by `[SpecRange]` (e.g., `new ImageFormat { Quality = 1.5 }`, where `Quality` is `[0.0, 1.0]`). The range is read from the property's `[SpecRange]` attribute; a bound may be open (`±∞`). The library does not validate the range at runtime, so a conforming remote end rejects the value. A property's declared reset sentinel (such as `-1`) is treated as valid, and runtime or dynamic (non-constant) values are never flagged |
 
 ## Code Fixes
 
@@ -214,6 +215,23 @@ Each rule below is addressable by anchor (for example `#bidi004`) so its diagnos
 
 **Error.** `RegisterEvent()` is called with a built-in protocol event name (such as `"log.entryAdded"`). Modules register those names in their constructors, so `RegisterEvent` throws `ArgumentException` at runtime. Use `RegisterEvent` only for custom events; observe a built-in event through its `ObservableEvent` property and `Session.SubscribeAsync`.
 
+### BIDI028
+
+**Warning.** A compile-time-constant value assigned to a command-parameter property falls outside the WebDriver BiDi specification range that the property's `[SpecRange]` attribute declares. The library deliberately does not validate these ranges at run time—the value is representable on the wire—but a conforming remote end rejects it when the command executes. Only compile-time constants are checked; runtime or dynamic values, `null`, and a property's declared reset sentinel value are never flagged.
+
+```csharp
+// Flagged: Quality's specification range is [0.0, 1.0].
+ImageFormat format = new ImageFormat { Quality = 1.5 };
+
+// Not flagged: within range.
+ImageFormat format = new ImageFormat { Quality = 0.9 };
+
+// Not flagged: MaxDomDepth's range is [0, ∞) with a reset sentinel of -1.
+SerializationOptions options = new SerializationOptions { MaxDomDepth = -1 };
+```
+
+This is a `Warning` by design so it never blocks a build; downgrade or suppress it (see [Configuration and Suppression](#configuration-and-suppression)) if you intend to send an out-of-range constant.
+
 ## Related Documentation
 
 | Analyzer Topic | See Also |
@@ -239,7 +257,7 @@ No analyzer performs whole-program flow analysis; none of them correlate data ac
 |-------|------------------------|-------|
 | **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024 |
 | **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017, BIDI022, BIDI025, BIDI026, BIDI027 |
-| **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast) in isolation. | BIDI008 |
+| **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast, an assignment) in isolation. | BIDI008, BIDI028 |
 | **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), BIDI007 and BIDI023 resolve the reference and walk that method body too; BIDI016 inspects only inline `async` lambda handlers and does not follow method references. None of them continue transitively into further methods that the handler body calls. | BIDI007, BIDI016, BIDI023 |
 
 ### What this means in practice

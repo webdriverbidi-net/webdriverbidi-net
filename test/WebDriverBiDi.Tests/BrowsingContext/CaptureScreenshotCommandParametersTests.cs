@@ -347,13 +347,19 @@ public class CaptureScreenshotCommandParametersTests
     }
 
     [Fact]
-    public void TestImageFormatQualityParameterOutsideValidRangeThrows()
+    public void TestImageFormatQualityParameterOutsideValidRangeIsAccepted()
     {
+        // The library does not validate spec ranges client-side; a value outside the 0.0 to 1.0
+        // range is accepted and sent as-is for a conforming remote end to reject.
         ImageFormat format = new();
 
-        // Also test that Quality property can be explicitly set to null.
         format.Quality = null;
-        Assert.Contains("Quality must be between 0 and 1 inclusive.", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => format.Quality = -.01).Message);
-        Assert.Contains("Quality must be between 0 and 1 inclusive.", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => format.Quality = 1.01).Message);
+        Assert.Null(format.Quality);
+
+        format.Quality = -0.01;
+        Assert.Equal(-0.01, format.Quality);
+
+        format.Quality = 1.01;
+        Assert.Equal(1.01, format.Quality);
     }
 }

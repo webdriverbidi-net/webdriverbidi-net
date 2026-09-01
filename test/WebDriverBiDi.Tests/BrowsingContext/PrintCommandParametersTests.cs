@@ -118,14 +118,22 @@ public class PrintCommandParametersTests
     }
 
     [Fact]
-    public void TestSettingMarginsToInvalidValuesThrows()
+    public void TestSettingMarginsToOutOfRangeValuesIsAccepted()
     {
-        PrintMarginParameters properties = new();
+        // The library does not validate spec ranges client-side; an out-of-range value is accepted
+        // and sent as-is for a conforming remote end to reject.
+        PrintMarginParameters properties = new()
+        {
+            Top = -1,
+            Bottom = -1,
+            Left = -1,
+            Right = -1,
+        };
 
-        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Top = -1).Message);
-        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Bottom = -1).Message);
-        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Left = -1).Message);
-        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Right = -1).Message);
+        Assert.Equal(-1, properties.Top);
+        Assert.Equal(-1, properties.Bottom);
+        Assert.Equal(-1, properties.Left);
+        Assert.Equal(-1, properties.Right);
     }
 
     [Fact]
@@ -160,12 +168,18 @@ public class PrintCommandParametersTests
     }
 
     [Fact]
-    public void TestSettingPageSizeToInvalidValuesThrows()
+    public void TestSettingPageSizeToOutOfRangeValuesIsAccepted()
     {
-        PrintPageParameters properties = new();
+        // The library does not validate spec ranges client-side; an out-of-range value is accepted
+        // and sent as-is for a conforming remote end to reject.
+        PrintPageParameters properties = new()
+        {
+            Width = -1,
+            Height = -1,
+        };
 
-        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Width = -1).Message);
-        Assert.Contains("Value must be greater than or equal to zero", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Height = -1).Message);
+        Assert.Equal(-1, properties.Width);
+        Assert.Equal(-1, properties.Height);
     }
 
     [Fact]
@@ -374,14 +388,16 @@ public class PrintCommandParametersTests
     }
 
     [Fact]
-    public void TestSettingScaleToInvalidValueThrows()
+    public void TestSettingScaleToOutOfRangeValueIsAccepted()
     {
-        PrintCommandParameters properties = new("myContextId");
+        // The library does not validate spec ranges client-side; an out-of-range value is accepted
+        // and sent as-is for a conforming remote end to reject.
+        PrintCommandParameters properties = new("myContextId")
+        {
+            Scale = 5.0,
+        };
 
-        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = -1).Message);
-        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = 0.01).Message);
-        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = 2.01).Message);
-        Assert.Contains("Value must be between 0.1 and 2.0", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Scale = 0).Message);
+        Assert.Equal(5.0, properties.Scale);
     }
 
     [Fact]

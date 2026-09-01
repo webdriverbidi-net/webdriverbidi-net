@@ -21,46 +21,30 @@ public class PrintPageParameters
     }
 
     /// <summary>
-    /// Gets or sets the width in centimeters of the page for printing.
-    /// The value must be greater than or equal to zero; the protocol further requires a minimum of
-    /// 0.0352 cm (1 point), which the remote end enforces. If omitted, defaults to 21.59.
+    /// Gets or sets the width in centimeters of the page for printing. If omitted, defaults to 21.59.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 0.0352 (the protocol's minimum of
+    /// one point). This property does not validate its value; a value outside this range is sent
+    /// as-is, and a conforming remote end rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("width")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? Width
-    {
-        get;
-        set
-        {
-            if (value is not null && value.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.0352, double.PositiveInfinity)]
+    public double? Width { get; set; }
 
     /// <summary>
-    /// Gets or sets the height in centimeters of the page for printing.
-    /// The value must be greater than or equal to zero; the protocol further requires a minimum of
-    /// 0.0352 cm (1 point), which the remote end enforces. If omitted, defaults to 27.94.
+    /// Gets or sets the height in centimeters of the page for printing. If omitted, defaults to 27.94.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 0.0352 (the protocol's minimum of
+    /// one point). This property does not validate its value; a value outside this range is sent
+    /// as-is, and a conforming remote end rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("height")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? Height
-    {
-        get;
-        set
-        {
-            if (value is not null && value.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.0352, double.PositiveInfinity)]
+    public double? Height { get; set; }
 }

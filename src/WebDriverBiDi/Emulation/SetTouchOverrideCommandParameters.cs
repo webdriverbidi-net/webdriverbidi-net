@@ -37,11 +37,17 @@ public class SetTouchOverrideCommandParameters : CommandParameters<SetTouchOverr
     public override string MethodName => "emulation.setTouchOverride";
 
     /// <summary>
-    /// Gets or sets the emulated touch points settings for the browser.
+    /// Gets or sets the emulated maximum number of touch points for the browser.
     /// When <see langword="null"/>, clears the override.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 1. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("maxTouchPoints")]
     [JsonInclude]
+    [SpecRange(1.0, double.PositiveInfinity)]
     public ulong? MaxTouchPoints { get; set; }
 
     /// <summary>

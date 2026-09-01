@@ -22,16 +22,28 @@ public class SerializationOptions
     /// <summary>
     /// Gets or sets the maximum depth when serializing DOM nodes from script execution.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero (or <see cref="InfiniteMaxDomDepth"/>
+    /// for no limit). This property does not validate its value; a value outside this range is sent as-is,
+    /// and a conforming remote end rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("maxDomDepth")]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = InfiniteMaxDomDepth)]
     public long? MaxDomDepth { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum depth when serializing script objects from script execution.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("maxObjectDepth")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [SpecRange(0.0, double.PositiveInfinity)]
     public long? MaxObjectDepth { get; set; }
 
     /// <summary>

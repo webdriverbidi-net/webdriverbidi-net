@@ -62,24 +62,17 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     public PrintPageParameters? Page { get; set; }
 
     /// <summary>
-    /// Gets or sets the scale factor of the printed page.
-    /// The value must be between 0.1 and 2.0 inclusive, and if omitted, defaults to 1.0.
+    /// Gets or sets the scale factor of the printed page. If omitted, defaults to 1.0.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property range from 0.1 to 2.0, inclusive. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("scale")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Scale
-    {
-        get;
-        set
-        {
-            if (value is not null && (value.Value < 0.1 || value.Value > 2.0))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be between 0.1 and 2.0");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.1, 2.0)]
+    public double? Scale { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to shrink the content to fit on a single page. If omitted, defaults to true.

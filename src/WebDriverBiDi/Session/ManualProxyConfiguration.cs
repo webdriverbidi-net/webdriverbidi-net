@@ -45,8 +45,14 @@ public class ManualProxyConfiguration : ProxyConfiguration
     /// <summary>
     /// Gets or sets the version of the SOCKS proxy to be used.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property range from 0 to 255, inclusive. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("socksVersion")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [SpecRange(0.0, 255.0)]
     public int? SocksVersion { get; set; }
 
     /// <summary>

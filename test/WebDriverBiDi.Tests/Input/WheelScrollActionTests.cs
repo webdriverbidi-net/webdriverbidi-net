@@ -299,5 +299,11 @@ public class WheelScrollActionTests
         // than letting an OverflowException surface later from inside serialization.
         WheelScrollAction properties = new();
         Assert.Contains("Duration must not be negative", Assert.ThrowsAny<ArgumentOutOfRangeException>(() => properties.Duration = TimeSpan.FromMilliseconds(-1)).Message);
+
+        // A null and a non-negative value are both accepted, exercising the setter's other paths.
+        properties.Duration = null;
+        Assert.Null(properties.Duration);
+        properties.Duration = TimeSpan.FromMilliseconds(1);
+        Assert.Equal(TimeSpan.FromMilliseconds(1), properties.Duration);
     }
 }

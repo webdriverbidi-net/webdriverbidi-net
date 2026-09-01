@@ -20,82 +20,54 @@ public class PrintMarginParameters
     }
 
     /// <summary>
-    /// Gets or sets the left margin in centimeters for printing.
-    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
+    /// Gets or sets the left margin in centimeters for printing. If omitted, defaults to 1.0.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 0.0. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("left")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Left
-    {
-        get;
-        set
-        {
-            if (value is not null && value.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.0, double.PositiveInfinity)]
+    public double? Left { get; set; }
 
     /// <summary>
-    /// Gets or sets the right margin in centimeters for printing.
-    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
+    /// Gets or sets the right margin in centimeters for printing. If omitted, defaults to 1.0.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 0.0. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("right")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Right
-    {
-        get;
-        set
-        {
-            if (value is not null && value.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.0, double.PositiveInfinity)]
+    public double? Right { get; set; }
 
     /// <summary>
-    /// Gets or sets the top margin in centimeters for printing.
-    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
+    /// Gets or sets the top margin in centimeters for printing. If omitted, defaults to 1.0.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 0.0. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("top")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Top
-    {
-        get;
-        set
-        {
-            if (value is not null && value.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.0, double.PositiveInfinity)]
+    public double? Top { get; set; }
 
     /// <summary>
-    /// Gets or sets the bottom margin in centimeters for printing.
-    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
+    /// Gets or sets the bottom margin in centimeters for printing. If omitted, defaults to 1.0.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to 0.0. This property does not
+    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
+    /// rejects it when the command is executed.
+    /// </remarks>
     [JsonPropertyName("bottom")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Bottom
-    {
-        get;
-        set
-        {
-            if (value is not null && value.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
-            }
-
-            field = value;
-        }
-    }
+    [SpecRange(0.0, double.PositiveInfinity)]
+    public double? Bottom { get; set; }
 }

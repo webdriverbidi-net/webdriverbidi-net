@@ -257,6 +257,51 @@ public class WebDriverBiDiConventionTests
         }
     }
 
+    [Fact]
+    public void TestSpecRangeAttributesAreWellFormed()
+    {
+        List<PropertyInfo> rangedProperties = GetSpecRangeProperties().ToList();
+
+        // Guard against the sweep silently finding nothing (for example if the attribute were renamed
+        // or every application removed): the library has many spec-ranged command-parameter properties.
+        Assert.True(rangedProperties.Count >= 15, $"Expected the library to contain multiple [SpecRange]-decorated properties, but found {rangedProperties.Count}.");
+
+        List<string> offenders = [];
+        foreach (PropertyInfo property in rangedProperties)
+        {
+            SpecRangeAttribute attribute = property.GetCustomAttribute<SpecRangeAttribute>()!;
+            string propertyName = $"{property.DeclaringType!.FullName}.{property.Name}";
+
+            if (attribute.Minimum > attribute.Maximum)
+            {
+                offenders.Add($"{propertyName} (minimum {attribute.Minimum} is greater than maximum {attribute.Maximum})");
+            }
+
+            // A reset sentinel is by definition a value outside the specification range; if it fell
+            // inside the range it would be indistinguishable from an ordinary valid value.
+            if (attribute.HasSentinel && attribute.SentinelValue >= attribute.Minimum && attribute.SentinelValue <= attribute.Maximum)
+            {
+                offenders.Add($"{propertyName} (sentinel {attribute.SentinelValue} is inside the valid range [{attribute.Minimum}, {attribute.Maximum}])");
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"[SpecRange] attributes must declare a valid range with the minimum no greater than the maximum, and any sentinel must fall outside that range. Offenders: {string.Join(", ", offenders)}");
+    }
+
+    private static IEnumerable<PropertyInfo> GetSpecRangeProperties()
+    {
+        foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
+        {
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (property.GetCustomAttribute<SpecRangeAttribute>() is not null)
+                {
+                    yield return property;
+                }
+            }
+        }
+    }
+
     private static IEnumerable<PropertyInfo> GetListProperties()
     {
         foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
