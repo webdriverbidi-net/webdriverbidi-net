@@ -106,10 +106,10 @@ driver.Speculation.OnPrefetchStatusUpdated   // Prefetch status of a resource up
 [!code-csharp[Bluetooth Events](../code/events-observables/EventObserverSamples.cs#BluetoothEvents)]
 
 ```csharp
-driver.Bluetooth.OnCharacteristicGenerated      // GATT characteristic event generated
-driver.Bluetooth.OnDescriptorGenerated          // GATT descriptor event generated
-driver.Bluetooth.OnGattConnectionAttempted      // GATT connection attempted
-driver.Bluetooth.OnRequestDevicePromptUpdated   // Device request prompt updated
+driver.Bluetooth.OnCharacteristicEventGenerated   // GATT characteristic event generated
+driver.Bluetooth.OnDescriptorEventGenerated       // GATT descriptor event generated
+driver.Bluetooth.OnGattConnectionAttempted        // GATT connection attempted
+driver.Bluetooth.OnRequestDevicePromptUpdated     // Device request prompt updated
 ```
 
 #### Modules Without Observable Events
