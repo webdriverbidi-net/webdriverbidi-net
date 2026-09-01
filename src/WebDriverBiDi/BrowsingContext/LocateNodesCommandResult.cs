@@ -24,6 +24,7 @@ public record LocateNodesCommandResult : CommandResult
     /// <summary>
     /// Gets the read-only list of located nodes.
     /// </summary>
+    [JsonIgnore]
     public IList<NodeRemoteValue> Nodes => this.SerializableNodes.AsReadOnly();
 
     /// <summary>
