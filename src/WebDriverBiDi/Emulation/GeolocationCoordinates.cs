@@ -15,15 +15,15 @@ public class GeolocationCoordinates
     /// <summary>
     /// Initializes a new instance of the <see cref="GeolocationCoordinates"/> class.
     /// </summary>
-    /// <param name="longitude">
-    /// The longitude of the geographic position in degrees. Positive values are east of the prime
-    /// meridian; negative values are west of the prime meridian.
-    /// </param>
     /// <param name="latitude">
     /// The latitude of the geographic position in degrees. Positive values are north of the equator;
     /// negative values are south of the equator.
     /// </param>
-    public GeolocationCoordinates(double longitude, double latitude)
+    /// <param name="longitude">
+    /// The longitude of the geographic position in degrees. Positive values are east of the prime
+    /// meridian; negative values are west of the prime meridian.
+    /// </param>
+    public GeolocationCoordinates(double latitude, double longitude)
     {
         this.Longitude = longitude;
         this.Latitude = latitude;

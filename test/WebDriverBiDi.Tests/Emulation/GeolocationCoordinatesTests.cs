@@ -13,17 +13,17 @@ public class GeolocationCoordinatesTests
         JObject serialized = JObject.Parse(json);
         Assert.Equal(2, serialized.Count);
 
-        Assert.True(serialized.ContainsKey("longitude"));
-        JToken? longitude = serialized["longitude"];
-        Assert.NotNull(longitude);
-        Assert.Equal(JTokenType.Float, longitude.Type);
-        Assert.Equal(123.45, longitude.Value<double>());
-
         Assert.True(serialized.ContainsKey("latitude"));
         JToken? latitude = serialized["latitude"];
         Assert.NotNull(latitude);
         Assert.Equal(JTokenType.Float, latitude.Type);
-        Assert.Equal(-67.89, latitude.Value<double>());
+        Assert.Equal(123.45, latitude.Value<double>());
+
+        Assert.True(serialized.ContainsKey("longitude"));
+        JToken? longitude = serialized["longitude"];
+        Assert.NotNull(longitude);
+        Assert.Equal(JTokenType.Float, longitude.Type);
+        Assert.Equal(-67.89, longitude.Value<double>());
     }
 
     [Fact]
@@ -37,17 +37,17 @@ public class GeolocationCoordinatesTests
         JObject serialized = JObject.Parse(json);
         Assert.Equal(3, serialized.Count);
 
-        Assert.True(serialized.ContainsKey("longitude"));
-        JToken? longitude = serialized["longitude"];
-        Assert.NotNull(longitude);
-        Assert.Equal(JTokenType.Float, longitude.Type);
-        Assert.Equal(123.45, longitude.Value<double>());
-
         Assert.True(serialized.ContainsKey("latitude"));
         JToken? latitude = serialized["latitude"];
         Assert.NotNull(latitude);
         Assert.Equal(JTokenType.Float, latitude.Type);
-        Assert.Equal(-67.89, latitude.Value<double>());
+        Assert.Equal(123.45, latitude.Value<double>());
+
+        Assert.True(serialized.ContainsKey("longitude"));
+        JToken? longitude = serialized["longitude"];
+        Assert.NotNull(longitude);
+        Assert.Equal(JTokenType.Float, longitude.Type);
+        Assert.Equal(-67.89, longitude.Value<double>());
 
         Assert.True(serialized.ContainsKey("accuracy"));
         JToken? accuracy = serialized["accuracy"];
@@ -68,17 +68,17 @@ public class GeolocationCoordinatesTests
         JObject serialized = JObject.Parse(json);
         Assert.Equal(4, serialized.Count);
 
-        Assert.True(serialized.ContainsKey("longitude"));
-        JToken? longitude = serialized["longitude"];
-        Assert.NotNull(longitude);
-        Assert.Equal(JTokenType.Float, longitude.Type);
-        Assert.Equal(123.45, longitude.Value<double>());
-
         Assert.True(serialized.ContainsKey("latitude"));
         JToken? latitude = serialized["latitude"];
         Assert.NotNull(latitude);
         Assert.Equal(JTokenType.Float, latitude.Type);
-        Assert.Equal(-67.89, latitude.Value<double>());
+        Assert.Equal(123.45, latitude.Value<double>());
+
+        Assert.True(serialized.ContainsKey("longitude"));
+        JToken? longitude = serialized["longitude"];
+        Assert.NotNull(longitude);
+        Assert.Equal(JTokenType.Float, longitude.Type);
+        Assert.Equal(-67.89, longitude.Value<double>());
 
         Assert.True(serialized.ContainsKey("altitude"));
         JToken? altitude = serialized["altitude"];
@@ -105,17 +105,17 @@ public class GeolocationCoordinatesTests
         JObject serialized = JObject.Parse(json);
         Assert.Equal(4, serialized.Count);
 
-        Assert.True(serialized.ContainsKey("longitude"));
-        JToken? longitude = serialized["longitude"];
-        Assert.NotNull(longitude);
-        Assert.Equal(JTokenType.Float, longitude.Type);
-        Assert.Equal(123.45, longitude.Value<double>());
-
         Assert.True(serialized.ContainsKey("latitude"));
         JToken? latitude = serialized["latitude"];
         Assert.NotNull(latitude);
         Assert.Equal(JTokenType.Float, latitude.Type);
-        Assert.Equal(-67.89, latitude.Value<double>());
+        Assert.Equal(123.45, latitude.Value<double>());
+
+        Assert.True(serialized.ContainsKey("longitude"));
+        JToken? longitude = serialized["longitude"];
+        Assert.NotNull(longitude);
+        Assert.Equal(JTokenType.Float, longitude.Type);
+        Assert.Equal(-67.89, longitude.Value<double>());
 
         Assert.True(serialized.ContainsKey("speed"));
         JToken? speed = serialized["speed"];
@@ -143,17 +143,17 @@ public class GeolocationCoordinatesTests
         JObject serialized = JObject.Parse(json);
         Assert.Equal(3, serialized.Count);
 
-        Assert.True(serialized.ContainsKey("longitude"));
-        JToken? longitude = serialized["longitude"];
-        Assert.NotNull(longitude);
-        Assert.Equal(JTokenType.Float, longitude.Type);
-        Assert.Equal(123.45, longitude.Value<double>());
-
         Assert.True(serialized.ContainsKey("latitude"));
         JToken? latitude = serialized["latitude"];
         Assert.NotNull(latitude);
         Assert.Equal(JTokenType.Float, latitude.Type);
-        Assert.Equal(-67.89, latitude.Value<double>());
+        Assert.Equal(123.45, latitude.Value<double>());
+
+        Assert.True(serialized.ContainsKey("longitude"));
+        JToken? longitude = serialized["longitude"];
+        Assert.NotNull(longitude);
+        Assert.Equal(JTokenType.Float, longitude.Type);
+        Assert.Equal(-67.89, longitude.Value<double>());
 
         Assert.True(serialized.ContainsKey("speed"));
         JToken? speed = serialized["speed"];

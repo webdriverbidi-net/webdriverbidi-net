@@ -46,17 +46,17 @@ public class SetGeolocationOverrideCoordinatesCommandParametersTests
         Assert.NotNull(coordinatesObject);
         Assert.Equal(2, coordinatesObject.Count);
 
-        Assert.True(coordinatesObject.ContainsKey("longitude"));
-        JToken? longitude = coordinatesObject["longitude"];
-        Assert.NotNull(longitude);
-        Assert.Equal(JTokenType.Float, longitude.Type);
-        Assert.Equal(123.45, longitude.Value<double>());
-
         Assert.True(coordinatesObject.ContainsKey("latitude"));
         JToken? latitude = coordinatesObject["latitude"];
         Assert.NotNull(latitude);
         Assert.Equal(JTokenType.Float, latitude.Type);
-        Assert.Equal(-67.89, latitude.Value<double>());
+        Assert.Equal(123.45, latitude.Value<double>());
+
+        Assert.True(coordinatesObject.ContainsKey("longitude"));
+        JToken? longitude = coordinatesObject["longitude"];
+        Assert.NotNull(longitude);
+        Assert.Equal(JTokenType.Float, longitude.Type);
+        Assert.Equal(-67.89, longitude.Value<double>());
     }
 
     [Fact]
