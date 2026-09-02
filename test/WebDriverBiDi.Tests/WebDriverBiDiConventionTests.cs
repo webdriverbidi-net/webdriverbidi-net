@@ -277,9 +277,17 @@ public class WebDriverBiDiConventionTests
                 offenders.Add($"{propertyName} (minimum {attribute.Minimum} is greater than maximum {attribute.Maximum})");
             }
 
+            // With an exclusive maximum, a minimum equal to the maximum would describe an empty range.
+            if (attribute.MaximumExclusive && attribute.Minimum == attribute.Maximum)
+            {
+                offenders.Add($"{propertyName} (minimum {attribute.Minimum} equals the exclusive maximum {attribute.Maximum}, describing an empty range)");
+            }
+
             // A reset sentinel is by definition a value outside the specification range; if it fell
-            // inside the range it would be indistinguishable from an ordinary valid value.
-            if (attribute.HasSentinel && attribute.SentinelValue >= attribute.Minimum && attribute.SentinelValue <= attribute.Maximum)
+            // inside the range it would be indistinguishable from an ordinary valid value. A value
+            // equal to an exclusive maximum is outside the range, so it is a legal sentinel.
+            bool sentinelBelowUpperBound = attribute.MaximumExclusive ? attribute.SentinelValue < attribute.Maximum : attribute.SentinelValue <= attribute.Maximum;
+            if (attribute.HasSentinel && attribute.SentinelValue >= attribute.Minimum && sentinelBelowUpperBound)
             {
                 offenders.Add($"{propertyName} (sentinel {attribute.SentinelValue} is inside the valid range [{attribute.Minimum}, {attribute.Maximum}])");
             }

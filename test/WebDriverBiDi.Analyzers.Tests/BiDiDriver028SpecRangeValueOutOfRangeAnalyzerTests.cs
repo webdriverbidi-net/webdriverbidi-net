@@ -39,7 +39,7 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("1.5", "Quality", "0", "1");
+            .WithArguments("1.5", "Quality", "[0, 1]");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
@@ -66,7 +66,7 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("-0.1", "Quality", "0", "1");
+            .WithArguments("-0.1", "Quality", "[0, 1]");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
@@ -143,13 +143,13 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("2", "Grid", "0", "1");
+            .WithArguments("2", "Grid", "[0, 1]");
 
         DiagnosticResult belowExpected = new DiagnosticResult(
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(1)
-            .WithArguments("-2", "Grid", "0", "1");
+            .WithArguments("-2", "Grid", "[0, 1]");
 
         await VerifyDiagnosticsAsync(testCode, aboveExpected, belowExpected);
     }
@@ -199,7 +199,7 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("-5", "MaxDomDepth", "0", "∞");
+            .WithArguments("-5", "MaxDomDepth", "[0, ∞]");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
@@ -227,7 +227,7 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("-1", "Left", "0", "∞");
+            .WithArguments("-1", "Left", "[0, ∞]");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
@@ -349,9 +349,60 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("'A'", "Quality", "0", "1");
+            .WithArguments("'A'", "Quality", "[0, 1]");
 
         await VerifyDiagnosticsAsync(testCode, expected);
+    }
+
+    [Fact]
+    public async Task Heading_EqualToExclusiveMaximum_ReportsWarning()
+    {
+        // Heading has range [0.0, 360.0) — the specification's CDDL range 0.0...360.0
+        // excludes its upper bound, so 360.0 itself is invalid.
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GeolocationCoordinates coordinates = new GeolocationCoordinates(0.0, 0.0) { Heading = {|#0:360.0|} };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("360.0", "Heading", "[0, 360)");
+
+        await VerifyDiagnosticsAsync(testCode, expected);
+    }
+
+    [Fact]
+    public async Task Heading_WithinExclusiveMaximum_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GeolocationCoordinates north = new GeolocationCoordinates(0.0, 0.0) { Heading = 0.0 };
+                        GeolocationCoordinates almostNorth = new GeolocationCoordinates(0.0, 0.0) { Heading = 359.9 };
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
     }
 
     [Fact]
