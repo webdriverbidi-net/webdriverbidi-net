@@ -158,6 +158,24 @@ public class ObservableEventTests
     }
 
     [Fact]
+    public async Task TestSingleExceptionFromMultiObserverNotificationPreservesStackTrace()
+    {
+        // With multiple observers, a lone collected exception is rethrown via
+        // ExceptionDispatchInfo, so the throwing handler's frame survives in the stack
+        // trace; a plain rethrow of the caught object would reset the trace at the
+        // rethrow site, degrading diagnostics exactly when a second observer is added.
+        static void ThrowingHandlerMethod(TestObservableEventArgs e) => throw new InvalidOperationException("observer failure");
+
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(ThrowingHandlerMethod);
+        testEventSource.TestObservableEvent.AddObserver(e => { });
+
+        InvalidOperationException exception = await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await testEventSource.RaiseTestEventAsync("myValue"));
+        Assert.NotNull(exception.StackTrace);
+        Assert.Contains(nameof(ThrowingHandlerMethod), exception.StackTrace);
+    }
+
+    [Fact]
     public async Task TestMultipleThrowingObserversProduceAggregateException()
     {
         TestEventSource testEventSource = new();
