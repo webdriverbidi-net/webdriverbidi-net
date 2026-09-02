@@ -1647,6 +1647,79 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestDisposeDuringInFlightConnectSerializesWithConnectAttempt()
+    {
+        // Disposing a transport whose connect attempt is still in flight must not tear the
+        // semaphore and connection out from under the attempt. Disposal waits for the
+        // attempt to complete, then tears down the connected transport normally.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+        };
+        TestTransport transport = new(connection);
+
+        // ConnectAsync runs synchronously (holding the connection lock) until it awaits the
+        // connection's start barrier, so when the call returns a pending task the transport
+        // is deterministically mid-connect.
+        Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        // Disposal must be blocked waiting for the in-flight attempt, not proceeding.
+        ValueTask disposeTask = transport.DisposeAsync();
+        Assert.False(disposeTask.IsCompleted);
+
+        startBarrier.SetResult();
+        await connectTask;
+        await disposeTask;
+
+        Assert.Equal(TransportState.Disconnected, transport.State);
+        Assert.True(transport.IsDisposed);
+    }
+
+    [Fact]
+    public async Task TestDisposeDuringStuckConnectTimesOutAndProceeds()
+    {
+        // When the in-flight connect attempt never completes, disposal must not deadlock:
+        // after ShutdownTimeout it logs a warning and proceeds with the teardown, exactly
+        // as disposal behaved before the serialization was added.
+        List<LogMessageEventArgs> logs = [];
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+        };
+        TestTransport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromMilliseconds(100),
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e);
+            }
+        });
+
+        Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        await transport.DisposeAsync();
+
+        Assert.True(transport.IsDisposed);
+        lock (logs)
+        {
+            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-flight connect attempt to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
+        }
+
+        // Release the stuck attempt; it now completes against a disposed transport and
+        // faults (its finally releases the disposed connection lock), which is the same
+        // degradation the pre-serialization disposal produced for this pathological case.
+        startBarrier.SetResult();
+        await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connectTask);
+    }
+
+    [Fact]
     public async Task TestExceptionInTransportEventReceivedCanTerminate()
     {
         // string receivedName = string.Empty;
