@@ -36,6 +36,37 @@ public class CapabilitiesResultTests
     }
 
     [Fact]
+    public void TestCanDeserializeNumericAdditionalCapabilitiesBeyondDoubleRange()
+    {
+        // Extension data numbers whose magnitude exceeds the range of double must
+        // convert to the matching signed infinity on every framework; on .NET
+        // Framework (reachable only via the netstandard2.0 build) the conversion
+        // takes an explicit fallback path in JsonConverterUtilities that produces
+        // the same values asserted here.
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "fractionalCap": 1.5,
+                        "overflowCap": 1e400,
+                        "negativeOverflowCap": -1e400
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.NotNull(result);
+
+        Assert.Equal(1.5, result.AdditionalCapabilities["fractionalCap"]);
+        double overflowValue = Assert.IsType<double>(result.AdditionalCapabilities["overflowCap"]);
+        Assert.True(double.IsPositiveInfinity(overflowValue));
+        double negativeOverflowValue = Assert.IsType<double>(result.AdditionalCapabilities["negativeOverflowCap"]);
+        Assert.True(double.IsNegativeInfinity(negativeOverflowValue));
+    }
+
+    [Fact]
     public void TestCanDeserializeWithWebSocketUrl()
     {
         string json = """

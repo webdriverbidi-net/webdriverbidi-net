@@ -104,7 +104,10 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
                         "timestamp": {{epochTimestamp}},
                         "stackTrace": {
                           "callFrames": []
-                        }
+                        },
+                        "compatFractionalExtra": 1.5,
+                        "compatOverflowExtra": 1e400,
+                        "compatNegativeOverflowExtra": -1e400
                       }
                     }
                     """;
@@ -125,6 +128,10 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
         await server.StopAsync();
 
         Assert.Contains(".NETStandard,Version=v2.0", runResult.StandardOutputConsoleContent);
+
+        // Prove the numeric extension-data validation actually ran (rather than being silently
+        // skipped), exercising JsonConverterUtilities' netstandard2.0 numeric conversion path.
+        Assert.Contains("Numeric extension data converted as expected.", runResult.StandardOutputConsoleContent);
 
         // Prove the pipe transport round trip actually ran (rather than being silently skipped),
         // exercising the netstandard2.0 PipeConnection code paths in addition to the WebSocket ones.

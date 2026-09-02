@@ -41,8 +41,14 @@ try
     driver = new BiDiDriver(TimeSpan.FromSeconds(10));
 
     // Exercises EventObserver<T>'s netstandard2.0-specific CancellationTokenSource/TimeProvider
-    // extension path (used internally by WaitForCapturedTasksAsync below).
-    EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => Console.WriteLine($"Log entry received: {e.Text}"));
+    // extension path (used internally by WaitForCapturedTasksAsync below). The event args are
+    // captured so that the extension-data conversion path can be validated after the wait.
+    EntryAddedEventArgs? receivedEntry = null;
+    EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e =>
+    {
+        receivedEntry = e;
+        Console.WriteLine($"Log entry received: {e.Text}");
+    });
 
     await driver.StartAsync(webSocketUrl);
     Console.WriteLine("Connected.");
@@ -62,6 +68,38 @@ try
     {
         throw new InvalidOperationException("Did not receive the expected log entry event within the timeout.");
     }
+
+    // Exercise the netstandard2.0 numeric extension-data conversion path in
+    // JsonConverterUtilities: the scripted event carries a fractional extension
+    // property and two whose magnitudes exceed the range of double. Modern runtimes
+    // round the over-range values to signed infinity when parsing; the netstandard2.0
+    // build contains an explicit fallback that produces the same signed infinities
+    // when running on .NET Framework, where that parse fails instead. The expected
+    // values are therefore identical on every runtime this application can run on.
+    if (receivedEntry is null)
+    {
+        throw new InvalidOperationException("The log entry event args were not captured.");
+    }
+
+    object? fractionalValue = receivedEntry.AdditionalData["compatFractionalExtra"];
+    if (fractionalValue is not double fractional || fractional != 1.5)
+    {
+        throw new InvalidOperationException($"Expected fractional extension datum to convert to 1.5, but was '{fractionalValue}'.");
+    }
+
+    object? overflowValue = receivedEntry.AdditionalData["compatOverflowExtra"];
+    if (overflowValue is not double overflow || !double.IsPositiveInfinity(overflow))
+    {
+        throw new InvalidOperationException($"Expected overflowing extension datum to convert to positive infinity, but was '{overflowValue}'.");
+    }
+
+    object? negativeOverflowValue = receivedEntry.AdditionalData["compatNegativeOverflowExtra"];
+    if (negativeOverflowValue is not double negativeOverflow || !double.IsNegativeInfinity(negativeOverflow))
+    {
+        throw new InvalidOperationException($"Expected negative overflowing extension datum to convert to negative infinity, but was '{negativeOverflowValue}'.");
+    }
+
+    Console.WriteLine("Numeric extension data converted as expected.");
 
     // Exercise the command-failure path: the scripted server replies to session.status with a BiDi
     // error response, which must surface as a WebDriverBiDiCommandException after the netstandard2.0

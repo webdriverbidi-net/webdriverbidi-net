@@ -86,11 +86,30 @@ internal static class JsonConverterUtilities
             {
                 return longValue;
             }
-            else
+
+#if NETSTANDARD2_0
+            if (valueElement.TryGetDouble(out double doubleValue))
             {
-                _ = valueElement.TryGetDouble(out double doubleValue);
                 return doubleValue;
             }
+
+            // Only the netstandard2.0 build can run on .NET Framework, where parsing a
+            // syntactically valid JSON number whose magnitude exceeds the range of double
+            // fails rather than rounding to signed infinity as .NET Core 3.0 and later
+            // runtimes do; such overflow is the only way parsing a number token can fail.
+            // Produce the same signed infinity the modern runtimes produce, rather than
+            // silently yielding 0.0 from the failed parse. This branch cannot execute on
+            // a modern runtime (the parse above always succeeds there), so it is
+            // exercised only when running on .NET Framework.
+            return valueElement.GetRawText().StartsWith("-", StringComparison.Ordinal) ? double.NegativeInfinity : double.PositiveInfinity;
+#else
+            // A syntactically valid JSON number always parses successfully on the
+            // runtimes that can load the modern builds; magnitudes beyond the range of
+            // double round to signed infinity, so the return value of TryGetDouble
+            // needs no inspection.
+            _ = valueElement.TryGetDouble(out double doubleValue);
+            return doubleValue;
+#endif
         }
         else
         {
