@@ -32,6 +32,13 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class.
     /// </summary>
+    /// <remarks>
+    /// The specification requires a subscription to name at least one event. Unlike values
+    /// whose specification constraints the remote end enforces, an empty events list is
+    /// rejected here: a subscription to no events cannot be meaningful under any revision
+    /// of the specification, and accepting it would only defer a certain failure to the
+    /// remote end.
+    /// </remarks>
     /// <param name="events">The list of events to which to subscribe or unsubscribe.</param>
     /// <param name="contexts">The list of browsing context IDs for which to subscribe to the specified events.</param>
     /// <param name="userContexts">The list of user context IDs for which to subscribe to the specified events.</param>

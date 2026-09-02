@@ -35,8 +35,7 @@ public static class SessionModuleExtensions
     /// <returns>An Task representing the asynchronous operation.</returns>
     public static async Task UnsubscribeAsync(this SessionModule module, string subscriptionId, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        UnsubscribeByIdsCommandParameters parameters = new();
-        parameters.SubscriptionIds.Add(subscriptionId);
+        UnsubscribeByIdsCommandParameters parameters = new(subscriptionId);
         await module.UnsubscribeAsync(parameters).ConfigureAwait(false);
     }
 }

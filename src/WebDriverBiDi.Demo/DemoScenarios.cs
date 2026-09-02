@@ -819,8 +819,7 @@ public static class DemoScenarios
         await monitor.StopMonitoringAsync();
         Console.WriteLine("Network traffic monitor stopped");
 
-        UnsubscribeByIdsCommandParameters unsubscribe = new();
-        unsubscribe.SubscriptionIds.Add(navigationSubscriptionId);
+        UnsubscribeByIdsCommandParameters unsubscribe = new(navigationSubscriptionId);
         await driver.Session.UnsubscribeAsync(unsubscribe);
     }
 
@@ -986,8 +985,7 @@ public static class DemoScenarios
 
         // Unsubscribe from one of the user contexts, and validate the other event observer
         // still processes the event from the other user context
-        UnsubscribeByIdsCommandParameters unsubscribeSecondObserverParameters = new();
-        unsubscribeSecondObserverParameters.SubscriptionIds.Add(secondNetworkSubscriptionId);
+        UnsubscribeByIdsCommandParameters unsubscribeSecondObserverParameters = new(secondNetworkSubscriptionId);
         await driver.Session.UnsubscribeAsync(unsubscribeSecondObserverParameters);
 
         // Perform the navigation operations asynchronously, to simulate parallel test runs.

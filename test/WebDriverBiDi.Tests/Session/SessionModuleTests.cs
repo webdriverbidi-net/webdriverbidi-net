@@ -115,8 +115,7 @@ public class SessionModuleTests
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        UnsubscribeByAttributesCommandParameters unsubscribeParameters = new();
-        unsubscribeParameters.Events.Add("log.entryAdded");
+        UnsubscribeByAttributesCommandParameters unsubscribeParameters = new("log.entryAdded");
         UnsubscribeCommandResult result = await module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
@@ -142,8 +141,7 @@ public class SessionModuleTests
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
 
-        UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
-        unsubscribeParameters.SubscriptionIds.Add("mySubscriptionId");
+        UnsubscribeByIdsCommandParameters unsubscribeParameters = new("mySubscriptionId");
         UnsubscribeCommandResult result = await module.UnsubscribeAsync(unsubscribeParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
