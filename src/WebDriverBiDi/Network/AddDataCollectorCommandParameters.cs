@@ -41,7 +41,7 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     public override string MethodName => "network.addDataCollector";
 
     /// <summary>
-    /// Gets the list of <see cref="DataType"/> values associated with this data collector.
+    /// Gets the set of <see cref="DataType"/> values associated with this data collector.
     /// </summary>
     [JsonPropertyName("dataTypes")]
     [JsonInclude]

@@ -20,13 +20,9 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     public AddInterceptCommandParameters(InterceptPhase phase, params InterceptPhase[] additionalPhases)
     {
         this.Phases.Add(phase);
-
         foreach (InterceptPhase additionalPhase in additionalPhases)
         {
-            if (!this.Phases.Contains(additionalPhase))
-            {
-                this.Phases.Add(additionalPhase);
-            }
+            this.Phases.Add(additionalPhase);
         }
     }
 
@@ -37,10 +33,10 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     public override string MethodName => "network.addIntercept";
 
     /// <summary>
-    /// Gets the list of phases for which network traffic will be intercepted.
+    /// Gets the set of phases for which network traffic will be intercepted.
     /// </summary>
     [JsonPropertyName("phases")]
-    public List<InterceptPhase> Phases { get; } = [];
+    public HashSet<InterceptPhase> Phases { get; } = [];
 
     /// <summary>
     /// Gets the list of top-level browsing context IDs for which traffic will be intercepted.
