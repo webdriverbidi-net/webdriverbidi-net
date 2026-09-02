@@ -492,6 +492,62 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestRacedDrainDoesNotReReportSynchronouslyFaultedCapturedTask()
+    {
+        // An async-mode handler task that is already faulted when the handler returns is
+        // both captured and rethrown to the producer — that rethrow is the documented,
+        // single surfacing of the failure. When a fulfilled wait's auto-close drains such
+        // a task from the buffer, it must be skipped rather than given a reporting
+        // continuation, which would record the same failure a second time through the
+        // observer-error pipeline.
+        List<EventObserverErrorInfo> reportedErrors = [];
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(errorInfo =>
+        {
+            lock (reportedErrors)
+            {
+                reportedErrors.Add(errorInfo);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        int invocationCount = 0;
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            e =>
+            {
+                if (Interlocked.Increment(ref invocationCount) == 2)
+                {
+                    return Task.FromException(new WebDriverBiDiException("synchronously faulted handler"));
+                }
+
+                return Task.CompletedTask;
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("first");
+
+        // The second event's handler task is already faulted when it returns; the fault
+        // is surfaced to the producer by the raise itself.
+        Assert.Equal("synchronously faulted handler", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await testEventSource.RaiseTestEventAsync("second"))).Message);
+
+        // Both tasks are buffered; the wait consumes the first and auto-closes, draining
+        // the faulted second task as a surplus task.
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        _ = Assert.Single(capturedTasks);
+
+        // The drained task's fault was already surfaced synchronously, so no report may
+        // have flowed through the observer-error pipeline for either handler task.
+        lock (reportedErrors)
+        {
+            Assert.Empty(reportedErrors);
+        }
+
+        observer.Dispose();
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenTimeExpiredDuringCapture()
     {
         TimeSpan timeout = TimeSpan.FromSeconds(1);

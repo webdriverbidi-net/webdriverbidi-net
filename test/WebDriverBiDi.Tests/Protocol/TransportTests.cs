@@ -1582,6 +1582,71 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestRacedDrainAttributesLateFaultToConcreteEventName()
+    {
+        // A fault surfacing through a continuation attached by the raced-task drain in
+        // WaitForCapturedTasksAsync is attributed to the concrete protocol event that
+        // produced the invocation, the same as a fault reported through the
+        // notification-time continuation — not to the generic observable's name.
+        TaskCompletionSource bothCapturedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<EventObserverErrorInfo> reportedErrorTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int observedEventCount = 0;
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventHandlerErrorOccurred.AddObserver(e => reportedErrorTaskCompletionSource.TrySetResult(e.ErrorInfo));
+        EventObserver<EventReceivedEventArgs> observer = transport.OnEventReceived.AddObserver(
+            async e =>
+            {
+                await handlerGate.Task;
+                throw new WebDriverBiDiException("late handler failure");
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        // Observers are notified in addition order, so when this second observer has seen
+        // both events, the first observer's tasks for both events have been captured.
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            if (Interlocked.Increment(ref observedEventCount) == 2)
+            {
+                bothCapturedTaskCompletionSource.TrySetResult();
+            }
+        });
+        observer.StartCapturingTasks();
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+        await connection.RaiseDataReceivedEventAsync(json);
+        await bothCapturedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The wait consumes one buffered task and auto-closes; the drain attaches a
+        // reporting continuation to the surplus one.
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        _ = Assert.Single(capturedTasks);
+
+        // Release the gate so both handler tasks fault late. The caller-owned task's
+        // fault stays with the caller; the surplus task's fault is reported through the
+        // drain-attached continuation, attributed to the concrete protocol event name.
+        handlerGate.TrySetResult();
+        EventObserverErrorInfo errorInfo = await reportedErrorTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal("protocol.event", errorInfo.ObservableEventName);
+        Assert.Contains("late handler failure", errorInfo.Exception.Message);
+
+        observer.Dispose();
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestExceptionInTransportEventReceivedCanTerminate()
     {
         // string receivedName = string.Empty;
