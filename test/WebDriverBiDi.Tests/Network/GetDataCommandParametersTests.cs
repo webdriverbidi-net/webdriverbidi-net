@@ -8,14 +8,14 @@ public class GetDataCommandParametersTests
     [Fact]
     public void TestCommandName()
     {
-        GetDataCommandParameters properties = new("myRequestId");
+        GetDataCommandParameters properties = new("myRequestId", DataType.Response);
         Assert.Equal("network.getData", properties.MethodName);
     }
 
     [Fact]
     public void TestCanSerializeParameters()
     {
-        GetDataCommandParameters properties = new("myRequestId");
+        GetDataCommandParameters properties = new("myRequestId", DataType.Response);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
 
@@ -36,7 +36,7 @@ public class GetDataCommandParametersTests
     [Fact]
     public void TestCanSerializeParametersWithCollectorId()
     {
-        GetDataCommandParameters properties = new("myRequestId")
+        GetDataCommandParameters properties = new("myRequestId", DataType.Response)
         {
             CollectorId = "myCollectorId"
         };
@@ -66,7 +66,7 @@ public class GetDataCommandParametersTests
     [Fact]
     public void TestCanSerializeParametersWithDisownDataTrue()
     {
-        GetDataCommandParameters properties = new("myRequestId")
+        GetDataCommandParameters properties = new("myRequestId", DataType.Response)
         {
             CollectorId = "myCollectorId",
             DisownCollectedData = true,
@@ -103,7 +103,7 @@ public class GetDataCommandParametersTests
     [Fact]
     public void TestCanSerializeParametersWithDisownDataFalse()
     {
-        GetDataCommandParameters properties = new("myRequestId")
+        GetDataCommandParameters properties = new("myRequestId", DataType.Response)
         {
             CollectorId = "myCollectorId",
             DisownCollectedData = false,

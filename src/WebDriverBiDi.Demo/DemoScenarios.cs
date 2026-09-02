@@ -637,7 +637,7 @@ public static class DemoScenarios
                 responseHeaders.AddRange(e.Response.Headers);
 
                 // Be a good citizen and release the collected data when collected.
-                GetDataCommandParameters getDataParameters = new(e.Request.RequestId)
+                GetDataCommandParameters getDataParameters = new(e.Request.RequestId, DataType.Response)
                 {
                     CollectorId = collectorId,
                     DisownCollectedData = true,

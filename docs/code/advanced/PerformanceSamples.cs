@@ -620,7 +620,8 @@ public class PerformanceSamples
         }
 
         // Disown collected data to free memory
-        GetDataCommandParameters getDataParams = new GetDataCommandParameters(requestId)
+        GetDataCommandParameters getDataParams =
+            new GetDataCommandParameters(requestId, DataType.Request)
         {
             CollectorId = collector.CollectorId,
             DisownCollectedData = true  // Free memory after retrieval

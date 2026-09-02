@@ -195,10 +195,9 @@ public class NetworkTrafficMonitor
         Task<GetDataCommandResult>? requestBodyTask = null;
         if (NetworkRequest.MethodMayHaveBody(e.Request.Method))
         {
-            GetDataCommandParameters getBodyParameters = new(requestId)
+            GetDataCommandParameters getBodyParameters = new(requestId, DataType.Request)
             {
                 CollectorId = this.bodyCollectorId,
-                DataType = DataType.Request,
                 DisownCollectedData = true,
             };
             requestBodyTask = this.driver.Network.GetDataAsync(getBodyParameters);
@@ -210,10 +209,9 @@ public class NetworkTrafficMonitor
     private void HandleResponseCompleted(ResponseCompletedEventArgs e)
     {
         string requestId = e.Request.RequestId;
-        GetDataCommandParameters getBodyParameters = new(requestId)
+        GetDataCommandParameters getBodyParameters = new(requestId, DataType.Response)
         {
             CollectorId = this.bodyCollectorId,
-            DataType = DataType.Response,
             DisownCollectedData = true,
         };
         Task<GetDataCommandResult> responseBodyTask = this.driver.Network.GetDataAsync(getBodyParameters);

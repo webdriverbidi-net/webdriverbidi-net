@@ -307,7 +307,7 @@ public static class NetworkInterceptionSamples
                 try
                 {
                     GetDataCommandParameters getDataParams =
-                        new GetDataCommandParameters(e.Request.RequestId)
+                        new GetDataCommandParameters(e.Request.RequestId, DataType.Response)
                         {
                             CollectorId = collectorId,
                             DisownCollectedData = true
