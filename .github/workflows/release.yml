@@ -34,7 +34,7 @@ jobs:
     name: Validate documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Validate documentation code regions
         run: ./docs/tools/validate-doc-regions.sh
@@ -45,10 +45,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: |
             8.0.x
@@ -75,7 +75,7 @@ jobs:
           touch _site/.nojekyll
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: docs/_site
 
@@ -92,7 +92,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
 
   release:
     name: Publish to NuGet
@@ -104,13 +104,19 @@ jobs:
     needs: [tests, build-docs]
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # A job-level permissions block replaces the workflow-level map entirely, so
+    # contents: read must be restated here: this job checks out the repository and
+    # fetches origin/main for the tag-ancestry check, which only works without it
+    # today because the repository is public. id-token: write enables the OIDC
+    # trusted-publishing login to NuGet.
     permissions:
+      contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: |
             8.0.x
@@ -141,7 +147,11 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release -p:AssemblyVersion="${ASSEMBLY_VERSION}" -p:FileVersion="${FILE_VERSION}" -p:ContinuousIntegrationBuild=true --no-restore
+        # InformationalVersion carries the release version into the assemblies'
+        # product-version metadata; without it, shipped DLLs report the MSBuild
+        # default of 1.0.0 (plus the source revision) regardless of the released
+        # version. SourceLink still appends the +<sha> suffix to the value set here.
+        run: dotnet build --configuration Release -p:AssemblyVersion="${ASSEMBLY_VERSION}" -p:FileVersion="${FILE_VERSION}" -p:InformationalVersion="${PACKAGE_VERSION}" -p:ContinuousIntegrationBuild=true --no-restore
 
       - name: Pack releasable packages
         # `dotnet pack` on the solution packs only projects with
