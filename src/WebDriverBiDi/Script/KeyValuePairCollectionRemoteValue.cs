@@ -55,6 +55,15 @@ public record KeyValuePairCollectionRemoteValue : RemoteValue, IObjectReferenceR
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
     /// </summary>
+    /// <remarks>
+    /// The dictionary wrapped by the returned LocalValue preserves the reference-keyed
+    /// semantics of <see cref="RemoteValueDictionary"/>: string keys compare by value,
+    /// while keys converted from <see cref="RemoteValue"/> objects compare by reference,
+    /// so two object keys that convert to structurally identical values (for example,
+    /// two distinct Date keys holding the same instant) remain distinct entries. Look
+    /// such entries up by enumerating the dictionary's keys; a separately constructed,
+    /// structurally equal <see cref="LocalValue"/> will not match.
+    /// </remarks>
     /// <returns>A LocalValue representing the key-value pair container.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown when the Value property is null.</exception>
     public override LocalValue ToLocalValue()
@@ -65,7 +74,11 @@ public record KeyValuePairCollectionRemoteValue : RemoteValue, IObjectReferenceR
         }
 
         RemoteValueDictionary mapping = this.Value;
-        Dictionary<object, LocalValue> dict = new(mapping.Count);
+
+        // The comparer preserves the source dictionary's key semantics. Without it,
+        // LocalValue's record value equality would silently collapse structurally
+        // identical object keys into a single entry, dropping data from the map.
+        Dictionary<object, LocalValue> dict = new(mapping.Count, LocalValueKeyComparer.Instance);
         foreach (KeyValuePair<object, RemoteValue> entry in mapping)
         {
             object mappedKey = entry.Key;
