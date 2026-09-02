@@ -110,18 +110,20 @@ These steps:
 
 ### Serve Locally
 
-To preview the documentation:
+To preview the documentation (also from the repository root):
 
 ```bash
-docfx serve _site
+docfx serve docs/_site
 ```
 
 Then open your browser to `http://localhost:8080`.
 
 ### Build and Serve in One Step
 
+From the repository root:
+
 ```bash
-docfx docfx.json --serve
+docfx docs/docfx.json --serve
 ```
 
 ## Writing Documentation
@@ -129,7 +131,7 @@ docfx docfx.json --serve
 ### Markdown Files
 
 - Use standard Markdown syntax
-- Code blocks should specify language: \`\`\`csharp
+- Fenced code blocks should specify their language (for example, ` ```bash ` or ` ```xml `); C# examples do not go inline — see [Code Examples](#code-examples) below
 - Use relative links for cross-references
 - Include practical examples
 

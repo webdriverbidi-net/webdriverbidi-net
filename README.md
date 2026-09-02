@@ -6,7 +6,7 @@ A .NET client library for the WebDriver BiDi protocol
 [![NuGet Version](https://img.shields.io/nuget/v/WebDriverBiDi)](https://www.nuget.org/packages/WebDriverBiDi)
 
 
-This is repository contains a library that is a .NET client for the
+This repository contains a library that is a .NET client for the
 [WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). This spec is in progress,
 and features are added to the library as the specification changes. This package is also 
 [published to NuGet](https://www.nuget.org/packages/WebDriverBiDi).
@@ -50,7 +50,7 @@ be launched, and for the WebDriver BiDi websocket to already be open and availab
 it is the user's responsibility to know what the URL of the websocket connection is to initiate a session.
 
 ## Getting Started
-The library is built to support .NETStandard 2.0. This should allow the widest usage of the library across
+The library is built to support .NET Standard 2.0. This should allow the widest usage of the library across
 the largest number of framework versions, including .NET Framework, .NET Core, and .NET 5 and higher. For
 convenience, the library also builds assemblies targeting the current and immediately previous Long Term
 Support (LTS) versions of .NET, as well as the most recent Standard Term Support (STS) version of .NET.

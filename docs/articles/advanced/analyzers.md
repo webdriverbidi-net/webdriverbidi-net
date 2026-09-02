@@ -10,13 +10,7 @@ The analyzers are distributed in a separate NuGet package. Add it to your projec
 dotnet add package WebDriverBiDi.Analyzers
 ```
 
-Or add to your `.csproj`:
-
-```xml
-<PackageReference Include="WebDriverBiDi.Analyzers" Version="*" />
-```
-
-The analyzer package is marked as a development dependency, so it will not be included in your application's output.
+The analyzer package is marked as a development dependency, so it will not be included in your application's output. To pin an exact version instead of tracking the current release, add a `<PackageReference>` to your `.csproj` the same way as the main package — see [Pinning an exact version](../getting-started.md#pinning-an-exact-version).
 
 ### Minimum SDK
 

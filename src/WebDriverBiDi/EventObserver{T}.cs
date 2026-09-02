@@ -182,7 +182,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// a handler, so its exception propagates out of the notification to the producer instead of
     /// being captured, and a wait for a fixed number of tasks is never satisfied by it. A handler
     /// registered with <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> is
-    /// captured whether it succeeds or fails.
+    /// captured whether it later succeeds or fails, provided it <em>returns</em> a task (including a
+    /// task that is already faulted). A handler that instead throws <em>synchronously</em>, before
+    /// returning a task — for example a non-<c>async</c> delegate that throws while producing its
+    /// <see cref="Task"/> — propagates the exception to the producer before capture can occur, so
+    /// like the synchronous-handler case it produces no captured task and never satisfies a
+    /// fixed-count wait.
     /// </para>
     /// </remarks>
     /// <example>

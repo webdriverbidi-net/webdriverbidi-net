@@ -24,13 +24,15 @@ Or using the Package Manager Console in Visual Studio:
 Install-Package WebDriverBiDi
 ```
 
-### Using Package Reference
+### Pinning an exact version
 
-Add this to your `.csproj` file:
+`dotnet add package` records the current release automatically, which is the recommended way to add the reference. Because the library is in the **0.x** series — where any release, including a patch increment, may change or remove public API — pin an exact version in your `.csproj` so that an update is always a deliberate choice rather than a wildcard that can pull in a breaking change:
 
 ```xml
-<PackageReference Include="WebDriverBiDi" Version="*" />
+<PackageReference Include="WebDriverBiDi" Version="0.0.55" />
 ```
+
+> Check [NuGet](https://www.nuget.org/packages/WebDriverBiDi) for the latest version, and see [API Design and Compatibility](advanced/api-design.md#versioning-and-compatibility) for the versioning policy.
 
 ### Optional: Roslyn Analyzers
 

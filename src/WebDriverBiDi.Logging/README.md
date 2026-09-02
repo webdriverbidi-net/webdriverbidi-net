@@ -125,7 +125,7 @@ using ILoggerFactory factory = LoggerFactory.Create(builder =>
 });
 ```
 
-For comprehensive examples including Serilog, Application Insights, custom filtering, and performance monitoring, see the [Observability Documentation](../../docs/articles/advanced/observability.md#integration-with-microsoftextensionslogging).
+For comprehensive examples including Serilog, Application Insights, custom filtering, and performance monitoring, see the [Observability Documentation](https://github.com/webdriverbidi-net/webdriverbidi-net/blob/main/docs/articles/advanced/observability.md#integration-with-microsoftextensionslogging).
 
 ## Available Events
 
@@ -133,10 +133,10 @@ WebDriverBiDi emits events for:
 - **Connection lifecycle**: Opening, Opened, Closing, Closed, Error
 - **Command execution**: Sending, Completed, Timeout, Error
 - **Event handling**: EventReceived, EventHandlerError
-- **Protocol processing**: UnknownMessage, ProtocolError
+- **Protocol processing**: UnknownMessageReceived, ProtocolError
 - **Transport lifecycle**: Started, Stopped
 
-See the [observability documentation](../../docs/articles/advanced/observability.md) for complete event reference.
+See the [observability documentation](https://github.com/webdriverbidi-net/webdriverbidi-net/blob/main/docs/articles/advanced/observability.md) for complete event reference.
 
 ## Performance
 
@@ -149,5 +149,5 @@ The EventSource bridge has minimal overhead:
 ## See Also
 
 - [WebDriverBiDi Package](https://www.nuget.org/packages/WebDriverBiDi)
-- [Observability Documentation](../../docs/articles/advanced/observability.md)
+- [Observability Documentation](https://github.com/webdriverbidi-net/webdriverbidi-net/blob/main/docs/articles/advanced/observability.md)
 - [Microsoft.Extensions.Logging Documentation](https://docs.microsoft.com/en-us/dotnet/core/extensions/logging)
