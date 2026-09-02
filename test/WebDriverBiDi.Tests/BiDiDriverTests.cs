@@ -2076,6 +2076,40 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestConcurrentStopDuringInFlightStartDoesNotReopenRegistration()
+    {
+        // CC-2: while a StartAsync is in flight (its ConnectAsync has not yet marked the transport
+        // connected), a racing StopAsync must not clear the start-requested flag. Clearing it would
+        // wrongly re-open module and event registration for the remainder of that start, even though
+        // the driver is starting. The start barrier holds the connection's StartAsync open inside
+        // ConnectAsync, reproducing that in-flight window deterministically.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+        };
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        // StartAsync sets the start-requested flag synchronously, then blocks inside ConnectAsync on
+        // the start barrier before the transport is marked connected.
+        Task startTask = driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        // A concurrent stop, running while the transport is not yet connected, must leave the
+        // in-flight start's flag untouched rather than treating the not-connected transport as a
+        // completed teardown.
+        await driver.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));
+        Assert.ThrowsAny<InvalidOperationException>(() => driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask));
+
+        // Releasing the barrier lets the in-flight start complete normally.
+        startBarrier.TrySetResult();
+        await startTask;
+        Assert.True(driver.IsStarted);
+    }
+
+    [Fact]
     public async Task TestUnserializableCommandParametersThrowSerializationException()
     {
         // A NaN pressure cannot be represented in JSON. The failure happens while serializing the
