@@ -19,6 +19,12 @@ public class EnumValueJsonConverter<[DynamicallyAccessedMembers(DynamicallyAcces
     private static readonly Lazy<StringEnumValueConverter<T>> StringEnumConverter = new();
 
     /// <summary>
+    /// Gets the shared string-to-enum conversion table for <typeparamref name="T"/>, so other
+    /// library code converting the same enum does not build a duplicate of it.
+    /// </summary>
+    internal static StringEnumValueConverter<T> SharedStringConverter => StringEnumConverter.Value;
+
+    /// <summary>
     /// Deserializes the JSON string to an enum value.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>

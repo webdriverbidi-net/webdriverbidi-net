@@ -131,6 +131,17 @@ public class RemoteValueDictionaryJsonConverterTests
     }
 
     [Fact]
+    public void TestDeserializingMapArrayWithEmptyElementThrows()
+    {
+        string json = """
+                      [
+                        []
+                      ]
+                      """;
+        Assert.Contains($"RemoteValue array element for dictionary must be an array with exactly two elements", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueDictionary>(json, new JsonSerializerOptions { Converters = { new RemoteValueDictionaryJsonConverter() } })).Message);
+    }
+
+    [Fact]
     public void TestDeserializingMapArrayWithTooShortElementLengthThrows()
     {
         string json = """
