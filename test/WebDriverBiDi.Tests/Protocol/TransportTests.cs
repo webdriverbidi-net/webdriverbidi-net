@@ -1179,6 +1179,27 @@ public class TransportTests
     }
 
     [Fact]
+    public void TestShutdownTimeoutRejectsNegativeValue()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.Throws<ArgumentOutOfRangeException>(() => transport.ShutdownTimeout = TimeSpan.FromMilliseconds(-5));
+    }
+
+    [Fact]
+    public void TestShutdownTimeoutAllowsInfiniteTimeSpan()
+    {
+        // Shutdown waits use Task.Delay, which treats Timeout.InfiniteTimeSpan as "no timeout", so an
+        // infinite value is a valid "wait indefinitely for message processing to drain" setting.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = Timeout.InfiniteTimeSpan,
+        };
+        Assert.Equal(Timeout.InfiniteTimeSpan, transport.ShutdownTimeout);
+    }
+
+    [Fact]
     public async Task TestDisconnectWhenNotConnectedDoesNotThrow()
     {
         TestWebSocketConnection connection = new();

@@ -155,6 +155,8 @@ public class Transport : IAsyncDisposable
     private int isDisposedFlag = 0;
     private int collectedErrorsReportedFlag = 0;
 
+    private TimeSpan shutdownTimeout = TimeSpan.FromSeconds(10);
+
     // Message/event sent/received statistics
     private long commandMessagesSent = 0;
     private long commandResponseMessagesReceived = 0;
@@ -284,7 +286,23 @@ public class Transport : IAsyncDisposable
     /// This timeout applies to both waiting for the incoming message queue to empty, and for
     /// the messages in the queue to be processed.
     /// </remarks>
-    public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(10);
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
+    /// the maximum timer duration supported by the runtime.
+    /// </exception>
+    public TimeSpan ShutdownTimeout
+    {
+        get => this.shutdownTimeout;
+        set
+        {
+            if (!TimeoutUtilities.IsValidTimeout(value))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), TimeoutUtilities.GetInvalidTimeoutMessage("Shutdown timeout"));
+            }
+
+            this.shutdownTimeout = value;
+        }
+    }
 
     /// <summary>
     /// Gets the number of messages currently buffered in the incoming message queue and

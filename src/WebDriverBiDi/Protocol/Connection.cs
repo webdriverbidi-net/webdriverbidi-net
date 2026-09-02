@@ -6,9 +6,9 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
-using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Text;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end.
@@ -52,6 +52,10 @@ public abstract class Connection : IAsyncDisposable
     private const string ConnectionErrorEventName = "connection.connectionError";
     private const string RemoteDisconnectedEventName = "connection.remoteDisconnected";
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+
+    private TimeSpan startupTimeout = DefaultTimeout;
+    private TimeSpan shutdownTimeout = DefaultTimeout;
+    private TimeSpan dataTimeout = DefaultTimeout;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag;
@@ -99,18 +103,70 @@ public abstract class Connection : IAsyncDisposable
     /// the deadline rather than allowed to complete late. Name resolution and address fallback (for
     /// example <c>localhost</c> resolving to an IPv6 address first) count against the budget, so avoid
     /// sub-second values when connecting by host name.
+    /// <para>
+    /// Because the startup budget is computed by subtracting elapsed time, it must be a finite value;
+    /// <see cref="Timeout.InfiniteTimeSpan"/> is not permitted.
+    /// </para>
     /// </remarks>
-    public TimeSpan StartupTimeout { get; set; } = DefaultTimeout;
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is negative, is <see cref="Timeout.InfiniteTimeSpan"/>, or exceeds the
+    /// maximum timer duration supported by the runtime.
+    /// </exception>
+    public TimeSpan StartupTimeout
+    {
+        get => this.startupTimeout;
+        set
+        {
+            if (!TimeoutUtilities.IsValidTimeout(value, allowInfinite: false))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), TimeoutUtilities.GetInvalidTimeoutMessage("Startup timeout", allowInfinite: false));
+            }
+
+            this.startupTimeout = value;
+        }
+    }
 
     /// <summary>
     /// Gets or sets the value of the timeout to wait before throwing an error when shutting down the connection.
     /// </summary>
-    public TimeSpan ShutdownTimeout { get; set; } = DefaultTimeout;
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
+    /// the maximum timer duration supported by the runtime.
+    /// </exception>
+    public TimeSpan ShutdownTimeout
+    {
+        get => this.shutdownTimeout;
+        set
+        {
+            if (!TimeoutUtilities.IsValidTimeout(value))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), TimeoutUtilities.GetInvalidTimeoutMessage("Shutdown timeout"));
+            }
+
+            this.shutdownTimeout = value;
+        }
+    }
 
     /// <summary>
     /// Gets or sets the value of the timeout to wait for exclusive access when sending to or receiving data from the ClientWebSocket.
     /// </summary>
-    public TimeSpan DataTimeout { get; set; } = DefaultTimeout;
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
+    /// the maximum timer duration supported by the runtime.
+    /// </exception>
+    public TimeSpan DataTimeout
+    {
+        get => this.dataTimeout;
+        set
+        {
+            if (!TimeoutUtilities.IsValidTimeout(value))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), TimeoutUtilities.GetInvalidTimeoutMessage("Data timeout"));
+            }
+
+            this.dataTimeout = value;
+        }
+    }
 
     /// <summary>
     /// Gets an observable event that notifies when data is received from this connection.
