@@ -148,8 +148,10 @@ public class Transport : IAsyncDisposable
     // enter a circular lock.
     private TaskCompletionSource<int> disconnectOwnedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
-    private int isConnectedTypeSafeFlag = 0;
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
+    // Backing store for the State property; holds a TransportState value. Zero is
+    // TransportState.Disconnected, matching the field's default.
+    private int transportStateValue = (int)TransportState.Disconnected;
     private int isDisposedFlag = 0;
     private int collectedErrorsReportedFlag = 0;
 
@@ -345,21 +347,19 @@ public class Transport : IAsyncDisposable
     public virtual int PendingCommandCount => this.PendingCommands.PendingCommandCount;
 
     /// <summary>
-    /// Gets or sets a value indicating whether this transport is connected to a connection.
-    /// Use this property to ensure thread-safe operations for checking connectivity.
+    /// Gets a value indicating the lifecycle state of this transport with respect to its connection
+    /// to a remote end. The returned value is a snapshot and may be stale by the time the caller
+    /// observes it.
     /// </summary>
-    internal bool IsConnected
+    /// <remarks>
+    /// Every state transition is performed while holding the connection lock (or, in the case of a
+    /// connection-loss transition, while racing that lock for ownership), so the setter is an
+    /// unconditional atomic publish; no compare-and-swap is required.
+    /// </remarks>
+    public TransportState State
     {
-        get
-        {
-            return Interlocked.CompareExchange(ref this.isConnectedTypeSafeFlag, 0, 0) == 1;
-        }
-
-        set
-        {
-            int flagValue = value ? 1 : 0;
-            Interlocked.Exchange(ref this.isConnectedTypeSafeFlag, flagValue);
-        }
+        get => (TransportState)Interlocked.CompareExchange(ref this.transportStateValue, 0, 0);
+        private set => Interlocked.Exchange(ref this.transportStateValue, (int)value);
     }
 
     /// <summary>
@@ -421,10 +421,16 @@ public class Transport : IAsyncDisposable
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (this.IsConnected)
+            if (this.State != TransportState.Disconnected)
             {
                 throw new WebDriverBiDiConnectionException($"The transport is already connected to {this.Connection.ConnectionString}; you must disconnect before connecting to another URL");
             }
+
+            // Publish the in-flight state before any awaits so that callers observing State (for
+            // example the driver's registration guard) treat the transport as no longer idle for the
+            // entire duration of the connect attempt, not only once it completes. The finally below
+            // rolls this back to Disconnected if the attempt fails before reaching Connected.
+            this.State = TransportState.Connecting;
 
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, websocketUri);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
@@ -492,7 +498,7 @@ public class Transport : IAsyncDisposable
             // shouldn't be an issue, as we are using a Channel for processing the data, which
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
-            this.IsConnected = true;
+            this.State = TransportState.Connected;
             this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync());
 
             // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
@@ -514,6 +520,17 @@ public class Transport : IAsyncDisposable
         }
         finally
         {
+            // If the attempt did not reach the Connected state (the body threw or was canceled after
+            // Connecting was published), roll the transport back to Disconnected so a later
+            // ConnectAsync is permitted and no observer is left seeing a stuck Connecting state. A
+            // still-Connecting state is the exact signal that the attempt did not complete; reaching
+            // Connected, or rejecting a non-idle transport before publishing Connecting, leaves the
+            // state untouched here.
+            if (this.State == TransportState.Connecting)
+            {
+                this.State = TransportState.Disconnected;
+            }
+
             this.ReleaseConnectionLock();
         }
     }
@@ -554,7 +571,7 @@ public class Transport : IAsyncDisposable
         // the whole shutdown wait before failing; checking here lets it fail immediately. The
         // state is re-checked under the lock below, so this is an optimization, not the
         // correctness guarantee.
-        if (!this.IsConnected)
+        if (this.State != TransportState.Connected)
         {
             throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
         }
@@ -599,7 +616,7 @@ public class Transport : IAsyncDisposable
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!this.IsConnected)
+            if (this.State != TransportState.Connected)
             {
                 throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
             }
@@ -691,7 +708,7 @@ public class Transport : IAsyncDisposable
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (this.IsConnected)
+            if (this.State == TransportState.Connected)
             {
                 throw new InvalidOperationException("Cannot register a type info resolver after the transport is connected");
             }
@@ -832,7 +849,7 @@ public class Transport : IAsyncDisposable
         // throw at the end of this method. This is the only remaining opportunity
         // to surface Collect-mode errors to a caller of StopAsync/DisconnectAsync
         // for that session.
-        if (!this.IsConnected)
+        if (this.State != TransportState.Connected)
         {
             this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
             return;
@@ -844,7 +861,7 @@ public class Transport : IAsyncDisposable
             // Double-check the connection state after acquiring the semaphore to prevent
             // race conditions where multiple threads pass the fast-path check simultaneously.
             // If another thread has already disconnected, we can safely return.
-            if (!this.IsConnected)
+            if (this.State != TransportState.Connected)
             {
                 this.ThrowIfCollectedExceptionsClaimed(throwCollectedExceptions);
                 return;
@@ -855,7 +872,7 @@ public class Transport : IAsyncDisposable
             // during shutdown) see the transport as disconnected and
             // short-circuit rather than attempting a redundant disconnect.
             WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.Id, this.TerminationReason);
-            this.IsConnected = false;
+            this.State = TransportState.Disconnected;
 
             // DisconnectAsync owns the shutdown, and we are about to await the completion
             // of the receive data loop. We release any connection-loss handler awaiting
@@ -939,7 +956,7 @@ public class Transport : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
-        if (this.IsConnected)
+        if (this.State == TransportState.Connected)
         {
             try
             {
@@ -1308,7 +1325,7 @@ public class Transport : IAsyncDisposable
     {
         // Fast-path: if already disconnected, no work to do.
         // Prevents deadlock when connection error occurs during DisconnectAsync.
-        if (!this.IsConnected)
+        if (this.State != TransportState.Connected)
         {
             return;
         }
@@ -1339,7 +1356,7 @@ public class Transport : IAsyncDisposable
             // Only process if we were connected (or thought we were).
             // If we're still in DisonnectAsync, we'll run after it releases the lock,
             // so we'll see the correct post-connect state.
-            if (!this.IsConnected)
+            if (this.State != TransportState.Connected)
             {
                 // DisconnectAsync hasn't set it yet, or we're already disconnected
                 return;
@@ -1348,7 +1365,7 @@ public class Transport : IAsyncDisposable
             // Mark the transport as disconnected so that subsequent SendCommandAsync
             // calls fail immediately rather than queuing commands that can never
             // receive a response.
-            this.IsConnected = false;
+            this.State = TransportState.Disconnected;
 
             // Close the pending command collection and fail every in-flight command
             // with an appropriate exception.
