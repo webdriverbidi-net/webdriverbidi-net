@@ -763,11 +763,12 @@ public class BiDiDriver005CodeFixProviderTests
     /// <summary>
     /// Tests that the code fix is a no-op when the SubscribeAsync argument is not an
     /// ObjectCreationExpressionSyntax — exercises AddEventNameToSubscribeCall returning
-    /// early (line 142).
+    /// early. A target-typed new(...) argument produces the analyzer diagnostic (its
+    /// event names are resolvable) but is a shape the fix does not rewrite.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_SubscribeAsyncWithVariableArgument_IsNoOp()
+    public async Task CodeFix_SubscribeAsyncWithTargetTypedNewArgument_IsNoOp()
     {
         string testCode = """
             using System;
@@ -779,14 +780,12 @@ public class BiDiDriver005CodeFixProviderTests
             {
                 public class TestClass
                 {
-                    private static readonly SubscribeCommandParameters existingParams = new SubscribeCommandParameters(new[] { "network.beforeRequestSent" });
-
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
-                        // Argument is a variable, not an ObjectCreationExpression.
-                        await driver.Session.SubscribeAsync(existingParams);
+                        // Argument is a target-typed new, not an ObjectCreationExpression.
+                        await driver.Session.SubscribeAsync(new("network.beforeRequestSent"));
                     }
                 }
             }

@@ -58,18 +58,13 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        SemanticModel semanticModel = context.SemanticModel;
-
         // Track BiDiDriver variables and whether StartAsync is currently in effect for each.
         Dictionary<string, bool> driverStartedStatus = [];
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            if (statement is LocalDeclarationStatementSyntax localDecl)
-            {
-                TrackDriverDeclarations(localDecl, semanticModel, driverStartedStatus);
-            }
-
+            // ProcessNode registers driver declarations and checks driver method calls,
+            // wherever in the statement's subtree they appear.
             ProcessNode(statement, context, driverStartedStatus);
         }
     }
@@ -124,6 +119,13 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
             else if (descendant is TryStatementSyntax tryStatement)
             {
                 ProcessTryStatement(tryStatement, context, driverStartedStatus);
+            }
+            else if (descendant is LocalDeclarationStatementSyntax localDecl)
+            {
+                // Register driver declarations wherever they appear (including inside nested
+                // blocks such as try or using statements); the pre-order walk visits the
+                // declaration before any later use of the variable.
+                TrackDriverDeclarations(localDecl, context.SemanticModel, driverStartedStatus);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {

@@ -670,4 +670,39 @@ public class BiDiDriver024AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task DriverDeclaredInsideUsingBlock_DuplicateStart_ReportsError()
+    {
+        // Driver declarations inside nested blocks (here, a using block) are tracked the
+        // same as top-level declarations.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
+                        {
+                            BiDiDriver driver = new();
+                            await driver.StartAsync("ws://localhost:9222");
+                            await {|#0:driver.StartAsync("ws://localhost:9222")|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected);
+    }
 }

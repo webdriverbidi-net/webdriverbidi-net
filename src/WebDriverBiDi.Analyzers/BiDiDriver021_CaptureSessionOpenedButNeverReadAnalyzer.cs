@@ -69,26 +69,34 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            // Register newly declared EventObserver<T> local variables.
-            if (statement is LocalDeclarationStatementSyntax localDecl)
-            {
-                foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
-                {
-                    ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
-                    if (localSymbol.Type is INamedTypeSymbol { Name: "EventObserver" })
-                    {
-                        pendingStartCapturingTasks[variable.Identifier.Text] = null;
-                        hasRead[variable.Identifier.Text] = false;
-                    }
-                }
-            }
-
             // The walk does not descend into the bodies of nested functions (lambdas, anonymous
             // methods, local functions): their code runs when the delegate is invoked, not at its
             // textual position, so a call there must not be judged against the capturing state at
-            // that position.
-            foreach (InvocationExpressionSyntax invocation in statement.DescendantNodes(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<InvocationExpressionSyntax>())
+            // that position. Observer declarations are registered wherever they appear (including
+            // inside nested blocks such as try or using statements); the pre-order walk visits a
+            // declaration before any later use of the variable.
+            foreach (SyntaxNode node in statement.DescendantNodesAndSelf(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction))
             {
+                if (node is LocalDeclarationStatementSyntax localDecl)
+                {
+                    foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
+                    {
+                        ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
+                        if (localSymbol.Type is INamedTypeSymbol { Name: "EventObserver" })
+                        {
+                            pendingStartCapturingTasks[variable.Identifier.Text] = null;
+                            hasRead[variable.Identifier.Text] = false;
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (node is not InvocationExpressionSyntax invocation)
+                {
+                    continue;
+                }
+
                 if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
                 {
                     continue;

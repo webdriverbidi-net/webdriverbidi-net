@@ -1210,4 +1210,43 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
+
+    [Fact]
+    public async Task DriverDeclaredInsideTryBlock_CommandBeforeStart_ReportsError()
+    {
+        // Driver declarations inside nested blocks (here, a try block) are tracked the
+        // same as top-level declarations.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        try
+                        {
+                            BiDiDriver driver = new();
+                            await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                        }
+                        finally
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
 }

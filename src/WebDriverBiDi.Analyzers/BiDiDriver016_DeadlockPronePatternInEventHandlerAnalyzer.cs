@@ -152,17 +152,24 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
                 continue;
             }
 
-            if ((containingTypeName == "Semaphore" || containingTypeName == "SemaphoreSlim") && (methodName == "Wait" || methodName == "WaitOne"))
+            if (containingTypeName == "SemaphoreSlim" && methodName == "Wait")
             {
-                patterns.Add((invocation, $"{containingTypeName}.{methodName}"));
+                patterns.Add((invocation, "SemaphoreSlim.Wait"));
                 continue;
             }
 
-            if ((containingTypeName == "ManualResetEvent" ||
-                 containingTypeName == "ManualResetEventSlim" ||
-                 containingTypeName == "AutoResetEvent" ||
-                 containingTypeName == "WaitHandle") &&
-                methodName == "WaitOne")
+            // WaitOne is declared on WaitHandle, so a call through any of its derived types
+            // (Mutex, Semaphore, ManualResetEvent, AutoResetEvent, ...) binds to a method
+            // symbol whose containing type is WaitHandle; matching the base type name covers
+            // them all. ManualResetEventSlim and CountdownEvent are not WaitHandles and
+            // declare their own blocking Wait methods, so they are matched by name.
+            if (containingTypeName == "WaitHandle" && methodName == "WaitOne")
+            {
+                patterns.Add((invocation, "WaitHandle.WaitOne"));
+                continue;
+            }
+
+            if ((containingTypeName == "ManualResetEventSlim" || containingTypeName == "CountdownEvent") && methodName == "Wait")
             {
                 patterns.Add((invocation, $"{containingTypeName}.{methodName}"));
                 continue;

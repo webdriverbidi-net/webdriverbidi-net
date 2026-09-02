@@ -146,7 +146,12 @@ internal static class AnalyzerSymbolHelpers
     internal static bool IsInWebDriverBiDiNamespace(INamedTypeSymbol type)
     {
         // A named type always has a containing namespace (the global namespace at worst).
-        return type.ContainingNamespace!.ToString().StartsWith("WebDriverBiDi", System.StringComparison.Ordinal);
+        // Match the library's root namespace exactly, or one of its sub-namespaces via the
+        // dotted prefix; a bare prefix match would also claim a user's own namespace that
+        // merely begins with the same characters (WebDriverBiDiExtensions, for example),
+        // branding the user's types with this library's diagnostics.
+        string namespaceName = type.ContainingNamespace!.ToString();
+        return namespaceName == "WebDriverBiDi" || namespaceName.StartsWith("WebDriverBiDi.", System.StringComparison.Ordinal);
     }
 
     /// <summary>
