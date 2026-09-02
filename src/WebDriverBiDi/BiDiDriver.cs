@@ -88,10 +88,6 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     // Track when constructor work is completed for custom event registration observability.
     private readonly bool isInitializationComplete = false;
 
-    // Track when a start of the driver is being requested, for purposes of registering
-    // custom modules and events.
-    private bool isStartRequested = false;
-
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag = 0;
 
@@ -356,7 +352,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// is not restricted and may be done at any time, before or after the driver has started.
     /// </para>
     /// </remarks>
-    public virtual bool IsStarted => this.transport.IsConnected;
+    public virtual bool IsStarted => this.transport.State == TransportState.Connected;
 
     /// <summary>
     /// Gets the default timeout to wait for a command to complete. This timeout is specified in
@@ -433,20 +429,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     {
         this.ThrowIfDisposed();
 
-        // Publish the start transition under the registration lock before the first await.
-        // RegisterModule and RegisterEvent check this flag under the same lock, so a
-        // registration either completes entirely before this point or is rejected.
-        this.SetIsStartRequestedValue(true);
-
-        try
-        {
-            await this.transport.ConnectAsync(connectionString, cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-            this.SetIsStartRequestedValue(false);
-            throw;
-        }
+        // ConnectAsync publishes the transport's Connecting state before its first await and rolls it
+        // back to Disconnected on failure, so the driver holds no start flag of its own: RegisterModule
+        // and RegisterEvent reject once the transport leaves the Disconnected state, and a failed start
+        // re-opens registration automatically.
+        await this.transport.ConnectAsync(connectionString, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -462,27 +449,10 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        // Capture whether the transport was connected when this stop began.
-        bool wasConnected = this.transport.IsConnected;
-        try
-        {
-            await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            // The transport supports reconnect, and registration is legal again after
-            // StopAsync (IsStarted is false). Clear the flag only when this stop actually brought a
-            // connected transport down: it was connected at entry and is no longer connected.
-            // DisconnectAsync throws after a fully completed teardown when Collect-mode errors were
-            // gathered during the session, so the flag is cleared on that path too. When the wait was
-            // canceled mid-teardown the transport is still connected and the flag remains set; when
-            // the stop was racing an in-flight start it never saw a connection and leaves that
-            // start's flag untouched.
-            if (wasConnected && !this.transport.IsConnected)
-            {
-                this.SetIsStartRequestedValue(false);
-            }
-        }
+        // Registration legality is derived entirely from the transport's State (registration re-opens
+        // once teardown returns the transport to Disconnected), so the driver keeps no flag to clear
+        // here and simply delegates the teardown to the transport.
+        await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -634,9 +604,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         this.ThrowIfDisposed();
         lock (this.registrationLock)
         {
-            // Note: Can check the isStartRequested field directly, because we are already
-            // inside the registration lock.
-            if (this.isStartRequested || this.IsStarted)
+            // The transport owns the lifecycle state: registration is rejected once the transport has
+            // left the Disconnected state (a connect is in flight or completed) and is legal again once
+            // a teardown returns it to Disconnected. The registration lock still serializes concurrent
+            // registrations and makes this check-then-add atomic among them.
+            if (this.transport.State != TransportState.Disconnected)
             {
                 throw new InvalidOperationException("Cannot register an event after the driver has started");
             }
@@ -703,9 +675,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         this.ThrowIfDisposed();
         lock (this.registrationLock)
         {
-            // Note: Can check the isStartRequested field directly, because we are already
-            // inside the registration lock.
-            if (this.isStartRequested || this.IsStarted)
+            // The transport owns the lifecycle state: registration is rejected once the transport has
+            // left the Disconnected state (a connect is in flight or completed) and is legal again once
+            // a teardown returns it to Disconnected. The registration lock still serializes concurrent
+            // registrations and makes this check-then-add atomic among them.
+            if (this.transport.State != TransportState.Disconnected)
             {
                 throw new InvalidOperationException("Cannot register a module after the driver has started");
             }
@@ -854,14 +828,6 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         if (this.IsDisposed)
         {
             throw new ObjectDisposedException(this.GetType().FullName);
-        }
-    }
-
-    private void SetIsStartRequestedValue(bool value)
-    {
-        lock (this.registrationLock)
-        {
-            this.isStartRequested = value;
         }
     }
 

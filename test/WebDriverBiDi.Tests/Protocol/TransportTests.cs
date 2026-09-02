@@ -1125,12 +1125,57 @@ public class TransportTests
         Task firstConnect = transport.ConnectAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
         Assert.False(firstConnect.IsCompleted);
 
+        // While the first connect is held open inside the connection's StartAsync, the transport
+        // reports the in-flight Connecting state rather than Disconnected or Connected.
+        Assert.Equal(TransportState.Connecting, transport.State);
+
         Task secondConnect = transport.ConnectAsync("ws://localhost:5678", TestContext.Current.CancellationToken);
 
         startBarrier.SetResult();
         await firstConnect;
 
         Assert.StartsWith("The transport is already connected", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await secondConnect)).Message);
+    }
+
+    [Fact]
+    public async Task TestStateReflectsConnectionLifecycle()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        Assert.Equal(TransportState.Disconnected, transport.State);
+
+        await transport.ConnectAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Disconnected, transport.State);
+    }
+
+    [Fact]
+    public async Task TestFailedConnectAsyncRollsBackStateToDisconnected()
+    {
+        // A connect attempt that fails after the Connecting state has been published must roll the
+        // transport back to Disconnected, so a later ConnectAsync is permitted and no observer is left
+        // seeing a stuck Connecting state. Driving the failure through the real WebSocket connect seam
+        // exercises the body of ConnectAsync after Connecting is published.
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            ConnectWebSocketOverride = (uri, cancellationToken) => throw new WebDriverBiDiException("Simulated connect failure"),
+        };
+        Transport transport = new(connection);
+
+        await Assert.ThrowsAnyAsync<Exception>(async () => await transport.ConnectAsync("ws://localhost:1234", TestContext.Current.CancellationToken));
+
+        Assert.Equal(TransportState.Disconnected, transport.State);
+
+        // The transport is idle again, so a subsequent connect attempt is accepted rather than being
+        // rejected as already connected.
+        connection.ConnectWebSocketOverride = null;
+        connection.BypassStart = true;
+        await transport.ConnectAsync("ws://localhost:5678", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
     }
 
     [Fact]
