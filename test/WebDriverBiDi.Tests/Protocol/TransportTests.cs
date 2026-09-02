@@ -514,6 +514,36 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestSynchronousLogObserverCanReenterTransportWithoutDeadlock()
+    {
+        // The "Sending command data" notification is emitted before the connection lock is acquired,
+        // so a synchronous log observer that re-enters the transport (here, by sending another command)
+        // can acquire the same non-reentrant lock and complete. Were the notification emitted while the
+        // lock was held, the re-entrant send would block on the lock the notifying call already owns and
+        // deadlock, and the bounded wait below would time out.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        int reentrantSendCount = 0;
+        Command? reentrantCommand = null;
+        transport.OnLogMessage.AddObserver(async e =>
+        {
+            // Re-enter exactly once: each send emits its own "Sending command data" notification, which
+            // would otherwise fire this observer again without bound.
+            if (e.Message.Contains("Sending command data") && Interlocked.Increment(ref reentrantSendCount) == 1)
+            {
+                reentrantCommand = await transport.SendCommandAsync(new TestCommandParameters("module.reentrant"), TestContext.Current.CancellationToken);
+            }
+        });
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(command);
+        Assert.NotNull(reentrantCommand);
+    }
+
+    [Fact]
     public async Task TestTransportLogsMalformedJsonMessages()
     {
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);

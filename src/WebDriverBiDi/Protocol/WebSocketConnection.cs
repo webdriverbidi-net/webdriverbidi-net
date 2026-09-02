@@ -223,73 +223,6 @@ public class WebSocketConnection : Connection
     }
 
     /// <summary>
-    /// Asynchronously sends data to the remote end of this connection.
-    /// </summary>
-    /// <param name="data">The data to be sent to the remote end of this connection.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is not active.</exception>
-    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the WebSocket for sending times out.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
-    {
-        if (!this.IsActive)
-        {
-            throw new WebDriverBiDiConnectionException("The WebSocket has not been initialized; you must call the Start method before sending data");
-        }
-
-        // Only one send operation at a time can be active on a ClientWebSocket instance,
-        // so we must synchronize send access to the socket in case multiple threads are
-        // attempting to send commands or other data simultaneously.
-        if (!await this.DataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
-        {
-            throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
-        }
-
-        try
-        {
-            if (!this.IsActive)
-            {
-                throw new WebDriverBiDiConnectionException("The WebSocket connection was closed before the send could be completed");
-            }
-
-            if (this.OnLogMessage.CurrentObserverCount > 0)
-            {
-#if NET5_0_OR_GREATER
-                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.Span)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-            }
-
-            CancellationToken effectiveCancellationToken = this.ConnectionCancellationToken;
-            CancellationTokenSource? linkedTokenSource = null;
-            try
-            {
-                if (cancellationToken != CancellationToken.None)
-                {
-                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, effectiveCancellationToken);
-                    effectiveCancellationToken = linkedTokenSource.Token;
-                }
-
-                await this.SendWebSocketDataAsync(data, effectiveCancellationToken).ConfigureAwait(false);
-            }
-            catch (WebSocketException ex)
-            {
-                throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
-            }
-            finally
-            {
-                linkedTokenSource?.Dispose();
-            }
-        }
-        finally
-        {
-            this.DataSendSemaphore.Release();
-        }
-    }
-
-    /// <summary>
     /// Asynchronously receives data from the remote end of this connection.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
@@ -465,7 +398,26 @@ public class WebSocketConnection : Connection
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the WebSocket.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task SendWebSocketDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when an exception is encountered sending data to the WebSocket.</exception>
+    protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await this.WriteWebSocketDataAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
+        }
+        catch (WebSocketException ex)
+        {
+            throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously writes data to the underlying WebSocket of this connection.
+    /// </summary>
+    /// <param name="messageBuffer">The data to write to the WebSocket.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected virtual async Task WriteWebSocketDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
 #if NET5_0_OR_GREATER
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);

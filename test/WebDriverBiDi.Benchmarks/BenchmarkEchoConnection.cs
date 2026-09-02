@@ -61,6 +61,13 @@ public sealed class BenchmarkEchoConnection : Connection
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Never invoked: this connection fully overrides <see cref="SendDataAsync"/> to synthesize a
+    /// response rather than writing to a transport, so the base send orchestration is bypassed.
+    /// </remarks>
+    protected override Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    /// <inheritdoc/>
     protected override Task ReceiveDataAsync() => Task.CompletedTask;
 
     /// <inheritdoc/>

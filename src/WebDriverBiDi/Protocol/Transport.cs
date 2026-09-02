@@ -585,6 +585,17 @@ public class Transport : IAsyncDisposable
             throw new WebDriverBiDiSerializationException($"Could not serialize command '{command.CommandName}' (command ID: {command.CommandId}): {ex.Message}", ex);
         }
 
+        // Notify log-message observers before acquiring the connection lock. Emitting this inside the
+        // lock would deadlock if a synchronous observer re-entered the transport (for example, by
+        // sending another command or disconnecting): the observer would block acquiring the same
+        // non-reentrant lock the notifying call already holds. The command is already created and
+        // serialized here, so its name and id are available, and this keeps the notification ordered
+        // ahead of the send.
+        if (this.OnLogMessage.CurrentObserverCount > 0)
+        {
+            await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+        }
+
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -601,13 +612,11 @@ public class Transport : IAsyncDisposable
             await this.PendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
             try
             {
-                // Start timing and log command sending
+                // Start timing and raise the command-sending event. The log-message notification for
+                // this command was emitted before the connection lock was acquired (see above) so that
+                // a synchronous log observer cannot deadlock by re-entering the transport.
                 command.StartTiming();
                 WebDriverBiDiEventSource.RaiseEvent.CommandSending(command.CommandId, command.CommandName);
-                if (this.OnLogMessage.CurrentObserverCount > 0)
-                {
-                    await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
-                }
 
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
 
