@@ -147,6 +147,30 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionWithZeroStartupTimeoutTimesOutBeforeAttemptingToConnect()
+    {
+        // A zero startup budget leaves no time for even a first attempt.
+        int attemptCount = 0;
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            StartupTimeout = TimeSpan.Zero,
+            ConnectWebSocketOverride = (uri, token) =>
+            {
+                Interlocked.Increment(ref attemptCount);
+                return Task.CompletedTask;
+            },
+        };
+
+        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(
+            async () => await connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken));
+
+        Assert.Contains("within 0 seconds", exception.Message);
+        Assert.Equal(0, attemptCount);
+        Assert.False(connection.IsActive);
+    }
+
+    [Fact]
     public async Task TestConnectionCallerCancellationDuringHangingConnectAttemptPropagates()
     {
         // Cancellation requested by the caller while a connect attempt is in flight must
