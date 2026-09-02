@@ -281,12 +281,13 @@ Always dispose EventListener instances:
 - **Zero allocation when not enabled** - EventSource uses [NonEvent] for helper methods
 - **Low overhead** - Minimal impact even with Verbose logging
 - **ETW optimized** - On Windows, uses highly optimized ETW infrastructure
-- **Async-friendly** - Events use `RunContinuationsAsynchronously` pattern
+- **Works with async pipelines** - integrates with the standard async `ILogger` logging infrastructure
 
-**Measured Overhead:**
-- No listener: < 5ns per event
-- Single listener at Info level: ~100ns per event
-- Single listener at Verbose level: ~150ns per event
+**Overhead:**
+- With no listener attached, event emission is effectively free: the EventSource short-circuits before building any event data.
+- With a listener attached, the per-event cost scales with the configured level and the amount of data captured, and is small relative to the network round-trips the events describe.
+
+> The repository does not include a benchmark for EventSource emission, so specific per-event timings are intentionally not quoted here.
 
 ## Troubleshooting
 

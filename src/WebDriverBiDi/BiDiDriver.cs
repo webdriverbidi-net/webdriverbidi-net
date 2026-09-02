@@ -373,7 +373,12 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <see cref="EventObserver{T}.WaitForCapturedTasksCompleteAsync"/>,
     /// or <see cref="EventObserver{T}.GetCapturedTasks"/>,
     /// those task exceptions remain owned by the caller rather than being surfaced again through the
-    /// transport error pipeline.
+    /// transport error pipeline. This applies to handler tasks that fault <em>asynchronously</em>
+    /// (they were still running when the handler returned). A handler task that is <em>already</em>
+    /// faulted when the handler returns — a synchronous failure, such as a task from
+    /// <see cref="System.Threading.Tasks.Task.FromException(System.Exception)"/> or an <c>async</c>
+    /// handler that throws before its first <c>await</c> — is both captured and re-surfaced through
+    /// the transport error pipeline.
     /// </summary>
     public virtual TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
 

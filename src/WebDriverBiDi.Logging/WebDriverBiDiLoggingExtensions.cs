@@ -40,6 +40,12 @@ public static class WebDriverBiDiLoggingExtensions
     ///     builder.AddWebDriverBiDi();
     /// });
     /// </code>
+    /// <para>
+    /// <strong>Registered once (first call wins):</strong> the listener is registered with
+    /// <c>TryAddSingleton</c>, so only the first <c>AddWebDriverBiDi</c> call on a given service
+    /// collection takes effect. A later call — including the level-taking overload — is silently
+    /// ignored, and the level from the first call remains in effect. Call this method a single time.
+    /// </para>
     /// </remarks>
     public static ILoggingBuilder AddWebDriverBiDi(this ILoggingBuilder builder)
     {
@@ -78,6 +84,14 @@ public static class WebDriverBiDiLoggingExtensions
     ///     builder.AddWebDriverBiDi(EventLevel.Verbose); // Capture all events including verbose
     /// });
     /// </code>
+    /// <para>
+    /// <strong>Registered once (first call wins):</strong> the listener is registered with
+    /// <c>TryAddSingleton</c>, capturing <paramref name="minimumLevel"/> in the registration. Only the
+    /// first <c>AddWebDriverBiDi</c> call on a given service collection takes effect; a later call —
+    /// including one that passes a different <paramref name="minimumLevel"/> — is silently ignored, and
+    /// the level from the first call remains in effect. Call this method a single time, with the level
+    /// you want.
+    /// </para>
     /// </remarks>
     public static ILoggingBuilder AddWebDriverBiDi(this ILoggingBuilder builder, EventLevel minimumLevel)
     {

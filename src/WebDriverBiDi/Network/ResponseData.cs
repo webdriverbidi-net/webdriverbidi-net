@@ -129,7 +129,10 @@ public record ResponseData
     {
         get
         {
-            // Safe without a lock: same single-thread access invariant as Headers above.
+            // Build once, then publish: the list is fully materialized before it is assigned to the
+            // field, so a concurrent first read (for example from a RunHandlerAsynchronously handler on
+            // the thread pool) can never observe a half-populated list — the same build-then-publish
+            // invariant as Headers above.
             if (this.authChallenges is null && this.SerializableAuthChallenges is not null)
             {
                 this.authChallenges = [.. this.SerializableAuthChallenges];

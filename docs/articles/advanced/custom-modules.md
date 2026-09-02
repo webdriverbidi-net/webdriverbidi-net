@@ -129,11 +129,13 @@ Create a NuGet package for reusable modules:
     <Authors>Your Name</Authors>
     <Description>Custom WebDriver BiDi modules</Description>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="WebDriverBiDi" Version="*" />
-  </ItemGroup>
 </Project>
+```
+
+Then add the WebDriverBiDi dependency with the .NET CLI, pinning an exact version so an update stays deliberate (see [Pinning an exact version](../getting-started.md#pinning-an-exact-version)):
+
+```bash
+dotnet add package WebDriverBiDi
 ```
 
 > **AOT support:** If your package will be used in AOT environments, include a source-generated `JsonSerializerContext` with `[JsonSerializable]` attributes for your custom types. See [AOT Compatibility](aot-compatibility.md) for details.
