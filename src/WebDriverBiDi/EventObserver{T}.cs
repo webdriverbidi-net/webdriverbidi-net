@@ -489,7 +489,15 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             if (!whenAllTask.IsCompleted)
             {
                 using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                Task cancellationTask = Task.Delay(remainingTime, linkedTokenSource.Token);
+
+                // The delay must be created against this observer's TimeProvider, matching the
+                // capture phase above, so that both phases of the wait are controllable with
+                // virtual time (for example, by a test using a fake provider).
+#if NETSTANDARD2_0
+                Task cancellationTask = this.timeProvider.Delay(remainingTime, linkedTokenSource.Token);
+#else
+                Task cancellationTask = Task.Delay(remainingTime, this.timeProvider, linkedTokenSource.Token);
+#endif
                 Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
                 if (completedTask == cancellationTask)
                 {
