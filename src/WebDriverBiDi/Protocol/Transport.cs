@@ -773,15 +773,36 @@ public class Transport : IAsyncDisposable
     /// re-invoke that same observer in a feedback loop.
     /// </param>
     /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <remarks>
+    /// This method never throws for a failure in an observer of
+    /// <see cref="OnEventHandlerErrorOccurred"/> itself: the original handler failure is
+    /// always captured, and the error observer's own failure is captured as a separate
+    /// event-handler error without re-raising the error event.
+    /// </remarks>
     internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo, bool notifyObservers)
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
+        Exception? errorObserverException = null;
         if (notifyObservers)
         {
-            await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
+            try
+            {
+                await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // Handle a synchronously throwing observer of OnEventHandlerErrorOccurred
+                // so as not to derail the reporting of the original handler failure. This
+                // prevents double-reporting of this as an error.
+                errorObserverException = ex;
+            }
         }
 
         this.CaptureUnhandledError(UnhandledErrorKind.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
+        if (errorObserverException is not null)
+        {
+            this.CaptureUnhandledError(UnhandledErrorKind.EventHandlerException, errorObserverException, this.GetEventHandlerTerminalReason(EventHandlerErrorOccurredEventName));
+        }
     }
 
     /// <summary>

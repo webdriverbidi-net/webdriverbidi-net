@@ -1482,6 +1482,68 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestSyncFaultingObserverOfEventHandlerErrorOccurredDoesNotDerailErrorCapture()
+    {
+        // A synchronously throwing observer of OnEventHandlerErrorOccurred must not
+        // prevent the original handler failure from being captured, must have its own
+        // failure captured as an event-handler error (rather than escaping to the
+        // message loop, where it would be classified as a protocol error), and must
+        // not cause a feedback loop of error events.
+        int errorObserverInvocationCount = 0;
+        int capturedErrorCount = 0;
+        TaskCompletionSource secondCaptureTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+            AfterUnhandledErrorCaptured = () =>
+            {
+                if (Interlocked.Increment(ref capturedErrorCount) == 2)
+                {
+                    secondCaptureTaskCompletionSource.TrySetResult();
+                }
+            },
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e => throw new WebDriverBiDiException("original handler failure"));
+        transport.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            Interlocked.Increment(ref errorObserverInvocationCount);
+            throw new WebDriverBiDiException("error observer failure");
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+
+        // Both the original handler failure and the error observer's own failure are
+        // captured, the latter without re-raising the error event.
+        await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Negative check: a feedback loop would keep re-invoking the error observer and
+        // capturing further errors, so after this delay neither count may have grown.
+        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
+        Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
+
+        // Only EventHandlerExceptionBehavior is set to Collect here, so both inner
+        // exceptions surfacing on disconnect proves both failures were captured under
+        // the event-handler category rather than any other.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(2, exception.InnerExceptions.Count);
+        Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("original handler failure"));
+        Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("error observer failure"));
+    }
+
+    [Fact]
     public async Task TestExceptionInTransportEventReceivedCanTerminate()
     {
         // string receivedName = string.Empty;
