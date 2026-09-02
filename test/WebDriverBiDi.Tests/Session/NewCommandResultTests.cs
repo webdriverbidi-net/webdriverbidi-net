@@ -38,7 +38,7 @@ public class NewCommandResultTests
         Assert.Equal("101.5b", result.Capabilities.BrowserVersion);
         Assert.Equal("otherOS", result.Capabilities.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.Capabilities.UserAgent);
-        Assert.True(result.Capabilities.AcceptInsecureCertificates);
+        Assert.True(result.Capabilities.AcceptInsecureCerts);
         Assert.NotNull(result.Capabilities.Proxy);
         ProxyConfigurationResult proxyResult = result.Capabilities.Proxy;
         Assert.Equal(ProxyType.Manual, proxyResult.ProxyType);

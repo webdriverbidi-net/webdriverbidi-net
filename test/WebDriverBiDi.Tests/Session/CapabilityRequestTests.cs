@@ -73,7 +73,7 @@ public class CapabilityRequestTests
     {
         CapabilityRequest capabilities = new()
         {
-            AcceptInsecureCertificates = true
+            AcceptInsecureCerts = true
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
@@ -91,7 +91,7 @@ public class CapabilityRequestTests
     {
         CapabilityRequest capabilities = new()
         {
-            AcceptInsecureCertificates = false
+            AcceptInsecureCerts = false
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);

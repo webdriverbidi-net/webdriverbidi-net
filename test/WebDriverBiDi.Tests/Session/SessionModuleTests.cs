@@ -193,7 +193,7 @@ public class SessionModuleTests
         Assert.Equal("101.5b", result.Capabilities.BrowserVersion);
         Assert.Equal("otherOS", result.Capabilities.PlatformName);
         Assert.Equal("WebDriverBidi.NET/1.0", result.Capabilities.UserAgent);
-        Assert.True(result.Capabilities.AcceptInsecureCertificates);
+        Assert.True(result.Capabilities.AcceptInsecureCerts);
         Assert.True(result.Capabilities.SetWindowRect);
         Assert.NotNull(result.Capabilities.Proxy);
         Assert.Single(result.Capabilities.AdditionalCapabilities);

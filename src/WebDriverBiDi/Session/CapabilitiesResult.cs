@@ -29,7 +29,7 @@ public record CapabilitiesResult
     [JsonPropertyName("acceptInsecureCerts")]
     [JsonRequired]
     [JsonInclude]
-    public bool AcceptInsecureCertificates { get; internal set; } = false;
+    public bool AcceptInsecureCerts { get; internal set; } = false;
 
     /// <summary>
     /// Gets the name of the browser.

@@ -37,7 +37,7 @@ Use `NewCommandParameters.Capabilities` to request specific session capabilities
 
 [!code-csharp[New Session With Capabilities](../../code/modules/SessionModuleSamples.cs#NewSessionWithCapabilities)]
 
-Supported capability requests include `BrowserName`, `BrowserVersion`, `PlatformName`, `AcceptInsecureCertificates`, `Proxy`, and `UnhandledPromptBehavior`. See `CapabilityRequest` and `CapabilitiesRequest` in the API reference for the full set.
+Supported capability requests include `BrowserName`, `BrowserVersion`, `PlatformName`, `AcceptInsecureCerts`, `Proxy`, and `UnhandledPromptBehavior`. See `CapabilityRequest` and `CapabilitiesRequest` in the API reference for the full set.
 
 ## Session Status
 
