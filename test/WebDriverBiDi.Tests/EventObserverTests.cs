@@ -858,22 +858,36 @@ public class EventObserverTests
         TaskCompletionSource allowFaultTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async e =>
+        Task? racedTask = null;
+        async Task RacedHandlerAsync(TestObservableEventArgs e)
+        {
+            if (e.EventValue == "raced")
             {
+                handlerStartedTaskCompletionSource.TrySetResult();
+                try
+                {
+                    await allowFaultTaskCompletionSource.Task;
+                    throw new InvalidOperationException("raced task fault");
+                }
+                finally
+                {
+                    handlerFaultedTaskCompletionSource.TrySetResult();
+                }
+            }
+        }
+
+        // The observer handler is a synchronous wrapper so the test can keep a reference to the raced
+        // handler's task and later poll its faulted state instead of racing a fixed delay.
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            e =>
+            {
+                Task handlerTask = RacedHandlerAsync(e);
                 if (e.EventValue == "raced")
                 {
-                    handlerStartedTaskCompletionSource.TrySetResult();
-                    try
-                    {
-                        await allowFaultTaskCompletionSource.Task;
-                        throw new InvalidOperationException("raced task fault");
-                    }
-                    finally
-                    {
-                        handlerFaultedTaskCompletionSource.TrySetResult();
-                    }
+                    racedTask = handlerTask;
                 }
+
+                return handlerTask;
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
@@ -896,9 +910,9 @@ public class EventObserverTests
 
         // handlerFaultedTaskCompletionSource fires from the finally block, which runs
         // before the async state machine calls SetException to transition the task to
-        // Faulted. Give the faulting thread a scheduler quantum to finish SetException
-        // and run the drain's ExecuteSynchronously fault continuation before GC runs.
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        // Faulted. Wait (bounded) for that transition, which also runs the drain's
+        // ExecuteSynchronously fault continuation, rather than betting a fixed delay is long enough.
+        await WaitUntilFaultedAsync(racedTask!, TestContext.Current.CancellationToken);
 
         // Force garbage collection to trigger UnobservedTaskException
         // for any task whose exception was not observed.
@@ -965,20 +979,25 @@ public class EventObserverTests
         TaskCompletionSource allowFaultTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestEventSource testEventSource = new();
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async _ =>
+        Task? faultingTask = null;
+        async Task FaultingHandlerAsync(TestObservableEventArgs _)
+        {
+            try
             {
-                try
-                {
-                    await allowFaultTaskCompletionSource.Task;
-                }
-                finally
-                {
-                    handlerFaultedTaskCompletionSource.TrySetResult();
-                }
+                await allowFaultTaskCompletionSource.Task;
+            }
+            finally
+            {
+                handlerFaultedTaskCompletionSource.TrySetResult();
+            }
 
-                throw new InvalidOperationException("late fault after completion timeout");
-            },
+            throw new InvalidOperationException("late fault after completion timeout");
+        }
+
+        // The observer handler is a synchronous wrapper so the test can keep a reference to the
+        // handler's task and later poll its faulted state instead of racing a fixed delay.
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            e => faultingTask = FaultingHandlerAsync(e),
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         observer.StartCapturingTasks();
@@ -995,9 +1014,9 @@ public class EventObserverTests
 
         // handlerFaultedTaskCompletionSource fires from the finally block, which runs
         // before the async state machine calls SetException to transition the task to
-        // Faulted. Give the faulting thread a scheduler quantum to finish SetException
-        // and run the wrapper's ExecuteSynchronously fault continuation before GC runs.
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        // Faulted. Wait (bounded) for that transition, which also runs the wrapper's
+        // ExecuteSynchronously fault continuation, rather than betting a fixed delay is long enough.
+        await WaitUntilFaultedAsync(faultingTask!, TestContext.Current.CancellationToken);
 
         // Force garbage collection to trigger UnobservedTaskException
         // for any task whose exception was not observed.
@@ -1186,22 +1205,27 @@ public class EventObserverTests
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestEventSource testEventSource = new();
+        Task? handlerTask = null;
+        async Task FaultingHandlerAsync(TestObservableEventArgs _)
+        {
+            await Task.Yield();
+            taskCompletionSource.TrySetResult();
+            throw new InvalidOperationException("async fire-and-forget failure");
+        }
+
+        // The observer handler is a synchronous wrapper so the test can keep a reference to the
+        // handler's task and later poll its faulted state instead of racing a fixed delay.
         testEventSource.TestObservableEvent.AddObserver(
-            async e =>
-            {
-                await Task.Yield();
-                taskCompletionSource.TrySetResult();
-                throw new InvalidOperationException("async fire-and-forget failure");
-            },
+            e => handlerTask = FaultingHandlerAsync(e),
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         await testEventSource.RaiseTestEventAsync("myValue");
 
-        // Wait for the handler to signal just before throwing, then give the faulting
-        // thread time to finish SetException and run the ExecuteSynchronously fault
-        // continuation that observes the exception, before GC pressure is applied.
+        // Wait for the handler to signal just before throwing, then wait (bounded) for its task to
+        // reach the Faulted state — which also runs the ExecuteSynchronously fault continuation that
+        // observes the exception — rather than betting a fixed delay is long enough, before GC.
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await WaitUntilFaultedAsync(handlerTask!, TestContext.Current.CancellationToken);
 
         // Force garbage collection to trigger UnobservedTaskException
         // for any task whose exception was not observed.
@@ -1603,5 +1627,22 @@ public class EventObserverTests
             {
             }
         }
+    }
+
+    // Waits (bounded) for a handler task to reach the Faulted state before a test forces GC to probe
+    // for UnobservedTaskException. The library's ExecuteSynchronously fault continuation — the one that
+    // observes the exception — runs during the task's transition to Faulted, so once IsFaulted is
+    // observed the exception has already been observed and GC will not raise. Reading IsFaulted does
+    // not itself observe the exception, so this replaces a fixed Task.Delay quantum (which can be too
+    // short on a loaded runner) without defeating the very thing the test checks.
+    private static async Task WaitUntilFaultedAsync(Task task, CancellationToken cancellationToken)
+    {
+        DateTime timeout = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!task.IsFaulted && DateTime.UtcNow < timeout)
+        {
+            await Task.Delay(5, cancellationToken).ConfigureAwait(false);
+        }
+
+        Assert.True(task.IsFaulted, "The handler task did not transition to Faulted within the timeout.");
     }
 }
