@@ -551,33 +551,49 @@ public class WebSocketConnectionTests : IAsyncDisposable
             "Client state is Aborted"
         ];
 
-        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        object logLock = new();
+        List<string> connectionLog = [];
+        TaskCompletionSource receiveLoopEnded = new(TaskCreationOptions.RunContinuationsAsynchronously);
         WebSocketConnection connection = new()
         {
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnConnectionError.AddObserver(e =>
-        {
-            taskCompletionSource.TrySetResult();
-            return Task.CompletedTask;
-        });
-        List<string> connectionLog = [];
         connection.OnLogMessage.AddObserver(e =>
         {
-            connectionLog.Add(e.Message);
+            lock (logLock)
+            {
+                connectionLog.Add(e.Message);
+            }
+
+            if (e.Message == "Ending processing loop in state Aborted")
+            {
+                receiveLoopEnded.TrySetResult();
+            }
+
             return Task.CompletedTask;
         });
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await server.StopAsync();
 
-        // Wait for the client's receive loop to detect the abrupt close (WebSocketException)
-        // before calling StopAsync. This ensures client.State is Aborted when StopAsync runs,
-        // so we take the early-exit path and avoid calling CloseOutputAsync on an Aborted socket.
-        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        // Wait for the receive loop to fully exit with the socket in the Aborted state before calling
+        // StopAsync. Waiting only for OnConnectionError is not enough: the error is reported before the
+        // socket has definitively transitioned to Aborted, so StopAsync could observe State == Open,
+        // take the close path instead of the early-exit path, and never log "Client state is Aborted".
+        // The receive loop logs "Ending processing loop in state Aborted" only once client.State is
+        // Aborted (a terminal state), so gating on it guarantees StopAsync sees Aborted, and it also
+        // ensures the loop is no longer logging concurrently with the assertion below.
+        await receiveLoopEnded.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await connection.StopAsync(TestContext.Current.CancellationToken);
-        Assert.Equivalent(expectedLogEntries, connectionLog);
+
+        string[] logSnapshot;
+        lock (logLock)
+        {
+            logSnapshot = [.. connectionLog];
+        }
+
+        Assert.Equivalent(expectedLogEntries, logSnapshot);
     }
 
     [Fact]
@@ -1119,6 +1135,11 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
+        // With ShutdownTimeout=Zero, StopAsync returns without waiting for the receive/close loop to
+        // finish, so that background loop can still be appending log messages after StopAsync returns.
+        // Guard the list and snapshot it under the same lock before asserting, so the assertion does
+        // not enumerate the list while a background Add is mutating it.
+        object logLock = new();
         List<string> connectionLog = [];
         WebSocketConnection connection = new()
         {
@@ -1126,7 +1147,11 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
         connection.OnLogMessage.AddObserver(e =>
         {
-            connectionLog.Add(e.Message);
+            lock (logLock)
+            {
+                connectionLog.Add(e.Message);
+            }
+
             return Task.CompletedTask;
         });
 
@@ -1135,10 +1160,16 @@ public class WebSocketConnectionTests : IAsyncDisposable
         server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
+        string[] logSnapshot;
+        lock (logLock)
+        {
+            logSnapshot = [.. connectionLog];
+        }
+
         // With ShutdownTimeout=Zero, CloseClientWebSocketAsync may throw OperationCanceledException
         // before logging "Client state is X". At minimum we get "Closing connection".
-        Assert.Contains("Closing connection", connectionLog);
-        Assert.True(connectionLog.Count >= 1);
+        Assert.Contains("Closing connection", logSnapshot);
+        Assert.True(logSnapshot.Length >= 1);
     }
 
     [Fact]
