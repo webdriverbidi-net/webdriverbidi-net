@@ -62,6 +62,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </summary>
     public static readonly TimeSpan DefaultCommandWaitTimeout = TimeSpan.FromSeconds(60);
 
+    private const string LogMessageObserverDescription = "driver log message observer";
+
     private const string EventReceivedEventName = "driver.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";
     private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
@@ -823,9 +825,32 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="message">The log message to raise in the event.</param>
     /// <param name="logLevel">The <see cref="WebDriverBiDiLogLevel"/> at which to raise the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// This method never throws for a failure in an observer of <see cref="OnLogMessage"/>;
+    /// such a failure is routed through the observer-error pipeline, where it is governed
+    /// by <see cref="EventHandlerExceptionBehavior"/>.
+    /// </remarks>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel)
     {
-        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, logLevel, LoggerComponentName)).ConfigureAwait(false);
+        // A synchronously throwing log observer would propagate its exception into
+        // whatever operation happened to emit the log message. We especially want
+        // to fix this so that disposal is not interrupted.
+        try
+        {
+            await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, logLevel, LoggerComponentName)).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            await this.ReportObservableEventObserverError(new EventObserverErrorInfo()
+            {
+                ObservableEventName = LogMessageEventName,
+                ObserverId = string.Empty,
+                ObserverDescription = LogMessageObserverDescription,
+                Exception = ex,
+                IsAsynchronousHandler = false,
+                FaultOccurredAfterHandlerReturned = false,
+            }).ConfigureAwait(false);
+        }
     }
 
     private void ThrowIfDisposed()

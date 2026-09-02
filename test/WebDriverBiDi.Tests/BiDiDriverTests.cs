@@ -1157,6 +1157,33 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestDisposeSurvivesThrowingLogObserver()
+    {
+        // A synchronously throwing observer of OnLogMessage must not turn the
+        // suppress-and-log disposal into a throwing DisposeAsync that skips the
+        // disposal of the transport. The observer's failure is instead routed
+        // through the observer-error pipeline and surfaced via
+        // OnEventHandlerErrorOccurred.
+        List<EventHandlerErrorOccurredEventArgs> observerErrors = [];
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        driver.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            observerErrors.Add(e);
+        });
+        driver.OnLogMessage.AddObserver(e => throw new WebDriverBiDiException("Simulated log observer failure"));
+        transport.ThrowOnDisconnect = true;
+        await driver.DisposeAsync();
+
+        Assert.True(transport.IsDisposed);
+        Assert.Contains(observerErrors,
+            e => e.ErrorInfo.ObservableEventName == driver.OnLogMessage.EventName
+                 && e.ErrorInfo.Exception.Message.Contains("Simulated log observer failure"));
+    }
+
+    [Fact]
     public async Task TestRegisterTypeInfoResolverBeforeStarting()
     {
         TestWebSocketConnection connection = new();
