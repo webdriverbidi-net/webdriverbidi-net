@@ -143,7 +143,7 @@ public class EmulationModuleSamples
         SetGeolocationOverrideCoordinatesCommandParameters parameters =
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
-                Coordinates = new GeolocationCoordinates(-122.4194, 37.7749) { Accuracy = 100 },
+                Coordinates = new GeolocationCoordinates(37.7749, -122.4194) { Accuracy = 100 },
                 Contexts = { contextId }
             };
 
@@ -182,7 +182,7 @@ public class EmulationModuleSamples
         await driver.Emulation.SetGeolocationOverrideAsync(
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
-                Coordinates = new GeolocationCoordinates(-74.0060, 40.7128) { Accuracy = 100 },
+                Coordinates = new GeolocationCoordinates(40.7128, -74.0060) { Accuracy = 100 },
                 Contexts = { contextId }
             });
 
@@ -190,7 +190,7 @@ public class EmulationModuleSamples
         await driver.Emulation.SetGeolocationOverrideAsync(
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
-                Coordinates = new GeolocationCoordinates(-0.1278, 51.5074) { Accuracy = 100 },
+                Coordinates = new GeolocationCoordinates(51.5074, -0.1278) { Accuracy = 100 },
                 Contexts = { contextId }
             });
 
@@ -198,7 +198,7 @@ public class EmulationModuleSamples
         await driver.Emulation.SetGeolocationOverrideAsync(
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
-                Coordinates = new GeolocationCoordinates(139.6503, 35.6762) { Accuracy = 100 },
+                Coordinates = new GeolocationCoordinates(35.6762, 139.6503) { Accuracy = 100 },
                 Contexts = { contextId }
             });
         #endregion
@@ -815,7 +815,7 @@ public class EmulationModuleSamples
             await driver.Emulation.SetGeolocationOverrideAsync(
                 new SetGeolocationOverrideCoordinatesCommandParameters
                 {
-                    Coordinates = new GeolocationCoordinates(location.Value.Lng, location.Value.Lat) { Accuracy = 100 },
+                    Coordinates = new GeolocationCoordinates(location.Value.Lat, location.Value.Lng) { Accuracy = 100 },
                     Contexts = { contextId }
                 });
 
