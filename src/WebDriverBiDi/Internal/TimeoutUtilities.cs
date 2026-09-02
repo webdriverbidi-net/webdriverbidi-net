@@ -36,22 +36,41 @@ internal static class TimeoutUtilities
     /// Gets a value indicating whether the specified timeout is usable with the runtime's timers.
     /// </summary>
     /// <param name="timeout">The timeout to validate.</param>
+    /// <param name="allowInfinite">
+    /// <see langword="true"/> to accept <see cref="Timeout.InfiniteTimeSpan"/> as a valid "wait
+    /// indefinitely" value; <see langword="false"/> to reject it. Callers whose consumption of the
+    /// timeout cannot represent an infinite wait (for example a budget computed by subtracting elapsed
+    /// time, where the negative <see cref="Timeout.InfiniteTimeSpan"/> would read as an already-expired
+    /// budget) should pass <see langword="false"/>.
+    /// </param>
     /// <returns>
-    /// <see langword="true"/> if <paramref name="timeout"/> is <see cref="Timeout.InfiniteTimeSpan"/>,
-    /// or is non-negative and no greater than <see cref="MaxTimeout"/>; otherwise, <see langword="false"/>.
+    /// <see langword="true"/> if <paramref name="timeout"/> is <see cref="Timeout.InfiniteTimeSpan"/>
+    /// and <paramref name="allowInfinite"/> is <see langword="true"/>, or if it is non-negative and no
+    /// greater than <see cref="MaxTimeout"/>; otherwise, <see langword="false"/>.
     /// </returns>
-    public static bool IsValidTimeout(TimeSpan timeout)
+    public static bool IsValidTimeout(TimeSpan timeout, bool allowInfinite = true)
     {
-        return timeout == Timeout.InfiniteTimeSpan || (timeout >= TimeSpan.Zero && timeout <= MaxTimeout);
+        if (allowInfinite && timeout == Timeout.InfiniteTimeSpan)
+        {
+            return true;
+        }
+
+        return timeout >= TimeSpan.Zero && timeout <= MaxTimeout;
     }
 
     /// <summary>
     /// Creates the message for an <see cref="ArgumentOutOfRangeException"/> describing an invalid timeout.
     /// </summary>
     /// <param name="description">A description of the timeout, used as the start of the message (for example, "Command timeout").</param>
+    /// <param name="allowInfinite">
+    /// <see langword="true"/> if <see cref="Timeout.InfiniteTimeSpan"/> is a permitted value (the message
+    /// then mentions it); <see langword="false"/> if it is not. Must match the value passed to the
+    /// corresponding <see cref="IsValidTimeout(TimeSpan, bool)"/> call.
+    /// </param>
     /// <returns>The exception message.</returns>
-    public static string GetInvalidTimeoutMessage(string description)
+    public static string GetInvalidTimeoutMessage(string description, bool allowInfinite = true)
     {
-        return $"{description} must be a non-negative TimeSpan value no greater than {MaxTimeout} ({(long)MaxTimeout.TotalMilliseconds} milliseconds), or Timeout.InfiniteTimeSpan";
+        string infiniteSuffix = allowInfinite ? ", or Timeout.InfiniteTimeSpan" : string.Empty;
+        return $"{description} must be a non-negative TimeSpan value no greater than {MaxTimeout} ({(long)MaxTimeout.TotalMilliseconds} milliseconds){infiniteSuffix}";
     }
 }

@@ -104,6 +104,56 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public void TestStartupTimeoutRejectsNegativeValue()
+    {
+        WebSocketConnection connection = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => connection.StartupTimeout = TimeSpan.FromMilliseconds(-5));
+    }
+
+    [Fact]
+    public void TestStartupTimeoutRejectsInfiniteTimeSpan()
+    {
+        // The startup budget is computed by subtracting elapsed time, so an infinite (negative)
+        // value would read as an already-expired budget rather than "wait forever"; it is rejected.
+        WebSocketConnection connection = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => connection.StartupTimeout = Timeout.InfiniteTimeSpan);
+    }
+
+    [Fact]
+    public void TestStartupTimeoutRejectsValueExceedingMaximum()
+    {
+        WebSocketConnection connection = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => connection.StartupTimeout = TimeSpan.FromDays(60));
+    }
+
+    [Fact]
+    public void TestShutdownTimeoutRejectsNegativeValue()
+    {
+        WebSocketConnection connection = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => connection.ShutdownTimeout = TimeSpan.FromMilliseconds(-5));
+    }
+
+    [Fact]
+    public void TestShutdownTimeoutAllowsInfiniteTimeSpan()
+    {
+        // Shutdown waits are bounded by Task.Delay/CancellationTokenSource, both of which treat
+        // Timeout.InfiniteTimeSpan as "no timeout", so an infinite value is a valid "wait
+        // indefinitely for a clean shutdown" setting.
+        WebSocketConnection connection = new()
+        {
+            ShutdownTimeout = Timeout.InfiniteTimeSpan,
+        };
+        Assert.Equal(Timeout.InfiniteTimeSpan, connection.ShutdownTimeout);
+    }
+
+    [Fact]
+    public void TestDataTimeoutRejectsNegativeValue()
+    {
+        WebSocketConnection connection = new();
+        Assert.Throws<ArgumentOutOfRangeException>(() => connection.DataTimeout = TimeSpan.FromMilliseconds(-5));
+    }
+
+    [Fact]
     public async Task TestConnectionSkipsRetryPauseWhenFailedAttemptConsumesStartupBudget()
     {
         // The pause between connection attempts is charged against StartupTimeout rather than
