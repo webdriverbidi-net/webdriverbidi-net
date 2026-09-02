@@ -91,10 +91,10 @@ jobs:
           echo ""
           echo "**Next steps:**"
           echo "1. Download the \`benchmark-baseline\` artifact from this workflow run."
-          echo "2. Extract both JSON files into \`test/WebDriverBiDi.Benchmarks/baselines/\`, replacing the existing files."
+          echo "2. Extract the JSON files into \`test/WebDriverBiDi.Benchmarks/baselines/\`, replacing the existing files."
           echo "3. Open a follow-up PR with the updated baseline files."
           echo ""
-          echo "The two files should be named:"
+          echo "The files should be named:"
           for f in baseline-out/*.json; do
             echo "- \`$(basename "$f")\`"
           done

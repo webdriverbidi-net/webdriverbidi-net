@@ -20,6 +20,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
 
@@ -44,6 +45,7 @@ jobs:
     name: Unit tests
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
@@ -106,7 +108,7 @@ jobs:
           test/coverage/lcov-logging.*.info
 
       - name: Upload code coverage
-        uses: coverallsapp/github-action@v2
+        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info
@@ -116,6 +118,7 @@ jobs:
     name: Unit tests (Windows)
     needs: build
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
@@ -154,6 +157,7 @@ jobs:
     name: Compatibility tests (${{ matrix.os.display }})
     needs: build
     runs-on: ${{ matrix.os.image }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -191,6 +195,7 @@ jobs:
     name: Integration tests (${{ matrix.browser.display }})
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -250,6 +255,7 @@ jobs:
     name: Integration tests (${{ matrix.browser.display }}, Windows)
     needs: build
     runs-on: windows-latest
+    timeout-minutes: 30
     # windows-latest defaults to Windows PowerShell 5.1, whose Invoke-WebRequest
     # buffers whole responses through a slow pipeline; PowerShell 7 downloads the
     # browser archives in a fraction of the time.

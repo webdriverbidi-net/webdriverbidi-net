@@ -43,6 +43,7 @@ jobs:
     name: Build documentation
     needs: [tests, validate-docs]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
@@ -95,7 +96,12 @@ jobs:
 
   release:
     name: Publish to NuGet
-    needs: tests
+    # Gate the package push on the documentation pipeline as well as the tests. build-docs
+    # transitively requires [tests, validate-docs], so a docs failure (region validation or the
+    # DocFX build itself) blocks the NuGet push, keeping the published package and docs in lockstep
+    # as the workflow header promises. deploy-docs (GitHub Pages) is intentionally not a gate: it is
+    # infrastructure that can be re-run without republishing the package.
+    needs: [tests, build-docs]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -146,7 +152,7 @@ jobs:
         run: dotnet pack WebDriverBiDi.NET.sln --configuration Release -p:PackageVersion="${PACKAGE_VERSION}" --no-build --output .
 
       - name: NuGet login (OIDC → temp API key)
-        uses: NuGet/login@v1
+        uses: NuGet/login@ebc737b6fc418a6ca0073cf116ec8dc156d8b81e # v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}
