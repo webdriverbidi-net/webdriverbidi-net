@@ -283,8 +283,9 @@ public class Transport : IAsyncDisposable
     /// will not be processed, and any pending commands will be canceled. The default is 10 seconds.
     /// </summary>
     /// <remarks>
-    /// This timeout applies to both waiting for the incoming message queue to empty, and for
-    /// the messages in the queue to be processed.
+    /// This timeout applies to waiting for the incoming message queue to empty, to waiting for
+    /// the messages in the queue to be processed, and, during disposal, to waiting for an
+    /// in-flight connect attempt to complete before the transport's resources are released.
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
@@ -995,6 +996,30 @@ public class Transport : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
+        // A connect attempt that is still in flight owns the connect/disconnect semaphore
+        // and is actively using the connection; disposing them out from under it would fail
+        // the attempt with ObjectDisposedException rather than its normal rollback.
+        // Serialize with the attempt by acquiring and releasing the lock, which cannot
+        // succeed until the attempt has either published Connected or rolled back to
+        // Disconnected; then tear down whichever state resulted. The wait is bounded by
+        // ShutdownTimeout so a pathological disposal from code the connect attempt itself
+        // invoked (such as a synchronous log observer) degrades to a logged, time-bounded
+        // wait rather than a deadlock; on timeout, disposal proceeds exactly as it would
+        // have without this serialization.
+        if (this.State == TransportState.Connecting)
+        {
+            using CancellationTokenSource lockWaitCancellationTokenSource = new(this.ShutdownTimeout);
+            try
+            {
+                await this.AcquireConnectionLockAsync(lockWaitCancellationTokenSource.Token).ConfigureAwait(false);
+                this.ReleaseConnectionLock();
+            }
+            catch (OperationCanceledException)
+            {
+                await this.LogAsync("Timed out waiting for an in-flight connect attempt to complete during disposal", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+            }
+        }
+
         if (this.State == TransportState.Connected)
         {
             try

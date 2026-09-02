@@ -108,7 +108,7 @@ Most users never need to tune this. Consider adjusting it only in specialized sc
 
 [!code-csharp[Transport Shutdown Timeout](../../code/advanced/ConnectionManagementSamples.cs#TransportShutdownTimeout)]
 
-`Transport.ShutdownTimeout` only affects the message-processing drain; it does not affect the underlying connection's close handshake, which is governed by `Connection.ShutdownTimeout`. Both timeouts may apply during `driver.StopAsync()`, at different stages of teardown.
+`Transport.ShutdownTimeout` governs the transport's own waits: the message-processing drain during `DisconnectAsync`, the wait for the previous connection's processing to finish when `StartAsync` reconnects, and, during disposal, the wait for an in-flight connect attempt to complete before resources are released. It does not affect the underlying connection's close handshake, which is governed by `Connection.ShutdownTimeout`. Both timeouts may apply during `driver.StopAsync()`, at different stages of teardown.
 
 An event handler that is still running while `StopAsync()` drains the queue may itself try to send a command. Such a command fails immediately with `WebDriverBiDiConnectionException` ("Transport must be connected to a remote end to execute commands") rather than waiting out the shutdown timeout, so a handler cannot deadlock shutdown by sending; it simply observes the exception.
 
