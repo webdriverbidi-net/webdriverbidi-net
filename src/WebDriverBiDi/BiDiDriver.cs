@@ -462,6 +462,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task StopAsync(CancellationToken cancellationToken = default)
     {
+        // Capture whether the transport was connected when this stop began.
+        bool wasConnected = this.transport.IsConnected;
         try
         {
             await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
@@ -469,12 +471,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         finally
         {
             // The transport supports reconnect, and registration is legal again after
-            // StopAsync (IsStarted is false). Preserve that by clearing the flag once the
-            // disconnect has completed. DisconnectAsync throws after a fully completed
-            // teardown when Collect-mode errors were gathered during the session, so the
-            // flag must be cleared on that path too; only when the transport is still
-            // connected (the wait was canceled mid-teardown) does the flag remain set.
-            if (!this.transport.IsConnected)
+            // StopAsync (IsStarted is false). Clear the flag only when this stop actually brought a
+            // connected transport down: it was connected at entry and is no longer connected.
+            // DisconnectAsync throws after a fully completed teardown when Collect-mode errors were
+            // gathered during the session, so the flag is cleared on that path too. When the wait was
+            // canceled mid-teardown the transport is still connected and the flag remains set; when
+            // the stop was racing an in-flight start it never saw a connection and leaves that
+            // start's flag untouched.
+            if (wasConnected && !this.transport.IsConnected)
             {
                 this.SetIsStartRequestedValue(false);
             }
