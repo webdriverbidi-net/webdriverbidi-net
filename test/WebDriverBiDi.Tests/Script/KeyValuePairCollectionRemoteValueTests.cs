@@ -193,6 +193,74 @@ public class KeyValuePairCollectionRemoteValueTests
     }
 
     [Fact]
+    public void TestConvertingMapWithStructurallyIdenticalObjectKeysToLocalValuePreservesDistinctEntries()
+    {
+        // A JavaScript Map may contain two distinct object keys that serialize
+        // identically (for example, two Date keys holding the same instant).
+        // RemoteValueDictionary preserves them as distinct entries via reference
+        // equality, and converting to a LocalValue must not collapse them, even
+        // though the converted keys are structurally equal records.
+        string json = """
+                      {
+                        "type": "map",
+                        "value": [
+                          [
+                            "stringKey",
+                            {
+                              "type": "number",
+                              "value": 1
+                            }
+                          ],
+                          [
+                            {
+                              "type": "date",
+                              "value": "1970-01-01T00:00:00.000Z"
+                            },
+                            {
+                              "type": "number",
+                              "value": 2
+                            }
+                          ],
+                          [
+                            {
+                              "type": "date",
+                              "value": "1970-01-01T00:00:00.000Z"
+                            },
+                            {
+                              "type": "number",
+                              "value": 3
+                            }
+                          ]
+                        ]
+                      }
+                      """;
+
+        KeyValuePairCollectionRemoteValue? result = JsonSerializer.Deserialize<KeyValuePairCollectionRemoteValue>(json);
+
+        Assert.NotNull(result);
+        LocalValue localValue = result.ToLocalValue();
+        LocalArgumentValue argumentLocalValue = (LocalArgumentValue)localValue;
+        Assert.Equal("map", argumentLocalValue.Type);
+        Assert.IsType<Dictionary<object, LocalValue>>(argumentLocalValue.Value);
+        Dictionary<object, LocalValue> convertedDictionary = (Dictionary<object, LocalValue>)argumentLocalValue.Value;
+        Assert.Equal(3, convertedDictionary.Count);
+
+        // String keys are compared by value.
+        Assert.True(convertedDictionary.ContainsKey("stringKey"));
+
+        // The two date keys are structurally equal records, yet remain distinct entries.
+        List<LocalValue> dateKeys = convertedDictionary.Keys.OfType<LocalValue>().ToList();
+        Assert.Equal(2, dateKeys.Count);
+        Assert.Equal(dateKeys[0], dateKeys[1]);
+        Assert.NotSame(dateKeys[0], dateKeys[1]);
+
+        // Each entry is retrievable by its own key instance and carries its own value.
+        LocalArgumentValue firstDateKeyedValue = (LocalArgumentValue)convertedDictionary[dateKeys[0]];
+        LocalArgumentValue secondDateKeyedValue = (LocalArgumentValue)convertedDictionary[dateKeys[1]];
+        Assert.NotEqual(firstDateKeyedValue.Value, secondDateKeyedValue.Value);
+    }
+
+    [Fact]
     public void TestCanConvertObjectToLocalValue()
     {
         string json = """
