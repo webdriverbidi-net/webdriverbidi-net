@@ -82,6 +82,45 @@ public class DateRemoteValueTests
     }
 
     [Fact]
+    public void TestCanDeserializeDateRemoteValueWithExpandedYearBeyondDateTimeRange()
+    {
+        // new Date(8.64e15).toISOString() is "+275760-09-13T00:00:00.000Z", the
+        // largest representable JavaScript date; instants outside the range of
+        // DateTime are clamped rather than failing the containing command.
+        string json = """
+                      {
+                        "type": "date",
+                        "value": "+275760-09-13T00:00:00.000Z"
+                      }
+                      """;
+
+        DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Date, result.Type);
+        Assert.Equal(DateTime.MaxValue, result.Value);
+    }
+
+    [Fact]
+    public void TestCanDeserializeDateRemoteValueWithNegativeExpandedYear()
+    {
+        // new Date(-8.64e15).toISOString() is "-271821-04-20T00:00:00.000Z", the
+        // smallest representable JavaScript date.
+        string json = """
+                      {
+                        "type": "date",
+                        "value": "-271821-04-20T00:00:00.000Z"
+                      }
+                      """;
+
+        DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(RemoteValueType.Date, result.Type);
+        Assert.Equal(DateTime.MinValue, result.Value);
+    }
+
+    [Fact]
     public void TestDeserializingDateRemoteValueWithMissingValueThrows()
     {
         string json = """

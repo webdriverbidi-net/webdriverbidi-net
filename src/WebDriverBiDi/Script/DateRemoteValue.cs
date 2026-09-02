@@ -27,9 +27,18 @@ public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>, IObjectRefere
     /// <summary>
     /// Gets the DateTime value of this remote value.
     /// </summary>
+    /// <remarks>
+    /// The remote end serializes JavaScript Date objects in the format of
+    /// <c>Date.prototype.toISOString()</c>, whose range (approximately years
+    /// -271821 to +275760) exceeds that of <see cref="DateTime"/> (years
+    /// 0001-9999). A date before the <see cref="DateTime"/> range deserializes
+    /// as <see cref="DateTime.MinValue"/>, and one after it as
+    /// <see cref="DateTime.MaxValue"/>.
+    /// </remarks>
     [JsonPropertyName("value")]
     [JsonInclude]
     [JsonRequired]
+    [JsonConverter(typeof(ExpandedYearDateTimeJsonConverter))]
     public override DateTime Value { get; internal set; } = DateTime.MinValue;
 
     /// <summary>

@@ -185,7 +185,7 @@ public class RemoteValueTests
                         "value": true
                       }
                       """;
-        Assert.Contains("JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+        Assert.Contains("JSON serialization of date value should be a string, but was True", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.Contains("JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+        Assert.Contains("Cannot parse invalid value 'some value' for date", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
     }
 
     [Fact]
