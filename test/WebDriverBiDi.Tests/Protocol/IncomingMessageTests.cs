@@ -20,6 +20,19 @@ public class IncomingMessageTests
     }
 
     [Fact]
+    public void TestMessageTextIsCachedAcrossReads()
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes("Hello, World!");
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length);
+        string firstRead = message.MessageText;
+        string secondRead = message.MessageText;
+        Assert.Equal("Hello, World!", firstRead);
+        Assert.Same(firstRead, secondRead);
+    }
+
+    [Fact]
     public async Task TestCanParseValidJson()
     {
         byte[] bytes = Encoding.UTF8.GetBytes("{}");

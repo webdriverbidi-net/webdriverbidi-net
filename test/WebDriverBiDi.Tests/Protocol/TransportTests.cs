@@ -715,7 +715,7 @@ public class TransportTests
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingId()
+    public async Task TestTransportReportsProtocolErrorForErrorMessageWithMissingId()
     {
         string json = """
                       {
@@ -724,19 +724,21 @@ public class TransportTests
                         "message": "This is a test error message"
                       }
                       """;
-        string loggedEvent = string.Empty;
+        bool unknownMessageEventRaised = false;
         List<LogMessageEventArgs> logs = [];
-        TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            loggedEvent = e.Message;
-            unknownMessageTaskCompletionSource.TrySetResult();
+            unknownMessageEventRaised = true;
             return Task.CompletedTask;
         });
         transport.OnLogMessage.AddObserver(e =>
@@ -750,18 +752,22 @@ public class TransportTests
             return Task.CompletedTask;
         });
         await connection.RaiseDataReceivedEventAsync(json);
-        await Task.WhenAll(
-            unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-            logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Equal(json, loggedEvent);
         Assert.Single(logs);
         Assert.Contains("Unexpected error parsing error JSON", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Error, logs[0].Level);
+
+        // With both categories set to Collect, exactly one collected exception proves the
+        // malformed-but-recognized message was captured once, as a protocol error, and
+        // was not additionally reported as an unknown message.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Single(exception.InnerExceptions);
+        Assert.False(unknownMessageEventRaised);
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingErrorProperty()
+    public async Task TestTransportReportsProtocolErrorForErrorMessageWithMissingErrorProperty()
     {
         string json = """
                       {
@@ -770,19 +776,21 @@ public class TransportTests
                         "message": "This is a test error message"
                       }
                       """;
-        string loggedEvent = string.Empty;
+        bool unknownMessageEventRaised = false;
         List<LogMessageEventArgs> logs = [];
-        TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            loggedEvent = e.Message;
-            unknownMessageTaskCompletionSource.TrySetResult();
+            unknownMessageEventRaised = true;
             return Task.CompletedTask;
         });
         transport.OnLogMessage.AddObserver(e =>
@@ -796,18 +804,22 @@ public class TransportTests
             return Task.CompletedTask;
         });
         await connection.RaiseDataReceivedEventAsync(json);
-        await Task.WhenAll(
-            unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-            logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Equal(json, loggedEvent);
         Assert.Single(logs);
         Assert.Contains("Unexpected error parsing error JSON", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Error, logs[0].Level);
+
+        // With both categories set to Collect, exactly one collected exception proves the
+        // malformed-but-recognized message was captured once, as a protocol error, and
+        // was not additionally reported as an unknown message.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Single(exception.InnerExceptions);
+        Assert.False(unknownMessageEventRaised);
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingMessageProperty()
+    public async Task TestTransportReportsProtocolErrorForErrorMessageWithMissingMessageProperty()
     {
         string json = """
                       {
@@ -816,19 +828,21 @@ public class TransportTests
                         "error": "unknown error"
                       }
                       """;
-        string loggedEvent = string.Empty;
+        bool unknownMessageEventRaised = false;
         List<LogMessageEventArgs> logs = [];
-        TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            loggedEvent = e.Message;
-            unknownMessageTaskCompletionSource.TrySetResult();
+            unknownMessageEventRaised = true;
             return Task.CompletedTask;
         });
         transport.OnLogMessage.AddObserver(e =>
@@ -842,14 +856,18 @@ public class TransportTests
             return Task.CompletedTask;
         });
         await connection.RaiseDataReceivedEventAsync(json);
-        await Task.WhenAll(
-            unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-            logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Equal(json, loggedEvent);
         Assert.Single(logs);
         Assert.Contains("Unexpected error parsing error JSON", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Error, logs[0].Level);
+
+        // With both categories set to Collect, exactly one collected exception proves the
+        // malformed-but-recognized message was captured once, as a protocol error, and
+        // was not additionally reported as an unknown message.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Single(exception.InnerExceptions);
+        Assert.False(unknownMessageEventRaised);
     }
 
     [Fact]
@@ -936,7 +954,7 @@ public class TransportTests
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForEventMessageWithMismatchingEventParameters()
+    public async Task TestTransportReportsProtocolErrorForEventMessageWithMismatchingEventParameters()
     {
         string json = """
                       {
@@ -947,20 +965,22 @@ public class TransportTests
                         }
                       }
                       """;
-        string loggedEvent = string.Empty;
+        bool unknownMessageEventRaised = false;
         List<LogMessageEventArgs> logs = [];
-        TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            loggedEvent = e.Message;
-            unknownMessageTaskCompletionSource.TrySetResult();
+            unknownMessageEventRaised = true;
             return Task.CompletedTask;
         });
         transport.OnLogMessage.AddObserver(e =>
@@ -974,22 +994,28 @@ public class TransportTests
             return Task.CompletedTask;
         });
         await connection.RaiseDataReceivedEventAsync(json);
-        await Task.WhenAll(
-            unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-            logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Equal(json, loggedEvent);
         Assert.Single(logs);
         Assert.Contains("Unexpected error parsing event JSON", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Error, logs[0].Level);
+
+        // With both categories set to Collect, exactly one collected exception proves the
+        // malformed payload of a registered event was captured once, as a protocol error,
+        // and was not additionally reported as an unknown message.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Single(exception.InnerExceptions);
+        Assert.False(unknownMessageEventRaised);
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForEventMessageWithNullParams()
+    public async Task TestTransportReportsProtocolErrorForEventMessageWithNullParams()
     {
-        // A registered event whose 'params' is JSON null must be reported as a protocol error
-        // (surfaced here as an unknown message plus an error-level log), not silently handed to the
-        // event dispatch pipeline where it would be misattributed to a user event handler.
+        // A registered event whose 'params' is JSON null must be reported as a protocol
+        // error (surfaced as an error-level log and a capture governed by
+        // ProtocolErrorBehavior) — not as an unknown message, and not silently handed to
+        // the event dispatch pipeline where it would be misattributed to a user event
+        // handler.
         string json = """
                       {
                         "type": "event",
@@ -997,20 +1023,22 @@ public class TransportTests
                         "params": null
                       }
                       """;
-        string loggedEvent = string.Empty;
+        bool unknownMessageEventRaised = false;
         List<LogMessageEventArgs> logs = [];
-        TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            loggedEvent = e.Message;
-            unknownMessageTaskCompletionSource.TrySetResult();
+            unknownMessageEventRaised = true;
             return Task.CompletedTask;
         });
         transport.OnLogMessage.AddObserver(e =>
@@ -1024,18 +1052,22 @@ public class TransportTests
             return Task.CompletedTask;
         });
         await connection.RaiseDataReceivedEventAsync(json);
-        await Task.WhenAll(
-            unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-            logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Equal(json, loggedEvent);
         Assert.Single(logs);
         Assert.Contains("Unexpected error parsing event JSON", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Error, logs[0].Level);
+
+        // With both categories set to Collect, exactly one collected exception proves the
+        // malformed payload of a registered event was captured once, as a protocol error,
+        // and was not additionally reported as an unknown message.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Single(exception.InnerExceptions);
+        Assert.False(unknownMessageEventRaised);
     }
 
     [Fact]
-    public async Task TestTransportRaisesUnknownMessageEventForEventMessageDeserializingToNonEventMessageType()
+    public async Task TestTransportReportsProtocolErrorForEventMessageDeserializingToNonEventMessageType()
     {
         string json = """
                       {
@@ -1046,20 +1078,22 @@ public class TransportTests
                         }
                       }
                       """;
-        string loggedEvent = string.Empty;
+        bool unknownMessageEventRaised = false;
         List<LogMessageEventArgs> logs = [];
-        TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource logTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        TestTransport transport = new(connection);
+        TestTransport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
         transport.RegisterInvalidEventMessageType("protocol.event", typeof(object));
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            loggedEvent = e.Message;
-            unknownMessageTaskCompletionSource.TrySetResult();
+            unknownMessageEventRaised = true;
             return Task.CompletedTask;
         });
         transport.OnLogMessage.AddObserver(e =>
@@ -1073,14 +1107,18 @@ public class TransportTests
             return Task.CompletedTask;
         });
         await connection.RaiseDataReceivedEventAsync(json);
-        await Task.WhenAll(
-            unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-            logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Equal(json, loggedEvent);
         Assert.Single(logs);
         Assert.Contains("Deserialization of event message returned null", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Error, logs[0].Level);
+
+        // With both categories set to Collect, exactly one collected exception proves the
+        // malformed payload of a registered event was captured once, as a protocol error,
+        // and was not additionally reported as an unknown message.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.Single(exception.InnerExceptions);
+        Assert.False(unknownMessageEventRaised);
     }
 
     [Fact]

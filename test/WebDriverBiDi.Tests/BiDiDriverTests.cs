@@ -674,7 +674,11 @@ public class BiDiDriverTests
         Server server = new();
         server.OnClientConnected.AddObserver(ConnectionHandler);
         await server.StartAsync();
-        await using BiDiDriver driver = new(TimeSpan.FromSeconds(30));
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(30))
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
 
         try
         {
@@ -691,12 +695,10 @@ public class BiDiDriverTests
                 }
             });
 
-            TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            string unknownMessage = string.Empty;
+            bool unknownMessageEventRaised = false;
             driver.OnUnknownMessageReceived.AddObserver(e =>
             {
-                unknownMessage = e.Message;
-                unknownMessageTaskCompletionSource.TrySetResult();
+                unknownMessageEventRaised = true;
             });
 
             // This payload omits the required "timestamp" field, which should cause an exception
@@ -713,13 +715,17 @@ public class BiDiDriverTests
                                }
                                """;
             await server.SendWebSocketDataAsync(connectionId, eventJson);
-            await Task.WhenAll(
-                logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-                unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             Assert.Single(driverLog);
             Assert.Contains("Unexpected error parsing event JSON", driverLog[0]);
-            Assert.NotEmpty(unknownMessage);
+
+            // With both categories set to Collect, exactly one collected exception proves
+            // the malformed payload of a recognized event was captured once, as a protocol
+            // error, and was not additionally reported as an unknown message.
+            AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
+            Assert.Single(exception.InnerExceptions);
+            Assert.False(unknownMessageEventRaised);
         }
         finally
         {
@@ -742,7 +748,11 @@ public class BiDiDriverTests
         Server server = new();
         server.OnClientConnected.AddObserver(ConnectionHandler);
         await server.StartAsync();
-        await using BiDiDriver driver = new();
+        await using BiDiDriver driver = new()
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
 
         try
         {
@@ -764,12 +774,10 @@ public class BiDiDriverTests
                 }
             });
 
-            TaskCompletionSource unknownMessageTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            string unknownMessage = string.Empty;
+            bool unknownMessageEventRaised = false;
             driver.OnUnknownMessageReceived.AddObserver(e =>
             {
-                unknownMessage = e.Message;
-                unknownMessageTaskCompletionSource.TrySetResult();
+                unknownMessageEventRaised = true;
             });
 
             // This payload uses an object for the error field, which should cause an exception
@@ -785,13 +793,17 @@ public class BiDiDriverTests
                           }
                           """;
             await server.SendWebSocketDataAsync(connectionId, json);
-            await Task.WhenAll(
-                logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
-                unknownMessageTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            await logTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
             Assert.Single(driverLog);
             Assert.Contains("Unexpected error parsing error JSON", driverLog[0]);
-            Assert.NotEmpty(unknownMessage);
+
+            // With both categories set to Collect, exactly one collected exception proves
+            // the malformed-but-recognized error message was captured once, as a protocol
+            // error, and was not additionally reported as an unknown message.
+            AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
+            Assert.Single(exception.InnerExceptions);
+            Assert.False(unknownMessageEventRaised);
         }
         finally
         {
