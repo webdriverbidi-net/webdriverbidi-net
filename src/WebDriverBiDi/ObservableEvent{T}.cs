@@ -6,6 +6,7 @@
 namespace WebDriverBiDi;
 
 using System.Buffers;
+using System.Runtime.ExceptionServices;
 
 /// <summary>
 /// Implementation of a subject in the Observer pattern for events. It can optionally be limited
@@ -323,10 +324,22 @@ public class ObservableEvent<T>
 
         if (exceptions is not null)
         {
+            // A lone collected exception is rethrown via ExceptionDispatchInfo to preserve
+            // the throwing handler's stack trace: rethrowing the caught object directly
+            // (throw exceptions[0]) would reset the trace at this site, degrading
+            // diagnostics exactly when a second observer is added (the single-observer
+            // fast path above preserves the trace through the await machinery).
+            //
+            // Some code coverage tools do not recognize full coverage when using
+            // ExceptionDispatchInfo.Throw() to throw the exception; they see a closing
+            // brace as unreachable. To work around this, we can omit the braces for the
+            // single-line if statement. However, this runs afoul of the coding style rules
+            // for this project, which require braces for all control blocks. Therefore, we
+            // disable those style rules for this block only.
+#pragma warning disable IDE0011, SA1503
             if (exceptions.Count == 1)
-            {
-                throw exceptions[0];
-            }
+                ExceptionDispatchInfo.Capture(exceptions[0]).Throw();
+#pragma warning restore IDE0011, SA1503
 
             throw new AggregateException("One or more observer handlers threw an exception.", exceptions);
         }

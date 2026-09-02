@@ -37,7 +37,7 @@ public class StartScreencastCommandParameters : CommandParameters<StartScreencas
     /// Gets or sets the MIME type of the screencast file.
     /// </summary>
     [JsonPropertyName("mimeType")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? MimeType { get; set; }
 
     /// <summary>
