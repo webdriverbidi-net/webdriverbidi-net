@@ -13,11 +13,35 @@ using System.Text.Json.Serialization;
 public class UnsubscribeByAttributesCommandParameters : UnsubscribeCommandParameters
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="UnsubscribeByAttributesCommandParameters"/> class for a single event.
+    /// </summary>
+    /// <param name="eventName">The event from which to unsubscribe.</param>
+    public UnsubscribeByAttributesCommandParameters(string eventName)
+        : this([eventName])
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="UnsubscribeByAttributesCommandParameters"/> class.
     /// </summary>
-    public UnsubscribeByAttributesCommandParameters()
+    /// <remarks>
+    /// The specification requires an unsubscription to name at least one event. Unlike values
+    /// whose specification constraints the remote end enforces, an empty events list is
+    /// rejected here: an unsubscription from no events cannot be meaningful under any revision
+    /// of the specification, and accepting it would only defer a certain failure to the
+    /// remote end.
+    /// </remarks>
+    /// <param name="events">The list of events from which to unsubscribe.</param>
+    /// <exception cref="ArgumentException">Thrown when no events are specified in the events list.</exception>
+    public UnsubscribeByAttributesCommandParameters(IList<string> events)
         : base()
     {
+        if (events.Count == 0)
+        {
+            throw new ArgumentException("At least one event must be specified.", nameof(events));
+        }
+
+        this.Events.AddRange(events);
     }
 
     /// <summary>

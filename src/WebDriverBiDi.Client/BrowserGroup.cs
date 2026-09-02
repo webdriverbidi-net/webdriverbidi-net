@@ -138,8 +138,7 @@ public class BrowserGroup : IAsyncDisposable
 
         try
         {
-            UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
-            unsubscribeParameters.SubscriptionIds.Add(this.navigationEventSubscriptionId);
+            UnsubscribeByIdsCommandParameters unsubscribeParameters = new(this.navigationEventSubscriptionId);
             await this.driver.Session.UnsubscribeAsync(unsubscribeParameters).ConfigureAwait(false);
             await this.driver.StopAsync().ConfigureAwait(false);
         }

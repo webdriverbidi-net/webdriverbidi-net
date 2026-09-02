@@ -15,6 +15,13 @@ public class KeyDownAction : IKeySourceAction
     /// <summary>
     /// Initializes a new instance of the <see cref="KeyDownAction"/> class.
     /// </summary>
+    /// <remarks>
+    /// The specification requires the value to be a string containing a single grapheme
+    /// cluster. Unlike values whose specification constraints the remote end enforces, a
+    /// null or empty string is rejected here: it cannot describe a key under any revision
+    /// of the specification, and accepting it would only defer a certain failure to the
+    /// remote end.
+    /// </remarks>
     /// <param name="value">The text of keys to send for key down.</param>
     /// <exception cref="ArgumentException">Thrown if the value is null or empty.</exception>
     public KeyDownAction(string value)

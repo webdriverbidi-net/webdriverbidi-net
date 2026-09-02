@@ -72,8 +72,7 @@ public static class SubscribeSamples
         #region UnsubscribebyID
         // Unsubscribe by subscription ID
         UnsubscribeByIdsCommandParameters unsubscribe =
-            new UnsubscribeByIdsCommandParameters();
-        unsubscribe.SubscriptionIds.Add(subscriptionId);
+            new UnsubscribeByIdsCommandParameters(subscriptionId);
         await driver.Session.UnsubscribeAsync(unsubscribe);
         #endregion
     }
@@ -86,9 +85,8 @@ public static class SubscribeSamples
         #region UnsubscribebyEventNames
         // Or unsubscribe by event names
         UnsubscribeByAttributesCommandParameters unsubscribe =
-            new UnsubscribeByAttributesCommandParameters();
-        unsubscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
-        unsubscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+            new UnsubscribeByAttributesCommandParameters(
+                [driver.Log.OnEntryAdded.EventName, driver.Network.OnResponseCompleted.EventName]);
         await driver.Session.UnsubscribeAsync(unsubscribe);
         #endregion
     }

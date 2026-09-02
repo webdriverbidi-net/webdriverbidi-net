@@ -136,8 +136,7 @@ public class NetworkTrafficMonitor
 
         if (!string.IsNullOrEmpty(this.eventSubscriptionId))
         {
-            UnsubscribeByIdsCommandParameters unsubscribe = new();
-            unsubscribe.SubscriptionIds.Add(this.eventSubscriptionId);
+            UnsubscribeByIdsCommandParameters unsubscribe = new(this.eventSubscriptionId);
             await this.driver.Session.UnsubscribeAsync(unsubscribe).ConfigureAwait(false);
         }
 
