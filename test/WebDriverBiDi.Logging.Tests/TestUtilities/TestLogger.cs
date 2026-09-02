@@ -15,12 +15,19 @@ public sealed class TestLogger : ILogger<WebDriverBiDiEventSourceLogger>
     /// </summary>
     public IReadOnlyList<LogEntry> Entries => this.entries;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether this logger reports itself as enabled from
+    /// <see cref="IsEnabled"/>. Defaults to <see langword="true"/>; set to <see langword="false"/> to
+    /// simulate a category that has been filtered off.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
     /// <inheritdoc />
     public IDisposable? BeginScope<TState>(TState state)
         where TState : notnull => null;
 
     /// <inheritdoc />
-    public bool IsEnabled(LogLevel logLevel) => true;
+    public bool IsEnabled(LogLevel logLevel) => this.Enabled;
 
     /// <inheritdoc />
     public void Log<TState>(
