@@ -452,4 +452,222 @@ public class BiDiDriver024AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task StartAsyncRetryInCatch_AfterStartInTry_NoDiagnostic()
+    {
+        // The catch runs only when the StartAsync in the try failed, so the retry is not
+        // a duplicate and must not be reported at Error severity.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncInCatch_DriverStartedBeforeTry_ReportsError()
+    {
+        // The driver was started before the try and nothing in the try stops it, so a
+        // StartAsync in the catch is a duplicate on every path that reaches it.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await {|#0:driver.StartAsync("ws://localhost:9222")|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task StartAsyncAfterTryCatch_WhenEveryPathStarted_ReportsError()
+    {
+        // Both the try path and the catch path leave the driver started, so a StartAsync
+        // after the try statement is a certain duplicate.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+
+                        await {|#0:driver.StartAsync("ws://localhost:9224")|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task StartAsyncRetryInFilteredCatch_NoDiagnostic()
+    {
+        // Same as the plain catch retry, with an exception filter on the catch clause.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool shouldRetry)
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (WebDriverBiDiException) when (shouldRetry)
+                        {
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncInFinally_AfterStartInTry_NoDiagnostic()
+    {
+        // The finally may begin executing after any prefix of the try block, so the
+        // StartAsync in the try may not have run; the StartAsync in the finally is not a
+        // certain duplicate and must not be reported at Error severity.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                        }
+                        finally
+                        {
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncAfterTryFinally_NoDiagnostic()
+    {
+        // With no catch clause, code after the try statement runs only when the try block
+        // completed, so the driver is in fact started; the merge is deliberately
+        // conservative about completion paths, preferring a missed report over an
+        // Error-severity false positive.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        finally
+                        {
+                        }
+
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
 }

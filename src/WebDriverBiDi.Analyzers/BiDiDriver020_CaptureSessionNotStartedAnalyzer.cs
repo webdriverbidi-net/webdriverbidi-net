@@ -79,52 +79,147 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            // Walk all invocations in this statement (including those inside nested blocks).
-            // DescendantNodes visits in source order, so a StartCapturingTasks inside an
-            // if-block that precedes a WaitForCapturedTasksAsync outside it is correctly
-            // seen first. The walk does not descend into the bodies of nested functions
-            // (lambdas, anonymous methods, local functions): their code runs when the delegate
-            // is invoked, not at its textual position, so a call there must not be judged
-            // against the capturing state at that position.
-            foreach (InvocationExpressionSyntax invocation in statement.DescendantNodes(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<InvocationExpressionSyntax>())
+            ProcessNode(statement, context, capturingState);
+        }
+    }
+
+    private static void ProcessNode(
+        SyntaxNode node,
+        SyntaxNodeAnalysisContext context,
+        Dictionary<string, bool> capturingState)
+    {
+        // Walk the node's descendants in document order, checking each invocation against the
+        // tracked capturing state. The walk does not descend into the bodies of nested
+        // functions (lambdas, anonymous methods, local functions): their code runs when the
+        // delegate is invoked, not at its textual position, so a call there must not be
+        // judged against the capturing state at that position. It also stops at if and
+        // switch statements — including one that is itself the root, which the barrier
+        // yields without descending into — and processes them recursively below with a
+        // forked copy of the state for each mutually exclusive branch.
+        foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
+            AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            child is not IfStatementSyntax &&
+            child is not SwitchStatementSyntax))
+        {
+            if (descendant is IfStatementSyntax ifStatement)
             {
-                if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-                {
-                    continue;
-                }
-
-                if (memberAccess.Expression is not IdentifierNameSyntax receiverIdentifier)
-                {
-                    continue;
-                }
-
-                string receiverName = receiverIdentifier.Identifier.Text;
-                if (!capturingState.ContainsKey(receiverName))
-                {
-                    continue;
-                }
-
-                string methodName = memberAccess.Name.Identifier.Text;
-                switch (methodName)
-                {
-                    case "StartCapturingTasks":
-                        capturingState[receiverName] = true;
-                        break;
-
-                    case "StopCapturingTasks":
-                        capturingState[receiverName] = false;
-                        break;
-
-                    case "WaitForCapturedTasksAsync":
-                    case "WaitForCapturedTasksCompleteAsync":
-                        if (!capturingState[receiverName])
-                        {
-                            context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodName, receiverName));
-                        }
-
-                        break;
-                }
+                ProcessIfStatement(ifStatement, context, capturingState);
             }
+            else if (descendant is SwitchStatementSyntax switchStatement)
+            {
+                ProcessSwitchStatement(switchStatement, context, capturingState);
+            }
+            else if (descendant is InvocationExpressionSyntax invocation)
+            {
+                CheckInvocation(invocation, context, capturingState);
+            }
+        }
+    }
+
+    private static void ProcessIfStatement(
+        IfStatementSyntax ifStatement,
+        SyntaxNodeAnalysisContext context,
+        Dictionary<string, bool> capturingState)
+    {
+        // Invocations in the condition execute unconditionally, before either branch.
+        ProcessNode(ifStatement.Condition, context, capturingState);
+
+        // The branches are mutually exclusive, so each arm is walked against its own copy of
+        // the state at the branch point: a StopCapturingTasks in one arm must not poison a
+        // wait in the other. An else-if chain arrives here as an else clause whose statement
+        // is itself an if statement, which ProcessNode routes back into this method.
+        Dictionary<string, bool> thenBranchState = new(capturingState);
+        ProcessNode(ifStatement.Statement, context, thenBranchState);
+
+        Dictionary<string, bool> elseBranchState = new(capturingState);
+        if (ifStatement.Else is not null)
+        {
+            ProcessNode(ifStatement.Else.Statement, context, elseBranchState);
+        }
+
+        // After the branch, an observer counts as not capturing only when every path through
+        // the branch leaves it not capturing. This rule reports waits on an observer with no
+        // active capture session, so treating "capturing on some path only" as not capturing
+        // would flag correct conditional stop patterns with an Error-severity false positive;
+        // the Error severity demands that the wait fail on every path.
+        foreach (string observerName in capturingState.Keys.ToList())
+        {
+            capturingState[observerName] = thenBranchState[observerName] || elseBranchState[observerName];
+        }
+    }
+
+    private static void ProcessSwitchStatement(
+        SwitchStatementSyntax switchStatement,
+        SyntaxNodeAnalysisContext context,
+        Dictionary<string, bool> capturingState)
+    {
+        // The governing expression executes unconditionally, before any section.
+        ProcessNode(switchStatement.Expression, context, capturingState);
+
+        // Sections are mutually exclusive in the same way if/else branches are.
+        List<Dictionary<string, bool>> sectionStates = [];
+        foreach (SwitchSectionSyntax section in switchStatement.Sections)
+        {
+            Dictionary<string, bool> sectionState = new(capturingState);
+            foreach (StatementSyntax sectionStatement in section.Statements)
+            {
+                ProcessNode(sectionStatement, context, sectionState);
+            }
+
+            sectionStates.Add(sectionState);
+        }
+
+        // As for if statements, an observer counts as not capturing after the switch only
+        // when no path through the switch leaves it capturing. The unchanged state at the
+        // switch (the path taken when no section matches) participates in the merge; when a
+        // default section makes that path impossible, including it can only suppress a
+        // report, never create a false positive, so default detection is not needed.
+        foreach (string observerName in capturingState.Keys.ToList())
+        {
+            capturingState[observerName] = capturingState[observerName] || sectionStates.Any(sectionState => sectionState[observerName]);
+        }
+    }
+
+    private static void CheckInvocation(
+        InvocationExpressionSyntax invocation,
+        SyntaxNodeAnalysisContext context,
+        Dictionary<string, bool> capturingState)
+    {
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
+            return;
+        }
+
+        if (memberAccess.Expression is not IdentifierNameSyntax receiverIdentifier)
+        {
+            return;
+        }
+
+        string receiverName = receiverIdentifier.Identifier.Text;
+        if (!capturingState.ContainsKey(receiverName))
+        {
+            return;
+        }
+
+        string methodName = memberAccess.Name.Identifier.Text;
+        switch (methodName)
+        {
+            case "StartCapturingTasks":
+                capturingState[receiverName] = true;
+                break;
+
+            case "StopCapturingTasks":
+                capturingState[receiverName] = false;
+                break;
+
+            case "WaitForCapturedTasksAsync":
+            case "WaitForCapturedTasksCompleteAsync":
+                if (!capturingState[receiverName])
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodName, receiverName));
+                }
+
+                break;
         }
     }
 }

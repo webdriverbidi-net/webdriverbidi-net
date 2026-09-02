@@ -410,4 +410,225 @@ public class BiDiDriver020AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task StopCapturingInThenBranch_WaitInElseBranch_NoDiagnostic()
+    {
+        // The branches are mutually exclusive: the else branch runs only when the capture
+        // session was not stopped, so the wait there is valid and must not be reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool shouldStop)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        if (shouldStop)
+                        {
+                            observer.StopCapturingTasks();
+                        }
+                        else
+                        {
+                            await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task ConditionalStartCapturing_WaitAfterBranch_NoDiagnostic()
+    {
+        // A capture session is active on at least one path through the branch, so the
+        // wait after it is not certain to fail and must not be reported at Error severity.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool shouldCapture)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        if (shouldCapture)
+                        {
+                            observer.StartCapturingTasks();
+                        }
+
+                        await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterBranchWhereNoPathStartsCapturing_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool condition)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        if (condition)
+                        {
+                            Console.WriteLine("then branch");
+                        }
+                        else
+                        {
+                            Console.WriteLine("else branch");
+                        }
+
+                        await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task StartCapturingInSwitchSection_WaitAfterSwitch_NoDiagnostic()
+    {
+        // A capture session is active on at least one path through the switch, so the
+        // wait after it must not be reported at Error severity.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        switch (mode)
+                        {
+                            case 0:
+                                observer.StartCapturingTasks();
+                                break;
+                            default:
+                                break;
+                        }
+
+                        await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartCapturingBeforeSwitch_ConditionalStopInSection_WaitAfterSwitch_NoDiagnostic()
+    {
+        // The capture session was started before the switch and is stopped on only one
+        // path through it, so the wait after the switch is not certain to fail and must
+        // not be reported at Error severity.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        switch (mode)
+                        {
+                            case 0:
+                                observer.StopCapturingTasks();
+                                break;
+                        }
+
+                        await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitInsideIfCondition_WithoutStartCapturing_ReportsError()
+    {
+        // Invocations in the branch condition execute unconditionally, before either
+        // branch, so a wait there is judged against the state at the branch point.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        if (await {|#0:observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10))|})
+                        {
+                            Console.WriteLine("completed");
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksCompleteAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
 }

@@ -73,7 +73,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             }
 
             // Check for method calls on driver
-            AnalyzeStatementForDriverMethodCalls(statement, context, semanticModel, driverStartedStatus);
+            ProcessNode(statement, context, semanticModel, driverStartedStatus);
         }
     }
 
@@ -89,6 +89,16 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 continue;
             }
 
+            // Only a variable initialized directly with an object creation expression is
+            // known to hold a driver that has not been started. A driver obtained any other
+            // way (from a factory method call, an awaited task, a property, and so on) may
+            // already have been started by the code that produced it, and the Error severity
+            // of this rule demands certainty, so such variables are not tracked.
+            if (variable.Initializer.Value is not BaseObjectCreationExpressionSyntax)
+            {
+                continue;
+            }
+
             ITypeSymbol? typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value).Type;
             if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo))
             {
@@ -97,28 +107,104 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         }
     }
 
-    private static void AnalyzeStatementForDriverMethodCalls(
-        StatementSyntax statement,
+    private static void ProcessNode(
+        SyntaxNode node,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus)
     {
-        // Find all invocations in this statement, but do not descend into the bodies of nested
-        // functions (lambdas, anonymous methods, local functions). Code in those bodies runs when the
-        // delegate is invoked or the local function is called — for example when an event handler
-        // fires after the connection is started — not at the textual position where it is declared, so
-        // it must not be judged against the driver's started state at this point in the method.
-        IEnumerable<InvocationExpressionSyntax>? invocations = statement
-            .DescendantNodes(descendIntoChildren: node => node is not (
-                SimpleLambdaExpressionSyntax or
-                ParenthesizedLambdaExpressionSyntax or
-                AnonymousMethodExpressionSyntax or
-                LocalFunctionStatementSyntax))
-            .OfType<InvocationExpressionSyntax>();
-
-        foreach (InvocationExpressionSyntax invocation in invocations)
+        // Walk the node's descendants in document order, checking each invocation against the
+        // tracked started state. The walk does not descend into the bodies of nested functions
+        // (lambdas, anonymous methods, local functions): their code runs when the delegate is
+        // invoked, not at the textual position where it is declared — for example when an event
+        // handler fires after the connection is started — so it must not be judged against the
+        // driver's started state at this point in the method. It also stops at if and switch
+        // statements — including one that is itself the root, which the barrier yields without
+        // descending into — and processes them recursively below with a forked copy of the
+        // state for each mutually exclusive branch.
+        foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
+            AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            child is not IfStatementSyntax &&
+            child is not SwitchStatementSyntax))
         {
-            CheckInvocation(invocation, context, semanticModel, driverStartedStatus);
+            if (descendant is IfStatementSyntax ifStatement)
+            {
+                ProcessIfStatement(ifStatement, context, semanticModel, driverStartedStatus);
+            }
+            else if (descendant is SwitchStatementSyntax switchStatement)
+            {
+                ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus);
+            }
+            else if (descendant is InvocationExpressionSyntax invocation)
+            {
+                CheckInvocation(invocation, context, semanticModel, driverStartedStatus);
+            }
+        }
+    }
+
+    private static void ProcessIfStatement(
+        IfStatementSyntax ifStatement,
+        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        // Invocations in the condition execute unconditionally, before either branch.
+        ProcessNode(ifStatement.Condition, context, semanticModel, driverStartedStatus);
+
+        // The branches are mutually exclusive, so each arm is walked against its own copy of
+        // the state at the branch point: a StopAsync in one arm must not poison a command in
+        // the other. An else-if chain arrives here as an else clause whose statement is itself
+        // an if statement, which ProcessNode routes back into this method.
+        Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
+        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranchStatus);
+
+        Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
+        if (ifStatement.Else is not null)
+        {
+            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranchStatus);
+        }
+
+        // After the branch, a driver counts as not started only when every path through the
+        // branch leaves it not started. This rule reports commands on a driver that has not
+        // been started, so treating "started on some path only" as not started would flag
+        // correct conditional stop/restart patterns with an Error-severity false positive;
+        // the Error severity demands that the command fail on every path.
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            driverStartedStatus[driverName] = thenBranchStatus[driverName] || elseBranchStatus[driverName];
+        }
+    }
+
+    private static void ProcessSwitchStatement(
+        SwitchStatementSyntax switchStatement,
+        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        // The governing expression executes unconditionally, before any section.
+        ProcessNode(switchStatement.Expression, context, semanticModel, driverStartedStatus);
+
+        // Sections are mutually exclusive in the same way if/else branches are.
+        List<Dictionary<string, bool>> sectionStatuses = [];
+        foreach (SwitchSectionSyntax section in switchStatement.Sections)
+        {
+            Dictionary<string, bool> sectionStatus = new(driverStartedStatus);
+            foreach (StatementSyntax sectionStatement in section.Statements)
+            {
+                ProcessNode(sectionStatement, context, semanticModel, sectionStatus);
+            }
+
+            sectionStatuses.Add(sectionStatus);
+        }
+
+        // As for if statements, a driver counts as not started after the switch only when no
+        // path through the switch leaves it started. The unchanged state at the switch (the
+        // path taken when no section matches) participates in the merge alongside every
+        // section; when a default section makes that path impossible, including it can only
+        // suppress a report, never create a false positive, so default detection is not needed.
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            driverStartedStatus[driverName] = driverStartedStatus[driverName] || sectionStatuses.Any(sectionStatus => sectionStatus[driverName]);
         }
     }
 
