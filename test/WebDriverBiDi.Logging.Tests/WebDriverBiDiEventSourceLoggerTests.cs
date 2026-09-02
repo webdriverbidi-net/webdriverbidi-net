@@ -226,6 +226,40 @@ public class WebDriverBiDiEventSourceLoggerTests
     }
 
     [Fact]
+    public void OnEventWritten_WhenLoggerFieldNotYetAssigned_DropsEventWithoutThrowing()
+    {
+        // Regression test for the base-constructor ordering window: OnEventSourceCreated (run during
+        // the base EventListener constructor) can enable an already-existing WebDriverBiDi EventSource
+        // before this instance's constructor body assigns the logger field, so an event delivered in
+        // that window must be dropped rather than dereferencing a null field. Capture a real
+        // WebDriverBiDi event args, clear the logger field to simulate that window, then invoke
+        // OnEventWritten directly: without the guard the null dereference surfaces as a
+        // TargetInvocationException; with it, the call returns and nothing is logged.
+        EventWrittenEventArgs? capturedArgs = null;
+        using (WebDriverBiDiArgsCapturingListener capture = new(args => capturedArgs ??= args))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "ws://localhost:9222");
+        }
+
+        Assert.NotNull(capturedArgs);
+
+        TestLogger fakeLogger = new();
+        using WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose);
+
+        FieldInfo loggerField = typeof(WebDriverBiDiEventSourceLogger).GetField(
+            "logger",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        loggerField.SetValue(eventSourceLogger, null);
+
+        MethodInfo onEventWritten = typeof(WebDriverBiDiEventSourceLogger).GetMethod(
+            "OnEventWritten",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        onEventWritten.Invoke(eventSourceLogger, new object[] { capturedArgs! });
+
+        Assert.Empty(fakeLogger.Entries);
+    }
+
+    [Fact]
     public void OnEventWritten_HandlesEventWithNullPayload()
     {
         TestLogger fakeLogger = new();
@@ -342,6 +376,32 @@ public class WebDriverBiDiEventSourceLoggerTests
         }
 
         public void EmitTestEvent() => this.TestEvent();
+    }
+
+    private sealed class WebDriverBiDiArgsCapturingListener : EventListener
+    {
+        private readonly Action<EventWrittenEventArgs> onEvent;
+
+        public WebDriverBiDiArgsCapturingListener(Action<EventWrittenEventArgs> onEvent)
+        {
+            this.onEvent = onEvent;
+        }
+
+        protected override void OnEventSourceCreated(EventSource eventSource)
+        {
+            if (eventSource.Name == "WebDriverBiDi")
+            {
+                this.EnableEvents(eventSource, EventLevel.Verbose);
+            }
+        }
+
+        protected override void OnEventWritten(EventWrittenEventArgs eventData)
+        {
+            if (eventData.EventSource.Name == "WebDriverBiDi")
+            {
+                this.onEvent(eventData);
+            }
+        }
     }
 
     private sealed class TestEventListenerForOtherSource : EventListener

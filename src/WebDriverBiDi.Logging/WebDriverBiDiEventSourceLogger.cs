@@ -31,7 +31,10 @@ using Microsoft.Extensions.Logging;
 /// </remarks>
 public sealed class WebDriverBiDiEventSourceLogger : EventListener
 {
-    private readonly Lazy<ILogger> logger;
+    // Declared nullable because the base EventListener constructor can deliver events (see
+    // OnEventWritten) before this derived instance's constructor body assigns this field, during
+    // which window a plain field read yields null.
+    private readonly Lazy<ILogger>? logger;
     private readonly EventLevel minimumLevel;
 
     /// <summary>
@@ -90,6 +93,17 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
             return;
         }
 
+        // OnEventSourceCreated runs during the base EventListener constructor and can enable a
+        // WebDriverBiDi EventSource that already exists when this listener is created, so an event may
+        // be delivered here before the constructor body has assigned the logger field. An event in
+        // that window has nowhere to go yet, so drop it rather than dereferencing the not-yet-assigned
+        // field. This is the same base-constructor ordering caveat documented for minimumLevel below.
+        Lazy<ILogger>? currentLogger = this.logger;
+        if (currentLogger is null)
+        {
+            return;
+        }
+
         // Enforce the configured minimum level here rather than relying solely on EnableEvents.
         // OnEventSourceCreated runs during the base EventListener constructor, before this instance's
         // minimum level is assigned, so a WebDriver BiDi EventSource that already exists when the
@@ -127,7 +141,7 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         EventId eventId = new(eventData.EventId, eventData.EventName);
 
         // Log with structured state
-        this.logger.Value.Log(logLevel, eventId, state, null, FormatMessage);
+        currentLogger.Value.Log(logLevel, eventId, state, null, FormatMessage);
     }
 
     private static LogLevel MapEventLevel(EventLevel level)
