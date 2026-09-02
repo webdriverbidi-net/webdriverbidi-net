@@ -241,7 +241,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId");
+        DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId", DataType.Response);
         DisownDataCommandResult result = await module.DisownDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
@@ -297,7 +297,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
-        GetDataCommandParameters commandParameters = new("myRequestId");
+        GetDataCommandParameters commandParameters = new("myRequestId", DataType.Response);
         GetDataCommandResult result = await module.GetDataAsync(commandParameters, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);

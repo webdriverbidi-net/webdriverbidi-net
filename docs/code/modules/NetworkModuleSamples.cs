@@ -382,7 +382,7 @@ public static class NetworkModuleSamples
             if (e.Response.Url.EndsWith(".json"))
             {
                 GetDataCommandParameters getDataParams =
-                    new GetDataCommandParameters(e.Request.RequestId)
+                    new GetDataCommandParameters(e.Request.RequestId, DataType.Response)
                     {
                         CollectorId = collectorId,
                         DisownCollectedData = true,  // Free memory after retrieval
@@ -406,7 +406,7 @@ public static class NetworkModuleSamples
     {
         #region DisownData
         DisownDataCommandParameters parameters =
-            new DisownDataCommandParameters(collectorId, requestId);
+            new DisownDataCommandParameters(collectorId, requestId, DataType.Response);
 
         await driver.Network.DisownDataAsync(parameters);
         #endregion
@@ -751,7 +751,7 @@ public static class NetworkModuleSamples
 
                 // Get response body
                 GetDataCommandParameters getDataParams =
-                    new GetDataCommandParameters(e.Request.RequestId)
+                    new GetDataCommandParameters(e.Request.RequestId, DataType.Response)
                     {
                         CollectorId = collectorId,
                         DisownCollectedData = true,

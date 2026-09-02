@@ -16,9 +16,11 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     /// Initializes a new instance of the <see cref="GetDataCommandParameters" /> class.
     /// </summary>
     /// <param name="requestId">The ID of the network request for which to fetch network data from the collector.</param>
-    public GetDataCommandParameters(string requestId)
+    /// <param name="dataType">The <see cref="DataType"/> of the collected network data to get.</param>
+    public GetDataCommandParameters(string requestId, DataType dataType)
     {
         this.RequestId = requestId;
+        this.DataType = dataType;
     }
 
     /// <summary>
@@ -39,7 +41,7 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     /// </summary>
     [JsonPropertyName("dataType")]
     [JsonInclude]
-    public DataType DataType { get; set; } = DataType.Response;
+    public DataType DataType { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the data collector for which to get collected network data.

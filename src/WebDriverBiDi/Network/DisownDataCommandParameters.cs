@@ -17,10 +17,12 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     /// </summary>
     /// <param name="collectorId">The ID of the collector collecting network data to be released.</param>
     /// <param name="requestId">The ID of the network request for which to release network data from the collector.</param>
-    public DisownDataCommandParameters(string collectorId, string requestId)
+    /// <param name="dataType">The <see cref="DataType"/> of collected network data to release.</param>
+    public DisownDataCommandParameters(string collectorId, string requestId, DataType dataType)
     {
         this.CollectorId = collectorId;
         this.RequestId = requestId;
+        this.DataType = dataType;
     }
 
     /// <summary>
@@ -34,7 +36,7 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     /// </summary>
     [JsonPropertyName("dataType")]
     [JsonInclude]
-    public DataType DataType { get; set; } = DataType.Response;
+    public DataType DataType { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the data collector for which to release collected network data.

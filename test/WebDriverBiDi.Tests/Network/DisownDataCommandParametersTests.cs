@@ -8,14 +8,14 @@ public class DisownDataCommandParametersTests
     [Fact]
     public void TestCommandName()
     {
-        DisownDataCommandParameters properties = new("myCollectorId", "myRequestId");
+        DisownDataCommandParameters properties = new("myCollectorId", "myRequestId", DataType.Response);
         Assert.Equal("network.disownData", properties.MethodName);
     }
 
     [Fact]
     public void TestCanSerializeParameters()
     {
-        DisownDataCommandParameters properties = new("myCollectorId", "myRequestId");
+        DisownDataCommandParameters properties = new("myCollectorId", "myRequestId", DataType.Response);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
 
