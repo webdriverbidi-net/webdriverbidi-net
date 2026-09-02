@@ -96,4 +96,41 @@ public class SystemProxyConfigurationResultTests
         Assert.IsType<string>(proxyConfig.AdditionalData["additionalName"]);
         Assert.Equal("additionalValue", proxyConfig.AdditionalData["additionalName"]);
     }
+
+    [Fact]
+    public void TestCanDeserializeWithNullValuedAdditionalData()
+    {
+        // The protocol's Extensible construct permits null-valued extension
+        // properties; the serializer stores those as CLR nulls in the underlying
+        // object-typed extension dictionary, which must not fail conversion.
+        // ProxyConfigurationResult constructor is internal; go through
+        // CapabilitiesResult deserialization.
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "system",
+                          "additionalName": "additionalValue",
+                          "nullValuedName": null
+                        },
+                        "setWindowRect": true
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.NotNull(result);
+        ProxyConfigurationResult? proxyResult = result.Proxy;
+        Assert.NotNull(proxyResult);
+        Assert.IsType<SystemProxyConfigurationResult>(proxyResult);
+        SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+
+        Assert.Equal(ProxyType.System, proxyConfig.ProxyType);
+        Assert.Equal(2, proxyConfig.AdditionalData.Count);
+        Assert.Equal("additionalValue", proxyConfig.AdditionalData["additionalName"]);
+        Assert.True(proxyConfig.AdditionalData.ContainsKey("nullValuedName"));
+        Assert.Null(proxyConfig.AdditionalData["nullValuedName"]);
+    }
 }
