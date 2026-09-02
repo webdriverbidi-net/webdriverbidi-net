@@ -91,6 +91,8 @@ Common permission descriptor names:
 
 **Note**: Available permissions vary by browser and version.
 
+Some permissions define descriptor members beyond the name — for example, `"midi"` supports a `sysex` member and `"camera"` supports `panTiltZoom`. Add such members via `PermissionDescriptor.AdditionalData` (for example, `descriptor.AdditionalData["sysex"] = true`) and they are serialized as additional members of the descriptor object.
+
 ## Browser Support
 
 | Browser | Support Level |

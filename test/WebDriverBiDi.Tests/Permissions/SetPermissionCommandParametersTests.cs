@@ -233,4 +233,31 @@ public class SetPermissionCommandParametersTests
         Assert.Equal(JTokenType.String, origin.Type);
         Assert.Equal("https://example.com", origin.Value<string>());
     }
+
+    [Fact]
+    public void TestCanSerializeParametersWithAdditionalDescriptorData()
+    {
+        // The Permissions specification converts the descriptor to the WebIDL descriptor
+        // type of the named permission, and for several permissions that type defines
+        // members beyond "name" (for example, midi's "sysex" or camera's "panTiltZoom").
+        // AdditionalData entries serialize as additional members of the descriptor object.
+        PermissionDescriptor descriptor = new("midi");
+        descriptor.AdditionalData["sysex"] = true;
+        SetPermissionCommandParameters properties = new(descriptor, PermissionState.Granted, "https://example.com");
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+
+        JToken? descriptorToken = serialized["descriptor"];
+        Assert.NotNull(descriptorToken);
+        JObject? serializedDescriptor = descriptorToken as JObject;
+        Assert.NotNull(serializedDescriptor);
+        Assert.Equal(2, serializedDescriptor.Count);
+        JToken? descriptorName = serializedDescriptor["name"];
+        Assert.NotNull(descriptorName);
+        Assert.Equal("midi", descriptorName.Value<string>());
+        JToken? sysex = serializedDescriptor["sysex"];
+        Assert.NotNull(sysex);
+        Assert.Equal(JTokenType.Boolean, sysex.Type);
+        Assert.True(sysex.Value<bool>());
+    }
 }
