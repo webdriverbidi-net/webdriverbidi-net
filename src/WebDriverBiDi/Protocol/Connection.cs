@@ -6,7 +6,9 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
+using System.Net.WebSockets;
 using System.Runtime.InteropServices;
+using System.Text;
 
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end.
@@ -204,7 +206,68 @@ public abstract class Connection : IAsyncDisposable
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public abstract Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default);
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the connection is not active.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the connection for sending times out.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    {
+        if (!this.IsActive)
+        {
+            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} has not been initialized; you must call the Start method before sending data");
+        }
+
+        // Notify log-message observers before acquiring the send semaphore to avoid
+        // potential deadlocks in a malformed observer on the logging event.
+        if (this.OnLogMessage.CurrentObserverCount > 0)
+        {
+#if NET5_0_OR_GREATER
+            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.Span)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#else
+            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#endif
+        }
+
+        // Only one send operation at a time can be active on a ClientWebSocket instance,
+        // so we must synchronize send access to the socket in case multiple threads are
+        // attempting to send commands or other data simultaneously.
+        if (!await this.DataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
+        {
+            throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
+        }
+
+        try
+        {
+            if (!this.IsActive)
+            {
+                throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection was closed before the send could be completed");
+            }
+
+            CancellationToken effectiveCancellationToken = this.ConnectionCancellationToken;
+            CancellationTokenSource? linkedTokenSource = null;
+            try
+            {
+                if (cancellationToken != CancellationToken.None)
+                {
+                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, effectiveCancellationToken);
+                    effectiveCancellationToken = linkedTokenSource.Token;
+                }
+
+                await this.SendConnectionDataAsync(data, effectiveCancellationToken).ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException ex)
+            {
+                throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
+            }
+            finally
+            {
+                linkedTokenSource?.Dispose();
+            }
+        }
+        finally
+        {
+            this.DataSendSemaphore.Release();
+        }
+    }
 
     /// <summary>
     /// Asynchronously releases the resources used by this <see cref="Connection"/>.
@@ -277,6 +340,15 @@ public abstract class Connection : IAsyncDisposable
         Buffer.BlockCopy(messageDataBuffer, 0, messageBuffer.Array!, messageBuffer.Offset, messageLength);
         return messageBufferOwner;
     }
+
+    /// <summary>
+    /// Asynchronously sends data to the underlying mechanism of this connection.
+    /// </summary>
+    /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when an exception is encountered sending data to the remote end of the connection.</exception>
+    protected abstract Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously receives data from the remote end of this connection.

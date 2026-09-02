@@ -86,16 +86,13 @@ public class PipeConnection : Connection
     /// Gets a value indicating whether this connection is active.
     /// </summary>
     /// <remarks>
-    /// The returned value is a point-in-time snapshot. Because the pipe server
-    /// process is owned by an external caller through
-    /// <see cref="IPipeServerProcessProvider"/>, the process may exit or be
-    /// disposed between this check and any subsequent I/O call. If the owning
-    /// process has already been disposed, this property returns
-    /// <see langword="false"/> rather than propagating the resulting
-    /// <see cref="InvalidOperationException"/>. Transient races where the
-    /// process exits after <see cref="IsActive"/> returns <see langword="true"/>
-    /// are surfaced by <see cref="SendDataAsync"/> as
-    /// <see cref="WebDriverBiDiConnectionException"/>.
+    /// The returned value is a point-in-time snapshot. Because the pipe server process is owned
+    /// by an external caller through<see cref="IPipeServerProcessProvider"/>, the process may
+    /// exit or be disposed between this check and any subsequent I/O call. If the owning process
+    /// has already been disposed, this property returns <see langword="false"/> rather than
+    /// propagating the resulting <see cref="InvalidOperationException"/>. Transient races where
+    /// the process exits after <see cref="IsActive"/> returns <see langword="true"/> are surfaced
+    /// by <see cref="Connection.SendDataAsync"/> as <see cref="WebDriverBiDiConnectionException"/>.
     /// </remarks>
     public override bool IsActive => this.IsConnectionActive && IsProcessRunning(this.processProvider.PipeServerProcess);
 
@@ -251,79 +248,31 @@ public class PipeConnection : Connection
     }
 
     /// <summary>
-    /// Asynchronously sends data to the remote end of this connection.
-    /// </summary>
-    /// <param name="data">The data to be sent to the remote end of this connection.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the pipe connection is not active.</exception>
-    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the pipe connection for sending times out.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
-    {
-        if (!this.IsActive)
-        {
-            throw new WebDriverBiDiConnectionException("The pipe connection has not been initialized; you must call the Start method before sending data");
-        }
-
-        // Only one send operation at a time can be active on a pipe,
-        // so we must synchronize send access to the pipe in case multiple threads are
-        // attempting to send commands or other data simultaneously.
-        if (!await this.DataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
-        {
-            throw new WebDriverBiDiTimeoutException("Timed out waiting to access pipe for sending; only one send operation is permitted at a time.");
-        }
-
-        try
-        {
-            if (!this.IsActive)
-            {
-                throw new WebDriverBiDiConnectionException("The pipe connection was closed before the send could be completed");
-            }
-
-            if (this.OnLogMessage.CurrentObserverCount > 0)
-            {
-                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
-            }
-
-            CancellationToken effectiveCancellationToken = this.ConnectionCancellationToken;
-            CancellationTokenSource? linkedTokenSource = null;
-            try
-            {
-                if (cancellationToken != CancellationToken.None)
-                {
-                    linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, effectiveCancellationToken);
-                    effectiveCancellationToken = linkedTokenSource.Token;
-                }
-
-                await this.SendPipeDataAsync(data, effectiveCancellationToken).ConfigureAwait(false);
-            }
-            catch (IOException ex)
-            {
-                throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
-            }
-            catch (ObjectDisposedException ex)
-            {
-                throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
-            }
-            finally
-            {
-                linkedTokenSource?.Dispose();
-            }
-        }
-        finally
-        {
-            this.DataSendSemaphore.Release();
-        }
-    }
-
-    /// <summary>
     /// Asynchronously sends data to the underlying pipe of this connection.
     /// </summary>
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the pipe.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task SendPipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when an exception is encountered sending data to the pipe.</exception>
+    protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await this.WritePipeDataAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException ex)
+        {
+            throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously writes data to the underlying pipe of this connection.
+    /// </summary>
+    /// <param name="messageBuffer">The data to write to the pipe.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected virtual async Task WritePipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
         // Write the data followed by a null terminator
 #if NET5_0_OR_GREATER

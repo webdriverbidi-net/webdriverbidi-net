@@ -39,6 +39,8 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public Func<ReadOnlyMemory<byte>, Task>? SendWebSocketDataOverride { get; set; }
 
+    public bool ThrowWebSocketExceptionOnSend { get; set; }
+
     /// <summary>
     /// Gets or sets a delegate that replaces the underlying WebSocket connect operation, for example
     /// to simulate a remote end that never completes the handshake.
@@ -141,7 +143,7 @@ public class TestWebSocketConnection : WebSocketConnection
             // Bypass the check to see if the connection has been started,
             // so that we can test the plumbing without needing an actual
             // WebSocket server active.
-            return this.SendWebSocketDataAsync(data, cancellationToken);
+            return this.SendConnectionDataAsync(data, cancellationToken);
         }
 
         return base.SendDataAsync(data, cancellationToken);
@@ -158,7 +160,7 @@ public class TestWebSocketConnection : WebSocketConnection
         await base.ConnectWebSocketAsync(websocketUri, cancellationToken).ConfigureAwait(false);
     }
 
-    protected override async Task SendWebSocketDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         if (this.SendWebSocketDataOverride is not null)
         {
@@ -176,10 +178,20 @@ public class TestWebSocketConnection : WebSocketConnection
 
         if (!this.BypassDataSend)
         {
-            await base.SendWebSocketDataAsync(data, cancellationToken).ConfigureAwait(false);
+            await base.SendConnectionDataAsync(data, cancellationToken).ConfigureAwait(false);
         }
 
         await this.dataSendCompleteInvocable.InvokeNotifyObserversAsync(new TestWebSocketConnectionDataSentEventArgs(this.DataSent));
+    }
+
+    protected override async Task WriteWebSocketDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    {
+        if (this.ThrowWebSocketExceptionOnSend)
+        {
+            throw new WebSocketException("Simulated WebSocket failure");
+        }
+
+        await base.WriteWebSocketDataAsync(data, cancellationToken).ConfigureAwait(false);
     }
 
     protected override async Task<WebSocketReceiveResult> ReceiveWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)

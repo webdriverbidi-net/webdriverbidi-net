@@ -608,7 +608,7 @@ public class PipeConnectionTests
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
-        Assert.Equal("The pipe connection was closed before the send could be completed", exception.Message);
+        Assert.Equal("The Pipes connection was closed before the send could be completed", exception.Message);
 
         testPipeServer.Stop();
     }
@@ -716,6 +716,7 @@ public class PipeConnectionTests
         {
             IsActiveOverride = () => true,
             ThrowIOExceptionOnSend = true,
+            BypassDataSend = false,
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
@@ -736,6 +737,7 @@ public class PipeConnectionTests
         {
             IsActiveOverride = () => true,
             ThrowObjectDisposedExceptionOnSend = true,
+            BypassDataSend = false,
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);

@@ -625,9 +625,11 @@ public class CustomConnection : Connection
         // Your shutdown logic
     }
 
-    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
-        // Your send logic
+        // Your transport write logic. The base Connection.SendDataAsync provides the surrounding
+        // send orchestration (single-send synchronization, cancellation-token linking, and the
+        // "SEND >>>" trace); a custom connection implements only the actual write here.
     }
 
     protected override async Task ReceiveDataAsync()

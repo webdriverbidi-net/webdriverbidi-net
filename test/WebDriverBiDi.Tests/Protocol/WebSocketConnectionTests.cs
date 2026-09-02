@@ -1428,7 +1428,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
         TestWebSocketConnection connection = new()
         {
             IsActiveOverride = () => true,
-            SendWebSocketDataOverride = _ => throw new WebSocketException("Simulated WebSocket failure"),
+            ThrowWebSocketExceptionOnSend = true,
+            BypassDataSend = false,
         };
         await connection.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;

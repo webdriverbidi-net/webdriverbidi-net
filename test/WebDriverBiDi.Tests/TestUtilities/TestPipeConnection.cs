@@ -124,10 +124,23 @@ public class TestPipeConnection : PipeConnection
         return base.ReceiveDataAsync();
     }
 
-    protected override async Task SendPipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
+    protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
         await this.dataSendStartingInvocable.InvokeNotifyObserversAsync(new WebDriverBiDiEventArgs());
 
+        if (this.SendBarrier is not null)
+        {
+            await this.SendBarrier.Task.ConfigureAwait(false);
+        }
+
+        if (!this.BypassDataSend)
+        {
+            await base.SendConnectionDataAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    protected override async Task WritePipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
+    {
         if (this.ThrowIOExceptionOnSend)
         {
             throw new IOException("Simulated pipe write failure");
@@ -138,15 +151,7 @@ public class TestPipeConnection : PipeConnection
             throw new ObjectDisposedException("Simulated pipe disposed");
         }
 
-        if (this.SendBarrier is not null)
-        {
-            await this.SendBarrier.Task.ConfigureAwait(false);
-        }
-
-        if (!this.BypassDataSend)
-        {
-            await base.SendPipeDataAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
-        }
+        await base.WritePipeDataAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
     }
 
     protected override Task<int> ReadPipeDataAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
