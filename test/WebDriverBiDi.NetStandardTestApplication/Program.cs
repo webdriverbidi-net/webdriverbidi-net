@@ -101,6 +101,33 @@ try
 
     Console.WriteLine("Numeric extension data converted as expected.");
 
+    // Exercise the netstandard2.0-specific TimeProvider.Delay path used by the completion
+    // phase of WaitForCapturedTasksCompleteAsync: with the captured handler still pending
+    // on the gate below, the completion wait must create its provider-based delay and
+    // time out rather than being fulfilled.
+    TaskCompletionSource handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    TaskCompletionSource secondEventReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    EventObserver<EntryAddedEventArgs> pendingHandlerObserver = driver.Log.OnEntryAdded.AddObserver(
+        async e => await handlerGate.Task,
+        ObservableEventHandlerOptions.RunHandlerAsynchronously);
+    EventObserver<EntryAddedEventArgs> signalObserver = driver.Log.OnEntryAdded.AddObserver(e => secondEventReceived.TrySetResult());
+    pendingHandlerObserver.StartCapturingTasks();
+
+    // A second subscribe prompts the scripted server to push another log.entryAdded event.
+    await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.Log.OnEntryAdded.EventName]));
+    await secondEventReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+    bool handlersCompleted = await pendingHandlerObserver.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(500));
+    if (handlersCompleted)
+    {
+        throw new InvalidOperationException("Expected the completion wait to time out while the handler was pending.");
+    }
+
+    handlerGate.TrySetResult();
+    pendingHandlerObserver.Dispose();
+    signalObserver.Dispose();
+    Console.WriteLine("Completion wait timed out while a handler was pending, exercising the provider-based delay path.");
+
     // Exercise the command-failure path: the scripted server replies to session.status with a BiDi
     // error response, which must surface as a WebDriverBiDiCommandException after the netstandard2.0
     // error-message deserialization path (UTF8 decoding and the error-response DTO mapping). This also

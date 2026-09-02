@@ -426,6 +426,72 @@ public class EventObserverTests
     }
 
     [Fact]
+    public async Task TestWaitForCapturedTasksCompleteAsyncExecutionTimeoutHonorsCustomTimeProvider()
+    {
+        // The completion phase's delay must be created against the observer's
+        // TimeProvider, like the capture phase, so both phases of the wait are
+        // controllable with virtual time. Against a wall-clock delay this test
+        // would hang until the test framework's timeout, because advancing the
+        // fake provider would never elapse the completion wait.
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+        FakeTimeProvider fakeTimeProvider = new();
+        TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int startedCount = 0;
+
+        // The handler bodies stay pending (on a cancellable delay) so the completion wait times out while
+        // they are still running. Their tasks are stored so the test can drain them at the end rather than
+        // leaving them running past the test and leaking an AsyncHandlerTaskCount decrement into a later
+        // test in this serialized collection.
+        using CancellationTokenSource handlerCancellationTokenSource = new();
+        List<Task> handlerTasks = [];
+        object handlerTasksLock = new();
+        TestEventSource testEventSource = new(fakeTimeProvider);
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            e =>
+            {
+                Task body = HandlerBodyAsync();
+                lock (handlerTasksLock)
+                {
+                    handlerTasks.Add(body);
+                }
+
+                return body;
+
+                async Task HandlerBodyAsync()
+                {
+                    if (Interlocked.Increment(ref startedCount) == 2)
+                    {
+                        bothStartedTaskCompletionSource.TrySetResult();
+                    }
+
+                    await Task.Delay(Timeout.InfiniteTimeSpan, handlerCancellationTokenSource.Token);
+                }
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        // Ensure both handlers have started before waiting, so capture completes
+        // immediately and the remaining timeout is spent waiting for slow execution.
+        await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // With both tasks already buffered, the wait proceeds synchronously through the
+        // capture phase and creates the completion-phase delay against the fake provider
+        // before yielding, so advancing the provider afterward deterministically elapses it.
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout, TestContext.Current.CancellationToken);
+        fakeTimeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
+        bool fulfilled = await waitTask;
+        Assert.False(fulfilled);
+
+        // Capture session is auto-closed once count tasks are collected.
+        Assert.False(observer.IsCapturing);
+
+        await DrainHandlerTasksAsync(handlerCancellationTokenSource, handlerTasks, handlerTasksLock);
+    }
+
+    [Fact]
     public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenTimeExpiredDuringCapture()
     {
         TimeSpan timeout = TimeSpan.FromSeconds(1);

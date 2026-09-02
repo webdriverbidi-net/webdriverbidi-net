@@ -133,6 +133,11 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
         // skipped), exercising JsonConverterUtilities' netstandard2.0 numeric conversion path.
         Assert.Contains("Numeric extension data converted as expected.", runResult.StandardOutputConsoleContent);
 
+        // Prove the completion-wait timeout scenario actually ran (rather than being silently
+        // skipped), exercising the netstandard2.0 TimeProvider.Delay path in the completion
+        // phase of WaitForCapturedTasksCompleteAsync.
+        Assert.Contains("Completion wait timed out while a handler was pending, exercising the provider-based delay path.", runResult.StandardOutputConsoleContent);
+
         // Prove the pipe transport round trip actually ran (rather than being silently skipped),
         // exercising the netstandard2.0 PipeConnection code paths in addition to the WebSocket ones.
         Assert.Contains("Pipe transport round-trip over the netstandard2.0 build succeeded.", runResult.StandardOutputConsoleContent);
