@@ -925,7 +925,7 @@ public class Transport : IAsyncDisposable
                     timeoutCancelTokenSource.Cancel();
                 }
 
-                WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
+                WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
                 WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.Id);
                 WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
                 await this.LogAsync("Transport disconnected", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
@@ -1383,7 +1383,7 @@ public class Transport : IAsyncDisposable
             this.incomingMessageQueue.Writer.TryComplete();
 
             // Log appropriate statistics and information.
-            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
+            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
             await this.LogAsync(logMessage, logLevel).ConfigureAwait(false);
         }
         finally
