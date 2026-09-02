@@ -59,7 +59,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
     private readonly TimeProvider timeProvider;
-    private Channel<Task>? capturedTaskQueue;
+    private Channel<CapturedTask>? capturedTaskQueue;
     private int waitingReaderCount;
     private int isDisposedFlag = 0;
 
@@ -209,7 +209,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 throw new WebDriverBiDiException("This observer already has an active capture session. Call StopCapturingTasks before starting a new one.");
             }
 
-            this.capturedTaskQueue = Channel.CreateUnbounded<Task>(new UnboundedChannelOptions()
+            this.capturedTaskQueue = Channel.CreateUnbounded<CapturedTask>(new UnboundedChannelOptions()
             {
                 SingleReader = true,
                 SingleWriter = true,
@@ -307,7 +307,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
 #endif
         using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
-        Channel<Task> channel;
+        Channel<CapturedTask> channel;
         lock (this.captureLock)
         {
             this.ThrowIfDisposed();
@@ -336,9 +336,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                         break;
                     }
 
-                    while (currentCaptureCount < count && channel.Reader.TryRead(out Task? task))
+                    while (currentCaptureCount < count && channel.Reader.TryRead(out CapturedTask capturedTask))
                     {
-                        collectedTasks[currentCaptureCount] = task;
+                        collectedTasks[currentCaptureCount] = capturedTask.Task;
                         currentCaptureCount++;
                     }
                 }
@@ -363,18 +363,25 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                     }
 
                     // Remove tasks that were added into the buffer in the window between the last
-                    // TryRead and TryComplete. These tasks are not returned to the caller; their
-                    // original fault continuation has ShouldReportAsyncFault = false (because they
-                    // were captured). We attach a new task continuation so any fault surfaces
-                    // through the normal error pipeline instead of being silently swallowed.
+                    // TryRead and TryComplete. These tasks are not returned to the caller. A task
+                    // that was still running when captured got a fault continuation with
+                    // ShouldReportAsyncFault = false (because it was captured), so a new reporting
+                    // continuation is attached here — attributed to the event that produced the
+                    // invocation — so any fault surfaces through the normal error pipeline instead
+                    // of being silently swallowed. A task whose fault was already surfaced
+                    // synchronously to the producer (captured and rethrown, per the contract
+                    // documented on EventHandlerExceptionBehavior) must be skipped: reporting it
+                    // here as well would record the same failure twice.
                     // Only do this when we are the sole active reader: if another WaitForCapturedTasksAsync
                     // caller is queued behind the semaphore, those tasks are legitimately theirs to consume.
                     if (readerCount == 1)
                     {
-                        string eventName = this.observableEvent.EventName;
-                        while (channel.Reader.TryRead(out Task? racedTask))
+                        while (channel.Reader.TryRead(out CapturedTask racedTask))
                         {
-                            this.AttachCompletionContinuation(racedTask, eventName, true, decrementInFlightCount: false);
+                            if (!racedTask.WasSynchronouslyFaulted)
+                            {
+                                this.AttachCompletionContinuation(racedTask.Task, racedTask.ReportedEventName, true, decrementInFlightCount: false);
+                            }
                         }
                     }
                 }
@@ -557,7 +564,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// </example>
     public Task[] GetCapturedTasks()
     {
-        Channel<Task>? channel;
+        Channel<CapturedTask>? channel;
         lock (this.captureLock)
         {
             this.ThrowIfDisposed();
@@ -573,9 +580,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         try
         {
             List<Task> collected = [];
-            while (channel.Reader.TryRead(out Task? task))
+            while (channel.Reader.TryRead(out CapturedTask capturedTask))
             {
-                collected.Add(task);
+                collected.Add(capturedTask.Task);
             }
 
             return [.. collected];
@@ -660,7 +667,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             isSynchronouslyFaulted = true;
         }
 
-        bool isCaptured = this.CaptureTask(executingTask);
+        // The reported event name is resolved at capture time so that a fault surfaced
+        // later — whether by the fault continuation attached below or by the raced-task
+        // drain in WaitForCapturedTasksAsync — is attributed to the concrete protocol
+        // event that produced this invocation, regardless of which path reports it.
+        string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
+        bool isCaptured = this.CaptureTask(executingTask, isSynchronouslyFaulted, reportedEventName);
         if (isHandlerRunAsynchronously && !isSynchronouslyFaulted)
         {
             // Track this handler task so operators can observe backlog via
@@ -675,7 +687,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             // handler that faults between the synchronous-fault check above and this
             // point escape both fault observation and error reporting.
             AsyncHandlerTaskMetrics.IncrementInFlight();
-            string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
             this.AttachCompletionContinuation(executingTask, reportedEventName, !isCaptured, decrementInFlightCount: true);
         }
 
@@ -772,11 +783,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             TaskScheduler.Default);
     }
 
-    private bool CaptureTask(Task executingTask)
+    private bool CaptureTask(Task executingTask, bool wasSynchronouslyFaulted, string reportedEventName)
     {
         lock (this.captureLock)
         {
-            return this.capturedTaskQueue is not null && this.capturedTaskQueue.Writer.TryWrite(executingTask);
+            return this.capturedTaskQueue is not null && this.capturedTaskQueue.Writer.TryWrite(new CapturedTask(executingTask, wasSynchronouslyFaulted, reportedEventName));
         }
     }
 
@@ -829,6 +840,28 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         {
             _ = handlerTask.Exception;
         }
+    }
+
+    /// <summary>
+    /// Internal data structure pairing a captured handler task with its capture-time metadata:
+    /// whether the task's fault was already surfaced synchronously to the producer (and so must
+    /// not be reported again by the raced-task drain), and the event name under which a fault
+    /// should be attributed when the drain attaches a reporting continuation.
+    /// </summary>
+    private readonly struct CapturedTask
+    {
+        public CapturedTask(Task task, bool wasSynchronouslyFaulted, string reportedEventName)
+        {
+            this.Task = task;
+            this.WasSynchronouslyFaulted = wasSynchronouslyFaulted;
+            this.ReportedEventName = reportedEventName;
+        }
+
+        public Task Task { get; }
+
+        public bool WasSynchronouslyFaulted { get; }
+
+        public string ReportedEventName { get; }
     }
 
     /// <summary>
