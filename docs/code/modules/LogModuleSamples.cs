@@ -71,7 +71,7 @@ public static class LogModuleSamples
             if (e.Source != null)
             {
                 Console.WriteLine($"Source: {e.Source.RealmId}");
-                Console.WriteLine($"Context: {e.Source.Context}");
+                Console.WriteLine($"Context: {e.Source.BrowsingContextId}");
             }
 
             if (e.StackTrace != null)

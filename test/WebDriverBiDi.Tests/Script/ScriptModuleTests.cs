@@ -233,7 +233,7 @@ public class ScriptModuleTests
 
         Assert.Equal("myRealmId", info.RealmId);
         Assert.Equal("myOrigin", info.Origin);
-        Assert.Equal("myContextId", info.BrowsingContext);
+        Assert.Equal("myContextId", info.BrowsingContextId);
     }
 
     [Fact]
@@ -304,7 +304,7 @@ public class ScriptModuleTests
             Assert.Equal("myRealm", e.RealmId);
             Assert.Equal("myOrigin", e.Origin);
             Assert.Equal(RealmType.Window, e.Type);
-            Assert.Equal("myContext", e.As<WindowRealmInfo>().BrowsingContext);
+            Assert.Equal("myContext", e.As<WindowRealmInfo>().BrowsingContextId);
 
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;

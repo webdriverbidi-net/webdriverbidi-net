@@ -1414,7 +1414,7 @@ public class RemoteValueTests
         WindowProxyRemoteValue windowProxyRemoteValue = (WindowProxyRemoteValue)remoteValue;
         Assert.Null(windowProxyRemoteValue.Handle);
         Assert.Null(windowProxyRemoteValue.InternalId);
-        Assert.Equal("myContext", windowProxyRemoteValue.Value.Context);
+        Assert.Equal("myContext", windowProxyRemoteValue.Value.BrowsingContextId);
     }
 
     [Fact]
@@ -1440,7 +1440,7 @@ public class RemoteValueTests
         Assert.Equal("myHandle", windowProxyRemoteValue.Handle);
         Assert.NotNull(windowProxyRemoteValue.InternalId);
         Assert.Equal("123", windowProxyRemoteValue.InternalId);
-        Assert.Equal("myContext", windowProxyRemoteValue.Value.Context);
+        Assert.Equal("myContext", windowProxyRemoteValue.Value.BrowsingContextId);
     }
 
     [Fact]

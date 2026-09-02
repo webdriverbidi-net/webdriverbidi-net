@@ -182,9 +182,9 @@ public static class ConsoleMonitoringSamples
                 Console.WriteLine($"[{e.Level}] {e.Text}");
 
                 // Additional processing for errors/warnings
-                if (e.Source != null && e.Source.Context != null)
+                if (e.Source != null && e.Source.BrowsingContextId != null)
                 {
-                    Console.WriteLine($"  Context: {e.Source.Context}");
+                    Console.WriteLine($"  Context: {e.Source.BrowsingContextId}");
                 }
             }
         });

@@ -22,7 +22,7 @@ public class WindowRealmInfoTests
         Assert.Equal("myRealm", realmInfo.RealmId);
         Assert.Equal("myOrigin", realmInfo.Origin);
         Assert.Equal(RealmType.Window, realmInfo.Type);
-        Assert.Equal("myContext", realmInfo.BrowsingContext);
+        Assert.Equal("myContext", realmInfo.BrowsingContextId);
         Assert.Null(realmInfo.Sandbox);
     }
 
@@ -45,9 +45,9 @@ public class WindowRealmInfoTests
         Assert.Equal("myRealm", realmInfo.RealmId);
         Assert.Equal("myOrigin", realmInfo.Origin);
         Assert.Equal(RealmType.Window, realmInfo.Type);
-        Assert.Equal("myContext", realmInfo.BrowsingContext);
+        Assert.Equal("myContext", realmInfo.BrowsingContextId);
         Assert.Null(realmInfo.Sandbox);
-        Assert.Equal("myUserContext", realmInfo.UserContext);
+        Assert.Equal("myUserContext", realmInfo.UserContextId);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class WindowRealmInfoTests
         Assert.Equal("myRealm", realmInfo.RealmId);
         Assert.Equal("myOrigin", realmInfo.Origin);
         Assert.Equal(RealmType.Window, realmInfo.Type);
-        Assert.Equal("myContext", realmInfo.BrowsingContext);
+        Assert.Equal("myContext", realmInfo.BrowsingContextId);
         Assert.Equal("mySandbox", realmInfo.Sandbox);
     }
 

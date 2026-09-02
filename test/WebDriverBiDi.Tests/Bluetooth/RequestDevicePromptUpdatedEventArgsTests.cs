@@ -23,7 +23,7 @@ public class RequestDevicePromptUpdatedEventArgsTests
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("myPromptId", eventArgs.Prompt);
+        Assert.Equal("myPromptId", eventArgs.PromptId);
         Assert.Empty(eventArgs.Devices);
     }
 
@@ -46,7 +46,7 @@ public class RequestDevicePromptUpdatedEventArgsTests
         Assert.NotNull(eventArgs);
 
         Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("myPromptId", eventArgs.Prompt);
+        Assert.Equal("myPromptId", eventArgs.PromptId);
         Assert.Single(eventArgs.Devices);
         Assert.Equal("myDeviceId", eventArgs.Devices[0].DeviceId);
         Assert.Equal("myDeviceName", eventArgs.Devices[0].DeviceName);

@@ -1333,7 +1333,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out WindowProxyRemoteValue? windowProxyValue);
         Assert.True(conversionResult);
         Assert.NotNull(windowProxyValue);
-        Assert.Equal("myContext", windowProxyValue.Value.Context);
+        Assert.Equal("myContext", windowProxyValue.Value.BrowsingContextId);
         Assert.Equal("myHandle", windowProxyValue.Handle);
         Assert.Equal("123", windowProxyValue.InternalId);
     }

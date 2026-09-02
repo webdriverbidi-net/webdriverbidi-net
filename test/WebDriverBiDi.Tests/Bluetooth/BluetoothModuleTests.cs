@@ -450,7 +450,7 @@ public class BluetoothModuleTests
         module.OnRequestDevicePromptUpdated.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
-            Assert.Equal("myPrompt", e.Prompt);
+            Assert.Equal("myPrompt", e.PromptId);
             Assert.Single(e.Devices);
             Assert.Equal("myDeviceId", e.Devices[0].DeviceId);
             Assert.Equal("myDeviceName", e.Devices[0].DeviceName);

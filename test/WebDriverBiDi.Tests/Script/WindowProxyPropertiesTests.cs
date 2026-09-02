@@ -13,7 +13,7 @@ public class WindowProxyPropertiesTests
                       }
                       """;
         WindowProxyProperties windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
-        Assert.Equal("myContextId", windowProxyProperties.Context);
+        Assert.Equal("myContextId", windowProxyProperties.BrowsingContextId);
     }
 
     [Fact]
