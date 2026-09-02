@@ -434,7 +434,7 @@ public static class BluetoothModuleSamples
         #region RequestDevicePromptUpdated
         driver.Bluetooth.OnRequestDevicePromptUpdated.AddObserver((RequestDevicePromptUpdatedEventArgs e) =>
         {
-            Console.WriteLine($"Prompt {e.Prompt} in context {e.BrowsingContextId}");
+            Console.WriteLine($"Prompt {e.PromptId} in context {e.BrowsingContextId}");
             foreach (RequestDeviceInfo device in e.Devices)
             {
                 Console.WriteLine($"  Device: {device.DeviceName} ({device.DeviceId})");

@@ -40,7 +40,7 @@ public class SetVirtualWalletBehaviorCommandParameters : CommandParameters<SetVi
     /// </summary>
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Context { get; set; }
+    public string? BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the protocol identifier to use for the virtual wallet behavior.

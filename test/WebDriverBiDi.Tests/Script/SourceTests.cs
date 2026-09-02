@@ -16,7 +16,7 @@ public class SourceTests
         Assert.NotNull(source);
 
         Assert.Equal("realmId", source.RealmId);
-        Assert.Null(source.Context);
+        Assert.Null(source.BrowsingContextId);
     }
 
     [Fact]
@@ -64,8 +64,8 @@ public class SourceTests
         Assert.NotNull(source);
 
         Assert.Equal("realmId", source.RealmId);
-        Assert.NotNull(source.Context);
-        Assert.Equal("contextId", source.Context);
+        Assert.NotNull(source.BrowsingContextId);
+        Assert.Equal("contextId", source.BrowsingContextId);
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public class SourceTests
         Assert.NotNull(source);
 
         Assert.Equal("realmId", source.RealmId);
-        Assert.NotNull(source.UserContext);
-        Assert.Equal("userContextId", source.UserContext);
+        Assert.NotNull(source.UserContextId);
+        Assert.Equal("userContextId", source.UserContextId);
     }
 
     [Fact]

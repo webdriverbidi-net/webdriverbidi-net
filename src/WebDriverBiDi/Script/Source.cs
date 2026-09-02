@@ -34,7 +34,7 @@ public record Source
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Context { get; internal set; }
+    public string? BrowsingContextId { get; internal set; }
 
     /// <summary>
     /// Gets the user context ID for a script.
@@ -42,5 +42,5 @@ public record Source
     [JsonPropertyName("userContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? UserContext { get; internal set; }
+    public string? UserContextId { get; internal set; }
 }

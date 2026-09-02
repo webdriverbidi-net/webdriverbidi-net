@@ -223,7 +223,7 @@ public class ScriptSamples
 
             if (realm is WindowRealmInfo windowRealm)
             {
-                Console.WriteLine($"  Context: {windowRealm.BrowsingContext}");
+                Console.WriteLine($"  Context: {windowRealm.BrowsingContextId}");
             }
         }
 
@@ -767,7 +767,7 @@ public class ScriptSamples
         {
             Console.WriteLine($"Channel: {e.ChannelId}");
             Console.WriteLine($"Data: {e.Data.ConvertTo<StringRemoteValue>().Value}");
-            Console.WriteLine($"Source context: {e.Source.Context}");
+            Console.WriteLine($"Source context: {e.Source.BrowsingContextId}");
         });
 
         SubscribeCommandParameters subscribe =

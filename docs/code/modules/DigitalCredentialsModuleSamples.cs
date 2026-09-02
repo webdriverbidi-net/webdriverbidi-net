@@ -102,7 +102,7 @@ public static class DigitalCredentialsModuleSamples
         SetVirtualWalletBehaviorCommandParameters @params = new SetVirtualWalletBehaviorCommandParameters(
             VirtualWalletAction.Decline)
         {
-            Context = contextId
+            BrowsingContextId = contextId
         };
 
         await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(@params);
@@ -178,7 +178,7 @@ public static class DigitalCredentialsModuleSamples
             VirtualWalletAction.Respond)
         {
             Protocol = "preview",
-            Context = contextId,
+            BrowsingContextId = contextId,
             Response = mdocResponse
         };
         await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(@params);

@@ -18,5 +18,5 @@ public record struct WindowProxyProperties
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string Context { get; internal set; }
+    public string BrowsingContextId { get; internal set; }
 }

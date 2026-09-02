@@ -77,7 +77,7 @@ public class SetVirtualWalletBehaviorCommandParametersTests
     {
         SetVirtualWalletBehaviorCommandParameters properties = new(VirtualWalletAction.Respond)
         {
-            Context = "myContextId"
+            BrowsingContextId = "myContextId"
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

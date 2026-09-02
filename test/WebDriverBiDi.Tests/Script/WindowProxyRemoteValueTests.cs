@@ -20,7 +20,7 @@ public class WindowProxyRemoteValueTests
 
         Assert.NotNull(result);
         Assert.Equal(RemoteValueType.Window, result.Type);
-        Assert.Equal("myContextid", result.Value.Context);
+        Assert.Equal("myContextid", result.Value.BrowsingContextId);
         Assert.Null(result.Handle);
         Assert.Null(result.InternalId);
     }
@@ -43,7 +43,7 @@ public class WindowProxyRemoteValueTests
 
         Assert.NotNull(result);
         Assert.Equal(RemoteValueType.Window, result.Type);
-        Assert.Equal("myContextid", result.Value.Context);
+        Assert.Equal("myContextid", result.Value.BrowsingContextId);
         Assert.Equal("myHandle", result.Handle);
         Assert.Equal("myInternalId", result.InternalId);
     }

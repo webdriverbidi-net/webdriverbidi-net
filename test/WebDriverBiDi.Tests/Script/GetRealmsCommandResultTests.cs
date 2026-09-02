@@ -54,7 +54,7 @@ public class GetRealmsCommandResultTests
         Assert.Equal("realmId", result.Realms[0].RealmId);
         Assert.Equal("myOrigin", result.Realms[0].Origin);
         Assert.Equal(RealmType.Window, result.Realms[0].Type);
-        Assert.Equal("contextId", ((WindowRealmInfo)result.Realms[0]).BrowsingContext);
+        Assert.Equal("contextId", ((WindowRealmInfo)result.Realms[0]).BrowsingContextId);
     }
 
     [Fact]
