@@ -13,6 +13,11 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public record ProxyConfigurationResult
 {
+    // A JsonElement whose ValueKind is Null, substituted for entries the serializer
+    // stored as CLR null (see ConvertIncomingExtensionData). The backing document is
+    // deliberately never disposed; this is a single, process-lifetime allocation.
+    private static readonly JsonElement NullJsonElement = JsonDocument.Parse("null").RootElement;
+
     private readonly ProxyConfiguration proxy;
 
     /// <summary>
@@ -72,13 +77,17 @@ public record ProxyConfigurationResult
 
     private Dictionary<string, JsonElement> ConvertIncomingExtensionData()
     {
-        // ASSUMPTION: Every object in the deserialized ProxyConfiguration is a
-        // JsonElement. Since we control the deserialization, this should always
-        // be true. If not, this will throw.
+        // Every value in the deserialized ProxyConfiguration's extension data is a
+        // JsonElement, with one exception: for an object-typed extension dictionary,
+        // the serializer stores a JSON null value as a CLR null rather than as a
+        // JsonElement of kind Null. The protocol's Extensible values include null,
+        // so restore such entries as null elements. Any other non-JsonElement value
+        // is impossible for a deserialized instance, so the cast below is expected
+        // to always succeed; if it does not, it will throw.
         Dictionary<string, JsonElement> convertedData = [];
         foreach (KeyValuePair<string, object?> pair in this.proxy.AdditionalData)
         {
-            convertedData[pair.Key] = (JsonElement)pair.Value!;
+            convertedData[pair.Key] = pair.Value is null ? NullJsonElement : (JsonElement)pair.Value;
         }
 
         return convertedData;
