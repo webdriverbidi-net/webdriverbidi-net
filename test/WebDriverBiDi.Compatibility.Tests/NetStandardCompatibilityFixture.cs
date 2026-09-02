@@ -16,9 +16,17 @@ public class NetStandardCompatibilityFixture : IAsyncLifetime
     private static readonly string SmokeAppProjectDir = Path.GetFullPath(
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "WebDriverBiDi.NetStandardTestApplication"));
 
+    // The pipe-peer application is copied next to this test assembly by the project's None items;
+    // the smoke application is handed this path so it can launch the peer for the PipeConnection
+    // round trip that exercises the netstandard2.0 pipe code paths.
+    private static readonly string PipePeerDllPath = Path.Combine(
+        AppContext.BaseDirectory, "TestApplications", "WebDriverBiDi.NamedPipeTestApplication.dll");
+
     public string BuildDir { get; private set; } = string.Empty;
 
     public string DllPath { get; private set; } = string.Empty;
+
+    public string PipePeerPath => PipePeerDllPath;
 
     public async ValueTask InitializeAsync()
     {
@@ -47,6 +55,10 @@ public class NetStandardCompatibilityFixture : IAsyncLifetime
         // and the test below would otherwise silently validate the wrong assembly.
         string libraryPath = Path.Combine(this.BuildDir, "WebDriverBiDi.dll");
         Assert.True(File.Exists(libraryPath));
+
+        // The pipe-peer application must have been copied next to this test assembly; the smoke app
+        // launches it to exercise the netstandard2.0 PipeConnection round trip.
+        Assert.True(File.Exists(PipePeerDllPath), $"Pipe peer application not found at {PipePeerDllPath}.");
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
