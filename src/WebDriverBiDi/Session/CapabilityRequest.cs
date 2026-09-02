@@ -17,7 +17,7 @@ public class CapabilityRequest
     /// </summary>
     [JsonPropertyName("acceptInsecureCerts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? AcceptInsecureCertificates { get; set; }
+    public bool? AcceptInsecureCerts { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the browser.

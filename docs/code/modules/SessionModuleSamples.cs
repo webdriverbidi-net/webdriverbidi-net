@@ -49,7 +49,7 @@ public static class SessionModuleSamples
         CapabilityRequest capabilities = new CapabilityRequest
         {
             BrowserName = "chrome",
-            AcceptInsecureCertificates = true,
+            AcceptInsecureCerts = true,
         };
 
         NewCommandParameters parameters = new NewCommandParameters

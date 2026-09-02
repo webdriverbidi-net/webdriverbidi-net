@@ -22,7 +22,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -53,7 +53,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -91,7 +91,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -132,7 +132,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -167,7 +167,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -201,7 +201,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -235,7 +235,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -270,7 +270,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -373,7 +373,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -406,7 +406,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -440,7 +440,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
@@ -491,7 +491,7 @@ public class CapabilitiesResultTests
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.NotNull(result);
 
-        Assert.True(result.AcceptInsecureCertificates);
+        Assert.True(result.AcceptInsecureCerts);
         Assert.Equal("greatBrowser", result.BrowserName);
         Assert.Equal("101.5b", result.BrowserVersion);
         Assert.Equal("otherOS", result.PlatformName);
