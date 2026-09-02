@@ -1552,51 +1552,58 @@ public class Transport : IAsyncDisposable
             await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in protocol error response: {messageString}");
             WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
-        }
 
-        return false;
+            // The message was recognized as an error response, and its malformed payload has
+            // been captured as a protocol error above, so the message is handled.
+            return true;
+        }
     }
 
     private async Task<bool> ProcessEventMessageAsync(IncomingMessage packet)
     {
-        if (packet.TryGetEventName(out string eventName))
+        if (!packet.TryGetEventName(out string eventName) || !this.eventMessageTypes.TryGetValue(eventName, out EventMessageRegistration? registration))
         {
-            if (this.eventMessageTypes.TryGetValue(eventName, out EventMessageRegistration? registration))
-            {
-                Type eventMessageType = registration.EventMessageType;
-                try
-                {
-                    JsonTypeInfo eventTypeInfo = registration.GetTypeInfo(this.options);
-                    if (!packet.TryDeserializeEventMessage(eventTypeInfo, out EventMessage? eventMessageData))
-                    {
-                        throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
-                    }
-
-                    WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
-                    {
-                        await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
-                    }
-
-                    // As for responses, extension properties inside the params object and on the event
-                    // envelope are exposed separately (AdditionalData and AdditionalEventProperties). The
-                    // converter rejects a null or missing 'params', so a deserialized event always carries
-                    // non-null data whose runtime type drives which payload properties are extension data.
-                    ReceivedDataDictionary payloadExtensionData = ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("params", this.options.GetTypeInfo(eventMessageData.EventData!.GetType())));
-                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData, payloadExtensionData)).ConfigureAwait(false);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    string messageString = packet.MessageText;
-                    await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in event message: {messageString}");
-                    WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
-                }
-            }
+            // An event with no method name, or with a method name that is not registered,
+            // is reported as an unknown message by the caller: the message-level
+            // forward-compatibility path for events the library does not know.
+            return false;
         }
 
-        return false;
+        Type eventMessageType = registration.EventMessageType;
+        try
+        {
+            JsonTypeInfo eventTypeInfo = registration.GetTypeInfo(this.options);
+            if (!packet.TryDeserializeEventMessage(eventTypeInfo, out EventMessage? eventMessageData))
+            {
+                throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
+            }
+
+            WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
+            if (this.OnLogMessage.CurrentObserverCount > 0)
+            {
+                await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+            }
+
+            // As for responses, extension properties inside the params object and on the event
+            // envelope are exposed separately (AdditionalData and AdditionalEventProperties). The
+            // converter rejects a null or missing 'params', so a deserialized event always carries
+            // non-null data whose runtime type drives which payload properties are extension data.
+            ReceivedDataDictionary payloadExtensionData = ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("params", this.options.GetTypeInfo(eventMessageData.EventData!.GetType())));
+            await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData, payloadExtensionData)).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            string messageString = packet.MessageText;
+            await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {messageString})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+            this.CaptureUnhandledError(UnhandledErrorKind.ProtocolError, ex, $"Invalid JSON in event message: {messageString}");
+            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(messageString, 100));
+
+            // The message was recognized as a registered event; its malformed payload has
+            // been captured as a protocol error above, so the message is handled and must
+            // not additionally be reported as an unknown message by the caller.
+            return true;
+        }
     }
 
     private async Task ReportDiscardedCanceledCommandResponseAsync(CanceledCommandInfo canceledCommand)

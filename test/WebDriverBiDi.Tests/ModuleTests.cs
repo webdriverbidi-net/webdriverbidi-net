@@ -10,7 +10,11 @@ public class ModuleTests
     public async Task TestEventWithInvalidEventArgsThrows()
     {
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnknownMessageBehavior = TransportErrorBehavior.Collect,
+        };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
@@ -25,14 +29,14 @@ public class ModuleTests
             if (e.Level >= WebDriverBiDiLogLevel.Error)
             {
                 driverLog.Add(e.Message);
+                taskCompletionSource.TrySetResult();
             }
         });
 
-        string unknownMessage = string.Empty;
+        bool unknownMessageEventRaised = false;
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
-            unknownMessage = e.Message;
-            taskCompletionSource.TrySetResult();
+            unknownMessageEventRaised = true;
         });
 
         await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -50,7 +54,13 @@ public class ModuleTests
 
         Assert.Single(driverLog);
         Assert.Contains("Unexpected error parsing event JSON", driverLog[0]);
-        Assert.NotEmpty(unknownMessage);
+
+        // With both categories set to Collect, exactly one collected exception proves the
+        // malformed payload of a registered event was captured once, as a protocol error,
+        // and was not additionally reported as an unknown message.
+        AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
+        Assert.Single(exception.InnerExceptions);
+        Assert.False(unknownMessageEventRaised);
     }
 
     [Fact]
