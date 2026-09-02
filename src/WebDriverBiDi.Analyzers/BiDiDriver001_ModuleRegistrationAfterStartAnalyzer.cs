@@ -156,6 +156,13 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             // driver rather than the Task.Wait() wrapper being analyzed (and ignored).
             CheckForDriverMethodCall(UnwrapBlockingWait(directInvocation), context, semanticModel, driverVariables);
         }
+        else if (expressionStmt.Expression is AssignmentExpressionSyntax assignment && assignment.Right is InvocationExpressionSyntax assignedInvocation)
+        {
+            // Handle: startTask = driver.StartAsync(...). The task may be awaited later, but
+            // the connect attempt begins at the call itself, so registration after this point
+            // is judged against a started driver — matching BIDI002 and BIDI003.
+            CheckForDriverMethodCall(assignedInvocation, context, semanticModel, driverVariables);
+        }
     }
 
     private static InvocationExpressionSyntax UnwrapBlockingWait(InvocationExpressionSyntax invocation)

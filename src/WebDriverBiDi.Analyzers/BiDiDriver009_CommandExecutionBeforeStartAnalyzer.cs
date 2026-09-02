@@ -66,13 +66,8 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
 
         foreach (StatementSyntax statement in statements)
         {
-            // Check for driver creation
-            if (statement is LocalDeclarationStatementSyntax localDecl)
-            {
-                AnalyzeLocalDeclaration(localDecl, semanticModel, driverStartedStatus);
-            }
-
-            // Check for method calls on driver
+            // ProcessNode registers driver declarations and checks driver method calls,
+            // wherever in the statement's subtree they appear.
             ProcessNode(statement, context, semanticModel, driverStartedStatus);
         }
     }
@@ -134,6 +129,13 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
                 ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus);
+            }
+            else if (descendant is LocalDeclarationStatementSyntax localDecl)
+            {
+                // Register driver declarations wherever they appear (including inside nested
+                // blocks such as try or using statements); the pre-order walk visits the
+                // declaration before any later use of the variable.
+                AnalyzeLocalDeclaration(localDecl, semanticModel, driverStartedStatus);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {

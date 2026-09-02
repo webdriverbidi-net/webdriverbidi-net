@@ -389,4 +389,45 @@ public class BiDiDriver021AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task ObserverDeclaredInsideTryBlock_StartWithoutRead_ReportsWarning()
+    {
+        // Observer declarations inside nested blocks (here, a try block) are tracked the
+        // same as top-level declarations.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                            {|#0:observer.StartCapturingTasks()|};
+                            await Task.Delay(100);
+                        }
+                        finally
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
+    }
 }

@@ -96,8 +96,13 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Get all subscribed event names from Session.SubscribeAsync calls
-        System.Collections.Generic.HashSet<string> subscribedEvents = GetSubscribedEventNames(context, context.Node);
+        // Get all subscribed event names from Session.SubscribeAsync calls. When any such
+        // call's parameters cannot be inspected at the call site, the subscription set is
+        // unknowable and no missing-subscription warning may be reported.
+        if (!TryGetSubscribedEventNames(context, context.Node, out System.Collections.Generic.HashSet<string> subscribedEvents))
+        {
+            return;
+        }
 
         // Report diagnostics for AddObserver calls without matching Subscribe
         foreach ((InvocationExpressionSyntax invocation, string eventName) in addObserverCalls)
@@ -191,9 +196,9 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static System.Collections.Generic.HashSet<string> GetSubscribedEventNames(SyntaxNodeAnalysisContext context, SyntaxNode node)
+    private static bool TryGetSubscribedEventNames(SyntaxNodeAnalysisContext context, SyntaxNode node, out System.Collections.Generic.HashSet<string> subscribedEvents)
     {
-        System.Collections.Generic.HashSet<string> subscribedEvents = [];
+        subscribedEvents = [];
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(node))
         {
@@ -227,29 +232,38 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                     if (invocation.ArgumentList.Arguments.Count > 0)
                     {
                         ExpressionSyntax firstArg = invocation.ArgumentList.Arguments[0].Expression;
-                        ExtractEventNamesFromSubscribeParameters(context, firstArg, subscribedEvents);
+                        if (firstArg is not BaseObjectCreationExpressionSyntax objectCreation)
+                        {
+                            // The subscription parameters are not created inline; they are held
+                            // in a variable (and possibly built up before the call), so the set
+                            // of subscribed event names cannot be determined from this call
+                            // site. Treat the whole set as unknowable so the caller suppresses
+                            // its warnings: a warning about missing code must prefer a false
+                            // negative over a false positive.
+                            return false;
+                        }
+
+                        ExtractEventNamesFromSubscribeParameters(context, objectCreation, subscribedEvents);
                     }
                 }
             }
         }
 
-        return subscribedEvents;
+        return true;
     }
 
     private static void ExtractEventNamesFromSubscribeParameters(
         SyntaxNodeAnalysisContext context,
-        ExpressionSyntax expression,
+        BaseObjectCreationExpressionSyntax objectCreation,
         System.Collections.Generic.HashSet<string> eventNames)
     {
-        // Handle: new SubscribeCommandParameters(new[] { "log.entryAdded", "network.beforeRequest" })
-        // and the single-event constructor: new SubscribeCommandParameters("log.entryAdded")
-        if (expression is ObjectCreationExpressionSyntax objectCreation && objectCreation.ArgumentList != null)
+        // Handle: new SubscribeCommandParameters(new[] { "log.entryAdded", "network.beforeRequest" }),
+        // the single-event constructor new SubscribeCommandParameters("log.entryAdded"), and their
+        // target-typed new(...) equivalents.
+        if (objectCreation.ArgumentList != null && objectCreation.ArgumentList.Arguments.Count > 0)
         {
-            if (objectCreation.ArgumentList.Arguments.Count > 0)
-            {
-                ExpressionSyntax eventsArg = objectCreation.ArgumentList.Arguments[0].Expression;
-                ExtractEventNamesFromArrayExpression(context, eventsArg, eventNames);
-            }
+            ExpressionSyntax eventsArg = objectCreation.ArgumentList.Arguments[0].Expression;
+            ExtractEventNamesFromArrayExpression(context, eventsArg, eventNames);
         }
     }
 

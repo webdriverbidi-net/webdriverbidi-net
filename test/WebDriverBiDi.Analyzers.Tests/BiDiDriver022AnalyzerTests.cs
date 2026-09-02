@@ -674,4 +674,35 @@ public class BiDiDriver022AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task IndexerAssignment_OnUserTypeInNamespaceWithLibraryPrefix_NoDiagnostic()
+    {
+        // A user's own AdditionalData dictionary on a type in a namespace that merely
+        // begins with the library's root namespace name (here, WebDriverBiDiExtensions)
+        // is not the library's Extensible plumbing and must not be branded with this
+        // library's diagnostic.
+        string testCode = """
+            using System.Collections.Generic;
+
+            namespace WebDriverBiDiExtensions
+            {
+                public class UserExtensibleType
+                {
+                    public Dictionary<string, object?> AdditionalData { get; } = new Dictionary<string, object?>();
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        UserExtensibleType userValue = new UserExtensibleType();
+                        userValue.AdditionalData["ext"] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
 }

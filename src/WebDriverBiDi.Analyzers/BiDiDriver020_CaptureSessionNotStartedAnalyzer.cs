@@ -58,28 +58,30 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        SemanticModel semanticModel = context.SemanticModel;
-
         // Track whether StartCapturingTasks has been seen for each local EventObserver<T> variable.
         // Only locally-declared variables are tracked; parameter-passed observers are not.
         Dictionary<string, bool> capturingState = [];
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            // Register newly declared EventObserver<T> local variables.
-            if (statement is LocalDeclarationStatementSyntax localDecl)
-            {
-                foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
-                {
-                    ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
-                    if (localSymbol.Type is INamedTypeSymbol { Name: "EventObserver" })
-                    {
-                        capturingState[variable.Identifier.Text] = false;
-                    }
-                }
-            }
-
+            // ProcessNode registers observer declarations and checks observer method calls,
+            // wherever in the statement's subtree they appear.
             ProcessNode(statement, context, capturingState);
+        }
+    }
+
+    private static void TrackObserverDeclarations(
+        LocalDeclarationStatementSyntax localDecl,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> capturingState)
+    {
+        foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
+        {
+            ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
+            if (localSymbol.Type is INamedTypeSymbol { Name: "EventObserver" })
+            {
+                capturingState[variable.Identifier.Text] = false;
+            }
         }
     }
 
@@ -108,6 +110,13 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
                 ProcessSwitchStatement(switchStatement, context, capturingState);
+            }
+            else if (descendant is LocalDeclarationStatementSyntax localDecl)
+            {
+                // Register observer declarations wherever they appear (including inside nested
+                // blocks such as try or using statements); the pre-order walk visits the
+                // declaration before any later use of the variable.
+                TrackObserverDeclarations(localDecl, context.SemanticModel, capturingState);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {

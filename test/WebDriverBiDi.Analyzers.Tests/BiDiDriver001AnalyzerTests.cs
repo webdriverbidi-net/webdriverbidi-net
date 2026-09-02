@@ -1297,4 +1297,54 @@ public class BiDiDriver001AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a StartAsync() whose task is assigned to a variable still counts as starting
+    /// the driver: the connect attempt begins at the call itself, so a RegisterModule() after
+    /// the assignment reports a diagnostic, matching how BIDI002 and BIDI003 treat the shape.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncAssignedToVariable_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        Task startTask;
+                        startTask = driver.StartAsync("ws://localhost:9222");
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                        await startTask;
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -2614,4 +2614,63 @@ public class BiDiDriver005AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task AddObserver_WithSubscribeParametersHeldInVariable_NoDiagnostic()
+    {
+        // The subscription parameters are held in a variable, so the set of subscribed
+        // event names cannot be determined from the call site; a warning about missing
+        // code must prefer a false negative over a false positive, so no diagnostic may
+        // be reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(e => { });
+                        SubscribeCommandParameters subscribeParameters = new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+                        await driver.Session.SubscribeAsync(subscribeParameters);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AddObserver_WithTargetTypedNewSubscribeParameters_NoDiagnostic()
+    {
+        // A target-typed new(...) argument is inspectable inline, so the subscribed
+        // event name resolves and the matching observer produces no diagnostic.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(e => { });
+                        await driver.Session.SubscribeAsync(new("log.entryAdded"));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
+    }
 }

@@ -1593,4 +1593,90 @@ public class BiDiDriver016AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that ManualResetEventSlim.Wait in async event handler reports a warning.
+    /// ManualResetEventSlim is not a WaitHandle; it declares its own blocking Wait method.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ManualResetEventSlimWait_InAsyncEventHandler_ReportsWarning()
+    {
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        ManualResetEventSlim resetEvent = new ManualResetEventSlim(false);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            {|#0:resetEvent.Wait()|};
+                            await Task.Delay(100);
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("ManualResetEventSlim.Wait");
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that CountdownEvent.Wait in async event handler reports a warning.
+    /// CountdownEvent is not a WaitHandle; it declares its own blocking Wait method.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CountdownEventWait_InAsyncEventHandler_ReportsWarning()
+    {
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        CountdownEvent countdownEvent = new CountdownEvent(1);
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            {|#0:countdownEvent.Wait()|};
+                            await Task.Delay(100);
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("CountdownEvent.Wait");
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }
