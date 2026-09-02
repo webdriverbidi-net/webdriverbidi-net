@@ -118,6 +118,17 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
 
         LogLevel logLevel = MapEventLevel(eventData.Level);
 
+        // Consult the target logger's own filtering before doing any per-event work. The listener
+        // subscribes to the EventSource at the configured EventLevel, but the ILogger may still have
+        // this category filtered off; checking IsEnabled here avoids allocating and boxing the
+        // structured state for an event that would only be discarded. Resolving the logger is required
+        // to make this check and is a one-time cost cached by the Lazy.
+        ILogger target = currentLogger.Value;
+        if (!target.IsEnabled(logLevel))
+        {
+            return;
+        }
+
         // Build structured log state with event properties
         Dictionary<string, object?> state = new()
         {
@@ -141,7 +152,7 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         EventId eventId = new(eventData.EventId, eventData.EventName);
 
         // Log with structured state
-        currentLogger.Value.Log(logLevel, eventId, state, null, FormatMessage);
+        target.Log(logLevel, eventId, state, null, FormatMessage);
     }
 
     private static LogLevel MapEventLevel(EventLevel level)

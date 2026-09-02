@@ -226,6 +226,24 @@ public class WebDriverBiDiEventSourceLoggerTests
     }
 
     [Fact]
+    public void OnEventWritten_WhenTargetLoggerCategoryDisabled_DropsEventWithoutBuildingState()
+    {
+        // The listener subscribes to the EventSource at EventLevel.Verbose, but the target ILogger
+        // may still have this category filtered off. OnEventWritten must consult IsEnabled and drop
+        // the event before building any per-event state, so a disabled logger records nothing.
+        TestLogger fakeLogger = new()
+        {
+            Enabled = false
+        };
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "ws://localhost:9222");
+        }
+
+        Assert.Empty(fakeLogger.Entries);
+    }
+
+    [Fact]
     public void OnEventWritten_WhenLoggerFieldNotYetAssigned_DropsEventWithoutThrowing()
     {
         // Regression test for the base-constructor ordering window: OnEventSourceCreated (run during
