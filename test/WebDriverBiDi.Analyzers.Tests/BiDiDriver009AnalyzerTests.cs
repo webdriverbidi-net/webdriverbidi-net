@@ -961,4 +961,253 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task StopAsyncInThenBranch_CommandInElseBranch_NoDiagnostic()
+    {
+        // The branches are mutually exclusive: the else branch runs only when the driver
+        // was not stopped, so the command there is valid and must not be reported.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool shouldStop)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        if (shouldStop)
+                        {
+                            await driver.StopAsync();
+                        }
+                        else
+                        {
+                            await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task DriverFromAwaitedFactoryMethod_CommandWithoutObservedStart_NoDiagnostic()
+    {
+        // A driver obtained from a factory method may already have been started by the
+        // factory; only variables initialized directly with an object creation are known
+        // to be unstarted, so no Error-severity diagnostic may be reported here.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = await CreateAndStartDriverAsync();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static async Task<BiDiDriver> CreateAndStartDriverAsync()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        return driver;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task ConditionalStartAsync_CommandAfterBranch_NoDiagnostic()
+    {
+        // The driver is started on at least one path through the branch, so the command
+        // after it is not certain to fail and must not be reported at Error severity.
+        // The non-driver object creation declaration also confirms such variables are
+        // not tracked as drivers.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool shouldStart)
+                    {
+                        BiDiDriver driver = new();
+                        StatusCommandParameters parameters = new();
+                        if (shouldStart)
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+
+                        await driver.ExecuteCommandAsync(parameters);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandInBothBranchesBeforeStart_ReportsErrorInEachBranch()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool condition)
+                    {
+                        BiDiDriver driver = new();
+                        if (condition)
+                        {
+                            await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                        }
+                        else
+                        {
+                            await {|#1:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expectedInThenBranch = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+        DiagnosticResult expectedInElseBranch = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(1)
+            .WithArguments("ExecuteCommandAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expectedInThenBranch, expectedInElseBranch);
+    }
+
+    [Fact]
+    public async Task StartAsyncInSwitchSection_CommandAfterSwitch_NoDiagnostic()
+    {
+        // The driver is started on at least one path through the switch, so the command
+        // after it must not be reported at Error severity.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        switch (mode)
+                        {
+                            case 0:
+                                await driver.StartAsync("ws://localhost:9222");
+                                break;
+                            default:
+                                break;
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncBeforeSwitch_ConditionalStopInSection_CommandAfterSwitch_NoDiagnostic()
+    {
+        // The driver was started before the switch and is stopped on only one path
+        // through it, so the command after the switch is not certain to fail and must
+        // not be reported at Error severity.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        switch (mode)
+                        {
+                            case 0:
+                                await driver.StopAsync();
+                                break;
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandInIfCondition_BeforeStart_ReportsError()
+    {
+        // Invocations in the branch condition execute unconditionally, before either
+        // branch, so a command there is judged against the state at the branch point.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        if (await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|} is not null)
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
 }

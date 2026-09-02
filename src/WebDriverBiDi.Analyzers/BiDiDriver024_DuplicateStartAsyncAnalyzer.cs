@@ -104,13 +104,14 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
         // (lambdas, anonymous methods, local functions): their code runs when the delegate is
         // invoked, not at the textual position where it is declared, so a StartAsync there must
         // not be judged against the driver's started state at this point in the method. It also
-        // stops at if and switch statements — including one that is itself the root, which the
-        // barrier yields without descending into — and processes them recursively below with a
-        // forked copy of the state for each mutually exclusive branch.
+        // stops at if, switch, and try statements — including one that is itself the root,
+        // which the barrier yields without descending into — and processes them recursively
+        // below with a forked copy of the state for each mutually exclusive branch.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
             child is not IfStatementSyntax &&
-            child is not SwitchStatementSyntax))
+            child is not SwitchStatementSyntax &&
+            child is not TryStatementSyntax))
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
@@ -120,10 +121,70 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
             {
                 ProcessSwitchStatement(switchStatement, context, driverStartedStatus);
             }
+            else if (descendant is TryStatementSyntax tryStatement)
+            {
+                ProcessTryStatement(tryStatement, context, driverStartedStatus);
+            }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
                 CheckInvocation(invocation, context, driverStartedStatus);
             }
+        }
+    }
+
+    private static void ProcessTryStatement(
+        TryStatementSyntax tryStatement,
+        SyntaxNodeAnalysisContext context,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        Dictionary<string, bool> entryStatus = new(driverStartedStatus);
+        Dictionary<string, bool> tryStatus = new(driverStartedStatus);
+        ProcessNode(tryStatement.Block, context, tryStatus);
+
+        // A catch clause (or a finally block) may begin executing after any prefix of the try
+        // block has run, so inside one a driver counts as started only when every partial
+        // execution of the try leaves it started. That is the conjunction of the state at try
+        // entry and the state after the full try walk: a StartAsync inside the try may not
+        // have run yet (started at entry is false), and a StopAsync inside the try may
+        // already have run (started after the try is false). Judging catch and finally code
+        // against this conjunction keeps the Error-severity diagnostic to statically certain
+        // duplicates: a StartAsync retry in a catch after a failed StartAsync in the try is
+        // not reported, while a second StartAsync in a catch on a driver that was already
+        // started before the try (with nothing in the try stopping it) still is.
+        Dictionary<string, bool> conservativeStatus = [];
+        foreach (string driverName in entryStatus.Keys)
+        {
+            conservativeStatus[driverName] = entryStatus[driverName] && tryStatus[driverName];
+        }
+
+        List<Dictionary<string, bool>> exitStatuses = [tryStatus];
+        foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
+        {
+            Dictionary<string, bool> catchStatus = new(conservativeStatus);
+            if (catchClause.Filter is not null)
+            {
+                ProcessNode(catchClause.Filter.FilterExpression, context, catchStatus);
+            }
+
+            ProcessNode(catchClause.Block, context, catchStatus);
+            exitStatuses.Add(catchStatus);
+        }
+
+        if (tryStatement.Finally is not null)
+        {
+            Dictionary<string, bool> finallyStatus = new(conservativeStatus);
+            ProcessNode(tryStatement.Finally.Block, context, finallyStatus);
+            exitStatuses.Add(finallyStatus);
+        }
+
+        // After the try statement, a driver counts as started only when every completion path
+        // leaves it started; a "started on some path" driver must not produce a duplicate
+        // report on a later StartAsync. Including the finally's conservative walk in the
+        // merge can only make the merged state more pessimistic (suppressing reports), never
+        // create a false positive.
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            driverStartedStatus[driverName] = exitStatuses.All(exitStatus => exitStatus[driverName]);
         }
     }
 
