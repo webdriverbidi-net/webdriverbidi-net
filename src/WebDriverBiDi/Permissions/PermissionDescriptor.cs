@@ -27,4 +27,17 @@ public class PermissionDescriptor
     [JsonRequired]
     [JsonPropertyName("name")]
     public string Name { get; set; }
+
+    /// <summary>
+    /// Gets the dictionary containing additional descriptor members to send for the permission.
+    /// </summary>
+    /// <remarks>
+    /// The Permissions specification converts the descriptor to the WebIDL descriptor type of
+    /// the named permission, and for several permissions that type defines members beyond
+    /// <c>name</c> — for example, the <c>midi</c> permission's <c>sysex</c> member, or the
+    /// <c>camera</c> permission's <c>panTiltZoom</c> member. Entries added to this dictionary
+    /// are serialized as additional members of the descriptor object.
+    /// </remarks>
+    [JsonExtensionData]
+    public Dictionary<string, object?> AdditionalData { get; } = [];
 }
