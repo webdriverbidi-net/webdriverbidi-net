@@ -71,6 +71,11 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
                     """,
                 "session.subscribe" => $$"""{ "type": "success", "id": {{id}}, "result": { "subscription": "netStandardSmokeTestSubscription" } }""",
                 "session.end" => $$"""{ "type": "success", "id": {{id}}, "result": {} }""",
+
+                // Reply to session.status with an error so the smoke app can exercise the
+                // netstandard2.0 command-failure path (error-response deserialization to a
+                // WebDriverBiDiCommandException) rather than only success responses.
+                "session.status" => $$"""{ "type": "error", "id": {{id}}, "error": "unknown error", "message": "simulated command failure for netstandard smoke test" }""",
                 _ => null,
             };
 
@@ -111,7 +116,7 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
 
         RunProcessResult runResult = await ProcessRunner.RunProcessAsync(
             "dotnet",
-            $"\"{this.fixture.DllPath}\" ws://localhost:{server.Port}",
+            $"\"{this.fixture.DllPath}\" ws://localhost:{server.Port} \"{this.fixture.PipePeerPath}\"",
             workingDirectory: this.fixture.BuildDir,
             timeout: TimeSpan.FromSeconds(30),
             diagnosticReporter: (output) => TestContext.Current.SendDiagnosticMessage(output));
@@ -120,6 +125,10 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
         await server.StopAsync();
 
         Assert.Contains(".NETStandard,Version=v2.0", runResult.StandardOutputConsoleContent);
+
+        // Prove the pipe transport round trip actually ran (rather than being silently skipped),
+        // exercising the netstandard2.0 PipeConnection code paths in addition to the WebSocket ones.
+        Assert.Contains("Pipe transport round-trip over the netstandard2.0 build succeeded.", runResult.StandardOutputConsoleContent);
         Assert.Contains("PASS:", runResult.StandardOutputConsoleContent);
         Assert.Equal(0, runResult.ExitCode);
     }

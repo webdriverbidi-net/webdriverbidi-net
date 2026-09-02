@@ -26,10 +26,27 @@
        out-of-process application against a real browser. -->
   <ItemGroup>
     <ProjectReference Include="..\WebDriverBiDi.TestUtilities\WebDriverBiDi.TestUtilities.csproj" />
+
+    <!-- Build the pipe-peer application, and copy it into this project's output so the netstandard2.0
+         smoke application can be handed its path and launch it to exercise the PipeConnection round
+         trip. ReferenceOutputAssembly=false: this project only needs the peer built and copied, not
+         referenced as an assembly. -->
+    <ProjectReference Include="..\WebDriverBiDi.NamedPipeTestApplication\WebDriverBiDi.NamedPipeTestApplication.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Copy the pipe-peer application next to this test assembly (see the None items in
+         WebDriverBiDi.Tests.csproj for the same mechanism). -->
+    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net10.0\WebDriverBiDi.NamedPipeTestApplication.dll">
+      <Link>TestApplications\WebDriverBiDi.NamedPipeTestApplication.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net10.0\WebDriverBiDi.NamedPipeTestApplication.runtimeconfig.json">
+      <Link>TestApplications\WebDriverBiDi.NamedPipeTestApplication.runtimeconfig.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
