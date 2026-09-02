@@ -37,7 +37,7 @@ jobs:
 
       - name: Classify changed paths
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@15192bc058cc28a13dbf6cde61f19e18988b7af6 # v3
         with:
           filters: |
             docs:
@@ -86,6 +86,7 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
@@ -153,7 +154,7 @@ jobs:
       # and upload artifacts without failing on a forbidden comment API call.
       - name: Find existing benchmark comment
         if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: peter-evans/find-comment@v4
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4
         id: find-comment
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -162,7 +163,7 @@ jobs:
 
       - name: Post or update PR comment
         if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: peter-evans/create-or-update-comment@v5
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}

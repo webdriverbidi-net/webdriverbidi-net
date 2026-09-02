@@ -4,3 +4,17 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  # GitHub Actions are pinned to commit SHAs (with a "# vX" comment naming the
+  # version). Dependabot uses that comment to track the current version and
+  # opens PRs that move the SHA to any newer release — patch, minor, or major —
+  # not just majors. The group batches those bumps into a single PR to keep the
+  # noise down.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
