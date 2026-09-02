@@ -1048,7 +1048,10 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.Contains("RemoteValue array element for dictionary must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+
+        // The converter reads the pair in document order, so the non-object second element
+        // is reported before the pair's excess length is reached.
+        Assert.Contains("RemoteValue array element for dictionary must have a second element (value) that is an object", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
         json = """
                {
                  "type": "map",

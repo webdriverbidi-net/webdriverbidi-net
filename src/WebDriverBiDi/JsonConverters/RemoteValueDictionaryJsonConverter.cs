@@ -24,10 +24,64 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
     /// <returns>The deserialized RemoteValueDictionary value.</returns>
     public override RemoteValueDictionary Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // Implementation for deserializing RemoteValueDictionary
-        using JsonDocument document = JsonDocument.ParseValue(ref reader);
-        RemoteValueDictionary remoteValueDictionary = this.ProcessMap(document.RootElement, options);
-        return remoteValueDictionary;
+        // Walk the reader directly rather than materializing the subtree into a fresh
+        // JsonDocument: the incoming payload is already backed by a parsed document, and
+        // re-parsing here would copy each nested map's subtree once per nesting level.
+        // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
+        // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
+        JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
+        if (reader.TokenType != JsonTokenType.StartArray)
+        {
+            throw new JsonException($"RemoteValue for dictionary must be an array");
+        }
+
+        Dictionary<object, RemoteValue> remoteValueDictionary = new(RemoteValueKeyComparer.Instance);
+        while (true)
+        {
+            reader.Read();
+            if (reader.TokenType == JsonTokenType.EndArray)
+            {
+                break;
+            }
+
+            if (reader.TokenType != JsonTokenType.StartArray)
+            {
+                throw new JsonException($"RemoteValue array element for dictionary must be an array");
+            }
+
+            reader.Read();
+            if (reader.TokenType == JsonTokenType.EndArray)
+            {
+                throw new JsonException($"RemoteValue array element for dictionary must be an array with exactly two elements");
+            }
+
+            object pairKey = ProcessMapKey(ref reader, typeInfo);
+
+            reader.Read();
+            if (reader.TokenType == JsonTokenType.EndArray)
+            {
+                throw new JsonException($"RemoteValue array element for dictionary must be an array with exactly two elements");
+            }
+
+            if (reader.TokenType != JsonTokenType.StartObject)
+            {
+                throw new JsonException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
+            }
+
+            // We can use the null-forgiving operator because the token is the start of an
+            // object, so the deserialization cannot yield a JSON null.
+            RemoteValue pairValue = JsonSerializer.Deserialize(ref reader, typeInfo)!;
+
+            reader.Read();
+            if (reader.TokenType != JsonTokenType.EndArray)
+            {
+                throw new JsonException($"RemoteValue array element for dictionary must be an array with exactly two elements");
+            }
+
+            remoteValueDictionary[pairKey] = pairValue;
+        }
+
+        return new RemoteValueDictionary(remoteValueDictionary);
     }
 
     /// <summary>
@@ -43,71 +97,24 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
         throw new NotSupportedException("RemoteValueDictionaryJsonConverter does not support serialization; RemoteValueDictionary is an inbound-only type.");
     }
 
-    private RemoteValueDictionary ProcessMap(JsonElement mapArray, JsonSerializerOptions options)
+    private static object ProcessMapKey(ref Utf8JsonReader reader, JsonTypeInfo<RemoteValue> typeInfo)
     {
-        JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
-        if (mapArray.ValueKind != JsonValueKind.Array)
-        {
-            throw new JsonException($"RemoteValue for dictionary must be an array");
-        }
-
-        Dictionary<object, RemoteValue> remoteValueDictionary = new(RemoteValueKeyComparer.Instance);
-        foreach (JsonElement mapElementToken in mapArray.EnumerateArray())
-        {
-            if (mapElementToken.ValueKind != JsonValueKind.Array)
-            {
-                throw new JsonException($"RemoteValue array element for dictionary must be an array");
-            }
-
-            if (mapElementToken.GetArrayLength() != 2)
-            {
-                throw new JsonException($"RemoteValue array element for dictionary must be an array with exactly two elements");
-            }
-
-            JsonElement keyToken = mapElementToken[0];
-            if (keyToken.ValueKind != JsonValueKind.String && keyToken.ValueKind != JsonValueKind.Object)
-            {
-                throw new JsonException($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object");
-            }
-
-            object pairKey = this.ProcessMapKey(keyToken, typeInfo);
-
-            JsonElement valueToken = mapElementToken[1];
-            if (valueToken.ValueKind != JsonValueKind.Object)
-            {
-                throw new JsonException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
-            }
-
-            // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
-            // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
-            RemoteValue pairValue = valueToken.Deserialize(typeInfo)!;
-            remoteValueDictionary[pairKey] = pairValue;
-        }
-
-        return new RemoteValueDictionary(remoteValueDictionary);
-    }
-
-    private object ProcessMapKey(JsonElement keyToken, JsonTypeInfo<RemoteValue> typeInfo)
-    {
-        object pairKey;
-        if (keyToken.ValueKind == JsonValueKind.String)
+        if (reader.TokenType == JsonTokenType.String)
         {
             // The token type is already guaranteed to be a string, and
             // therefore cannot be null.
-            pairKey = keyToken.GetString()!;
-        }
-        else
-        {
-            // Previous caller has already determined the value must be either
-            // a string or object. We will use the null forgiving operator since
-            // the token must be an object, and therefore the cast cannot return
-            // null.
-            // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
-            // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
-            RemoteValue keyRemoteValue = keyToken.Deserialize(typeInfo)!;
-            pairKey = keyRemoteValue;
+            return reader.GetString()!;
         }
 
-        return pairKey;
+        if (reader.TokenType == JsonTokenType.StartObject)
+        {
+            // We can use the null-forgiving operator because the token is the start of an
+            // object, so the deserialization cannot yield a JSON null.
+            // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
+            // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
+            return JsonSerializer.Deserialize(ref reader, typeInfo)!;
+        }
+
+        throw new JsonException($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object");
     }
 }
