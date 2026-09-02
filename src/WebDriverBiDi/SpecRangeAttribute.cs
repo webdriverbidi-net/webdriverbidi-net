@@ -6,7 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// Marks a command-parameter property with the inclusive numeric range the WebDriver BiDi
+/// Marks a command-parameter property with the numeric range the WebDriver BiDi
 /// specification defines for its value, so that Roslyn analyzers can read the range from compiled
 /// metadata as well as from source.
 /// </summary>
@@ -16,8 +16,11 @@ namespace WebDriverBiDi;
 /// deliberately does not validate a property's value against this range at run time: a value the
 /// specification places outside the range is representable on the wire, and a conforming remote end
 /// rejects it when the command is executed. Bounds are inclusive of both <see cref="Minimum"/> and
-/// <see cref="Maximum"/>. Use <see cref="double.NegativeInfinity"/> or
-/// <see cref="double.PositiveInfinity"/> for a range that is unbounded on that side.
+/// <see cref="Maximum"/>, unless <see cref="MaximumExclusive"/> is set to <see langword="true"/>,
+/// in which case a value equal to <see cref="Maximum"/> is outside the range (the specification's
+/// CDDL expresses such a range with the <c>...</c> operator rather than <c>..</c>). Use
+/// <see cref="double.NegativeInfinity"/> or <see cref="double.PositiveInfinity"/> for a range that
+/// is unbounded on that side.
 /// </para>
 /// <para>
 /// Some properties accept a reset sentinel value that falls outside the specification range (for
@@ -46,9 +49,17 @@ public sealed class SpecRangeAttribute : Attribute
     public double Minimum { get; }
 
     /// <summary>
-    /// Gets the inclusive maximum value the specification allows for the property.
+    /// Gets the maximum value the specification allows for the property. The bound is inclusive
+    /// unless <see cref="MaximumExclusive"/> is set to <see langword="true"/>.
     /// </summary>
     public double Maximum { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether <see cref="Maximum"/> is an exclusive bound, so that
+    /// a value equal to <see cref="Maximum"/> is outside the specification range. This corresponds
+    /// to the specification's CDDL <c>...</c> range operator, which excludes its upper bound.
+    /// </summary>
+    public bool MaximumExclusive { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the property accepts a reset sentinel value outside

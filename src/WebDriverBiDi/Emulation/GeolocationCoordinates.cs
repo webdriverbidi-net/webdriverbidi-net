@@ -94,13 +94,15 @@ public class GeolocationCoordinates
     /// Gets or sets the heading of the movement of the geographic position, in degrees. If the device is stationary, leave this property unset (<see langword="null"/>).
     /// </summary>
     /// <remarks>
-    /// Valid values for this property range from 0.0 to 360.0, inclusive. This property does not
-    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
-    /// rejects it when the command is executed.
+    /// Valid values for this property range from 0.0 inclusive to 360.0 exclusive: the
+    /// specification's CDDL range <c>0.0...360.0</c> excludes its upper bound, so 360.0 itself is
+    /// not a valid heading (use 0.0). This property does not validate its value; a value outside
+    /// this range is sent as-is, and a conforming remote end rejects it when the command is
+    /// executed.
     /// </remarks>
     [JsonPropertyName("heading")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [SpecRange(0.0, 360.0)]
+    [SpecRange(0.0, 360.0, MaximumExclusive = true)]
     public double? Heading { get; set; }
 
     /// <summary>
