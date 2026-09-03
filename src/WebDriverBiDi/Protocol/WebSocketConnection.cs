@@ -79,8 +79,14 @@ public class WebSocketConnection : Connection
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is already connected.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="url"/> is not a valid absolute URI, or does not have a WebSocket scheme.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when attempting to start a disposed connection.</exception>
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
+        if (this.IsDisposed)
+        {
+            throw new ObjectDisposedException(nameof(WebSocketConnection), "This connection has been disposed; the connection cannot be restarted after disposal.");
+        }
+
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? websocketUri))
         {
             throw new ArgumentException($"The value '{url}' is not a valid absolute URI", nameof(url));
