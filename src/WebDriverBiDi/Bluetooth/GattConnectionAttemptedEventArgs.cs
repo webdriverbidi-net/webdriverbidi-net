@@ -16,7 +16,7 @@ public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="GattConnectionAttemptedEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    internal GattConnectionAttemptedEventArgs()
+    public GattConnectionAttemptedEventArgs()
     {
     }
 

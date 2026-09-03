@@ -16,7 +16,7 @@ public record RealmCreatedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="RealmCreatedEventArgs"/> class.
     /// </summary>
     /// <param name="info">The RealmInfo object containing information about the realm being created.</param>
-    internal RealmCreatedEventArgs(RealmInfo info)
+    public RealmCreatedEventArgs(RealmInfo info)
     {
         this.info = info;
     }

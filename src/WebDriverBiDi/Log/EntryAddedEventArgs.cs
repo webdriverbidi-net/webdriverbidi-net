@@ -18,7 +18,7 @@ public record EntryAddedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="EntryAddedEventArgs" /> class.
     /// </summary>
     /// <param name="entry">The data describing the log entry.</param>
-    internal EntryAddedEventArgs(LogEntry entry)
+    public EntryAddedEventArgs(LogEntry entry)
     {
         this.entry = entry;
     }

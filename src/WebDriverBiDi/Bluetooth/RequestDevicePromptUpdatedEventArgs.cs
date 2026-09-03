@@ -16,7 +16,7 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="RequestDevicePromptUpdatedEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    internal RequestDevicePromptUpdatedEventArgs()
+    public RequestDevicePromptUpdatedEventArgs()
     {
     }
 

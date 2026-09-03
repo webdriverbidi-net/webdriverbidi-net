@@ -17,7 +17,7 @@ public record RealmDestroyedEventArgs : WebDriverBiDiEventArgs
     /// </summary>
     /// <param name="realmId">The ID of the realm being destroyed.</param>
     [JsonConstructor]
-    internal RealmDestroyedEventArgs(string realmId)
+    public RealmDestroyedEventArgs(string realmId)
     {
         this.RealmId = realmId;
     }

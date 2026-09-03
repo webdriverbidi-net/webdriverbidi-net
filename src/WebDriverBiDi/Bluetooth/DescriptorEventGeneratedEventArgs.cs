@@ -16,7 +16,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="DescriptorEventGeneratedEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    internal DescriptorEventGeneratedEventArgs()
+    public DescriptorEventGeneratedEventArgs()
     {
     }
 

@@ -16,7 +16,7 @@ public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="PrefetchStatusUpdatedEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    internal PrefetchStatusUpdatedEventArgs()
+    public PrefetchStatusUpdatedEventArgs()
     {
     }
 
