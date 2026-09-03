@@ -34,6 +34,13 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     public string BrowsingContextId { get; set; }
 
     /// <summary>
+    /// Gets or sets the clip rectangle for the screenshot, if any.
+    /// </summary>
+    [JsonPropertyName("clip")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ClipRectangle? Clip { get; set; }
+
+    /// <summary>
     /// Gets or sets the format of the screenshot image.
     /// </summary>
     [JsonPropertyName("format")]
@@ -41,11 +48,11 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     public ImageFormat? Format { get; set; }
 
     /// <summary>
-    /// Gets or sets the clip rectangle for the screenshot, if any.
+    /// Gets or sets the size of the screenshot image.
     /// </summary>
-    [JsonPropertyName("clip")]
+    [JsonPropertyName("imageSize")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ClipRectangle? Clip { get; set; }
+    public ImageSize? ImageSize { get; set; }
 
     /// <summary>
     /// Gets or sets the origin of the clip rectangle for the screenshot, if any.

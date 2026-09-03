@@ -255,6 +255,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(GetTreeCommandParameters))]
 [JsonSerializable(typeof(HandleUserPromptCommandParameters))]
 [JsonSerializable(typeof(ImageFormat))]
+[JsonSerializable(typeof(ImageSize))]
 [JsonSerializable(typeof(InnerTextLocator))]
 [JsonSerializable(typeof(InnerTextMatchType))]
 [JsonSerializable(typeof(LocateNodesCommandParameters))]
