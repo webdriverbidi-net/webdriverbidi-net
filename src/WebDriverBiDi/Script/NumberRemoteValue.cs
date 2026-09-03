@@ -76,7 +76,25 @@ public record NumberRemoteValue : ValueHoldingRemoteValue<double>
     /// <see cref="ValueHoldingRemoteValue{T}.Value"/> when the exact value must be preserved, including
     /// detecting <c>NaN</c> or an infinity.
     /// </remarks>
-    public int ToInt() => (int)this.Value;
+    public int ToInt()
+    {
+        if (double.IsNaN(this.Value))
+        {
+            return 0;
+        }
+
+        if (this.Value >= int.MaxValue)
+        {
+            return int.MaxValue;
+        }
+
+        if (this.Value <= int.MinValue)
+        {
+            return int.MinValue;
+        }
+
+        return (int)this.Value;
+    }
 
     /// <summary>
     /// Gets the numeric value of this remote value as a long, converting from double to long as needed.
@@ -92,5 +110,23 @@ public record NumberRemoteValue : ValueHoldingRemoteValue<double>
     /// <see cref="ValueHoldingRemoteValue{T}.Value"/> when the exact value must be preserved, including
     /// detecting <c>NaN</c> or an infinity.
     /// </remarks>
-    public long ToLong() => (long)this.Value;
+    public long ToLong()
+    {
+        if (double.IsNaN(this.Value))
+        {
+            return 0;
+        }
+
+        if (this.Value >= long.MaxValue)
+        {
+            return long.MaxValue;
+        }
+
+        if (this.Value <= long.MinValue)
+        {
+            return long.MinValue;
+        }
+
+        return (long)this.Value;
+    }
 }
