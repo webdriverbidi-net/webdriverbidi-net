@@ -45,7 +45,6 @@ public class SetViewportMetaOverrideCommandParameters : CommandParameters<SetVie
     /// to reject it.
     /// </remarks>
     [JsonPropertyName("viewportMeta")]
-    [JsonInclude]
     public bool? IsViewportMetaOverridden { get; set; }
 
     /// <summary>

@@ -31,7 +31,6 @@ public class BoxClipRectangle : ClipRectangle
     /// Gets or sets the X coordinate of the clip rectangle relative to the left edge of the viewport.
     /// </summary>
     [JsonPropertyName("x")]
-    [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double X { get; set; } = 0.0;
 
@@ -39,7 +38,6 @@ public class BoxClipRectangle : ClipRectangle
     /// Gets or sets the Y coordinate of the clip rectangle relative to the top edge of the viewport.
     /// </summary>
     [JsonPropertyName("y")]
-    [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double Y { get; set; } = 0.0;
 
@@ -47,7 +45,6 @@ public class BoxClipRectangle : ClipRectangle
     /// Gets or sets the width of the clip rectangle.
     /// </summary>
     [JsonPropertyName("width")]
-    [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double Width { get; set; } = 0.0;
 
@@ -55,7 +52,6 @@ public class BoxClipRectangle : ClipRectangle
     /// Gets or sets the height of the clip rectangle.
     /// </summary>
     [JsonPropertyName("height")]
-    [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double Height { get; set; } = 0.0;
 }

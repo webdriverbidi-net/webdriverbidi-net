@@ -38,7 +38,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </summary>
     [JsonPropertyName("body")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public BytesValue? Body { get; set; }
 
     /// <summary>
@@ -60,7 +59,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </remarks>
     [JsonPropertyName("cookies")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public List<SetCookieHeader>? Cookies { get; set; }
 
     /// <summary>
@@ -81,7 +79,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </remarks>
     [JsonPropertyName("headers")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public List<Header>? Headers { get; set; }
 
     /// <summary>
@@ -89,7 +86,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </summary>
     [JsonPropertyName("reasonPhrase")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public string? ReasonPhrase { get; set; }
 
     /// <summary>
@@ -97,6 +93,5 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </summary>
     [JsonPropertyName("statusCode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public ulong? StatusCode { get; set; }
 }

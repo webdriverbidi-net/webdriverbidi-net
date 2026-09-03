@@ -40,7 +40,6 @@ public class SetScreenSettingsOverrideCommandParameters : CommandParameters<SetS
     /// When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("screenArea")]
-    [JsonInclude]
     public ScreenArea? ScreenArea { get; set; }
 
     /// <summary>

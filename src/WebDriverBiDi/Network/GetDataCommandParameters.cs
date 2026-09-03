@@ -33,14 +33,12 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     /// Gets or sets the ID of the request for which to get collected network data.
     /// </summary>
     [JsonPropertyName("request")]
-    [JsonInclude]
     public string RequestId { get; set; }
 
     /// <summary>
     /// Gets or sets the <see cref="DataType"/> of collected network data to get.
     /// </summary>
     [JsonPropertyName("dataType")]
-    [JsonInclude]
     public DataType DataType { get; set; }
 
     /// <summary>
@@ -54,7 +52,6 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     /// Gets or sets a value indicating whether the retrieved collected data should be removed from the collector after retrieval.
     /// </summary>
     [JsonPropertyName("disown")]
-    [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? DisownCollectedData { get; set; }
 }

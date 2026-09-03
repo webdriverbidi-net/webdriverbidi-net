@@ -39,7 +39,6 @@ public class SetForcedColorsModeThemeOverrideCommandParameters : CommandParamete
     /// Gets or sets the emulated color theme mode for the browser. When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("theme")]
-    [JsonInclude]
     public ForcedColorsModeTheme? Theme { get; set; }
 
     /// <summary>

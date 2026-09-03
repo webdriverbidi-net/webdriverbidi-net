@@ -43,6 +43,5 @@ public record SharedReference : RemoteReference
     /// </summary>
     [JsonPropertyName("handle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public string? Handle { get; set; }
 }

@@ -31,14 +31,12 @@ public class SetClientWindowStateCommandParameters : CommandParameters<SetClient
     /// Gets or sets the ID of the client window for which to set the state.
     /// </summary>
     [JsonPropertyName("clientWindow")]
-    [JsonInclude]
     public string ClientWindowId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating the state of the client window.
     /// </summary>
     [JsonPropertyName("state")]
-    [JsonInclude]
     public ClientWindowState State { get; set; } = ClientWindowState.Normal;
 
     /// <summary>

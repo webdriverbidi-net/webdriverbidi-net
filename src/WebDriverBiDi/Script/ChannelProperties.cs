@@ -32,7 +32,6 @@ public class ChannelProperties
     /// </summary>
     [JsonPropertyName("serializationOptions")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
@@ -40,6 +39,5 @@ public class ChannelProperties
     /// </summary>
     [JsonPropertyName("ownership")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public ResultOwnership? Ownership { get; set; }
 }

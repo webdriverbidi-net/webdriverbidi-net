@@ -40,7 +40,6 @@ public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOve
     /// locale tag (e.g., "en-US", "pt-BR", etc.). When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("locale")]
-    [JsonInclude]
     public string? Locale { get; set; }
 
     /// <summary>

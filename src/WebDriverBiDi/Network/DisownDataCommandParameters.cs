@@ -35,20 +35,17 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     /// Gets or sets the <see cref="DataType"/> of collected network data to release.
     /// </summary>
     [JsonPropertyName("dataType")]
-    [JsonInclude]
     public DataType DataType { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the data collector for which to release collected network data.
     /// </summary>
     [JsonPropertyName("collector")]
-    [JsonInclude]
     public string CollectorId { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the request for which to release collected network data.
     /// </summary>
     [JsonPropertyName("request")]
-    [JsonInclude]
     public string RequestId { get; set; }
 }

@@ -35,6 +35,5 @@ public record ContextTarget : Target
     /// </summary>
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public string? Sandbox { get; set; }
 }

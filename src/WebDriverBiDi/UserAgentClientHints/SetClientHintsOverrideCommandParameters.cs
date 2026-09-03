@@ -39,7 +39,6 @@ public class SetClientHintsOverrideCommandParameters : CommandParameters<SetClie
     /// Gets or sets the client hints to override. When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("clientHints")]
-    [JsonInclude]
     public ClientHintsMetadata? ClientHints { get; set; }
 
     /// <summary>

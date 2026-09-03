@@ -32,7 +32,6 @@ public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeader
     /// Gets the list of extra HTTP headers to send with every request.
     /// </summary>
     [JsonPropertyName("headers")]
-    [JsonInclude]
     public List<Header> Headers { get; } = [];
 
     /// <summary>

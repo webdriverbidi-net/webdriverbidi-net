@@ -40,7 +40,6 @@ public class SetDownloadBehaviorCommandParameters : CommandParameters<SetDownloa
     /// Setting the value to <see langword="null"/> resets the download behavior to the default.
     /// </summary>
     [JsonPropertyName("downloadBehavior")]
-    [JsonInclude]
     public DownloadBehavior? DownloadBehavior { get; set; }
 
     /// <summary>

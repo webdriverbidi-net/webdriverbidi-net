@@ -39,7 +39,6 @@ public class SetMediaFeaturesOverrideCommandParameters : CommandParameters<SetMe
     /// Gets or sets the media features to emulate. When <see langword="null"/>, clears all emulated media features.
     /// </summary>
     [JsonPropertyName("features")]
-    [JsonInclude]
     public MediaFeatures? Features { get; set; }
 
     /// <summary>

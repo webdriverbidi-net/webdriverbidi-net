@@ -40,7 +40,6 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// Note carefully that only emulation of disabled JavaScript is supported.
     /// </summary>
     [JsonPropertyName("enabled")]
-    [JsonInclude]
     public bool? IsScriptingEnabled { get; set; }
 
     /// <summary>

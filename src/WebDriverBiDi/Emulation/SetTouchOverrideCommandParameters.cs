@@ -46,7 +46,6 @@ public class SetTouchOverrideCommandParameters : CommandParameters<SetTouchOverr
     /// rejects it when the command is executed.
     /// </remarks>
     [JsonPropertyName("maxTouchPoints")]
-    [JsonInclude]
     [SpecRange(1.0, double.PositiveInfinity)]
     public ulong? MaxTouchPoints { get; set; }
 

@@ -24,6 +24,5 @@ public class SetGeolocationOverrideErrorCommandParameters : SetGeolocationOverri
     /// Gets or sets the error to return when emulating the geolocation.
     /// </summary>
     [JsonPropertyName("error")]
-    [JsonInclude]
     public GeolocationPositionError Error { get; set; } = new();
 }

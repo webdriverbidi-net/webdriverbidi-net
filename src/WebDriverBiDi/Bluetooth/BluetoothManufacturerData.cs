@@ -28,7 +28,6 @@ public class BluetoothManufacturerData
     /// </summary>
     [JsonPropertyName("key")]
     [JsonRequired]
-    [JsonInclude]
     public uint Key { get; set; }
 
     /// <summary>
@@ -36,6 +35,5 @@ public class BluetoothManufacturerData
     /// </summary>
     [JsonPropertyName("data")]
     [JsonRequired]
-    [JsonInclude]
     public string Data { get; set; }
 }

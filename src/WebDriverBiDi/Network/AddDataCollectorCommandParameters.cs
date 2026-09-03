@@ -44,14 +44,12 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// Gets the set of <see cref="DataType"/> values associated with this data collector.
     /// </summary>
     [JsonPropertyName("dataTypes")]
-    [JsonInclude]
     public HashSet<DataType> DataTypes { get; } = [];
 
     /// <summary>
     /// Gets or sets the maximum encoded data size for this collector in bytes.
     /// </summary>
     [JsonPropertyName("maxEncodedDataSize")]
-    [JsonInclude]
     public ulong MaxEncodedDataSize { get; set; }
 
     /// <summary>
@@ -59,7 +57,6 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// </summary>
     [JsonPropertyName("collectorType")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public CollectorType? CollectorType { get; set; }
 
     /// <summary>
