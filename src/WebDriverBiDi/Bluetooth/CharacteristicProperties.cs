@@ -20,56 +20,56 @@ public class CharacteristicProperties
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to broadcast.
+    /// Gets or sets a value indicating whether the characteristic supports broadcasting its value.
     /// </summary>
     [JsonPropertyName("broadcast")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsBroadcast { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to read.
+    /// Gets or sets a value indicating whether the characteristic supports the read operation.
     /// </summary>
     [JsonPropertyName("read")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsRead { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to write without a response.
+    /// Gets or sets a value indicating whether the characteristic supports the write-without-response operation.
     /// </summary>
     [JsonPropertyName("writeWithoutResponse")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsWriteWithoutResponse { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to write.
+    /// Gets or sets a value indicating whether the characteristic supports the write operation.
     /// </summary>
     [JsonPropertyName("write")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsWrite { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to notify.
+    /// Gets or sets a value indicating whether the characteristic supports notifications.
     /// </summary>
     [JsonPropertyName("notify")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsNotify { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to indicate.
+    /// Gets or sets a value indicating whether the characteristic supports indications.
     /// </summary>
     [JsonPropertyName("indicate")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsIndicate { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to use authenticated signed writes.
+    /// Gets or sets a value indicating whether the characteristic supports authenticated signed writes.
     /// </summary>
     [JsonPropertyName("authenticatedSignedWrites")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsAuthenticatedSignedWrites { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is extended properties.
+    /// Gets or sets a value indicating whether the characteristic has extended properties.
     /// </summary>
     [JsonPropertyName("extendedProperties")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -21,9 +21,11 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 ## Installing Extensions
 
-### Install from Path
+`InstallAsync` accepts one of three `ExtensionData` forms: `ExtensionArchivePath` (a packed extension archive file), `ExtensionPath` (an unpacked extension directory), or `ExtensionBase64Encoded` (a packed extension supplied inline as a base64-encoded string).
 
-[!code-csharp[Install from Path](../../code/modules/WebExtensionModuleSamples.cs#InstallfromPath)]
+### Install from Archive Path
+
+[!code-csharp[Install from Archive Path](../../code/modules/WebExtensionModuleSamples.cs#InstallfromPath)]
 
 ### Install Unpacked Extension
 

@@ -129,7 +129,7 @@ When `Protocol` is omitted the behavior applies to all credential protocols.
 
 **Solution**:
 - Call `SetVirtualWalletBehaviorAsync` with `VirtualWalletAction.Clear` in your test teardown.
-- Use isolated browsing contexts or user contexts for each test.
+- Use an isolated browsing context for each test; the command scopes only by browsing context, via the `BrowsingContextId` property.
 
 ## Next Steps
 

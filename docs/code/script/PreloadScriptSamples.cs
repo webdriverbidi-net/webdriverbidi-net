@@ -314,8 +314,13 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("elementWatcher"));
 
+        // Running the script in a named sandbox isolates it from the page's own
+        // JavaScript: the page cannot see or interfere with the watcher.
         AddPreloadScriptCommandParameters preloadParams =
-            new AddPreloadScriptCommandParameters(waitForElementScript);
+            new AddPreloadScriptCommandParameters(waitForElementScript)
+            {
+                Sandbox = "elementWatcherSandbox"
+            };
         preloadParams.Arguments.Add(channel);
 
         await driver.Script.AddPreloadScriptAsync(preloadParams);

@@ -160,7 +160,13 @@ Internal connection logging:
 
 ## Transport Diagnostics
 
-In addition to the `Connection`-level observable events above, the `Transport` itself exposes two read-only diagnostic properties you can sample at any time. These are intended for operators and frameworks that want to understand backlog and in-flight state without subscribing to an `EventSource`. Both are safe to read concurrently with command send and response processing; the returned values are snapshots and may be stale by the time the caller observes them.
+In addition to the `Connection`-level observable events above, the `Transport` itself exposes read-only diagnostic properties you can sample at any time. These are intended for operators and frameworks that want to understand lifecycle, backlog, and in-flight state without subscribing to an `EventSource`. All are safe to read concurrently with command send and response processing; the returned values are snapshots and may be stale by the time the caller observes them.
+
+### State
+
+`Transport.State` reports where the transport is in its connection lifecycle as a `TransportState` value: `Disconnected` (the initial state, the state after a completed disconnect, and the state a failed connection attempt rolls back to), `Connecting` (a connection attempt is in flight but not yet complete), or `Connected` (the transport can exchange messages with the remote end). `BiDiDriver.IsStarted` derives from it (it is `true` exactly when the state is `Connected`), and so does registration legality: `RegisterModule` and `RegisterEvent` are rejected once the transport has left `Disconnected`, and become legal again when a stop returns it there.
+
+[!code-csharp[Transport State Diagnostic](../../code/advanced/ConnectionManagementSamples.cs#TransportStateDiagnostic)]
 
 ### IncomingQueueDepth
 
@@ -178,7 +184,7 @@ The pending-command collection is cleared during `DisconnectAsync`, so reads aft
 
 [!code-csharp[Transport PendingCommandCount Diagnostic](../../code/advanced/ConnectionManagementSamples.cs#TransportPendingCommandCountDiagnostic)]
 
-Both properties pair well with the EventSource-based diagnostics described in [Observability](observability.md): the properties let you poll current state, while the `EventSource` stream gives you lifecycle events.
+These properties pair well with the EventSource-based diagnostics described in [Observability](observability.md): the properties let you poll current state, while the `EventSource` stream gives you lifecycle events.
 
 ## WebSocket Connection Details
 

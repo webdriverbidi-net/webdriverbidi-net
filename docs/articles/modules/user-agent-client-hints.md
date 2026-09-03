@@ -86,7 +86,7 @@ While `Contexts` and `UserContexts` are left empty they are omitted from the com
 
 ## Best Practices
 
-1. **Combine with Emulation**: For full device emulation, use both the UserAgentClientHints module and the Emulation module (viewport, user agent string).
+1. **Combine with other modules**: For full device emulation, combine client hints with the Emulation module (user agent string, viewport meta behavior) and `BrowsingContext.SetViewportAsync` (viewport size).
 2. **Reset between tests**: Clear overrides between test cases to ensure isolation using `ResetClientHintsOverride`.
 3. **Set before navigation**: Apply overrides before navigating to pages that may use client hints for feature detection.
 4. **Match brand and version**: Ensure `Brands` and `FullVersionList` are consistent when both are used.
@@ -95,7 +95,7 @@ While `Contexts` and `UserContexts` are left empty they are omitted from the com
 ## Limitations
 
 - Client hints override affects HTTP request headers and the `navigator.userAgentData` JavaScript API; the traditional `navigator.userAgent` string is controlled by the Emulation module.
-- Support varies by browser; Chrome and Edge have full support, Firefox and Safari have varying levels of support.
+- Support varies by browser; the client-hints override command is experimental in Chromium-based browsers and not yet available in Firefox or Safari (see the [support matrix](additional-modules.md)).
 - Some websites may use additional detection methods beyond client hints.
 
 ## Common Issues
@@ -127,7 +127,8 @@ While `Contexts` and `UserContexts` are left empty they are omitted from the com
 
 ## Next Steps
 
-- [Emulation Module](emulation.md): User agent string and viewport emulation
+- [Emulation Module](emulation.md): User agent string and viewport meta emulation
+- [Browsing Context Module](browsing-context.md#setting-viewport): Viewport size emulation
 - [Browsing Context Module](browsing-context.md): Context management and navigation
 - [Network Module](network.md): Network interception and headers
 - [API Reference](../../api/index.md): Complete API documentation

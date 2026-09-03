@@ -23,7 +23,9 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     }
 
     /// <summary>
-    /// Gets the ID of the browsing context initiating the request.
+    /// Gets the ID of the browsing context initiating the request, or <see langword="null"/>
+    /// when the request is not associated with a browsing context (for example, a request made
+    /// by a service worker).
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
@@ -38,7 +40,8 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     public string? UserContextId { get; internal set; }
 
     /// <summary>
-    /// Gets the ID of the navigation initiating the request.
+    /// Gets the ID of the navigation initiating the request, or <see langword="null"/> when the
+    /// request is not associated with a navigation.
     /// </summary>
     [JsonPropertyName("navigation")]
     [JsonRequired]

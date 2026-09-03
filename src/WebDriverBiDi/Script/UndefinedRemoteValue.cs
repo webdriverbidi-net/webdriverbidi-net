@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Represents a remote value for an undefined value. providing the ability to
+/// Represents a remote value for an undefined value, providing the ability to
 /// convert to a local value for use as an argument for script execution on the
 /// remote end.
 /// </summary>

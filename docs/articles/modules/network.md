@@ -121,7 +121,7 @@ To capture response bodies, you must set up a data collector.
 
 ### Release Response Body Data (DisownDataAsync)
 
-Use `DisownDataAsync` to release response-body data held by a data collector when you no longer need it. This frees memory without retrieving the data first. Construct `DisownDataCommandParameters` with the collector ID and request ID:
+Use `DisownDataAsync` to release response-body data held by a data collector when you no longer need it. This frees memory without retrieving the data first. Construct `DisownDataCommandParameters` with the collector ID, request ID, and data type:
 
 [!code-csharp[Disown Data](../../code/modules/NetworkModuleSamples.cs#DisownData)]
 

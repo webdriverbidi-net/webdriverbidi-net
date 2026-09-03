@@ -21,7 +21,9 @@ public record NavigateCommandResult : CommandResult
     }
 
     /// <summary>
-    /// Gets the ID of the navigation.
+    /// Gets the ID of the navigation, or <see langword="null"/> when the operation created no
+    /// navigation (for example, a navigate command with a wait condition of
+    /// <see cref="ReadinessState.None"/>, or one resolving to the same document).
     /// </summary>
     [JsonPropertyName("navigation")]
     [JsonRequired]

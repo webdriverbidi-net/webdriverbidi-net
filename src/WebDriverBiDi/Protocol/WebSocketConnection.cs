@@ -438,7 +438,9 @@ public class WebSocketConnection : Connection
     }
 
     /// <summary>
-    /// Asynchronously raises a logging event at the Info log level.
+    /// Asynchronously sends a close handshake to the remote WebSocket and waits, bounded by
+    /// <see cref="Connection.ShutdownTimeout"/>, for the receive loop to observe the server's
+    /// close response.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>

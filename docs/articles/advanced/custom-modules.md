@@ -90,6 +90,16 @@ You can also expose observable events from your custom module:
 > Passing a `BiDiDriver` instance satisfies both interfaces, so your module constructor always
 > receives a `BiDiDriver` in practice.
 
+## Enum Wire Values
+
+Enums used in command parameters, results, and event args serialize as JSON strings through `EnumValueJsonConverter<T>` (applied with a `JsonConverter` attribute on the enum). By default the wire value is the member name lowercased (`Enabled` becomes `"enabled"`), and deserialization is strict: an incoming string that matches no member throws a `JsonException` rather than mapping silently. Three attributes adjust this for a custom module's enums:
+
+- `StringEnumValueAttribute` (on a member) sets the exact wire string when lowercasing the name is not enough, such as hyphenated protocol values.
+- `StringEnumUnmatchedValueAttribute<T>` (on the enum) names the member to which any unmatched incoming string deserializes, opting that enum out of strict deserialization.
+- `StringEnumNullSentinelValueAttribute<T>` (on the enum) names a member that serializes as JSON `null`, for protocol members where sending null means "reset to default".
+
+[!code-csharp[Custom Enum Wire Values](../../code/advanced/CustomModulesSamples.cs#CustomEnumWireValues)]
+
 ## Best Practices
 
 ### 1. Namespace Your Commands

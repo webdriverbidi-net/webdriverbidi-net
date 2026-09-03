@@ -104,7 +104,7 @@ Some permissions define descriptor members beyond the name — for example, `"mi
 ## Best Practices
 
 1. **Set permissions before navigation**: Set permissions before navigating to the page that needs them
-2. **Reset permissions between tests**: Clear permissions to ensure test isolation
+2. **Reset permissions between tests**: Return each permission to `PermissionState.Prompt` to ensure test isolation (there is no separate clear command)
 3. **Test both granted and denied states**: Verify your application handles both cases correctly
 4. **Combine with emulation**: Use with Emulation module for location testing
 5. **Handle errors gracefully**: Not all permissions are available in all browsers
@@ -135,7 +135,7 @@ Some permissions define descriptor members beyond the name — for example, `"mi
 
 **Solution**:
 - Reset permissions to `PermissionState.Prompt` after each test
-- Use isolated user contexts for test isolation
+- Use isolated user contexts for test isolation, scoping the permission to one via `SetPermissionCommandParameters.UserContextId`
 - Clear browser state between test runs
 
 ### Invalid Permission Name

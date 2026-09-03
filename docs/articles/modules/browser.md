@@ -73,7 +73,7 @@ Control how the browser handles downloads.
 
 [!code-csharp[Close Browser](../../code/modules/BrowserModuleSamples.cs#CloseBrowser)]
 
-Note: This closes the entire browser, not just a tab. To close a tab, use `BrowsingContext.CloseAsync()`.
+Note: This closes the entire browser, not just a tab. To close a tab, use `BrowsingContext.CloseAsync`, passing a `CloseCommandParameters` identifying the browsing context to close.
 
 ## Common Patterns
 

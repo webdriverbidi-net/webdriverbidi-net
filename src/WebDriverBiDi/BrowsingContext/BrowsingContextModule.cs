@@ -211,7 +211,7 @@ public sealed class BrowsingContextModule : Module
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>The tree associated browsing contexts.</returns>
+    /// <returns>The tree of associated browsing contexts.</returns>
     public Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters ?? new(), timeoutOverride, cancellationToken);
@@ -326,7 +326,7 @@ public sealed class BrowsingContextModule : Module
     }
 
     /// <summary>
-    /// Traverses the history entries of the browser.
+    /// Traverses the history entries of a specific browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>

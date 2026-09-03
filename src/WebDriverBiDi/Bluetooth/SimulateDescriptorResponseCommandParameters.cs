@@ -85,9 +85,10 @@ public class SimulateDescriptorResponseCommandParameters : CommandParameters<Sim
     /// Gets the data for the simulated descriptor response.
     /// </summary>
     /// <remarks>
-    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
-    /// empty array. An empty list therefore means "not specified": the property is omitted from the
-    /// JSON payload entirely. Add entries to the list to populate it.
+    /// This property is optional in the protocol. An empty list means "not specified": the
+    /// property is omitted from the JSON payload entirely, and the remote end's behavior for
+    /// a response without data is implementation-defined; an empty array is never sent. Add
+    /// entries to the list to populate it.
     /// </remarks>
     [JsonIgnore]
     public List<uint> Data { get; } = [];

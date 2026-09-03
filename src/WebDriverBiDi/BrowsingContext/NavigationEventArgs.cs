@@ -23,7 +23,8 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     }
 
     /// <summary>
-    /// Gets the ID of the navigation operation.
+    /// Gets the ID of the navigation operation, or <see langword="null"/> when the event is not
+    /// associated with a navigation the remote end tracks by ID.
     /// </summary>
     [JsonPropertyName("navigation")]
     [JsonRequired]

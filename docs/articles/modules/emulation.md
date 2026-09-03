@@ -46,11 +46,11 @@ Viewport emulation (setting viewport dimensions, device pixel ratio, and common 
 
 ## Forced Colors Mode Theme
 
-The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate light or dark forced colors mode.
+The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate forced colors mode (the `forced-colors` CSS media feature) with a light or dark theme. To emulate ordinary light or dark mode — the `prefers-color-scheme` media feature — use the [media features override](#media-features-override) instead.
 
-### Emulate Dark Mode
+### Emulate Forced Colors Mode
 
-[!code-csharp[Emulate Dark Mode](../../code/modules/EmulationModuleSamples.cs#EmulateDarkMode)]
+[!code-csharp[Emulate Forced Colors Mode](../../code/modules/EmulationModuleSamples.cs#EmulateForcedColorsMode)]
 
 ### Clear Forced Colors Override
 

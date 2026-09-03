@@ -142,7 +142,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     /// (<c>await using (driver) { ... }</c>), together with the statements that run before the
     /// implicit disposal.
     /// </summary>
-    /// <param name="method">The method being analyzed.</param>
+    /// <param name="node">The executable body being analyzed.</param>
     /// <param name="semanticModel">The semantic model for the method.</param>
     /// <returns>The location to report, the driver variable name, and the statements in scope for each driver.</returns>
     private static IEnumerable<(Location Location, string DriverVariableName, IEnumerable<StatementSyntax> Scope)> GetAwaitUsingDrivers(
@@ -213,7 +213,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     /// an object initializer for either), so that the diagnostic can explain the consequence of
     /// disposing without stopping.
     /// </summary>
-    /// <param name="method">The method being analyzed.</param>
+    /// <param name="node">The executable body being analyzed.</param>
     /// <param name="semanticModel">The semantic model for the method.</param>
     /// <returns><see langword="true"/> if a <c>Collect</c> assignment is present; otherwise <see langword="false"/>.</returns>
     private static bool HasCollectBehaviorAssignment(SyntaxNode node, SemanticModel semanticModel)

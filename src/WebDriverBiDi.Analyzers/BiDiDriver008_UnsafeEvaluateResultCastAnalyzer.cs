@@ -95,7 +95,7 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
         if (IsEvaluateResultBaseType(expressionType))
         {
             // 'as' expressions that are followed by null checks are safer, but still not ideal
-            // Report with info severity to suggest pattern matching
+            // Report the diagnostic to suggest pattern matching
             Diagnostic diagnostic = Diagnostic.Create(Rule, asExpression.GetLocation(), targetType.Name);
             context.ReportDiagnostic(diagnostic);
         }

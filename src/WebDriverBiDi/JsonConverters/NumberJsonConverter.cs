@@ -9,12 +9,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// A converter to convert number values format when serializing to JSON.
+/// A read-only converter that deserializes the protocol's number representation —
+/// a JSON number, or one of the special strings "NaN", "-0", "Infinity", and
+/// "-Infinity" — to a double. Serialization is not supported.
 /// </summary>
 public class NumberJsonConverter : JsonConverter<double>
 {
     /// <summary>
-    /// Deserializes the JSON string to a numberic (double) value.
+    /// Deserializes the JSON string to a numeric (double) value.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>

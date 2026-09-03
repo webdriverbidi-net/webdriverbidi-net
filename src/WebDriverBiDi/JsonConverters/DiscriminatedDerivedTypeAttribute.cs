@@ -15,8 +15,8 @@ public sealed class DiscriminatedDerivedTypeAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of the <see cref="DiscriminatedDerivedTypeAttribute"/> class.
     /// </summary>
-    /// <param name="derivedType">The derived type for the enumerated value.</param>
-    /// <param name="typeDiscriminator">The string representation of the enumerated value.</param>
+    /// <param name="derivedType">The derived type to deserialize when the discriminator matches.</param>
+    /// <param name="typeDiscriminator">The discriminator string value that selects the derived type.</param>
     public DiscriminatedDerivedTypeAttribute(Type derivedType, string typeDiscriminator)
     {
         this.DerivedType = derivedType;
@@ -29,7 +29,7 @@ public sealed class DiscriminatedDerivedTypeAttribute : Attribute
     public Type DerivedType { get; }
 
     /// <summary>
-    /// Gets the value to use in JSON serialization and deserialization of the enumerated value.
+    /// Gets the discriminator string value that selects <see cref="DerivedType"/> during deserialization.
     /// </summary>
     public string Discriminator { get; }
 }
