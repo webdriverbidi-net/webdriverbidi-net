@@ -8,29 +8,13 @@ will fold this functionality into the browser itself, and this JavaScript file w
 no longer be necessary.
 
 ## Updating the mapper tab source
-To update the mapper tab source, you will need to have a working, buildable clone
-of the [chromium-bidi](https://github.com/GoogleChromeLabs/chromium-bidi) project.
-Getting a working clone of this repo is beyond the scope of this document.
-Once you have a working, bulidable clone, in the directory of that clone, you can
-update the `mapperTab.js` file by executing following commands:
+To update the mapper tab source, from the root of this project, you can execute the
+following command:
 
 ```shell
-git pull
-npm install
-npm run build
+./scripts/update-chromium-bidi.sh
 ```
 
-Once that execution is complete, you will need to copy the `out/Default/lib/iife/mapperTab.js`
-file into this directory, and commit the results.
-
-## Getting a working copy of the source repo
-You will need to clone both the `chromium-bidi` repo and the `depot_tools` repo.
-See above for the former; for the latter, you can follow the instructions at
-[this link](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up).
-There are a couple of things that need to be noted with getting this repo to build:
-* The initial execution of `npm install` will fail, as it attempts to call
-`npm run build`, which will fail without the prerequisites of the `depot_tools` repo.
-* Note carefully that the part about the `depot_tools` repo needing to be on the
-`PATH` environment variable. This is not optional to build the project in the repo.
-* You **must** have a symlink to `python` as an executable. Many OSes only supply
-`python3` without creating a symlink to `python`.
+This will download the latest published version of the mapper tab tarball from NPM,
+extract it, and copy the tab JavaScript file to the proper location in this repo.
+You can then commit the changes.
