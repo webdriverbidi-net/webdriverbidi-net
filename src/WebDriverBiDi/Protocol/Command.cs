@@ -57,6 +57,12 @@ public class Command
     /// command parameters should use the <see cref="CommandParameters.AdditionalData"/>
     /// property.
     /// </summary>
+    /// <remarks>
+    /// An entry may not use <c>id</c>, <c>method</c> or <c>params</c> as its name: the envelope writes those
+    /// itself, so the message would carry the name twice, and a JSON object with a duplicate name has no
+    /// defined meaning. Sending such a command throws <see cref="WebDriverBiDiSerializationException"/> rather
+    /// than emitting the ambiguous payload.
+    /// </remarks>
     [JsonExtensionData]
     public Dictionary<string, object?> AdditionalCommandProperties { get; } = [];
 
