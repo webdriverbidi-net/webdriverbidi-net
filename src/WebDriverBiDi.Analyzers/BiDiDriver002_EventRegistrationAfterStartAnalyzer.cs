@@ -12,7 +12,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 /// <summary>
-/// Analyzer that detects RegisterEvent() or AddObserver() calls after StartAsync().
+/// Analyzer that detects RegisterEvent() calls after StartAsync(). AddObserver() calls are
+/// deliberately not reported: observers may be added at any time, including while the
+/// driver is running.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnalyzer

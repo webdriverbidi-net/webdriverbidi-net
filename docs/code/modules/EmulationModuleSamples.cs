@@ -89,11 +89,11 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
-    /// Emulate dark mode using forced colors theme override.
+    /// Emulate forced colors mode with a dark theme.
     /// </summary>
-    public static async Task EmulateDarkMode(BiDiDriver driver, string contextId)
+    public static async Task EmulateForcedColorsMode(BiDiDriver driver, string contextId)
     {
-        #region EmulateDarkMode
+        #region EmulateForcedColorsMode
         SetForcedColorsModeThemeOverrideCommandParameters parameters =
             new SetForcedColorsModeThemeOverrideCommandParameters
             {
@@ -102,18 +102,18 @@ public class EmulationModuleSamples
             };
 
         await driver.Emulation.SetForcedColorsModeThemeOverrideAsync(parameters);
-        Console.WriteLine("Dark mode enabled");
+        Console.WriteLine("Forced colors mode enabled with a dark theme");
 
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
-                "window.matchMedia('(prefers-color-scheme: dark)').matches",
+                "window.matchMedia('(forced-colors: active)').matches",
                 new ContextTarget(contextId),
                 true));
 
         if (result is EvaluateResultSuccess success)
         {
-            bool isDarkMode = success.Result.ConvertTo<BooleanRemoteValue>().Value;
-            Console.WriteLine($"Dark mode active: {isDarkMode}");
+            bool isForcedColors = success.Result.ConvertTo<BooleanRemoteValue>().Value;
+            Console.WriteLine($"Forced colors active: {isForcedColors}");
         }
         #endregion
     }
@@ -749,18 +749,22 @@ public class EmulationModuleSamples
     public static async Task DarkModeTesting(BiDiDriver driver, string contextId)
     {
         #region DarkModeTesting
-        // Test both light and dark modes
+        // Test both light and dark modes by overriding the prefers-color-scheme
+        // CSS media feature.
         string[] colorSchemes = { "light", "dark" };
 
         foreach (string scheme in colorSchemes)
         {
             Console.WriteLine($"\nTesting {scheme} mode");
 
-            ForcedColorsModeTheme theme = scheme == "dark" ? ForcedColorsModeTheme.Dark : ForcedColorsModeTheme.Light;
-            await driver.Emulation.SetForcedColorsModeThemeOverrideAsync(
-                new SetForcedColorsModeThemeOverrideCommandParameters
+            PrefersColorSchemeFeatureValue colorScheme = scheme == "dark" ? PrefersColorSchemeFeatureValue.Dark : PrefersColorSchemeFeatureValue.Light;
+            await driver.Emulation.SetMediaFeaturesOverrideAsync(
+                new SetMediaFeaturesOverrideCommandParameters
                 {
-                    Theme = theme,
+                    Features = new MediaFeatures
+                    {
+                        PrefersColorScheme = colorScheme
+                    },
                     Contexts = { contextId }
                 });
 

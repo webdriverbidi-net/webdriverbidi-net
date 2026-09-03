@@ -13,8 +13,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 /// <summary>
 /// Analyzer that detects an explicit <c>ExecuteCommandAsync&lt;T&gt;</c> type argument that disagrees
-/// with the command's declared result type. Such a call binds to the non-generic
-/// <c>ExecuteCommandAsync(CommandParameters)</c> overload, compiles, and then throws
+/// with the command's declared result type. Such a call binds to the overload taking the
+/// non-generic <c>CommandParameters</c> parameter type, compiles, and then throws
 /// <c>WebDriverBiDiException</c> at runtime because the response cannot be converted to <c>T</c>.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -29,9 +29,9 @@ public class BiDiDriver026_ExecuteCommandResultTypeMismatchAnalyzer : Diagnostic
 
     private static readonly LocalizableString Title = "ExecuteCommandAsync type argument does not match the command result type";
 
-    private static readonly LocalizableString MessageFormat = "The type argument '{0}' does not match the command's result type '{1}'. This call binds to the non-generic ExecuteCommandAsync(CommandParameters) overload and throws WebDriverBiDiException at runtime because the response deserializes as '{1}', which cannot be converted to '{0}'. Use ExecuteCommandAsync<{1}> or let the type argument be inferred.";
+    private static readonly LocalizableString MessageFormat = "The type argument '{0}' does not match the command's result type '{1}'. This call binds to the ExecuteCommandAsync overload taking the non-generic CommandParameters parameter type and throws WebDriverBiDiException at runtime because the response deserializes as '{1}', which cannot be converted to '{0}'. Use ExecuteCommandAsync<{1}> or let the type argument be inferred.";
 
-    private static readonly LocalizableString Description = "ExecuteCommandAsync has a generic overload taking CommandParameters<T> and a non-generic overload taking CommandParameters. When the explicit type argument does not match the result type of the supplied parameters object, the generic overload does not apply and the call binds to the non-generic overload. It compiles, but at runtime the response is deserialized as the command's real result type and cannot be cast to the requested type, so ExecuteCommandAsync throws a WebDriverBiDiException. Match the type argument to the command's result type, or omit it and let it be inferred.";
+    private static readonly LocalizableString Description = "ExecuteCommandAsync has an overload taking CommandParameters<T> and an overload taking the non-generic CommandParameters; both are generic methods. When the explicit type argument does not match the result type of the supplied parameters object, the first overload does not apply and the call binds to the one taking the non-generic parameter type. It compiles, but at runtime the response is deserialized as the command's real result type and cannot be cast to the requested type, so ExecuteCommandAsync throws a WebDriverBiDiException. Match the type argument to the command's result type, or omit it and let it be inferred.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,

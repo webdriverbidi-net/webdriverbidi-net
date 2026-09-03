@@ -21,12 +21,12 @@ public enum EnvironmentBlendingMediaFeatureValue
     Opaque,
 
     /// <summary>
-    /// The "Additive" value for the "environment-blending" CSS media feature.
+    /// The "additive" value for the "environment-blending" CSS media feature.
     /// </summary>
     Additive,
 
     /// <summary>
-    /// The "Subtractive" value for the "environment-blending" CSS media feature.
+    /// The "subtractive" value for the "environment-blending" CSS media feature.
     /// </summary>
     Subtractive,
 

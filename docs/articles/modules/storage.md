@@ -22,6 +22,8 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 [!code-csharp[Get All Cookies](../../code/modules/StorageModuleSamples.cs#GetAllCookies)]
 
+The `GetCookiesCommandResult` also reports the storage `PartitionKey` the cookies were retrieved from, and `SetCookieAsync`'s result likewise carries the partition key the cookie was set in.
+
 ### Get Cookies by Filter
 
 [!code-csharp[Get Cookies by Filter](../../code/modules/StorageModuleSamples.cs#GetCookiesbyFilter)]
@@ -60,7 +62,7 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 1. **Set cookies before navigation**: Set cookies before navigating to the domain
 2. **Match domains correctly**: Cookie domain must match the current page domain
-3. **Use appropriate SameSite**: Choose `Strict`, `Lax`, or `None` based on needs
+3. **Use appropriate SameSite**: Choose `Strict`, `Lax`, or `None` based on needs; cookies the browser reports without an explicit policy have `CookieSameSiteValue.Default`
 4. **Clean up between tests**: Clear cookies and storage for test isolation
 5. **Handle secure cookies**: Set `Secure` flag for HTTPS-only cookies
 

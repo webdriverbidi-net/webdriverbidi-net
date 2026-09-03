@@ -227,8 +227,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// This method is thread-safe and is idempotent: calling it when no capture is active does nothing.
     /// </para>
     /// <para>
-    /// If captured tasks that have not yet been retrieved may fault, call <see cref="GetCapturedTasks"/> before
-    /// calling this method to transfer ownership to the caller and avoid unobserved task exceptions.
+    /// If captured tasks that have not yet been retrieved may fault, call <see cref="GetCapturedTasks"/>
+    /// before calling this method to transfer ownership to the caller. A fault in an unretrieved,
+    /// still-buffered task is always observed (no <see cref="System.Threading.Tasks.TaskScheduler.UnobservedTaskException"/>
+    /// is ever raised), but it is not reported through the observer-error pipeline either — it is
+    /// silently dropped, so retrieving the tasks first is the only way to see such failures.
     /// </para>
     /// </remarks>
     public void StopCapturingTasks()
@@ -257,8 +260,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <list type="bullet">
     /// <item><description>
     /// If the array length equals <paramref name="count"/>, the wait was fulfilled — all expected
-    /// handler invocations were captured before the timeout expired. The capture session is
-    /// automatically ended; a subsequent <see cref="StopCapturingTasks"/> call is a no-op.
+    /// handler invocations were captured before the timeout expired. When this is the only wait
+    /// active on the observer, the capture session is automatically ended and a subsequent
+    /// <see cref="StopCapturingTasks"/> call is a no-op; when another wait is concurrently active,
+    /// the session is left open for that waiter to continue receiving tasks.
     /// </description></item>
     /// <item><description>
     /// If the array length is less than <paramref name="count"/>, the wait timed out — only the
@@ -434,8 +439,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// </param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns><see langword="true"/> if the expected number of handler tasks were captured and completed before
-    /// the timeout expired; otherwise, <see langword="false"/>. When <see langword="true"/> is returned, the
-    /// capture session is automatically ended; a subsequent <see cref="StopCapturingTasks"/> call is a no-op.</returns>
+    /// the timeout expired; otherwise, <see langword="false"/>. When <see langword="true"/> is returned and no
+    /// other wait is concurrently active on the observer, the capture session is automatically ended and a
+    /// subsequent <see cref="StopCapturingTasks"/> call is a no-op.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="count"/> is zero, or when <paramref name="timeout"/> is negative (other than
     /// <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.

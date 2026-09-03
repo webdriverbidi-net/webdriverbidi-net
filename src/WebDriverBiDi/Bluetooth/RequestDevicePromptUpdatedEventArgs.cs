@@ -42,7 +42,7 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     public IList<RequestDeviceInfo> Devices => this.SerializableDevices.AsReadOnly();
 
     /// <summary>
-    /// Gets or sets the read-only list of devices being requested in the prompt.
+    /// Gets or sets the mutable list of devices being requested in the prompt, used as the serialization backing for the read-only list.
     /// </summary>
     [JsonPropertyName("devices")]
     [JsonRequired]

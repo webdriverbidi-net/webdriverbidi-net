@@ -64,7 +64,7 @@ public class EnumValueJsonConverter<[DynamicallyAccessedMembers(DynamicallyAcces
     {
         try
         {
-            if (StringEnumConverter.Value.NullSentinelValue is T sentinalValue && EqualityComparer<T>.Default.Equals(sentinalValue, value))
+            if (StringEnumConverter.Value.NullSentinelValue is T sentinelValue && EqualityComparer<T>.Default.Equals(sentinelValue, value))
             {
                 writer.WriteNullValue();
                 return;

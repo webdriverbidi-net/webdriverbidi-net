@@ -11,7 +11,9 @@ using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Script;
 
 /// <summary>
-/// A converter to preserve RemoteValueDictionary values format when serializing to JSON.
+/// A read-only converter that deserializes the protocol's key-value pair array
+/// representation of a map or object to a <see cref="RemoteValueDictionary"/>.
+/// Serialization is not supported; the type is inbound-only.
 /// </summary>
 public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDictionary>
 {

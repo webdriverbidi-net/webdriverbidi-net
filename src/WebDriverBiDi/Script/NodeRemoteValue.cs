@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents a remote value for a DOM node, providing type-safe access to the
 /// NodeProperties value and the ability to convert to a local value for use as
-/// an argument for script execution on the remote end..
+/// an argument for script execution on the remote end.
 /// </summary>
 public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeSafeRemoteValue<NodeProperties?>
 {

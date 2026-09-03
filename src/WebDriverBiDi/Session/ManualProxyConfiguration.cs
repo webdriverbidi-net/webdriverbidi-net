@@ -38,6 +38,11 @@ public class ManualProxyConfiguration : ProxyConfiguration
     /// <summary>
     /// Gets or sets the address of a SOCKS proxy used to proxy commands.
     /// </summary>
+    /// <remarks>
+    /// The specification groups this member with <see cref="SocksVersion"/>: whenever one is
+    /// present, the other must be present as well. The pairing is not validated here; a
+    /// conforming remote end rejects a configuration providing only one of the two.
+    /// </remarks>
     [JsonPropertyName("socksProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SocksProxy { get; set; }
@@ -46,9 +51,11 @@ public class ManualProxyConfiguration : ProxyConfiguration
     /// Gets or sets the version of the SOCKS proxy to be used.
     /// </summary>
     /// <remarks>
-    /// Valid values for this property range from 0 to 255, inclusive. This property does not
-    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
-    /// rejects it when the command is executed.
+    /// Valid values for this property range from 0 to 255, inclusive. The specification groups
+    /// this member with <see cref="SocksProxy"/>: whenever one is present, the other must be
+    /// present as well. Neither the range nor the pairing is validated here; a value outside
+    /// the range, or a configuration providing only one of the two members, is sent as-is, and
+    /// a conforming remote end rejects it when the command is executed.
     /// </remarks>
     [JsonPropertyName("socksVersion")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

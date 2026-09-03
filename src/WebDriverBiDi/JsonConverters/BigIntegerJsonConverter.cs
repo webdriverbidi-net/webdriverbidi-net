@@ -11,7 +11,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// A converter to preserve BigInteger values format when serializing to JSON.
+/// A read-only converter that deserializes the protocol's string representation of a
+/// bigint value to a BigInteger. Serialization is not supported; outbound bigint values
+/// are serialized via <see cref="WebDriverBiDi.Script.LocalArgumentValue"/>.
 /// </summary>
 public class BigIntegerJsonConverter : JsonConverter<BigInteger>
 {

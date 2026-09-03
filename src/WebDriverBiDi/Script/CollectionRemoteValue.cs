@@ -81,7 +81,7 @@ public record CollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, 
     }
 
     /// <summary>
-    /// Converts this RemoteValue into a RemoteReference.
+    /// Converts this RemoteValue into a RemoteObjectReference.
     /// </summary>
     /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown when the RemoteValue does not have a handle set.</exception>

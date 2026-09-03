@@ -176,7 +176,7 @@ public sealed class BluetoothModule : Module
     }
 
     /// <summary>
-    /// Simulates a GATT disconnection response for a Bluetooth device.
+    /// Simulates a GATT disconnection for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>

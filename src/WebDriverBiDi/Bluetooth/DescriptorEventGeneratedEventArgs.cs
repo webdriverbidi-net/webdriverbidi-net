@@ -75,7 +75,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public IList<uint>? Data => this.SerializableData?.AsReadOnly();
 
     /// <summary>
-    /// Gets or sets the read-only data for the event.
+    /// Gets or sets the mutable data for the event, used as the serialization backing for the read-only data.
     /// </summary>
     [JsonPropertyName("data")]
     [JsonInclude]

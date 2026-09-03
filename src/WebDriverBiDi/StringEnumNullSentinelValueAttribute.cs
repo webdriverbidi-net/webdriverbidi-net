@@ -26,7 +26,8 @@ public sealed class StringEnumNullSentinelValueAttribute<T> : Attribute
     }
 
     /// <summary>
-    /// Gets the enumerated value to return if the string value does not match one of the enumerated options.
+    /// Gets the enumerated value that is serialized as a JSON <see langword="null"/> rather
+    /// than as a string, allowing an enum member to express a protocol "reset" value.
     /// </summary>
     public T NullSentinelValue { get; }
 }

@@ -65,14 +65,13 @@ public static class LogModuleSamples
             Console.WriteLine($"Level: {e.Level}");          // Error, Warn, Info, Debug
             Console.WriteLine($"Text: {e.Text}");            // Log message
             Console.WriteLine($"Timestamp: {e.Timestamp}");  // When logged
-            Console.WriteLine($"Type: {e.Type}");            // Console, JavaScript
+            Console.WriteLine($"Type: {e.Type}");            // "console", "javascript"
             Console.WriteLine($"Method: {e.Method}");        // log, error, warn, etc.
 
-            if (e.Source != null)
-            {
-                Console.WriteLine($"Source: {e.Source.RealmId}");
-                Console.WriteLine($"Context: {e.Source.BrowsingContextId}");
-            }
+            // Source is always present; its BrowsingContextId may be null for
+            // realms not attached to a browsing context.
+            Console.WriteLine($"Source: {e.Source.RealmId}");
+            Console.WriteLine($"Context: {e.Source.BrowsingContextId}");
 
             if (e.StackTrace != null)
             {

@@ -40,7 +40,7 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
-    /// <returns>A subclass of an EvaluateResult object as described by the JSON.</returns>
+    /// <returns>An instance of a derived type of <typeparamref name="T"/> as described by the JSON.</returns>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -93,7 +93,6 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The object to be serialized.</param>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
-    /// <exception cref="ArgumentNullException">Thrown if the value of T is null.</exception>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
         // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
@@ -106,7 +105,7 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
     {
         DiscriminatedTypePropertyAttribute? typePropertyAttribute = baseType.GetCustomAttribute<DiscriminatedTypePropertyAttribute>(false);
         DiscriminatedTypePresenceAttribute? typePresenceAttribute = baseType.GetCustomAttribute<DiscriminatedTypePresenceAttribute>(false);
-        DiscriminatedTypeInfo discriminiatedTypeInfo = (typePropertyAttribute, typePresenceAttribute) switch
+        DiscriminatedTypeInfo discriminatedTypeInfo = (typePropertyAttribute, typePresenceAttribute) switch
         {
             ({ } valueAttr, _) => new()
             {
@@ -134,10 +133,10 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
                 throw new InvalidOperationException($"Derived type {attr.DerivedType.FullName} must have a non-empty Discriminator");
             }
 
-            discriminiatedTypeInfo.DiscriminatorToTypeMap[discriminatorValue] = attr.DerivedType;
+            discriminatedTypeInfo.DiscriminatorToTypeMap[discriminatorValue] = attr.DerivedType;
         }
 
-        return discriminiatedTypeInfo;
+        return discriminatedTypeInfo;
     }
 
     private bool TryGetDiscriminatorPropertyValue(ref Utf8JsonReader reader, [NotNullWhen(true)] out string? discriminatorValue)
@@ -145,8 +144,9 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
         // Utf8JsonReader is a forward-only reader, so we create a copy to read
         // the JSON to find the value of the discriminator property. This leaves
         // the original reader in the correct position to read the JSON again for
-        // deserialization. This also prevents double-parsing the document, once
-        // to find the discriminator and once to deserialize.
+        // deserialization. The object's prefix is scanned twice (once to find
+        // the discriminator, once during deserialization), but no intermediate
+        // JsonDocument is ever materialized.
         Utf8JsonReader readerCopy = reader;
         if (readerCopy.TokenType != JsonTokenType.StartObject)
         {

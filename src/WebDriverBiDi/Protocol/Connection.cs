@@ -519,7 +519,7 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously raises a logging event at the specified log level.
+    /// Asynchronously raises a logging event at the Info log level.
     /// </summary>
     /// <param name="message">The log message to raise in the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>

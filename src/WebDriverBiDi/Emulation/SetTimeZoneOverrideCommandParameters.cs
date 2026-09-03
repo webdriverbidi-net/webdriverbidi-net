@@ -38,7 +38,8 @@ public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZon
     /// <summary>
     /// Gets or sets the emulated time zone for the browser. The value should be a valid structurally correct
     /// named time zone identifier (e.g., "America/New_York", "Europe/London", "Asia/Tokyo", "Asia/Kolkata" etc.),
-    /// or a UTC offset time zone identifier (e.g., "-5:00", "+5:30", etc.). When <see langword="null"/>,
+    /// or a UTC offset time zone identifier with a two-digit hour (e.g., "-05:00", "+05:30", etc.;
+    /// a conforming remote end rejects single-digit hours such as "-5:00"). When <see langword="null"/>,
     /// clears the override.
     /// </summary>
     [JsonPropertyName("timezone")]

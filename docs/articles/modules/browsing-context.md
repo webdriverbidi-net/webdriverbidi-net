@@ -164,9 +164,10 @@ To restore default CSP behavior, use `SetBypassCSPCommandParameters.ResetBypassC
 ## Screencasting
 
 `StartScreencastAsync` begins a screencast of a browsing context, and `StopScreencastAsync` ends it.
-Pass a `StartScreencastCommandParameters` (configuring the target context and frame options) to start
-the capture and a `StopScreencastCommandParameters` to stop it. Screencast frames are delivered by the
-remote end for the duration of the capture.
+Pass a `StartScreencastCommandParameters` (configuring the target context, and optionally the output
+`MimeType` and `Video`/`Audio` track settings) to start the capture. The result carries a
+`ScreencastId`; stopping requires that ID, passed in the `StopScreencastCommandParameters`
+constructor. Screencast output is written by the remote end for the duration of the capture.
 
 ## Handling User Prompts
 

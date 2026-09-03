@@ -7,7 +7,7 @@ namespace WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Sentinel checker for <see cref="long"/> that treats any negative value as the
-/// sentinel null value, used to indicate a writing an explicit null value in the
+/// sentinel, indicating that an explicit null value should be written in the
 /// JSON payload.
 /// </summary>
 public class NegativeLongSentinelChecker : SentinelValueChecker<long>

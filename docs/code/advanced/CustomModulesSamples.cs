@@ -11,6 +11,7 @@ namespace WebDriverBiDi.Docs.Code.Advanced;
 using System.Text.Json.Serialization;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.JsonConverters;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -528,6 +529,31 @@ public class CustomModulesNamespacedCommandParameters : CommandParameters<MyComm
     {
         this.Value = value;
     }
+}
+#endregion
+
+/// <summary>
+/// Custom enum wire-value pattern: lowercase-by-default serialization with the
+/// three StringEnum* attributes adjusting the wire behavior.
+/// </summary>
+#region CustomEnumWireValues
+[JsonConverter(typeof(EnumValueJsonConverter<WidgetMode>))]
+[StringEnumUnmatchedValue<WidgetMode>(Unknown)]
+[StringEnumNullSentinelValue<WidgetMode>(Reset)]
+public enum WidgetMode
+{
+    // Serializes as "enabled": the member name lowercased.
+    Enabled,
+
+    // Serializes as "power-save"; lowercasing alone cannot produce the hyphen.
+    [StringEnumValue("power-save")]
+    PowerSave,
+
+    // Deserialized from any incoming string that matches no other member.
+    Unknown,
+
+    // Serializes as JSON null, signaling the remote end to reset the mode.
+    Reset,
 }
 #endregion
 

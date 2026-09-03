@@ -551,6 +551,39 @@ public static class ConnectionManagementSamples
         #endregion
     }
 
+    /// <summary>
+    /// Transport.State exposes the transport's position in its connection
+    /// lifecycle. Registration legality and BiDiDriver.IsStarted derive from it.
+    /// </summary>
+    public static async Task TransportStateDiagnostic(string url)
+    {
+        #region TransportStateDiagnostic
+        WebSocketConnection connection = new WebSocketConnection();
+        Transport transport = new Transport(connection);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+        // Before StartAsync the transport is Disconnected; module and event
+        // registration is legal only in this state.
+        Console.WriteLine($"Before start: {transport.State}");
+
+        await driver.StartAsync(url);
+        try
+        {
+            // Connected: the transport can exchange messages, and
+            // driver.IsStarted derives from this state.
+            Console.WriteLine($"After start: {transport.State}");
+        }
+        finally
+        {
+            await driver.StopAsync();
+        }
+
+        // A completed stop returns the transport to Disconnected, making
+        // registration legal again.
+        Console.WriteLine($"After stop: {transport.State}");
+        #endregion
+    }
+
     internal static class Logger
     {
         public static void Error(string message)
