@@ -74,7 +74,7 @@ Rule ID | Category    | Severity | Notes
 --------|-------------|----------|--------------------
 BIDI023 | Reliability | Warning  | BiDiDriver023_ModuleCommandInEventHandlerAnalyzer
 
-## Release 0.0.54
+## Release 0.0.56
 
 ### New Rules
 
