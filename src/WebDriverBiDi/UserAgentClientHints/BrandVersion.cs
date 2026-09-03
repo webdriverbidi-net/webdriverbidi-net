@@ -27,7 +27,6 @@ public class BrandVersion
     /// Gets or sets the brand name.
     /// </summary>
     [JsonPropertyName("brand")]
-    [JsonInclude]
     [JsonRequired]
     public string Brand { get; set; }
 
@@ -35,7 +34,6 @@ public class BrandVersion
     /// Gets or sets the version.
     /// </summary>
     [JsonPropertyName("version")]
-    [JsonInclude]
     [JsonRequired]
     public string Version { get; set; }
 }

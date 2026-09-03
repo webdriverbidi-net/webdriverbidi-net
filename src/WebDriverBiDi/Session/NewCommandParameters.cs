@@ -22,7 +22,5 @@ public class NewCommandParameters : CommandParameters<NewCommandResult>
     /// Gets or sets the capabilities to use for the new session.
     /// </summary>
     [JsonPropertyName("capabilities")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public CapabilitiesRequest Capabilities { get; set; } = new();
 }

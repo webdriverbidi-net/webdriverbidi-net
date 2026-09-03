@@ -24,6 +24,5 @@ public class SetGeolocationOverrideCoordinatesCommandParameters : SetGeolocation
     /// Gets or sets the coordinates to which to override the geolocation. When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("coordinates")]
-    [JsonInclude]
     public GeolocationCoordinates? Coordinates { get; set; }
 }

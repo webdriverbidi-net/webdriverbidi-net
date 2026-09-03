@@ -39,7 +39,6 @@ public class SetUserAgentOverrideCommandParameters : CommandParameters<SetUserAg
     /// Gets or sets the user agent string for the browser. When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("userAgent")]
-    [JsonInclude]
     public string? UserAgent { get; set; }
 
     /// <summary>

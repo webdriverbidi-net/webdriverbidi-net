@@ -39,7 +39,6 @@ public class SetScrollbarTypeOverrideCommandParameters : CommandParameters<SetSc
     /// Gets or sets the type of scroll bar to be emulated. When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("scrollbarType")]
-    [JsonInclude]
     public ScrollbarType? ScrollbarType { get; set; }
 
     /// <summary>

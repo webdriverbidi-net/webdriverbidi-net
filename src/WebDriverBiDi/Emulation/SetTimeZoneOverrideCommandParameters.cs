@@ -43,7 +43,6 @@ public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZon
     /// clears the override.
     /// </summary>
     [JsonPropertyName("timezone")]
-    [JsonInclude]
     public string? TimeZone { get; set; }
 
     /// <summary>

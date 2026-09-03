@@ -40,7 +40,6 @@ public class SetScreenOrientationOverrideCommandParameters : CommandParameters<S
     /// When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("screenOrientation")]
-    [JsonInclude]
     public ScreenOrientation? ScreenOrientation { get; set; }
 
     /// <summary>

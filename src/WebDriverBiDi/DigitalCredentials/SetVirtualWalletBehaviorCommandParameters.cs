@@ -31,8 +31,6 @@ public class SetVirtualWalletBehaviorCommandParameters : CommandParameters<SetVi
     /// Gets or sets the action to take with the virtual wallet.
     /// </summary>
     [JsonPropertyName("action")]
-    [JsonRequired]
-    [JsonInclude]
     public VirtualWalletAction Action { get; set; }
 
     /// <summary>

@@ -38,7 +38,6 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     /// </summary>
     [JsonPropertyName("body")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public BytesValue? Body { get; set; }
 
     /// <summary>

@@ -33,7 +33,6 @@ public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistor
     /// Gets or sets the ID of the browsing context for which to traverse the history.
     /// </summary>
     [JsonPropertyName("context")]
-    [JsonInclude]
     public string BrowsingContextId { get; set; }
 
     /// <summary>
@@ -41,6 +40,5 @@ public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistor
     /// values move forward in the history; negative values move backward in the history.
     /// </summary>
     [JsonPropertyName("delta")]
-    [JsonInclude]
     public long Delta { get; set; }
 }

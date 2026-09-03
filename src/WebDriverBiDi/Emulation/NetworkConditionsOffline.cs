@@ -24,6 +24,5 @@ public class NetworkConditionsOffline : NetworkConditions
     /// Gets the type of network conditions.
     /// </summary>
     [JsonPropertyName("type")]
-    [JsonInclude]
     public override string Type => "offline";
 }

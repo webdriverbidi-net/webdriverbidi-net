@@ -39,7 +39,6 @@ public class SetNetworkConditionsCommandParameters : CommandParameters<SetNetwor
     /// Gets or sets the network conditions to emulate. When <see langword="null"/>, clears the emulated network conditions.
     /// </summary>
     [JsonPropertyName("networkConditions")]
-    [JsonInclude]
     public NetworkConditions? NetworkConditions { get; set; }
 
     /// <summary>

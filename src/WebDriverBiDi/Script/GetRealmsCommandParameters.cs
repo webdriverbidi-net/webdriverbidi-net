@@ -30,7 +30,6 @@ public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResu
     /// </summary>
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public string? BrowsingContextId { get; set; }
 
     /// <summary>
@@ -38,6 +37,5 @@ public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResu
     /// </summary>
     [JsonPropertyName("type")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public RealmType? RealmType { get; set; }
 }

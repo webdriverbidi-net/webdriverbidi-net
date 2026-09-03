@@ -221,6 +221,59 @@ public class WebDriverBiDiConventionTests
         Assert.True(unreachable.Count == 0, $"Every module in the library must be reachable from BiDiDriver, or its observable events escape the [ObservableEventName] sweep. Unreachable: {string.Join(", ", unreachable)}");
     }
 
+    /// <summary>
+    /// Verifies that <see cref="JsonIncludeAttribute"/> appears only where it changes what the serializer does.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// System.Text.Json already serializes a public property through a public getter, and populates one through
+    /// a public setter, so the attribute is a no-op there. It earns its place only on a non-public member, or on
+    /// a member whose getter or setter is non-public — the internal <c>Serializable*</c> shims, and received
+    /// types whose properties expose <c>{ get; internal set; }</c> so that deserialization can fill them.
+    /// </para>
+    /// <para>
+    /// The attribute is deliberately <em>not</em> used to mark a member the specification makes mandatory. That
+    /// fact is already carried, functionally, by the absence of
+    /// <see cref="JsonIgnoreCondition.WhenWritingNull"/>: a member that may be omitted says so, and one that may
+    /// not, does not. Encoding it a second time with an attribute the serializer ignores would add a signal
+    /// nothing enforces, and would give one attribute two unrelated meanings in the same codebase.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TestJsonIncludeIsUsedOnlyWhereLoadBearing()
+    {
+        List<string> offenders = [];
+        foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
+        {
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                if (property.GetCustomAttribute<JsonIncludeAttribute>() is null)
+                {
+                    continue;
+                }
+
+                // A non-public member needs the attribute to be seen at all.
+                MethodInfo? getter = property.GetMethod;
+                MethodInfo? setter = property.SetMethod;
+                bool isMemberNonPublic = (getter is null || !getter.IsPublic) && (setter is null || !setter.IsPublic);
+                if (isMemberNonPublic)
+                {
+                    continue;
+                }
+
+                // A public member needs it only when one of its accessors is non-public. A get-only public
+                // property has no setter to make accessible, so the attribute does nothing for it either.
+                bool hasNonPublicAccessor = (getter is not null && !getter.IsPublic) || (setter is not null && !setter.IsPublic);
+                if (!hasNonPublicAccessor)
+                {
+                    offenders.Add(Key(property));
+                }
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"[JsonInclude] is a no-op on a public member with public accessors and must be removed; keep it only on a non-public member or one with a non-public accessor. Offenders: {string.Join(", ", offenders)}");
+    }
+
     private static string Key(PropertyInfo property)
     {
         return $"{property.DeclaringType!.FullName}.{property.Name}";
