@@ -75,4 +75,62 @@ public class CommandJsonConverterTests
         using Utf8JsonWriter writer = new(stream);
         Assert.ThrowsAny<ArgumentNullException>(() => converter.Write(writer, null!, new JsonSerializerOptions()));
     }
+
+    [Theory]
+    [InlineData("id")]
+    [InlineData("method")]
+    [InlineData("params")]
+    public void TestWriteWithEnvelopePropertyShadowedByAdditionalCommandPropertyThrows(string reservedName)
+    {
+        TestCommandParameters commandParams = new("module.command");
+        Command command = new(1, commandParams);
+        command.AdditionalCommandProperties[reservedName] = "shadowingValue";
+
+        WebDriverBiDiSerializationException exception = Assert.ThrowsAny<WebDriverBiDiSerializationException>(() => JsonSerializer.Serialize(command));
+        Assert.Contains($"AdditionalCommandProperties entry '{reservedName}'", exception.Message);
+        Assert.Contains("module.command", exception.Message);
+    }
+
+    [Fact]
+    public void TestWriteWithParametersPropertyShadowedByAdditionalDataThrows()
+    {
+        TestCommandParameters commandParams = new("module.command");
+        commandParams.AdditionalData["parameterName"] = "shadowingValue";
+        Command command = new(1, commandParams);
+
+        WebDriverBiDiSerializationException exception = Assert.ThrowsAny<WebDriverBiDiSerializationException>(() => JsonSerializer.Serialize(command));
+        Assert.Contains("AdditionalData entry 'parameterName'", exception.Message);
+        Assert.Contains("module.command", exception.Message);
+    }
+
+    [Fact]
+    public void TestWriteAllowsAdditionalDataNamedForAnIgnoredProperty()
+    {
+        // MethodName is [JsonIgnore]d, so it consumes no name in the payload and cannot be shadowed.
+        TestCommandParameters commandParams = new("module.command");
+        commandParams.AdditionalData["MethodName"] = "notAConflict";
+        Command command = new(1, commandParams);
+
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(command));
+        JObject? paramsObject = serialized["params"] as JObject;
+        Assert.NotNull(paramsObject);
+        JToken? methodName = paramsObject["MethodName"];
+        Assert.NotNull(methodName);
+        Assert.Equal("notAConflict", methodName.Value<string>());
+    }
+
+    [Fact]
+    public void TestWriteAllowsNonCollidingExtensionDataOnBothDictionaries()
+    {
+        TestCommandParameters commandParams = new("module.command");
+        commandParams.AdditionalData["goog:extraParam"] = "paramValue";
+        Command command = new(1, commandParams);
+        command.AdditionalCommandProperties["goog:channel"] = "channelValue";
+
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(command));
+        Assert.Equal("channelValue", serialized["goog:channel"]!.Value<string>());
+        JObject? paramsObject = serialized["params"] as JObject;
+        Assert.NotNull(paramsObject);
+        Assert.Equal("paramValue", paramsObject["goog:extraParam"]!.Value<string>());
+    }
 }

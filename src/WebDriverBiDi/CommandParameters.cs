@@ -45,6 +45,12 @@ public abstract class CommandParameters
     /// and populate <see cref="Protocol.Command.AdditionalCommandProperties"/>.
     /// </para>
     /// <para>
+    /// An entry may not reuse the name of a property this parameters type already serializes; doing so would
+    /// write that name twice inside <c>params</c>, and a JSON object with a duplicate name has no defined
+    /// meaning. Sending such a command throws <see cref="WebDriverBiDiSerializationException"/> rather than
+    /// emitting the ambiguous payload. Set the typed property instead.
+    /// </para>
+    /// <para>
     /// Though the values of this dictionary are typed as <see cref="object"/>, they will be
     /// serialized to JSON using the same rules as other properties of the command. This means
     /// that values can be of any type that is serializable to JSON, including complex objects,
