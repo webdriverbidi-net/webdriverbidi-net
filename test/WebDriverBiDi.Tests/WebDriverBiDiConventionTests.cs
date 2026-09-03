@@ -247,12 +247,31 @@ public class WebDriverBiDiConventionTests
     {
         foreach (Module module in GetDriverModules())
         {
-            foreach (PropertyInfo property in module.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            // Inherited properties are swept deliberately. An ObservableEvent<T> declared on an
+            // intermediate base class is still an event the module raises, and it must carry the
+            // attribute like any other; restricting the sweep to declared properties would let it
+            // escape. The hierarchy is flat today, so this widens nothing, but it stops the hole
+            // from opening the moment a base module is introduced.
+            Dictionary<string, PropertyInfo> mostDerivedByName = [];
+            foreach (PropertyInfo property in module.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(ObservableEvent<>))
+                if (!property.PropertyType.IsGenericType || property.PropertyType.GetGenericTypeDefinition() != typeof(ObservableEvent<>))
                 {
-                    yield return (module, property);
+                    continue;
                 }
+
+                // Reflection reports a property shadowed by a "new" declaration once per declaring
+                // type. Only the most derived one is the property the module actually exposes, so
+                // keeping the others would report phantom offenders against hidden declarations.
+                if (!mostDerivedByName.TryGetValue(property.Name, out PropertyInfo? existing) || existing.DeclaringType!.IsAssignableFrom(property.DeclaringType))
+                {
+                    mostDerivedByName[property.Name] = property;
+                }
+            }
+
+            foreach (PropertyInfo property in mostDerivedByName.Values.OrderBy(eventProperty => eventProperty.Name, StringComparer.Ordinal))
+            {
+                yield return (module, property);
             }
         }
     }
