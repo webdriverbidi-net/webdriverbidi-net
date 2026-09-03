@@ -154,6 +154,8 @@ public class PipeConnection : Connection
     /// wait (see the remarks on <see cref="StopAsync(CancellationToken)"/>).
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the external process is null, not running, or already connected to.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when attempting to start a disposed connection.</exception>
     public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         Process? pipeServerProcess = this.processProvider.PipeServerProcess;
@@ -164,7 +166,7 @@ public class PipeConnection : Connection
 
         if (this.IsDisposed)
         {
-            throw new WebDriverBiDiConnectionException("The pipes have been disposed; the connection cannot be restarted after disposal.");
+            throw new ObjectDisposedException(nameof(PipeConnection), "The pipes have been disposed; the connection cannot be restarted after disposal.");
         }
 
         if (!IsProcessRunning(pipeServerProcess))

@@ -1093,6 +1093,19 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestStartAfterDisposeThrows()
+    {
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        WebSocketConnection connection = new();
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        await connection.DisposeAsync();
+
+        Assert.Contains("connection has been disposed", (await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connection.StartAsync("ws://localost", TestContext.Current.CancellationToken))).Message);
+    }
+
+    [Fact]
     public async Task TestCanStartWithSecuredWebSocketUrl()
     {
         using RSA rsa = RSA.Create(2048);

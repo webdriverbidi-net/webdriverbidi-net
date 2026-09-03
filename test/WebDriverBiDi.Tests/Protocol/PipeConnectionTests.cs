@@ -654,7 +654,7 @@ public class PipeConnectionTests
         await connection.DisposeAsync();
         testPipeServer.Stop();
 
-        Assert.Contains("pipes have been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("pipes have been disposed", (await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
