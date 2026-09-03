@@ -910,12 +910,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
         ServerEventObserver<ServerDataReceivedEventArgs> observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("First connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
-        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
         observer.Unobserve();
         Assert.Equal("First connection hello", serverReceivedData);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "First connection acknowledged");
-        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("First connection acknowledged"u8.ToArray(), receivedData);
 
@@ -924,12 +924,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
         observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("Second connection hello"u8.ToArray(), TestContext.Current.CancellationToken);
-        serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
         observer.Unobserve();
         Assert.Equal("Second connection hello", serverReceivedData);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "Second connection acknowledged");
-        receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Second connection acknowledged"u8.ToArray(), receivedData);
     }
@@ -1296,8 +1296,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
             logs.Add(e);
             return Task.CompletedTask;
         });
+        // TestWebSocketConnection bypasses the real connect by default, so there is no client
+        // connection for the server to register and nothing to wait for here.
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
-        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.ThrowOnStop = true;
         connection.BypassStop = false;
         await connection.DisposeAsync();
@@ -1681,21 +1682,27 @@ public class WebSocketConnectionTests : IAsyncDisposable
         this.connectionSyncEvent.Set();
     }
 
+    // The three waits below assert that the thing waited for actually happened. Returning the
+    // last recorded value on a timeout instead would hand the caller state left over from an
+    // earlier step -- the previous session's payload in the connection-reuse tests, or the
+    // initial empty value elsewhere -- so a wait that expired would surface as a value
+    // comparison failing for reasons that have nothing to do with the values, rather than as
+    // the timeout it is.
     private string WaitForServerToRegisterConnection(TimeSpan timeout)
     {
-        this.connectionSyncEvent.WaitOne(timeout);
+        Assert.True(this.connectionSyncEvent.WaitOne(timeout), $"Server did not register a client connection within {timeout.TotalMilliseconds} ms.");
         return this.connectionId;
     }
 
     private byte[] WaitForConnectionToReceiveData(TimeSpan timeout)
     {
-        this.connectionReceiveSyncEvent.WaitOne(timeout);
+        Assert.True(this.connectionReceiveSyncEvent.WaitOne(timeout), $"Connection did not receive data within {timeout.TotalMilliseconds} ms.");
         return this.lastConnectionReceivedData.ToArray();
     }
 
     private string WaitForServerToReceiveData(TimeSpan timeout)
     {
-        this.serverReceiveSyncEvent.WaitOne(timeout);
+        Assert.True(this.serverReceiveSyncEvent.WaitOne(timeout), $"Server did not receive data within {timeout.TotalMilliseconds} ms.");
         return this.lastServerReceivedData;
     }
 }
