@@ -19,7 +19,7 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     /// <param name="data">The data for this message.</param>
     /// <param name="source">The source for this message.</param>
     [JsonConstructor]
-    internal MessageEventArgs(string channelId, RemoteValue data, Source source)
+    public MessageEventArgs(string channelId, RemoteValue data, Source source)
     {
         this.ChannelId = channelId;
         this.Data = data;

@@ -17,7 +17,7 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="NavigationEventArgs" /> class.
     /// </summary>
     [JsonConstructor]
-    internal NavigationEventArgs()
+    public NavigationEventArgs()
     {
         this.EpochTimestamp = 0;
     }

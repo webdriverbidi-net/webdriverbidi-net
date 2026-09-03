@@ -16,7 +16,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="CharacteristicEventGeneratedEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    internal CharacteristicEventGeneratedEventArgs()
+    public CharacteristicEventGeneratedEventArgs()
     {
     }
 

@@ -18,7 +18,7 @@ public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     /// <param name="browsingContextId">The browsing context for which the user prompt was closed.</param>
     /// <param name="isAccepted">A value of true if the user prompt was accepted; false if it was canceled.</param>
     [JsonConstructor]
-    internal UserPromptClosedEventArgs(string browsingContextId, bool isAccepted)
+    public UserPromptClosedEventArgs(string browsingContextId, bool isAccepted)
     {
         this.BrowsingContextId = browsingContextId;
         this.IsAccepted = isAccepted;
