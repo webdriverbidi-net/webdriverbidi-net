@@ -43,6 +43,19 @@ public class KeyUpAction : IKeySourceAction
     /// <summary>
     /// Gets or sets the value of the key up action.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when attempting to set this property to null or the empty string.</exception>
     [JsonPropertyName("value")]
-    public string Value { get; set; } = string.Empty;
+    public string Value
+    {
+        get;
+        set
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                throw new ArgumentException("Action value cannot be null or the empty string", nameof(value));
+            }
+
+            field = value;
+        }
+    }
 }

@@ -31,4 +31,11 @@ public class KeyUpActionTests
     {
         Assert.Contains("Action value cannot be null or the empty string", Assert.ThrowsAny<ArgumentException>(() => new KeyUpAction(string.Empty)).Message);
     }
+
+    [Fact]
+    public void TestSettingValueToEmptyValueThrows()
+    {
+        KeyUpAction action = new("a");
+        Assert.Contains("Action value cannot be null or the empty string", Assert.ThrowsAny<ArgumentException>(() => action.Value = string.Empty).Message);
+    }
 }
