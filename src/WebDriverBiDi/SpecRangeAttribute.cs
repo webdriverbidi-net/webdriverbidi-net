@@ -16,9 +16,11 @@ namespace WebDriverBiDi;
 /// deliberately does not validate a property's value against this range at run time: a value the
 /// specification places outside the range is representable on the wire, and a conforming remote end
 /// rejects it when the command is executed. Bounds are inclusive of both <see cref="Minimum"/> and
-/// <see cref="Maximum"/>, unless <see cref="MaximumExclusive"/> is set to <see langword="true"/>,
-/// in which case a value equal to <see cref="Maximum"/> is outside the range (the specification's
-/// CDDL expresses such a range with the <c>...</c> operator rather than <c>..</c>). Use
+/// <see cref="Maximum"/> unless the corresponding exclusive flag is set: with
+/// <see cref="MaximumExclusive"/> a value equal to <see cref="Maximum"/> is outside the range (the
+/// specification's CDDL expresses such a range with the <c>...</c> operator rather than <c>..</c>),
+/// and with <see cref="MinimumExclusive"/> a value equal to <see cref="Minimum"/> is outside it (the
+/// CDDL <c>.gt</c> control operator, as opposed to <c>.ge</c>). Use
 /// <see cref="double.NegativeInfinity"/> or <see cref="double.PositiveInfinity"/> for a range that
 /// is unbounded on that side.
 /// </para>
@@ -35,8 +37,8 @@ public sealed class SpecRangeAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of the <see cref="SpecRangeAttribute"/> class.
     /// </summary>
-    /// <param name="minimum">The inclusive minimum value the specification allows, or <see cref="double.NegativeInfinity"/> if unbounded below.</param>
-    /// <param name="maximum">The inclusive maximum value the specification allows, or <see cref="double.PositiveInfinity"/> if unbounded above.</param>
+    /// <param name="minimum">The minimum value the specification allows, inclusive unless <see cref="MinimumExclusive"/> is set, or <see cref="double.NegativeInfinity"/> if unbounded below.</param>
+    /// <param name="maximum">The maximum value the specification allows, inclusive unless <see cref="MaximumExclusive"/> is set, or <see cref="double.PositiveInfinity"/> if unbounded above.</param>
     public SpecRangeAttribute(double minimum, double maximum)
     {
         this.Minimum = minimum;
@@ -44,7 +46,8 @@ public sealed class SpecRangeAttribute : Attribute
     }
 
     /// <summary>
-    /// Gets the inclusive minimum value the specification allows for the property.
+    /// Gets the minimum value the specification allows for the property. The bound is inclusive
+    /// unless <see cref="MinimumExclusive"/> is set to <see langword="true"/>.
     /// </summary>
     public double Minimum { get; }
 
@@ -53,6 +56,18 @@ public sealed class SpecRangeAttribute : Attribute
     /// unless <see cref="MaximumExclusive"/> is set to <see langword="true"/>.
     /// </summary>
     public double Maximum { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether <see cref="Minimum"/> is an exclusive bound, so that
+    /// a value equal to <see cref="Minimum"/> is outside the specification range. This corresponds
+    /// to the specification's CDDL <c>.gt</c> control operator, as opposed to <c>.ge</c>.
+    /// </summary>
+    /// <remarks>
+    /// An exclusive lower bound cannot in general be rewritten as an inclusive one: for an integer-valued
+    /// member, <c>.gt 1</c> happens to coincide with a minimum of 2, but for a floating-point member such as
+    /// the specification's <c>(float .gt 0.0)</c> there is no smallest permitted value to name.
+    /// </remarks>
+    public bool MinimumExclusive { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether <see cref="Maximum"/> is an exclusive bound, so that

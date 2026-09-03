@@ -299,6 +299,40 @@ public class CaptureScreenshotCommandParametersTests
     }
 
     [Fact]
+    public void TestCanSerializeParametersWithImageSize()
+    {
+        CaptureScreenshotCommandParameters properties = new("myContextId")
+        {
+            ImageSize = new()
+            {
+                MaxHeight = 2,
+                MaxWidth = 3,
+            },
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("context"));
+        JToken? context = serialized["context"];
+        Assert.NotNull(context);
+        Assert.Equal(JTokenType.String, context.Type);
+        Assert.Equal("myContextId", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("imageSize"));
+        JToken? sizeToken = serialized["imageSize"];
+        Assert.NotNull(sizeToken);
+        Assert.Equal(JTokenType.Object, sizeToken.Type);
+
+        // ImageSize has its own serialization tests.
+        JObject? size = sizeToken as JObject;
+        Assert.NotNull(size);
+        Assert.Equal(2, size.Count);
+        Assert.True(size.ContainsKey("maxWidth"));
+        Assert.True(size.ContainsKey("maxHeight"));
+    }
+
+    [Fact]
     public void TestCanSerializeParametersWithViewportOrigin()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")

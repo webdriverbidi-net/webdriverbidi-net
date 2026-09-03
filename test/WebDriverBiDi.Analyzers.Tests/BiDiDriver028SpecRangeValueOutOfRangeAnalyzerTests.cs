@@ -254,6 +254,59 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
     }
 
     [Fact]
+    public async Task ExclusiveMinimum_ValueEqualToMinimum_ReportsWarning()
+    {
+        // ImageSize.MaxWidth is (js-uint .gt 1): the bound is exclusive, so 1 is out of range even
+        // though it equals the declared minimum.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageSize size = new ImageSize { MaxWidth = {|#0:1|} };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("1", "MaxWidth", "(1, \u221E]");
+
+        await VerifyDiagnosticsAsync(testCode, expected);
+    }
+
+    [Fact]
+    public async Task ExclusiveMinimum_ValueAboveMinimum_NoDiagnostic()
+    {
+        // 2 is the smallest value the exclusive bound admits; a larger value is equally fine.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageSize size = new ImageSize { MaxWidth = 2 };
+                        ImageSize other = new ImageSize();
+                        other.MaxHeight = 1024;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
+    }
+
+    [Fact]
     public async Task PropertyWithoutSpecRange_NoDiagnostic()
     {
         // GeolocationCoordinates.Altitude is a double? property with no [SpecRange] attribute.

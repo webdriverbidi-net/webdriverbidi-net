@@ -89,7 +89,7 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!TryGetSpecRange(property, specRangeAttributeSymbol, out double minimum, out double maximum, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue))
+        if (!TryGetSpecRange(property, specRangeAttributeSymbol, out double minimum, out double maximum, out bool minimumExclusive, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue))
         {
             return;
         }
@@ -110,22 +110,23 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (value < minimum || value > maximum || (maximumExclusive && value == maximum))
+        if (value < minimum || value > maximum || (minimumExclusive && value == minimum) || (maximumExclusive && value == maximum))
         {
             Diagnostic diagnostic = Diagnostic.Create(
                 Rule,
                 assignment.Right.GetLocation(),
                 assignment.Right.ToString(),
                 property.Name,
-                FormatRange(minimum, maximum, maximumExclusive));
+                FormatRange(minimum, maximum, minimumExclusive, maximumExclusive));
             context.ReportDiagnostic(diagnostic);
         }
     }
 
-    private static bool TryGetSpecRange(IPropertySymbol property, INamedTypeSymbol specRangeAttributeSymbol, out double minimum, out double maximum, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue)
+    private static bool TryGetSpecRange(IPropertySymbol property, INamedTypeSymbol specRangeAttributeSymbol, out double minimum, out double maximum, out bool minimumExclusive, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue)
     {
         minimum = double.NegativeInfinity;
         maximum = double.PositiveInfinity;
+        minimumExclusive = false;
         maximumExclusive = false;
         hasSentinel = false;
         sentinelValue = 0.0;
@@ -142,11 +143,16 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             minimum = (double)attribute.ConstructorArguments[0].Value!;
             maximum = (double)attribute.ConstructorArguments[1].Value!;
 
-            // MaximumExclusive, HasSentinel, and SentinelValue are independent optional named
-            // arguments; a property may set any combination of them, so each is read with its own
-            // separate check.
+            // MinimumExclusive, MaximumExclusive, HasSentinel, and SentinelValue are independent
+            // optional named arguments; a property may set any combination of them, so each is read
+            // with its own separate check.
             foreach (KeyValuePair<string, TypedConstant> namedArgument in attribute.NamedArguments)
             {
+                if (namedArgument.Key == "MinimumExclusive")
+                {
+                    minimumExclusive = (bool)namedArgument.Value.Value!;
+                }
+
                 if (namedArgument.Key == "MaximumExclusive")
                 {
                     maximumExclusive = (bool)namedArgument.Value.Value!;
@@ -183,12 +189,13 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
         return ((IConvertible)value).ToDouble(CultureInfo.InvariantCulture);
     }
 
-    private static string FormatRange(double minimum, double maximum, bool maximumExclusive)
+    private static string FormatRange(double minimum, double maximum, bool minimumExclusive, bool maximumExclusive)
     {
-        // An exclusive upper bound renders in interval notation with a closing parenthesis,
-        // for example [0, 360) for the specification's CDDL range 0.0...360.0.
+        // Exclusive bounds render in interval notation with a parenthesis on that side: [0, 360) for
+        // the specification's CDDL range 0.0...360.0, and (1, ∞] for a member declared js-uint .gt 1.
+        string openingDelimiter = minimumExclusive ? "(" : "[";
         string closingDelimiter = maximumExclusive ? ")" : "]";
-        return $"[{FormatBound(minimum)}, {FormatBound(maximum)}{closingDelimiter}";
+        return $"{openingDelimiter}{FormatBound(minimum)}, {FormatBound(maximum)}{closingDelimiter}";
     }
 
     private static string FormatBound(double bound)
