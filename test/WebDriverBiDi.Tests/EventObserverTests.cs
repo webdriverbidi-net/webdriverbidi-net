@@ -492,15 +492,15 @@ public class EventObserverTests
     }
 
     [Fact]
-    public async Task TestRacedDrainDoesNotReReportSynchronouslyFaultedCapturedTask()
+    public async Task TestRacedDrainReportsAlreadyFaultedCapturedTask()
     {
         // An async-mode handler task that is already faulted when the handler returns is
-        // both captured and rethrown to the producer — that rethrow is the documented,
-        // single surfacing of the failure. When a fulfilled wait's auto-close drains such
-        // a task from the buffer, it must be skipped rather than given a reporting
-        // continuation, which would record the same failure a second time through the
+        // captured like any other and is never rethrown to the producer. When a fulfilled
+        // wait's auto-close drains such a task from the buffer, the reporting continuation
+        // the drain attaches is the single surfacing of that failure, through the
         // observer-error pipeline.
         List<EventObserverErrorInfo> reportedErrors = [];
+        TaskCompletionSource errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestEventSource testEventSource = new();
         testEventSource.SetObserverErrorReporter(errorInfo =>
         {
@@ -509,6 +509,7 @@ public class EventObserverTests
                 reportedErrors.Add(errorInfo);
             }
 
+            errorReported.TrySetResult();
             return Task.CompletedTask;
         });
 
@@ -528,20 +529,23 @@ public class EventObserverTests
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("first");
 
-        // The second event's handler task is already faulted when it returns; the fault
-        // is surfaced to the producer by the raise itself.
-        Assert.Equal("synchronously faulted handler", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await testEventSource.RaiseTestEventAsync("second"))).Message);
+        // The second event's handler task is already faulted when it returns, but the producer
+        // does not await an asynchronously-run handler, so the raise itself completes normally.
+        await testEventSource.RaiseTestEventAsync("second");
 
         // Both tasks are buffered; the wait consumes the first and auto-closes, draining
         // the faulted second task as a surplus task.
         Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         _ = Assert.Single(capturedTasks);
 
-        // The drained task's fault was already surfaced synchronously, so no report may
-        // have flowed through the observer-error pipeline for either handler task.
+        // The drain is the only route by which the surplus task's fault can surface, so it is
+        // reported exactly once, attributed to the observer that produced it.
+        await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         lock (reportedErrors)
         {
-            Assert.Empty(reportedErrors);
+            EventObserverErrorInfo reportedError = Assert.Single(reportedErrors);
+            Assert.Equal(observer.Id, reportedError.ObserverId);
+            Assert.Equal("synchronously faulted handler", reportedError.Exception.Message);
         }
 
         observer.Dispose();
@@ -752,13 +756,10 @@ public class EventObserverTests
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         observer.StartCapturingTasks();
-        try
-        {
-            await testEventSource.RaiseTestEventAsync("myValue");
-        }
-        catch (InvalidOperationException)
-        {
-        }
+
+        // The raise itself completes normally: the fault of an asynchronously-run handler's
+        // task belongs to whoever takes ownership of the captured task, not to the producer.
+        await testEventSource.RaiseTestEventAsync("myValue");
 
         Assert.Equal("capture failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken))).Message);
         observer.StopCapturingTasks();
@@ -1048,8 +1049,8 @@ public class EventObserverTests
     [Fact]
     public async Task TestWaitForCapturedTasksAsyncAlreadyFaultedRacedTaskDoesNotCauseUnobservedTaskException()
     {
-        // If the raced task is already faulted synchronously by the time the drain runs,
-        // the direct observation path in ReportOrAttachFaultContinuation is taken.
+        // If the raced task is already faulted by the time the drain runs, the direct
+        // observation path in the drain's reporting continuation is taken.
         // Verify that path also prevents UnobservedTaskException.
         using UnobservedTaskExceptionMonitor monitor = new("already faulted raced task");
 
@@ -1067,14 +1068,9 @@ public class EventObserverTests
 
         // Raise both events so both tasks land in the buffer before WaitForAsync reads.
         await testEventSource.RaiseTestEventAsync("collected");
-        try
-        {
-            // The raced handler faults synchronously; RaiseTestEventAsync re-throws it.
-            await testEventSource.RaiseTestEventAsync("raced");
-        }
-        catch (InvalidOperationException)
-        {
-        }
+
+        // The raced handler returns an already-faulted task, which the raise does not rethrow.
+        await testEventSource.RaiseTestEventAsync("raced");
 
         // WaitForAsync collects 1 task, auto-closes, and drains the already-faulted raced task.
         Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -1296,18 +1292,23 @@ public class EventObserverTests
     }
 
     [Fact]
-    public async Task TestHandlerRunAsynchronouslyWithSynchronousExceptionPropagates()
+    public async Task TestHandlerRunAsynchronouslyWithAlreadyFaultedTaskDoesNotPropagateToProducer()
     {
+        // The producer does not await a handler registered to run asynchronously, so the
+        // failure of the task that handler returns is never thrown at the raise, however
+        // early the task faults — including a task that is already faulted when returned.
+        // Were the outcome decided by inspecting the task's state after the handler returns,
+        // it would depend on thread scheduling for handlers that fault very quickly.
         TestEventSource testEventSource = new();
         testEventSource.TestObservableEvent.AddObserver(
             _ => Task.FromException(new InvalidOperationException("sync fire-and-forget failure")),
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        Assert.Equal("sync fire-and-forget failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await testEventSource.RaiseTestEventAsync("myValue"))).Message);
+        await testEventSource.RaiseTestEventAsync("myValue");
     }
 
     [Fact]
-    public async Task TestHandlerRunAsynchronouslyWithSynchronousExceptionDoesNotPreventSubsequentObservers()
+    public async Task TestHandlerRunAsynchronouslyWithAlreadyFaultedTaskDoesNotPreventSubsequentObservers()
     {
         string? observedValue = null;
         TestEventSource testEventSource = new();
@@ -1316,7 +1317,7 @@ public class EventObserverTests
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
         testEventSource.TestObservableEvent.AddObserver(e => observedValue = e.EventValue);
 
-        Assert.Equal("sync fire-and-forget failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await testEventSource.RaiseTestEventAsync("myValue"))).Message);
+        await testEventSource.RaiseTestEventAsync("myValue");
         Assert.Equal("myValue", observedValue);
     }
 
@@ -1363,13 +1364,18 @@ public class EventObserverTests
     {
         bool handlerCompleted = false;
         TaskCompletionSource handlerReachedAsyncTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource resumeHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource handlerFinishedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestEventSource testEventSource = new();
         testEventSource.TestObservableEvent.AddObserver(
             async _ =>
             {
                 handlerReachedAsyncTaskCompletionSource.TrySetResult();
-                await Task.Yield();
+
+                // The handler is suspended here until the test releases it, so that the
+                // assertion below observes a handler that has started and has provably not
+                // finished, rather than betting that a yielded continuation has not yet run.
+                await resumeHandlerTaskCompletionSource.Task;
                 handlerCompleted = true;
                 handlerFinishedTaskCompletionSource.TrySetResult();
             },
@@ -1382,6 +1388,7 @@ public class EventObserverTests
         await handlerReachedAsyncTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.False(handlerCompleted);
 
+        resumeHandlerTaskCompletionSource.SetResult();
         await handlerFinishedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.True(handlerCompleted);
     }
@@ -1608,35 +1615,35 @@ public class EventObserverTests
     }
 
     [Fact]
-    public async Task TestSynchronousFaultOnAsyncHandlerDoesNotInvokeErrorReporter()
+    public async Task TestAlreadyFaultedTaskOnAsyncHandlerInvokesErrorReporter()
     {
-        bool reporterInvoked = false;
+        // A task that is already faulted when an asynchronously-run handler returns it reaches
+        // the error reporter exactly as a fault arriving later does. The producer never sees
+        // such a failure, so the reporter is the only place it can surface, and it carries the
+        // identity of the observer that produced it.
+        EventObserverErrorInfo? reportedErrorInfo = null;
+        TaskCompletionSource reporterInvokedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestEventSource testEventSource = new();
-        testEventSource.SetObserverErrorReporter(_ =>
+        testEventSource.SetObserverErrorReporter(errorInfo =>
         {
-            reporterInvoked = true;
+            reportedErrorInfo = errorInfo;
+            reporterInvokedTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
 
-        testEventSource.TestObservableEvent.AddObserver(
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             _ => Task.FromException(new InvalidOperationException("sync fault on async handler")),
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        // Synchronous fault propagates through NotifyObserversAsync directly
-        // rather than through the error reporter.
-        try
-        {
-            await testEventSource.RaiseTestEventAsync("value");
-        }
-        catch (InvalidOperationException)
-        {
-        }
+        await testEventSource.RaiseTestEventAsync("value");
+        await reporterInvokedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // Give any would-be reporter invocation a chance to arrive.
-        await Task.Delay(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
-
-        Assert.False(reporterInvoked);
+        Assert.NotNull(reportedErrorInfo);
+        Assert.Equal(observer.Id, reportedErrorInfo.ObserverId);
+        Assert.Equal("sync fault on async handler", reportedErrorInfo.Exception.Message);
+        Assert.True(reportedErrorInfo.IsAsynchronousHandler);
+        Assert.True(reportedErrorInfo.FaultOccurredAfterHandlerReturned);
     }
 
     [Fact]

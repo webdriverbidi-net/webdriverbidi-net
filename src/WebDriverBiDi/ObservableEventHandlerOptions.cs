@@ -35,6 +35,14 @@ public enum ObservableEventHandlerOptions
     /// this option the whole action is queued to the thread pool, so none of it runs on the dispatching thread.
     /// </para>
     /// <para>
+    /// A failure of the <see cref="System.Threading.Tasks.Task"/> the handler returns is never thrown
+    /// at the code raising the event, which does not await that task. It is routed to the observer-error
+    /// reporting pipeline instead, and this holds however quickly the task faults, including a handler
+    /// that returns a task that is already faulted. An exception thrown by the handler <em>before</em> it
+    /// returns a task at all still propagates to the caller raising the event, because there is no task
+    /// to detach.
+    /// </para>
+    /// <para>
     /// To offload blocking work from a <c>Task</c>-returning handler, make it <c>async</c> and place an
     /// <c>await</c> (for example <c>await Task.Yield()</c>) before the blocking work, or wrap the work in
     /// <c>Task.Run</c>. The BIDI007 and BIDI023 analyzers report handlers where this option cannot help.
