@@ -368,25 +368,21 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                     }
 
                     // Remove tasks that were added into the buffer in the window between the last
-                    // TryRead and TryComplete. These tasks are not returned to the caller. A task
-                    // that was still running when captured got a fault continuation with
-                    // ShouldReportAsyncFault = false (because it was captured), so a new reporting
-                    // continuation is attached here — attributed to the event that produced the
-                    // invocation — so any fault surfaces through the normal error pipeline instead
-                    // of being silently swallowed. A task whose fault was already surfaced
-                    // synchronously to the producer (captured and rethrown, per the contract
-                    // documented on EventHandlerExceptionBehavior) must be skipped: reporting it
-                    // here as well would record the same failure twice.
+                    // TryRead and TryComplete. These tasks are not returned to the caller. A
+                    // captured task got a fault continuation with ShouldReportAsyncFault = false
+                    // (because capture transfers ownership of the fault to the consumer), so a new
+                    // reporting continuation is attached here — attributed to the event that
+                    // produced the invocation — so any fault surfaces through the normal error
+                    // pipeline instead of being silently swallowed. This is the only route by
+                    // which such a fault is reported, so it can never record the same failure
+                    // twice.
                     // Only do this when we are the sole active reader: if another WaitForCapturedTasksAsync
                     // caller is queued behind the semaphore, those tasks are legitimately theirs to consume.
                     if (readerCount == 1)
                     {
                         while (channel.Reader.TryRead(out CapturedTask racedTask))
                         {
-                            if (!racedTask.WasSynchronouslyFaulted)
-                            {
-                                this.AttachCompletionContinuation(racedTask.Task, racedTask.ReportedEventName, true, decrementInFlightCount: false);
-                            }
+                            this.AttachCompletionContinuation(racedTask.Task, racedTask.ReportedEventName, true, decrementInFlightCount: false);
                         }
                     }
                 }
@@ -658,19 +654,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     {
         Task executingTask = this.handler(notifyData);
         bool isHandlerRunAsynchronously = this.handlerOptions == ObservableEventHandlerOptions.RunHandlerAsynchronously;
-
-        // Capture the faulted state immediately after the handler returns,
-        // before any other code runs, to distinguish synchronous failures
-        // (e.g., Task.FromException or throwing before the first await)
-        // from truly asynchronous ones that complete later.
-        bool isSynchronouslyFaulted = false;
         if (!isHandlerRunAsynchronously)
         {
+            // Notification waits for a synchronously-run handler, so its failure propagates out
+            // of this method to the producer raising the event through the normal exception path,
+            // and no task reaches the capture buffer.
             await executingTask.ConfigureAwait(false);
-        }
-        else if (executingTask.IsFaulted)
-        {
-            isSynchronouslyFaulted = true;
         }
 
         // The reported event name is resolved at capture time so that a fault surfaced
@@ -678,9 +667,18 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         // drain in WaitForCapturedTasksAsync — is attributed to the concrete protocol
         // event that produced this invocation, regardless of which path reports it.
         string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
-        bool isCaptured = this.CaptureTask(executingTask, isSynchronouslyFaulted, reportedEventName);
-        if (isHandlerRunAsynchronously && !isSynchronouslyFaulted)
+        bool isCaptured = this.CaptureTask(executingTask, reportedEventName);
+        if (isHandlerRunAsynchronously)
         {
+            // A failure of the task returned by an asynchronously-run handler is never thrown
+            // back at the producer raising the event: the producer does not await the handler,
+            // so the failure is routed to the observer-error reporter instead. Notably, this
+            // holds however quickly the task faults, including a handler that returns a task
+            // that is already faulted. Inspecting the task's state here to decide between the
+            // two routes would make the choice a matter of thread scheduling, because a handler
+            // queued to the thread pool by the Action<T> overload of AddObserver, or one that
+            // resumes from its first await on another thread, can fault before this line runs.
+            //
             // Track this handler task so operators can observe backlog via
             // WebDriverBiDiEventSource.AsyncHandlerTaskCount. The increment must
             // precede attaching the decrement continuation: if the task completes
@@ -688,24 +686,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             // schedules on already-completed tasks), so the counter remains balanced.
             // The continuation also will observe the task if it is faulted, preventing
             // an UnobservedTaskException, and forwarding the exception to the higher-
-            // level error reporting pipeline. The continuation must be attached even
-            // when the task has already completed: gating on completion would let a
-            // handler that faults between the synchronous-fault check above and this
-            // point escape both fault observation and error reporting.
+            // level error reporting pipeline.
             AsyncHandlerTaskMetrics.IncrementInFlight();
             this.AttachCompletionContinuation(executingTask, reportedEventName, !isCaptured, decrementInFlightCount: true);
         }
-
-        if (!isSynchronouslyFaulted)
-        {
-            return;
-        }
-
-        // The handler was already faulted when it returned (synchronous
-        // failure); propagate so NotifyObserversAsync can capture it through
-        // its normal exception path. Truly asynchronous failures are observed
-        // by the continuation above to prevent UnobservedTaskException.
-        await executingTask.ConfigureAwait(false);
     }
 
     /// <summary>
@@ -789,11 +773,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
             TaskScheduler.Default);
     }
 
-    private bool CaptureTask(Task executingTask, bool wasSynchronouslyFaulted, string reportedEventName)
+    private bool CaptureTask(Task executingTask, string reportedEventName)
     {
         lock (this.captureLock)
         {
-            return this.capturedTaskQueue is not null && this.capturedTaskQueue.Writer.TryWrite(new CapturedTask(executingTask, wasSynchronouslyFaulted, reportedEventName));
+            return this.capturedTaskQueue is not null && this.capturedTaskQueue.Writer.TryWrite(new CapturedTask(executingTask, reportedEventName));
         }
     }
 
@@ -850,22 +834,18 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
 
     /// <summary>
     /// Internal data structure pairing a captured handler task with its capture-time metadata:
-    /// whether the task's fault was already surfaced synchronously to the producer (and so must
-    /// not be reported again by the raced-task drain), and the event name under which a fault
-    /// should be attributed when the drain attaches a reporting continuation.
+    /// the event name under which a fault should be attributed when the raced-task drain
+    /// attaches a reporting continuation.
     /// </summary>
     private readonly struct CapturedTask
     {
-        public CapturedTask(Task task, bool wasSynchronouslyFaulted, string reportedEventName)
+        public CapturedTask(Task task, string reportedEventName)
         {
             this.Task = task;
-            this.WasSynchronouslyFaulted = wasSynchronouslyFaulted;
             this.ReportedEventName = reportedEventName;
         }
 
         public Task Task { get; }
-
-        public bool WasSynchronouslyFaulted { get; }
 
         public string ReportedEventName { get; }
     }

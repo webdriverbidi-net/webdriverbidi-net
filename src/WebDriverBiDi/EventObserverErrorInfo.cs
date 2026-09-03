@@ -38,5 +38,11 @@ public sealed record EventObserverErrorInfo
     /// <summary>
     /// Gets a value indicating whether the fault occurred after control returned to the caller.
     /// </summary>
+    /// <remarks>
+    /// This is always <see langword="true"/> for a handler registered with
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>: the caller raising the
+    /// event does not await such a handler, so its failure can only surface after control returned,
+    /// even when the task the handler returned was already faulted.
+    /// </remarks>
     public required bool FaultOccurredAfterHandlerReturned { get; init; }
 }
