@@ -89,7 +89,29 @@
          runs in a separate process via Exec rather than the MSBuild task: this project is itself on the
          build stack while packing, and an in-process build of a project that references it back triggers
          MSBuild reentrancy that resolves the analyzer at the wrong Roslyn version (MSB3277). -->
-    <Exec Command="dotnet build &quot;$(_CodeFixesProject)&quot; -c $(Configuration) -p:RoslynVersion=%(AnalyzerRoslynVariant.Identity) -p:OutputPath=&quot;$(_AnalyzerVariantStaging)%(AnalyzerRoslynVariant.Folder)/&quot; -p:AppendTargetFrameworkToOutputPath=false" />
+    <PropertyGroup>
+      <!-- The child build starts from a clean property set, so the release version properties are
+           forwarded to it explicitly. They must be supplied to the *pack* invocation to arrive here:
+           MSBuild global properties do not survive across processes, so the values an earlier
+           `dotnet build` was given never reach this target (release.yml's pack step passes them for
+           that reason, and the analyzer pack in _tests.yml passes probe values to keep this path
+           verified on every PR). Without them, the analyzer assemblies that actually ship carry the
+           MSBuild default 1.0.0.0 and no CI-build metadata, however the package itself is versioned —
+           the package says one thing and the assemblies inside it another. Each property is forwarded
+           only when it is set, so an ordinary local pack still gets the normal defaults rather than
+           empty overrides.
+
+           -warnaserror matches the solution build's convention (README.md): this is the only build of
+           these two assemblies that produces shipped artifacts, so it should not be the one build
+           allowed to emit warnings. -->
+      <_AnalyzerVariantBuildArgs>-warnaserror</_AnalyzerVariantBuildArgs>
+      <_AnalyzerVariantBuildArgs Condition="'$(AssemblyVersion)' != ''">$(_AnalyzerVariantBuildArgs) -p:AssemblyVersion=&quot;$(AssemblyVersion)&quot;</_AnalyzerVariantBuildArgs>
+      <_AnalyzerVariantBuildArgs Condition="'$(FileVersion)' != ''">$(_AnalyzerVariantBuildArgs) -p:FileVersion=&quot;$(FileVersion)&quot;</_AnalyzerVariantBuildArgs>
+      <_AnalyzerVariantBuildArgs Condition="'$(InformationalVersion)' != ''">$(_AnalyzerVariantBuildArgs) -p:InformationalVersion=&quot;$(InformationalVersion)&quot;</_AnalyzerVariantBuildArgs>
+      <_AnalyzerVariantBuildArgs Condition="'$(ContinuousIntegrationBuild)' != ''">$(_AnalyzerVariantBuildArgs) -p:ContinuousIntegrationBuild=&quot;$(ContinuousIntegrationBuild)&quot;</_AnalyzerVariantBuildArgs>
+    </PropertyGroup>
+
+    <Exec Command="dotnet build &quot;$(_CodeFixesProject)&quot; -c $(Configuration) -p:RoslynVersion=%(AnalyzerRoslynVariant.Identity) -p:OutputPath=&quot;$(_AnalyzerVariantStaging)%(AnalyzerRoslynVariant.Folder)/&quot; -p:AppendTargetFrameworkToOutputPath=false $(_AnalyzerVariantBuildArgs)" />
   </Target>
 
   <!-- Pack each variant's analyzer and code-fix assemblies into their Roslyn-version folder. Only the two

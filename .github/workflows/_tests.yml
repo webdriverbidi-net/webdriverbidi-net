@@ -113,7 +113,16 @@ jobs:
       # with the variant list by hand. Packing here means a mistake in that target fails a PR rather
       # than the release.
       - name: Pack the analyzer package
-        run: dotnet pack src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj --configuration Release -o test/package -p:GeneratePackageOnBuild=true
+        # The version properties mirror the ones release.yml passes to its own pack step. Supplying
+        # them to the pack invocation is the only way the shipped analyzer assemblies get stamped:
+        # the pack target forwards them to the child build that compiles the Roslyn variants, and
+        # nothing else in the repository exercises that path. Packing with them here lets the step
+        # below prove the forwarding still works. The values are deliberately unlike any real release
+        # version so that the check cannot pass by coincidence.
+        run: >
+          dotnet pack src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj --configuration Release
+          -o test/package -p:GeneratePackageOnBuild=true
+          -p:AssemblyVersion=9.9.9.9 -p:FileVersion=9.9.9.9 -p:InformationalVersion=9.9.9-packprobe
 
       - name: Verify the analyzer package layout
         run: |
@@ -127,11 +136,19 @@ jobs:
           for variant in roslyn4.8 roslyn5.9; do
             directory="test/package/extracted/analyzers/dotnet/$variant/cs"
             for assembly in WebDriverBiDi.Analyzers.dll WebDriverBiDi.Analyzers.CodeFixProviders.dll; do
-              if [ -f "$directory/$assembly" ]; then
-                echo "OK   $variant/cs/$assembly"
-              else
+              if [ ! -f "$directory/$assembly" ]; then
                 echo "FAIL $variant/cs/$assembly is missing"
                 status=1
+              # These assemblies are compiled by a child `dotnet build` inside the pack target, which
+              # stamps them only with the version properties the pack invocation forwards to it. If
+              # that forwarding breaks, they ship as 1.0.0.0 inside a package carrying the release
+              # version, and nothing else would notice. The probe value comes from the pack step above
+              # and is matched against the assembly's embedded metadata strings.
+              elif ! grep -a -q '9.9.9-packprobe' "$directory/$assembly"; then
+                echo "FAIL $variant/cs/$assembly is not version stamped; the pack target did not forward the version properties"
+                status=1
+              else
+                echo "OK   $variant/cs/$assembly (version stamped)"
               fi
             done
           done
