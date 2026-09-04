@@ -51,7 +51,7 @@ public class SelfExtractingExecutableFileExtractor : FileExtractor
             }
 
             Directory.CreateDirectory(temporaryExtractionPath);
-            await this.RunProcessAsync(installerPath, $"/ExtractDir={temporaryExtractionPath}");
+            await this.RunProcessAsync(installerPath, $"/ExtractDir={temporaryExtractionPath}").ConfigureAwait(false);
             string sourcePath = Path.Combine(temporaryExtractionPath, this.extractedSourceDirectoryName);
             Directory.Move(sourcePath, destinationPath);
         }

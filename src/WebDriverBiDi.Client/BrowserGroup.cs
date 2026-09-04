@@ -96,7 +96,7 @@ public class BrowserGroup : IAsyncDisposable
         {
             UserContextId = result.UserContextId,
         };
-        CreateCommandResult browsingContextResult = await this.driver.BrowsingContext.CreateAsync(createParameters);
+        CreateCommandResult browsingContextResult = await this.driver.BrowsingContext.CreateAsync(createParameters).ConfigureAwait(false);
         browser.AddPage(new Page(this.driver, browsingContextResult.BrowsingContextId, this.inspector));
         this.browsers.Add(browser);
         return browser;

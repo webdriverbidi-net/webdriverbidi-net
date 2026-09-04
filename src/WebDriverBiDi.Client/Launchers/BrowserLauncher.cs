@@ -314,7 +314,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel = WebDriverBiDiLogLevel.Info, string component = LoggerComponentName)
     {
         LogMessageEventArgs logMessageArgs = new(message, logLevel, component);
-        await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(logMessageArgs);
+        await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(logMessageArgs).ConfigureAwait(false);
     }
 
     private async Task OnLocatorLogAsync(LogMessageEventArgs args)

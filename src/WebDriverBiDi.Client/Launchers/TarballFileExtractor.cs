@@ -23,7 +23,7 @@ public class TarballFileExtractor : FileExtractor
         try
         {
             string extractFlags = tarFilePath.EndsWith(".tar.xz", StringComparison.OrdinalIgnoreCase) ? "xJf" : "xzf";
-            await this.RunProcessAsync("tar", $"-{extractFlags} \"{tarFilePath}\" -C \"{extractDirectory}\"");
+            await this.RunProcessAsync("tar", $"-{extractFlags} \"{tarFilePath}\" -C \"{extractDirectory}\"").ConfigureAwait(false);
         }
         finally
         {

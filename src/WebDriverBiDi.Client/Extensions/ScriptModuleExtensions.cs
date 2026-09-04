@@ -84,7 +84,7 @@ public static class ScriptModuleExtensions
     /// <exception cref="WebDriverBiDiException">Thrown when the result of the JavaScript function cannot be converted to the requested type.</exception>
     public static async Task<T?> CallFunctionAsync<T>(this ScriptModule module, string browsingContextId, string functionDeclaration, List<LocalValue>? arguments = null, string? sandbox = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        RemoteValue callResult = await module.CallFunctionAsync(browsingContextId, functionDeclaration, arguments, sandbox, timeoutOverride, cancellationToken);
+        RemoteValue callResult = await module.CallFunctionAsync(browsingContextId, functionDeclaration, arguments, sandbox, timeoutOverride, cancellationToken).ConfigureAwait(false);
         return ConvertRemoteValue<T>(callResult);
     }
 

@@ -186,7 +186,7 @@ public class NetworkRequest
     {
         if (this.requestBodyRetrieveTask is not null)
         {
-            GetDataCommandResult bodyResult = await this.requestBodyRetrieveTask;
+            GetDataCommandResult bodyResult = await this.requestBodyRetrieveTask.ConfigureAwait(false);
             this.isRequestBodyBase64Encoded = bodyResult.Bytes.Type == BytesValueType.Base64;
             this.requestBody = bodyResult.Bytes.Value;
         }
@@ -200,7 +200,7 @@ public class NetworkRequest
     {
         if (this.responseBodyAvailableTask is not null)
         {
-            GetDataCommandResult bodyResult = await this.responseBodyAvailableTask;
+            GetDataCommandResult bodyResult = await this.responseBodyAvailableTask.ConfigureAwait(false);
             this.isResponseBodyBase64Encoded = bodyResult.Bytes.Type == BytesValueType.Base64;
             this.responseBody = bodyResult.Bytes.Value;
         }

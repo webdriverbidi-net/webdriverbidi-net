@@ -400,7 +400,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             }
             else
             {
-                await Task.Delay(100);
+                await Task.Delay(100).ConfigureAwait(false);
             }
         }
 

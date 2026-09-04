@@ -240,7 +240,7 @@ public class ElementLocator
             // Clean up event handler
             if (observer != null)
             {
-                await observer.DisposeAsync();
+                await observer.DisposeAsync().ConfigureAwait(false);
             }
         }
     }

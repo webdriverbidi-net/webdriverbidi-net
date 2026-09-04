@@ -140,8 +140,8 @@ internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
             ? "https://api.github.com/repos/mozilla/geckodriver/releases/latest"
             : $"https://api.github.com/repos/mozilla/geckodriver/releases/tags/v{this.DriverVersion}";
 
-        HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-        string json = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await httpClient.GetAsync(apiUrl).ConfigureAwait(false);
+        string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         GeckoDriverRelease? release = JsonSerializer.Deserialize(json, GeckoDriverJsonSerializerContext.Default.GeckoDriverRelease);
         if (release is null)

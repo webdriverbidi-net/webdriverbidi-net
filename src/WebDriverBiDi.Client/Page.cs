@@ -116,7 +116,7 @@ public class Page
             args.Add(this.ConvertToLocalValue(arg));
         }
 
-        await this.driver.Script.CallFunctionAsync(this.browsingContextId, functionDefinition, args);
+        await this.driver.Script.CallFunctionAsync(this.browsingContextId, functionDefinition, args).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public class Page
             args.Add(this.ConvertToLocalValue(arg));
         }
 
-        RemoteValue functionResult = await this.driver.Script.CallFunctionAsync(this.browsingContextId, functionDefinition, args);
+        RemoteValue functionResult = await this.driver.Script.CallFunctionAsync(this.browsingContextId, functionDefinition, args).ConfigureAwait(false);
         return (T?)this.ConvertFromRemoteValue(functionResult);
     }
 

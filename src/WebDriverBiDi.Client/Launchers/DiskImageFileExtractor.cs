@@ -27,7 +27,7 @@ public class DiskImageFileExtractor : FileExtractor
 
         try
         {
-            await this.RunProcessAsync("hdiutil", $"attach \"{dmgPath}\" -mountpoint \"{mountPoint}\" -nobrowse -quiet");
+            await this.RunProcessAsync("hdiutil", $"attach \"{dmgPath}\" -mountpoint \"{mountPoint}\" -nobrowse -quiet").ConfigureAwait(false);
 
             // Find the .app bundle in the mounted DMG
             string? appBundle = Directory.GetDirectories(mountPoint, "*.app").FirstOrDefault();
@@ -42,13 +42,13 @@ public class DiskImageFileExtractor : FileExtractor
                 Directory.Delete(destApp, true);
             }
 
-            await this.RunProcessAsync("cp", $"-R \"{appBundle}\" \"{destApp}\"");
+            await this.RunProcessAsync("cp", $"-R \"{appBundle}\" \"{destApp}\"").ConfigureAwait(false);
         }
         finally
         {
             try
             {
-                await this.RunProcessAsync("hdiutil", $"detach \"{mountPoint}\" -quiet");
+                await this.RunProcessAsync("hdiutil", $"detach \"{mountPoint}\" -quiet").ConfigureAwait(false);
                 Directory.Delete(mountPoint);
             }
             catch
