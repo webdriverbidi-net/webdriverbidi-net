@@ -74,6 +74,14 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                     continue;
                 }
 
+                // Rule out every other call in the body on its name alone, before paying for the
+                // semantic model. The name test against the resolved symbol below remains the
+                // authoritative one; this only avoids binding calls that cannot possibly match.
+                if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, SubscribeMethodName))
+                {
+                    continue;
+                }
+
                 IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
                 if (methodSymbol == null)
                 {
@@ -265,6 +273,10 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     {
         return AnalyzerSymbolHelpers.IsLibraryModuleType(type);
     }
+
+    // The only method name this analyzer inspects. Hoisted to a static field to avoid allocating on
+    // every invocation examined.
+    private static readonly string[] SubscribeMethodName = ["SubscribeAsync"];
 
     private static bool IsSessionModule(INamedTypeSymbol type)
     {

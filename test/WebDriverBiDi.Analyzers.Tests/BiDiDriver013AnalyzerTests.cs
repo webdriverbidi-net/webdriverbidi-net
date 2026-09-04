@@ -464,4 +464,99 @@ public class BiDiDriver013AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a long-running call made through the null-conditional operator is still reported.
+    /// Such a call's invocation expression is a <c>MemberBindingExpressionSyntax</c> rather than a
+    /// member access, which the analyzer's syntactic name pre-filter must recognize; failing to would
+    /// silently lose the diagnostic.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_ThroughConditionalAccess_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BrowsingContextModule module)
+                    {
+                        _ = module?{|#0:.NavigateAsync(new NavigateCommandParameters("contextId", "https://example.com"))|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("NavigateAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a long-running method name invoked on a <c>dynamic</c> receiver does not report a
+    /// diagnostic. The name matches, so the pre-filter admits the call, but a late-bound invocation
+    /// resolves to no symbol; the analyzer's null-symbol guard must return rather than dereference it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_OnDynamicReceiver_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(dynamic receiver)
+                    {
+                        receiver.NavigateAsync("https://example.com");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that invoking a delegate whose variable name happens to match a long-running operation
+    /// is not reported. The syntactic pre-filter matches on that name and admits the call, but the
+    /// call resolves to the delegate's <c>Invoke</c> method; the authoritative name test against the
+    /// resolved symbol is what rejects it, even though the delegate's containing type is
+    /// module-shaped.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DelegateVariableNamedForLongRunningOperation_DoesNotReportDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public delegate Task PageActionModule(string url);
+            }
+
+            namespace TestNamespace
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(PageActionModule NavigateAsync)
+                    {
+                        await NavigateAsync("https://example.com");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+    }
 }

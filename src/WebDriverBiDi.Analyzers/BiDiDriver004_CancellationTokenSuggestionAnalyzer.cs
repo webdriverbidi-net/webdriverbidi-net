@@ -57,6 +57,15 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
+
+        // Rule out the overwhelming majority of invocations on their name alone, before paying for
+        // the semantic model. ShouldSuggestToken below remains the authoritative test, against the
+        // resolved symbol's name; this only avoids binding calls that cannot possibly match.
+        if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, LongRunningMethods))
+        {
+            return;
+        }
+
         IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
 
         if (methodSymbol == null)
