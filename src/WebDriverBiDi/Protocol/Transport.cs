@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -469,20 +470,7 @@ public class Transport : IAsyncDisposable
             // connection may not be complete, even if the reader is completed during
             // disconnect. Wait for that processing to complete before recreating the
             // message processing task.
-            if (!this.messageQueueProcessingTask.IsCompleted)
-            {
-                using CancellationTokenSource previousProcessingWaitCancelTokenSource = new();
-                Task previousProcessingWaitTask = Task.Delay(this.ShutdownTimeout, previousProcessingWaitCancelTokenSource.Token);
-                Task previousProcessingCompletedTask = await Task.WhenAny(this.messageQueueProcessingTask, previousProcessingWaitTask).ConfigureAwait(false);
-                if (previousProcessingCompletedTask == this.messageQueueProcessingTask)
-                {
-                    previousProcessingWaitCancelTokenSource.Cancel();
-                }
-                else
-                {
-                    await this.LogAsync("Timed out waiting for message processing of the previous connection to complete before reconnecting", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-                }
-            }
+            await this.WaitForMessageProcessingCompletionAsync(this.ShutdownTimeout, "Timed out waiting for message processing of the previous connection to complete before reconnecting").ConfigureAwait(false);
 
             this.incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
             {
@@ -996,6 +984,10 @@ public class Transport : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
+        // Account for the two potential waits, one for a concurrent attempt to connect,
+        // and one for message processing to complete. Use one shutdown budget for both.
+        Stopwatch disposalStopwatch = Stopwatch.StartNew();
+
         // A connect attempt that is still in flight owns the connect/disconnect semaphore
         // and is actively using the connection; disposing them out from under it would fail
         // the attempt with ObjectDisposedException rather than its normal rollback.
@@ -1030,6 +1022,13 @@ public class Transport : IAsyncDisposable
             {
                 await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
+        }
+        else
+        {
+            // If we lost our connection, we still need to wait for delivered messages to
+            // be processed. HandleConnectionDisconnectionAsync closes the queue, but does
+            // not wait for message processing.
+            await this.WaitForMessageProcessingCompletionAsync(TimeoutUtilities.GetRemainingTimeout(this.ShutdownTimeout, disposalStopwatch.Elapsed), "Timed out waiting for message processing to complete during disposal").ConfigureAwait(false);
         }
 
         this.PendingCommands.Dispose();
@@ -1242,6 +1241,38 @@ public class Transport : IAsyncDisposable
 #else
         return string.Concat(message.AsSpan(0, maxLength), "...");
 #endif
+    }
+
+    /// <summary>
+    /// Waits, bounded by <see cref="ShutdownTimeout"/>, for the message-processing task to finish, logging a
+    /// warning and returning if it does not.
+    /// </summary>
+    /// <param name="timeout">How long to wait before giving up, or <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.</param>
+    /// <param name="timeoutLogMessage">The warning to log if the task does not finish within the timeout.</param>
+    /// <returns>A task representing the asynchronous wait.</returns>
+    /// <remarks>
+    /// The task completes once the incoming message queue has been marked complete for writing and its remaining
+    /// messages have been dispatched. Every caller therefore completes the queue first; this method only waits.
+    /// It never throws, so a caller on a teardown path is not derailed by a stuck message handler.
+    /// </remarks>
+    private async Task WaitForMessageProcessingCompletionAsync(TimeSpan timeout, string timeoutLogMessage)
+    {
+        if (this.messageQueueProcessingTask.IsCompleted)
+        {
+            return;
+        }
+
+        using CancellationTokenSource processingWaitCancelTokenSource = new();
+        Task processingWaitTask = Task.Delay(timeout, processingWaitCancelTokenSource.Token);
+        Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, processingWaitTask).ConfigureAwait(false);
+        if (completedTask == this.messageQueueProcessingTask)
+        {
+            processingWaitCancelTokenSource.Cancel();
+        }
+        else
+        {
+            await this.LogAsync(timeoutLogMessage, WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+        }
     }
 
     private void SetDisposed()
