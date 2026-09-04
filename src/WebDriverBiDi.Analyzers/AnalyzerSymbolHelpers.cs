@@ -145,13 +145,58 @@ internal static class AnalyzerSymbolHelpers
     /// <returns><see langword="true"/> if the type is declared in the WebDriverBiDi namespace; otherwise <see langword="false"/>.</returns>
     internal static bool IsInWebDriverBiDiNamespace(INamedTypeSymbol type)
     {
-        // A named type always has a containing namespace (the global namespace at worst).
-        // Match the library's root namespace exactly, or one of its sub-namespaces via the
-        // dotted prefix; a bare prefix match would also claim a user's own namespace that
-        // merely begins with the same characters (WebDriverBiDiExtensions, for example),
-        // branding the user's types with this library's diagnostics.
-        string namespaceName = type.ContainingNamespace!.ToString();
-        return namespaceName == "WebDriverBiDi" || namespaceName.StartsWith("WebDriverBiDi.", System.StringComparison.Ordinal);
+        // The library's root namespace exactly, or one of its sub-namespaces. A bare prefix match
+        // would also claim a user's own namespace that merely begins with the same characters
+        // (WebDriverBiDiExtensions, for example), branding the user's types with this library's
+        // diagnostics; asking whether the outermost enclosing namespace *is* WebDriverBiDi draws
+        // that distinction exactly, and does so without formatting the fully qualified name.
+        // Composing the name (ContainingNamespace.ToString()) allocates a string on every call, and
+        // this runs once per base type and per implemented interface of every symbol the analyzers
+        // inspect, so the walk is the cheaper of the two identical tests.
+        //
+        // A named type always has a containing namespace (the global namespace at worst), and only
+        // the global namespace has no container, so the loop always terminates.
+        INamespaceSymbol containingNamespace = type.ContainingNamespace!;
+        if (containingNamespace.IsGlobalNamespace)
+        {
+            return false;
+        }
+
+        while (!containingNamespace.ContainingNamespace.IsGlobalNamespace)
+        {
+            containingNamespace = containingNamespace.ContainingNamespace;
+        }
+
+        return containingNamespace.Name == "WebDriverBiDi";
+    }
+
+    /// <summary>
+    /// Determines whether an invocation could be a call to one of the named methods, judged from
+    /// syntax alone. Used as a pre-filter ahead of the semantic model, whose <c>GetSymbolInfo</c> is
+    /// far more expensive than a name comparison and would otherwise be run for every invocation in
+    /// every compiled file.
+    /// </summary>
+    /// <param name="invocation">The invocation to inspect.</param>
+    /// <param name="methodNames">The method names of interest.</param>
+    /// <returns><see langword="false"/> only when the invocation definitely names none of the methods; otherwise <see langword="true"/>.</returns>
+    /// <remarks>
+    /// This is a conservative filter, never an answer: it returns <see langword="true"/> whenever the
+    /// invoked name is not syntactically evident (a delegate produced by another expression, say), so
+    /// the caller still resolves the symbol and applies its own authoritative name test. Names are
+    /// compared by <c>ValueText</c> rather than <c>Text</c> so that a verbatim identifier
+    /// (<c>@ExecuteCommandAsync</c>) is not filtered out here and silently robbed of its diagnostic.
+    /// </remarks>
+    internal static bool CouldInvokeAnyOf(InvocationExpressionSyntax invocation, string[] methodNames)
+    {
+        SimpleNameSyntax? invokedName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
+            SimpleNameSyntax simpleName => simpleName,
+            _ => null,
+        };
+
+        return invokedName is null || methodNames.Contains(invokedName.Identifier.ValueText);
     }
 
     /// <summary>
