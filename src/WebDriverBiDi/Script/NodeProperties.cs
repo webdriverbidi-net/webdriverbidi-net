@@ -13,6 +13,14 @@ using System.Text.Json.Serialization;
 public record NodeProperties
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="NodeProperties"/> class.
+    /// </summary>
+    [JsonConstructor]
+    internal NodeProperties()
+    {
+    }
+
+    /// <summary>
     /// Gets the type of node.
     /// </summary>
     [JsonPropertyName("nodeType")]
