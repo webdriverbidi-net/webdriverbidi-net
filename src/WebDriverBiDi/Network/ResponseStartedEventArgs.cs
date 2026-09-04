@@ -16,7 +16,7 @@ public record ResponseStartedEventArgs : BaseNetworkEventArgs
     /// Initializes a new instance of the <see cref="ResponseStartedEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    internal ResponseStartedEventArgs()
+    public ResponseStartedEventArgs()
         : base()
     {
     }

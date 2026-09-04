@@ -16,7 +16,7 @@ public record FetchErrorEventArgs : BaseNetworkEventArgs
     /// Initializes a new instance of the <see cref="FetchErrorEventArgs"/> class.
     /// </summary>
     [JsonConstructor]
-    internal FetchErrorEventArgs()
+    public FetchErrorEventArgs()
         : base()
     {
     }
