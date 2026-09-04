@@ -6,6 +6,8 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <Nullable>enable</Nullable>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../../WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
 
