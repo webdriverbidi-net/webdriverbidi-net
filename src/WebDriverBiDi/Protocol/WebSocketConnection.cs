@@ -52,6 +52,11 @@ public class WebSocketConnection : Connection
 
     private ClientWebSocket client = new();
 
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
+    // Set by StopAsync before the close handshake begins, and read by the receive loop, which runs on
+    // its own task.
+    private int isLocalCloseInitiatedFlag = 0;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketConnection" /> class.
     /// </summary>
@@ -68,6 +73,28 @@ public class WebSocketConnection : Connection
     /// Gets a value indicating the type of data transport used by this connection, in this case, a WebSocket connection.
     /// </summary>
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the close now in progress was initiated by this end.
+    /// </summary>
+    /// <remarks>
+    /// A local close is completed by the remote end answering the close handshake, which ends the receive
+    /// loop the same way a remote-initiated close does. The receive loop cannot tell the two apart from the
+    /// socket state alone, so <see cref="StopAsync(CancellationToken)"/> records which case it is.
+    /// </remarks>
+    private bool IsLocalCloseInitiated
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isLocalCloseInitiatedFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isLocalCloseInitiatedFlag, flagValue);
+        }
+    }
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -114,6 +141,9 @@ public class WebSocketConnection : Connection
         }
 
         this.ResetConnectionCancellation();
+
+        // A previous session may have ended with a local close; this session has not.
+        this.IsLocalCloseInitiated = false;
 
         await this.LogAsync($"Opening connection to URL {url}").ConfigureAwait(false);
         bool connected = false;
@@ -213,10 +243,17 @@ public class WebSocketConnection : Connection
         await this.LogAsync($"Closing connection").ConfigureAwait(false);
         if (this.client.State != WebSocketState.Open)
         {
+            // The socket is no longer open, so this call starts no close handshake. The receive loop may still
+            // be unwinding from a close the remote end began; leaving the flag clear lets it report that
+            // disconnection even though it finishes while this method runs.
             await this.LogAsync($"Client state is {this.client.State}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
         else
         {
+            // This end is starting the handshake, so the close that ends the receive loop is ours. Record it
+            // before the handshake begins: CloseClientWebSocketAsync awaits the receive loop, so the loop can
+            // reach its graceful-exit check while this method is still running.
+            this.IsLocalCloseInitiated = true;
             await this.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -324,8 +361,11 @@ public class WebSocketConnection : Connection
                 }
             }
 
-            // If the loop exited without cancellation, the remote end closed the connection gracefully.
-            if (!connectionCancellationToken.IsCancellationRequested)
+            // If the loop exited without cancellation, and this end did not start the close, the remote end
+            // closed the connection gracefully. A close this end initiated ends the loop the same way once the
+            // remote end answers the handshake, but it is not a remote disconnection and must not be reported
+            // as one.
+            if (!connectionCancellationToken.IsCancellationRequested && !this.IsLocalCloseInitiated)
             {
                 await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
             }

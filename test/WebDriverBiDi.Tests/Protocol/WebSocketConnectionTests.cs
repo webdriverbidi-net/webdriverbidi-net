@@ -1613,6 +1613,69 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionDoesNotRaiseOnRemoteDisconnectedWhenLocallyClosed()
+    {
+        // A local close is completed by the server answering the close handshake, which ends the receive
+        // loop exactly as a server-initiated close does. The event must still not be raised: the remote end
+        // did not disconnect us.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        int remoteDisconnectedCount = 0;
+        WebSocketConnection connection = new()
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(5),
+        };
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            Interlocked.Increment(ref remoteDisconnectedCount);
+            return Task.CompletedTask;
+        });
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+
+        // StopAsync waits for the receive loop to finish, so by the time it returns the loop has passed
+        // its graceful-exit check and would already have raised the event if it were going to.
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, Interlocked.CompareExchange(ref remoteDisconnectedCount, 0, 0));
+    }
+
+    [Fact]
+    public async Task TestConnectionRaisesOnRemoteDisconnectedAfterRestartFollowingLocalClose()
+    {
+        // The local-close state must not leak into the next session: a server-initiated close after a
+        // restart is still a remote disconnection.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        WebSocketConnection connection = new()
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(5),
+        };
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.clientDisconnectedObserver = server.OnClientDisconnected.AddObserver(_ => { });
+
+        await server.DisconnectAsync(registeredConnectionId);
+
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestAllLogOutputsAreProduced()
     {
         await using Server server = this.CreateServer();
