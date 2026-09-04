@@ -3,10 +3,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+using System.Globalization;
+using System.Numerics;
 using System.Text.Json.Serialization;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Input;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
@@ -185,6 +188,45 @@ try
         throw new InvalidOperationException("Map remote value did not round-trip.");
     }
 
+    // The polymorphic argument kinds. LocalArgumentValue.SerializableValue is object-typed, so the
+    // source-generated context cannot see through it from the static type alone: these are the shapes
+    // most at risk from trimming, and none of them was exercised here before. Sending them all in one
+    // call means a single round trip covers map, object, regexp, date, bigint, array and set.
+    CallFunctionCommandParameters polymorphicParams = new(
+        "(map, obj, pattern, when, big, list, unique) => "
+            + "`${map.get('k')}|${obj.k}|${pattern.source}|${when.getUTCFullYear()}|${big}|${list.length}|${unique.size}`",
+        new ContextTarget(contextId),
+        true);
+    polymorphicParams.Arguments.Add(LocalValue.Map(new Dictionary<string, LocalValue> { ["k"] = LocalValue.String("mapValue") }));
+    polymorphicParams.Arguments.Add(LocalValue.Object(new Dictionary<string, LocalValue> { ["k"] = LocalValue.String("objectValue") }));
+    polymorphicParams.Arguments.Add(LocalValue.RegExp("ab+c", "i"));
+    polymorphicParams.Arguments.Add(LocalValue.Date(new DateTime(2026, 9, 4, 0, 0, 0, DateTimeKind.Utc)));
+    polymorphicParams.Arguments.Add(LocalValue.BigInt(BigInteger.Parse("9007199254740993", CultureInfo.InvariantCulture)));
+    polymorphicParams.Arguments.Add(LocalValue.Array([LocalValue.Number(1), LocalValue.Number(2)]));
+    polymorphicParams.Arguments.Add(LocalValue.Set([LocalValue.Number(1), LocalValue.Number(1), LocalValue.Number(2)]));
+
+    EvaluateResult polymorphicResult = await driver.Script.CallFunctionAsync(polymorphicParams);
+    if (polymorphicResult is not EvaluateResultSuccess polymorphicSuccess)
+    {
+        throw new InvalidOperationException($"Polymorphic callFunction failed: result type was {polymorphicResult.ResultType}");
+    }
+
+    string? polymorphic = polymorphicSuccess.Result.ConvertTo<StringRemoteValue>().Value;
+    Console.WriteLine($"Polymorphic arguments round-tripped: {polymorphic}");
+    if (polymorphic != "mapValue|objectValue|ab+c|2026|9007199254740993|2|2")
+    {
+        throw new InvalidOperationException($"Polymorphic arguments did not round-trip; got '{polymorphic}'");
+    }
+
+    // PointerMoveAction.SerializableOrigin is object-typed for the same reason, and input.performActions
+    // is the only command that reaches it.
+    PerformActionsCommandParameters actionsParams = new(contextId);
+    PointerSourceActions pointerActions = new("aot-pointer");
+    pointerActions.Actions.Add(new PointerMoveAction { X = 5, Y = 7, Origin = Origin.Viewport });
+    actionsParams.Actions.Add(pointerActions);
+    await driver.Input.PerformActionsAsync(actionsParams);
+    Console.WriteLine("performActions with a pointer move accepted.");
+
     // A script exception deserializes into EvaluateResultException with its details.
     EvaluateCommandParameters throwParams = new("(() => { throw new Error('boom'); })()", new ContextTarget(contextId), true);
     EvaluateResult throwResult = await driver.Script.EvaluateAsync(throwParams);
@@ -210,7 +252,7 @@ try
         }
     }
 
-    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, callFunction, a custom command through a registered resolver, decimal/array/map values, a script exception and an error response.");
+    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, callFunction, a custom command through a registered resolver, decimal/array/map values, the polymorphic argument kinds, input.performActions, a script exception and an error response.");
     return 0;
 }
 catch (Exception ex)
