@@ -179,20 +179,15 @@ public class WebSocketConnectionTests : IAsyncDisposable
             },
         };
 
-        Stopwatch stopwatch = Stopwatch.StartNew();
         WebDriverBiDiTimeoutException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(
             async () => await connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken));
-        stopwatch.Stop();
 
         Assert.Contains($"{0.1} seconds", exception.Message);
         Assert.Equal(1, attemptCount);
 
-        // The attempt itself takes 150ms. An unclamped retry pause would add a further 500ms
-        // before the loop noticed the budget was gone, so the bound below separates the two
-        // outcomes with generous room for a slow machine on either side.
-        Assert.True(
-            stopwatch.Elapsed < TimeSpan.FromMilliseconds(450),
-            $"StartAsync took {stopwatch.Elapsed}; the retry pause was not skipped once the startup budget was exhausted");
+        // Assert the decision, not its duration: no pause was attempted at all. Measuring elapsed time
+        // instead would only ever be evidence about the machine the test ran on.
+        Assert.Empty(connection.AttemptedRetryDelays);
         Assert.False(connection.IsActive);
     }
 

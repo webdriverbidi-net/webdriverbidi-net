@@ -7,6 +7,10 @@ using WebDriverBiDi.TestUtilities;
 [Collection("EventSourceTests")]
 public class EventObserverTests
 {
+    // A safety bound, not a timing expectation: the waits it guards end when the EventSource counter event
+    // is written, so this only turns a hang into a failure.
+    private static readonly TimeSpan CounterEventSafetyBound = TimeSpan.FromSeconds(30);
+
     [Fact]
     public async Task TestObserverCanHandleObservableEvent()
     {
@@ -1406,12 +1410,7 @@ public class EventObserverTests
         await testEventSource.RaiseTestEventAsync("myValue");
 
         // Wait for the increment event to land.
-        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count == 0; i++)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(20), TestContext.Current.CancellationToken);
-        }
-
-        List<System.Diagnostics.Tracing.EventWrittenEventArgs> incrementEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> incrementEvents = listener.WaitForEventCount("AsyncHandlerTaskCount", 1, CounterEventSafetyBound);
         Assert.NotEmpty(incrementEvents);
         int? incrementPayload = incrementEvents[0].Payload is [int c] ? c : null;
         Assert.NotNull(incrementPayload);
@@ -1419,12 +1418,7 @@ public class EventObserverTests
         taskCompletionSource.TrySetResult();
 
         // Wait for the decrement event to land.
-        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count < 2; i++)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(20), TestContext.Current.CancellationToken);
-        }
-
-        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.WaitForEventCount("AsyncHandlerTaskCount", 2, CounterEventSafetyBound);
         Assert.True(allEvents.Count >= 2);
 
         // The decrement value must be strictly less than the increment value, regardless
@@ -1454,12 +1448,7 @@ public class EventObserverTests
 
         await testEventSource.RaiseTestEventAsync("myValue");
 
-        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count < 2; i++)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(20), TestContext.Current.CancellationToken);
-        }
-
-        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.WaitForEventCount("AsyncHandlerTaskCount", 2, CounterEventSafetyBound);
         Assert.True(allEvents.Count >= 2);
     }
 
@@ -1479,12 +1468,7 @@ public class EventObserverTests
 
         await testEventSource.RaiseTestEventAsync("myValue");
 
-        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count < 2; i++)
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(20), TestContext.Current.CancellationToken);
-        }
-
-        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.WaitForEventCount("AsyncHandlerTaskCount", 2, CounterEventSafetyBound);
         Assert.Equal(2, allEvents.Count);
         ReadOnlyCollection<object?>? firstPayload = allEvents[0].Payload;
         Assert.NotNull(firstPayload);
@@ -1504,9 +1488,10 @@ public class EventObserverTests
             _ => { },
             ObservableEventHandlerOptions.RunHandlerSynchronously);
 
+        // A synchronous handler runs inline, so it has already completed when RaiseTestEventAsync returns:
+        // any counter event it was going to write would have been written. There is nothing to wait for,
+        // and the delay this replaces could only ever have hidden a failure, never caused one to be caught.
         await testEventSource.RaiseTestEventAsync("myValue");
-
-        await Task.Delay(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
 
         Assert.Empty(listener.GetEventsForEventName("AsyncHandlerTaskCount"));
     }

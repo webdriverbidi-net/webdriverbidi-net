@@ -210,7 +210,7 @@ public class WebSocketConnection : Connection
                 }
 
                 TimeSpan retryDelay = remainingRetryTime < ConnectionRetryInterval ? remainingRetryTime : ConnectionRetryInterval;
-                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+                await this.DelayBeforeRetryAsync(retryDelay, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -418,6 +418,23 @@ public class WebSocketConnection : Connection
 
             this.client.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Pauses between connection attempts.
+    /// </summary>
+    /// <param name="delay">The length of the pause, already clamped to the remaining startup budget.</param>
+    /// <param name="cancellationToken">A cancellation token used to cancel the pause.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Exposed as a seam so that a test can observe whether a pause was attempted, and how long it would
+    /// have been, without waiting for one. Whether the pause is skipped when the startup budget is already
+    /// spent is a decision this class makes; asserting it through elapsed wall-clock time would make the
+    /// test's result depend on how loaded the machine is.
+    /// </remarks>
+    protected virtual Task DelayBeforeRetryAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        return Task.Delay(delay, cancellationToken);
     }
 
     /// <summary>

@@ -96,6 +96,8 @@ public class TestTransport : Transport
 
     public Action? AfterUnhandledErrorCaptured { get; set; }
 
+    private TaskCompletionSource unhandledErrorCapturedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     /// <summary>
     /// Gets or sets the number of remaining calls to <see cref="DeserializeMessage"/>
     /// that should throw an <see cref="InvalidOperationException"/> instead of
@@ -160,24 +162,41 @@ public class TestTransport : Transport
         this.AddEventMessageType(eventName, type);
     }
 
+    /// <summary>
+    /// Waits until the late-fault continuation has recorded an exception into the transport's
+    /// collected-error store for the given behavior. Waiting only for the handler body to complete is not
+    /// sufficient, because the capture happens on a continuation after the handler returns.
+    /// </summary>
+    /// <param name="timeout">A safety bound. The wait ends when the error is captured, not when this elapses.</param>
+    /// <param name="errorBehavior">The behavior whose collected errors are of interest.</param>
+    /// <returns><see langword="true"/> if an error was captured for that behavior.</returns>
+    /// <remarks>
+    /// Each capture completes the current signal and installs a fresh one, so a wait resumes on the next
+    /// capture rather than on a timer. The signal is snapshotted <em>before</em> the predicate is tested: a
+    /// capture landing between the two would otherwise complete a signal this loop has already replaced,
+    /// and the wait would hang until the safety bound even though the condition it wanted had been met.
+    /// </remarks>
     public async Task<bool> WaitForCollectedEventHandlerExceptionAsync(TimeSpan timeout, TransportErrorBehavior errorBehavior)
     {
-        // This test needs to wait until the late-fault continuation has actually
-        // recorded the exception into the transport's collected-error store.
-        // Waiting only for the handler body to complete is not sufficient.
         UnhandledErrorCollection unhandledErrors = this.UnhandledErrors;
-        DateTime endTime = DateTime.UtcNow + timeout;
-        while (DateTime.UtcNow < endTime)
+        using CancellationTokenSource safetyBound = new(timeout);
+        while (true)
         {
+            Task nextCapture = Volatile.Read(ref this.unhandledErrorCapturedSignal).Task;
             if (unhandledErrors.HasUnhandledErrors(errorBehavior))
             {
                 return true;
             }
 
-            await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
+            try
+            {
+                await nextCapture.WaitAsync(safetyBound.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return unhandledErrors.HasUnhandledErrors(errorBehavior);
+            }
         }
-
-        return unhandledErrors.HasUnhandledErrors(errorBehavior);
     }
 
     /// <summary>
@@ -331,6 +350,15 @@ public class TestTransport : Transport
     protected override void CaptureUnhandledError(UnhandledErrorKind errorType, Exception ex, string terminalReason)
     {
         base.CaptureUnhandledError(errorType, ex, terminalReason);
+
+        // Release anyone waiting on the previous signal and arm a fresh one, so a later capture can be
+        // awaited too. Exchanging before completing means a waiter that snapshotted the old signal is
+        // woken, while one arriving afterwards waits on the new one.
+        TaskCompletionSource capturedSignal = Interlocked.Exchange(
+            ref this.unhandledErrorCapturedSignal,
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        capturedSignal.TrySetResult();
+
         this.AfterUnhandledErrorCaptured?.Invoke();
     }
 }

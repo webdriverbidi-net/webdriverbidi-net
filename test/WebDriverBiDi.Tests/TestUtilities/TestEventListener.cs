@@ -62,6 +62,43 @@ public class TestEventListener : EventListener
         }
     }
 
+    /// <summary>
+    /// Blocks until at least <paramref name="count"/> events with the given name have been written, or
+    /// the safety bound elapses, and returns whatever has been collected.
+    /// </summary>
+    /// <param name="eventName">The event name to wait for.</param>
+    /// <param name="count">The number of events to wait for.</param>
+    /// <param name="timeout">A safety bound. The wait ends when the events arrive, not when this elapses.</param>
+    /// <returns>The matching events collected so far.</returns>
+    /// <remarks>
+    /// The single-argument overload above waits only for the first match, which is why tests that needed a
+    /// second event resorted to polling loops. Waiting on the monitor that <see cref="OnEventWritten"/>
+    /// pulses means the wait ends when the event is written rather than on the next poll tick, and the
+    /// elapsed time is measured with a <see cref="System.Diagnostics.Stopwatch"/> so a system clock
+    /// adjustment cannot shorten or extend it.
+    /// </remarks>
+    public List<EventWrittenEventArgs> WaitForEventCount(string eventName, int count, TimeSpan timeout)
+    {
+        System.Diagnostics.Stopwatch elapsed = System.Diagnostics.Stopwatch.StartNew();
+        lock (this.eventListObject)
+        {
+            List<EventWrittenEventArgs> foundEvents = this.events.Where(e => e.EventName == eventName).ToList();
+            while (foundEvents.Count < count)
+            {
+                TimeSpan remaining = timeout - elapsed.Elapsed;
+                if (remaining <= TimeSpan.Zero)
+                {
+                    break;
+                }
+
+                Monitor.Wait(this.eventListObject, remaining);
+                foundEvents = this.events.Where(e => e.EventName == eventName).ToList();
+            }
+
+            return foundEvents;
+        }
+    }
+
     public void ClearEvents()
     {
         lock (this.eventListObject)

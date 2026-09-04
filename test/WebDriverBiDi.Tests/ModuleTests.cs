@@ -190,8 +190,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect);
         Assert.True(errorPropagated);
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
         Assert.IsType<WebDriverBiDiException>(exception.InnerException);
@@ -282,8 +282,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect);
         Assert.True(errorPropagated);
 
         AggregateException exception = await Assert.ThrowsAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
@@ -332,8 +332,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
         Assert.True(errorPropagated);
         WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.Session.StatusAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Contains("Unhandled exception in user event handler", exception.Message);
@@ -424,8 +424,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
         Assert.True(errorPropagated);
 
         WebDriverBiDiException exception = await Assert.ThrowsAsync<WebDriverBiDiException>(async () => await driver.Session.StatusAsync(cancellationToken: TestContext.Current.CancellationToken));

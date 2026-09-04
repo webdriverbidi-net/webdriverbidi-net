@@ -6,6 +6,11 @@ using WebDriverBiDi.TestUtilities;
 
 public class PipeConnectionTests
 {
+    // A safety bound, not a timing expectation: the reads it guards complete as soon as the child echoes,
+    // so this only turns a hang into a failure. It is deliberately far larger than any plausible dotnet
+    // process start so that a slow or loaded CI machine cannot fail the test.
+    private static readonly TimeSpan DataEchoSafetyBound = TimeSpan.FromSeconds(30);
+
     [Fact]
     public void TestConstructorThrowsForNullProcessProvider()
     {
@@ -31,11 +36,12 @@ public class PipeConnectionTests
 
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
-        bool dataSendSuccess = testPipeServer.WaitForDataSent(TimeSpan.FromSeconds(1));
-        testPipeServer.Stop();
-        Assert.True(dataSendSuccess);
 
-        string output = testPipeServer.GetSentData();
+        using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCancellation.CancelAfter(DataEchoSafetyBound);
+        string output = await testPipeServer.ReadSentDataAsync("Hello".Length, readCancellation.Token);
+        testPipeServer.Stop();
+
         Assert.Equal("Hello", output);
     }
 
@@ -584,7 +590,11 @@ public class PipeConnectionTests
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
-        testPipeServer.WaitForDataSent(TimeSpan.FromSeconds(1));
+
+        using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCancellation.CancelAfter(DataEchoSafetyBound);
+        Assert.Equal("Hello", await testPipeServer.ReadSentDataAsync("Hello".Length, readCancellation.Token));
+
         await connection.StopAsync(TestContext.Current.CancellationToken);
         testPipeServer.Stop();
         await connection.DisposeAsync();
