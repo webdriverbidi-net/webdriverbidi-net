@@ -161,7 +161,26 @@ jobs:
         # and WebDriverBiDi.Logging. Symbol-package emission is configured
         # per-project in the csproj files (only library and logging produce
         # .snupkg; the analyzer has no managed assembly to symbolicate).
-        run: dotnet pack WebDriverBiDi.NET.sln --configuration Release -p:PackageVersion="${PACKAGE_VERSION}" --no-build --output .
+        #
+        # The version properties are repeated here even though the build step above already
+        # passed them and this pack runs --no-build. MSBuild global properties do not carry
+        # across invocations, and the analyzer package's shipped assemblies are not produced
+        # by that build step at all: the analyzer's pack target compiles the roslyn4.8 and
+        # roslyn5.9 variants in a child `dotnet build` during pack, forwarding whichever of
+        # these properties the pack invocation was given (see
+        # BuildAnalyzerRoslynVariantsBeforePack in WebDriverBiDi.Analyzers.csproj). Without
+        # them here that child build falls back to the SDK default, so the shipped analyzer
+        # assemblies report 1.0.0.0 while the package around them carries the release version.
+        # The other two packages are unaffected either way, since --no-build leaves the
+        # assemblies the build step already stamped.
+        run: >
+          dotnet pack WebDriverBiDi.NET.sln --configuration Release
+          -p:PackageVersion="${PACKAGE_VERSION}"
+          -p:AssemblyVersion="${ASSEMBLY_VERSION}"
+          -p:FileVersion="${FILE_VERSION}"
+          -p:InformationalVersion="${PACKAGE_VERSION}"
+          -p:ContinuousIntegrationBuild=true
+          --no-build --output .
 
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
