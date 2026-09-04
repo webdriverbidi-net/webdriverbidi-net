@@ -47,6 +47,7 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         ILogger resolvedLogger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.logger = new Lazy<ILogger>(() => resolvedLogger);
         this.minimumLevel = minimumLevel;
+        this.EnableConfiguredEvents();
     }
 
     /// <summary>
@@ -67,12 +68,19 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         // WebDriverBiDiLoggingExtensions.AddWebDriverBiDi), so no null guard is needed.
         this.logger = logger;
         this.minimumLevel = minimumLevel;
+        this.EnableConfiguredEvents();
     }
 
     /// <summary>
     /// Called when an EventSource is created. Enables the WebDriverBiDi EventSource.
     /// </summary>
     /// <param name="eventSource">The EventSource that was created.</param>
+    /// <remarks>
+    /// For a source created after this listener exists, the configured minimum level is already assigned and
+    /// this subscribes at it. For a source that already existed, the base <see cref="EventListener"/> constructor
+    /// calls this before the derived constructor body runs, so the level read here is still the default; the
+    /// constructor re-subscribes at the configured level once it is known.
+    /// </remarks>
     protected override void OnEventSourceCreated(EventSource eventSource)
     {
         if (eventSource.Name == "WebDriverBiDi")
@@ -195,5 +203,22 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         }
 
         return "WebDriverBiDi event";
+    }
+
+    /// <summary>
+    /// Subscribes to the WebDriverBiDi event source at the configured minimum level.
+    /// </summary>
+    /// <remarks>
+    /// Called from each constructor, after the minimum level is assigned, to correct the subscription for a
+    /// source that already existed when this listener was created: the base constructor enabled it through
+    /// <see cref="OnEventSourceCreated"/> while the level was still the default of
+    /// <see cref="EventLevel.LogAlways"/>, which leaves the source reporting itself enabled for every event.
+    /// Each such event is then formatted and dispatched only for the listener to discard it. Re-subscribing
+    /// lowers the source's own level so that work is never done. Enabling an already-enabled source updates
+    /// its level rather than adding a second subscription, so this is safe on either ordering.
+    /// </remarks>
+    private void EnableConfiguredEvents()
+    {
+        this.EnableEvents(WebDriverBiDiEventSource.RaiseEvent, this.minimumLevel);
     }
 }
