@@ -124,8 +124,20 @@ public class TestPipeConnection : PipeConnection
         return base.ReceiveDataAsync();
     }
 
+    /// <summary>
+    /// Gets the cancellation token the connection passed down to the send, so a test can assert which
+    /// token was actually used rather than only that the send completed.
+    /// </summary>
+    public CancellationToken LastSendCancellationToken { get; private set; }
+
+    /// <summary>
+    /// Gets the connection's own cancellation token, which is protected on the base class.
+    /// </summary>
+    public CancellationToken ObservedConnectionCancellationToken => this.ConnectionCancellationToken;
+
     protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
+        this.LastSendCancellationToken = cancellationToken;
         await this.dataSendStartingInvocable.InvokeNotifyObserversAsync(new WebDriverBiDiEventArgs());
 
         if (this.SendBarrier is not null)

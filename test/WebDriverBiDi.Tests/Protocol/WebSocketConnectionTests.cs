@@ -1725,6 +1725,11 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await connection.SendDataAsync(payload);
 #pragma warning restore xUnit1051
         Assert.Equal("""{"id":1,"method":"session.new","params":{}}""", connection.DataSent);
+
+        // The name of this test is a claim about which token the send used, so assert it: with no
+        // caller token there is nothing to link, and the connection's own token is passed straight
+        // down. Previously the test asserted only that the payload arrived.
+        Assert.Equal(connection.ObservedConnectionCancellationToken, connection.LastSendCancellationToken);
     }
 
     private Server CreateServer()
