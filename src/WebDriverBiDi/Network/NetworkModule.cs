@@ -89,7 +89,8 @@ public sealed class NetworkModule : Module
     }
 
     /// <summary>
-    /// Adds collector for network data like response bodies for specific phases of the traffic.
+    /// Adds a collector for network data such as response bodies, scoped by the data types to collect
+    /// and, optionally, by browsing context or user context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>

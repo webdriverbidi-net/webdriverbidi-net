@@ -59,7 +59,9 @@ jobs:
         run: dotnet restore
 
       - name: Build WebDriverBiDi library
-        run: dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release --no-restore
+        run: |
+          dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release --no-restore
+          dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release --no-restore
 
       - name: Build documentation sample code
         run: dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release --no-restore

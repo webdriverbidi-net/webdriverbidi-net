@@ -8,7 +8,8 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Value to be used as argument to a preload script.
+/// A channel, used as an argument to a script. Because a channel is a <see cref="LocalValue"/>, it can be
+/// passed to <c>script.callFunction</c> as well as to a preload script.
 /// </summary>
 public record ChannelValue : LocalValue
 {

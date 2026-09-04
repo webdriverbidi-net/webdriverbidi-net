@@ -6,7 +6,8 @@
 namespace WebDriverBiDi.Storage;
 
 /// <summary>
-/// The Storage module contains commands and events relating to browser storage such as cookies.
+/// The Storage module contains commands relating to browser storage such as cookies. The
+/// specification defines no events for this module.
 /// </summary>
 public sealed class StorageModule : Module
 {

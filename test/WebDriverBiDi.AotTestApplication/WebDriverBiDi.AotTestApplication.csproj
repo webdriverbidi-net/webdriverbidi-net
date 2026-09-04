@@ -7,6 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishAot>true</PublishAot>
+    <!-- The ILCompiler disables EventSource support by default, which silently suppresses every
+         diagnostic event the library raises. Opt back in so this application exercises the same
+         configuration the AOT documentation tells consumers to use. -->
+    <EventSourceSupport>true</EventSourceSupport>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <IsPackable>false</IsPackable>

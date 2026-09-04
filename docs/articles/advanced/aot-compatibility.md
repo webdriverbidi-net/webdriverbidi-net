@@ -75,9 +75,12 @@ Document that consumers should register it:
 
 ### Serialization fails at runtime in AOT
 
-If you see errors like `JsonSerializerOptions instance is locked` or types not being serialized correctly:
+If types are not being serialized correctly:
 
-- Ensure `RegisterTypeInfoResolverAsync` is called **before** `StartAsync`. The transport's serializer options are frozen on first use.
+- Ensure `RegisterTypeInfoResolverAsync` is called **before** `StartAsync`. Registering after the transport
+  has connected throws `InvalidOperationException` with the message "Cannot register a type info resolver
+  after the transport is connected". The transport rebuilds its serializer options around each new resolver,
+  so this is a lifecycle restriction rather than a frozen-options one.
 - Verify that every custom `CommandParameters`, `CommandResult` and event args type is listed in your context; the library's envelope types (`CommandResponseMessage<T>`, `EventMessage<T>`) must **not** be.
 
 ### Types work in development but fail in AOT
@@ -91,6 +94,22 @@ If your custom types use enums with a custom `JsonConverter` (such as `EnumValue
 [!code-csharp[AOT Enum Rooting](../../code/advanced/AotCompatibilitySamples.cs#AOTEnumRooting)]
 
 > This pattern requires `using System.Runtime.CompilerServices;` for `RuntimeHelpers`.
+
+### Diagnostic events and logging produce nothing under AOT
+
+The ILCompiler sets `EventSourceSupport` to `false` by default, so in a Native AOT application
+`EventSource.IsEnabled()` is permanently false. The library's `WebDriverBiDiEventSource` emits nothing, no
+`EventListener` is ever called, and the `WebDriverBiDi.Logging` bridge forwards no entries. Nothing throws
+and nothing is written to say why, so it looks simply like an absence of events. Opt back in:
+
+```xml
+<PropertyGroup>
+  <PublishAot>true</PublishAot>
+  <EventSourceSupport>true</EventSourceSupport>
+</PropertyGroup>
+```
+
+See [Observability](observability.md) for the events this restores.
 
 ## Best Practices
 

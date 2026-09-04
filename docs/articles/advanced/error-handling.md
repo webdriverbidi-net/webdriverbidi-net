@@ -78,6 +78,19 @@ a slow navigation that times out and then completes does not terminate the sessi
 Only a response whose command ID was never issued (or was canceled so long ago that it has been forgotten)
 is treated as an unknown message or unexpected error.
 
+Each remembered entry is a `CanceledCommandInfo`, carrying the command's `CommandId` and `CommandName`, the
+`ResponseType` the answer would have been deserialized to, the `TimeSinceCancellation`, and a `Reason` of type
+`CommandCancellationReason`:
+
+| Reason | Meaning |
+|---|---|
+| `Canceled` | The command's `CancellationToken` fired, or the command was canceled directly |
+| `TimedOut` | The command's timeout elapsed before a response arrived |
+| `ConnectionClosed` | The command was still pending when the connection closed |
+
+The reason appears in the `Debug` log message and in the `CanceledCommandResponseDiscarded` EventSource
+event's payload, which is how you tell a slow-but-successful command apart from one abandoned at shutdown.
+
 ```csharp
 public enum TransportErrorBehavior
 {

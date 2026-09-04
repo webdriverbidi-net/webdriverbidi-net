@@ -205,6 +205,10 @@ All command result classes follow this pattern:
 
 [!code-csharp[Command Results Pattern](../code/api/ApiIndexSamples.cs#CommandResultsPattern)]
 
+Commands whose protocol result carries no data return `EmptyResult`. It is a `CommandResult` like any
+other, so `AdditionalData` still exposes any extension properties the remote end supplied — from inside the
+result object when it is non-empty, and from the response envelope otherwise.
+
 #### Event Arguments
 
 All event argument classes inherit from `WebDriverBiDiEventArgs`:

@@ -34,8 +34,8 @@ using System.Text;
 /// <strong>Protocol details:</strong>
 /// <list type="bullet">
 /// <item><description>Messages are null-terminated JSON strings (each message ends with \0)</description></item>
-/// <item><description>On Unix systems: Browser reads from file descriptor 3, writes to file descriptor 4</description></item>
-/// <item><description>On Windows: Uses named pipe handles</description></item>
+/// <item><description>Two anonymous pipes are created on every platform and their handles are inherited by the browser process</description></item>
+/// <item><description>On Unix systems the browser reads from file descriptor 3 and writes to file descriptor 4; on Windows it receives the inherited handles</description></item>
 /// <item><description>Requires <see cref="IPipeServerProcessProvider"/> for process lifecycle management</description></item>
 /// </list>
 /// </para>

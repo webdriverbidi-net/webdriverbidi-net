@@ -46,10 +46,11 @@ public class ContinueResponseCommandParameters : CommandParameters<ContinueRespo
     /// <remarks>
     /// <para>
     /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
-    /// settable, because the protocol gives a present-but-empty array its own meaning. The remote end steps
-    /// for <c>network.continueResponse</c> state: "If command parameters contains "headers": Let headers be an empty
-    /// header list" and then append each entry, so sending <c>[]</c> replaces the header list with none, while
-    /// omitting the field keeps the original header list.
+    /// settable, because the protocol gives a present-but-empty array its own meaning. When
+    /// <c>network.continueResponse</c> is given a <c>headers</c> field, the remote end updates the response
+    /// from that field alone rather than merging it with the intercepted response's headers. Sending
+    /// <c>[]</c> therefore leaves the response with no headers, while omitting the field leaves the
+    /// intercepted response's headers untouched.
     /// </para>
     /// <para>
     /// When <see langword="null"/>, the property is not included in the command; when an empty list, an

@@ -224,11 +224,11 @@ A classic new-session request to the driver with the `webSocketUrl: true` capabi
 chrome --remote-debugging-pipe
 ```
 
-The `--remote-debugging-pipe` flag instructs the browser to communicate via stdin/stdout/file descriptors instead of opening a TCP port.
+The `--remote-debugging-pipe` flag instructs the browser to communicate over a pair of inherited anonymous pipes instead of opening a TCP port. The browser reads from file descriptor 3 and writes to file descriptor 4; standard input and output are left alone.
 
 ### IPipeServerProcessProvider Interface
 
-The `IPipeServerProcessProvider` interface enables dependency injection for pipe connections. See the interface in the WebDriverBiDi.Protocol namespace—it defines `Process? PipeServerProcess { get; }`. This allows `PipeConnection` to access the browser process and its stdin/stdout handles. You must implement this interface to manage the browser process lifecycle and provide it to the connection.
+The `IPipeServerProcessProvider` interface enables dependency injection for pipe connections. See the interface in the WebDriverBiDi.Protocol namespace—it defines `Process? PipeServerProcess { get; }`. `PipeConnection` creates the two anonymous pipes itself and needs the provider to start the browser process with their handles inherited, and to report whether that process is still running. You must implement this interface to manage the browser process lifecycle and provide it to the connection.
 
 ### ConnectionKind Enum
 

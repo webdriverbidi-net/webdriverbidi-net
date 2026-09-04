@@ -79,7 +79,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     public IList<string>? Intercepts => this.SerializableIntercepts?.AsReadOnly();
 
     /// <summary>
-    /// Gets the timestamp of the navigation in UTC.
+    /// Gets the timestamp of the network event in UTC.
     /// </summary>
     [JsonIgnore]
     public DateTime Timestamp { get; internal set; } = DateTimeUtilities.UnixEpoch;
