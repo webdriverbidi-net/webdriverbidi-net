@@ -11,7 +11,7 @@ namespace WebDriverBiDi.BrowsingContext;
 public readonly struct PageRange
 {
     private readonly string? stringValue;
-    private readonly long intValue;
+    private readonly ulong numericValue;
     private readonly bool isString;
 
     private PageRange(string value)
@@ -20,9 +20,9 @@ public readonly struct PageRange
         this.isString = true;
     }
 
-    private PageRange(long value)
+    private PageRange(ulong value)
     {
-        this.intValue = value;
+        this.numericValue = value;
         this.isString = false;
     }
 
@@ -37,9 +37,9 @@ public readonly struct PageRange
     internal string StringValue => this.stringValue!;
 
     /// <summary>
-    /// Gets the value as an integer.
+    /// Gets the value as a numeric integer.
     /// </summary>
-    internal long IntValue => this.intValue;
+    internal ulong NumericValue => this.numericValue;
 
     /// <summary>
     /// Operator converting a string to a PageRange.
@@ -48,14 +48,8 @@ public readonly struct PageRange
     public static implicit operator PageRange(string value) => new(value);
 
     /// <summary>
-    /// Operator converting a long to a PageRange.
+    /// Operator converting an unsigned long to a PageRange.
     /// </summary>
-    /// <param name="value">The long value of the page range.</param>
-    public static implicit operator PageRange(long value) => new(value);
-
-    /// <summary>
-    /// Operator converting an int to a PageRange.
-    /// </summary>
-    /// <param name="value">The int value of the page range.</param>
-    public static implicit operator PageRange(int value) => new((long)value);
+    /// <param name="value">The unsigned long value of the page range.</param>
+    public static implicit operator PageRange(ulong value) => new(value);
 }
