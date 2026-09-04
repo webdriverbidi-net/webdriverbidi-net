@@ -52,6 +52,20 @@ format_delta_cell() {
     return
   fi
 
+  # An absolute delta against a baseline of zero: a percentage is undefined, so report the bytes.
+  # Any allocation at all is a regression against a zero-allocation baseline.
+  case "$delta" in
+    abs:*)
+      local absolute="${delta#abs:}"
+      if [ "$(awk -v a="$absolute" 'BEGIN { print (a > 0) ? 1 : 0 }')" = "1" ]; then
+        echo "+${absolute} B 🔴"
+      else
+        echo "0 B ✅"
+      fi
+      return
+      ;;
+  esac
+
   # Compare with a small tolerance so a delta that renders as "+25.0%" also
   # crosses the 25% threshold, avoiding cosmetic boundary flips from
   # float-serialization noise (e.g. 0.24999999 showing as "+25.0% ✅").
@@ -116,7 +130,16 @@ render_class_table() {
         ($cur.Statistics.Mean | tostring),
         (if $base then (($cur.Statistics.Mean - $base.Statistics.Mean) / $base.Statistics.Mean | tostring) else "new" end),
         ($cur.Memory.BytesAllocatedPerOperation | tostring),
-        (if $base and ($base.Memory.BytesAllocatedPerOperation // 0) > 0 then (($cur.Memory.BytesAllocatedPerOperation - $base.Memory.BytesAllocatedPerOperation) / $base.Memory.BytesAllocatedPerOperation | tostring) else "new" end)
+        (if $base | not then "new"
+         elif ($base.Memory.BytesAllocatedPerOperation // 0) > 0
+         then (($cur.Memory.BytesAllocatedPerOperation - $base.Memory.BytesAllocatedPerOperation) / $base.Memory.BytesAllocatedPerOperation | tostring)
+         else
+           # A baseline that allocated nothing has no ratio to compute, but it is still a baseline:
+           # going from 0 to any allocation is a regression and must be reported as one. Emit the
+           # absolute figure for the shell to render, rather than the "new" sentinel, which would
+           # claim the benchmark is unknown to the baseline.
+           ("abs:" + ($cur.Memory.BytesAllocatedPerOperation | tostring))
+         end)
       ]
     | @tsv
   ' "$current_file" | while IFS=$'\t' read -r method mean mean_delta allocated alloc_delta; do
@@ -124,6 +147,24 @@ render_class_table() {
     alloc_cell=$(format_delta_cell "$alloc_delta" "$alloc_warn_threshold" "$alloc_bad_threshold")
     mean_rounded=$(awk -v m="$mean" 'BEGIN { printf "%.0f", m }')
     echo "| $method | $mean_rounded | $mean_cell | $allocated | $alloc_cell |"
+  done
+
+  # Benchmarks the baseline knows about that this run did not produce. Iterating only over the
+  # current results made a renamed or deleted benchmark vanish from the comparison entirely, so a
+  # rename read as "everything is fine" instead of "this measurement is no longer being taken".
+  jq -r --slurpfile current "$current_file" '
+    (($current[0].Benchmarks // []) | map(.FullName)) as $current_names
+    | .Benchmarks[]
+    | select([.FullName] | inside($current_names) | not)
+    | [
+        (.DisplayInfo // .Method // .MethodTitle),
+        (.Statistics.Mean | tostring),
+        (.Memory.BytesAllocatedPerOperation | tostring)
+      ]
+    | @tsv
+  ' "$baseline_arg" | while IFS=$'\t' read -r method mean allocated; do
+    mean_rounded=$(awk -v m="$mean" 'BEGIN { printf "%.0f", m }')
+    echo "| $method | $mean_rounded | (removed) | $allocated | (removed) |"
   done
 
   if [ "$baseline_arg" != "$baseline_file" ]; then

@@ -92,6 +92,18 @@ printf "Branches: %s / %s  (%s%%)  — threshold %s%%\n"    "$BRH" "$BRF" "$BRAN
 printf "Methods:  %s / %s  (%s%%)  — threshold %s%%\n"    "$FNH" "$FNF" "$METHOD_PCT" "$MIN_METHOD"
 echo ""
 
+# A report with no instrumented lines is not fully covered; it is a broken input. An include filter
+# that matched nothing, a project that failed to produce a report, or a truncated file all land here,
+# and every one of them used to print PASS and exit 0 — so the CI gate could be satisfied by
+# measuring nothing at all. This is an input error, not a coverage failure, and gets its own exit
+# code so a caller can tell the two apart.
+if [ "$LF" -eq 0 ]; then
+  echo "❌ ERROR: the coverage report contains no instrumented lines."
+  echo "   An include/exclude filter that matched nothing, or an empty or truncated report, produces"
+  echo "   this. Nothing was measured, so no threshold can be met."
+  exit 2
+fi
+
 # Compare exact coverage (hit/found) to a threshold. found==0 is ignored (nothing
 # to gate). The comparison uses the unrounded ratio, not the 2-decimal display
 # percentage, so a value like 94.995% does not pass a 95% threshold. Returns 0 if

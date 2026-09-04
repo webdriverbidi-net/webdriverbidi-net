@@ -3,7 +3,7 @@
 # method coverage drops below the configured thresholds.
 #
 # Usage:
-#   check-lcov-thresholds.ps1 [-MinLine N] [-MinBranch N] [-MinMethod N] <lcov-file>...
+#   check-lcov-thresholds.ps1 [-MinLine N] [-MinBranch N] [-MinMethod N] [-Help] <lcov-file>...
 #
 # Defaults:
 #   -MinLine   100   (line coverage percentage; integer or decimal)
@@ -20,11 +20,47 @@ param(
     [double] $MinLine   = 100,
     [double] $MinBranch = 100,
     [double] $MinMethod = 100,
+    [switch] $Help,
     [Parameter(ValueFromRemainingArguments)]
     [string[]] $Files = @()
 )
 
 $ErrorActionPreference = 'Stop'
+
+# -Help prints the header block above, matching the -h/--help behaviour of
+# check-lcov-thresholds.sh.
+if ($Help) {
+    Get-Content -LiteralPath $PSCommandPath |
+        Select-Object -Skip 1 -First 15 |
+        ForEach-Object { $_ -replace '^# ?', '' } |
+        Write-Host
+    exit 0
+}
+
+# Anything that still looks like a flag was not bound by param(), so it is an unknown flag. The
+# shell script exits 2 for this rather than treating it as a file name, and silently reading it as
+# a path would turn a typo into a "file not found" or, worse, into a silent no-op.
+$unknownFlags = @($Files | Where-Object { $_ -like '-*' })
+if ($unknownFlags.Count -gt 0) {
+    Write-Host "ERROR: Unknown flag: $($unknownFlags[0])" -ForegroundColor Red
+    exit 2
+}
+
+# CI passes a glob (lcov-library.*.info) which the shell expands before the script sees it.
+# PowerShell does not expand arguments, so expand here; a pattern that matches nothing is left
+# alone so the not-found check below reports it by name.
+$expanded = @()
+foreach ($pattern in $Files) {
+    $matched = @(Get-ChildItem -Path $pattern -File -ErrorAction SilentlyContinue)
+    if ($matched.Count -gt 0) {
+        $expanded += $matched.FullName
+    }
+    else {
+        $expanded += $pattern
+    }
+}
+
+$Files = $expanded
 
 if ($Files.Count -eq 0) {
     Write-Host 'ERROR: No LCOV input files supplied.' -ForegroundColor Red
@@ -82,6 +118,18 @@ Write-Host ("Lines:    {0} / {1}  ({2})  — threshold {3}%" -f $lh,  $lf,  (For
 Write-Host ("Branches: {0} / {1}  ({2})  — threshold {3}%" -f $brh, $brf, (Format-Pct $branchPct), $MinBranch)
 Write-Host ("Methods:  {0} / {1}  ({2})  — threshold {3}%" -f $fnh, $fnf, (Format-Pct $methodPct), $MinMethod)
 Write-Host ''
+
+# A report with no instrumented lines is not fully covered; it is a broken input. An include filter
+# that matched nothing, a project that failed to produce a report, or a truncated file all land here,
+# and every one of them used to print PASS and exit 0 — so the gate could be satisfied by measuring
+# nothing at all. This is an input error, not a coverage failure, and gets its own exit code so a
+# caller can tell the two apart.
+if ($lf -eq 0) {
+    Write-Host 'x  ERROR: the coverage report contains no instrumented lines.'
+    Write-Host '   An include/exclude filter that matched nothing, or an empty or truncated report,'
+    Write-Host '   produces this. Nothing was measured, so no threshold can be met.'
+    exit 2
+}
 
 # Compares exact coverage (Hit/Found) to a threshold using the unrounded ratio,
 # not the 2-decimal display percentage, so a value like 94.995% does not pass a

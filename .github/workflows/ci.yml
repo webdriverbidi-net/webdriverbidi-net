@@ -136,7 +136,7 @@ jobs:
             echo ""
             echo "Commit: \`${{ github.event.pull_request.head.sha }}\`"
             echo ""
-            echo "**Legend:** ✅ no meaningful regression · ⚠️ mean +25% or allocated +10% · 🔴 mean +50% or allocated +25% · (new) no baseline entry"
+            echo "**Legend:** ✅ no meaningful regression · ⚠️ mean +25% or allocated +10% · 🔴 mean +50% or allocated +25% · (new) no baseline entry · (removed) in the baseline but not produced by this run · allocation deltas against a zero-allocation baseline are shown in bytes"
             echo ""
             cat compare-output.md
             echo ""
