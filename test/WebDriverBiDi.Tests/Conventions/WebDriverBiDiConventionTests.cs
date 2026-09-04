@@ -1,8 +1,12 @@
-namespace WebDriverBiDi;
+namespace WebDriverBiDi.Conventions;
 
 using System.Collections;
 using System.Reflection;
 using System.Text.Json.Serialization;
+
+// In this namespace the file-level using of System.Reflection would otherwise make the bare name
+// 'Module' bind to System.Reflection.Module rather than to the library's protocol module base class.
+using Module = WebDriverBiDi.Module;
 
 /// <summary>
 /// Enforces conventions that hold across the whole library and that no compiler check can express.

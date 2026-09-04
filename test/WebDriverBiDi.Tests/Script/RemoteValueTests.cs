@@ -424,7 +424,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.Contains("JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+        Assert.Contains("must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
     }
 
     [Fact]
@@ -493,7 +493,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.Contains("JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+        Assert.Contains("must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
     }
 
     [Fact]
@@ -555,7 +555,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.Contains("JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+        Assert.Contains("must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
     }
 
     [Fact]
@@ -617,7 +617,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.Contains("JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
+        Assert.Contains("must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValue>(json)).Message);
     }
 
     [Fact]

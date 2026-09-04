@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing event data for events raised when a Bluetooth device prompt is requested.
@@ -47,5 +48,6 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("devices")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<RequestDeviceInfo>))]
     internal List<RequestDeviceInfo> SerializableDevices { get; set; } = [];
 }

@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object representing a stack trace from a script.
@@ -31,5 +32,6 @@ public record StackTrace
     [JsonPropertyName("callFrames")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<StackFrame>))]
     internal List<StackFrame> SerializableCallFrames { get; set; } = [];
 }
