@@ -228,7 +228,7 @@ public class ScriptModuleTests
         Assert.Equal(RealmType.Window, result.Realms[0].Type);
         Assert.IsType<WindowRealmInfo>(result.Realms[0]);
 
-        WindowRealmInfo info = result.Realms[0].As<WindowRealmInfo>();
+        WindowRealmInfo info = result.Realms[0].ConvertTo<WindowRealmInfo>();
         Assert.NotNull(info);
 
         Assert.Equal("myRealmId", info.RealmId);
@@ -304,7 +304,7 @@ public class ScriptModuleTests
             Assert.Equal("myRealm", e.RealmId);
             Assert.Equal("myOrigin", e.Origin);
             Assert.Equal(RealmType.Window, e.Type);
-            Assert.Equal("myContext", e.As<WindowRealmInfo>().BrowsingContextId);
+            Assert.Equal("myContext", e.ConvertTo<WindowRealmInfo>().BrowsingContextId);
 
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;

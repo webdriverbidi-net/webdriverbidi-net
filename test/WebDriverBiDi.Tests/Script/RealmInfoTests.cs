@@ -113,7 +113,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.NotNull(info);
         Assert.IsType<ServiceWorkerRealmInfo>(info);
-        Assert.NotNull(info.As<ServiceWorkerRealmInfo>());
+        Assert.NotNull(info.ConvertTo<ServiceWorkerRealmInfo>());
     }
 
     [Fact]
@@ -130,6 +130,44 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.NotNull(info);
         Assert.IsType<ServiceWorkerRealmInfo>(info);
-        Assert.Contains("cannot be cast", Assert.ThrowsAny<WebDriverBiDiException>(() => info.As<SharedWorkerRealmInfo>()).Message);
+        Assert.Contains("cannot be cast", Assert.ThrowsAny<WebDriverBiDiException>(() => info.ConvertTo<SharedWorkerRealmInfo>()).Message);
+    }
+
+    [Fact]
+    public void TestTryCastToSubclassTypeReturnsTrue()
+    {
+        string json = """
+                      {
+                        "realm": "myRealm",
+                        "origin": "myOrigin",
+                        "type": "service-worker",
+                        "owners": [ "ownerRealm" ]
+                      }
+                      """;
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.NotNull(info);
+        Assert.IsType<ServiceWorkerRealmInfo>(info);
+        bool result = info.TryConvertTo(out ServiceWorkerRealmInfo? outRealmInfo);
+        Assert.True(result);
+        Assert.NotNull(outRealmInfo);
+    }
+
+    [Fact]
+    public void TestTryCastToImproperSubclassTypeReturnsFalse()
+    {
+        string json = """
+                      {
+                        "realm": "myRealm",
+                        "origin": "myOrigin",
+                        "type": "service-worker",
+                        "owners": [ "ownerRealm" ]
+                      }
+                      """;
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.NotNull(info);
+        Assert.IsType<ServiceWorkerRealmInfo>(info);
+        bool result = info.TryConvertTo(out SharedWorkerRealmInfo? outRealmInfo);
+        Assert.False(result);
+        Assert.Null(outRealmInfo);
     }
 }

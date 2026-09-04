@@ -67,7 +67,7 @@ public class RealmCreatedEventArgsTests
                       """;
         RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
-        WindowRealmInfo castInfo = eventArgs.As<WindowRealmInfo>();
+        WindowRealmInfo castInfo = eventArgs.ConvertTo<WindowRealmInfo>();
 
         Assert.Equal("myRealm", castInfo.RealmId);
         Assert.Equal("myOrigin", castInfo.Origin);
