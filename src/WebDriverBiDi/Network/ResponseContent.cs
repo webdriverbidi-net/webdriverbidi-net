@@ -31,5 +31,5 @@ public record ResponseContent
     /// <summary>
     /// Gets an empty <see cref="ResponseContent"/> object.
     /// </summary>
-    public static ResponseContent Empty => new();
+    internal static ResponseContent Empty => new();
 }
