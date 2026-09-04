@@ -77,7 +77,7 @@ public class AnalyzerConventionTests
 
     private static IEnumerable<string> EnumerateAnalyzerSources()
     {
-        string repositoryRoot = FindRepositoryRoot();
+        string repositoryRoot = AnalyzerTestHelpers.FindRepositoryRoot();
         foreach (string projectDirectory in new[] { "WebDriverBiDi.Analyzers", "WebDriverBiDi.Analyzers.CodeFixProviders" })
         {
             string directory = Path.Combine(repositoryRoot, "src", projectDirectory);
@@ -93,19 +93,5 @@ public class AnalyzerConventionTests
                 yield return file;
             }
         }
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        // Walk up from the test assembly until the directory holding the solution is found, rather
-        // than counting directory levels, so the search survives a change in output layout.
-        string? current = Path.GetDirectoryName(typeof(AnalyzerConventionTests).Assembly.Location);
-        while (current != null && !File.Exists(Path.Combine(current, "WebDriverBiDi.NET.sln")))
-        {
-            current = Path.GetDirectoryName(current);
-        }
-
-        Assert.NotNull(current);
-        return current!;
     }
 }
