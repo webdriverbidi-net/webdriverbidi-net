@@ -2,6 +2,7 @@ namespace WebDriverBiDi;
 
 using System.Diagnostics.Tracing;
 using WebDriverBiDi.Protocol;
+using WebDriverBiDi.TestUtilities;
 
 /// <summary>
 /// Tests for WebDriverBiDiEventSource to ensure events are emitted correctly
@@ -466,41 +467,18 @@ public class WebDriverBiDiEventSourceTests
 
         Assert.Equal("CommandTimeout", relevantEvents[0].EventName);
         Assert.Equal("ConnectionError", relevantEvents[1].EventName);
+
+        // The assertions above are all about the events that were captured, so on their own they hold
+        // whether or not the level was respected: filtering to the two expected events and then
+        // counting two cannot detect the other two also arriving. These are the assertions the test's
+        // name promises. Each is scoped by the unique payload this test emits, so a concurrently
+        // running test raising the same events cannot make them pass or fail.
+        Assert.DoesNotContain(
+            listener.Events,
+            e => e.EventName == "ConnectionOpening" && e.Payload?[0]?.ToString() == "test-respect-level");
+        Assert.DoesNotContain(
+            listener.Events,
+            e => e.EventName == "CommandSending" && e.Payload?[1]?.ToString() == "test.respect.level");
     }
 
-    /// <summary>
-    /// Test EventListener that captures events for verification.
-    /// </summary>
-    private class TestEventListener : EventListener
-    {
-        private readonly object eventLockObject = new();
-        private readonly EventLevel minimumLevel;
-
-        public TestEventListener(EventLevel minimumLevel = EventLevel.Verbose)
-        {
-            this.minimumLevel = minimumLevel;
-            this.Events = [];
-        }
-
-        public List<EventWrittenEventArgs> Events { get; }
-
-        protected override void OnEventSourceCreated(EventSource eventSource)
-        {
-            if (eventSource.Name == "WebDriverBiDi")
-            {
-                this.EnableEvents(eventSource, this.minimumLevel);
-            }
-        }
-
-        protected override void OnEventWritten(EventWrittenEventArgs eventData)
-        {
-            if (eventData.EventSource.Name == "WebDriverBiDi")
-            {
-                lock (this.eventLockObject)
-                {
-                    this.Events.Add(eventData);
-                }
-            }
-        }
-    }
 }

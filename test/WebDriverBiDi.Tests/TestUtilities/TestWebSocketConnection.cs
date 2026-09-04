@@ -27,6 +27,17 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public string? DataSent { get; set; }
 
+    /// <summary>
+    /// Gets the cancellation token the connection passed down to the send, so a test can assert which
+    /// token was actually used rather than only that the send completed.
+    /// </summary>
+    public CancellationToken LastSendCancellationToken { get; private set; }
+
+    /// <summary>
+    /// Gets the connection's own cancellation token, which is protected on the base class.
+    /// </summary>
+    public CancellationToken ObservedConnectionCancellationToken => this.ConnectionCancellationToken;
+
     public TaskCompletionSource? SendBarrier { get; set; }
 
     public TimeSpan? StopDelay { get; set; }
@@ -178,6 +189,7 @@ public class TestWebSocketConnection : WebSocketConnection
 
     protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
+        this.LastSendCancellationToken = cancellationToken;
         if (this.SendWebSocketDataOverride is not null)
         {
             await this.SendWebSocketDataOverride(data).ConfigureAwait(false);

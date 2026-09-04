@@ -9,12 +9,45 @@ public class TestEventListener : EventListener
 {
     private readonly object eventListObject = new();
     private readonly List<EventWrittenEventArgs> events = new();
+    private readonly EventLevel minimumLevel;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestEventListener"/> class.
+    /// </summary>
+    /// <param name="minimumLevel">The level to subscribe at. Defaults to capturing everything.</param>
+    public TestEventListener(EventLevel minimumLevel = EventLevel.Verbose)
+    {
+        this.minimumLevel = minimumLevel;
+        this.EnableEvents(WebDriverBiDiEventSource.RaiseEvent, minimumLevel);
+    }
+
+    /// <summary>
+    /// Gets a snapshot of the events captured so far, in the order they were written.
+    /// </summary>
+    /// <remarks>
+    /// A copy rather than the live list: events arrive on the thread that raised them, so handing out
+    /// the backing list would let a caller enumerate it while it is being appended to.
+    /// </remarks>
+    public IReadOnlyList<EventWrittenEventArgs> Events
+    {
+        get
+        {
+            lock (this.eventListObject)
+            {
+                return this.events.ToList();
+            }
+        }
+    }
 
     protected override void OnEventSourceCreated(EventSource eventSource)
     {
         if (eventSource.Name == "WebDriverBiDi")
         {
-            this.EnableEvents(eventSource, EventLevel.Verbose);
+            // OnEventSourceCreated runs from the base constructor, before this instance's field is
+            // assigned, so a source that already exists is enabled at the default EventLevel.LogAlways.
+            // Re-subscribing at the configured level corrects that; enabling an already-enabled source
+            // updates its level rather than adding a second subscription.
+            this.EnableEvents(eventSource, this.minimumLevel);
         }
     }
 

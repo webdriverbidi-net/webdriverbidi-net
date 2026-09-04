@@ -114,10 +114,9 @@ public class WebDriverBiDiLoggingExtensionsTests
             WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
         }
 
-        TestLogger.LogEntry entry = fakeLogger.Entries
-            .Where(e => e.EventId.Name == "CommandTimeout")
-            .Last();
-        Assert.Equal("CommandTimeout", entry.EventId.Name);
+        // The Warning event was forwarded and the Verbose one was not. 
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "CommandTimeout");
+        Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
     }
 
     /// <summary>

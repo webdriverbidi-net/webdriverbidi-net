@@ -652,6 +652,11 @@ public class PipeConnectionTests
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello world"));
 #pragma warning restore xUnit1051
         testPipeServer.Stop();
+
+        // The name of this test is a claim about which token the send used, so assert it: with no
+        // caller token there is nothing to link, and the connection's own token is passed straight
+        // down. Previously the test asserted nothing at all and passed whatever token was used.
+        Assert.Equal(connection.ObservedConnectionCancellationToken, connection.LastSendCancellationToken);
     }
 
     [Fact]
