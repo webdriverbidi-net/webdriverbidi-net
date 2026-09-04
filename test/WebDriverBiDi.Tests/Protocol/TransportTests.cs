@@ -4040,6 +4040,137 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestDisposeWaitsForMessageProcessingAfterConnectionLoss()
+    {
+        // Connection loss completes the incoming message queue but deliberately does not await the reader,
+        // because the handler runs on the connection's receive loop. Disposal must do that waiting, or it
+        // tears down resources while observers are still being notified. The gate is never opened, so the
+        // wait can only end by timing out - which is exactly what proves disposal waited at all.
+        List<string> logMessages = [];
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromMilliseconds(500),
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logMessages)
+            {
+                logMessages.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        // The message is now held inside the processing loop, so the reader cannot complete.
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        await transport.DisposeAsync();
+
+        lock (logMessages)
+        {
+            Assert.Contains("Timed out waiting for message processing to complete during disposal", logMessages);
+        }
+
+        gate.TrySetResult();
+    }
+
+    [Fact]
+    public async Task TestDisposeReturnsOnceMessageProcessingCompletesAfterConnectionLoss()
+    {
+        // The companion to the timeout case: when the in-flight message finishes, disposal stops waiting and
+        // completes without logging the timeout warning.
+        List<string> logMessages = [];
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(30),
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logMessages)
+            {
+                logMessages.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // Release the held message, then dispose: the reader drains and disposal returns without timing out.
+        gate.TrySetResult();
+        await transport.DisposeAsync();
+
+        lock (logMessages)
+        {
+            Assert.DoesNotContain("Timed out waiting for message processing to complete during disposal", logMessages);
+        }
+    }
+
+    [Fact]
+    public async Task TestDisposeWaitsIndefinitelyForMessageProcessingWhenShutdownTimeoutIsInfinite()
+    {
+        // An unbounded ShutdownTimeout cannot be consumed by an earlier wait, so the remaining-budget
+        // calculation must hand the message-processing wait an infinite timeout rather than arithmetic on
+        // Timeout.InfiniteTimeSpan, which is negative and would make the wait give up at once.
+        List<string> logMessages = [];
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ShutdownTimeout = Timeout.InfiniteTimeSpan,
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logMessages)
+            {
+                logMessages.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // Disposal must still be waiting on the held message; releasing it is what lets disposal finish.
+        ValueTask disposeTask = transport.DisposeAsync();
+        gate.TrySetResult();
+        await disposeTask.AsTask().WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+
+        lock (logMessages)
+        {
+            Assert.DoesNotContain("Timed out waiting for message processing to complete during disposal", logMessages);
+        }
+    }
+
+    [Fact]
     public async Task TestSendCommandWrapsSerializationFailures()
     {
         TestWebSocketConnection connection = new();

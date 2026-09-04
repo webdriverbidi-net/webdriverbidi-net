@@ -83,6 +83,17 @@ public class TestTransport : Transport
     /// Transport unhandled error mechanism.
     /// Used for precise test synchronization.
     /// </summary>
+    /// <summary>
+    /// Gets or sets a gate awaited by the message-processing loop before each message is processed. Use it to
+    /// hold a message in flight deterministically instead of relying on a timed delay.
+    /// </summary>
+    public Func<Task>? MessageProcessingGate { get; set; }
+
+    /// <summary>
+    /// Gets or sets a callback invoked when the message-processing loop reaches the gate, before awaiting it.
+    /// </summary>
+    public Action? MessageProcessingStarted { get; set; }
+
     public Action? AfterUnhandledErrorCaptured { get; set; }
 
     /// <summary>
@@ -224,6 +235,14 @@ public class TestTransport : Transport
 
     protected override async Task ProcessMessageAsync(IncomingMessage packet)
     {
+        if (this.MessageProcessingGate is not null)
+        {
+            // Hold the message-processing loop deterministically, without a timed delay, so a test can
+            // observe the transport's behavior while a message is still in flight.
+            this.MessageProcessingStarted?.Invoke();
+            await this.MessageProcessingGate().ConfigureAwait(false);
+        }
+
         if (this.messageProcessingDelay > TimeSpan.Zero)
         {
             // Delay processing so a caller can leave a message pending on the reader loop while it

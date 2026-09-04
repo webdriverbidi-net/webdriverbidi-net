@@ -73,4 +73,24 @@ internal static class TimeoutUtilities
         string infiniteSuffix = allowInfinite ? ", or Timeout.InfiniteTimeSpan" : string.Empty;
         return $"{description} must be a non-negative TimeSpan value no greater than {MaxTimeout} ({(long)MaxTimeout.TotalMilliseconds} milliseconds){infiniteSuffix}";
     }
+
+    /// <summary>
+    /// Gets the portion of a timeout budget that remains after the time already spent against it.
+    /// </summary>
+    /// <param name="timeout">The total budget, or <see cref="Timeout.InfiniteTimeSpan"/> for an unbounded one.</param>
+    /// <param name="elapsed">The time already spent against the budget.</param>
+    /// <returns>
+    /// The remaining budget, never negative; <see cref="Timeout.InfiniteTimeSpan"/> when the budget is unbounded,
+    /// since an unbounded budget cannot be consumed.
+    /// </returns>
+    public static TimeSpan GetRemainingTimeout(TimeSpan timeout, TimeSpan elapsed)
+    {
+        if (timeout == Timeout.InfiniteTimeSpan)
+        {
+            return Timeout.InfiniteTimeSpan;
+        }
+
+        // An exhausted budget yields zero, so prevent a negative TimeSpan from being returned.
+        return TimeSpan.FromTicks(Math.Max(0L, (timeout - elapsed).Ticks));
+    }
 }
