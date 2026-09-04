@@ -29,11 +29,11 @@ internal class FileDownloader
     /// <returns>A task representing the asynchronous operation.</returns>
     internal async Task DownloadFileAsync(HttpClient client, string url, string destPath)
     {
-        using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         long? totalBytes = response.Content.Headers.ContentLength;
-        using Stream contentStream = await response.Content.ReadAsStreamAsync();
+        using Stream contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
         using FileStream fileStream = new(destPath, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize, true);
 
         byte[] buffer = new byte[BufferSize];
@@ -41,9 +41,9 @@ internal class FileDownloader
         int bytesRead;
         int lastPercent = -1;
 
-        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
         {
-            await fileStream.WriteAsync(buffer, 0, bytesRead);
+            await fileStream.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
             totalRead += bytesRead;
 
             if (totalBytes.HasValue && totalBytes.Value > 0)

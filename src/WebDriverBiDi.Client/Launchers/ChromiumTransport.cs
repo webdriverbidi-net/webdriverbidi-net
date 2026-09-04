@@ -66,8 +66,8 @@ public class ChromiumTransport : Transport
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public override async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
     {
-        await base.ConnectAsync(websocketUri);
-        await this.InitializeBiDiAsync();
+        await base.ConnectAsync(websocketUri).ConfigureAwait(false);
+        await this.InitializeBiDiAsync().ConfigureAwait(false);
     }
 
     /// <summary>

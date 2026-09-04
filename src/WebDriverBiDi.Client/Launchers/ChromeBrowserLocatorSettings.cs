@@ -75,8 +75,8 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         using HttpClient httpClient = new();
         httpClient.Timeout = TimeSpan.FromSeconds(30);
         string chromeBinaryDownloadInfoUrl = this.GetBinaryDownloadInfoUrl();
-        HttpResponseMessage response = await httpClient.GetAsync(chromeBinaryDownloadInfoUrl);
-        string json = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await httpClient.GetAsync(chromeBinaryDownloadInfoUrl).ConfigureAwait(false);
+        string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
         BinaryVersionInfo binaryVersionInfo = this.IsLatestChannelVersion
             ? this.GetChannelBinaryVersionInfo(json)
@@ -125,8 +125,8 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         {
             // Explicit driver version specified
             string driverBinaryUrl = this.DriverVersion == LatestVersionString ? ChannelDownloadInfoUrl : AllVersionsDownloadInfoUrl;
-            HttpResponseMessage response = await httpClient.GetAsync(driverBinaryUrl);
-            string json = await response.Content.ReadAsStringAsync();
+            HttpResponseMessage response = await httpClient.GetAsync(driverBinaryUrl).ConfigureAwait(false);
+            string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             if (this.DriverVersion == LatestVersionString)
             {
@@ -148,8 +148,8 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         {
             // Browser is being auto-downloaded, match driver to browser version
             string chromeBinaryDownloadInfoUrl = this.GetBinaryDownloadInfoUrl();
-            HttpResponseMessage response = await httpClient.GetAsync(chromeBinaryDownloadInfoUrl);
-            string json = await response.Content.ReadAsStringAsync();
+            HttpResponseMessage response = await httpClient.GetAsync(chromeBinaryDownloadInfoUrl).ConfigureAwait(false);
+            string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             binaryVersionInfo = this.IsLatestChannelVersion
                 ? this.GetChannelBinaryVersionInfo(json)
@@ -158,8 +158,8 @@ internal class ChromeBrowserLocatorSettings : BrowserLocatorSettings
         else
         {
             // Browser is system/custom - download latest driver for the browser's channel
-            HttpResponseMessage response = await httpClient.GetAsync(ChannelDownloadInfoUrl);
-            string json = await response.Content.ReadAsStringAsync();
+            HttpResponseMessage response = await httpClient.GetAsync(ChannelDownloadInfoUrl).ConfigureAwait(false);
+            string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             binaryVersionInfo = this.GetChannelBinaryVersionInfo(json);
         }
 
