@@ -149,6 +149,22 @@ public class TestWebSocketConnection : WebSocketConnection
         return base.SendDataAsync(data, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets the retry pauses the connection attempted, in order. A pause is recorded and returns
+    /// immediately, so a test can assert on the decision without waiting for it.
+    /// </summary>
+    public List<TimeSpan> AttemptedRetryDelays { get; } = [];
+
+    protected override Task DelayBeforeRetryAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        lock (this.AttemptedRetryDelays)
+        {
+            this.AttemptedRetryDelays.Add(delay);
+        }
+
+        return Task.CompletedTask;
+    }
+
     protected override async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
     {
         if (this.ConnectWebSocketOverride is not null)

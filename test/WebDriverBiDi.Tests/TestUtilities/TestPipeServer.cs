@@ -70,32 +70,33 @@ public class TestPipeServer : IPipeServerProcessProvider, IDisposable
         }
     }
 
-    public bool WaitForDataSent(TimeSpan timeout)
+    // Reads exactly the number of characters the child is expected to echo, completing as soon as they
+    // arrive. The previous helper raced a fixed one-second delay against a 50 ms Peek() poll, so its pass
+    // depended on the child process starting and echoing inside a budget that also had to cover dotnet
+    // process startup. Awaiting the data itself removes the wall clock from the assertion; the caller's
+    // cancellation token supplies a generous safety bound so a genuine hang still fails rather than hangs.
+    public async Task<string> ReadSentDataAsync(int expectedLength, CancellationToken cancellationToken)
     {
-        Task timeoutTask = Task.Delay(timeout);
-        Task peekTask = Task.Run(
-            async () =>
-            {
-                if (this.ServerProcess is not null)
-                {
-                    while (this.ServerProcess.StandardOutput.Peek() < 0)
-                    {
-                        await Task.Delay(TimeSpan.FromMilliseconds(50));
-                    }
-                }
-            });
-        int completedTaskIndex = Task.WaitAny(peekTask, timeoutTask);
-        return completedTaskIndex == 0;
-    }
-
-    public string GetSentData()
-    {
-        if (this.ServerProcess is not null)
+        if (this.ServerProcess is null)
         {
-            return this.ServerProcess.StandardOutput.ReadToEnd();
+            return string.Empty;
         }
 
-        return string.Empty;
+        char[] buffer = new char[expectedLength];
+        int totalRead = 0;
+        while (totalRead < expectedLength)
+        {
+            int read = await this.ServerProcess.StandardOutput.ReadAsync(buffer.AsMemory(totalRead, expectedLength - totalRead), cancellationToken);
+            if (read == 0)
+            {
+                // The child closed its output before sending everything expected.
+                break;
+            }
+
+            totalRead += read;
+        }
+
+        return new string(buffer, 0, totalRead);
     }
 
     public void Dispose()
