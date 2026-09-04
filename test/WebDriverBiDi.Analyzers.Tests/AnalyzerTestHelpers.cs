@@ -207,36 +207,103 @@ public static class AnalyzerTestHelpers
     /// Gets the path to the WebDriverBiDi assembly for use in code fix tests.
     /// </summary>
     /// <returns>The assembly path.</returns>
+    /// <summary>
+    /// Gets the path to the <c>WebDriverBiDi</c> assembly the analyzer tests compile their sources against.
+    /// </summary>
+    /// <returns>The path to the assembly.</returns>
+    /// <remarks>
+    /// <para>
+    /// This deliberately resolves the library's <c>net8.0</c> artifact by path rather than using
+    /// <c>typeof(BiDiDriver).Assembly.Location</c>, which the project reference already supplies. The
+    /// harnesses in this project compile their analyzed sources against
+    /// <see cref="ReferenceAssemblies.Net.Net80"/>, and handing those compilations the library's
+    /// <c>net10.0</c> build fails with <c>CS1705</c> — the assembly references a framework newer than the
+    /// reference set. Switching to the loaded assembly fails 203 tests for that reason.
+    /// </para>
+    /// <para>
+    /// The cost of resolving by path is that this artifact is refreshed only by an explicit build of the
+    /// library project: a <c>net10.0</c> test project's project reference builds only the library's
+    /// <c>net10.0</c> output. A stale artifact used to bind silently, so a test referencing a
+    /// newly-added library type failed with <c>CS0246</c> pointing at the test source rather than at the
+    /// real cause. It is now detected and reported: the artifact is compared against the newest source
+    /// file in the library project, which answers "was this rebuilt since the source last changed?"
+    /// directly, rather than against the loaded assembly's timestamp, which a copy during the test
+    /// project's own build would make newer even when everything is current.
+    /// </para>
+    /// </remarks>
     internal static string GetWebDriverBiDiAssemblyPath()
     {
-        // Get the test assembly's location
-        string testAssemblyPath = Assembly.GetExecutingAssembly().Location;
-        string testDirectory = Path.GetDirectoryName(testAssemblyPath) ?? string.Empty;
+        string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
 
         // Extract configuration (Debug/Release) from path: .../bin/{Configuration}/net10.0
         string? configDir = Path.GetDirectoryName(testDirectory);
         string configuration = configDir != null ? Path.GetFileName(configDir) : "Debug";
 
-        // Navigate up from test/WebDriverBiDi.Analyzers.Tests/bin/{Configuration}/net10.0
-        // to get to the project root, then go to src/WebDriverBiDi/bin/{Configuration}/net10.0
-        string? currentPath = testDirectory;
-
-        // Go up to the project root (5 levels up: net10.0 -> Configuration -> bin -> WebDriverBiDi.Analyzers.Tests -> test)
-        for (int i = 0; i < 5 && currentPath != null; i++)
+        string repositoryRoot = FindRepositoryRoot();
+        string librarySourceDirectory = Path.Combine(repositoryRoot, "src", "WebDriverBiDi");
+        string net80AssemblyPath = Path.Combine(librarySourceDirectory, "bin", configuration, "net8.0", "WebDriverBiDi.dll");
+        if (!File.Exists(net80AssemblyPath))
         {
-            currentPath = Path.GetDirectoryName(currentPath);
+            // Nothing to go stale; the loaded assembly is the only thing available.
+            return typeof(BiDiDriver).Assembly.Location;
         }
 
-        if (currentPath != null)
+        DateTime artifactWriteTime = File.GetLastWriteTimeUtc(net80AssemblyPath);
+        DateTime newestSourceWriteTime = NewestSourceWriteTime(librarySourceDirectory);
+        if (artifactWriteTime < newestSourceWriteTime)
         {
-            string net80AssemblyPath = Path.Combine(currentPath, "src", "WebDriverBiDi", "bin", configuration, "net8.0", "WebDriverBiDi.dll");
-            if (File.Exists(net80AssemblyPath))
+            throw new InvalidOperationException(
+                $"The WebDriverBiDi {configuration} net8.0 assembly is older than the library's sources, so these tests "
+                + $"would compile against an out-of-date library and fail in ways that point at the test source rather "
+                + $"than at the stale reference.{Environment.NewLine}"
+                + $"  assembly: {net80AssemblyPath} ({artifactWriteTime:u}){Environment.NewLine}"
+                + $"  newest source: {newestSourceWriteTime:u}{Environment.NewLine}"
+                + $"Build the library project for this configuration and re-run:{Environment.NewLine}"
+                + $"  dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj -c {configuration}");
+        }
+
+        return net80AssemblyPath;
+    }
+
+    /// <summary>
+    /// Gets the most recent write time of any C# source file in a project directory.
+    /// </summary>
+    /// <param name="projectDirectory">The directory to search.</param>
+    /// <returns>The newest write time, or <see cref="DateTime.MinValue"/> if there are no sources.</returns>
+    private static DateTime NewestSourceWriteTime(string projectDirectory)
+    {
+        DateTime newest = DateTime.MinValue;
+        foreach (string file in Directory.EnumerateFiles(projectDirectory, "*.cs", SearchOption.AllDirectories))
+        {
+            // Build intermediates contain generated copies whose timestamps track the build, not the source.
+            if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) ||
+                file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             {
-                return net80AssemblyPath;
+                continue;
+            }
+
+            DateTime writeTime = File.GetLastWriteTimeUtc(file);
+            if (writeTime > newest)
+            {
+                newest = writeTime;
             }
         }
 
-        // Fall back to the current loaded assembly
-        return typeof(BiDiDriver).Assembly.Location;
+        return newest;
+    }
+
+    /// <summary>
+    /// Finds the repository root by walking up from the test assembly until the solution file is found.
+    /// </summary>
+    /// <returns>The repository root directory.</returns>
+    internal static string FindRepositoryRoot()
+    {
+        string? current = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        while (current != null && !File.Exists(Path.Combine(current, "WebDriverBiDi.NET.sln")))
+        {
+            current = Path.GetDirectoryName(current);
+        }
+
+        return current ?? throw new InvalidOperationException("Could not locate the repository root from the test assembly location.");
     }
 }
