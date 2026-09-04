@@ -1347,4 +1347,187 @@ public class BiDiDriver001AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that RegisterModule after a StartAsync call written with a <c>.ConfigureAwait(false)</c> continuation is still reported.
+    /// The wrapper is the outermost invocation, so without unwrapping the chain the analyzer sees a
+    /// call it does not recognize and never marks the driver as started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncWithConfigureAwait_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222").ConfigureAwait(false);
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0).WithArguments("new CustomModule(driver)");
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that RegisterModule after a StartAsync call written with a blocking <c>.Wait()</c> is still reported.
+    /// The wrapper is the outermost invocation, so without unwrapping the chain the analyzer sees a
+    /// call it does not recognize and never marks the driver as started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncWithBlockingWait_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.StartAsync("ws://localhost:9222").Wait();
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0).WithArguments("new CustomModule(driver)");
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that RegisterModule after a StartAsync call written with a blocking <c>.ConfigureAwait(false).GetAwaiter().GetResult()</c> chain is still reported.
+    /// The wrapper is the outermost invocation, so without unwrapping the chain the analyzer sees a
+    /// call it does not recognize and never marks the driver as started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncWithGetAwaiterGetResult_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.StartAsync("ws://localhost:9222").ConfigureAwait(false).GetAwaiter().GetResult();
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0).WithArguments("new CustomModule(driver)");
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that starting a driver instance returned by another call does not mark a differently
+    /// obtained local as started. The StartAsync receiver is itself an invocation, so this also pins
+    /// that only the known task-chaining wrappers are unwrapped: unwrapping every
+    /// invocation-receivered member access would discard the StartAsync call entirely.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartAsyncOnDifferentReturnedDriver_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = GetDriver();
+                        await GetDriver().StartAsync("ws://localhost:9222");
+                        driver.RegisterModule(new CustomModule(driver));
+                    }
+
+                    private static BiDiDriver GetDriver() => new BiDiDriver(TimeSpan.FromSeconds(30));
+                }
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0).WithArguments("new CustomModule(driver)");
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

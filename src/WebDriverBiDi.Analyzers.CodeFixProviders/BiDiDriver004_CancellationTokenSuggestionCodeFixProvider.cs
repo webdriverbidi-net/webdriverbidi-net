@@ -18,14 +18,21 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 /// <summary>
-/// Code fix provider for BIDI004 that adds CancellationToken parameters to method calls.
+/// Code fix provider that adds CancellationToken arguments to method calls, for BIDI004 and BIDI013.
 /// </summary>
+/// <remarks>
+/// BIDI013 reports the same shape as BIDI004 — a call to a method with a cancellation-token overload
+/// that passes no token — differing only in severity and in which operations it covers. Both are fixed
+/// the same way, so one provider serves both rather than the warning-level rule having no fix at all.
+/// </remarks>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(BiDiDriver004_CancellationTokenSuggestionCodeFixProvider))]
 [Shared]
 public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc/>
-    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId);
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
+        BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId,
+        BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId);
 
     /// <inheritdoc/>
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
@@ -43,61 +50,117 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
             .OfType<InvocationExpressionSyntax>()
             .First();
 
+        SemanticModel semanticModel = (await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false))!;
+        INamedTypeSymbol? tokenType = semanticModel.Compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
+
+        // Write CancellationToken.None only when the type name resolves at the call site; otherwise
+        // qualify it. Emitting the short name unconditionally produces code that does not compile in a
+        // file without a using for System.Threading — which is the common case, since the diagnostic
+        // fires precisely on calls that pass no token and so had no reason to import it.
+        ExpressionSyntax noneExpression = SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            IsCancellationTokenNameInScope(semanticModel, tokenType, invocation.SpanStart)
+                ? SyntaxFactory.IdentifierName("CancellationToken")
+                : SyntaxFactory.ParseExpression("System.Threading.CancellationToken"),
+            SyntaxFactory.IdentifierName("None"));
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Add CancellationToken.None parameter",
-                createChangedDocument: c => AddCancellationTokenNoneAsync(
-                    context.Document, invocation, c),
+                createChangedDocument: c => AddTokenArgumentAsync(
+                    context.Document, invocation, noneExpression, c),
                 equivalenceKey: "AddCancellationTokenNone"),
             diagnostic);
 
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: "Add cancellationToken parameter",
-                createChangedDocument: c => AddCancellationTokenParameterAsync(
-                    context.Document, invocation, c),
-                equivalenceKey: "AddCancellationTokenParameter"),
-            diagnostic);
+        // Offer to pass an existing token only when there is one in scope to pass. Inserting a bare
+        // cancellationToken identifier where no such symbol exists produces code that does not compile,
+        // and the name used is the one actually in scope rather than an assumed "cancellationToken".
+        if (FindCancellationTokenInScope(semanticModel, tokenType, invocation.SpanStart) is string tokenName)
+        {
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    title: $"Add {tokenName} parameter",
+                    createChangedDocument: c => AddTokenArgumentAsync(
+                        context.Document, invocation, SyntaxFactory.IdentifierName(tokenName), c),
+                    equivalenceKey: "AddCancellationTokenParameter"),
+                diagnostic);
+        }
     }
 
-    private static async Task<Document> AddCancellationTokenNoneAsync(
+    /// <summary>
+    /// Determines whether the simple name <c>CancellationToken</c> resolves to the token type at the
+    /// given position, so that it can be written without qualification.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="tokenType">The <see cref="CancellationToken"/> type symbol, if the compilation has one.</param>
+    /// <param name="position">The position of the call being fixed.</param>
+    /// <returns><see langword="true"/> if the short name resolves; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The comparison is against the resolved type symbol, so a user's own type that merely shares the
+    /// name does not count as the short name being available. A <see langword="null"/> token type
+    /// compares equal to nothing, so an exotic compilation without one degrades to qualifying the name.
+    /// </remarks>
+    private static bool IsCancellationTokenNameInScope(SemanticModel semanticModel, INamedTypeSymbol? tokenType, int position)
+    {
+        return semanticModel.LookupNamespacesAndTypes(position, name: "CancellationToken")
+            .Any(symbol => SymbolEqualityComparer.Default.Equals(symbol, tokenType));
+    }
+
+    /// <summary>
+    /// Finds the name of a <see cref="CancellationToken"/>-typed symbol in scope at the given position.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="tokenType">The <see cref="CancellationToken"/> type symbol, if the compilation has one.</param>
+    /// <param name="position">The position of the call being fixed.</param>
+    /// <returns>The symbol's name, or <see langword="null"/> when no token is in scope.</returns>
+    /// <remarks>
+    /// A symbol literally named <c>cancellationToken</c> wins when there is one, so the offered fix
+    /// matches the convention the surrounding code most likely uses; otherwise the first token-typed
+    /// parameter, local, field or property in scope is taken.
+    /// </remarks>
+    private static string? FindCancellationTokenInScope(SemanticModel semanticModel, INamedTypeSymbol? tokenType, int position)
+    {
+        string? firstMatch = null;
+        foreach (ISymbol symbol in semanticModel.LookupSymbols(position))
+        {
+            ITypeSymbol? symbolType = symbol switch
+            {
+                IParameterSymbol parameter => parameter.Type,
+                ILocalSymbol local => local.Type,
+                IFieldSymbol field => field.Type,
+                IPropertySymbol property => property.Type,
+                _ => null,
+            };
+
+            if (!SymbolEqualityComparer.Default.Equals(symbolType, tokenType))
+            {
+                continue;
+            }
+
+            if (symbol.Name == "cancellationToken")
+            {
+                return symbol.Name;
+            }
+
+            firstMatch ??= symbol.Name;
+        }
+
+        return firstMatch;
+    }
+
+    private static async Task<Document> AddTokenArgumentAsync(
         Document document,
         InvocationExpressionSyntax invocation,
+        ExpressionSyntax tokenExpression,
         CancellationToken cancellationToken)
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Add CancellationToken.None as a named argument. The target methods declare an optional
-        // parameter (for example a TimeSpan? timeout) before the trailing cancellationToken, so a
-        // positional append would bind to that parameter and fail to compile; naming the argument
-        // targets the token parameter regardless of the intervening optional parameters.
-        ArgumentSyntax tokenArgument = SyntaxFactory.Argument(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName("CancellationToken"),
-                SyntaxFactory.IdentifierName("None")))
-            .WithNameColon(SyntaxFactory.NameColon("cancellationToken"));
-
-        ArgumentListSyntax newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
-        InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);
-
-        SyntaxNode newRoot = root.ReplaceNode(invocation, newInvocation);
-        return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static async Task<Document> AddCancellationTokenParameterAsync(
-        Document document,
-        InvocationExpressionSyntax invocation,
-        CancellationToken cancellationToken)
-    {
-        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
-
-        // Add a cancellationToken variable reference as a named argument. The target methods declare
-        // an optional parameter (for example a TimeSpan? timeout) before the trailing
-        // cancellationToken, so a positional append would bind to that parameter and fail to compile;
-        // naming the argument targets the token parameter regardless of the intervening parameters.
-        ArgumentSyntax tokenArgument = SyntaxFactory.Argument(
-            SyntaxFactory.IdentifierName("cancellationToken"))
+        // Add the token as a named argument. The target methods declare an optional parameter (for
+        // example a TimeSpan? timeout) before the trailing cancellationToken, so a positional append
+        // would bind to that parameter and fail to compile; naming the argument targets the token
+        // parameter regardless of the intervening optional parameters.
+        ArgumentSyntax tokenArgument = SyntaxFactory.Argument(tokenExpression)
             .WithNameColon(SyntaxFactory.NameColon("cancellationToken"));
 
         ArgumentListSyntax newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);

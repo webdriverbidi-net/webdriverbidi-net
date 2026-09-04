@@ -55,7 +55,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
         bool startAsyncExists = method is not null && method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.Text == "StartAsync"
+                && memberAccess.Name.Identifier.ValueText == "StartAsync"
                 && GetRootIdentifierName(memberAccess) == driverVariableName);
         if (!startAsyncExists)
         {
@@ -91,7 +91,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider : CodeFix
         InvocationExpressionSyntax startAsyncInvocation = method.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .First(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.Text == "StartAsync"
+                && memberAccess.Name.Identifier.ValueText == "StartAsync"
                 && GetRootIdentifierName(memberAccess) == driverVariableName);
 
         StatementSyntax startAsyncStatement = startAsyncInvocation.Ancestors()

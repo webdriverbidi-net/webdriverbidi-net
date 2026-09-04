@@ -1679,4 +1679,48 @@ public class BiDiDriver016AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a lock taken inside a <c>Task.Run</c> lambda is not reported. The lambda's body runs
+    /// on a thread-pool thread when the delegate is invoked, not on the dispatching thread this rule is
+    /// about, and offloading is the remedy the rule recommends.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task LockStatement_InsideTaskRunLambda_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        object lockObj = new object();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            await Task.Run(() =>
+                            {
+                                lock (lockObj)
+                                {
+                                    int x = 1 + 1;
+                                }
+                            });
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

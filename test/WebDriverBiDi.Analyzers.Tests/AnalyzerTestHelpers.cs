@@ -156,11 +156,18 @@ public static class AnalyzerTestHelpers
     /// a method passed as a method group); the testing framework rejects such "non-local"
     /// diagnostics before the provider is ever invoked.
     /// </remarks>
-    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source)
+    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source, bool referenceWebDriverBiDi = false)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TCodeFix : CodeFixProvider, new()
     {
         ImmutableArray<MetadataReference> references = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, CancellationToken.None);
+        if (referenceWebDriverBiDi)
+        {
+            // Analyzed sources that use the library's real types rather than hand-written stubs need it
+            // on the compilation, or nothing resolves and no diagnostic — hence no code action — appears.
+            references = references.Add(MetadataReference.CreateFromFile(GetWebDriverBiDiAssemblyPath()));
+        }
+
         using AdhocWorkspace workspace = new();
         Project project = workspace.AddProject("TestProject", LanguageNames.CSharp)
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))

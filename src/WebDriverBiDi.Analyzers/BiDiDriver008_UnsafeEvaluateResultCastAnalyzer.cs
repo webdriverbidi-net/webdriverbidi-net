@@ -69,7 +69,7 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
         if (IsEvaluateResultBaseType(expressionType))
         {
             // Check if this cast is already inside a safe context (like try-catch or is expression)
-            if (IsInSafeContext(castExpression))
+            if (IsInSafeContext(context, castExpression))
             {
                 return;
             }
@@ -121,24 +121,75 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsInSafeContext(CastExpressionSyntax castExpression)
+    private static bool IsInSafeContext(SyntaxNodeAnalysisContext context, CastExpressionSyntax castExpression)
     {
-        // Check if the cast is inside a try-catch block
-        SyntaxNode? current = castExpression.Parent;
+        // A cast is protected only when it sits in the *try block* of a try statement that has a catch
+        // clause able to catch an InvalidCastException. Treating any enclosing try statement as
+        // protection was wrong three ways: a try/finally catches nothing at all; a catch of an
+        // unrelated type (IOException, say) never sees the cast failure; and a cast inside a catch or
+        // finally block of the try is not covered by that try at all.
+        SyntaxNode? current = castExpression;
         while (current != null)
         {
-            if (current is TryStatementSyntax)
-            {
-                return true;
-            }
-
-            // Stop at method boundary
-            if (current is MethodDeclarationSyntax || current is LocalFunctionStatementSyntax)
+            // Stop at a method boundary; a try statement outside it does not enclose this code.
+            // A lambda body is deliberately *not* treated as a boundary here: a lambda declared and
+            // invoked inside the try does run under its catch, and this rule has no way to tell that
+            // apart from one stored for later, so the existing behaviour is left alone.
+            if (current is MethodDeclarationSyntax or LocalFunctionStatementSyntax)
             {
                 break;
             }
 
+            if (current.Parent is TryStatementSyntax tryStatement
+                && tryStatement.Block == current
+                && HasCatchForInvalidCast(context, tryStatement))
+            {
+                return true;
+            }
+
             current = current.Parent;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether a try statement has a catch clause that would catch an
+    /// <see cref="InvalidCastException"/>.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="tryStatement">The try statement enclosing the cast.</param>
+    /// <returns><see langword="true"/> if a catch clause covers an invalid cast; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// An untyped <c>catch</c> catches everything. A typed one covers the cast when its type is
+    /// <see cref="InvalidCastException"/> or one of its base types. A clause carrying a <c>when</c>
+    /// filter is still treated as covering: the filter may reject at run time, but the common idiom
+    /// <c>catch (Exception ex) when (ex is InvalidCastException)</c> is deliberate handling, and
+    /// reporting it would be a false positive on code that already does the right thing.
+    /// </remarks>
+    private static bool HasCatchForInvalidCast(SyntaxNodeAnalysisContext context, TryStatementSyntax tryStatement)
+    {
+        INamedTypeSymbol? invalidCastException = context.Compilation.GetTypeByMetadataName("System.InvalidCastException");
+        foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
+        {
+            if (catchClause.Declaration is null)
+            {
+                return true;
+            }
+
+            // The clause covers the cast when the caught type is InvalidCastException itself or one
+            // of its base types (SystemException, Exception, object). The walk therefore runs up
+            // InvalidCastException's own chain looking for the caught type — not up the caught type's
+            // chain, which would match only InvalidCastException itself and would report the ordinary
+            // catch (Exception) as unprotected.
+            ITypeSymbol? caughtType = context.SemanticModel.GetTypeInfo(catchClause.Declaration.Type).Type;
+            for (ITypeSymbol? current = invalidCastException; current is not null; current = current.BaseType)
+            {
+                if (SymbolEqualityComparer.Default.Equals(current, caughtType))
+                {
+                    return true;
+                }
+            }
         }
 
         return false;

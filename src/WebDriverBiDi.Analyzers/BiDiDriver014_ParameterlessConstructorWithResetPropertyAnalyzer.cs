@@ -109,7 +109,9 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
     {
         foreach (ArgumentSyntax argument in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<ArgumentSyntax>())
         {
-            if (argument.Expression is not ObjectCreationExpressionSyntax objectCreation)
+            // BaseObjectCreationExpressionSyntax, not ObjectCreationExpressionSyntax, so that the
+            // target-typed form (`new()`) is recognized; it is the library's own reset idiom.
+            if (argument.Expression is not BaseObjectCreationExpressionSyntax objectCreation)
             {
                 continue;
             }
@@ -164,7 +166,8 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
     {
         foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
         {
-            if (variable.Initializer?.Value is not ObjectCreationExpressionSyntax objectCreation)
+            // BaseObjectCreationExpressionSyntax so the target-typed form (`new()`) is recognized.
+            if (variable.Initializer?.Value is not BaseObjectCreationExpressionSyntax objectCreation)
             {
                 continue;
             }

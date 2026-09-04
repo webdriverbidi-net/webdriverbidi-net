@@ -156,22 +156,26 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
     {
         ImmutableDictionary<string, DriverVariableState> updatedVariables = driverVariables;
 
+        // Every form unwraps its task-chaining wrappers first, so that await
+        // driver.StartAsync(url).ConfigureAwait(false), driver.StartAsync(url).Wait() and
+        // driver.StartAsync(url).GetAwaiter().GetResult() are all recognized as starting the driver
+        // rather than the wrapper being analyzed (and ignored).
         if (expressionStatement.Expression is InvocationExpressionSyntax invocation)
         {
-            updatedVariables = AnalyzeInvocation(context, invocation, updatedVariables);
+            updatedVariables = AnalyzeInvocation(context, AnalyzerSymbolHelpers.UnwrapTaskChain(invocation), updatedVariables);
         }
         else if (expressionStatement.Expression is AwaitExpressionSyntax awaitExpression)
         {
             if (awaitExpression.Expression is InvocationExpressionSyntax awaitedInvocation)
             {
-                updatedVariables = AnalyzeInvocation(context, awaitedInvocation, updatedVariables);
+                updatedVariables = AnalyzeInvocation(context, AnalyzerSymbolHelpers.UnwrapTaskChain(awaitedInvocation), updatedVariables);
             }
         }
         else if (expressionStatement.Expression is AssignmentExpressionSyntax assignment)
         {
             if (assignment.Right is InvocationExpressionSyntax assignmentInvocation)
             {
-                updatedVariables = AnalyzeInvocation(context, assignmentInvocation, updatedVariables);
+                updatedVariables = AnalyzeInvocation(context, AnalyzerSymbolHelpers.UnwrapTaskChain(assignmentInvocation), updatedVariables);
             }
         }
 

@@ -92,7 +92,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         INamedTypeSymbol? currentType = type.BaseType;
         while (currentType != null)
         {
-            if (currentType.Name == "Module")
+            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(currentType, "Module"))
             {
                 return true;
             }

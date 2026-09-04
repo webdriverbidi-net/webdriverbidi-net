@@ -1614,4 +1614,45 @@ public class BiDiDriver010AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a user type deriving from an unrelated base class named <c>Module</c> is not treated
+    /// as a WebDriver BiDi module. Matching the base type on its simple name alone claimed types this
+    /// library has nothing to do with — a class deriving from <c>Autofac.Module</c>, for example — and
+    /// reported an ordinary fire-and-forget call at Error severity.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FireAndForgetOnForeignModuleBaseClass_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace ThirdParty
+            {
+                public abstract class Module { }
+            }
+
+            namespace TestNamespace
+            {
+                using ThirdParty;
+
+                public class RegistrationModule : Module
+                {
+                    public Task<int> LoadAsync() => Task.FromResult(0);
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(RegistrationModule registration)
+                    {
+                        registration.LoadAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
 }

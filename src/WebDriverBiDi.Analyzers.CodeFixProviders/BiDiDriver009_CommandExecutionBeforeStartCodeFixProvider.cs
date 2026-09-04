@@ -56,7 +56,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         bool startAsyncExists = method.Body.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && ma.Name.Identifier.Text == "StartAsync"
+                && ma.Name.Identifier.ValueText == "StartAsync"
                 && GetRootIdentifierName(ma) == driverVariableName);
         if (!startAsyncExists)
         {
@@ -92,7 +92,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         StatementSyntax startAsyncStatement = method.Body!.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .First(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && ma.Name.Identifier.Text == "StartAsync"
+                && ma.Name.Identifier.ValueText == "StartAsync"
                 && GetRootIdentifierName(ma) == driverVariableName)
             .FirstAncestorOrSelf<StatementSyntax>()!;
 

@@ -42,8 +42,16 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
             .Parent!.AncestorsAndSelf()
             .First(n => n is CastExpressionSyntax || n.IsKind(SyntaxKind.AsExpression));
 
+        // Offer the action only for shapes the conversion can actually rewrite. Both transforms used
+        // to return the document unchanged for the rest, which put an item on the light-bulb menu that
+        // did nothing when chosen.
         if (node is CastExpressionSyntax castExpression)
         {
+            if (!CanConvertCast(castExpression))
+            {
+                return;
+            }
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: "Use pattern matching with 'is' expression",
@@ -55,6 +63,11 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         else
         {
             BinaryExpressionSyntax asExpression = (BinaryExpressionSyntax)node;
+            if (GetInitializedDeclaration(asExpression) is null)
+            {
+                return;
+            }
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: "Use pattern matching with 'is' expression",
@@ -63,6 +76,41 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
                     equivalenceKey: "ConvertToPatternMatching"),
                 diagnostic);
         }
+    }
+
+    /// <summary>
+    /// Gets the local declaration an expression initializes, if it initializes one.
+    /// </summary>
+    /// <param name="expression">The cast or <c>as</c> expression.</param>
+    /// <returns>The declaration statement, or <see langword="null"/> when the expression is not a local's initializer.</returns>
+    private static LocalDeclarationStatementSyntax? GetInitializedDeclaration(ExpressionSyntax expression)
+    {
+        // The last step is a cast rather than a pattern because a variable declaration is not always a
+        // local declaration statement: the same shape appears in a field declaration and in a for-loop
+        // initializer, neither of which this conversion rewrites.
+        // A declarator's parent is always a variable declaration, so only the declaration's own parent
+        // needs testing: the same shape appears in a field declaration and in a for-loop initializer,
+        // neither of which this conversion rewrites.
+        return expression.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
+            ? declarator.Parent!.Parent as LocalDeclarationStatementSyntax
+            : null;
+    }
+
+    /// <summary>
+    /// Determines whether a cast can be rewritten as a pattern match.
+    /// </summary>
+    /// <param name="castExpression">The cast to inspect.</param>
+    /// <returns><see langword="true"/> if the conversion would change the document; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A cast that initializes a local is always convertible. Any other cast is rewritten by wrapping
+    /// its enclosing statement in an <c>if</c>, which is only valid when that statement neither
+    /// transfers control out of the containing member nor produces a required value: wrapping a
+    /// return, throw or yield would leave a path that no longer returns or assigns (CS0161/CS0165).
+    /// </remarks>
+    private static bool CanConvertCast(CastExpressionSyntax castExpression)
+    {
+        return GetInitializedDeclaration(castExpression) is not null
+            || castExpression.FirstAncestorOrSelf<StatementSyntax>() is ExpressionStatementSyntax or LocalDeclarationStatementSyntax;
     }
 
     private static async Task<Document> ConvertCastToPatternMatchingAsync(
@@ -77,32 +125,20 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         ITypeSymbol targetType = semanticModel.GetTypeInfo(castExpression.Type, cancellationToken).Type!;
 
         // Check if this is a variable declaration: var success = (EvaluateResultSuccess)result;
-        if (castExpression.Parent is EqualsValueClauseSyntax equalsValue &&
-            equalsValue.Parent is VariableDeclaratorSyntax variableDeclarator &&
-            variableDeclarator.Parent is VariableDeclarationSyntax variableDeclaration &&
-            variableDeclaration.Parent is LocalDeclarationStatementSyntax declarationStatement)
+        if (GetInitializedDeclaration(castExpression) is LocalDeclarationStatementSyntax declarationStatement)
         {
             return await ConvertCastInVariableDeclarationAsync(
                 document,
                 root,
                 castExpression,
-                variableDeclarator,
+                (VariableDeclaratorSyntax)castExpression.Parent!.Parent!,
                 declarationStatement,
                 cancellationToken).ConfigureAwait(false);
         }
 
-        // For inline casts (not in variable declarations), wrap just that expression
+        // For inline casts (not in variable declarations), wrap just that expression. The action is
+        // registered only for a statement shape that can be wrapped, so this is one.
         StatementSyntax statement = castExpression.FirstAncestorOrSelf<StatementSyntax>()!;
-
-        // Wrapping the enclosing statement in an if block is only valid when that statement neither
-        // transfers control out of the containing member nor produces a required value: wrapping a
-        // return/throw/yield (or any other non-expression, non-declaration statement) would leave a
-        // code path that no longer returns or assigns (CS0161/CS0165). Leave such casts unchanged
-        // rather than emitting code that does not compile.
-        if (statement is not (ExpressionStatementSyntax or LocalDeclarationStatementSyntax))
-        {
-            return document;
-        }
 
         // Generate a variable name based on the type
         string variableName = GenerateVariableName(targetType.Name);
@@ -268,26 +304,18 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // Get the target type
         ITypeSymbol targetType = semanticModel.GetTypeInfo(asExpression.Right, cancellationToken).Type!;
 
-        // Find the variable declaration or assignment that uses this 'as' expression
-        SyntaxNode? parent = asExpression.Parent;
+        // The action is registered only when the expression initializes a local, so both of these are
+        // present: var success = result as EvaluateResultSuccess;
+        LocalDeclarationStatementSyntax declarationStatement = GetInitializedDeclaration(asExpression)!;
+        VariableDeclaratorSyntax variableDeclarator = (VariableDeclaratorSyntax)asExpression.Parent!.Parent!;
 
-        // Check if this is a variable declaration: var success = result as EvaluateResultSuccess;
-        if (parent is EqualsValueClauseSyntax equalsValue &&
-            equalsValue.Parent is VariableDeclaratorSyntax variableDeclarator &&
-            variableDeclarator.Parent is VariableDeclarationSyntax variableDeclaration &&
-            variableDeclaration.Parent is LocalDeclarationStatementSyntax declarationStatement)
-        {
-            return await ConvertAsInVariableDeclarationAsync(
-                document,
-                root,
-                asExpression,
-                variableDeclarator,
-                declarationStatement,
-                cancellationToken).ConfigureAwait(false);
-        }
-
-        // For other cases, we can't safely refactor
-        return document;
+        return await ConvertAsInVariableDeclarationAsync(
+            document,
+            root,
+            asExpression,
+            variableDeclarator,
+            declarationStatement,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task<Document> ConvertAsInVariableDeclarationAsync(

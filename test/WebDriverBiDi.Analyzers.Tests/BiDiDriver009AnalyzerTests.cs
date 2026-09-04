@@ -1249,4 +1249,210 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a StopAsync confined to a catch clause does not poison a command that follows the
+    /// try statement. Without forking state across try/catch, the flat walk saw the stop and reported
+    /// the later command at Error severity — on code where the catch rethrows, so the command is only
+    /// ever reached when the catch did not run.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandAfterTryWithStopAsyncInCatch_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                        catch (Exception)
+                        {
+                            await driver.StopAsync();
+                            throw;
+                        }
+
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a command inside a catch clause is not reported when the try block started the
+    /// driver. The catch may begin after any prefix of the try, so the start may already have run.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInCatchAfterStartAsyncInTry_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (Exception)
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a command in a try block on a driver that was never started is still reported.
+    /// Forking state across try/catch must not turn the rule off inside a try statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInTryWithoutStartAsync_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a command in a finally block on a driver that was never started is still reported,
+    /// and that the finally walk participates in the state merged after the statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInFinallyWithoutStartAsync_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                        }
+                        finally
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a catch filter is walked, so a command in the filter expression on a never-started
+    /// driver is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInCatchFilterWithoutStartAsync_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                        }
+                        catch (Exception) when ({|#0:driver.Session.StatusAsync()|} is not null)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
 }

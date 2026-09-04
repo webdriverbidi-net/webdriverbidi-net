@@ -5,6 +5,10 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -387,7 +391,7 @@ public class BiDiDriver008CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AsExpression_InMethodArgument_CodeFixIsNoOp()
+    public async Task AsExpression_InMethodArgument_OffersNoCodeAction()
     {
         string testCode = """
             using WebDriverBiDi.Script;
@@ -418,7 +422,6 @@ public class BiDiDriver008CodeFixProviderTests
         {
             TestCode = testCode,
             FixedCode = testCode,
-            NumberOfIncrementalIterations = 1,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -672,7 +675,7 @@ public class BiDiDriver008CodeFixProviderTests
     }
 
     [Fact]
-    public async Task CodeFix_InlineCastInReturn_IsNoOp()
+    public async Task CodeFix_InlineCastInReturn_OffersNoCodeAction()
     {
         // A cast inside a return statement cannot be wrapped in an if without leaving a code path
         // that does not return a value (CS0161), so the fix leaves such casts unchanged.
@@ -699,10 +702,209 @@ public class BiDiDriver008CodeFixProviderTests
         {
             TestCode = testCode,
             FixedCode = testCode,
-            NumberOfIncrementalIterations = 1,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that no code action is offered for a cast in a return statement. Wrapping that statement
+    /// in an <c>if</c> would leave a path that no longer returns, so the conversion declined to change
+    /// anything — while still putting an item on the light-bulb menu that did nothing when chosen.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InlineCastInReturn_RegistersNoAction()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public EvaluateResultSuccess GetSuccess(EvaluateResult result)
+                    {
+                        return (EvaluateResultSuccess)result;
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that no code action is offered for an <c>as</c> expression that does not initialize a
+    /// local, which is the only shape the conversion knows how to rewrite.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AsExpressionInMethodArgument_RegistersNoAction()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        Consume(result as EvaluateResultSuccess);
+                    }
+
+                    private static void Consume(EvaluateResultSuccess? s) { }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that the action is still offered for the shapes the conversion can rewrite, so the
+    /// applicability gate did not turn the fix off.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastInitializingALocal_RegistersTheAction()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        var success = (EvaluateResultSuccess)result;
+                        var value = success.Result;
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        CodeAction action = Assert.Single(actions);
+        Assert.Equal("Use pattern matching with 'is' expression", action.Title);
+    }
+
+
+    /// <summary>
+    /// Tests that the action is offered for an inline cast in an expression statement, which the
+    /// conversion rewrites by wrapping that statement in an <c>if</c>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InlineCastInExpressionStatement_RegistersTheAction()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        Consume((EvaluateResultSuccess)result);
+                    }
+
+                    private static void Consume(EvaluateResultSuccess s) { }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Single(actions);
+    }
+
+    /// <summary>
+    /// Tests that the action is offered for a cast nested inside a local declaration without being
+    /// that local's initializer, which the conversion also rewrites by wrapping the statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InlineCastWithinLocalDeclaration_RegistersTheAction()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        int length = Describe((EvaluateResultSuccess)result).Length;
+                    }
+
+                    private static string Describe(EvaluateResultSuccess s) => string.Empty;
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Single(actions);
+    }
+
+
+    /// <summary>
+    /// Tests that no action is offered for a cast in a field initializer. It has the same
+    /// declaration shape as a local, but is not a statement the conversion can wrap.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastInFieldInitializer_OffersNoCodeAction()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static readonly EvaluateResult Shared = null!;
+
+                    private readonly EvaluateResultSuccess success = (EvaluateResultSuccess)Shared;
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Empty(actions);
+    }
+
+
+    /// <summary>
+    /// Tests that no action is offered for a cast in a property initializer, whose enclosing syntax is
+    /// not a variable declarator at all.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastInPropertyInitializer_OffersNoCodeAction()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static readonly EvaluateResult Shared = null!;
+
+                    private EvaluateResultSuccess Success { get; } = (EvaluateResultSuccess)Shared;
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Empty(actions);
+    }
+
 }

@@ -51,7 +51,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider
         bool startAsyncStatementExists = method?.Body is not null && method.Body.Statements
             .Any(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
                 .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                    && ma.Name.Identifier.Text == "StartAsync"
+                    && ma.Name.Identifier.ValueText == "StartAsync"
                     && GetRootIdentifierName(ma) == driverVariableName));
         if (!startAsyncStatementExists)
         {
@@ -82,7 +82,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider
         StatementSyntax startAsyncStatement = method.Body!.Statements
             .First(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
                 .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                    && ma.Name.Identifier.Text == "StartAsync"
+                    && ma.Name.Identifier.ValueText == "StartAsync"
                     && GetRootIdentifierName(ma) == driverVariableName));
 
         // Track both statements through the transformation

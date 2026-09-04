@@ -205,11 +205,13 @@ public class BiDiDriver015AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that methods without driver variable are handled gracefully.
+    /// Tests that a driver received as a parameter is reported. Searching the body for a local
+    /// declaration missed this shape entirely — the common one in helper methods and documentation
+    /// samples — so the rule was silent exactly where a literal is most likely to be written.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NoDriverVariable_NoDiagnostic()
+    public async Task DriverAsParameter_ReportsWarning()
     {
         string test = """
             using System.Threading.Tasks;
@@ -223,16 +225,21 @@ public class BiDiDriver015AnalyzerTests
                     public async Task TestMethod(BiDiDriver driver)
                     {
                         // Driver is a parameter, not a local variable
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
                     }
                 }
             }
             """;
 
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
         RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -755,11 +762,13 @@ public class BiDiDriver015AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that driver variables without initializers are handled gracefully.
+    /// Tests that a driver declared without an initializer and assigned afterwards is still resolved.
+    /// The driver now comes from the SubscribeAsync receiver's type, so how it was declared no longer
+    /// decides whether the rule fires.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task DriverVariableWithoutInitializer_NoDiagnostic()
+    public async Task DriverVariableWithoutInitializer_ReportsWarning()
     {
         string test = """
             using System.Threading.Tasks;
@@ -774,16 +783,21 @@ public class BiDiDriver015AnalyzerTests
                     {
                         BiDiDriver driver;
                         driver = new BiDiDriver();
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
                     }
                 }
             }
             """;
 
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
         RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1220,11 +1234,13 @@ public class BiDiDriver015AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
-    /// <summary>Tests that SubscribeAsync with a driver variable without an initializer
-    /// is handled — exercises variable.Initializer?.Value null path (line 209).</summary>
+    /// <summary>
+    /// Tests the same shape reached through the analyzer's other entry point: a driver declared without
+    /// an initializer is resolved from the call's receiver rather than from its declaration.
+    /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task SubscribeAsync_WithUninitializedDriverVariable_DoesNotReportDiagnostic()
+    public async Task SubscribeAsync_WithUninitializedDriverVariable_ReportsWarning()
     {
         string test = """
             using System.Threading.Tasks;
@@ -1240,16 +1256,21 @@ public class BiDiDriver015AnalyzerTests
                         // Variable declared without initializer — Initializer?.Value is null.
                         BiDiDriver driver;
                         driver = new BiDiDriver();
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
                     }
                 }
             }
             """;
 
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
         RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -2006,4 +2027,153 @@ public class BiDiDriver015AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a string literal inside a target-typed <c>new(...)</c> is reported. Recognizing only
+    /// <c>ObjectCreationExpressionSyntax</c> would skip the parameters object entirely and lose the
+    /// diagnostic, even though BIDI005 already reads the same argument through
+    /// <c>BaseObjectCreationExpressionSyntax</c>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StringLiteral_InTargetTypedSubscribeParameters_ReportsWarning()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.Session.SubscribeAsync(new(new[] { {|#0:"log.entryAdded"|} }));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+
+    /// <summary>
+    /// Tests that no diagnostic is reported when the SubscribeAsync receiver does not root in a plain
+    /// identifier — there is no name to put in the suggested replacement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SubscribeAsync_OnReturnedDriver_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await GetDriver().Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    }
+
+                    private static BiDiDriver GetDriver() => new BiDiDriver(TimeSpan.FromSeconds(30));
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that no diagnostic is reported when the session module is held directly, with no driver
+    /// to name in the suggested replacement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SubscribeAsync_OnBareSessionModule_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(SessionModule session)
+                    {
+                        await session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+
+    /// <summary>
+    /// Tests that no diagnostic is reported when the driver is a generic type parameter constrained to
+    /// <c>BiDiDriver</c>. A type parameter is not a named type, so the command-executor test walks past
+    /// it and answers false; the rule stays silent rather than naming a type it cannot resolve members
+    /// on. This documents current behaviour — looking through a constraint would be a separate change.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SubscribeAsync_OnGenericDriverParameter_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod<TDriver>(TDriver driver)
+                        where TDriver : BiDiDriver
+                    {
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

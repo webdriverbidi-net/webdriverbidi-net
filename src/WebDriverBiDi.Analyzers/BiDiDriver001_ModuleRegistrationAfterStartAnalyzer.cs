@@ -144,37 +144,27 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
 
     private static void AnalyzeExpressionStatement(ExpressionStatementSyntax expressionStmt, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
     {
+        // Every form unwraps its task-chaining wrappers first, so that await
+        // driver.StartAsync(url).ConfigureAwait(false), driver.StartAsync(url).Wait() and
+        // driver.StartAsync(url).GetAwaiter().GetResult() are all recognized as starting the driver
+        // rather than the wrapper being analyzed (and ignored).
         if (expressionStmt.Expression is AwaitExpressionSyntax awaitExpr && awaitExpr.Expression is InvocationExpressionSyntax invocation)
         {
             // Handle: await driver.StartAsync(...)
-            CheckForDriverMethodCall(invocation, context, semanticModel, driverVariables);
+            CheckForDriverMethodCall(AnalyzerSymbolHelpers.UnwrapTaskChain(invocation), context, semanticModel, driverVariables);
         }
         else if (expressionStmt.Expression is InvocationExpressionSyntax directInvocation)
         {
-            // Handle: driver.StartAsync(...).Wait() or driver.RegisterModule(...). A blocking
-            // .Wait() is unwrapped so the underlying StartAsync call is recognized as starting the
-            // driver rather than the Task.Wait() wrapper being analyzed (and ignored).
-            CheckForDriverMethodCall(UnwrapBlockingWait(directInvocation), context, semanticModel, driverVariables);
+            // Handle: driver.StartAsync(...).Wait() or driver.RegisterModule(...).
+            CheckForDriverMethodCall(AnalyzerSymbolHelpers.UnwrapTaskChain(directInvocation), context, semanticModel, driverVariables);
         }
         else if (expressionStmt.Expression is AssignmentExpressionSyntax assignment && assignment.Right is InvocationExpressionSyntax assignedInvocation)
         {
             // Handle: startTask = driver.StartAsync(...). The task may be awaited later, but
             // the connect attempt begins at the call itself, so registration after this point
             // is judged against a started driver — matching BIDI002 and BIDI003.
-            CheckForDriverMethodCall(assignedInvocation, context, semanticModel, driverVariables);
+            CheckForDriverMethodCall(AnalyzerSymbolHelpers.UnwrapTaskChain(assignedInvocation), context, semanticModel, driverVariables);
         }
-    }
-
-    private static InvocationExpressionSyntax UnwrapBlockingWait(InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
-            memberAccess.Name.Identifier.Text == "Wait" &&
-            memberAccess.Expression is InvocationExpressionSyntax innerInvocation)
-        {
-            return innerInvocation;
-        }
-
-        return invocation;
     }
 
     private static void CheckForDriverMethodCall(InvocationExpressionSyntax invocation, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)

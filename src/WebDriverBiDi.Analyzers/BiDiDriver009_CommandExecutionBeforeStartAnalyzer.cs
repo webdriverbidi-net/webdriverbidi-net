@@ -113,14 +113,15 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // (lambdas, anonymous methods, local functions): their code runs when the delegate is
         // invoked, not at the textual position where it is declared — for example when an event
         // handler fires after the connection is started — so it must not be judged against the
-        // driver's started state at this point in the method. It also stops at if and switch
+        // driver's started state at this point in the method. It also stops at if, switch, and try
         // statements — including one that is itself the root, which the barrier yields without
         // descending into — and processes them recursively below with a forked copy of the
         // state for each mutually exclusive branch.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
             child is not IfStatementSyntax &&
-            child is not SwitchStatementSyntax))
+            child is not SwitchStatementSyntax &&
+            child is not TryStatementSyntax))
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
@@ -129,6 +130,10 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
                 ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus);
+            }
+            else if (descendant is TryStatementSyntax tryStatement)
+            {
+                ProcessTryStatement(tryStatement, context, semanticModel, driverStartedStatus);
             }
             else if (descendant is LocalDeclarationStatementSyntax localDecl)
             {
@@ -174,6 +179,63 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         foreach (string driverName in driverStartedStatus.Keys.ToList())
         {
             driverStartedStatus[driverName] = thenBranchStatus[driverName] || elseBranchStatus[driverName];
+        }
+    }
+
+    private static void ProcessTryStatement(
+        TryStatementSyntax tryStatement,
+        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        Dictionary<string, bool> entryStatus = new(driverStartedStatus);
+        Dictionary<string, bool> tryStatus = new(driverStartedStatus);
+        ProcessNode(tryStatement.Block, context, semanticModel, tryStatus);
+
+        // A catch clause (or a finally block) may begin executing after any prefix of the try block
+        // has run, so inside one a driver counts as started when *any* partial execution of the try
+        // could leave it started: the disjunction of the state at try entry and the state after the
+        // full try walk. A StartAsync inside the try may already have run (started after the try is
+        // true), and a StopAsync inside the try may not have run yet (started at entry is true).
+        //
+        // This is the mirror image of the same walk in BIDI024, which conjoins the two instead. The
+        // polarity follows from what each rule reports: BIDI024 reports a *duplicate* start, so it
+        // must be pessimistic about a driver being started; this rule reports a command on a driver
+        // that was *never* started, so it must be optimistic. Both choices keep an Error-severity
+        // diagnostic to cases that are certain on every path.
+        Dictionary<string, bool> mightBeStartedStatus = [];
+        foreach (string driverName in entryStatus.Keys)
+        {
+            mightBeStartedStatus[driverName] = entryStatus[driverName] || tryStatus[driverName];
+        }
+
+        List<Dictionary<string, bool>> exitStatuses = [tryStatus];
+        foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
+        {
+            Dictionary<string, bool> catchStatus = new(mightBeStartedStatus);
+            if (catchClause.Filter is not null)
+            {
+                ProcessNode(catchClause.Filter.FilterExpression, context, semanticModel, catchStatus);
+            }
+
+            ProcessNode(catchClause.Block, context, semanticModel, catchStatus);
+            exitStatuses.Add(catchStatus);
+        }
+
+        if (tryStatement.Finally is not null)
+        {
+            Dictionary<string, bool> finallyStatus = new(mightBeStartedStatus);
+            ProcessNode(tryStatement.Finally.Block, context, semanticModel, finallyStatus);
+            exitStatuses.Add(finallyStatus);
+        }
+
+        // After the try statement, a driver counts as started when any completion path leaves it
+        // started, matching how the if and switch merges treat mutually exclusive branches: this
+        // rule reports only a driver that is not started on every path, so a stop confined to one
+        // catch clause must not poison code that follows the statement.
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            driverStartedStatus[driverName] = exitStatuses.Any(exitStatus => exitStatus[driverName]);
         }
     }
 
@@ -337,7 +399,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         INamedTypeSymbol? currentType = type as INamedTypeSymbol;
         while (currentType != null)
         {
-            if (currentType.Name == "CommandResult")
+            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(currentType, "CommandResult"))
             {
                 return true;
             }
@@ -354,7 +416,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         INamedTypeSymbol? currentType = type!.BaseType;
         while (currentType != null)
         {
-            if (currentType.Name == "Module")
+            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(currentType, "Module"))
             {
                 return true;
             }

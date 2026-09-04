@@ -55,13 +55,6 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        // Find the driver variable (if any)
-        (string Name, ITypeSymbol Type)? driverVariable = FindDriverVariable(context, context.Node);
-        if (driverVariable == null)
-        {
-            return;
-        }
-
         // Find all Session.SubscribeAsync calls
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
@@ -89,12 +82,48 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                 }
 
                 // Check if this is Session.SubscribeAsync
-                if (methodSymbol.Name == "SubscribeAsync" && IsSessionModule(methodSymbol.ContainingType))
+                if (methodSymbol.Name != "SubscribeAsync" || !IsSessionModule(methodSymbol.ContainingType))
                 {
-                    AnalyzeSubscribeCall(context, invocation, driverVariable.Value);
+                    continue;
                 }
+
+                // The driver comes from the call's own receiver rather than from a search for a local
+                // declaration, so a driver held in a parameter, a field or a property is found just as
+                // a local is — and the suggested replacement names whatever the call site actually used.
+                if (GetDriverFromReceiver(context, memberAccess.Expression) is not (string, ITypeSymbol) driverVariable)
+                {
+                    continue;
+                }
+
+                AnalyzeSubscribeCall(context, invocation, driverVariable);
             }
         }
+    }
+
+    /// <summary>
+    /// Gets the name and type of the driver a Session.SubscribeAsync call was made through.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="receiver">The receiver of the SubscribeAsync call, for example <c>driver.Session</c>.</param>
+    /// <returns>The driver's name and type, or <see langword="null"/> if the receiver does not root in one.</returns>
+    private static (string Name, ITypeSymbol Type)? GetDriverFromReceiver(SyntaxNodeAnalysisContext context, ExpressionSyntax receiver)
+    {
+        ExpressionSyntax current = receiver;
+        while (current is MemberAccessExpressionSyntax memberAccess)
+        {
+            current = memberAccess.Expression;
+        }
+
+        if (current is not IdentifierNameSyntax identifier)
+        {
+            return null;
+        }
+
+        // IsCommandExecutorType accepts a null type and answers false, so no separate null test is needed.
+        ITypeSymbol? type = context.SemanticModel.GetTypeInfo(identifier).Type;
+        return AnalyzerSymbolHelpers.IsCommandExecutorType(type)
+            ? (identifier.Identifier.Text, type!)
+            : null;
     }
 
     private static void AnalyzeSubscribeCall(
@@ -109,7 +138,9 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
         // Get the first argument (SubscribeCommandParameters)
         ExpressionSyntax firstArg = invocation.ArgumentList.Arguments[0].Expression;
-        if (firstArg is not ObjectCreationExpressionSyntax objectCreation || objectCreation.ArgumentList == null)
+        // BaseObjectCreationExpressionSyntax so the target-typed form (`new(...)`) is recognized,
+        // matching what BIDI005 already accepts for the same argument.
+        if (firstArg is not BaseObjectCreationExpressionSyntax objectCreation || objectCreation.ArgumentList == null)
         {
             return;
         }
@@ -200,14 +231,14 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         (string Name, ITypeSymbol Type) driverVariable,
         string eventName)
     {
-        // Search through the driver's module properties. The driver's type was already resolved
-        // when its declaration was located, so there is no need to walk the method body again.
-        foreach (ISymbol member in driverVariable.Type.GetMembers())
+        // Search the driver's module properties, including those it inherits: a user's type deriving
+        // from BiDiDriver declares none of them itself, and GetMembers returns declared members only.
+        foreach (ISymbol member in GetAllMembers(driverVariable.Type))
         {
             if (member is IPropertySymbol propertySymbol && IsModuleType(propertySymbol.Type))
             {
                 // Search through module's ObservableEvent properties
-                foreach (ISymbol moduleMember in propertySymbol.Type.GetMembers())
+                foreach (ISymbol moduleMember in GetAllMembers(propertySymbol.Type))
                 {
                     if (moduleMember is IPropertySymbol eventProperty && IsObservableEventType(eventProperty.Type))
                     {
@@ -225,6 +256,22 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         return null;
     }
 
+    /// <summary>
+    /// Gets a type's members, including those declared on its base types.
+    /// </summary>
+    /// <param name="type">The type to enumerate.</param>
+    /// <returns>The declared and inherited members.</returns>
+    private static System.Collections.Generic.IEnumerable<ISymbol> GetAllMembers(ITypeSymbol type)
+    {
+        for (ITypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            foreach (ISymbol member in current.GetMembers())
+            {
+                yield return member;
+            }
+        }
+    }
+
     private static string? GetEventNameFromObservableEvent(
         SyntaxNodeAnalysisContext context,
         IPropertySymbol propertySymbol)
@@ -239,30 +286,6 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                 attr.ConstructorArguments[0].Value is string eventName)
             {
                 return eventName;
-            }
-        }
-
-        return null;
-    }
-
-    private static (string Name, ITypeSymbol Type)? FindDriverVariable(SyntaxNodeAnalysisContext context, SyntaxNode node)
-    {
-        // Look for BiDiDriver variable declarations
-        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(node))
-        {
-            if (statement is LocalDeclarationStatementSyntax localDecl)
-            {
-                foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
-                {
-                    if (variable.Initializer?.Value != null)
-                    {
-                        ITypeSymbol? type = context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-                        if (type != null && AnalyzerSymbolHelpers.IsCommandExecutorType(type))
-                        {
-                            return (variable.Identifier.Text, type);
-                        }
-                    }
-                }
             }
         }
 
@@ -287,6 +310,6 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private static bool IsObservableEventType(ITypeSymbol type)
     {
-        return type is INamedTypeSymbol namedType && namedType.Name == "ObservableEvent";
+        return AnalyzerSymbolHelpers.IsLibraryTypeNamed(type, "ObservableEvent");
     }
 }

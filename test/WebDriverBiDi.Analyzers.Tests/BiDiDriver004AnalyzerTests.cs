@@ -361,15 +361,16 @@ public class BiDiDriver004AnalyzerTests
     }
 
     /// <summary>
-    /// Tests FixableDiagnosticIds property.
+    /// Tests that the provider fixes both rules that report the same shape: BIDI004 and BIDI013.
     /// </summary>
     [Fact]
-    public void FixableDiagnosticIds_ContainsBIDI004()
+    public void FixableDiagnosticIds_ContainsBIDI004AndBIDI013()
     {
         BiDiDriver004_CancellationTokenSuggestionCodeFixProvider provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
 
         Assert.Contains(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, provider.FixableDiagnosticIds);
-        Assert.Single(provider.FixableDiagnosticIds);
+        Assert.Contains(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, provider.FixableDiagnosticIds);
+        Assert.Equal(2, provider.FixableDiagnosticIds.Length);
     }
 
     /// <summary>
@@ -788,4 +789,116 @@ public class BiDiDriver004AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a user type recognised through the <c>IBiDiCommandExecutor</c> interface — rather
+    /// than by its own name — is treated as a command executor. A wrapper or test double implementing
+    /// the interface is a driver for this rule's purposes just as <c>BiDiDriver</c> is.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_OnInterfaceImplementer_ReportsInfo()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class RecordingExecutor : IBiDiCommandExecutor
+                {
+                    public TimeSpan DefaultCommandTimeout => TimeSpan.Zero;
+
+                    public bool IsStarted => true;
+
+                    public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+                    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+                    public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+                        where T : CommandResult => throw new NotImplementedException();
+
+                    public Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+                        where T : CommandResult => throw new NotImplementedException();
+
+                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+                    {
+                    }
+
+                    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(RecordingExecutor executor)
+                    {
+                        await {|#0:executor.ExecuteCommandAsync(new StatusCommandParameters())|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+
+    /// <summary>
+    /// Tests that a type implementing a user's own interface that merely shares the name
+    /// <c>IBiDiCommandExecutor</c> is not treated as a command executor. The interface match requires
+    /// the library's namespace, exactly as the base-class match does.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_OnForeignInterfaceImplementer_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace UserApp
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task<int> ExecuteCommandAsync(string name);
+                }
+
+                public class RecordingExecutor : IBiDiCommandExecutor
+                {
+                    public Task<int> ExecuteCommandAsync(string name) => Task.FromResult(0);
+
+                    public Task<int> ExecuteCommandAsync(string name, CancellationToken cancellationToken) => Task.FromResult(0);
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(RecordingExecutor executor)
+                    {
+                        await executor.ExecuteCommandAsync("status");
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }
