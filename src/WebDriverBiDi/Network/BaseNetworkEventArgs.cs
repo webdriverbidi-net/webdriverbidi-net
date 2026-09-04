@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// The base properties of all events for network traffic.
@@ -106,5 +107,6 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("intercepts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<string>))]
     internal List<string>? SerializableIntercepts { get; set; }
 }

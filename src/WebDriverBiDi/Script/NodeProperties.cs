@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing information about a Node object.
@@ -117,6 +118,7 @@ public record NodeProperties
     [JsonPropertyName("children")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<NodeRemoteValue>))]
     internal List<NodeRemoteValue>? SerializableChildren { get; set; }
 
     /// <summary>
@@ -125,5 +127,6 @@ public record NodeProperties
     [JsonPropertyName("attributes")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullValueDictionaryJsonConverter<string>))]
     internal Dictionary<string, string>? SerializableAttributes { get; set; }
 }

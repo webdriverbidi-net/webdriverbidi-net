@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// A network request.
@@ -135,6 +136,7 @@ public record RequestData
     [JsonPropertyName("headers")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<Header>))]
     internal List<Header> SerializableHeaders { get; set; } = [];
 
     /// <summary>
@@ -143,6 +145,7 @@ public record RequestData
     [JsonPropertyName("cookies")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<Cookie>))]
     internal List<Cookie> SerializableCookies { get; set; } = [];
 
     /// <summary>

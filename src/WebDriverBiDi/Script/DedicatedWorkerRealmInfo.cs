@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object representing a dedicated worker realm for executing script.
@@ -32,5 +33,6 @@ public record DedicatedWorkerRealmInfo : RealmInfo
     [JsonPropertyName("owners")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<string>))]
     internal List<string> SerializableOwners { get; set; } = [];
 }

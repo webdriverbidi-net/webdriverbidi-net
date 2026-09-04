@@ -69,7 +69,7 @@ public class DedicatedWorkerRealmInfoTests
                         "owners": ""
                       }
                       """;
-        Assert.Contains("value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
+        Assert.Contains("must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RealmInfo>(json)).Message);
     }
 
     [Fact]
