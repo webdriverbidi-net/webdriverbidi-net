@@ -67,7 +67,7 @@ Use `GetRealmsAsync` to enumerate script execution realms. Realms represent Java
 
 [!code-csharp[Get Realms](../../code/script/ScriptSamples.cs#GetRealms)]
 
-Use the returned `RealmId` with `RealmTarget` to execute script in a specific realm. `WindowRealmInfo` provides `BrowsingContext` and `Sandbox` for window realms.
+Use the returned `RealmId` with `RealmTarget` to execute script in a specific realm. `WindowRealmInfo` provides `BrowsingContextId` and `Sandbox` for window realms.
 
 ### Sandboxed Execution
 

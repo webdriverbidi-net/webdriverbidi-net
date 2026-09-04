@@ -138,6 +138,22 @@ WebDriverBiDi emits events for:
 
 See the [observability documentation](https://github.com/webdriverbidi-net/webdriverbidi-net/blob/main/docs/articles/advanced/observability.md) for complete event reference.
 
+## Native AOT
+
+When publishing with `PublishAot`, the ILCompiler sets `EventSourceSupport` to `false` by default. That
+makes `EventSource.IsEnabled()` permanently false, so the library raises no diagnostic events and this
+bridge forwards nothing to `ILogger`. Nothing throws and nothing is written to explain the silence. Opt
+back in from your project file:
+
+```xml
+<PropertyGroup>
+  <PublishAot>true</PublishAot>
+  <EventSourceSupport>true</EventSourceSupport>
+</PropertyGroup>
+```
+
+This affects Native AOT publishing only; a normal build, including a trimmed one, is unaffected.
+
 ## Performance
 
 The EventSource bridge has minimal overhead:

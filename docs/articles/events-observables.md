@@ -10,7 +10,6 @@ Browser events allow you to react to things happening in the browser in real-tim
 - Network events (requests, responses)
 - Console log messages
 - User context creation/destruction
-- DOM mutations
 - And more...
 
 ## The Two-Step Subscription Process
@@ -208,6 +207,13 @@ library diagnostics to your own logging infrastructure.
 Each observable event has an `EventName` property with the protocol event name:
 
 [!code-csharp[Event Names](../code/events-observables/EventObserverSamples.cs#EventNames)]
+
+### Counting Observers
+
+`ObservableEvent<T>.CurrentObserverCount` reports how many observers are currently attached. It is most
+useful when deciding whether a `Session.UnsubscribeAsync` is safe — an event with observers still attached
+should stay subscribed — and when asserting in tests that an observer was disposed. A data collector counts
+as one observer.
 
 ## Collecting Event Data
 

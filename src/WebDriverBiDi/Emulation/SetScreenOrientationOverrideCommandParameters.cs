@@ -10,6 +10,13 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setScreenOrientationOverride command.
 /// </summary>
+/// <remarks>
+/// Unlike most emulation commands, this one has no global form: the specification requires the command to
+/// name a scope, so a call that leaves both <see cref="Contexts"/> and <see cref="UserContexts"/> empty is
+/// rejected with <see cref="ErrorCode.InvalidArgument"/>. Add at least one browsing context or user context
+/// before executing the command. Commands such as <c>emulation.setNetworkConditions</c> do accept an
+/// unscoped call and apply the screen orientation override as the default for new contexts; this one does not.
+/// </remarks>
 public class SetScreenOrientationOverrideCommandParameters : CommandParameters<SetScreenOrientationOverrideCommandResult>
 {
     /// <summary>

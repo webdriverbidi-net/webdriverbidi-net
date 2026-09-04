@@ -53,7 +53,7 @@ The `RegisterModule` method is thread-safe and can be called concurrently from m
 
 [!code-csharp[Thread Safe Registration](../code/core-concepts/CoreConceptsSamples.cs#ThreadSafeRegistration)]
 
-Thread safety is enforced using an internal lock that ensures the check against `IsStarted` and the module addition are atomic operations. However, the timing restriction still applies—all registrations must complete before `StartAsync()` is called.
+Thread safety is enforced using an internal lock that makes the lifecycle check and the module addition atomic. The check is against the transport's state rather than `IsStarted`: registration is rejected as soon as the transport leaves `Disconnected`, which happens when a connect begins, not when it completes. Registration is legal again once a teardown returns the transport to `Disconnected`.
 
 #### Command Timeout Configuration
 

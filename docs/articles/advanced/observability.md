@@ -48,64 +48,69 @@ Choose the appropriate level based on your needs:
 | **Critical** | Production alerts | Critical failures (none currently emitted) |
 | **Error** | Error tracking | Command errors, protocol errors, connection errors |
 | **Warning** | Operational monitoring | Command timeouts, event handler errors, unknown messages |
-| **Informational** | General monitoring | Connection lifecycle, command completion, subscriptions |
+| **Informational** | General monitoring | Connection lifecycle, command completion, transport start/stop, custom registrations |
 | **Verbose** | Development/debugging | All events including command sending, event receipt, statistics |
 
 **Recommendation for Production:** Use `EventLevel.Informational` or `EventLevel.Warning` to balance observability with overhead.
 
 ## Available Events
 
+The **ID** column is the numeric EventSource event ID, which the
+[Microsoft.Extensions.Logging bridge](webdriverbidi-logging.md) surfaces as `EventId` on every forwarded
+entry. IDs are stable; gaps in the sequence are events that existed in an earlier version and have since
+been retired.
+
 ### Connection Lifecycle
 
-| Event | Level | Description | Payload |
-|-------|-------|-------------|---------|
-| `ConnectionOpening` | Info | Connection is being established | `connectionId`, `url` |
-| `ConnectionOpened` | Info | Connection successfully established | `connectionId`, `url` |
-| `ConnectionClosing` | Info | Connection is being closed | `connectionId`, `reason` |
-| `ConnectionClosed` | Info | Connection fully closed | `connectionId` |
-| `ConnectionError` | Error | Connection error occurred | `connectionId`, `errorMessage` |
+| Event | ID | Level | Description | Payload |
+|-------|---:|-------|-------------|---------|
+| `ConnectionOpening` | 1 | Info | Connection is being established | `connectionId`, `url` |
+| `ConnectionOpened` | 2 | Info | Connection successfully established | `connectionId`, `url` |
+| `ConnectionClosing` | 3 | Info | Connection is being closed | `connectionId`, `reason` |
+| `ConnectionClosed` | 4 | Info | Connection fully closed | `connectionId` |
+| `ConnectionError` | 5 | Error | Connection error occurred | `connectionId`, `errorMessage` |
 
 ### Command Execution
 
-| Event | Level | Description | Payload |
-|-------|-------|-------------|---------|
-| `CommandSending` | Verbose | Command being sent to remote end | `commandId`, `method` |
-| `CommandCompleted` | Info | Command completed successfully | `commandId`, `method`, `elapsedMilliseconds` |
-| `CommandTimeout` | Warning | Command timed out | `commandId`, `method`, `timeoutMilliseconds` |
-| `CommandError` | Error | Command failed with error response | `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
-| `CommandSendFailed` | Warning | Command could not be transmitted to the remote end | `commandId`, `method`, `failureType`, `failureMessage`, `elapsedMilliseconds` |
-| `CanceledCommandResponseDiscarded` | Info | A response arrived for a command the local end had already stopped waiting for (timed out, canceled, or pending at connection close) and was discarded | `commandId`, `method`, `reason`, `millisecondsSinceCancellation` |
+| Event | ID | Level | Description | Payload |
+|-------|---:|-------|-------------|---------|
+| `CommandSending` | 6 | Verbose | Command being sent to remote end | `commandId`, `method` |
+| `CommandCompleted` | 7 | Info | Command completed successfully | `commandId`, `method`, `elapsedMilliseconds` |
+| `CommandTimeout` | 8 | Warning | Command timed out | `commandId`, `method`, `timeoutMilliseconds` |
+| `CommandError` | 9 | Error | Command failed with error response | `commandId`, `method`, `errorCode`, `errorType`, `errorMessage` |
+| `CommandSendFailed` | 22 | Warning | Command could not be transmitted to the remote end | `commandId`, `method`, `failureType`, `failureMessage`, `elapsedMilliseconds` |
+| `CanceledCommandResponseDiscarded` | 24 | Info | A response arrived for a command the local end had already stopped waiting for (timed out, canceled, or pending at connection close) and was discarded | `commandId`, `method`, `reason`, `millisecondsSinceCancellation` |
 
 ### Event Handling
 
-| Event | Level | Description | Payload |
-|-------|-------|-------------|---------|
-| `EventReceived` | Verbose | Protocol event received | `eventMethod` |
-| `EventHandlerError` | Warning | User event handler threw exception | `eventMethod`, `errorMessage` |
+| Event | ID | Level | Description | Payload |
+|-------|---:|-------|-------------|---------|
+| `EventReceived` | 10 | Verbose | Protocol event received | `eventMethod` |
+| `EventHandlerError` | 15 | Warning | User event handler threw exception | `eventMethod`, `errorMessage` |
 
 ### Protocol Processing
 
-| Event | Level | Description | Payload |
-|-------|-------|-------------|---------|
-| `UnknownMessageReceived` | Warning | Unknown message from remote end | `messageType`, `messageLength` |
-| `ProtocolError` | Error | Protocol parsing/processing error | `errorMessage`, `messageSnippet` |
+| Event | ID | Level | Description | Payload |
+|-------|---:|-------|-------------|---------|
+| `UnknownMessageReceived` | 13 | Warning | Unknown message from remote end | `messageType`, `messageLength` |
+| `ProtocolError` | 14 | Error | Protocol parsing/processing error | `errorMessage`, `messageSnippet` |
 
 ### Transport & Statistics
 
-| Event | Level | Description | Payload |
-|-------|-------|-------------|---------|
-| `TransportStarted` | Info | Transport message processing started | (none) |
-| `TransportStopped` | Info | Transport message processing stopped | `reason` |
-| `PendingCommandCount` | Verbose | Current pending command count | `pendingCount` |
-| `AsyncHandlerTaskCount` | Verbose | Number of in-flight asynchronous event handler tasks (see [Performance](performance.md#in-flight-async-handler-tasks-asynchandlertaskcount-eventsource-event)) | `inFlightCount` |
-| `MessageStatistics` | Verbose | Message statistics snapshot | `messagesSent`, `messagesReceived`, `eventsReceived`, `errorsReceived` |
+| Event | ID | Level | Description | Payload |
+|-------|---:|-------|-------------|---------|
+| `TransportStarted` | 17 | Info | Transport message processing started | (none) |
+| `TransportStopped` | 18 | Info | Transport message processing stopped | `reason` |
+| `PendingCommandCount` | 16 | Verbose | Current pending command count | `pendingCount` |
+| `AsyncHandlerTaskCount` | 23 | Verbose | Number of in-flight asynchronous event handler tasks (see [Performance](performance.md#in-flight-async-handler-tasks-asynchandlertaskcount-eventsource-event)) | `inFlightCount` |
+| `MessageStatistics` | 21 | Verbose | Message statistics snapshot | `messagesSent`, `messagesReceived`, `eventsReceived`, `errorsReceived` |
 
 ### Module & Extensibility
 
-| Event | Level | Description | Payload |
-|-------|-------|-------------|---------|
-| `CustomModuleRegistered` | Info | Custom module registered | `moduleName` |
-| `CustomEventRegistered` | Info | Custom event type registered | `eventName`, `eventType` |
+| Event | ID | Level | Description | Payload |
+|-------|---:|-------|-------------|---------|
+| `CustomModuleRegistered` | 19 | Info | Custom module registered | `moduleName` |
+| `CustomEventRegistered` | 20 | Info | Custom event type registered | `eventName`, `eventType` |
 
 ## Common Scenarios
 
@@ -304,6 +309,21 @@ Always dispose EventListener instances:
 3. Ensure listener is created before WebDriverBiDi use:
 
    [!code-csharp[Listener Before Driver](../../code/advanced/ObservabilitySamples.cs#ListenerBeforeDriver)]
+
+4. If the application is published with Native AOT, enable EventSource support. The ILCompiler sets
+   `EventSourceSupport` to `false` by default, which makes `EventSource.IsEnabled()` return false
+   permanently: no events are emitted, no listener is ever called, and the
+   [Microsoft.Extensions.Logging bridge](webdriverbidi-logging.md) produces nothing. Nothing throws and
+   nothing is logged about it, so it presents exactly as "no events". Opt back in from the project file:
+
+   ```xml
+   <PropertyGroup>
+     <PublishAot>true</PublishAot>
+     <EventSourceSupport>true</EventSourceSupport>
+   </PropertyGroup>
+   ```
+
+   This applies only to Native AOT publishing; a normal build, including a trimmed one, is unaffected.
 
 ### High Event Volume
 

@@ -593,7 +593,7 @@ public class PerformanceSamples
         }
         finally
         {
-            pool.Release(driver);
+            await pool.ReleaseAsync(driver);
         }
         #endregion
     }
@@ -926,18 +926,24 @@ public class DriverPool
         return driver;
     }
 
-    public void Release(BiDiDriver driver)
+    public async Task ReleaseAsync(BiDiDriver driver)
     {
+        bool returnedToPool;
         lock (availableDrivers)
         {
-            if (availableDrivers.Count < maxPoolSize)
+            returnedToPool = availableDrivers.Count < maxPoolSize;
+            if (returnedToPool)
             {
                 availableDrivers.Push(driver);
             }
-            else
-            {
-                driver.StopAsync().Wait();
-            }
+        }
+
+        // Shut the surplus driver down outside the lock, and await it rather than blocking with
+        // .Wait(): blocking here would hold the lock across I/O and can deadlock, and a faulted
+        // StopAsync would surface as an AggregateException instead of the original exception.
+        if (!returnedToPool)
+        {
+            await driver.StopAsync();
         }
 
         semaphore.Release();

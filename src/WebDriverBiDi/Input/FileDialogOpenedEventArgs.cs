@@ -22,7 +22,7 @@ public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
     }
 
     /// <summary>
-    /// Gets the ID of the browsing context for which the user prompt was opened.
+    /// Gets the ID of the browsing context for which the file dialog was opened.
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
@@ -38,7 +38,7 @@ public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
     public bool IsMultiple { get; internal set; }
 
     /// <summary>
-    /// Gets the ID of the user context for which the user prompt was opened.
+    /// Gets the ID of the user context for which the file dialog was opened.
     /// </summary>
     [JsonPropertyName("userContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

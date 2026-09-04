@@ -54,7 +54,7 @@ Remove any previously configured virtual wallet behavior, returning to the brows
 
 ### Scoping to a Browsing Context
 
-Apply the wallet behavior only to a specific tab or frame by setting the `Context` property:
+Apply the wallet behavior only to a specific tab or frame by setting the `BrowsingContextId` property:
 
 [!code-csharp[Scope to Context](../../code/modules/DigitalCredentialsModuleSamples.cs#ScopeToContext)]
 

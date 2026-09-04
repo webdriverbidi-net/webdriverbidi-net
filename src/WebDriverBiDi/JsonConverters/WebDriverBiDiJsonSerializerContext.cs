@@ -8,6 +8,7 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
@@ -28,16 +29,19 @@ using WebDriverBiDi.WebExtension;
 /// <summary>
 /// Source-generated JSON serializer context providing AOT-compatible metadata
 /// for all types that flow through WebDriverBiDi command serialization.
-/// <para>
-/// AOT consumers should set this as their <c>TypeInfoResolver</c>:
-/// <code>
-/// var options = new JsonSerializerOptions
-/// {
-///     TypeInfoResolver = WebDriverBiDiJsonSerializerContext.Default,
-/// };
-/// </code>
-/// </para>
 /// </summary>
+/// <remarks>
+/// <para>
+/// Consumers do not need to install this context. The transport selects it automatically, and its
+/// serializer options are private, so there is no <c>TypeInfoResolver</c> for a caller to set.
+/// </para>
+/// <para>
+/// To make types from a custom module serializable under AOT, declare a context of your own over
+/// those types and register it with
+/// <see cref="IBiDiDriverConfiguration.RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver, System.Threading.CancellationToken)"/>
+/// before starting the driver; the library combines it with this context.
+/// </para>
+/// </remarks>
 // ── Standard .NET types typically used in serialization of extension data ──
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(bool))]

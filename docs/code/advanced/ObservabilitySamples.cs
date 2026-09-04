@@ -8,6 +8,7 @@
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Linq;
@@ -184,9 +185,9 @@ public static class ObservabilitySamples
         await driver.Session.StatusAsync();
 
         // Logs will show:
-        // [12:34:56 INF] TransportStarted
         // [12:34:56 INF] CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
-        // (CommandSending is a Verbose-level event and is not emitted at EventLevel.Informational)
+        // (CommandSending is a Verbose-level event and is not emitted at EventLevel.Informational;
+        //  TransportStarted is raised once, when the transport connects, and is already shown above)
         #endregion
     }
 
@@ -450,7 +451,13 @@ public class ErrorTracker : EventListener
         if (eventData.Level == EventLevel.Error)
         {
             errorCount++;
-            string error = $"{eventData.EventName}: {string.Join(", ", eventData.PayloadNames)}";
+            // Pair each payload name with its value; joining PayloadNames alone records the shape of
+            // the event and none of its detail, so every error of a given kind looks identical.
+            ReadOnlyCollection<string>? names = eventData.PayloadNames;
+            ReadOnlyCollection<object?>? values = eventData.Payload;
+            IEnumerable<string> payload = Enumerable.Range(0, Math.Min(names?.Count ?? 0, values?.Count ?? 0))
+                .Select(index => $"{names![index]}={values![index]}");
+            string error = $"{eventData.EventName}: {string.Join(", ", payload)}";
             recentErrors.Add(error);
 
             // Keep only last 100 errors

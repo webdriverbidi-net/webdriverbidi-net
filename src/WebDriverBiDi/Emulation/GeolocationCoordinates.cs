@@ -81,9 +81,11 @@ public class GeolocationCoordinates
     /// Gets or sets the accuracy of the altitude of the geographic position to a 95% confidence level.
     /// </summary>
     /// <remarks>
-    /// Valid values for this property are greater than or equal to 0.0. This property does not
-    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
-    /// rejects it when the command is executed.
+    /// Valid values for this property are greater than or equal to 0.0. The specification also requires
+    /// that this property be set only when <see cref="Altitude"/> is: an altitude accuracy without an
+    /// altitude is rejected as <c>invalid argument</c>. This property does not validate either
+    /// constraint; the value is sent as-is, and a conforming remote end rejects it when the command is
+    /// executed.
     /// </remarks>
     [JsonPropertyName("altitudeAccuracy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

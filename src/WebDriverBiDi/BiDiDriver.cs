@@ -659,9 +659,12 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </para>
     /// <para>
     /// <strong>Thread safety:</strong> This method is thread-safe and can be safely called from multiple
-    /// threads concurrently. An internal lock ensures that the check against <see cref="IsStarted"/> and
-    /// the module addition to the registry are performed atomically, preventing race conditions during
-    /// concurrent registration attempts or when registering near the time of calling <see cref="StartAsync(string, CancellationToken)"/>.
+    /// threads concurrently. An internal lock ensures that the lifecycle check and the module addition to
+    /// the registry are performed atomically, preventing race conditions during concurrent registration
+    /// attempts or when registering near the time of calling <see cref="StartAsync(string, CancellationToken)"/>.
+    /// The check is against the transport's state, not <see cref="IsStarted"/>: registration is rejected
+    /// once the transport has left <c>Disconnected</c>, which is as soon as a connect is in flight, and
+    /// <see cref="IsStarted"/> is still false at that point.
     /// </para>
     /// <para>
     /// This method is used for registering custom modules that extend the WebDriver BiDi protocol.

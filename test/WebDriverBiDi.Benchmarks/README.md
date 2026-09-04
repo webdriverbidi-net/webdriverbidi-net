@@ -116,11 +116,13 @@ dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- --exporters jso
 # Results in: BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json
 ```
 
-Store these files with version tags:
+Store these files under the names the comparison script looks for. `compare-benchmarks.sh` resolves a
+baseline per benchmark class as `ci-baseline-<ClassName>.json`, so any other filename is ignored:
 ```bash
 # After running benchmarks for a release
 cp BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
-   test/WebDriverBiDi.Benchmarks/baselines/v1.0.0-baseline.json
+   test/WebDriverBiDi.Benchmarks/baselines/
+# then rename each to ci-baseline-<ClassName>.json
 ```
 
 ### For Detailed Analysis (HTML + CSV)
@@ -191,7 +193,7 @@ Before tagging a release:
 
 3. Document any significant changes (>20%) in release notes
 
-4. Refresh the committed baselines: run the **Produce benchmark baseline** workflow
+4. Refresh the committed baselines: run the **Benchmark Baseline** workflow
    (`.github/workflows/benchmark-baseline.yml`), download the `benchmark-baseline` artifact, and drop its
    `ci-baseline-<ClassName>.json` files into `test/WebDriverBiDi.Benchmarks/baselines/`. Baselines are
    produced on a CI runner so they match the hardware the comparison runs on.

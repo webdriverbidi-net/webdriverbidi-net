@@ -22,6 +22,20 @@ The Emulation module allows you to:
 
 [!code-csharp[Accessing Module](../../code/modules/EmulationModuleSamples.cs#AccessingModule)]
 
+## Scoping
+
+Every command in this module takes `Contexts` and `UserContexts` collections that limit the override to
+particular browsing contexts or user contexts. Leaving both empty means "not specified", and the two groups
+of commands treat that differently:
+
+| Behavior when unscoped | Commands |
+|---|---|
+| Applies globally, becoming the default for new contexts | `setUserAgentOverride`, `setForcedColorsModeThemeOverride`, `setGeolocationOverride`, `setMediaFeaturesOverride`, `setNetworkConditions`, `setScrollbarTypeOverride`, `setTouchOverride`, `setViewportMetaOverride` |
+| **Rejected with `invalid argument`** | `setLocaleOverride`, `setTimezoneOverride`, `setScreenSettingsOverride`, `setScreenOrientationOverride`, `setScriptingEnabled` |
+
+For the second group the specification requires a scope, so add at least one browsing context or user
+context before executing the command.
+
 ## Timeout and Cancellation
 
 All commands in this module accept optional `timeoutOverride` and `CancellationToken` parameters. Use `timeoutOverride` to set a per-command timeout (defaults to `BiDiDriver.DefaultCommandTimeout` when omitted). Use `CancellationToken` for cooperative cancellation. See the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details and examples.

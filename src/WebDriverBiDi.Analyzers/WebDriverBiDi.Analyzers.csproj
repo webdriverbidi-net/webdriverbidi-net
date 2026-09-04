@@ -12,12 +12,15 @@
     <!-- NuGet Package Metadata -->
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>WebDriverBiDi.Analyzers</PackageId>
-    <Authors>WebDriverBiDi.NET Contributors</Authors>
+    <Authors>WebDriverBiDi.NET Committers</Authors>
+    <Company>WebDriverBiDi.NET Committers</Company>
     <Title>WebDriver BiDirectional Client Library - Source Code Analyzers</Title>
     <Description>Roslyn analyzers for WebDriverBiDi.NET to catch common usage errors at compile time</Description>
     <PackageTags>webdriver;bidi;roslyn;analyzer</PackageTags>
     <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
 
     <!-- Include analyzer DLL in the package -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -40,6 +43,10 @@
     <RoslynVersion Condition="'$(RoslynVersion)' == ''">4.8.0</RoslynVersion>
   </PropertyGroup>
 
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/"/>
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0">

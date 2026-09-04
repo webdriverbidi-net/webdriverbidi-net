@@ -21,7 +21,7 @@ public record DeleteCookiesCommandResult : CommandResult
     }
 
     /// <summary>
-    /// Gets the partition key for the list of returned cookies.
+    /// Gets the partition key of the storage partition the cookies were deleted from.
     /// </summary>
     [JsonPropertyName("partitionKey")]
     [JsonRequired]

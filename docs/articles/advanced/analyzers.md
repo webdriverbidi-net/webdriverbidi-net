@@ -26,7 +26,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI002** | Error | Custom event registered (via `RegisterEvent()`) after `StartAsync()`; not reported after a `StopAsync()`. Adding observers with `AddObserver()` is not reported: observers may be added to an observable event at any time, including while the driver is running |
 | **BIDI003** | Error | `RegisterTypeInfoResolverAsync()` called after `StartAsync()`; not reported after a `StopAsync()` |
 | **BIDI004** | Info | Cancellable operation (`ExecuteCommandAsync`, `EvaluateAsync`, `CallFunctionAsync`, `GetTreeAsync`, `LocateNodesAsync`) called without `CancellationToken`; suggests passing one. `NavigateAsync` is reported by BIDI013 instead, never by both |
-| **BIDI005** | Warning | Event observer added but event name not included in `Session.SubscribeAsync()`. Both the list constructor (`new SubscribeCommandParameters(["a", "b"])`) and the single-event constructor (`new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName)`) are recognized; string literals, constants and `EventName` property accesses all resolve. When the subscription parameters are held in a variable rather than created inline at the call, the subscription set cannot be inspected and no warning is reported |
+| **BIDI005** | Warning | Event observer added but event name not included in `Session.SubscribeAsync()`. Both the list constructor (`new SubscribeCommandParameters(["a", "b"])`) and the single-event constructor (`new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName)`) are recognized; string literals, constants and `EventName` property accesses all resolve. When any part of the subscription cannot be read at the call site — the parameters object held in a variable, an events list held in a variable, a spread element such as `[..events]`, a non-constant array element, or an object initializer that adds to `Events` — the subscribed set is unknowable and no warning is reported, because reporting from an incomplete set would accuse code that does subscribe |
 | **BIDI006** | Warning | `EventObserver` not disposed or unobserved |
 | **BIDI007** | Warning | Blocking operation (e.g., `Thread.Sleep`, `.Result`) in event handler. `RunHandlerAsynchronously` suppresses the diagnostic only when the handler actually runs off the dispatching thread: an `Action<T>` handler, an `async` lambda, or an `async` method group. A non-`async` `Task`-returning handler is still reported (with a message saying the option cannot help), because the option detaches the returned `Task` rather than moving where the handler starts |
 | **BIDI008** | Warning | Unsafe cast of `EvaluateResult`; suggests pattern matching |
@@ -57,13 +57,15 @@ The following analyzers have code fix providers:
 - **BIDI001** — Moves `RegisterModule()` call before `StartAsync()`
 - **BIDI002** — Moves `RegisterEvent()` call before `StartAsync()`
 - **BIDI003** — Moves `RegisterTypeInfoResolverAsync()` call before `StartAsync()`
-- **BIDI004** — Adds `CancellationToken` parameter to long-running operations
+- **BIDI004** — Adds a `CancellationToken` argument: either `CancellationToken.None`, or an existing token in scope, offered by its own name. The second action appears only when such a token exists, and the type name is qualified when the file has no `using System.Threading`
 - **BIDI005** — Adds missing event name to `Session.SubscribeAsync()` call (a single-event constructor argument is rewritten into a collection expression holding both events)
 - **BIDI006** — Adds a `using` declaration for the `EventObserver`
 - **BIDI007** — For an `Action<T>` handler or an `async` lambda, adds the `ObservableEventHandlerOptions.RunHandlerAsynchronously` option to the `AddObserver` call. For a non-`async` `Task`-returning lambda, converts it to an `async` lambda whose first statement is `await Task.Yield();` (rewriting `return Task.CompletedTask;` / `return <task>;` accordingly) and adds the option if it is missing. No fix is offered when the handler is a method group, because the method declaration itself would have to change
 - **BIDI008** — Replaces unsafe cast with pattern matching
 - **BIDI009** — Moves the command execution after the existing `StartAsync` call on the same driver
+- **BIDI010** — Adds `await` to the fire-and-forget command, offered only where `await` is legal: the nearest enclosing function must be `async`, or the call must be a top-level statement
 - **BIDI012** — Adds `await driver.StopAsync()` before `DisposeAsync()`; for `await using` forms, at the end of the scope that disposes the driver
+- **BIDI013** — Same fix as BIDI004; the two rules report the same shape and share a provider
 - **BIDI014** — Replaces parameterless constructor with `.Reset*` property (qualified by the type that declares it; a local declared with the derived type is retyped to match)
 - **BIDI015** — Replaces string literal with `ObservableEvent.EventName` property
 - **BIDI017** — Adds null-coalescing assignment before adding to nullable list
@@ -167,7 +169,11 @@ Each rule below is addressable by anchor (for example `#bidi004`) so its diagnos
 
 ### BIDI015
 
-**Warning.** A string literal is used for an event name instead of `ObservableEvent.EventName`.
+**Warning.** A string literal is used for an event name instead of `ObservableEvent.EventName`. The driver is
+resolved from the `Session.SubscribeAsync` receiver, so it may be a local, a parameter, a field or a property,
+and a type deriving from `BiDiDriver` resolves its inherited module properties. The rule stays silent when the
+receiver does not root in a simple identifier (`GetDriver().Session.SubscribeAsync(...)`), when the session
+module is held on its own with no driver to name, and when the driver is a generic type parameter.
 
 ### BIDI016
 

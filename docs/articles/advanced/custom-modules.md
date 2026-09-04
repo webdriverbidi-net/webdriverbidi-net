@@ -90,6 +90,24 @@ You can also expose observable events from your custom module:
 > Passing a `BiDiDriver` instance satisfies both interfaces, so your module constructor always
 > receives a `BiDiDriver` in practice.
 
+### What the invoker receives
+
+`RegisterEvent<T>` takes a `Func<EventInfo<T>, Task>`. `EventInfo<T>` carries three things:
+
+| Member | Contents |
+|---|---|
+| `EventData` | The deserialized `T` — your event args type |
+| `AdditionalData` | Extension properties the remote end put **inside** the event's `params` object |
+| `AdditionalEventProperties` | Extension properties the remote end put on the **event envelope**, alongside `method` and `params` |
+
+Both dictionaries are `ReceivedDataDictionary` and are empty rather than null when the remote end sent
+nothing extra, so a vendor-prefixed field can be read without a null check.
+
+Mark each `ObservableEvent<T>` property on your module with `[ObservableEventName("your.event")]`, naming the
+same string you passed to the `ObservableEvent<T>` constructor. The library's analyzers read that attribute
+from compiled metadata, which is what lets BIDI005 and BIDI015 recognise your module's events in a consuming
+project that references your module as a package.
+
 ## Enum Wire Values
 
 Enums used in command parameters, results, and event args serialize as JSON strings through `EnumValueJsonConverter<T>` (applied with a `JsonConverter` attribute on the enum). By default the wire value is the member name lowercased (`Enabled` becomes `"enabled"`), and deserialization is strict: an incoming string that matches no member throws a `JsonException` rather than mapping silently. Three attributes adjust this for a custom module's enums:
@@ -186,6 +204,18 @@ LoggingTransport transport = new(connection);
 await using BiDiDriver driver = new(TimeSpan.FromSeconds(60), transport);
 await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 ```
+
+### Other extension points on `Transport`
+
+| Member | Purpose |
+|---|---|
+| `CreateIncomingMessage` | `protected virtual`. See the raw bytes of every inbound message before they are parsed |
+| `CreateCommand` | `protected virtual`. Build the `Command` envelope — its id, method and parameters — for an outgoing command; override to stamp every command with an extra property |
+| `SendCommandAsync` | `public virtual`. Send a command and get back the `Command` that was queued, without waiting for its response. `BiDiDriver.ExecuteCommandAsync` is the layer above it that waits and deserializes |
+
+Overriding `CreateCommand` is the supported way to add a vendor extension property to every command; adding
+it per call through `CommandParameters.AdditionalData` works too, but goes through reflection-based
+serialization and so is flagged by BIDI022 for AOT and trimming.
 
 ## Next Steps
 

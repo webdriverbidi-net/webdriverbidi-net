@@ -21,7 +21,7 @@ public record SetCookieCommandResult : CommandResult
     }
 
     /// <summary>
-    /// Gets the partition key for the list of returned cookies.
+    /// Gets the partition key of the storage partition the cookie was set in.
     /// </summary>
     [JsonPropertyName("partitionKey")]
     [JsonRequired]

@@ -55,7 +55,8 @@ public abstract record RemoteValue
     public abstract LocalValue ToLocalValue();
 
     /// <summary>
-    /// Attempts to convert this <see cref="RemoteValue"/> to the specified type-specific RemoteValue type.
+    /// Converts this <see cref="RemoteValue"/> to the specified type-specific RemoteValue type, throwing if it
+    /// is not of that type. Use <see cref="TryConvertTo{T}"/> to test without throwing.
     /// </summary>
     /// <typeparam name="T">The type-specific RemoteValue type to convert to.</typeparam>
     /// <param name="result">When this method returns, contains the converted value or null if the conversion failed.</param>

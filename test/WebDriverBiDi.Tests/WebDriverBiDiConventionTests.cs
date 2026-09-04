@@ -26,9 +26,10 @@ public class WebDriverBiDiConventionTests
     /// <summary>
     /// The optional lists that are deliberately nullable and settable. An entry belongs here only when the
     /// command's remote end steps in the WebDriver BiDi specification branch on the field's presence and
-    /// replace existing state before consuming the array (e.g. network.continueRequest: "If command parameters
-    /// contains "headers": Let headers be an empty header list"), so that sending <c>[]</c> differs from omitting
-    /// the field. Cite the step in the property's XML remarks when adding an entry.
+    /// build the resulting state from that field alone, so that sending <c>[]</c> means "none" and differs
+    /// from omitting the field, which leaves the intercepted request or response as it was. Describe the
+    /// behaviour in the property's XML remarks when adding an entry; describe it rather than quoting the
+    /// specification, because the steps differ per command and a verbatim quotation drifts out of date.
     /// </summary>
     private static readonly HashSet<string> NullableSettableListAllowList =
     [

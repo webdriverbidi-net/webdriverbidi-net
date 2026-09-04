@@ -21,10 +21,15 @@ public record NavigateCommandResult : CommandResult
     }
 
     /// <summary>
-    /// Gets the ID of the navigation, or <see langword="null"/> when the operation created no
-    /// navigation (for example, a navigate command with a wait condition of
-    /// <see cref="ReadinessState.None"/>, or one resolving to the same document).
+    /// Gets the ID of the navigation, or <see langword="null"/> if the remote end reported none.
     /// </summary>
+    /// <remarks>
+    /// The specification's CDDL types this field as <c>Navigation / null</c>, so a null value is
+    /// permitted on the wire and this property is nullable to match. The specification's own
+    /// navigation steps allocate a navigation id for every navigation, including one that waits for
+    /// <see cref="ReadinessState.None"/> and one that resolves to the same document, so a conforming
+    /// remote end is not expected to return null in practice.
+    /// </remarks>
     [JsonPropertyName("navigation")]
     [JsonRequired]
     [JsonInclude]

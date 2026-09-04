@@ -137,4 +137,4 @@ While `Contexts` and `UserContexts` are left empty they are omitted from the com
 
 - [User-Agent Client Hints](https://developer.mozilla.org/en-US/docs/Web/HTTP/Client_hints#user-agent_client_hints)
 - [Navigator.userAgentData](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userAgentData)
-- [W3C User-Agent Client Hints](https://www.w3.org/TR/user-agent-client-hints/)
+- [User-Agent Client Hints specification](https://wicg.github.io/ua-client-hints/)

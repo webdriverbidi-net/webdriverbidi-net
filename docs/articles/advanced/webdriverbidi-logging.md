@@ -24,6 +24,8 @@ Register the bridge with `AddWebDriverBiDi()` on `ILoggingBuilder`:
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using WebDriverBiDi;
+using WebDriverBiDi.Logging;
 
 var services = new ServiceCollection();
 services.AddLogging(builder =>
