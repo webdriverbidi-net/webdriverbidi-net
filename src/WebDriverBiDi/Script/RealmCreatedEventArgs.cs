@@ -42,9 +42,9 @@ public record RealmCreatedEventArgs : WebDriverBiDiEventArgs
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
     /// <returns>The underlying RealmInfo cast to the specified type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if this RealmInfo is not the specified type.</exception>
-    public T As<T>()
+    public T ConvertTo<T>()
         where T : RealmInfo
     {
-        return this.info.As<T>();
+        return this.info.ConvertTo<T>();
     }
 }
