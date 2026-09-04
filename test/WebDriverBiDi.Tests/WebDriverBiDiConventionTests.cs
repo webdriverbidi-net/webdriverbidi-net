@@ -199,7 +199,7 @@ public class WebDriverBiDiConventionTests
     }
 
     [Fact]
-    public void TestEveryModuleObservableEventIsCoveredByTheAttributeSweep()
+    public void TestEveryModuleObservableEventIsCoveredByExaminingAttributes()
     {
         // The sweep above reaches events through the driver's module properties, so a module the
         // driver does not expose would be skipped silently and its events would go unchecked.
@@ -222,27 +222,10 @@ public class WebDriverBiDiConventionTests
         Assert.True(unreachable.Count == 0, $"Every module in the library must be reachable from BiDiDriver, or its observable events escape the [ObservableEventName] sweep. Unreachable: {string.Join(", ", unreachable)}");
     }
 
-    /// <summary>
-    /// Verifies that <see cref="JsonIncludeAttribute"/> appears only where it changes what the serializer does.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// System.Text.Json already serializes a public property through a public getter, and populates one through
-    /// a public setter, so the attribute is a no-op there. It earns its place only on a non-public member, or on
-    /// a member whose getter or setter is non-public — the internal <c>Serializable*</c> shims, and received
-    /// types whose properties expose <c>{ get; internal set; }</c> so that deserialization can fill them.
-    /// </para>
-    /// <para>
-    /// The attribute is deliberately <em>not</em> used to mark a member the specification makes mandatory. That
-    /// fact is already carried, functionally, by the absence of
-    /// <see cref="JsonIgnoreCondition.WhenWritingNull"/>: a member that may be omitted says so, and one that may
-    /// not, does not. Encoding it a second time with an attribute the serializer ignores would add a signal
-    /// nothing enforces, and would give one attribute two unrelated meanings in the same codebase.
-    /// </para>
-    /// </remarks>
     [Fact]
-    public void TestJsonIncludeIsUsedOnlyWhereLoadBearing()
+    public void TestJsonIncludeIsUsedOnlyWhereNecessary()
     {
+        // Verifies that [JsonInclude] appears only where it changes what the serializer does.
         List<string> offenders = [];
         foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
         {
@@ -278,6 +261,60 @@ public class WebDriverBiDiConventionTests
     private static string Key(PropertyInfo property)
     {
         return $"{property.DeclaringType!.FullName}.{property.Name}";
+    }
+
+    [Fact]
+    public void TestReceivedTypesHaveNoPublicSetters()
+    {
+        // Collect all types received from the remote end, and validate
+        // no properties have public setters.
+        List<string> offenders = [];
+        foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
+        {
+            if (!IsReceivedType(type))
+            {
+                continue;
+            }
+
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                MethodInfo? setter = property.SetMethod;
+                if (setter is null || !setter.IsPublic)
+                {
+                    continue;
+                }
+
+                // An init accessor is a public setter as far as reflection is concerned, but it can only be
+                // used in an object initializer, so it does not let a caller mutate an object it was handed.
+                bool isInitOnly = setter.ReturnParameter.GetRequiredCustomModifiers()
+                    .Any(modifier => modifier.FullName == "System.Runtime.CompilerServices.IsExternalInit");
+                if (isInitOnly)
+                {
+                    continue;
+                }
+
+                offenders.Add(Key(property));
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"Types received from the remote end must not expose a public setter; use an internal or init accessor so the deserializer can populate the property without letting a caller mutate the object afterwards. Offenders: {string.Join(", ", offenders)}");
+    }
+
+    /// <summary>
+    /// Determines whether a type is one the remote end sends to the consumer.
+    /// </summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> if the type is a command result or event arguments type that is subject to the immutability rule.</returns>
+    private static bool IsReceivedType(Type type)
+    {
+        if (!typeof(CommandResult).IsAssignableFrom(type) && !typeof(WebDriverBiDiEventArgs).IsAssignableFrom(type))
+        {
+            return false;
+        }
+
+        // Transport-level event arguments are raised by the library itself rather than deserialized from the
+        // remote end, and callers construct them; they are outside the rule this test enforces.
+        return type.Namespace != "WebDriverBiDi.Protocol";
     }
 
     /// <summary>

@@ -107,6 +107,48 @@ jobs:
           test/coverage/lcov-analyzers.*.info
           test/coverage/lcov-logging.*.info
 
+      # The analyzer package's shipped layout is produced entirely by a pack target that nothing else
+      # runs: the Roslyn 5.9 variant is compiled only inside it, every other CI build and test uses the
+      # 4.8 default, and the staging paths it packs from are literal strings that must be kept in step
+      # with the variant list by hand. Packing here means a mistake in that target fails a PR rather
+      # than the release.
+      - name: Pack the analyzer package
+        run: dotnet pack src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj --configuration Release -o test/package -p:GeneratePackageOnBuild=true
+
+      - name: Verify the analyzer package layout
+        run: |
+          set -euo pipefail
+          package=$(ls test/package/WebDriverBiDi.Analyzers.*.nupkg)
+          echo "Inspecting $package"
+          rm -rf test/package/extracted
+          unzip -q "$package" -d test/package/extracted
+
+          status=0
+          for variant in roslyn4.8 roslyn5.9; do
+            directory="test/package/extracted/analyzers/dotnet/$variant/cs"
+            for assembly in WebDriverBiDi.Analyzers.dll WebDriverBiDi.Analyzers.CodeFixProviders.dll; do
+              if [ -f "$directory/$assembly" ]; then
+                echo "OK   $variant/cs/$assembly"
+              else
+                echo "FAIL $variant/cs/$assembly is missing"
+                status=1
+              fi
+            done
+          done
+
+          # The compiler host supplies the Roslyn assemblies. Shipping our own copy makes the analyzer
+          # load against a different version than the compiler is running, which fails in ways that are
+          # hard to diagnose from a consumer's build log.
+          if compiler_assemblies=$(find test/package/extracted -name 'Microsoft.CodeAnalysis*.dll' -print -quit); [ -n "$compiler_assemblies" ]; then
+            echo "FAIL the package ships Roslyn assemblies, which must be left to the compiler host:"
+            find test/package/extracted -name 'Microsoft.CodeAnalysis*.dll'
+            status=1
+          else
+            echo "OK   no Roslyn assemblies are shipped"
+          fi
+
+          exit "$status"
+
       - name: Upload code coverage
         uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2
         with:
