@@ -105,6 +105,13 @@ public enum ErrorCode
     NoSuchAlert,
 
     /// <summary>
+    /// The ID of the client window was invalid when attempting to set the client
+    /// window state.
+    /// </summary>
+    [StringEnumValue("no such client window")]
+    NoSuchClientWindow,
+
+    /// <summary>
     /// No cookie matching the given path name was found amongst the associated
     /// cookies of session's current browsing context's active document.
     /// </summary>
@@ -164,6 +171,12 @@ public enum ErrorCode
     /// </summary>
     [StringEnumValue("no such request")]
     NoSuchRequest,
+
+    /// <summary>
+    /// The ID of the screencast used in the command was not found.
+    /// </summary>
+    [StringEnumValue("no such screencast")]
+    NoSuchScreencast,
 
     /// <summary>
     /// The ID of the script used in the command was not found.
