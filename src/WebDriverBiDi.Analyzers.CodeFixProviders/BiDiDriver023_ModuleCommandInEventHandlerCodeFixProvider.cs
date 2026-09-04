@@ -44,7 +44,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider : CodeFixP
             .OfType<InvocationExpressionSyntax>()
             .FirstOrDefault(inv =>
                 inv.Expression is MemberAccessExpressionSyntax memberAccess &&
-                memberAccess.Name.Identifier.Text == "AddObserver");
+                memberAccess.Name.Identifier.ValueText == "AddObserver");
         if (addObserverInvocation == null)
         {
             // The diagnostic is inside a method passed as a method group rather than inside a

@@ -171,6 +171,27 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
+    /// Determines whether a type is the library's type of the given simple name, rather than an
+    /// unrelated type that merely shares the name.
+    /// </summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <param name="name">The simple name of the library type.</param>
+    /// <returns><see langword="true"/> if the type is the library's; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Matching on the simple name alone claims types this library has nothing to do with: a user class
+    /// deriving from <c>Autofac.Module</c>, for example, would be treated as a WebDriver BiDi module and
+    /// reported by BIDI010 at Error severity. Requiring the WebDriverBiDi namespace as well is the same
+    /// guard <see cref="IsInWebDriverBiDiNamespace"/> already applies to <c>BiDiDriver</c> and
+    /// <c>IBiDiCommandExecutor</c>.
+    /// </remarks>
+    internal static bool IsLibraryTypeNamed(ITypeSymbol? type, string name)
+    {
+        return type is INamedTypeSymbol named
+            && named.Name == name
+            && IsInWebDriverBiDiNamespace(named);
+    }
+
+    /// <summary>
     /// Determines whether an invocation could be a call to one of the named methods, judged from
     /// syntax alone. Used as a pre-filter ahead of the semantic model, whose <c>GetSymbolInfo</c> is
     /// far more expensive than a name comparison and would otherwise be run for every invocation in
@@ -198,6 +219,45 @@ internal static class AnalyzerSymbolHelpers
 
         return invokedName is null || methodNames.Contains(invokedName.Identifier.ValueText);
     }
+
+    /// <summary>
+    /// Unwraps the task-chaining wrappers around an invocation, returning the innermost call the
+    /// chain is built on. <c>driver.StartAsync(url).ConfigureAwait(false)</c> yields
+    /// <c>driver.StartAsync(url)</c>, as do <c>.Wait()</c> and
+    /// <c>.ConfigureAwait(false).GetAwaiter().GetResult()</c>.
+    /// </summary>
+    /// <param name="invocation">The outermost invocation.</param>
+    /// <returns>The innermost invocation the chain wraps, or the original invocation when it wraps nothing.</returns>
+    /// <remarks>
+    /// Only the names in <see cref="TaskChainingMethodNames"/> are unwrapped. Descending through any
+    /// invocation-receivered member access would be wrong: in <c>GetDriver().StartAsync(url)</c> the
+    /// receiver is also an invocation, and unwrapping it would discard the <c>StartAsync</c> call
+    /// that the analyzers exist to find.
+    /// </remarks>
+    internal static InvocationExpressionSyntax UnwrapTaskChain(InvocationExpressionSyntax invocation)
+    {
+        InvocationExpressionSyntax current = invocation;
+        while (current.Expression is MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax inner } memberAccess
+            && TaskChainingMethodNames.Contains(memberAccess.Name.Identifier.ValueText))
+        {
+            current = inner;
+        }
+
+        return current;
+    }
+
+    /// <summary>
+    /// The methods that wrap a task-returning call without changing which call was made: awaiting
+    /// and blocking adapters. Hoisted to a static field to avoid allocating on every unwrap.
+    /// </summary>
+    private static readonly string[] TaskChainingMethodNames =
+    [
+        "ConfigureAwait",
+        "Wait",
+        "GetAwaiter",
+        "GetResult",
+        "AsTask",
+    ];
 
     /// <summary>
     /// The syntax kinds that carry an executable body the intra-procedural analyzers examine: a method
@@ -337,7 +397,7 @@ internal static class AnalyzerSymbolHelpers
         INamedTypeSymbol? current = type!.BaseType;
         while (current != null)
         {
-            if (current.Name == "Module")
+            if (IsLibraryTypeNamed(current, "Module"))
             {
                 return true;
             }
@@ -375,12 +435,17 @@ internal static class AnalyzerSymbolHelpers
             // Require the matched type to be declared in the WebDriverBiDi namespace so a user's own
             // type that merely shares a name (for example a class named BiDiDriver, or an interface
             // named IBiDiCommandExecutor, in another namespace) is not treated as the library type.
-            if (current is INamedTypeSymbol namedCurrent && typeNames.Contains(namedCurrent.Name) && IsInWebDriverBiDiNamespace(namedCurrent))
+            if (current is not INamedTypeSymbol namedCurrent)
+            {
+                continue;
+            }
+
+            if (typeNames.Contains(namedCurrent.Name) && IsInWebDriverBiDiNamespace(namedCurrent))
             {
                 return true;
             }
 
-            if (current is INamedTypeSymbol namedType && namedType.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name) && IsInWebDriverBiDiNamespace(interfaceType)))
+            if (namedCurrent.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name) && IsInWebDriverBiDiNamespace(interfaceType)))
             {
                 return true;
             }

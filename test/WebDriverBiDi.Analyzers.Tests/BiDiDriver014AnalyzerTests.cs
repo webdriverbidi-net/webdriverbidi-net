@@ -986,4 +986,73 @@ public class BiDiDriver014AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test);
     }
+
+    /// <summary>
+    /// Tests that a target-typed <c>new()</c> is reported, not only an explicitly named construction.
+    /// The library's own reset idiom is written this way, so recognizing only
+    /// <c>ObjectCreationExpressionSyntax</c> would miss the shape the rule most needs to see.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task TargetTypedParameterlessConstructor_ReportsDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        SetGeolocationOverrideCoordinatesCommandParameters parameters = {|#0:new()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetGeolocationOverrideCoordinatesCommandParameters", "ResetGeolocationOverride");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test, expected);
+    }
+
+    /// <summary>
+    /// Tests that a target-typed <c>new()</c> passed inline as an argument is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task TargetTypedParameterlessConstructor_AsArgument_ReportsDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        Consume({|#0:new()|});
+                    }
+
+                    private static void Consume(SetGeolocationOverrideCoordinatesCommandParameters parameters)
+                    {
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetGeolocationOverrideCoordinatesCommandParameters", "ResetGeolocationOverride");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test, expected);
+    }
+
 }

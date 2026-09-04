@@ -157,7 +157,7 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
 
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
-            || !ValueAddingMethodNames.Contains(memberAccess.Name.Identifier.Text))
+            || !ValueAddingMethodNames.Contains(memberAccess.Name.Identifier.ValueText))
         {
             return;
         }

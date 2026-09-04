@@ -78,7 +78,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
         {
             ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
-            if (localSymbol.Type is INamedTypeSymbol { Name: "EventObserver" })
+            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
             {
                 capturingState[variable.Identifier.Text] = false;
             }
@@ -210,7 +210,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        string methodName = memberAccess.Name.Identifier.Text;
+        string methodName = memberAccess.Name.Identifier.ValueText;
         switch (methodName)
         {
             case "StartCapturingTasks":

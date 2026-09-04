@@ -112,7 +112,9 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
 
     private static bool IsTargetType(INamedTypeSymbol? type)
     {
-        return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || AnalyzerSymbolHelpers.IsLibraryModuleType(type) || type is { Name: "EventObserver", IsGenericType: true };
+        return AnalyzerSymbolHelpers.IsCommandExecutorType(type)
+            || AnalyzerSymbolHelpers.IsLibraryModuleType(type)
+            || (type is { IsGenericType: true } && AnalyzerSymbolHelpers.IsLibraryTypeNamed(type, "EventObserver"));
     }
 
     // Operations known to be potentially long-running. Hoisted to a static field to avoid allocating

@@ -202,7 +202,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         return statements.Any(s => s.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && ma.Name.Identifier.Text == "StopAsync"
+                && ma.Name.Identifier.ValueText == "StopAsync"
                 && ma.Expression is IdentifierNameSyntax id
                 && id.Identifier.Text == variableName));
     }
@@ -241,8 +241,8 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         // initializer form `new Transport(connection) { ProtocolErrorBehavior = ... }` (identifier).
         string? propertyName = assignmentTarget switch
         {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text,
-            IdentifierNameSyntax identifier => identifier.Identifier.Text,
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
             _ => null,
         };
 
@@ -258,7 +258,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             .Where(invocation =>
             {
                 if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
-                    memberAccess.Name.Identifier.Text == "DisposeAsync")
+                    memberAccess.Name.Identifier.ValueText == "DisposeAsync")
                 {
                     ITypeSymbol? receiverType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
                     if (AnalyzerSymbolHelpers.IsCommandExecutorType(receiverType))
@@ -327,7 +327,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         return scope.DescendantNodes(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<InvocationExpressionSyntax>()
             .Any(invocation => invocation.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.Text == "StopAsync"
+                && memberAccess.Name.Identifier.ValueText == "StopAsync"
                 && memberAccess.Expression is IdentifierNameSyntax identifier
                 && identifier.Identifier.Text == variableName);
     }
@@ -373,7 +373,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
             .Any(s => s.DescendantNodes()
                 .OfType<InvocationExpressionSyntax>()
                 .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                    && ma.Name.Identifier.Text == "StopAsync"
+                    && ma.Name.Identifier.ValueText == "StopAsync"
                     && ma.Expression is IdentifierNameSyntax id
                     && id.Identifier.Text == variableName));
     }

@@ -78,7 +78,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (memberAccess.Name.Identifier.Text != "AddObserver")
+        if (memberAccess.Name.Identifier.ValueText != "AddObserver")
         {
             return;
         }
@@ -89,7 +89,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        if (methodSymbol.ReturnType is not INamedTypeSymbol { Name: "EventObserver" })
+        if (!AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
         {
             return;
         }
@@ -132,7 +132,10 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
     {
         List<SyntaxNode> blockingOps = [];
 
-        IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes()
+        // Do not descend into a nested lambda, anonymous method or local function: its body runs only
+        // when that delegate is invoked, not on the dispatching thread. Task.Run(() => Thread.Sleep(...))
+        // is the very remedy this rule recommends, so reporting inside it would flag the fix.
+        IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<InvocationExpressionSyntax>();
 
         foreach (InvocationExpressionSyntax invocation in invocations)
@@ -168,12 +171,12 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             }
         }
 
-        IEnumerable<MemberAccessExpressionSyntax> memberAccesses = handlerBody.DescendantNodes()
+        IEnumerable<MemberAccessExpressionSyntax> memberAccesses = handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<MemberAccessExpressionSyntax>();
 
         foreach (MemberAccessExpressionSyntax memberAccess in memberAccesses)
         {
-            if (memberAccess.Name.Identifier.Text == "Result")
+            if (memberAccess.Name.Identifier.ValueText == "Result")
             {
                 ITypeSymbol? expressionType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
                 if (expressionType is { Name: "Task" })

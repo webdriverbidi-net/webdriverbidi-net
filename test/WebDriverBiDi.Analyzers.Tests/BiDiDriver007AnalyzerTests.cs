@@ -1473,16 +1473,17 @@ public class BiDiDriver007AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that passing a method reference from a compiled assembly (no source, so no
-    /// syntax references) does not report a diagnostic — exercises GetMethodBodyFromSymbol
-    /// returning null when DeclaringSyntaxReferences is empty (AnalyzerSymbolHelpers lines
-    /// 114 and 122).
+    /// Tests that a handler which is a method from a compiled assembly (no source, so no syntax
+    /// references) does not report a diagnostic, exercising the guard in
+    /// <c>GetMethodBodyFromSymbol</c> for an empty <c>DeclaringSyntaxReferences</c>.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     /// <remarks>
-    /// Synthetic by construction: this test compiles a purpose-built <c>FakeLib</c> assembly so the handler
-    /// method symbol has no <c>DeclaringSyntaxReferences</c> when analyzed from the test project. It does not
-    /// use hand-written <c>WebDriverBiDi</c> stub types in the analyzed source.
+    /// Synthetic by construction: it compiles a purpose-built assembly so the handler method symbol has
+    /// no <c>DeclaringSyntaxReferences</c> when analyzed from the test project. That assembly declares
+    /// its stand-in types in the <c>WebDriverBiDi</c> namespace, because the analyzer requires the
+    /// library's own namespace before it will treat a type named <c>EventObserver</c> as this library's
+    /// — which is exactly the situation being modelled: the library referenced as a compiled assembly.
     /// </remarks>
     [Fact]
     public async Task AddObserver_WithCompiledAssemblyMethodReference_DoesNotReportDiagnostic()
@@ -1493,7 +1494,7 @@ public class BiDiDriver007AnalyzerTests
             using System;
             using System.Threading.Tasks;
 
-            namespace FakeLib
+            namespace WebDriverBiDi
             {
                 public class WebDriverBiDiEventArgs { }
                 public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
@@ -1540,7 +1541,7 @@ public class BiDiDriver007AnalyzerTests
         string testCode = """
             using System;
             using System.Threading.Tasks;
-            using FakeLib;
+            using WebDriverBiDi;
 
             namespace TestApp
             {
@@ -2340,4 +2341,42 @@ public class BiDiDriver007AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a blocking call offloaded with <c>Task.Run</c> is not reported. Moving the blocking
+    /// work off the dispatching thread is the remedy this rule recommends, so reporting inside the lambda
+    /// would flag the fix itself. The lambda's body runs only when that delegate is invoked.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task BlockingCall_InsideTaskRunLambda_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            await Task.Run(() => Thread.Sleep(1000));
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

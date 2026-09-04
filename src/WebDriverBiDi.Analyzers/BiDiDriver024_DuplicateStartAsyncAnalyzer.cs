@@ -278,7 +278,7 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        string methodName = memberAccess.Name.Identifier.Text;
+        string methodName = memberAccess.Name.Identifier.ValueText;
         if (methodName == "StartAsync")
         {
             if (started)

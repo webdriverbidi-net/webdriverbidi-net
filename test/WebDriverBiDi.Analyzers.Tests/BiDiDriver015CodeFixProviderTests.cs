@@ -15,7 +15,9 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver015CodeFixProviderTests
 {
     /// <summary>
-    /// Tests that code fix replaces string literal with EventName property.
+    /// Tests that a literal is reported when the driver is a parameter. This previously asserted no
+    /// diagnostic on the stated grounds that BIDI015 needs a matching AddObserver call — which it does
+    /// not; the rule was silent only because it searched for a local driver declaration.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -72,7 +74,7 @@ public class BiDiDriver015CodeFixProviderTests
     }
 
     [Fact]
-    public async Task StringLiteralWithNoObserver_NoDiagnostic()
+    public async Task StringLiteralWithDriverAsParameter_ReportsWarning()
     {
         // A string literal matching a known event name appears in SubscribeAsync,
         // but there is no AddObserver call for that event.
@@ -141,13 +143,17 @@ public class BiDiDriver015CodeFixProviderTests
                 {
                     public async Task TestMethod(BiDiDriver driver)
                     {
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer>(testCode);
+                DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer>(testCode, expected);
     }
 
     /// <summary>

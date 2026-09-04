@@ -87,7 +87,7 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!AddMethodNames.Contains(memberAccess.Name.Identifier.Text))
+        if (!AddMethodNames.Contains(memberAccess.Name.Identifier.ValueText))
         {
             return;
         }

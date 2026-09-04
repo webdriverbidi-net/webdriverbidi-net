@@ -41,7 +41,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : Co
 
         InvocationExpressionSyntax? addObserverInvocation = blockingOperation.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.Text == "AddObserver");
+            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.ValueText == "AddObserver");
         if (addObserverInvocation == null)
         {
             // The diagnostic is inside a method passed as a method group rather than inside a

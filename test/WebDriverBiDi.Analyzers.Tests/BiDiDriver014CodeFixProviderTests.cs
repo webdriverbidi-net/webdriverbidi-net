@@ -443,4 +443,59 @@ public class BiDiDriver014CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that the fix rewrites a target-typed <c>new()</c>. There is no written type to reuse, so
+    /// the receiver comes from the analyzer-supplied type name instead of the construction's syntax.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task TargetTypedParameterlessConstructor_IsReplacedWithResetProperty()
+    {
+        string test = """
+            using WebDriverBiDi.Browser;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        SetDownloadBehaviorCommandParameters parameters = {|#0:new()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi.Browser;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        SetDownloadBehaviorCommandParameters parameters = SetDownloadBehaviorCommandParameters.ResetDownloadBehavior;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetDownloadBehaviorCommandParameters", "ResetDownloadBehavior");
+
+        RealAssemblyCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
+        {
+            TestCode = test,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }
