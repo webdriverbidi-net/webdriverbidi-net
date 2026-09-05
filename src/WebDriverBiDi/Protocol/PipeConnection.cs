@@ -272,18 +272,63 @@ public class PipeConnection : Connection
     /// <param name="messageBuffer">The data to write to the pipe.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <para>
+    /// The message and the null terminator that frames it are written as a single operation, so that
+    /// cancellation cannot separate them. Written as two cancellable writes, a token canceled after the
+    /// first one completes would leave an unterminated message in the pipe; the remote end would then read
+    /// that message and the next one as a single malformed message, and every message after it would be
+    /// framed one boundary out of step. Nothing later in the session can repair that, and the caller
+    /// receives only the cancellation, so the corruption would surface as unrelated failures.
+    /// </para>
+    /// <para>
+    /// Cancellation is therefore honored up to the point the first byte is written, and not after it: the
+    /// flush that follows the write uses <see cref="CancellationToken.None"/>, because by then the bytes
+    /// are already committed to the stream.
+    /// </para>
+    /// </remarks>
     protected virtual async Task WritePipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
-        // Write the data followed by a null terminator
+        // Copy the message and its null terminator into one buffer so that a single write emits the whole
+        // frame. The rented array is usually longer than the frame, so every use below is bounded by
+        // frameLength rather than by the array's own length.
+        int frameLength = messageBuffer.Length + 1;
+        byte[] frame = ArrayPool<byte>.Shared.Rent(frameLength);
+        try
+        {
+            messageBuffer.CopyTo(frame);
+            frame[messageBuffer.Length] = 0;
+            await this.WriteToPipeAsync(frame, 0, frameLength, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(frame);
+        }
+
+        await this.pipeToProcess.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously writes bytes to the underlying pipe of this connection.
+    /// </summary>
+    /// <param name="buffer">The buffer containing the bytes to write.</param>
+    /// <param name="offset">The offset in the buffer at which the bytes to write begin.</param>
+    /// <param name="count">The number of bytes to write.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// This is the counterpart of <see cref="ReadPipeDataAsync"/> for the outbound direction, and is the
+    /// single point at which bytes reach the pipe. <see cref="WritePipeDataAsync"/> calls it exactly once
+    /// per message, with the message and its null terminator already assembled into one buffer, which is
+    /// what keeps cancellation from splitting a frame.
+    /// </remarks>
+    protected virtual async Task WriteToPipeAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
+    {
 #if NET5_0_OR_GREATER
-        await this.pipeToProcess.WriteAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
-        await this.pipeToProcess.WriteAsync(new ReadOnlyMemory<byte>([0]), cancellationToken).ConfigureAwait(false);
+        await this.pipeToProcess.WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
 #else
-        byte[] data = messageBuffer.ToArray();
-        await this.pipeToProcess.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
-        await this.pipeToProcess.WriteAsync(new byte[] { 0 }, 0, 1, cancellationToken).ConfigureAwait(false);
+        await this.pipeToProcess.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
 #endif
-        await this.pipeToProcess.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

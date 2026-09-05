@@ -960,6 +960,80 @@ public class PipeConnectionTests
         public Process? PipeServerProcess => this.unstartedProcess;
     }
 
+    [Fact]
+    public async Task TestAMessageAndItsTerminatorReachThePipeInOneWrite()
+    {
+        // The null terminator frames the message, so the two must not be separable. Written as two
+        // operations, a token canceled after the first completed would leave an unterminated message in
+        // the pipe and put every later message one frame boundary out of step, with nothing able to
+        // repair it. Asserting the count is what makes that impossible to reintroduce: a behavioral test
+        // would have to cancel in the window between the two writes, and after this fix there is no such
+        // window to aim at.
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+
+        byte[] message = Encoding.UTF8.GetBytes("{\"id\":1}");
+        await connection.WriteFramedMessageAsync(message, TestContext.Current.CancellationToken);
+
+        byte[] frame = Assert.Single(connection.RecordedPipeWrites);
+        Assert.Equal(message.Length + 1, frame.Length);
+        Assert.Equal("{\"id\":1}", Encoding.UTF8.GetString(frame, 0, message.Length));
+        Assert.Equal(0, frame[message.Length]);
+    }
+
+    [Fact]
+    public async Task TestAnEmptyMessageIsStillTerminated()
+    {
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+
+        await connection.WriteFramedMessageAsync(ReadOnlyMemory<byte>.Empty, TestContext.Current.CancellationToken);
+
+        byte[] frame = Assert.Single(connection.RecordedPipeWrites);
+        Assert.Equal([0], frame);
+    }
+
+    [Fact]
+    public async Task TestAnAlreadyCanceledSendWritesNoPartialFrame()
+    {
+        // Cancellation is honored up to the first byte. What must never happen is a canceled send that
+        // has nonetheless put part of a frame into the pipe.
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+        using CancellationTokenSource cancellationTokenSource = new();
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await connection.WriteFramedMessageAsync(Encoding.UTF8.GetBytes("hello"), cancellationTokenSource.Token));
+
+        // One write was attempted and it carried the whole frame; the cancellation stopped it before any
+        // byte reached the pipe, rather than after a payload without its terminator.
+        byte[] attempted = Assert.Single(connection.RecordedPipeWrites);
+        Assert.Equal(6, attempted.Length);
+        Assert.Equal(0, attempted[5]);
+    }
+
+    [Fact]
+    public async Task TestTheFrameSentToTheRemoteEndIsNullTerminated()
+    {
+        // The same invariant observed from the other side of a real pipe, so that the framing test above
+        // cannot pass against a connection that frames correctly but writes somewhere else.
+        using TestPipeServer testPipeServer = new();
+        PipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
+
+        using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCancellation.CancelAfter(DataEchoSafetyBound);
+        string output = await testPipeServer.ReadSentDataAsync("Hello".Length, readCancellation.Token);
+        testPipeServer.Stop();
+
+        Assert.Equal("Hello", output);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
+
     private sealed class MutableProcessPipeProvider : IPipeServerProcessProvider
     {
         private readonly IPipeServerProcessProvider inner;
