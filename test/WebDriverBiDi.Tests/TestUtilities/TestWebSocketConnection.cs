@@ -100,6 +100,20 @@ public class TestWebSocketConnection : WebSocketConnection
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, "TestWebSocketConnection"));
     }
 
+    /// <summary>
+    /// Raises a log message through the connection's own <c>LogAsync</c>, so that the message is subject
+    /// to <see cref="Connection.LogLevel"/> exactly as a message the connection itself emits.
+    /// <see cref="RaiseLogMessageEventAsync"/> notifies the observable directly and deliberately bypasses
+    /// that filtering.
+    /// </summary>
+    /// <param name="message">The log message to raise.</param>
+    /// <param name="level">The level at which to raise it.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public async Task RaiseFilteredLogMessageAsync(string message, WebDriverBiDiLogLevel level)
+    {
+        await this.LogAsync(message, level);
+    }
+
     public async Task RaiseConnectionErrorEventAsync(Exception exception)
     {
         await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(exception));

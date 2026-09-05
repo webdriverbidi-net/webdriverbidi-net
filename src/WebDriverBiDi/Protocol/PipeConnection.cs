@@ -9,7 +9,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using System.Text;
 
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end over anonymous pipes.
@@ -354,16 +353,7 @@ public class PipeConnection : Connection
                         if (messageBuffer.HasData)
                         {
                             IMemoryOwner<byte> messageOwner = messageBuffer.TakeOwnership(out int messageLength);
-
-                            if (this.OnLogMessage.CurrentObserverCount > 0)
-                            {
-#if NET5_0_OR_GREATER
-                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-                            }
-
+                            await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageOwner.Memory, messageLength).ConfigureAwait(false);
                             await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
                         }
 

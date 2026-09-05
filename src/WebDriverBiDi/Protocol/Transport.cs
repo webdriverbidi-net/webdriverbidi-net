@@ -278,6 +278,29 @@ public class Transport : IAsyncDisposable
     public TransportErrorBehavior UnexpectedErrorBehavior { get => this.UnhandledErrors.UnexpectedErrorBehavior; set => this.UnhandledErrors.UnexpectedErrorBehavior = value; }
 
     /// <summary>
+    /// Gets or sets the minimum <see cref="WebDriverBiDiLogLevel"/> at which log messages are raised.
+    /// Defaults to <see cref="WebDriverBiDiLogLevel.Info"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// By default this is the same setting as <see cref="Protocol.Connection.LogLevel"/> on the connection
+    /// this transport wraps, which holds it for the whole pipeline; setting it here sets it for the
+    /// connection's messages as well as this transport's own. Raise it to
+    /// <see cref="WebDriverBiDiLogLevel.Debug"/> for per-command messages, or to
+    /// <see cref="WebDriverBiDiLogLevel.Trace"/> to also see the raw protocol traffic the connection logs.
+    /// </para>
+    /// <para>
+    /// A derived transport may override this to keep a level of its own rather than share the
+    /// connection's. Note what that decouples: <see cref="IsLogLevelEnabled"/> and this transport's
+    /// <c>LogAsync</c> read this property, and so does <see cref="BiDiDriver.LogLevel"/>, so all three
+    /// follow the override; the connection keeps filtering its own messages — the <c>SEND</c> and
+    /// <c>RECV</c> traffic among them — by <see cref="Protocol.Connection.LogLevel"/>. An override whose
+    /// setter also assigns <see cref="Protocol.Connection.LogLevel"/> keeps the whole pipeline together.
+    /// </para>
+    /// </remarks>
+    public virtual WebDriverBiDiLogLevel LogLevel { get => this.Connection.LogLevel; set => this.Connection.LogLevel = value; }
+
+    /// <summary>
     /// Gets or sets the timeout to wait for message processing to complete during shutdown.
     /// If message processing does not complete within this timeout, the shutdown will proceed
     /// without waiting for the remaining processing to finish. Messages still in the queue
@@ -615,7 +638,7 @@ public class Transport : IAsyncDisposable
         // non-reentrant lock the notifying call already holds. The command is already created and
         // serialized here, so its name and id are available, and this keeps the notification ordered
         // ahead of the send.
-        if (this.OnLogMessage.CurrentObserverCount > 0)
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
         {
             await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
@@ -726,6 +749,25 @@ public class Transport : IAsyncDisposable
         {
             this.ReleaseConnectionLock();
         }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a message at the given level would be raised on
+    /// <see cref="OnLogMessage"/>, so that a caller can avoid building a message that would be discarded.
+    /// </summary>
+    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
+    /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The transport uses this for its per-command <see cref="WebDriverBiDiLogLevel.Debug"/> messages,
+    /// each of which composes a string naming the command; a custom transport should use it for the same
+    /// purpose.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> is never enabled. It selects "no messages at all" when
+    /// assigned to <see cref="LogLevel"/>, and is not a level a message can carry; without the explicit
+    /// test it would compare as enabled against every setting, because it is the highest value.
+    /// </remarks>
+    public bool IsLogLevelEnabled(WebDriverBiDiLogLevel level)
+    {
+        return level != WebDriverBiDiLogLevel.Off && level >= this.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
     }
 
     /// <summary>
@@ -1520,7 +1562,7 @@ public class Transport : IAsyncDisposable
                     // result object (AdditionalData) and on the response envelope (AdditionalResponseProperties).
                     commandResult.AdditionalData = ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("result", this.options.GetTypeInfo(commandResult.GetType())));
                     commandResult.AdditionalResponseProperties = response.AdditionalData;
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
                     {
                         await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     }
@@ -1564,7 +1606,7 @@ public class Transport : IAsyncDisposable
                     // Stop timing and log error
                     executedCommand.StopTiming();
                     WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value, executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
                     {
                         await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     }
@@ -1635,7 +1677,7 @@ public class Transport : IAsyncDisposable
             }
 
             WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
-            if (this.OnLogMessage.CurrentObserverCount > 0)
+            if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
             {
                 await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             }
@@ -1666,7 +1708,7 @@ public class Transport : IAsyncDisposable
     {
         long millisecondsSinceCancellation = (long)canceledCommand.TimeSinceCancellation.TotalMilliseconds;
         WebDriverBiDiEventSource.RaiseEvent.CanceledCommandResponseDiscarded(canceledCommand.CommandId, canceledCommand.CommandName, canceledCommand.Reason, millisecondsSinceCancellation);
-        if (this.OnLogMessage.CurrentObserverCount > 0)
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
         {
             await this.LogAsync($"Discarding late response for command '{canceledCommand.CommandName}' (command ID: {canceledCommand.CommandId}); the command was canceled ({canceledCommand.Reason}) {millisecondsSinceCancellation} ms before this response arrived", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
@@ -1674,6 +1716,11 @@ public class Transport : IAsyncDisposable
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
+        if (!this.IsLogLevelEnabled(level))
+        {
+            return;
+        }
+
         await this.NotifyLogMessageObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 

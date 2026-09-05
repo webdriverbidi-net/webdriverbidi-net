@@ -105,12 +105,14 @@ public static class ConnectionManagementSamples
     public static void ProtocolTrafficLogging(WebSocketConnection connection)
     {
         #region ProtocolTrafficLogging
+        // Traffic messages are Trace level, which the default minimum of Info excludes. Raising the
+        // level is what turns them on: until you do, the payload is never even decoded into a string,
+        // so leaving the observer in place costs nothing.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             // A connection emits every message it sends and receives at Trace level,
-            // prefixed with "SEND >>>" or "RECV <<<". The messages are only produced
-            // when this event has at least one observer, so there is no cost to leaving
-            // the instrumentation in place until you subscribe.
+            // prefixed with "SEND >>>" or "RECV <<<".
             if (e.Level == WebDriverBiDiLogLevel.Trace)
             {
                 Console.WriteLine(e.Message);

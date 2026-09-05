@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Text;
+using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
@@ -34,9 +35,24 @@ internal static class PipeTransportScenario
             return Task.CompletedTask;
         });
 
-        // A log observer must be attached so PipeConnection's RECV trace runs when data is received;
-        // that trace is one of the netstandard2.0-specific (#else) branches this scenario covers.
-        connection.OnLogMessage.AddObserver(_ => { });
+        // The SEND and RECV traces are the netstandard2.0-specific (#else) decode branch this scenario
+        // covers, and reaching them takes both of the following: the level must admit Trace, which the
+        // default of Info does not, and something must be observing, or the message is never composed at
+        // all. Recording the traces rather than discarding them lets the round trip below assert that the
+        // branch actually ran; an observer alone silently stopped reaching it once the level gained a
+        // default, and nothing failed.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
+        List<string> traceMessages = new List<string>();
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Level == WebDriverBiDiLogLevel.Trace)
+            {
+                lock (traceMessages)
+                {
+                    traceMessages.Add(e.Message);
+                }
+            }
+        });
 
         provider.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         try
@@ -52,6 +68,25 @@ internal static class PipeTransportScenario
             {
                 throw new InvalidOperationException($"Pipe peer returned unexpected data: '{received}'.");
             }
+
+            // Both directions must have gone through the netstandard2.0 decode branch.
+            string[] traces;
+            lock (traceMessages)
+            {
+                traces = traceMessages.ToArray();
+            }
+
+            if (!Array.Exists(traces, message => message.StartsWith("SEND >>> ", StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException("The netstandard2.0 SEND trace was never raised.");
+            }
+
+            if (!Array.Exists(traces, message => message.StartsWith("RECV <<< ", StringComparison.Ordinal) && message.Contains(expectedResponse)))
+            {
+                throw new InvalidOperationException("The netstandard2.0 RECV trace was never raised.");
+            }
+
+            Console.WriteLine("Netstandard2.0 SEND and RECV trace logging exercised the message decode branch.");
         }
         finally
         {

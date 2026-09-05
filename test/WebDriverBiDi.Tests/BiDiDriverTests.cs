@@ -531,6 +531,8 @@ public class BiDiDriverTests
         bool unknownMessageReceived = false;
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1), transport)
         {
             UnknownMessageBehavior = TransportErrorBehavior.Terminate,

@@ -527,6 +527,8 @@ public class TransportEventSourceIntegrationTests
         TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Message.Contains("Discarding late response"))

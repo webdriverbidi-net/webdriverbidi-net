@@ -413,6 +413,31 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
 
     /// <summary>
+    /// Gets or sets the minimum <see cref="WebDriverBiDiLogLevel"/> at which log messages are raised on
+    /// <see cref="OnLogMessage"/>. Defaults to <see cref="WebDriverBiDiLogLevel.Info"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is one setting for the whole pipeline: the driver, its <see cref="Transport"/> and the
+    /// transport's <see cref="Connection"/> all read and write the same value, so a message from any of
+    /// the three is subject to it.
+    /// </para>
+    /// <para>
+    /// The default excludes <see cref="WebDriverBiDiLogLevel.Debug"/> and
+    /// <see cref="WebDriverBiDiLogLevel.Trace"/>. Set it to <see cref="WebDriverBiDiLogLevel.Debug"/> for
+    /// a message per command sent and answered, or to <see cref="WebDriverBiDiLogLevel.Trace"/> to also
+    /// receive every message exchanged with the remote end, which is how protocol traffic is inspected.
+    /// Trace is not the default because composing those messages decodes each payload into a string.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> suppresses every message.
+    /// </para>
+    /// <para>
+    /// This governs only <see cref="OnLogMessage"/>. The <see cref="WebDriverBiDiEventSource"/>
+    /// diagnostic events are independent, and are filtered by whatever enables the event source.
+    /// </para>
+    /// </remarks>
+    public virtual WebDriverBiDiLogLevel LogLevel { get => this.transport.LogLevel; set => this.transport.LogLevel = value; }
+
+    /// <summary>
     /// Gets the callback used to report late observer execution errors to the underlying transport.
     /// </summary>
     Func<EventObserverErrorInfo, Task> IEventObserverErrorReporter.EventObserverErrorReporter => this.ReportObservableEventObserverError;
@@ -786,6 +811,26 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     }
 
     /// <summary>
+    /// Gets a value indicating whether a message at the given level would be raised on
+    /// <see cref="OnLogMessage"/>, so that a caller can avoid building a message that would be discarded.
+    /// </summary>
+    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
+    /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A message is raised only when its level is at or above <see cref="LogLevel"/> and
+    /// <see cref="OnLogMessage"/> has at least one observer.
+    /// <see cref="Protocol.Connection.IsLogLevelEnabled"/> and
+    /// <see cref="Protocol.Transport.IsLogLevelEnabled"/> answer the same question for their own layer.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> is never enabled. It selects "no messages at all" when
+    /// assigned to <see cref="LogLevel"/>, and is not a level a message can carry; without the explicit
+    /// test it would compare as enabled against every setting, because it is the highest value.
+    /// </remarks>
+    public bool IsLogLevelEnabled(WebDriverBiDiLogLevel level)
+    {
+        return level != WebDriverBiDiLogLevel.Off && level >= this.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
+    }
+
+    /// <summary>
     /// Asynchronously releases the resources used by this driver instance.
     /// Override this method in derived classes to add custom cleanup logic.
     /// </summary>
@@ -829,12 +874,22 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="logLevel">The <see cref="WebDriverBiDiLogLevel"/> at which to raise the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <remarks>
+    /// <para>
+    /// A message below <see cref="LogLevel"/> is discarded rather than raised.
+    /// </para>
+    /// <para>
     /// This method never throws for a failure in an observer of <see cref="OnLogMessage"/>;
     /// such a failure is routed through the observer-error pipeline, where it is governed
     /// by <see cref="EventHandlerExceptionBehavior"/>.
+    /// </para>
     /// </remarks>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel)
     {
+        if (!this.IsLogLevelEnabled(logLevel))
+        {
+            return;
+        }
+
         // A synchronously throwing log observer would propagate its exception into
         // whatever operation happened to emit the log message. We especially want
         // to fix this so that disposal is not interrupted.

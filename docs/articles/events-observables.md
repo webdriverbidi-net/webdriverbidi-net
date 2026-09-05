@@ -195,7 +195,11 @@ library diagnostics to your own logging infrastructure.
 
 [!code-csharp[OnLogMessage](../code/events-observables/EventObserverSamples.cs#OnLogMessage)]
 
-`Level` is a `WebDriverBiDiLogLevel` value (`Trace`, `Debug`, `Info`, `Warn`, `Error`, `Fatal`; the enum also defines `Off`, which is never emitted).
+`Level` is a `WebDriverBiDiLogLevel` value (`Trace`, `Debug`, `Info`, `Warn`, `Error`, `Fatal`). Only
+messages at or above `BiDiDriver.LogLevel` are raised; it defaults to `Info`, so `Debug` (a message
+per command) and `Trace` (every message exchanged with the remote end) must be opted into. The enum's
+`Off` member is never the level of a raised message: it exists to be assigned to `LogLevel`, where
+it suppresses everything.
 `ComponentName` identifies the part of the library that emitted the message. `Timestamp` is set to
 `DateTime.UtcNow` at the time the message was created.
 

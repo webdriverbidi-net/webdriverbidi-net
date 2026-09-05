@@ -141,6 +141,12 @@ public class NetStandardCompatibilityTests : IClassFixture<NetStandardCompatibil
         // Prove the pipe transport round trip actually ran (rather than being silently skipped),
         // exercising the netstandard2.0 PipeConnection code paths in addition to the WebSocket ones.
         Assert.Contains("Pipe transport round-trip over the netstandard2.0 build succeeded.", runResult.StandardOutputConsoleContent);
+
+        // Prove the netstandard2.0 arm of the message-decode branch in Connection.LogMessageContentAsync
+        // ran in both directions. It is the only netstandard2.0-specific line in the connection layer,
+        // and reaching it depends on the log level, so a change to the level's default can silently stop
+        // covering it, as one did.
+        Assert.Contains("Netstandard2.0 SEND and RECV trace logging exercised the message decode branch.", runResult.StandardOutputConsoleContent);
         Assert.Contains("PASS:", runResult.StandardOutputConsoleContent);
         Assert.Equal(0, runResult.ExitCode);
     }

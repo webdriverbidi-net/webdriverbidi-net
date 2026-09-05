@@ -9,7 +9,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
-using System.Text;
 
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end over a WebSocket.
@@ -317,16 +316,7 @@ public class WebSocketConnection : Connection
                                 // returns the buffer to the pool on disposal, so no second copy is needed.
                                 messageBuffer.Append(socketFrameBuffer.AsSpan(0, receiveResult.Count));
                                 IMemoryOwner<byte> messageBufferOwner = messageBuffer.TakeOwnership(out int messageLength);
-
-                                if (this.OnLogMessage.CurrentObserverCount > 0)
-                                {
-#if NET5_0_OR_GREATER
-                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-                                }
-
+                                await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageBufferOwner.Memory, messageLength).ConfigureAwait(false);
                                 await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
                             }
                             else
@@ -336,15 +326,7 @@ public class WebSocketConnection : Connection
                                 if (messageLength > 0)
                                 {
                                     IMemoryOwner<byte> messageBufferOwner = TakeOwnershipOfReceivedData(socketFrameBuffer.Array!, messageLength);
-                                    if (this.OnLogMessage.CurrentObserverCount > 0)
-                                    {
-#if NET5_0_OR_GREATER
-                                        await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-                                        await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-                                    }
-
+                                    await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageBufferOwner.Memory, messageLength).ConfigureAwait(false);
                                     await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
                                 }
                             }

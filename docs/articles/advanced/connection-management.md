@@ -124,11 +124,39 @@ This is suitable for typical WebDriver BiDi messages. Larger payloads (screensho
 
 Connections provide observable events for diagnostics. This is useful for monitoring and debugging.
 
+### Log Level
+
+`OnLogMessage` is filtered by a minimum level that defaults to `WebDriverBiDiLogLevel.Info`. The same
+setting is exposed at all three layers — `BiDiDriver.LogLevel`, `Transport.LogLevel` and
+`Connection.LogLevel` — and they read and write one value, so setting it anywhere sets it
+everywhere:
+
+```csharp
+driver.LogLevel = WebDriverBiDiLogLevel.Debug;
+```
+
+| Level | What it adds |
+|-------|--------------|
+| `Warn` and above | Shutdown timeouts, disposal problems, connection errors |
+| `Info` (default) | Connection and transport lifecycle |
+| `Debug` | A message per command sent, answered, or discarded as a late response |
+| `Trace` | Every message exchanged with the remote end (`SEND >>>` / `RECV <<<`) |
+| `Off` | Nothing at all, including `Fatal` |
+
+`Debug` and `Trace` are excluded by default because they are the voluminous ones, and because a `Trace`
+traffic message is built by decoding the whole payload into a string. While `Trace` is disabled that
+decode never happens, so the cost is paid only once you ask for it. If you need to know whether a level
+is enabled before composing an expensive message of your own — in a custom `Connection` or `Transport`,
+for instance — call `IsLogLevelEnabled`, which accounts for both the level and whether anything is
+observing.
+
 ### Inspecting Protocol Traffic
 
-To see the raw messages exchanged with the browser, observe `OnLogMessage` and filter for
-`Trace` level. Connections emit every message they send and receive at that level, prefixed
-with `SEND >>>` or `RECV <<<`:
+To see the raw messages exchanged with the browser, set `LogLevel` to `Trace` and observe
+`OnLogMessage`. Connections emit every message they send and receive at that level, prefixed
+with `SEND >>>` or `RECV <<<`. The level must be raised explicitly: it defaults to `Info`, and a
+traffic message is not composed at all — the payload is not even decoded from UTF-8 — while `Trace`
+is disabled, so an observer alone will not show any traffic:
 
 [!code-csharp[Protocol Traffic Logging](../../code/advanced/ConnectionManagementSamples.cs#ProtocolTrafficLogging)]
 
@@ -156,7 +184,7 @@ Internal connection logging:
 
 [!code-csharp[OnLogMessage Event](../../code/advanced/ConnectionManagementSamples.cs#OnLogMessageEvent)]
 
-**Levels:** `Info` (normal operations), `Warn` (non-critical issues), `Error` (connection errors); `Debug` and `Trace` carry per-message detail.
+**Levels:** `Info` (normal operations), `Warn` (non-critical issues), `Error` (connection errors); `Debug` and `Trace` carry per-message detail and are excluded by the default `LogLevel` of `Info`.
 
 ## Transport Diagnostics
 

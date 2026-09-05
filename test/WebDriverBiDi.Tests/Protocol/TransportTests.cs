@@ -465,6 +465,8 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -523,6 +525,8 @@ public class TransportTests
         // deadlock, and the bounded wait below would time out.
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         int reentrantSendCount = 0;
@@ -3189,6 +3193,8 @@ public class TransportTests
         {
             AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
@@ -3306,6 +3312,8 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Ignore,
             AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -3605,6 +3613,8 @@ public class TransportTests
         {
             UnknownMessageBehavior = TransportErrorBehavior.Terminate,
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         transport.OnUnknownMessageReceived.AddObserver(e => unknownMessageReceived = true);
         transport.OnLogMessage.AddObserver(e =>
         {
@@ -3649,6 +3659,8 @@ public class TransportTests
         {
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         transport.OnErrorEventReceived.AddObserver(e => errorEventReceived = true);
         transport.OnLogMessage.AddObserver(e =>
         {

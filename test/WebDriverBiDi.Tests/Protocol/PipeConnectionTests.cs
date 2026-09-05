@@ -271,6 +271,8 @@ public class PipeConnectionTests
         TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e => receivedData.Add(e.Message));
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
