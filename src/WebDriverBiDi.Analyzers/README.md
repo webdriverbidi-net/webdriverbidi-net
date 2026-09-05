@@ -23,7 +23,8 @@ Twenty-five rules, in four groups:
   result type; registering a custom event under a built-in event name.
 - **Event handling (Warning).** Adding an observer for an event that was never subscribed; leaking an
   `EventObserver`; blocking calls and deadlock-prone synchronization inside a handler; issuing a module
-  command from a handler that runs on the dispatching thread; an `async void` handler.
+  command from a handler that runs on the dispatching thread; an `async void` handler; opening a capture
+  session that is never read.
 - **Correctness (Warning).** Unsafe casts of `EvaluateResult`; adding to a nullable list without
   initializing it; mutating `AdditionalData`, which is not AOT-safe; a value outside the range the
   specification defines for a property.

@@ -56,7 +56,8 @@ public abstract record RealmInfo
     public RealmType Type { get; internal set; } = RealmType.Window;
 
     /// <summary>
-    /// Attempts to convert this <see cref="RealmInfo"/> to a type-specific realm info.
+    /// Converts this <see cref="RealmInfo"/> to a type-specific realm info, throwing if it is not of that
+    /// type. Use <see cref="TryConvertTo{T}"/> to test without throwing.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
     /// <returns>This instance cast to the specified correct type.</returns>
@@ -73,7 +74,8 @@ public abstract record RealmInfo
     }
 
     /// <summary>
-    /// Attempts to convert this <see cref="RealmInfo"/> to a type-specific realm info.
+    /// Attempts to convert this <see cref="RealmInfo"/> to a type-specific realm info, returning
+    /// <see langword="false"/> rather than throwing when it is not of that type.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
     /// <param name="result">When this method returns, contains the converted value or null if the conversion failed.</param>

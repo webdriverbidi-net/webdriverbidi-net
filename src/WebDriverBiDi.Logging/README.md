@@ -116,6 +116,7 @@ var app = builder.Build();
 ### Console Application
 
 ```csharp
+using System.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;
 
 using ILoggerFactory factory = LoggerFactory.Create(builder =>

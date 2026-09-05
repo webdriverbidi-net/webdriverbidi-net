@@ -109,7 +109,7 @@ public sealed class ScriptModule : Module
     /// <summary>
     /// Gets the realms associated with a given browsing context and realm type.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing information about the realms.</returns>

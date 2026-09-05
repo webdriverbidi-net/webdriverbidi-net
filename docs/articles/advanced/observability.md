@@ -47,8 +47,8 @@ Choose the appropriate level based on your needs:
 |-------|----------|-----------------|
 | **Critical** | Production alerts | Critical failures (none currently emitted) |
 | **Error** | Error tracking | Command errors, protocol errors, connection errors |
-| **Warning** | Operational monitoring | Command timeouts, event handler errors, unknown messages |
-| **Informational** | General monitoring | Connection lifecycle, command completion, transport start/stop, custom registrations |
+| **Warning** | Operational monitoring | Command timeouts, commands that failed before transmission, event handler errors, unknown messages |
+| **Informational** | General monitoring | Connection lifecycle, command completion, responses discarded for canceled commands, transport start/stop, custom registrations |
 | **Verbose** | Development/debugging | All events including command sending, event receipt, statistics |
 
 **Recommendation for Production:** Use `EventLevel.Informational` or `EventLevel.Warning` to balance observability with overhead.
