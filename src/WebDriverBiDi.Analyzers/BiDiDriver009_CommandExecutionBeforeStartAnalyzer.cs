@@ -61,6 +61,14 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // Track BiDiDriver variables and whether StartAsync has been called
         Dictionary<string, bool> driverStartedStatus = [];
 
+        // A driver that this method hands to something else may be started by that other code, which
+        // this rule cannot see. Its started state is therefore unknown from the outset, so it is never
+        // tracked and never reported on. Collecting the escaping names up front, rather than at the
+        // point of escape, is what the Error severity of this rule demands: the helper that starts the
+        // driver may be called before or after the command textually, and a wrong Error on correct
+        // code is worse than a missed report.
+        HashSet<string> escapedNames = FindEscapedVariableNames(context.Node);
+
         // Walk through all statements in the method
         IEnumerable<StatementSyntax> statements = AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node);
 
@@ -68,14 +76,102 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         {
             // ProcessNode registers driver declarations and checks driver method calls,
             // wherever in the statement's subtree they appear.
-            ProcessNode(statement, context, semanticModel, driverStartedStatus);
+            ProcessNode(statement, context, semanticModel, driverStartedStatus, escapedNames);
         }
+    }
+
+    /// <summary>
+    /// Collects the names of local variables that this member hands to something else, or that a nested
+    /// function could start or stop.
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <returns>The set of names whose started state cannot be known from this member alone.</returns>
+    private static HashSet<string> FindEscapedVariableNames(SyntaxNode body)
+    {
+        HashSet<string> escapedNames = [];
+        foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
+        {
+            if (IsEscapingPosition(identifier) || IsStartedOrStoppedInsideNestedFunction(identifier, body))
+            {
+                escapedNames.Add(identifier.Identifier.ValueText);
+            }
+        }
+
+        return escapedNames;
+    }
+
+    /// <summary>
+    /// Determines whether a mention of a variable hands it to something else, so that other code could
+    /// start it.
+    /// </summary>
+    /// <param name="identifier">The mention of the variable.</param>
+    /// <returns><see langword="true"/> if the variable escapes at this position; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// This mirrors the escape classification in BIDI006. A mention that merely uses the driver
+    /// (<c>driver.Session.StatusAsync()</c>, a null test, a using statement) has a parent that is not in
+    /// the list below and is correctly not treated as an escape.
+    /// </remarks>
+    private static bool IsEscapingPosition(IdentifierNameSyntax identifier)
+    {
+        return identifier.Parent switch
+        {
+            // Returned to the caller: return driver; or yield return driver;
+            ReturnStatementSyntax or YieldStatementSyntax => true,
+
+            // Assigned to another target, for example a field: this.driver = driver;
+            AssignmentExpressionSyntax assignment => assignment.Right == identifier,
+
+            // Passed to a method or constructor that may start it: await StartHelperAsync(driver);
+            ArgumentSyntax => true,
+
+            // Placed in a collection expression, an initializer, or used to initialize another
+            // variable that may itself be started.
+            ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
+
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Determines whether a mention of a variable inside a nested function starts or stops it.
+    /// </summary>
+    /// <param name="identifier">The mention of the variable.</param>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <returns><see langword="true"/> if a nested function can change the variable's started state; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A nested function runs when its delegate is invoked, not where it is declared, so a
+    /// <c>StartAsync</c> or <c>StopAsync</c> inside one can change the driver's state at a point this
+    /// rule's textual walk cannot place. Only those two calls make the state unknown: a nested function
+    /// that merely issues commands on the driver leaves the state alone, and treating every capture as
+    /// an escape would stop the rule reporting a genuine error elsewhere in the same method.
+    /// </remarks>
+    private static bool IsStartedOrStoppedInsideNestedFunction(IdentifierNameSyntax identifier, SyntaxNode body)
+    {
+        if (identifier.Parent is not MemberAccessExpressionSyntax memberAccess ||
+            memberAccess.Expression != identifier ||
+            memberAccess.Parent is not InvocationExpressionSyntax)
+        {
+            return false;
+        }
+
+        string methodName = memberAccess.Name.Identifier.ValueText;
+        if (methodName != "StartAsync" && methodName != "StopAsync")
+        {
+            return false;
+        }
+
+        // The identifier came from the body's descendants, so the body is always an ancestor and always
+        // stops the walk.
+        return identifier.Ancestors()
+            .TakeWhile(ancestor => ancestor != body)
+            .Any(ancestor => ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax);
     }
 
     private static void AnalyzeLocalDeclaration(
         LocalDeclarationStatementSyntax localDecl,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
         {
@@ -94,6 +190,11 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 continue;
             }
 
+            if (escapedNames.Contains(variable.Identifier.ValueText))
+            {
+                continue;
+            }
+
             ITypeSymbol? typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value).Type;
             if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo))
             {
@@ -106,7 +207,8 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the
         // tracked started state. The walk does not descend into the bodies of nested functions
@@ -125,22 +227,22 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
-                ProcessIfStatement(ifStatement, context, semanticModel, driverStartedStatus);
+                ProcessIfStatement(ifStatement, context, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
-                ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus);
+                ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is TryStatementSyntax tryStatement)
             {
-                ProcessTryStatement(tryStatement, context, semanticModel, driverStartedStatus);
+                ProcessTryStatement(tryStatement, context, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is LocalDeclarationStatementSyntax localDecl)
             {
                 // Register driver declarations wherever they appear (including inside nested
                 // blocks such as try or using statements); the pre-order walk visits the
                 // declaration before any later use of the variable.
-                AnalyzeLocalDeclaration(localDecl, semanticModel, driverStartedStatus);
+                AnalyzeLocalDeclaration(localDecl, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
@@ -153,22 +255,23 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         IfStatementSyntax ifStatement,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
-        ProcessNode(ifStatement.Condition, context, semanticModel, driverStartedStatus);
+        ProcessNode(ifStatement.Condition, context, semanticModel, driverStartedStatus, escapedNames);
 
         // The branches are mutually exclusive, so each arm is walked against its own copy of
         // the state at the branch point: a StopAsync in one arm must not poison a command in
         // the other. An else-if chain arrives here as an else clause whose statement is itself
         // an if statement, which ProcessNode routes back into this method.
         Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
-        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranchStatus);
+        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranchStatus, escapedNames);
 
         Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
         if (ifStatement.Else is not null)
         {
-            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranchStatus);
+            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranchStatus, escapedNames);
         }
 
         // After the branch, a driver counts as not started only when every path through the
@@ -186,11 +289,12 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         TryStatementSyntax tryStatement,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         Dictionary<string, bool> entryStatus = new(driverStartedStatus);
         Dictionary<string, bool> tryStatus = new(driverStartedStatus);
-        ProcessNode(tryStatement.Block, context, semanticModel, tryStatus);
+        ProcessNode(tryStatement.Block, context, semanticModel, tryStatus, escapedNames);
 
         // A catch clause (or a finally block) may begin executing after any prefix of the try block
         // has run, so inside one a driver counts as started when *any* partial execution of the try
@@ -215,17 +319,17 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             Dictionary<string, bool> catchStatus = new(mightBeStartedStatus);
             if (catchClause.Filter is not null)
             {
-                ProcessNode(catchClause.Filter.FilterExpression, context, semanticModel, catchStatus);
+                ProcessNode(catchClause.Filter.FilterExpression, context, semanticModel, catchStatus, escapedNames);
             }
 
-            ProcessNode(catchClause.Block, context, semanticModel, catchStatus);
+            ProcessNode(catchClause.Block, context, semanticModel, catchStatus, escapedNames);
             exitStatuses.Add(catchStatus);
         }
 
         if (tryStatement.Finally is not null)
         {
             Dictionary<string, bool> finallyStatus = new(mightBeStartedStatus);
-            ProcessNode(tryStatement.Finally.Block, context, semanticModel, finallyStatus);
+            ProcessNode(tryStatement.Finally.Block, context, semanticModel, finallyStatus, escapedNames);
             exitStatuses.Add(finallyStatus);
         }
 
@@ -243,10 +347,11 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         SwitchStatementSyntax switchStatement,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         // The governing expression executes unconditionally, before any section.
-        ProcessNode(switchStatement.Expression, context, semanticModel, driverStartedStatus);
+        ProcessNode(switchStatement.Expression, context, semanticModel, driverStartedStatus, escapedNames);
 
         // Sections are mutually exclusive in the same way if/else branches are.
         List<Dictionary<string, bool>> sectionStatuses = [];
@@ -255,7 +360,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             Dictionary<string, bool> sectionStatus = new(driverStartedStatus);
             foreach (StatementSyntax sectionStatement in section.Statements)
             {
-                ProcessNode(sectionStatement, context, semanticModel, sectionStatus);
+                ProcessNode(sectionStatement, context, semanticModel, sectionStatus, escapedNames);
             }
 
             sectionStatuses.Add(sectionStatus);

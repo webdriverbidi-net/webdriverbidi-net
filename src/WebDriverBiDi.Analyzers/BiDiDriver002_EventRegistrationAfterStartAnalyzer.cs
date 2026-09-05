@@ -144,6 +144,16 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
             if (AnalyzerSymbolHelpers.IsCommandExecutorType(variableType))
             {
                 updatedVariables = updatedVariables.Add(variable.Identifier.Text, new DriverVariableState());
+                continue;
+            }
+
+            // A declaration can start the driver just as an assignment can:
+            // Task startTask = driver.StartAsync(url); begins the connect attempt at the call, and the
+            // task is typically awaited later. Recognizing only the assignment spelling would let the
+            // declaration form silently escape the rule.
+            if (variable.Initializer.Value is InvocationExpressionSyntax initializerInvocation)
+            {
+                updatedVariables = AnalyzeInvocation(context, AnalyzerSymbolHelpers.UnwrapTaskChain(initializerInvocation), updatedVariables);
             }
         }
 

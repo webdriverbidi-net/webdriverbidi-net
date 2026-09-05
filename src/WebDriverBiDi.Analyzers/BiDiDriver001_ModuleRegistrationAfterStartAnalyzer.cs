@@ -90,7 +90,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             }
             else if (descendant is LocalDeclarationStatementSyntax localDecl)
             {
-                AnalyzeLocalDeclaration(localDecl, semanticModel, driverVariables);
+                AnalyzeLocalDeclaration(localDecl, context, semanticModel, driverVariables);
             }
             else if (descendant is ExpressionStatementSyntax expressionStmt)
             {
@@ -125,7 +125,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         }
     }
 
-    private static void AnalyzeLocalDeclaration(LocalDeclarationStatementSyntax localDecl, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
+    private static void AnalyzeLocalDeclaration(LocalDeclarationStatementSyntax localDecl, SyntaxNodeAnalysisContext context, SemanticModel semanticModel, Dictionary<string, bool> driverVariables)
     {
         foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
         {
@@ -138,6 +138,16 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             if (AnalyzerSymbolHelpers.IsDriverConfigurationType(typeInfo.Type))
             {
                 driverVariables[variable.Identifier.Text] = false;
+                continue;
+            }
+
+            // A declaration can start the driver just as an assignment can:
+            // Task startTask = driver.StartAsync(url); begins the connect attempt at the call, and the
+            // task is typically awaited later. Recognizing only the assignment spelling would let the
+            // declaration form silently escape the rule.
+            if (variable.Initializer.Value is InvocationExpressionSyntax initializerInvocation)
+            {
+                CheckForDriverMethodCall(AnalyzerSymbolHelpers.UnwrapTaskChain(initializerInvocation), context, semanticModel, driverVariables);
             }
         }
     }

@@ -2379,4 +2379,47 @@ public class BiDiDriver007AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that a handler written as an anonymous method is inspected like a lambda. It is a legal
+    /// spelling of the same handler and carries the same hazard.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WrittenAsAnonymousMethod_ReportsWarning()
+    {
+        string test = """
+            using System.Threading;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(delegate (EntryAddedEventArgs args)
+                        {
+                            {|#0:Thread.Sleep(1000)|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }
