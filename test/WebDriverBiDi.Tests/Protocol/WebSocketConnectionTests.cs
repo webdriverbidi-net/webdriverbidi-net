@@ -350,6 +350,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<LogMessageEventArgs> allLogs = [];
         WebSocketConnection connection = new();
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         connection.OnLogMessage.AddObserver(e =>
         {
@@ -462,6 +464,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
     {
         List<string> connectionLog = [];
         WebSocketConnection connection = new();
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
@@ -511,6 +515,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> connectionLog = [];
         WebSocketConnection connection = new();
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
@@ -553,6 +559,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
         {
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e =>
         {
             lock (logLock)
@@ -802,6 +810,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
         {
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e =>
         {
             connectionLog.Add(e.Message);
@@ -1370,13 +1380,19 @@ public class WebSocketConnectionTests : IAsyncDisposable
             throw new OperationCanceledException(token);
         };
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        connection.OnLogMessage.AddObserver((e) => { });
+
+        // Trace also makes the connection log the reassembled message, so this covers the traffic
+        // message for the multi-frame path as well as the reassembly itself.
+        List<LogMessageEventArgs> logs = [];
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
+        connection.OnLogMessage.AddObserver((e) => logs.Add(e));
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("Hello, World!", Encoding.UTF8.GetString(dataReceivedByConnection));
+        Assert.Contains(logs, log => log.Level == WebDriverBiDiLogLevel.Trace && log.Message.Contains("RECV <<< Hello, World!"));
     }
 
     [Fact]

@@ -41,7 +41,8 @@ public enum WebDriverBiDiLogLevel
     Fatal,
 
     /// <summary>
-    /// Suppresses all logs.
+    /// Suppresses all logs. This member is a setting rather than a level a message can carry; a message
+    /// is never raised at this level, and asking whether it is enabled always answers no.
     /// </summary>
     Off,
 }

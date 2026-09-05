@@ -45,12 +45,23 @@ public abstract class Connection : IAsyncDisposable
     /// </summary>
     public const string LoggerComponentName = "Connection";
 
+    /// <summary>
+    /// The prefix for logging message content during a send operation.
+    /// </summary>
+    protected const string LogSendMessagePrefix = "SEND >>> ";
+
+    /// <summary>
+    /// The prefix for logging message content during a receive operation.
+    /// </summary>
+    protected const string LogReceiveMessagePrefix = "RECV <<< ";
+
     // Default buffer size is 2^20 bytes, or 1MB.
     private const int BufferSizeInBytes = 1 << 20;
     private const string DataReceivedEventName = "connection.dataReceived";
     private const string LogMessageEventName = "connection.logMessage";
     private const string ConnectionErrorEventName = "connection.connectionError";
     private const string RemoteDisconnectedEventName = "connection.remoteDisconnected";
+
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
     private TimeSpan startupTimeout = DefaultTimeout;
@@ -169,6 +180,29 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets or sets the minimum <see cref="WebDriverBiDiLogLevel"/> at which this connection raises
+    /// <see cref="OnLogMessage"/>. Messages below this level are never built or raised. Defaults to
+    /// <see cref="WebDriverBiDiLogLevel.Info"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the single setting for the whole log pipeline: <see cref="Transport.LogLevel"/> and
+    /// <see cref="BiDiDriver.LogLevel"/> read and write this property, so setting it on any of the
+    /// three sets it for all of them.
+    /// </para>
+    /// <para>
+    /// The default excludes the two most voluminous levels. Every message this connection sends and
+    /// receives is logged at <see cref="WebDriverBiDiLogLevel.Trace"/>, and each such message is decoded
+    /// from UTF-8 into a string only when that level is enabled, so raising the level to
+    /// <see cref="WebDriverBiDiLogLevel.Trace"/> to inspect protocol traffic also opts in to that cost.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> suppresses every message, including
+    /// <see cref="WebDriverBiDiLogLevel.Fatal"/>; it is only meaningful here, and is never the level of a
+    /// message that is raised.
+    /// </para>
+    /// </remarks>
+    public WebDriverBiDiLogLevel LogLevel { get; set; } = WebDriverBiDiLogLevel.Info;
+
+    /// <summary>
     /// Gets an observable event that notifies when data is received from this connection.
     /// </summary>
     /// <remarks>
@@ -273,15 +307,9 @@ public abstract class Connection : IAsyncDisposable
         }
 
         // Notify log-message observers before acquiring the send semaphore to avoid
-        // potential deadlocks in a malformed observer on the logging event.
-        if (this.OnLogMessage.CurrentObserverCount > 0)
-        {
-#if NET5_0_OR_GREATER
-            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.Span)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-        }
+        // potential deadlocks in a malformed observer on the logging event. Decoding the payload for
+        // the message is only worth doing when a Trace message would actually be raised.
+        await this.LogMessageContentAsync(LogSendMessagePrefix, data, data.Length).ConfigureAwait(false);
 
         // Only one send operation at a time can be active on a ClientWebSocket instance,
         // so we must synchronize send access to the socket in case multiple threads are
@@ -342,6 +370,25 @@ public abstract class Connection : IAsyncDisposable
         }
 
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a message at the given level would be raised on
+    /// <see cref="OnLogMessage"/>, so that a caller can avoid building a message that would be discarded.
+    /// </summary>
+    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
+    /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Test this before composing any log message whose construction is not free. The connection uses it
+    /// for the <c>SEND</c> and <c>RECV</c> traffic messages, whose construction decodes the whole payload
+    /// from UTF-8; a custom <see cref="Connection"/> should use it for the same purpose.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> is never enabled. It selects "no messages at all" when
+    /// assigned to <see cref="LogLevel"/>, and is not a level a message can carry; without the explicit
+    /// test it would compare as enabled against every setting, because it is the highest value.
+    /// </remarks>
+    public bool IsLogLevelEnabled(WebDriverBiDiLogLevel level)
+    {
+        return level != WebDriverBiDiLogLevel.Off && level >= this.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
     }
 
     /// <summary>
@@ -519,6 +566,30 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Logs the content of an incoming or outgoing message at the <see cref="WebDriverBiDiLogLevel.Trace"/> level.
+    /// </summary>
+    /// <param name="logPrefix">The prefix identifying the direction, either <see cref="LogSendMessagePrefix"/> or <see cref="LogReceiveMessagePrefix"/>.</param>
+    /// <param name="messageData">The buffer containing the message, which may be longer than <paramref name="messageLength"/> when it comes from a pool.</param>
+    /// <param name="messageLength">The length of the message within <paramref name="messageData"/>.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// If the <see cref="LogLevel"/> property is set to other than
+    /// <see cref="WebDriverBiDiLogLevel.Trace"/>, or if there are no
+    /// observers on the OnLogMessage event, this method does nothing.
+    /// </remarks>
+    protected async Task LogMessageContentAsync(string logPrefix, ReadOnlyMemory<byte> messageData, int messageLength)
+    {
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Trace))
+        {
+#if NET5_0_OR_GREATER
+            await this.LogAsync($"{logPrefix}{Encoding.UTF8.GetString(messageData.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#else
+            await this.LogAsync($"{logPrefix}{Encoding.UTF8.GetString(messageData.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#endif
+        }
+    }
+
+    /// <summary>
     /// Asynchronously raises a logging event at the Info log level.
     /// </summary>
     /// <param name="message">The log message to raise in the event.</param>
@@ -534,8 +605,18 @@ public abstract class Connection : IAsyncDisposable
     /// <param name="message">The log message to raise in the event.</param>
     /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> at which to raise the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// A message below <see cref="LogLevel"/> is discarded here rather than raised. Callers whose
+    /// message is expensive to compose should also test <see cref="IsLogLevelEnabled"/> first, because the
+    /// message has already been built by the time it reaches this method.
+    /// </remarks>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
+        if (!this.IsLogLevelEnabled(level))
+        {
+            return;
+        }
+
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
