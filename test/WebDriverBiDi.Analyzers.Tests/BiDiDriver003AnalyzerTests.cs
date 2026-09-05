@@ -1020,4 +1020,45 @@ public class BiDiDriver003AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that declaring the start task, rather than assigning it, is still recognized as starting the
+    /// driver. The connect attempt begins at the call in both spellings.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterStartAsyncDeclaredAsTask_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        Task startTask = driver.StartAsync("ws://localhost:9222");
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                        await startTask;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

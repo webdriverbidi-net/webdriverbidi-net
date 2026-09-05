@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.Testing;
 /// command-parameter property whose value is outside the WebDriver BiDi specification range declared
 /// by <c>SpecRangeAttribute</c>.
 /// </summary>
-public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
+public class BiDiDriver028AnalyzerTests
 {
     [Fact]
     public async Task ObjectInitializer_QualityAboveRange_ReportsWarning()

@@ -110,10 +110,11 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
 
     private static bool IsAsyncHandler(ExpressionSyntax expression)
     {
+        // Every inline handler form carries its async keyword on this base type, so matching it covers
+        // anonymous methods (delegate (…) { … }) as well as both lambda spellings.
         return expression switch
         {
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            ParenthesizedLambdaExpressionSyntax parenthesizedLambda => parenthesizedLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
+            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             _ => false,
         };
     }

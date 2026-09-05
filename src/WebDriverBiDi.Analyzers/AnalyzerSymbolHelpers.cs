@@ -103,17 +103,23 @@ internal static class AnalyzerSymbolHelpers
 
     /// <summary>
     /// Gets the body syntax node for a handler expression passed to AddObserver.
-    /// Returns the lambda body, or resolves a method reference to its body.
+    /// Returns the body of an anonymous function, or resolves a method reference to its body.
     /// </summary>
     /// <param name="context">The analysis context.</param>
     /// <param name="expression">The handler expression.</param>
     /// <returns>The body syntax node, or <see langword="null"/> if it cannot be resolved.</returns>
+    /// <remarks>
+    /// Matching <see cref="AnonymousFunctionExpressionSyntax"/> covers all three spellings of an inline
+    /// handler at once: a simple lambda, a parenthesized lambda, and an anonymous method written with the
+    /// <c>delegate</c> keyword. All three declare their body on that base type. Matching the two lambda
+    /// forms individually would silently exempt <c>delegate (…) { … }</c> handlers from every rule that
+    /// inspects a handler body, which is a legal spelling with exactly the same hazards.
+    /// </remarks>
     internal static SyntaxNode? GetHandlerBody(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
         return expression switch
         {
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Body,
-            ParenthesizedLambdaExpressionSyntax parenthesizedLambda => parenthesizedLambda.Body,
+            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.Body,
             IdentifierNameSyntax identifierName => GetMethodBodyFromSymbol(context, identifierName),
             MemberAccessExpressionSyntax memberAccess => GetMethodBodyFromSymbol(context, memberAccess),
             _ => null,

@@ -1418,4 +1418,89 @@ public class BiDiDriver023AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that a module command inside a handler written as an anonymous method reports a warning.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WrittenAsAnonymousMethod_ReportsWarning()
+    {
+        string test = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(async delegate (EntryAddedEventArgs args)
+                        {
+                            await {|#0:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("NavigateAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that ExecuteCommandAsync in a handler reports a warning. It sends a command over the same
+    /// connection a module command does, so reaching the command through the executor rather than
+    /// through a module is a spelling difference, not a different hazard.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WithExecuteCommandAsync_ReportsWarning()
+    {
+        string test = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

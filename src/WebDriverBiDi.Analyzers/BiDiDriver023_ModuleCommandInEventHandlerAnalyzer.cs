@@ -155,6 +155,15 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
 
     private static bool IsModuleCommandMethod(IMethodSymbol method)
     {
+        // ExecuteCommandAsync sends a command over the same connection a module command does, so awaiting
+        // it from a synchronous handler deadlocks in exactly the same way. Reaching a command through the
+        // executor rather than through a module is a spelling difference, not a different hazard. Both
+        // of its overloads return Task<T>, so it needs no separate return-type test.
+        if (method.Name == "ExecuteCommandAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType))
+        {
+            return true;
+        }
+
         if (!method.ContainingType.Name.EndsWith("Module", System.StringComparison.Ordinal))
         {
             return false;

@@ -272,7 +272,17 @@ async Task SetupAsync() { driver = new BiDiDriver(); await driver.StartAsync(...
 async Task TestAsync() { driver.RegisterModule(new CustomModule(driver)); } // no diagnostic
 ```
 
-BIDI007 and BIDI023 are the exceptions: they will follow a single hop from an `AddObserver(...)` call to a method reference used as the handler, but they will not walk further than that. BIDI016 analyzes only inline `async` lambda handlers; a handler passed as a method reference is not analyzed.
+BIDI007 and BIDI023 are the exceptions: they will follow a single hop from an `AddObserver(...)` call to a method reference used as the handler, but they will not walk further than that. BIDI016 analyzes only inline `async` handlers; a handler passed as a method reference is not analyzed. All three treat the three spellings of an inline handler alike — a simple lambda, a parenthesized lambda, and an anonymous method written with the `delegate` keyword.
+
+BIDI009 goes further in the other direction. Because it reports an **Error**, it reports only when it is certain, so it stops tracking a driver that this method hands to something else — passed as an argument, returned, assigned to a field, aliased to another variable, or placed in a collection — since the code it was handed to may start it:
+
+```csharp
+BiDiDriver driver = new BiDiDriver();
+await StartHelperAsync(driver);                 // the driver escapes here
+await driver.Session.StatusAsync();             // no diagnostic: the state is unknown, not known-unstarted
+```
+
+A driver captured by a lambda or local function that calls `StartAsync` or `StopAsync` is treated the same way, because a nested function runs when its delegate is invoked rather than where it is written. A nested function that only issues commands does not suppress the rule.
 
 **Runtime enforcement remains correct.** The library still throws `InvalidOperationException` or `ObjectDisposedException` at runtime when these patterns are violated. The analyzers provide compile-time guidance where they can; they do not replace runtime validation.
 
