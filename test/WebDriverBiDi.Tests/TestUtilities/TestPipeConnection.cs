@@ -151,6 +151,50 @@ public class TestPipeConnection : PipeConnection
         }
     }
 
+    /// <summary>
+    /// Gets each write the connection issued to the pipe, one entry per call, so that a test can assert
+    /// how many operations a message was split into and what each one carried.
+    /// </summary>
+    public List<byte[]> RecordedPipeWrites { get; } = [];
+
+    /// <summary>
+    /// Gets or sets a value indicating whether recorded writes are also passed to the real pipe. Tests
+    /// that only inspect framing leave this false, so that no pipe peer is required.
+    /// </summary>
+    public bool BypassRealPipeWrite { get; set; }
+
+    /// <summary>
+    /// Calls the connection's own <c>WritePipeDataAsync</c>, which is protected, so that a test can
+    /// exercise the framing directly rather than through a started connection.
+    /// </summary>
+    /// <param name="messageBuffer">The message to frame and write.</param>
+    /// <param name="cancellationToken">The token to pass to the write.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public async Task WriteFramedMessageAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
+    {
+        await this.WritePipeDataAsync(messageBuffer, cancellationToken);
+    }
+
+    protected override async Task WriteToPipeAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
+    {
+        // Record before writing, so that a write that throws is still counted; a partial frame reaching
+        // the pipe is exactly what the framing test needs to be able to see.
+        byte[] written = new byte[count];
+        Array.Copy(buffer, offset, written, 0, count);
+        lock (this.RecordedPipeWrites)
+        {
+            this.RecordedPipeWrites.Add(written);
+        }
+
+        if (this.BypassRealPipeWrite)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return;
+        }
+
+        await base.WriteToPipeAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+    }
+
     protected override async Task WritePipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
         if (this.ThrowIOExceptionOnSend)

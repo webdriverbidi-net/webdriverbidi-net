@@ -59,7 +59,7 @@ internal static class PipeTransportScenario
         {
             await connection.StartAsync("pipe://local");
 
-            // Sending exercises the netstandard2.0 WritePipeDataAsync #else branch; the response the
+            // Sending exercises the netstandard2.0 WriteToPipeAsync #else branch; the response the
             // peer pushes back is received while a log observer is attached, exercising the RECV trace.
             await connection.SendDataAsync(Encoding.UTF8.GetBytes("netstandard2.0 pipe ping"));
 

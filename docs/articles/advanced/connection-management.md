@@ -270,6 +270,12 @@ Pipes use null-terminated JSON messages:
 - Browser writes to file descriptor 4 (Unix) or pipe handle (Windows)
 - Each message ends with `\0`
 
+Because that terminator is the only frame boundary, a message and its terminator are written as one
+operation. Canceling a command therefore either sends the whole message or sends none of it; cancellation
+is honored up to the moment the first byte is written, and not after. A canceled send can never leave a
+partial message in the pipe, which would otherwise put every message after it one frame out of step for
+the rest of the session.
+
 ### Limitations
 
 **Browser Support:** Only Chromium-based browsers support pipes.
