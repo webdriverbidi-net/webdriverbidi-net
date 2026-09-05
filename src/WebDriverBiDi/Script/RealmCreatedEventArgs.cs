@@ -37,7 +37,8 @@ public record RealmCreatedEventArgs : WebDriverBiDiEventArgs
     public RealmType Type { get => this.info.Type; }
 
     /// <summary>
-    /// Gets this RealmCreatedEventArgs instance as a RealmInfo containing type-specific realm info.
+    /// Converts the underlying realm info to a type-specific realm info, throwing if it is not of that
+    /// type.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
     /// <returns>The underlying RealmInfo cast to the specified type.</returns>
