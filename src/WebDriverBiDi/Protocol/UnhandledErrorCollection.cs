@@ -117,20 +117,22 @@ public class UnhandledErrorCollection
     }
 
     /// <summary>
-    /// Gets the list of exceptions for the unhandled errors in the collection.
+    /// Gets the list of exceptions for the unhandled errors in the collection, across every
+    /// error category. An empty collection yields an empty list.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when there are no unhandled errors in the collection.</exception>
+    /// <remarks>
+    /// The returned list is a snapshot, disconnected from this collection: it is unaffected by errors
+    /// added afterwards, and mutating it does not alter the collection. To ask about one
+    /// <see cref="TransportErrorBehavior"/> rather than all of them, use
+    /// <see cref="TryGetExceptions(TransportErrorBehavior, out IList{Exception})"/> or
+    /// <see cref="HasUnhandledErrors(TransportErrorBehavior)"/>.
+    /// </remarks>
     public IList<Exception> Exceptions
     {
         get
         {
             lock (this.collectionLock)
             {
-                if (this.unhandledErrors.Count == 0)
-                {
-                    throw new InvalidOperationException("No unhandled errors.");
-                }
-
                 List<Exception> result = new(this.unhandledErrors.Count);
                 foreach (UnhandledError error in this.unhandledErrors)
                 {

@@ -14,7 +14,7 @@ public class UnhandledErrorCollectionTests()
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Ignore));
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect));
         Assert.False(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate));
-        Assert.Equal("No unhandled errors.", Assert.ThrowsAny<InvalidOperationException>(() => unhandledErrors.Exceptions).Message);
+        Assert.Empty(unhandledErrors.Exceptions);
     }
 
     [Fact]
@@ -89,6 +89,28 @@ public class UnhandledErrorCollectionTests()
         WebDriverBiDiException? typedException = unhandledErrors.Exceptions[0] as WebDriverBiDiException;
         Assert.NotNull(typedException);
         Assert.Equal("new exception", typedException.Message);
+    }
+
+    [Fact]
+    public void TestExceptionsReturnsSnapshotDisconnectedFromCollection()
+    {
+        UnhandledErrorCollection unhandledErrors = new()
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect
+        };
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("first exception"));
+
+        IList<Exception> snapshot = unhandledErrors.Exceptions;
+        Assert.Single(snapshot);
+
+        // An error captured afterwards does not appear in a list already handed out.
+        unhandledErrors.AddUnhandledError(UnhandledErrorKind.ProtocolError, new WebDriverBiDiException("second exception"));
+        Assert.Single(snapshot);
+        Assert.Equal(2, unhandledErrors.Exceptions.Count);
+
+        // Mutating the returned list does not alter the collection it came from.
+        snapshot.Clear();
+        Assert.Equal(2, unhandledErrors.Exceptions.Count);
     }
 
     [Fact]
