@@ -430,12 +430,22 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
-    /// <param name="websocketUri">The URI used to connect to the web socket.</param>
+    /// <param name="connectionString">The URI used to connect to the web socket.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is already connected to a remote end.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is already connected to a remote end, or when the <see cref="Connection"/> refuses to open.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">
+    /// Propagated from <see cref="Connection.StartAsync"/> when the connection is not established within
+    /// its <see cref="Connection.StartupTimeout"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Propagated from <see cref="Connection.StartAsync"/> when <paramref name="connectionString"/> is not
+    /// acceptable to the connection. <see cref="WebSocketConnection"/> throws this when the value is not a
+    /// valid absolute URI, or when its scheme is neither <c>ws</c> nor <c>wss</c>.
+    /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public virtual async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
+    /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the transport is disposed.</exception>
+    public virtual async Task ConnectAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
@@ -459,7 +469,7 @@ public class Transport : IAsyncDisposable
                 this.State = TransportState.Connecting;
             }
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, websocketUri);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, connectionString);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
             // SendCommandAsync requires that the pending commands collection be
@@ -500,7 +510,7 @@ public class Transport : IAsyncDisposable
             if (!this.Connection.IsActive)
             {
                 // Allow for the possibility of the connection to already being opened.
-                await this.Connection.StartAsync(websocketUri, cancellationToken).ConfigureAwait(false);
+                await this.Connection.StartAsync(connectionString, cancellationToken).ConfigureAwait(false);
             }
 
             // Delaying starting the processing loop until after establishing the connection
@@ -508,7 +518,7 @@ public class Transport : IAsyncDisposable
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
             this.State = TransportState.Connected;
-            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync());
+            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync(), CancellationToken.None);
 
             // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
             // its inner loop, so under normal operation this continuation never fires. It
@@ -524,7 +534,7 @@ public class Transport : IAsyncDisposable
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.Id, websocketUri);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.Id, connectionString);
             WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
         }
         finally
@@ -549,6 +559,12 @@ public class Transport : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="AggregateException">
+    /// Thrown when <see cref="TransportErrorBehavior.Collect"/> is configured for any error category and one
+    /// or more errors were collected during the session. The aggregated exceptions describe the collected
+    /// errors. They are thrown at most once per session, by whichever disconnect claims them.
+    /// </exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
         await this.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
