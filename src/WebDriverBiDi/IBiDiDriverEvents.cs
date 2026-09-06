@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using WebDriverBiDi.Log;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
@@ -22,6 +23,12 @@ using WebDriverBiDi.Protocol;
 /// </remarks>
 public interface IBiDiDriverEvents
 {
+    /// <summary>
+    /// Gets or sets the minimum <see cref="WebDriverBiDiLogLevel"/> at which log messages are raised on
+    /// <see cref="OnLogMessage"/>. Defaults to <see cref="WebDriverBiDiLogLevel.Info"/>.
+    /// </summary>
+    WebDriverBiDiLogLevel LogLevel { get; set; }
+
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
     /// invoked by this driver. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that
@@ -82,4 +89,12 @@ public interface IBiDiDriverEvents
     /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
     ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether a message at the given level would be raised on
+    /// <see cref="OnLogMessage"/>, so that a caller can avoid building a message that would be discarded.
+    /// </summary>
+    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
+    /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
+    bool IsLogLevelEnabled(WebDriverBiDiLogLevel level);
 }
