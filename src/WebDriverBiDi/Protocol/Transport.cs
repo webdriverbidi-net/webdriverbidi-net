@@ -94,6 +94,14 @@ public class Transport : IAsyncDisposable
     private readonly ConcurrentDictionary<string, EventMessageRegistration> eventMessageTypes = [];
     private readonly ConcurrentDictionary<Type, JsonTypeInfo> responseTypeInfoCache = [];
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
+
+    // Guards the publication of the Connecting state against work that is only legal while this
+    // transport is disconnected (see TryExecuteWhileDisconnected). It is deliberately an instance
+    // lock: the state it protects is per-transport, and the action passed to
+    // TryExecuteWhileDisconnected runs while the lock is held, so a process-wide lock would let
+    // one transport's registration block every other transport in the process.
+    private readonly object connectionStateLock = new();
+
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
     private readonly EventObserver<ConnectionDisconnectedEventArgs> connectionRemoteDisconnectObserver;
@@ -473,7 +481,14 @@ public class Transport : IAsyncDisposable
             // example the driver's registration guard) treat the transport as no longer idle for the
             // entire duration of the connect attempt, not only once it completes. The finally below
             // rolls this back to Disconnected if the attempt fails before reaching Connected.
-            this.State = TransportState.Connecting;
+            // The publication is made under the connection state lock so that it cannot interleave
+            // with work another thread is performing under TryExecuteWhileDisconnected: such work
+            // either completes entirely before this transport stops being idle, or observes the
+            // transport as no longer idle and is rejected.
+            lock (this.connectionStateLock)
+            {
+                this.State = TransportState.Connecting;
+            }
 
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, websocketUri);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
@@ -833,6 +848,39 @@ public class Transport : IAsyncDisposable
         if (errorObserverException is not null)
         {
             this.CaptureUnhandledError(UnhandledErrorKind.EventHandlerException, errorObserverException, this.GetEventHandlerTerminalReason(EventHandlerErrorOccurredEventName));
+        }
+    }
+
+    /// <summary>
+    /// Tries to execute the given action while this Transport is disconnected.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <returns><see langword="true"/> if the Transport was disconnected and the execution completed; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <para>
+    /// The state is tested and <paramref name="action"/> is executed under the same lock that
+    /// <see cref="ConnectAsync"/> takes to publish <see cref="TransportState.Connecting"/>, which is what
+    /// makes the pair atomic with respect to a connect attempt beginning on another thread. This is the
+    /// mechanism behind the driver's registration guard: a registration either completes in full while the
+    /// transport is still idle, or is rejected because the transport is not.
+    /// </para>
+    /// <para>
+    /// <paramref name="action"/> runs while the lock is held, so it must not block, must not wait on
+    /// another thread, and must not re-enter this transport's connection lifecycle. It may call members
+    /// that are themselves thread-safe and non-blocking, as the driver's registration actions do.
+    /// </para>
+    /// </remarks>
+    internal bool TryExecuteWhileDisconnected(Action action)
+    {
+        lock (this.connectionStateLock)
+        {
+            if (this.State == TransportState.Disconnected)
+            {
+                action();
+                return true;
+            }
+
+            return false;
         }
     }
 
