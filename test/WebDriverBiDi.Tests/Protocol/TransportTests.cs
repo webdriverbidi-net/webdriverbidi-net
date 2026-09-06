@@ -4024,6 +4024,78 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestReconnectAfterTimedOutHandlerDoesNotCorruptQueueDepth()
+    {
+        // A reconnect that gives up waiting for a stuck handler leaves the previous connection's
+        // reader still draining the previous connection's queue. Those reads must be counted
+        // against the queue the messages actually came from, not against the queue the new
+        // connection is filling; otherwise the depth reported for the new connection is
+        // decremented for messages that were never on it, and goes negative.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource firstHandlerBlockedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseFirstHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource staleMessageProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int eventCount = 0;
+
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            int currentCount = Interlocked.Increment(ref eventCount);
+            if (currentCount == 1)
+            {
+                firstHandlerBlockedTaskCompletionSource.TrySetResult();
+                releaseFirstHandlerTaskCompletionSource.Task.GetAwaiter().GetResult();
+            }
+            else
+            {
+                staleMessageProcessedTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+
+        await transport.ConnectAsync("ws:localhost", cancellationToken);
+
+        // Two messages reach the first connection's queue. The reader takes the first, decrementing
+        // that queue's depth, and then blocks in the handler, so the second is left unread on it.
+        await connection.RaiseDataReceivedEventAsync(json);
+        await firstHandlerBlockedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // The reader is still stuck in the handler, so this reconnect times out waiting for it and
+        // installs a new queue while the old one still holds an unread message.
+        await transport.ConnectAsync("ws:localhost", cancellationToken).WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        // Releasing the handler lets the previous connection's reader drain that unread message.
+        releaseFirstHandlerTaskCompletionSource.SetResult();
+        await staleMessageProcessedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        // The drain belonged to the previous connection's queue, so the current connection's depth
+        // is untouched by it.
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        await transport.DisconnectAsync(cancellationToken);
+    }
+
+    [Fact]
     public async Task TestDataReceivedAfterRemoteDisconnectIsDisposedAndNotQueued()
     {
         // A remote disconnect completes the incoming message queue, so data delivered by the

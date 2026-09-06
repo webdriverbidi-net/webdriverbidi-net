@@ -117,35 +117,7 @@ public class Transport : IAsyncDisposable
         RespectNullableAnnotations = true,
     };
 
-    // We are using an unbounded channel by design. This decision was
-    // carefully considered, as the rate of incoming messages is unlikely
-    // to cause memory issues by exceeding the rate of processing. Should
-    // real-world usage indicate otherwise, we will update this behavior
-    // with a bounded channel, and add monitoring of the queue depth to
-    // the transport events. Reassignment of this variable happens only
-    // under the connection lock, so is thread-safe.
-    private Channel<IncomingMessage> incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
-    {
-        SingleReader = true,
-        SingleWriter = true,
-    });
-
-    // Interlocked-maintained mirror of the unread depth of incomingMessageQueue.
-    // The SingleConsumerUnboundedChannel implementation returned by
-    // Channel.CreateUnbounded<T>(new UnboundedChannelOptions { SingleReader = true,
-    // SingleWriter = true }) does not support ChannelReader<T>.Count (CanCount is
-    // false), so we maintain the depth ourselves: increment after a successful
-    // Writer.TryWrite, decrement after a successful Reader.TryRead, and reset
-    // alongside any channel replacement.
-    //
-    // This counter is used solely for observability (WebDriverBiDiEventSource
-    // PendingCommandCount events) and does not affect correctness. There is a
-    // narrow window during reconnect where a TryWrite in flight on the old
-    // channel can apply its increment after the reset-to-zero that accompanies
-    // channel replacement, producing a transient over-count. The window closes
-    // as soon as that write completes, and the value self-corrects on the next
-    // TryRead. No data is lost and no messages are misrouted as a result.
-    private int incomingQueueDepth;
+    private IncomingMessageQueue incomingMessageQueue = new();
 
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
@@ -350,18 +322,15 @@ public class Transport : IAsyncDisposable
     /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
     /// </para>
     /// <para>
-    /// The value reflects the queue for the <em>current</em> connection. The counter is reset
-    /// to zero on each call to <see cref="ConnectAsync"/> alongside the channel replacement.
-    /// Reading this property before <see cref="ConnectAsync"/> has ever been called, or after
+    /// The value reflects the queue for the <em>current</em> connection. Each call to
+    /// <see cref="ConnectAsync"/> installs a fresh queue whose depth begins at zero, and every
+    /// message is counted against the queue it was written to for as long as that queue is being
+    /// drained. A reconnect that gives up waiting for the previous connection's reader therefore
+    /// reports only the current connection's backlog, even while the previous reader is still
+    /// draining what remains of its own queue. Reading this property before
+    /// <see cref="ConnectAsync"/> has ever been called, or after
     /// <see cref="DisconnectAsync(CancellationToken)"/>, returns the depth of the remaining
     /// (possibly drained) queue rather than throwing.
-    /// </para>
-    /// <para>
-    /// <strong>Reconnect transient overcount:</strong> The reset and channel replacement occur
-    /// together under the connect/disconnect semaphore, but a <c>TryWrite</c> call already
-    /// in progress on the old channel will increment the counter after the reset. This produces
-    /// a brief positive overcount (never a negative value) during reconnect. The effect is
-    /// observability-only and resolves on the next message dispatch.
     /// </para>
     /// <para>
     /// <strong>Thread Safety:</strong> This property is safe to read concurrently with message
@@ -369,7 +338,7 @@ public class Transport : IAsyncDisposable
     /// the caller observes it.
     /// </para>
     /// </remarks>
-    public virtual int IncomingQueueDepth => Interlocked.CompareExchange(ref this.incomingQueueDepth, 0, 0);
+    public virtual int IncomingQueueDepth => this.incomingMessageQueue.Depth;
 
     /// <summary>
     /// Gets the number of commands that have been sent to the remote end and are
@@ -510,12 +479,7 @@ public class Transport : IAsyncDisposable
             // message processing task.
             await this.WaitForMessageProcessingCompletionAsync(this.ShutdownTimeout, "Timed out waiting for message processing of the previous connection to complete before reconnecting").ConfigureAwait(false);
 
-            this.incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
-            {
-                SingleReader = true,
-                SingleWriter = true,
-            });
-            Interlocked.Exchange(ref this.incomingQueueDepth, 0);
+            this.incomingMessageQueue = new IncomingMessageQueue();
             Interlocked.Exchange(ref this.disconnectOwnedSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
 
             this.ResetCollectedErrors();
@@ -1017,9 +981,9 @@ public class Transport : IAsyncDisposable
                 // must be awaited separately. TryComplete is used rather than Complete
                 // because the queue may already have been completed by a remote disconnect
                 // or connection error that raced with this call.
-                this.incomingMessageQueue.Writer.TryComplete();
-                Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.Reader.Completion, timeoutTask).ConfigureAwait(false);
-                if (messageQueueReaderCompleteTask != this.incomingMessageQueue.Reader.Completion)
+                this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
+                Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.MessageChannel.Reader.Completion, timeoutTask).ConfigureAwait(false);
+                if (messageQueueReaderCompleteTask != this.incomingMessageQueue.MessageChannel.Reader.Completion)
                 {
                     shutdownTimedOut = true;
                     await this.LogAsync("Timed out waiting for message writer to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -1057,7 +1021,7 @@ public class Transport : IAsyncDisposable
                 // implementation). Both of these statements are no-ops if the try block completed
                 // successfully, allowing a subsequent ConnectAsync to not wait for the full shutdown
                 // timeout before reconnecting.
-                this.incomingMessageQueue.Writer.TryComplete();
+                this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
                 this.PendingCommands.Clear();
             }
         }
@@ -1162,10 +1126,14 @@ public class Transport : IAsyncDisposable
     /// <returns>A task representing the asynchronous message-processing loop.</returns>
     protected virtual async Task ReadIncomingMessagesAsync()
     {
-        // Capture the queue this reader is bound to. Reading the field directly
-        // in the below code may lead to accessing the wrong reader in the
-        // reconnect-after-disconnect scenario, because the channel gets recreated.
-        ChannelReader<IncomingMessage> reader = this.incomingMessageQueue.Reader;
+        // Capture the queue this reader is bound to, and read and count against that capture for
+        // the life of the loop. Reading the field directly in the code below would address the
+        // wrong queue in the reconnect-after-disconnect scenario: a reconnect that gives up
+        // waiting for this loop replaces the field while the loop is still draining the queue it
+        // started on, so a depth adjustment made against the field would be applied to the new
+        // connection's queue for a message that was never on it.
+        IncomingMessageQueue queue = this.incomingMessageQueue;
+        ChannelReader<IncomingMessage> reader = queue.MessageChannel.Reader;
 
         // In theory, we could accomplish this with an `await foreach` using
         // IAsyncEnumerable, but this would require additional dependencies,
@@ -1176,7 +1144,7 @@ public class Transport : IAsyncDisposable
         {
             while (reader.TryRead(out IncomingMessage? packet))
             {
-                Interlocked.Decrement(ref this.incomingQueueDepth);
+                queue.DecrementDepth();
                 try
                 {
                     await this.ProcessMessageAsync(packet).ConfigureAwait(false);
@@ -1480,14 +1448,17 @@ public class Transport : IAsyncDisposable
         // connection's receive loop can outlive that (see PipeConnection.StopAsync), so a
         // late message must be disposed here to return its pooled buffer rather than being
         // dropped on the floor.
+        // Capture the queue once, so that the write and the count it produces cannot address
+        // different queues if a reconnect replaces the field between them.
+        IncomingMessageQueue queue = this.incomingMessageQueue;
         IncomingMessage message = this.CreateIncomingMessage(e.BufferOwner, e.DataLength);
-        if (!this.incomingMessageQueue.Writer.TryWrite(message))
+        if (!queue.MessageChannel.Writer.TryWrite(message))
         {
             message.Dispose();
             return Task.CompletedTask;
         }
 
-        Interlocked.Increment(ref this.incomingQueueDepth);
+        queue.IncrementDepth();
         return Task.CompletedTask;
     }
 
@@ -1565,7 +1536,7 @@ public class Transport : IAsyncDisposable
             // reader may itself need that lock (e.g., to send a command, which will
             // fail because the transport is now disconnected). ConnectAsync waits for
             // the reader to finish before starting a new session.
-            this.incomingMessageQueue.Writer.TryComplete();
+            this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
 
             // Log appropriate statistics and information.
             WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
@@ -1875,5 +1846,73 @@ public class Transport : IAsyncDisposable
         // the event that produced it.
         bool notifyObservers = errorInfo.ObservableEventName != EventHandlerErrorOccurredEventName;
         await this.ReportEventObserverErrorAsync(errorInfo, notifyObservers).ConfigureAwait(false);
+    }
+
+    private sealed class IncomingMessageQueue
+    {
+        private int depth = 0;
+
+        public IncomingMessageQueue()
+        {
+            // We are using an unbounded channel by design. This decision was
+            // carefully considered, as the rate of incoming messages is unlikely
+            // to cause memory issues by exceeding the rate of processing. Should
+            // real-world usage indicate otherwise, we will update this behavior
+            // with a bounded channel, and add monitoring of the queue depth to
+            // the transport events.
+            this.MessageChannel = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
+            {
+                SingleReader = true,
+                SingleWriter = true,
+            });
+        }
+
+        /// <summary>
+        /// Gets the channel that received incoming messages.
+        /// </summary>
+        public Channel<IncomingMessage> MessageChannel { get; }
+
+        /// <summary>
+        /// Gets the current count of the unread received incoming messages.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Interlocked-maintained mirror of the unread depth of <see cref="MessageChannel"/>.
+        /// The SingleConsumerUnboundedChannel implementation returned by
+        /// Channel.CreateUnbounded&lt;T&gt;(new UnboundedChannelOptions { SingleReader = true,
+        /// SingleWriter = true }) does not support ChannelReader&lt;T&gt;.Count (CanCount is
+        /// false), so the depth is maintained here: incremented after a successful
+        /// Writer.TryWrite, decremented after a successful Reader.TryRead.
+        /// </para>
+        /// <para>
+        /// The count belongs to this queue alone, which is what keeps it accurate across a
+        /// reconnect. A connect installs a new queue rather than resetting a shared counter, and
+        /// both the producer and the reader capture the queue they are operating on, so a write
+        /// and the increment it produces cannot address different queues, and a reader still
+        /// draining a previous connection's queue cannot decrement the current one. The value is
+        /// therefore never negative and carries no transient over-count.
+        /// </para>
+        /// <para>
+        /// This counter is used solely for observability, through
+        /// <see cref="IncomingQueueDepth"/>; it does not affect correctness.
+        /// </para>
+        /// </remarks>
+        public int Depth => Interlocked.CompareExchange(ref this.depth, 0, 0);
+
+        /// <summary>
+        /// Increments the queue depth.
+        /// </summary>
+        public void IncrementDepth()
+        {
+            Interlocked.Increment(ref this.depth);
+        }
+
+        /// <summary>
+        /// Decrements the queue depth.
+        /// </summary>
+        public void DecrementDepth()
+        {
+            Interlocked.Decrement(ref this.depth);
+        }
     }
 }

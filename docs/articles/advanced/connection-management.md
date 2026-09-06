@@ -200,7 +200,7 @@ In addition to the `Connection`-level observable events above, the `Transport` i
 
 `Transport.IncomingQueueDepth` reports the number of raw messages received from the connection that are waiting to be processed by the transport's reader task. A persistently growing value indicates that event handlers are not keeping up with the incoming message rate; consider using `ObservableEventHandlerOptions.RunHandlerAsynchronously` for I/O-heavy handlers so that they do not block the reader.
 
-The counter is reset to zero on each call to `ConnectAsync` alongside the channel replacement. Reading it before `ConnectAsync` has ever been called, or after `DisconnectAsync`, returns the depth of the remaining (possibly drained) queue rather than throwing.
+Each call to `ConnectAsync` installs a fresh queue whose depth begins at zero, and every message is counted against the queue it was written to. The value therefore reports only the current connection's backlog, even when a reconnect gave up waiting for the previous connection's reader and that reader is still draining what remains of its own queue. Reading it before `ConnectAsync` has ever been called, or after `DisconnectAsync`, returns the depth of the remaining (possibly drained) queue rather than throwing.
 
 [!code-csharp[Transport IncomingQueueDepth Diagnostic](../../code/advanced/ConnectionManagementSamples.cs#TransportIncomingQueueDepthDiagnostic)]
 
