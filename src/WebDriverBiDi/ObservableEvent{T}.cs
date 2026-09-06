@@ -91,11 +91,15 @@ public class ObservableEvent<T>
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the user attempts to add more observers than this event allows.
-    /// </exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when the user attempts to add more observers than this event allows.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when a null handler is passed.</exception>
     public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
+        if (handler is null)
+        {
+            throw new ArgumentNullException(nameof(handler), "Handler cannot be null");
+        }
+
         Func<T, Task> wrappedHandler = handlerOptions == ObservableEventHandlerOptions.RunHandlerAsynchronously
             ? args => Task.Run(() => handler(args))
             : args =>
@@ -124,9 +128,8 @@ public class ObservableEvent<T>
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the user attempts to add more observers than this event allows.
-    /// </exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when the user attempts to add more observers than this event allows.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when a null handler is passed.</exception>
     /// <example>
     /// <code>
     /// // Synchronous handler (default) - for quick in-memory work
@@ -140,6 +143,11 @@ public class ObservableEvent<T>
     /// </example>
     public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
+        if (handler is null)
+        {
+            throw new ArgumentNullException(nameof(handler), "Handler cannot be null");
+        }
+
         return this.CreateObserver(handler, handlerOptions, description, EventObserverPriority.NormalObserverPriority);
     }
 

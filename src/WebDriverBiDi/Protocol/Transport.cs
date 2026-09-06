@@ -579,10 +579,16 @@ public class Transport : IAsyncDisposable
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
     /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
+        if (commandData is null)
+        {
+            throw new ArgumentNullException(nameof(commandData), "Command parameters must not be null");
+        }
+
         if (this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
         {
             await this.DisconnectAsync(false).ConfigureAwait(false);

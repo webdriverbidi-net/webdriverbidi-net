@@ -257,6 +257,15 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestSendingWithNullParametersThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        await Assert.ThrowsAnyAsync<ArgumentNullException>(async () => await transport.SendCommandAsync(null!, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task TestTransportCannotSendCommandWithoutConnection()
     {
         string commandName = "module.command";
