@@ -454,7 +454,19 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="connectionString">The connection string used to connect to the remote end. Usually the URL to the WebSocket used to communicate with the remote end.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the driver has already been started.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the driver has already been started, or when the underlying <see cref="Connection"/> refuses to open.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">
+    /// Thrown when the underlying <see cref="Connection"/> is not established within its
+    /// <see cref="Connection.StartupTimeout"/>. The default WebSocket connection retries until that
+    /// budget is exhausted before reporting the failure this way.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown by the default WebSocket connection when <paramref name="connectionString"/> is not valid
+    /// for the connection type. For the default <see cref="WebSocketConnection"/>, this exception would
+    /// be thrown when the connection string is not an absolute URI, or when its scheme is neither <c>ws</c>
+    /// nor <c>wss</c>. A different <see cref="Connection"/> type, such as <see cref="PipeConnection"/>,
+    /// validates its own connection string and may not throw this.
+    /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     public virtual async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
