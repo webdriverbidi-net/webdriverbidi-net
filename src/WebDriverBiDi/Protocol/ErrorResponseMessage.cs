@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Response class that contains the result of a command when an error is encountered.
@@ -58,10 +57,9 @@ public class ErrorResponseMessage : Message
             if (this.errorCode is null)
             {
                 // ErrorCode is marked with a default value of UnsetErrorCode,
-                // so this should never throw. The conversion table is the same one
-                // EnumValueJsonConverter<ErrorCode> builds for deserialization, reused
-                // here rather than duplicated.
-                this.errorCode = EnumValueJsonConverter<ErrorCode>.SharedStringConverter.GetValue(this.ErrorType);
+                // so this should never throw. The conversion table is the one the library
+                // shares for this enumerated type, rather than a duplicate built here.
+                this.errorCode = StringEnumValueConverter<ErrorCode>.Shared.GetValue(this.ErrorType);
             }
 
             return this.errorCode.Value;

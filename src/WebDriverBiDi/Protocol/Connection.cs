@@ -206,7 +206,7 @@ public abstract class Connection : IAsyncDisposable
     /// Gets an observable event that notifies when data is received from this connection.
     /// </summary>
     /// <remarks>
-    /// Due to the the shared-memory nature of the data received, one, and only one,
+    /// Due to the shared-memory nature of the data received, one, and only one,
     /// <see cref="EventObserver{ConnectionDataReceivedEventArgs}"/> can be observing this
     /// event at a time. Attempting to connect a second observer will throw an exception.
     /// </remarks>
