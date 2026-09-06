@@ -254,6 +254,141 @@ public class BiDiDriver028AnalyzerTests
     }
 
     [Fact]
+    public async Task DevicePixelRatio_SentinelAndValuesAboveZero_NoDiagnostic()
+    {
+        // devicePixelRatio is (float .gt 0.0) with a reset sentinel of -1, so the sentinel and any
+        // value above zero are both acceptable.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        SetViewportCommandParameters sentinel = new SetViewportCommandParameters { DevicePixelRatio = -1 };
+                        SetViewportCommandParameters fractional = new SetViewportCommandParameters { DevicePixelRatio = 0.5 };
+                        SetViewportCommandParameters whole = new SetViewportCommandParameters { DevicePixelRatio = 2 };
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task DevicePixelRatio_ZeroAndUndeclaredNegative_ReportsWarning()
+    {
+        // Zero equals the exclusive minimum, so it is out of range. A negative value other than the
+        // declared sentinel is reported too: the remote end resets on any negative, but the named
+        // sentinel is the supported way to ask for that.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(SetViewportCommandParameters parameters)
+                    {
+                        SetViewportCommandParameters zero = new SetViewportCommandParameters { DevicePixelRatio = {|#0:0|} };
+                        parameters.DevicePixelRatio = {|#1:-2|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult zeroExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("0", "DevicePixelRatio", "(0, ∞]");
+
+        DiagnosticResult negativeExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("-2", "DevicePixelRatio", "(0, ∞]");
+
+        await VerifyDiagnosticsAsync(testCode, zeroExpected, negativeExpected);
+    }
+
+    [Fact]
+    public async Task JsUintMediaFeatures_SentinelAndNonNegativeValues_NoDiagnostic()
+    {
+        // color, color-index, monochrome and the two viewport-segment counts are js-uint, so zero and
+        // above are acceptable, as is each feature's own reset sentinel.
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        MediaFeatures sentinels = new MediaFeatures
+                        {
+                            Color = MediaFeatures.ResetColorValue,
+                            ColorIndex = MediaFeatures.ResetColorIndexValue,
+                            Monochrome = MediaFeatures.ResetMonochromeValue,
+                            HorizontalViewportSegments = MediaFeatures.ResetHorizontalViewportSegmentsValue,
+                            VerticalViewportSegments = MediaFeatures.ResetVerticalViewportSegmentsValue,
+                        };
+                        MediaFeatures values = new MediaFeatures
+                        {
+                            Color = 0,
+                            ColorIndex = 256,
+                            Monochrome = 8,
+                            HorizontalViewportSegments = 2,
+                            VerticalViewportSegments = 1,
+                        };
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task JsUintMediaFeatures_UndeclaredNegative_ReportsWarning()
+    {
+        // js-uint admits no negative value, and only the declared sentinel is exempt.
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(MediaFeatures features)
+                    {
+                        MediaFeatures below = new MediaFeatures { Color = {|#0:-2|} };
+                        features.VerticalViewportSegments = {|#1:-3|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult colorExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("-2", "Color", "[0, ∞]");
+
+        DiagnosticResult segmentsExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("-3", "VerticalViewportSegments", "[0, ∞]");
+
+        await VerifyDiagnosticsAsync(testCode, colorExpected, segmentsExpected);
+    }
+
+    [Fact]
     public async Task ExclusiveMinimum_ValueEqualToMinimum_ReportsWarning()
     {
         // ImageSize.MaxWidth is (js-uint .gt 1): the bound is exclusive, so 1 is out of range even

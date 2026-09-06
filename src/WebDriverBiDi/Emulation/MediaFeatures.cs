@@ -70,9 +70,16 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "color" CSS media feature.
     /// Use <see cref="ResetColorValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetColorValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </remarks>
     [JsonPropertyName("color")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetColorValue)]
     public long? Color { get; set; }
 
     /// <summary>
@@ -87,9 +94,16 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "color-index" CSS media feature.
     /// Use <see cref="ResetColorIndexValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetColorIndexValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </remarks>
     [JsonPropertyName("color-index")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetColorIndexValue)]
     public long? ColorIndex { get; set; }
 
     /// <summary>
@@ -143,9 +157,16 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "horizontal-viewport-segments" CSS media feature.
     /// Use <see cref="ResetHorizontalViewportSegmentsValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetHorizontalViewportSegmentsValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </remarks>
     [JsonPropertyName("horizontal-viewport-segments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetHorizontalViewportSegmentsValue)]
     public long? HorizontalViewportSegments { get; set; }
 
     /// <summary>
@@ -168,9 +189,16 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "monochrome" CSS media feature.
     /// Use <see cref="ResetMonochromeValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetMonochromeValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </remarks>
     [JsonPropertyName("monochrome")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetMonochromeValue)]
     public long? Monochrome { get; set; }
 
     /// <summary>
@@ -273,9 +301,16 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "vertical-viewport-segments" CSS media feature.
     /// Use <see cref="ResetVerticalViewportSegmentsValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetVerticalViewportSegmentsValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </remarks>
     [JsonPropertyName("vertical-viewport-segments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetVerticalViewportSegmentsValue)]
     public long? VerticalViewportSegments { get; set; }
 
     /// <summary>
