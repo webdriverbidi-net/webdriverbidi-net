@@ -586,7 +586,7 @@ public class Transport : IAsyncDisposable
         }
 
         // Capture the current pending command collection ID to allow us to detect
-        // if the connection has been disconnected and reconnected before we actuall
+        // if the connection has been disconnected and reconnected before we actually
         // send the command down the wire.
         string currentPendingCommandCollectionId = this.PendingCommands.Id;
 
@@ -1510,7 +1510,7 @@ public class Transport : IAsyncDisposable
         try
         {
             // Only process if we were connected (or thought we were).
-            // If we're still in DisonnectAsync, we'll run after it releases the lock,
+            // If we're still in DisconnectAsync, we'll run after it releases the lock,
             // so we'll see the correct post-connect state.
             if (this.State != TransportState.Connected)
             {
@@ -1657,7 +1657,7 @@ public class Transport : IAsyncDisposable
             // existing in the pending command collection), resolve the command so that
             // the caller does not have to wait for the full command timeout. Note that
             // the invalid error payload is deliberately not routed to the transport
-            // unandled error pipeline.
+            // unhandled error pipeline.
             if (packet.TryGetCommandId(out long commandId) && this.PendingCommands.RemovePendingCommand(commandId, out Command? executedCommand))
             {
                 executedCommand.StopTiming();
@@ -1775,7 +1775,7 @@ public class Transport : IAsyncDisposable
     {
         // Throws the collected Collect-mode exceptions for the current session, if any are
         // pending and this call successfully claims them via ClaimCollectedErrors.
-        // Claiming is reset for each new session by ResetCollectedErrors, called
+        // Claiming is reset for each new session by ResetCollectedErrors.
         if (throwCollectedExceptions && this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions) && this.ClaimCollectedErrors())
         {
             throw this.CreateTerminationException(collectedExceptions, TransportErrorBehavior.Collect);

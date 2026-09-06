@@ -12,8 +12,6 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public record ErrorResult : CommandResult
 {
-    private static readonly Lazy<StringEnumValueConverter<ErrorCode>> ErrorCodeConverter = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ErrorResult"/> class with default values.
     /// </summary>
@@ -77,7 +75,11 @@ public record ErrorResult : CommandResult
         return new ErrorResult
         {
             ErrorType = errorType,
-            ErrorCode = ErrorCodeConverter.Value.GetValue(errorType),
+
+            // The conversion table is the one the library shares for this enumerated type, rather
+            // than a duplicate built here. ErrorCode declares an unmatched value of UnsetErrorCode,
+            // so an unrecognized error type converts to that rather than throwing.
+            ErrorCode = StringEnumValueConverter<ErrorCode>.Shared.GetValue(errorType),
             ErrorMessage = errorMessage,
             StackTrace = stackTrace,
         };

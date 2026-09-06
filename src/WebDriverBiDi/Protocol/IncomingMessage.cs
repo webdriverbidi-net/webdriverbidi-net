@@ -83,7 +83,7 @@ public class IncomingMessage : IDisposable
                 if (this.document is not null)
                 {
                     // If the document for this message packet has been successfully
-                    // deserialzed and a root element accessed, look for a "type"
+                    // deserialized and a root element accessed, look for a "type"
                     // property in the root element, and, if its value is a string,
                     // capture that value as the message type. Otherwise, the packet
                     // type is "unknown".
@@ -266,7 +266,7 @@ public class IncomingMessage : IDisposable
     /// <summary>
     /// Attempts to deserialize the payload of the incoming message as an event message.
     /// </summary>
-    /// <param name="eventTypeInfo">The <see cref="JsonTypeInfo"/> for the type-specifc event data.</param>
+    /// <param name="eventTypeInfo">The <see cref="JsonTypeInfo"/> for the type-specific event data.</param>
     /// <param name="eventMessage">When this method returns, contains the <see cref="EventMessage"/> contained in the incoming message.</param>
     /// <returns><see langword="true"/> if the incoming message contains valid event data; otherwise, <see langword="false"/>.</returns>
     internal bool TryDeserializeEventMessage(JsonTypeInfo eventTypeInfo, [NotNullWhen(true)] out EventMessage? eventMessage)
