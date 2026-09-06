@@ -103,6 +103,17 @@ public class ObservableEventTests
     }
 
     [Fact]
+    public void TestCannotAddNullObserver()
+    {
+        TestEventSource testEventSource = new();
+        Func<TestObservableEventArgs, Task> func = null!;
+        Assert.Throws<ArgumentNullException>(() => testEventSource.TestObservableEvent.AddObserver(func));
+
+        Action<TestObservableEventArgs> action = null!;
+        Assert.Throws<ArgumentNullException>(() => testEventSource.TestObservableEvent.AddObserver(action));
+    }
+
+    [Fact]
     public async Task TestToStringReturnsDescriptionForEventObserver()
     {
         TestEventSource testEventSource = new();

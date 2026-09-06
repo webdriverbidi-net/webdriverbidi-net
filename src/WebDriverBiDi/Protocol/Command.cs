@@ -25,8 +25,14 @@ public class Command
     /// </summary>
     /// <param name="commandId">The ID of the command.</param>
     /// <param name="commandData">The settings for the command, including parameters.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
     public Command(long commandId, CommandParameters commandData)
     {
+        if (commandData is null)
+        {
+            throw new ArgumentNullException(nameof(commandData), "Command parameters must not be null");
+        }
+
         this.CommandId = commandId;
         this.CommandParameters = commandData;
         this.CommandName = commandData.MethodName;

@@ -393,4 +393,10 @@ public class CommandTests
         Assert.True(command.TryGetResult(out CommandResult? result));
         Assert.Equal("done", Assert.IsType<TestCommandResult>(result).Value);
     }
+
+    [Fact]
+    public void TestNullCommandParametersThrows()
+    {
+        Assert.Throws<ArgumentNullException>(() => new Command(1, null!));
+    }
 }
