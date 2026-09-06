@@ -45,6 +45,29 @@ public class WebDriverBiDiConventionTests
         "WebDriverBiDi.Network.ProvideResponseCommandParameters.Cookies",
     ];
 
+    /// <summary>
+    /// The module commands whose <see cref="CommandParameters"/> argument may be omitted. A command belongs
+    /// here exactly when its parameters type can be constructed with <c>new()</c> and offers no public static
+    /// reset member, which is what
+    /// <see cref="TestModuleCommandParametersAreOptionalExactlyWhenTheRuleAllows"/> verifies. The set is
+    /// listed as well as derived because these commands are enumerated in the documentation, so a change
+    /// here is a prompt to change the tables there too.
+    /// </summary>
+    private static readonly HashSet<string> OptionalParametersCommands =
+    [
+        "BrowserModule.CloseAsync",
+        "BrowserModule.CreateUserContextAsync",
+        "BrowserModule.GetClientWindowsAsync",
+        "BrowserModule.GetUserContextsAsync",
+        "BrowsingContextModule.GetTreeAsync",
+        "ScriptModule.GetRealmsAsync",
+        "SessionModule.EndAsync",
+        "SessionModule.NewSessionAsync",
+        "SessionModule.StatusAsync",
+        "StorageModule.DeleteCookiesAsync",
+        "StorageModule.GetCookiesAsync",
+    ];
+
     private static readonly NullabilityInfoContext NullabilityContext = new();
 
     [Fact]
@@ -224,6 +247,94 @@ public class WebDriverBiDiConventionTests
         }
 
         Assert.True(unreachable.Count == 0, $"Every module in the library must be reachable from BiDiDriver, or its observable events escape the [ObservableEventName] sweep. Unreachable: {string.Join(", ", unreachable)}");
+    }
+
+    [Fact]
+    public void TestModuleCommandParametersAreOptionalExactlyWhenTheRuleAllows()
+    {
+        // A module command may let its parameters object be omitted only where omitting it is unambiguous.
+        // The type must be constructible with new(), so that a default instance can stand in for "no
+        // options"; and it must expose no public static reset member, because for those commands the method
+        // name alone would not say whether a value is being set or reset — SetSomeCondition() reads as
+        // though a condition is being established, where
+        // SetSomeCondition(SetSomeConditionCommandParameters.ResetSomeCondition) states the intent. Every
+        // other command requires its parameters object. Nothing but review enforced this before.
+        List<string> offenders = [];
+        List<string> optionalCommands = [];
+        int commandCount = 0;
+        foreach ((Module module, MethodInfo method, ParameterInfo parameter) in GetModuleCommandMethods())
+        {
+            commandCount++;
+            string key = $"{module.GetType().Name}.{method.Name}";
+            Type parametersType = parameter.ParameterType;
+
+            // The optional form is a nullable parameter defaulted to null, which the module turns into a
+            // default instance with `commandParameters ?? new()`.
+            bool isOptional = parameter.HasDefaultValue
+                && parameter.DefaultValue is null
+                && NullabilityContext.Create(parameter).WriteState == NullabilityState.Nullable;
+            if (isOptional)
+            {
+                optionalCommands.Add(key);
+            }
+
+            // GetConstructor considers public instance constructors only, so a type whose parameterless
+            // constructor is protected — as the base of a discriminated set of parameters types tends to
+            // be — is correctly reported as not constructible here.
+            bool isConstructible = !parametersType.IsAbstract && parametersType.GetConstructor(Type.EmptyTypes) is not null;
+            bool hasResetMember = HasPublicStaticResetMember(parametersType);
+            bool shouldBeOptional = isConstructible && !hasResetMember;
+            if (isOptional == shouldBeOptional)
+            {
+                continue;
+            }
+
+            string reason = shouldBeOptional
+                ? $"{parametersType.Name} is constructible and offers no reset member, so the parameters object should be optional"
+                : hasResetMember
+                    ? $"{parametersType.Name} offers a public static reset member, so the parameters object must be required"
+                    : $"{parametersType.Name} cannot be constructed with new(), so the parameters object must be required";
+            offenders.Add($"{key} ({reason})");
+        }
+
+        Assert.True(offenders.Count == 0, $"A module command must accept an optional parameters object exactly when its parameters type is constructible with new() and offers no public static reset member. Offenders: {string.Join(", ", offenders)}");
+
+        // Guard against the sweep silently reaching nothing and passing vacuously.
+        Assert.True(commandCount >= 60, $"Expected the sweep to reach every module command in the library, but it found only {commandCount}.");
+
+        // The commands that take optional parameters are enumerated in the documentation (the tables in
+        // docs/articles/advanced/api-design.md and docs/articles/core-concepts.md). Nothing else keeps those
+        // tables honest, so changing the set here is deliberately a two-step edit.
+        List<string> unexpected = [.. optionalCommands.Where(command => !OptionalParametersCommands.Contains(command)).OrderBy(command => command, StringComparer.Ordinal)];
+        List<string> missing = [.. OptionalParametersCommands.Where(command => !optionalCommands.Contains(command)).OrderBy(command => command, StringComparer.Ordinal)];
+        Assert.True(unexpected.Count == 0 && missing.Count == 0, $"The set of commands taking optional parameters changed. Update this list and the documented tables together. Newly optional: {string.Join(", ", unexpected)}. No longer optional: {string.Join(", ", missing)}.");
+    }
+
+    private static bool HasPublicStaticResetMember(Type parametersType)
+    {
+        // Inherited statics count: a derived parameters type whose reset helper lives on its base (as
+        // SetGeolocationOverrideCoordinatesCommandParameters' does) is still a resettable command.
+        const BindingFlags MemberFlags = BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy;
+        bool onProperty = parametersType.GetProperties(MemberFlags).Any(member => member.Name.StartsWith("Reset", StringComparison.Ordinal));
+        bool onField = parametersType.GetFields(MemberFlags).Any(member => member.Name.StartsWith("Reset", StringComparison.Ordinal));
+        return onProperty || onField;
+    }
+
+    private static IEnumerable<(Module Module, MethodInfo Method, ParameterInfo Parameter)> GetModuleCommandMethods()
+    {
+        foreach (Module module in GetDriverModules())
+        {
+            foreach (MethodInfo method in module.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).OrderBy(method => method.Name, StringComparer.Ordinal))
+            {
+                // A module's command methods are exactly its public methods whose first parameter is the
+                // command's parameters object; everything else it exposes is an observable event property.
+                ParameterInfo[] parameters = method.GetParameters();
+                if (parameters.Length > 0 && typeof(CommandParameters).IsAssignableFrom(parameters[0].ParameterType))
+                {
+                    yield return (module, method, parameters[0]);
+                }
+            }
+        }
     }
 
     [Fact]
