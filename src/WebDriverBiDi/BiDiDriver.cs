@@ -634,33 +634,39 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
         this.ThrowIfDisposed();
-        lock (this.registrationLock)
+        if (string.IsNullOrEmpty(eventName))
         {
-            // The transport owns the lifecycle state: registration is rejected once the transport has
-            // left the Disconnected state (a connect is in flight or completed) and is legal again once
-            // a teardown returns it to Disconnected. The registration lock still serializes concurrent
-            // registrations and makes this check-then-add atomic among them.
-            if (this.transport.State != TransportState.Disconnected)
-            {
-                throw new InvalidOperationException("Cannot register an event after the driver has started");
-            }
+            throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
+        }
 
-            if (string.IsNullOrEmpty(eventName))
-            {
-                throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
-            }
+        if (eventInvoker is null)
+        {
+            throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
+        }
 
-            if (eventInvoker is null)
-            {
-                throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
-            }
-
+        // Action for registring an event, executed under Transport's connection state lock
+        // so that it can only be executed while the Trandport is disconnected, and cannot
+        // interleave with a call to Transport.ConnectAsync().
+        void RegistrationAction()
+        {
             if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
             {
                 throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
             }
 
             this.transport.RegisterEventMessage<T>(eventName);
+        }
+
+        lock (this.registrationLock)
+        {
+            // The transport owns the lifecycle state: registration is rejected once the transport has
+            // left the Disconnected state (a connect is in flight or completed) and is legal again once
+            // a teardown returns it to Disconnected.
+            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
+            {
+                throw new InvalidOperationException("Cannot register an event after the driver has started");
+            }
+
             if (this.isInitializationComplete)
             {
                 WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered(eventName, typeof(T).ToString());
@@ -684,12 +690,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </para>
     /// <para>
     /// <strong>Thread safety:</strong> This method is thread-safe and can be safely called from multiple
-    /// threads concurrently. An internal lock ensures that the lifecycle check and the module addition to
-    /// the registry are performed atomically, preventing race conditions during concurrent registration
-    /// attempts or when registering near the time of calling <see cref="StartAsync(string, CancellationToken)"/>.
-    /// The check is against the transport's state, not <see cref="IsStarted"/>: registration is rejected
-    /// once the transport has left <c>Disconnected</c>, which is as soon as a connect is in flight, and
-    /// <see cref="IsStarted"/> is still false at that point.
+    /// threads concurrently. Two locks cooperate to make that so. A registration lock serializes concurrent
+    /// registrations with one another, and the transport tests its own lifecycle state and performs the
+    /// registration under the same lock it uses to publish the start of a connect. A registration therefore
+    /// either completes in full while the transport is still idle, or is rejected because it is not; it
+    /// cannot land part-way through a <see cref="StartAsync(string, CancellationToken)"/> running on another
+    /// thread. The check is against the transport's state, not <see cref="IsStarted"/>: registration is
+    /// rejected once the transport has left <c>Disconnected</c>, which is as soon as a connect is in flight,
+    /// and <see cref="IsStarted"/> is still false at that point.
     /// </para>
     /// <para>
     /// This method is used for registering custom modules that extend the WebDriver BiDi protocol.
@@ -708,25 +716,30 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual void RegisterModule(Module module)
     {
         this.ThrowIfDisposed();
+        if (module is null)
+        {
+            throw new ArgumentNullException(nameof(module), "Module object may not be null");
+        }
+
+        // Action for registring a module, executed under Transport's connection state lock
+        // so that it can only be executed while the Trandport is disconnected, and cannot
+        // interleave with a call to Transport.ConnectAsync().
+        void RegistrationAction()
+        {
+            if (!this.modules.TryAdd(module.ModuleName, module))
+            {
+                throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
+            }
+        }
+
         lock (this.registrationLock)
         {
             // The transport owns the lifecycle state: registration is rejected once the transport has
             // left the Disconnected state (a connect is in flight or completed) and is legal again once
-            // a teardown returns it to Disconnected. The registration lock still serializes concurrent
-            // registrations and makes this check-then-add atomic among them.
-            if (this.transport.State != TransportState.Disconnected)
+            // a teardown returns it to Disconnected.
+            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
             {
                 throw new InvalidOperationException("Cannot register a module after the driver has started");
-            }
-
-            if (module is null)
-            {
-                throw new ArgumentNullException(nameof(module), "Module object may not be null");
-            }
-
-            if (!this.modules.TryAdd(module.ModuleName, module))
-            {
-                throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
             }
 
             if (this.isInitializationComplete)

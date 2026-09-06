@@ -1837,10 +1837,10 @@ public class BiDiDriverTests
     [Fact]
     public async Task TestRegisteringModuleWhileStartIsInProgressThrows()
     {
-        // StartAsync publishes the start transition under the registration lock before its
-        // first await. The connection's StartBarrier holds ConnectAsync open so that the
-        // registration attempt happens while the driver is still starting (IsStarted is
-        // false, because the transport has not yet finished connecting).
+        // ConnectAsync publishes the transport's Connecting state before it opens the connection.
+        // The connection's StartBarrier holds that open so that the registration attempt happens
+        // while the driver is still starting (IsStarted is false, because the transport has not
+        // yet finished connecting).
         TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new()
         {
@@ -1877,6 +1877,60 @@ public class BiDiDriverTests
 
         startBarrier.SetResult();
         await startTask;
+        Assert.True(driver.IsStarted);
+    }
+
+    [Fact]
+    public async Task TestRegistrationCannotInterleaveWithConnectStateTransition()
+    {
+        // A registration and the publication of the transport's Connecting state are performed under
+        // one and the same lock, so a registration that is under way cannot be overtaken by a connect
+        // beginning on another thread. The module's name is read while that lock is held, so the hook
+        // below runs at exactly the point a test needs to observe: the connect has been let all the
+        // way up to the instant before it would publish, and the state sampled from inside the
+        // registration must still be Disconnected. If the two could interleave, the sample could
+        // observe Connecting instead, and the registration would land against a transport that was
+        // no longer idle.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource registrationHoldsLock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource connectReadyToPublish = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseRegistration = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            // Fires once the connect owns the connection semaphore, which is the step immediately
+            // before it publishes the Connecting state. Waiting for it removes any dependence on
+            // how quickly the connect thread is scheduled.
+            AfterAcquireLockCallback = () => connectReadyToPublish.TrySetResult(),
+        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        // Seeded with a value the assertion would reject, so a hook that never runs fails the test
+        // rather than passing by default.
+        TransportState stateObservedDuringRegistration = TransportState.Connected;
+        RegistrationHookModule module = new(driver, "hookedModule", () =>
+        {
+            registrationHoldsLock.TrySetResult();
+            releaseRegistration.Task.GetAwaiter().GetResult();
+            stateObservedDuringRegistration = transport.State;
+        });
+
+        Task registrationTask = Task.Run(() => driver.RegisterModule(module), cancellationToken);
+        await registrationHoldsLock.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        Task startTask = Task.Run(() => driver.StartAsync("ws://localhost:5555", cancellationToken), cancellationToken);
+        await connectReadyToPublish.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        releaseRegistration.SetResult();
+        await registrationTask.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await startTask.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        Assert.Equal(TransportState.Disconnected, stateObservedDuringRegistration);
+
+        // The registration completed in full despite the concurrent connect, and the connect went on
+        // to succeed once the registration released the lock.
+        Assert.IsType<RegistrationHookModule>(driver.GetModule<RegistrationHookModule>("hookedModule"));
         Assert.True(driver.IsStarted);
     }
 
