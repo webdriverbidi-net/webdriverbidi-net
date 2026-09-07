@@ -1,0 +1,303 @@
+// <copyright file="DriverStartStateWalker.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace WebDriverBiDi.Analyzers;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+
+/// <summary>
+/// Walks an executable body (a method, a constructor, or a top-level program) tracking, for each
+/// local driver variable, whether a <c>StartAsync</c> call is in effect at each textual position, and
+/// hands every invocation made through a tracked driver to a callback together with that state.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Shared by the rules that judge a driver call against the driver's started state: BIDI001, BIDI002
+/// and BIDI003 (a registration on a started driver) and BIDI024 (a second start). All four report at
+/// Error severity, so all four need the same conservative merge: after a branch, a driver counts as
+/// started only when <em>every</em> path through the branch leaves it started. Treating "started on
+/// some path" as started would report correct conditional start/stop code.
+/// </para>
+/// <para>
+/// A driver variable is tracked from any declaration whose initializer has the driver type: a local
+/// declaration statement, a <c>using</c> declaration, the declaration of a classic
+/// <c>using (T x = ...)</c> statement, or a <c>for</c> initializer. The same name declared again in a
+/// sibling scope (two <c>foreach</c> bodies, say) simply restarts the tracking. The walk does not
+/// descend into nested functions (lambdas, anonymous methods, local functions): their code runs when
+/// the delegate is invoked, not where it is written. <c>if</c>, <c>switch</c> and <c>try</c>
+/// statements are walked with a forked copy of the state per mutually exclusive branch.
+/// </para>
+/// </remarks>
+internal sealed class DriverStartStateWalker
+{
+    private readonly SyntaxNodeAnalysisContext context;
+    private readonly Func<ITypeSymbol?, bool> isDriverType;
+    private readonly DriverInvocationHandler handler;
+
+    private DriverStartStateWalker(SyntaxNodeAnalysisContext context, Func<ITypeSymbol?, bool> isDriverType, DriverInvocationHandler handler)
+    {
+        this.context = context;
+        this.isDriverType = isDriverType;
+        this.handler = handler;
+    }
+
+    /// <summary>
+    /// Receives an invocation made through a tracked driver variable.
+    /// </summary>
+    /// <param name="invocation">The invocation.</param>
+    /// <param name="method">The method the invocation binds to.</param>
+    /// <param name="driverVariableName">The name of the driver variable the invocation is made through.</param>
+    /// <param name="isStarted">
+    /// <see langword="true"/> if a <c>StartAsync</c> call on the driver is in effect on every path that
+    /// reaches the invocation; otherwise <see langword="false"/>. For a <c>StartAsync</c> invocation
+    /// this is the state before the call takes effect.
+    /// </param>
+    internal delegate void DriverInvocationHandler(InvocationExpressionSyntax invocation, IMethodSymbol method, string driverVariableName, bool isStarted);
+
+    /// <summary>
+    /// Walks the executable body of the analysis context's node.
+    /// </summary>
+    /// <param name="context">The analysis context whose node is the body to walk.</param>
+    /// <param name="isDriverType">Determines whether a declaration's initializer type is a driver to track.</param>
+    /// <param name="handler">Receives every invocation made through a tracked driver.</param>
+    internal static void Walk(SyntaxNodeAnalysisContext context, Func<ITypeSymbol?, bool> isDriverType, DriverInvocationHandler handler)
+    {
+        DriverStartStateWalker walker = new(context, isDriverType, handler);
+        Dictionary<string, bool> driverStartedStatus = [];
+        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
+        {
+            walker.ProcessNode(statement, driverStartedStatus);
+        }
+    }
+
+    /// <summary>
+    /// Gets the identifier at the root of a member access chain: <c>driver</c> for
+    /// <c>driver.Session.StartAsync</c>.
+    /// </summary>
+    /// <param name="expression">The receiver expression of a member access.</param>
+    /// <returns>The root identifier's name, or <see langword="null"/> when the chain does not root in a simple identifier.</returns>
+    internal static string? GetRootIdentifierName(ExpressionSyntax expression)
+    {
+        ExpressionSyntax current = expression;
+        while (current is MemberAccessExpressionSyntax memberAccess)
+        {
+            current = memberAccess.Expression;
+        }
+
+        return (current as IdentifierNameSyntax)?.Identifier.ValueText;
+    }
+
+    private void ProcessNode(SyntaxNode node, Dictionary<string, bool> driverStartedStatus)
+    {
+        // Walk the node's descendants in document order. The walk stops at if, switch, and try
+        // statements — including one that is itself the root, which the barrier yields without
+        // descending into — and processes them recursively below with a forked copy of the state
+        // for each mutually exclusive branch.
+        foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
+            AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            child is not IfStatementSyntax &&
+            child is not SwitchStatementSyntax &&
+            child is not TryStatementSyntax))
+        {
+            switch (descendant)
+            {
+                case IfStatementSyntax ifStatement:
+                    this.ProcessIfStatement(ifStatement, driverStartedStatus);
+                    break;
+
+                case SwitchStatementSyntax switchStatement:
+                    this.ProcessSwitchStatement(switchStatement, driverStartedStatus);
+                    break;
+
+                case TryStatementSyntax tryStatement:
+                    this.ProcessTryStatement(tryStatement, driverStartedStatus);
+                    break;
+
+                case VariableDeclarationSyntax declaration:
+                    // Register driver declarations wherever they appear; the pre-order walk visits
+                    // the declaration before any later use of the variable, and before the
+                    // invocations inside its own initializer.
+                    this.TrackDriverDeclarations(declaration, driverStartedStatus);
+                    break;
+
+                case InvocationExpressionSyntax invocation:
+                    this.CheckInvocation(invocation, driverStartedStatus);
+                    break;
+            }
+        }
+    }
+
+    private void TrackDriverDeclarations(VariableDeclarationSyntax declaration, Dictionary<string, bool> driverStartedStatus)
+    {
+        foreach (VariableDeclaratorSyntax variable in declaration.Variables)
+        {
+            if (variable.Initializer is null)
+            {
+                continue;
+            }
+
+            ITypeSymbol? initializerType = this.context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
+            if (this.isDriverType(initializerType))
+            {
+                driverStartedStatus[variable.Identifier.ValueText] = false;
+            }
+        }
+    }
+
+    private void ProcessIfStatement(IfStatementSyntax ifStatement, Dictionary<string, bool> driverStartedStatus)
+    {
+        // Invocations in the condition execute unconditionally, before either branch.
+        this.ProcessNode(ifStatement.Condition, driverStartedStatus);
+
+        // The branches are mutually exclusive, so each arm is walked against its own copy of the
+        // state at the branch point. An else-if chain arrives here as an else clause whose statement
+        // is itself an if statement, which ProcessNode routes back into this method.
+        Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
+        this.ProcessNode(ifStatement.Statement, thenBranchStatus);
+
+        Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
+        if (ifStatement.Else is not null)
+        {
+            this.ProcessNode(ifStatement.Else.Statement, elseBranchStatus);
+        }
+
+        MergeAllPaths(driverStartedStatus, [thenBranchStatus, elseBranchStatus]);
+    }
+
+    private void ProcessSwitchStatement(SwitchStatementSyntax switchStatement, Dictionary<string, bool> driverStartedStatus)
+    {
+        // The governing expression executes unconditionally, before any section.
+        this.ProcessNode(switchStatement.Expression, driverStartedStatus);
+
+        // Sections are mutually exclusive in the same way if/else branches are. When no default
+        // section exists, the switch may match nothing, so the unchanged state at the switch is
+        // one of the possible paths.
+        bool hasDefaultSection = false;
+        List<Dictionary<string, bool>> sectionStatuses = [];
+        foreach (SwitchSectionSyntax section in switchStatement.Sections)
+        {
+            if (section.Labels.Any(label => label is DefaultSwitchLabelSyntax))
+            {
+                hasDefaultSection = true;
+            }
+
+            Dictionary<string, bool> sectionStatus = new(driverStartedStatus);
+            foreach (StatementSyntax sectionStatement in section.Statements)
+            {
+                this.ProcessNode(sectionStatement, sectionStatus);
+            }
+
+            sectionStatuses.Add(sectionStatus);
+        }
+
+        if (!hasDefaultSection)
+        {
+            sectionStatuses.Add(new Dictionary<string, bool>(driverStartedStatus));
+        }
+
+        MergeAllPaths(driverStartedStatus, sectionStatuses);
+    }
+
+    private void ProcessTryStatement(TryStatementSyntax tryStatement, Dictionary<string, bool> driverStartedStatus)
+    {
+        Dictionary<string, bool> entryStatus = new(driverStartedStatus);
+        Dictionary<string, bool> tryStatus = new(driverStartedStatus);
+        this.ProcessNode(tryStatement.Block, tryStatus);
+
+        // A catch clause (or a finally block) may begin executing after any prefix of the try
+        // block has run, so inside one a driver counts as started only when every partial
+        // execution of the try leaves it started. That is the conjunction of the state at try
+        // entry and the state after the full try walk: a StartAsync inside the try may not
+        // have run yet (started at entry is false), and a StopAsync inside the try may
+        // already have run (started after the try is false). Judging catch and finally code
+        // against this conjunction keeps an Error-severity diagnostic to statically certain
+        // cases: a registration or a StartAsync retry in a catch after a failed StartAsync in
+        // the try is not reported (the library rolls the driver back to not-started when a
+        // start fails), while the same call in a catch on a driver that was already started
+        // before the try (with nothing in the try stopping it) still is.
+        Dictionary<string, bool> conservativeStatus = [];
+        foreach (string driverName in entryStatus.Keys)
+        {
+            conservativeStatus[driverName] = entryStatus[driverName] && tryStatus[driverName];
+        }
+
+        List<Dictionary<string, bool>> exitStatuses = [tryStatus];
+        foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
+        {
+            Dictionary<string, bool> catchStatus = new(conservativeStatus);
+            if (catchClause.Filter is not null)
+            {
+                this.ProcessNode(catchClause.Filter.FilterExpression, catchStatus);
+            }
+
+            this.ProcessNode(catchClause.Block, catchStatus);
+            exitStatuses.Add(catchStatus);
+        }
+
+        if (tryStatement.Finally is not null)
+        {
+            Dictionary<string, bool> finallyStatus = new(conservativeStatus);
+            this.ProcessNode(tryStatement.Finally.Block, finallyStatus);
+            exitStatuses.Add(finallyStatus);
+        }
+
+        // Including the finally's conservative walk in the merge can only make the merged state
+        // more pessimistic (suppressing reports), never create a false positive.
+        MergeAllPaths(driverStartedStatus, exitStatuses);
+    }
+
+    private void CheckInvocation(InvocationExpressionSyntax invocation, Dictionary<string, bool> driverStartedStatus)
+    {
+        // Nothing to do until a driver variable is being tracked; skip the semantic bind for every
+        // invocation seen before the first driver is declared.
+        if (driverStartedStatus.Count == 0 || invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        {
+            return;
+        }
+
+        // Only a call whose receiver chain roots in a tracked driver variable matters; the receiver's
+        // type was checked when the variable was declared. Resolving the name first keeps the
+        // expensive semantic bind to calls that can affect a tracked driver.
+        string? driverVariableName = GetRootIdentifierName(memberAccess.Expression);
+        if (driverVariableName is null || !driverStartedStatus.TryGetValue(driverVariableName, out bool started))
+        {
+            return;
+        }
+
+        if (this.context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        {
+            return;
+        }
+
+        this.handler(invocation, method, driverVariableName, started);
+
+        // StartAsync puts the driver in the started state; StopAsync returns it to the not-started
+        // state, in which the runtime permits registration and a new start again.
+        if (method.Name == "StartAsync")
+        {
+            driverStartedStatus[driverVariableName] = true;
+        }
+        else if (method.Name == "StopAsync")
+        {
+            driverStartedStatus[driverVariableName] = false;
+        }
+    }
+
+    private static void MergeAllPaths(Dictionary<string, bool> driverStartedStatus, List<Dictionary<string, bool>> pathStatuses)
+    {
+        // After a branch, a driver counts as started only when every path through it leaves the
+        // driver started. A driver declared inside one path is scoped to that path, so only the
+        // drivers known at the branch point are merged.
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            driverStartedStatus[driverName] = pathStatuses.All(pathStatus => pathStatus[driverName]);
+        }
+    }
+}

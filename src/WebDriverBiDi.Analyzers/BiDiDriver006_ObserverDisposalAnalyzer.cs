@@ -141,42 +141,50 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private static bool IsObserverHandled(SyntaxNode node, string variableName)
     {
-        // The observer is not leaked when it is disposed directly, released through
+        // The observer is not leaked when it is disposed directly, disposed by a classic
+        // using (observer) { ... } statement, released through
         // ObservableEvent.RemoveObserver(observer.Id), returned to the caller, or stored elsewhere
         // (for example assigned to a field) so another owner disposes it later.
         return HasDisposalCall(node, variableName)
+            || IsDisposedByUsingStatement(node, variableName)
             || IsReleasedViaRemoveObserver(node, variableName)
             || IsReturnedOrStored(node, variableName);
     }
 
     private static bool HasDisposalCall(SyntaxNode node, string variableName)
     {
-        // Look for method invocations on the variable
-        IEnumerable<InvocationExpressionSyntax> invocations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>();
-
-        foreach (InvocationExpressionSyntax invocation in invocations)
+        // Look for disposal invocations on the variable, spelled either observer.Dispose() or
+        // observer?.Dispose(). The conditional form binds its member through a
+        // MemberBindingExpression whose receiver is the enclosing ConditionalAccessExpression.
+        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
         {
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            (ExpressionSyntax? receiver, SimpleNameSyntax? methodName) = invocation.Expression switch
             {
-                // Check if the expression is calling a method on our variable
-                string? expressionName = null;
-                if (memberAccess.Expression is IdentifierNameSyntax identifier)
-                {
-                    expressionName = identifier.Identifier.Text;
-                }
+                MemberAccessExpressionSyntax memberAccess => (memberAccess.Expression, memberAccess.Name),
+                MemberBindingExpressionSyntax memberBinding when invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess
+                    => (conditionalAccess.Expression, memberBinding.Name),
+                _ => (null, null),
+            };
 
-                if (expressionName == variableName)
-                {
-                    string methodName = memberAccess.Name.Identifier.ValueText;
-                    if (methodName == "Unobserve" || methodName == "Dispose" || methodName == "DisposeAsync")
-                    {
-                        return true;
-                    }
-                }
+            if (receiver is IdentifierNameSyntax identifier
+                && identifier.Identifier.ValueText == variableName
+                && methodName!.Identifier.ValueText is "Unobserve" or "Dispose" or "DisposeAsync")
+            {
+                return true;
             }
         }
 
         return false;
+    }
+
+    private static bool IsDisposedByUsingStatement(SyntaxNode node, string variableName)
+    {
+        // using (observer) { ... } and await using (observer) { ... } dispose the observer when the
+        // statement completes; the observer is the statement's expression, not a declaration.
+        return AnalyzerSymbolHelpers.GetBodyDescendantNodes(node)
+            .OfType<UsingStatementSyntax>()
+            .Any(usingStatement => usingStatement.Expression is IdentifierNameSyntax identifier
+                && identifier.Identifier.ValueText == variableName);
     }
 
     private static bool IsReleasedViaRemoveObserver(SyntaxNode node, string variableName)

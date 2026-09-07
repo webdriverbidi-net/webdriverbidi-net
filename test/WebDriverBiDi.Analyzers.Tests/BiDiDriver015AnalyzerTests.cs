@@ -642,7 +642,7 @@ public class BiDiDriver015AnalyzerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task ExpressionBodiedMethod_NoDiagnostic()
+    public async Task ExpressionBodiedMethod_ReportsWarning()
     {
         string test = """
             using System.Threading.Tasks;
@@ -653,15 +653,20 @@ public class BiDiDriver015AnalyzerTests
             {
                 public class TestClass
                 {
-                    public Task TestMethod(BiDiDriver driver) => driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    public Task TestMethod(BiDiDriver driver) => driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
                 }
             }
             """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
 
         RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1747,7 +1752,7 @@ public class BiDiDriver015AnalyzerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task SubscribeAsync_InExpressionBodiedMethod_DoesNotReportDiagnostic()
+    public async Task SubscribeAsync_InExpressionBodiedMethod_ReportsWarning()
     {
         string test = """
             using System.Threading.Tasks;
@@ -1758,17 +1763,22 @@ public class BiDiDriver015AnalyzerTests
             {
                 public class TestClass
                 {
-                    // Expression-bodied: method.Body is null
+                    // Expression-bodied: method.Body is null, so the body is the arrow expression.
                     public Task TestMethod(BiDiDriver driver) =>
-                        driver.Session.SubscribeAsync(new SubscribeCommandParameters(["log.entryAdded"]));
+                        driver.Session.SubscribeAsync(new SubscribeCommandParameters([{|#0:"log.entryAdded"|}]));
                 }
             }
             """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
 
         RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -1829,8 +1839,11 @@ public class BiDiDriver015AnalyzerTests
 
                 public class BiDiDriver
                 {
-                    // Declared first so a non-module property is visited before the modules.
+                    // Declared first so a non-module property, and an array-typed one (not a named
+                    // type at all), are visited before the modules.
                     public string SessionId { get; } = string.Empty;
+
+                    public string[] Tags { get; } = new string[0];
 
                     public LogModule Log { get; } = new();
 

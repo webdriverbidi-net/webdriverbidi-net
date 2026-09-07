@@ -705,4 +705,140 @@ public class BiDiDriver022AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that the nested object-initializer spelling <c>AdditionalData = { ["key"] = value }</c> is reported once per element.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IndexerElementInitializer_OnAdditionalData_ReportsWarningPerElement()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var cmd = new GetTreeCommandParameters
+                        {
+                            AdditionalData =
+                            {
+                                {|#0:["first"] = "value"|},
+                                {|#1:["second"] = 2|},
+                            },
+                        };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("GetTreeCommandParameters");
+
+        DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("GetTreeCommandParameters");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected0, expected1);
+    }
+
+    /// <summary>
+    /// Tests that the nested collection-initializer spelling <c>AdditionalData = { { "key", value } }</c> is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CollectionElementInitializer_OnAdditionalData_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var cmd = new GetTreeCommandParameters
+                        {
+                            AdditionalData = { {|#0:{ "ext", "value" }|} },
+                        };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("GetTreeCommandParameters");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that an AdditionalData initializer nested inside a member initializer (<c>Cookie = { AdditionalData = { ... } }</c>) is reported, naming the member's type.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NestedMemberInitializer_OnAdditionalData_ReportsWarningNamingMemberType()
+    {
+        string testCode = """
+            using WebDriverBiDi.Network;
+            using WebDriverBiDi.Storage;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var cmd = new SetCookieCommandParameters(new PartialCookie("name", BytesValue.FromString("value"), "example.com"))
+                        {
+                            Cookie =
+                            {
+                                AdditionalData = { {|#0:["ext"] = "value"|} },
+                            },
+                        };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("PartialCookie");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that an ordinary member initializer, and an initializer assigning some other property, are not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task PropertyAssignmentInInitializer_OtherThanAdditionalData_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var cmd = new GetTreeCommandParameters
+                        {
+                            MaxDepth = 2,
+                        };
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
 }

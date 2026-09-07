@@ -67,7 +67,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // point of escape, is what the Error severity of this rule demands: the helper that starts the
         // driver may be called before or after the command textually, and a wrong Error on correct
         // code is worse than a missed report.
-        HashSet<string> escapedNames = FindEscapedVariableNames(context.Node);
+        HashSet<string> escapedNames = FindEscapedVariableNames(context.Node, semanticModel);
 
         // Walk through all statements in the method
         IEnumerable<StatementSyntax> statements = AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node);
@@ -85,13 +85,14 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     /// function could start or stop.
     /// </summary>
     /// <param name="body">The member body being analyzed.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
     /// <returns>The set of names whose started state cannot be known from this member alone.</returns>
-    private static HashSet<string> FindEscapedVariableNames(SyntaxNode body)
+    private static HashSet<string> FindEscapedVariableNames(SyntaxNode body, SemanticModel semanticModel)
     {
         HashSet<string> escapedNames = [];
         foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            if (IsEscapingPosition(identifier) || IsStartedOrStoppedInsideNestedFunction(identifier, body))
+            if (IsEscapingPosition(identifier, semanticModel) || IsStartedOrStoppedInsideNestedFunction(identifier, body))
             {
                 escapedNames.Add(identifier.Identifier.ValueText);
             }
@@ -105,13 +106,14 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     /// start it.
     /// </summary>
     /// <param name="identifier">The mention of the variable.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
     /// <returns><see langword="true"/> if the variable escapes at this position; otherwise <see langword="false"/>.</returns>
     /// <remarks>
     /// This mirrors the escape classification in BIDI006. A mention that merely uses the driver
     /// (<c>driver.Session.StatusAsync()</c>, a null test, a using statement) has a parent that is not in
     /// the list below and is correctly not treated as an escape.
     /// </remarks>
-    private static bool IsEscapingPosition(IdentifierNameSyntax identifier)
+    private static bool IsEscapingPosition(IdentifierNameSyntax identifier, SemanticModel semanticModel)
     {
         return identifier.Parent switch
         {
@@ -122,7 +124,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             AssignmentExpressionSyntax assignment => assignment.Right == identifier,
 
             // Passed to a method or constructor that may start it: await StartHelperAsync(driver);
-            ArgumentSyntax => true,
+            ArgumentSyntax argument => !IsModuleConstructionArgument(argument, semanticModel),
 
             // Placed in a collection expression, an initializer, or used to initialize another
             // variable that may itself be started.
@@ -130,6 +132,26 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
 
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Determines whether an argument hands the driver to the constructor of a module.
+    /// </summary>
+    /// <param name="argument">The argument mentioning the driver.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns><see langword="true"/> if the argument constructs a module; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The documented way to add a custom module is <c>driver.RegisterModule(new CustomModule(driver))</c>:
+    /// the driver is passed to the module's constructor, which hands it to the <c>Module</c> base class
+    /// so the module can issue commands through it later. A module holds the driver; it does not start
+    /// it. Treating that argument as an escape would switch this rule off for every method that
+    /// registers a custom module, which is precisely the set-up code the rule exists to check.
+    /// </remarks>
+    private static bool IsModuleConstructionArgument(ArgumentSyntax argument, SemanticModel semanticModel)
+    {
+        return argument.Parent is ArgumentListSyntax { Parent: BaseObjectCreationExpressionSyntax creation }
+            && semanticModel.GetTypeInfo(creation).Type is INamedTypeSymbol createdType
+            && AnalyzerSymbolHelpers.IsModuleSubclass(createdType);
     }
 
     /// <summary>
@@ -168,12 +190,12 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     }
 
     private static void AnalyzeLocalDeclaration(
-        LocalDeclarationStatementSyntax localDecl,
+        VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
         HashSet<string> escapedNames)
     {
-        foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
+        foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
             if (variable.Initializer == null)
             {
@@ -237,12 +259,14 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             {
                 ProcessTryStatement(tryStatement, context, semanticModel, driverStartedStatus, escapedNames);
             }
-            else if (descendant is LocalDeclarationStatementSyntax localDecl)
+            else if (descendant is VariableDeclarationSyntax declaration)
             {
-                // Register driver declarations wherever they appear (including inside nested
-                // blocks such as try or using statements); the pre-order walk visits the
-                // declaration before any later use of the variable.
-                AnalyzeLocalDeclaration(localDecl, semanticModel, driverStartedStatus, escapedNames);
+                // Register driver declarations wherever they appear: a local declaration
+                // statement, a using declaration, the declaration of a classic
+                // using (T x = ...) statement, or a for initializer, including inside nested
+                // blocks such as try statements. The pre-order walk visits the declaration
+                // before any later use of the variable.
+                AnalyzeLocalDeclaration(declaration, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {

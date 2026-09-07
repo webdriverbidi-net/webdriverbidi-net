@@ -164,11 +164,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return true;
         }
 
-        if (!method.ContainingType.Name.EndsWith("Module", System.StringComparison.Ordinal))
-        {
-            return false;
-        }
-
+        // Any type deriving from the library's Module base class is a module, whatever it is named.
         if (!AnalyzerSymbolHelpers.IsModuleSubclass(method.ContainingType))
         {
             return false;

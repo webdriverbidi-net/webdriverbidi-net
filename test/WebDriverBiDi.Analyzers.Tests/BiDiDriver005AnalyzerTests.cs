@@ -1410,12 +1410,12 @@ public class BiDiDriver005AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that an expression-bodied method (no block body) with an observer does not
-    /// cause an exception — exercises GetSubscribedEventNames null-body guard (line 189).
+    /// Tests that an observer added in an expression-bodied method (no block body) is analyzed
+    /// like one added in a block body: the arrow expression is the member's executable body.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_InExpressionBodiedMethod_DoesNotReportDiagnostic()
+    public async Task AddObserver_InExpressionBodiedMethod_ReportsWarning()
     {
         string test = """
             using System;
@@ -1429,15 +1429,20 @@ public class BiDiDriver005AnalyzerTests
                 {
                     // Expression-bodied method: method.Body will be null.
                     public EventObserver<EntryAddedEventArgs> GetObserver(BiDiDriver driver) =>
-                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
                 }
             }
             """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
 
         RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -2292,11 +2297,12 @@ public class BiDiDriver005AnalyzerTests
 
     /// <summary>
     /// Tests that an event access whose member-access chain roots at <c>this</c> rather than at an
-    /// identifier is not attributed to a driver variable.
+    /// identifier (a driver held in a field, spelled the way StyleCop's SA1101 requires) is analyzed
+    /// like one rooted at a local: the driver is recognized by the type of the module's receiver.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_OnThisRootedEventAccess_DoesNotReportDiagnostic()
+    public async Task AddObserver_OnThisRootedEventAccess_ReportsWarning()
     {
         string test = """
             using WebDriverBiDi;
@@ -2313,16 +2319,21 @@ public class BiDiDriver005AnalyzerTests
                     {
                         // The chain roots at `this`, not at an identifier.
                         using EventObserver<EntryAddedEventArgs> observer =
-                            this.driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask);
+                            {|#0:this.driver.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask)|};
                     }
                 }
             }
             """;
 
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
         RealAssemblyAnalyzerTest<BiDiDriver005_MissingEventSubscriptionAnalyzer> testState = new()
         {
             TestCode = test,
         };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -2987,4 +2998,106 @@ public class BiDiDriver005AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that an event reached through a driver returned by a call (<c>GetDriver().Log.OnEntryAdded</c>) is analyzed: the driver is recognized by the type of the module's receiver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnDriverReturnedByMethod_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void Setup()
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            {|#0:GetDriver().Log.OnEntryAdded.AddObserver(e => Task.CompletedTask)|};
+                    }
+
+                    private static BiDiDriver GetDriver() => new BiDiDriver(TimeSpan.FromSeconds(30));
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("log.entryAdded");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that an event whose module is reached by a call rather than a property (<c>driver.GetModule&lt;LogModule&gt;(...)</c>) is not attributed to the driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnModuleReachedByMethodCall_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void Setup(BiDiDriver driver)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            driver.GetModule<LogModule>("log").OnEntryAdded.AddObserver(e => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a module property whose receiver is not a driver (<c>holder.Log.OnEntryAdded</c>) is not attributed to a driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddObserver_OnModulePropertyOfNonDriver_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class Holder
+                {
+                    public Holder(BiDiDriver driver)
+                    {
+                        this.Log = new LogModule(driver);
+                    }
+
+                    public LogModule Log { get; }
+                }
+
+                public class TestClass
+                {
+                    public void Setup(Holder holder)
+                    {
+                        using EventObserver<EntryAddedEventArgs> observer =
+                            holder.Log.OnEntryAdded.AddObserver(e => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
+    }
 }

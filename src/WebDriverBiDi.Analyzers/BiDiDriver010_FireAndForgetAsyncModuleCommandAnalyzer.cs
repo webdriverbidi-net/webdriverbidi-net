@@ -56,8 +56,9 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         IInvocationOperation invocation = (IInvocationOperation)context.Operation;
         IMethodSymbol method = invocation.TargetMethod;
 
-        // Check if this is a module method
-        if (!IsModuleType(method.ContainingType))
+        // A module command, or ExecuteCommandAsync on the driver itself, which sends a command over
+        // the same connection a module command does; discarding its task is the same hazard.
+        if (!IsModuleType(method.ContainingType) && !IsExecuteCommandAsync(method))
         {
             return;
         }
@@ -82,9 +83,17 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         context.ReportDiagnostic(diagnostic);
     }
 
-    private static bool IsModuleType(INamedTypeSymbol? type)
+    private static bool IsModuleType(INamedTypeSymbol type)
     {
-        return type != null && type.Name.EndsWith("Module", System.StringComparison.Ordinal) && HasModuleBaseClass(type);
+        // Any type deriving from the library's Module base class is a module, whatever it is named:
+        // a custom class GoogleCdp : Module is registered and invoked exactly as one named
+        // GoogleCdpModule would be.
+        return HasModuleBaseClass(type);
+    }
+
+    private static bool IsExecuteCommandAsync(IMethodSymbol method)
+    {
+        return method.Name == "ExecuteCommandAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType);
     }
 
     private static bool HasModuleBaseClass(INamedTypeSymbol type)
@@ -114,6 +123,14 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
 
         // Follow conversions unconditionally: they preserve the value.
         if (parent is IConversionOperation)
+        {
+            return IsResultDiscarded(parent);
+        }
+
+        // A call made through a null-conditional receiver (driver?.BrowsingContext.NavigateAsync(p))
+        // is the WhenNotNull part of a conditional access; the value that is kept or discarded is
+        // that of the conditional access as a whole.
+        if (parent is IConditionalAccessOperation)
         {
             return IsResultDiscarded(parent);
         }

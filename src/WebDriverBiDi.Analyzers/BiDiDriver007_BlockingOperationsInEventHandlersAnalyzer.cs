@@ -116,8 +116,15 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
+        // Synchronization primitives (lock, SemaphoreSlim.Wait, WaitHandle.WaitOne, ...) block the
+        // dispatching thread of a non-async handler just as Thread.Sleep does. In an async lambda
+        // they are BIDI016's deadlock-prone patterns instead, so they are left to that rule there
+        // rather than reported twice on the same line.
+        bool includeSynchronizationPrimitives = handlerArgument.Expression is not AnonymousFunctionExpressionSyntax anonymousFunction
+            || !anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword);
+
         DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
-        IEnumerable<SyntaxNode> blockingOperations = FindBlockingOperations(context, handlerBody);
+        IEnumerable<SyntaxNode> blockingOperations = FindBlockingOperations(context, handlerBody, includeSynchronizationPrimitives);
         foreach (SyntaxNode blockingOp in blockingOperations)
         {
             string operationName = GetBlockingOperationName(blockingOp);
@@ -128,9 +135,15 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
     private static IEnumerable<SyntaxNode> FindBlockingOperations(
         SyntaxNodeAnalysisContext context,
-        SyntaxNode handlerBody)
+        SyntaxNode handlerBody,
+        bool includeSynchronizationPrimitives)
     {
         List<SyntaxNode> blockingOps = [];
+
+        if (includeSynchronizationPrimitives)
+        {
+            blockingOps.AddRange(handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<LockStatementSyntax>());
+        }
 
         // Do not descend into a nested lambda, anonymous method or local function: its body runs only
         // when that delegate is invoked, not on the dispatching thread. Task.Run(() => Thread.Sleep(...))
@@ -146,13 +159,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 continue;
             }
 
-            if (methodSymbol.ContainingType.Name == "Thread" && methodSymbol.Name == "Sleep")
-            {
-                blockingOps.Add(invocation);
-                continue;
-            }
-
-            if (methodSymbol.ContainingType.Name == "Task" && methodSymbol.Name == "Wait")
+            if (IsBlockingMethod(methodSymbol, includeSynchronizationPrimitives))
             {
                 blockingOps.Add(invocation);
                 continue;
@@ -178,8 +185,9 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         {
             if (memberAccess.Name.Identifier.ValueText == "Result")
             {
+                // Task<T>.Result and ValueTask<T>.Result both block until the operation completes.
                 ITypeSymbol? expressionType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
-                if (expressionType is { Name: "Task" })
+                if (expressionType is { Name: "Task" or "ValueTask" })
                 {
                     blockingOps.Add(memberAccess);
                 }
@@ -189,13 +197,30 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         return blockingOps;
     }
 
+    private static bool IsBlockingMethod(IMethodSymbol method, bool includeSynchronizationPrimitives)
+    {
+        // WaitOne is declared on WaitHandle, so a call through any of its derived types (Mutex,
+        // Semaphore, ManualResetEvent, AutoResetEvent, ...) binds to a method whose containing type
+        // is WaitHandle. ManualResetEventSlim and CountdownEvent are not WaitHandles and declare
+        // their own blocking Wait methods.
+        return (method.ContainingType.Name, method.Name) switch
+        {
+            ("Thread", "Sleep") or ("Thread", "Join") or ("Task", "Wait") => true,
+            ("Task", "WaitAll") or ("Task", "WaitAny") => includeSynchronizationPrimitives,
+            ("Monitor", "Enter") or ("Monitor", "TryEnter") => includeSynchronizationPrimitives,
+            ("SemaphoreSlim", "Wait") or ("ManualResetEventSlim", "Wait") or ("CountdownEvent", "Wait") => includeSynchronizationPrimitives,
+            ("WaitHandle", "WaitOne") => includeSynchronizationPrimitives,
+            _ => false,
+        };
+    }
+
     private static string GetBlockingOperationName(SyntaxNode blockingOperation)
     {
-        if (blockingOperation is InvocationExpressionSyntax invocation && invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+        return blockingOperation switch
         {
-            return memberAccess.Name.Identifier.Text + "()";
-        }
-
-        return ((MemberAccessExpressionSyntax)blockingOperation).Name.Identifier.Text;
+            LockStatementSyntax => "lock",
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess } => memberAccess.Name.Identifier.Text + "()",
+            _ => ((MemberAccessExpressionSyntax)blockingOperation).Name.Identifier.Text,
+        };
     }
 }

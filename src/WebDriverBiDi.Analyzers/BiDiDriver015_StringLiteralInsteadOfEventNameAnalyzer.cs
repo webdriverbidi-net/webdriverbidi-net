@@ -55,48 +55,44 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        // Find all Session.SubscribeAsync calls
-        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
+        // Find all Session.SubscribeAsync calls. GetBodyDescendantNodes covers block bodies,
+        // expression bodies, and top-level programs alike.
+        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node).OfType<InvocationExpressionSyntax>())
         {
-            System.Collections.Generic.IEnumerable<InvocationExpressionSyntax> invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
-
-            foreach (InvocationExpressionSyntax invocation in invocations)
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
             {
-                if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-                {
-                    continue;
-                }
-
-                // Rule out every other call in the body on its name alone, before paying for the
-                // semantic model. The name test against the resolved symbol below remains the
-                // authoritative one; this only avoids binding calls that cannot possibly match.
-                if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, SubscribeMethodName))
-                {
-                    continue;
-                }
-
-                IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                if (methodSymbol == null)
-                {
-                    continue;
-                }
-
-                // Check if this is Session.SubscribeAsync
-                if (methodSymbol.Name != "SubscribeAsync" || !IsSessionModule(methodSymbol.ContainingType))
-                {
-                    continue;
-                }
-
-                // The driver comes from the call's own receiver rather than from a search for a local
-                // declaration, so a driver held in a parameter, a field or a property is found just as
-                // a local is — and the suggested replacement names whatever the call site actually used.
-                if (GetDriverFromReceiver(context, memberAccess.Expression) is not (string, ITypeSymbol) driverVariable)
-                {
-                    continue;
-                }
-
-                AnalyzeSubscribeCall(context, invocation, driverVariable);
+                continue;
             }
+
+            // Rule out every other call in the body on its name alone, before paying for the
+            // semantic model. The name test against the resolved symbol below remains the
+            // authoritative one; this only avoids binding calls that cannot possibly match.
+            if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, SubscribeMethodName))
+            {
+                continue;
+            }
+
+            IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            if (methodSymbol == null)
+            {
+                continue;
+            }
+
+            // Check if this is Session.SubscribeAsync
+            if (methodSymbol.Name != "SubscribeAsync" || !IsSessionModule(methodSymbol.ContainingType))
+            {
+                continue;
+            }
+
+            // The driver comes from the call's own receiver rather than from a search for a local
+            // declaration, so a driver held in a parameter, a field or a property is found just as
+            // a local is — and the suggested replacement names whatever the call site actually used.
+            if (GetDriverFromReceiver(context, memberAccess.Expression) is not (string, ITypeSymbol) driverVariable)
+            {
+                continue;
+            }
+
+            AnalyzeSubscribeCall(context, invocation, driverVariable);
         }
     }
 

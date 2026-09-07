@@ -1340,4 +1340,95 @@ public class BiDiDriver006AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that an observer disposed by a classic <c>using (observer) { ... }</c> statement, whose expression is the observer rather than a declaration, is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_DisposedByClassicUsingStatementExpression_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        using (observer)
+                        {
+                            Console.WriteLine(observer.Id);
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that <c>observer?.Dispose()</c> — a disposal through a null-conditional member binding rather than a member access — is recognized as disposing the observer.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_ConditionallyDisposed_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer?.Dispose();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a null-conditional call to a method other than a disposal, including one that continues into a chain, does not count as disposing the observer.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_ConditionalCallToNonDisposalMethod_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var {|#0:observer|} = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer?.StartCapturingTasks();
+                        Console.WriteLine(observer?.GetHashCode().ToString());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode, expected0);
+    }
 }

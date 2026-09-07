@@ -127,19 +127,19 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
-    /// Determines whether a type is a library module: its name ends in <c>"Module"</c> and it either
-    /// derives from the abstract <c>Module</c> base class or is declared within the
-    /// <c>WebDriverBiDi</c> namespace. Requiring more than the <c>"*Module"</c> name avoids matching
-    /// unrelated user types that merely end in <c>"Module"</c> (they neither derive from <c>Module</c>
-    /// nor live in the library's namespace).
+    /// Determines whether a type is a library module: it derives from the abstract <c>Module</c> base
+    /// class, whatever it is named — a custom <c>class GoogleCdp : Module</c> is registered and used
+    /// exactly as one named <c>GoogleCdpModule</c> would be — or it is a <c>"*Module"</c> type
+    /// declared within the <c>WebDriverBiDi</c> namespace. Unrelated user types that merely end in
+    /// <c>"Module"</c> neither derive from <c>Module</c> nor live in the library's namespace, and are
+    /// not matched.
     /// </summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> if the type is a library module; otherwise <see langword="false"/>.</returns>
     internal static bool IsLibraryModuleType(ITypeSymbol? type)
     {
         return type is INamedTypeSymbol named
-            && named.Name.EndsWith("Module", System.StringComparison.Ordinal)
-            && (IsModuleSubclass(named) || IsInWebDriverBiDiNamespace(named));
+            && (IsModuleSubclass(named) || (named.Name.EndsWith("Module", System.StringComparison.Ordinal) && IsInWebDriverBiDiNamespace(named)));
     }
 
     /// <summary>
@@ -225,45 +225,6 @@ internal static class AnalyzerSymbolHelpers
 
         return invokedName is null || methodNames.Contains(invokedName.Identifier.ValueText);
     }
-
-    /// <summary>
-    /// Unwraps the task-chaining wrappers around an invocation, returning the innermost call the
-    /// chain is built on. <c>driver.StartAsync(url).ConfigureAwait(false)</c> yields
-    /// <c>driver.StartAsync(url)</c>, as do <c>.Wait()</c> and
-    /// <c>.ConfigureAwait(false).GetAwaiter().GetResult()</c>.
-    /// </summary>
-    /// <param name="invocation">The outermost invocation.</param>
-    /// <returns>The innermost invocation the chain wraps, or the original invocation when it wraps nothing.</returns>
-    /// <remarks>
-    /// Only the names in <see cref="TaskChainingMethodNames"/> are unwrapped. Descending through any
-    /// invocation-receivered member access would be wrong: in <c>GetDriver().StartAsync(url)</c> the
-    /// receiver is also an invocation, and unwrapping it would discard the <c>StartAsync</c> call
-    /// that the analyzers exist to find.
-    /// </remarks>
-    internal static InvocationExpressionSyntax UnwrapTaskChain(InvocationExpressionSyntax invocation)
-    {
-        InvocationExpressionSyntax current = invocation;
-        while (current.Expression is MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax inner } memberAccess
-            && TaskChainingMethodNames.Contains(memberAccess.Name.Identifier.ValueText))
-        {
-            current = inner;
-        }
-
-        return current;
-    }
-
-    /// <summary>
-    /// The methods that wrap a task-returning call without changing which call was made: awaiting
-    /// and blocking adapters. Hoisted to a static field to avoid allocating on every unwrap.
-    /// </summary>
-    private static readonly string[] TaskChainingMethodNames =
-    [
-        "ConfigureAwait",
-        "Wait",
-        "GetAwaiter",
-        "GetResult",
-        "AsTask",
-    ];
 
     /// <summary>
     /// The syntax kinds that carry an executable body the intra-procedural analyzers examine: a method

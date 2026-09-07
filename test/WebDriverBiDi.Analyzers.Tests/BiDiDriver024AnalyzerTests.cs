@@ -705,4 +705,77 @@ public class BiDiDriver024AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a driver declared by a classic <c>await using (T x = ...)</c> statement is tracked like one declared by a local declaration statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DriverDeclaredInClassicUsingStatement_DuplicateStart_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using (BiDiDriver driver = new())
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            await {|#0:driver.StartAsync("ws://localhost:9222")|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that a StartAsync after a switch whose every section, including a default section, starts the driver is reported: no path leaves the driver unstarted.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartAsyncAfterSwitchWithDefaultStartingEverySection_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int endpoint)
+                    {
+                        BiDiDriver driver = new();
+                        switch (endpoint)
+                        {
+                            case 1:
+                                await driver.StartAsync("ws://localhost:9222");
+                                break;
+                            default:
+                                await driver.StartAsync("ws://localhost:9223");
+                                break;
+                        }
+
+                        await {|#0:driver.StartAsync("ws://localhost:9224")|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected0);
+    }
 }

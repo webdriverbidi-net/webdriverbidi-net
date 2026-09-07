@@ -1236,4 +1236,190 @@ public class BiDiDriver012AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a driver held in a field and disposed through <c>this.</c> (the spelling StyleCop's SA1101 enforces) is reported like a local.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_OnThisField_WithoutStopAsync_ReportsInfo()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new();
+
+                    public async Task TestMethod()
+                    {
+                        await this.driver.StartAsync("ws://localhost:9222");
+                        await {|#0:this.driver.DisposeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that a <c>this.driver.StopAsync()</c> before <c>this.driver.DisposeAsync()</c> is correlated by the field's name.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_OnThisField_WithStopAsyncOnThisField_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new();
+
+                    public async Task TestMethod()
+                    {
+                        await this.driver.StartAsync("ws://localhost:9222");
+                        await this.driver.StopAsync();
+                        await this.driver.DisposeAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that an <c>await using var</c> declaration in a top-level program, whose parent is a global statement rather than a block, is reported when no later global statement stops the driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AwaitUsingDeclaration_InTopLevelProgram_WithoutStopAsync_ReportsInfo()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            await using BiDiDriver {|#0:driver|} = new();
+            await driver.StartAsync("ws://localhost:9222");
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+            TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an <c>await using var</c> declaration in a top-level program is not reported when a later global statement stops the driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AwaitUsingDeclaration_InTopLevelProgram_WithStopAsync_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            await using BiDiDriver driver = new();
+            await driver.StartAsync("ws://localhost:9222");
+            await driver.StopAsync();
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+            TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that <c>await using (this.driver)</c> is reported on the receiver expression when the body does not stop the driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AwaitUsingStatement_WithThisFieldExpression_WithoutStopAsync_ReportsInfo()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new();
+
+                    public async Task TestMethod()
+                    {
+                        await using ({|#0:this.driver|})
+                        {
+                            await this.driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that <c>await using (holder.Driver)</c>, whose receiver is neither a simple identifier nor a <c>this.</c> member, is not tracked.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AwaitUsingStatement_WithOtherMemberAccessExpression_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class Holder
+                {
+                    public BiDiDriver Driver { get; } = new();
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(Holder holder)
+                    {
+                        await using (holder.Driver)
+                        {
+                            await holder.Driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
 }

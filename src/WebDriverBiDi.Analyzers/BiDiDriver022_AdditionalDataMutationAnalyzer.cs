@@ -137,19 +137,49 @@ public class BiDiDriver022_AdditionalDataMutationAnalyzer : DiagnosticAnalyzer
     {
         AssignmentExpressionSyntax assignment = (AssignmentExpressionSyntax)context.Node;
 
-        // We are looking for: someExpr[key] = value
-        if (assignment.Left is not ElementAccessExpressionSyntax elementAccess)
+        // The statement form: someExpr.AdditionalData[key] = value
+        if (assignment.Left is ElementAccessExpressionSyntax elementAccess)
         {
+            if (IsAdditionalDataProperty(context, elementAccess.Expression))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation(), ReceiverTypeName(context, elementAccess.Expression)));
+            }
+
             return;
         }
 
-        if (!IsAdditionalDataProperty(context, elementAccess.Expression))
+        // The two nested-initializer spellings inside an object initializer, which write into the
+        // get-only property's dictionary rather than assigning the property:
+        //   new P { AdditionalData = { ["key"] = value } }   (an indexer element)
+        //   new P { AdditionalData = { { "key", value } } }  (a collection element)
+        // Both arrive here as the outer `AdditionalData = { ... }` assignment. Each element is
+        // reported on its own, as the equivalent statement-form writes would be; the indexer
+        // elements are themselves assignments, but their left side is an implicit element access
+        // rather than an element access, so they fall through the test above without a report.
+        if (assignment.Left is IdentifierNameSyntax
+            && assignment.Right is InitializerExpressionSyntax elements
+            && IsAdditionalDataProperty(context, assignment.Left))
         {
-            return;
+            // An assignment whose value is an initializer only parses inside an object initializer.
+            string typeName = InitializedTypeName(context, (InitializerExpressionSyntax)assignment.Parent!);
+            foreach (ExpressionSyntax element in elements.Expressions)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule, element.GetLocation(), typeName));
+            }
         }
+    }
 
-        string typeName = ReceiverTypeName(context, elementAccess.Expression);
-        context.ReportDiagnostic(Diagnostic.Create(Rule, assignment.GetLocation(), typeName));
+    // Returns the name of the type an object initializer initializes: the created type for
+    // `new P { ... }`, or the member's type for a nested `Member = { ... }` initializer. An object
+    // initializer has one of those two parents, and both bind to a type here: the AdditionalData
+    // property inside it has already resolved to a library property, so the initialized type is a
+    // library type.
+    private static string InitializedTypeName(SyntaxNodeAnalysisContext context, InitializerExpressionSyntax objectInitializer)
+    {
+        ExpressionSyntax initialized = objectInitializer.Parent is BaseObjectCreationExpressionSyntax creation
+            ? creation
+            : ((AssignmentExpressionSyntax)objectInitializer.Parent!).Left;
+        return context.SemanticModel.GetTypeInfo(initialized).Type!.Name;
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)

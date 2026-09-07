@@ -151,11 +151,24 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     {
         foreach (LocalDeclarationStatementSyntax declaration in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<LocalDeclarationStatementSyntax>())
         {
-            // A using declaration is only permitted directly inside a block (CS8647 otherwise), and
-            // the implicit disposal happens at the end of that block, so every statement after the
-            // declaration in the block runs before it. Code that violates the placement rule has no
-            // well-defined scope and is skipped.
-            if (declaration.AwaitKeyword.IsKind(SyntaxKind.None) || declaration.UsingKeyword.IsKind(SyntaxKind.None) || declaration.Parent is not BlockSyntax block)
+            if (declaration.AwaitKeyword.IsKind(SyntaxKind.None) || declaration.UsingKeyword.IsKind(SyntaxKind.None))
+            {
+                continue;
+            }
+
+            // A using declaration is only permitted directly inside a block, or as a top-level
+            // statement (CS8647 otherwise), and the implicit disposal happens at the end of that
+            // block or program, so every statement after the declaration in it runs before the
+            // disposal. Code that violates the placement rule has no well-defined scope and is
+            // skipped.
+            IEnumerable<StatementSyntax>? scope = declaration.Parent switch
+            {
+                BlockSyntax block => block.Statements.SkipWhile(s => s != declaration).Skip(1),
+                GlobalStatementSyntax { Parent: CompilationUnitSyntax compilationUnit } => AnalyzerSymbolHelpers.GetTopLevelStatements(compilationUnit).SkipWhile(s => s != declaration).Skip(1),
+                _ => null,
+            };
+
+            if (scope is null)
             {
                 continue;
             }
@@ -166,7 +179,6 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                 continue;
             }
 
-            IEnumerable<StatementSyntax> scope = block.Statements.SkipWhile(s => s != declaration).Skip(1);
             foreach (VariableDeclaratorSyntax declarator in declaration.Declaration.Variables)
             {
                 yield return (declarator.Identifier.GetLocation(), declarator.Identifier.Text, scope);
@@ -190,9 +202,11 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                     }
                 }
             }
-            else if (usingStatement.Expression is IdentifierNameSyntax identifier && AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(identifier).Type))
+            else if (usingStatement.Expression is { } expression
+                && GetReceiverName(expression) is string receiverName
+                && AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(expression).Type))
             {
-                yield return (identifier.GetLocation(), identifier.Identifier.Text, [usingStatement.Statement]);
+                yield return (expression.GetLocation(), receiverName, [usingStatement.Statement]);
             }
         }
     }
@@ -201,10 +215,37 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     {
         return statements.Any(s => s.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && ma.Name.Identifier.ValueText == "StopAsync"
-                && ma.Expression is IdentifierNameSyntax id
-                && id.Identifier.Text == variableName));
+            .Any(invocation => IsStopAsyncOn(invocation, variableName)));
+    }
+
+    /// <summary>
+    /// Determines whether an invocation is <c>StopAsync()</c> on the named driver.
+    /// </summary>
+    /// <param name="invocation">The invocation.</param>
+    /// <param name="variableName">The driver's name, as <see cref="GetReceiverName"/> reports it.</param>
+    /// <returns><see langword="true"/> if the invocation stops the driver; otherwise <see langword="false"/>.</returns>
+    private static bool IsStopAsyncOn(InvocationExpressionSyntax invocation, string variableName)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax memberAccess
+            && memberAccess.Name.Identifier.ValueText == "StopAsync"
+            && GetReceiverName(memberAccess.Expression) == variableName;
+    }
+
+    /// <summary>
+    /// Gets the name a driver receiver is held under: <c>driver</c> for both <c>driver</c> and
+    /// <c>this.driver</c>, so a field that is stopped and disposed through <c>this.</c> (the spelling
+    /// StyleCop's SA1101 enforces) is correlated the same way a local is.
+    /// </summary>
+    /// <param name="receiver">The receiver expression.</param>
+    /// <returns>The name, or <see langword="null"/> when the receiver is neither a simple identifier nor a <c>this.</c> member.</returns>
+    private static string? GetReceiverName(ExpressionSyntax receiver)
+    {
+        return receiver switch
+        {
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } memberAccess => memberAccess.Name.Identifier.ValueText,
+            _ => null,
+        };
     }
 
     /// <summary>
@@ -275,12 +316,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
     private static string? GetDriverVariableName(MemberAccessExpressionSyntax memberAccess)
     {
-        if (memberAccess.Expression is IdentifierNameSyntax identifier)
-        {
-            return identifier.Identifier.Text;
-        }
-
-        return null;
+        return GetReceiverName(memberAccess.Expression);
     }
 
     private static bool HasStopAsyncBefore(
@@ -326,10 +362,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
     {
         return scope.DescendantNodes(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<InvocationExpressionSyntax>()
-            .Any(invocation => invocation.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.ValueText == "StopAsync"
-                && memberAccess.Expression is IdentifierNameSyntax identifier
-                && identifier.Identifier.Text == variableName);
+            .Any(invocation => IsStopAsyncOn(invocation, variableName));
     }
 
     private static SyntaxNode GetContainingBlock(SyntaxNode node)
@@ -368,14 +401,6 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
         }
 
         // Look for StopAsync calls on the same variable in all statements before DisposeAsync.
-        return statements
-            .TakeWhile(s => s != disposeStatement)
-            .Any(s => s.DescendantNodes()
-                .OfType<InvocationExpressionSyntax>()
-                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                    && ma.Name.Identifier.ValueText == "StopAsync"
-                    && ma.Expression is IdentifierNameSyntax id
-                    && id.Identifier.Text == variableName));
+        return ContainsStopAsync(statements.TakeWhile(s => s != disposeStatement), variableName);
     }
-
 }

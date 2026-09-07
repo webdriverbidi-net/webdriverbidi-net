@@ -79,6 +79,12 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
             }
         }
 
+        // A tracked object handed to a method outside the library may be configured by that method
+        // (Configure(parameters) before the command is sent), which this rule cannot see; the
+        // Warning severity prefers a missed report to accusing code that does configure the object.
+        // Passing it to a library method — the command that sends it — is not configuration.
+        MarkVariablesPassedOutsideLibrary(context.Node, semanticModel, trackedVariables);
+
         // Report diagnostics for variables that were never assigned properties
         foreach (KeyValuePair<string, VariableState> kvp in trackedVariables)
         {
@@ -146,6 +152,31 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 CreateDiagnosticProperties(type.Name, resetProperty.PropertyName, resetProperty.DeclaringTypeName),
                 type.Name,
                 resetProperty.PropertyName));
+        }
+    }
+
+    private static void MarkVariablesPassedOutsideLibrary(
+        SyntaxNode node,
+        SemanticModel semanticModel,
+        Dictionary<string, VariableState> trackedVariables)
+    {
+        foreach (ArgumentSyntax argument in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<ArgumentSyntax>())
+        {
+            // An indexer argument (dictionary[parameters]) has a bracketed argument list and hands
+            // the object to nothing that could configure it.
+            if (argument.Expression is not IdentifierNameSyntax identifier
+                || !trackedVariables.TryGetValue(identifier.Identifier.ValueText, out VariableState? state)
+                || argument.Parent is not ArgumentListSyntax argumentList)
+            {
+                continue;
+            }
+
+            // An unresolved callee, or one declared outside the library, may configure the object.
+            IMethodSymbol? callee = semanticModel.GetSymbolInfo(argumentList.Parent!).Symbol as IMethodSymbol;
+            if (callee is null || !AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(callee.ContainingType))
+            {
+                state.HasPropertyAssignment = true;
+            }
         }
     }
 

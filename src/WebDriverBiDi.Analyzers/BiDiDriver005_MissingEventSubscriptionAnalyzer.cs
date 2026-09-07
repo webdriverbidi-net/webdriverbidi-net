@@ -64,36 +64,32 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         // Find all AddObserver calls on module events
         System.Collections.Generic.List<(InvocationExpressionSyntax Invocation, string EventName)> addObserverCalls = [];
 
-        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
+        // GetBodyDescendantNodes covers block bodies, expression bodies, and top-level programs alike.
+        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node).OfType<InvocationExpressionSyntax>())
         {
-            System.Collections.Generic.IEnumerable<InvocationExpressionSyntax> invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
-
-            foreach (InvocationExpressionSyntax invocation in invocations)
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
             {
-                if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
-                // whose member name is not the one this pass cares about. The bound symbol's name is
-                // therefore already known, so only the null (unresolved) case needs re-checking.
-                if (memberAccess.Name.Identifier.ValueText != "AddObserver")
-                {
-                    continue;
-                }
+            // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
+            // whose member name is not the one this pass cares about. The bound symbol's name is
+            // therefore already known, so only the null (unresolved) case needs re-checking.
+            if (memberAccess.Name.Identifier.ValueText != "AddObserver")
+            {
+                continue;
+            }
 
-                IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                if (methodSymbol == null)
-                {
-                    continue;
-                }
+            IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            if (methodSymbol == null)
+            {
+                continue;
+            }
 
-                // Check if AddObserver is being called on a Module's ObservableEvent
-                if (IsModuleObservableEvent(context, memberAccess.Expression, out string? eventName))
-                {
-                    addObserverCalls.Add((invocation, eventName!));
-                }
+            // Check if AddObserver is being called on a Module's ObservableEvent
+            if (IsModuleObservableEvent(context, memberAccess.Expression, out string? eventName))
+            {
+                addObserverCalls.Add((invocation, eventName!));
             }
         }
 
@@ -172,33 +168,29 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        // Check if the root is a driver variable accessing a module
-        ExpressionSyntax current = expression;
-        while (current is MemberAccessExpressionSyntax memberAccess)
+        // The event must be reached through a module property of a driver: driver.Log.OnEntryAdded,
+        // where Log is a module-typed property and its receiver has the command executor type. The
+        // driver may be spelled any way that has that type — a local, a parameter, a field reached
+        // through `this`, a property of another object, or the result of a call.
+        if (expression is not MemberAccessExpressionSyntax eventAccess
+            || eventAccess.Expression is not MemberAccessExpressionSyntax moduleAccess)
         {
-            current = memberAccess.Expression;
+            return false;
         }
 
-        if (current is IdentifierNameSyntax identifier)
+        if (context.SemanticModel.GetSymbolInfo(moduleAccess).Symbol is not IPropertySymbol moduleProperty || !IsModuleType(moduleProperty.Type))
         {
-            ITypeSymbol? identifierType = context.SemanticModel.GetTypeInfo(identifier).Type;
-            if (identifierType != null && AnalyzerSymbolHelpers.IsCommandExecutorType(identifierType))
-            {
-                // Verify the expression goes through a Module property
-                if (expression is MemberAccessExpressionSyntax ma)
-                {
-                    ISymbol? firstSymbol = context.SemanticModel.GetSymbolInfo(ma.Expression).Symbol;
-                    if (firstSymbol is IPropertySymbol propertySymbol && IsModuleType(propertySymbol.Type))
-                    {
-                        // Extract the EventName from the ObservableEvent property
-                        eventName = GetEventNameFromProperty(context, expression);
-                        return eventName != null;
-                    }
-                }
-            }
+            return false;
         }
 
-        return false;
+        if (!AnalyzerSymbolHelpers.IsCommandExecutorType(context.SemanticModel.GetTypeInfo(moduleAccess.Expression).Type))
+        {
+            return false;
+        }
+
+        // Extract the EventName from the ObservableEvent property
+        eventName = GetEventNameFromProperty(context, expression);
+        return eventName != null;
     }
 
     private static string? GetEventNameFromProperty(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
@@ -234,59 +226,54 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         subscribedEvents = [];
         amendableEventsArgument = null;
 
-        foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(node))
+        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
         {
-            System.Collections.Generic.IEnumerable<InvocationExpressionSyntax> invocations = statement.DescendantNodes().OfType<InvocationExpressionSyntax>();
-
-            foreach (InvocationExpressionSyntax invocation in invocations)
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
             {
-                if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
-                // whose member name is not the one this pass cares about. The bound symbol's name is
-                // therefore already known, so only its containing type needs checking below.
-                if (memberAccess.Name.Identifier.ValueText != "SubscribeAsync")
-                {
-                    continue;
-                }
+            // Cheap syntactic pre-filter before the expensive semantic bind: skip any invocation
+            // whose member name is not the one this pass cares about. The bound symbol's name is
+            // therefore already known, so only its containing type needs checking below.
+            if (memberAccess.Name.Identifier.ValueText != "SubscribeAsync")
+            {
+                continue;
+            }
 
-                IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                if (methodSymbol == null)
-                {
-                    continue;
-                }
+            IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            if (methodSymbol == null)
+            {
+                continue;
+            }
 
-                // Check if this is Session.SubscribeAsync
-                if (IsSessionModule(methodSymbol.ContainingType))
+            // Check if this is Session.SubscribeAsync
+            if (IsSessionModule(methodSymbol.ContainingType))
+            {
+                // Extract event names from the SubscribeCommandParameters argument
+                if (invocation.ArgumentList.Arguments.Count > 0)
                 {
-                    // Extract event names from the SubscribeCommandParameters argument
-                    if (invocation.ArgumentList.Arguments.Count > 0)
+                    ExpressionSyntax firstArg = invocation.ArgumentList.Arguments[0].Expression;
+                    if (firstArg is not BaseObjectCreationExpressionSyntax objectCreation)
                     {
-                        ExpressionSyntax firstArg = invocation.ArgumentList.Arguments[0].Expression;
-                        if (firstArg is not BaseObjectCreationExpressionSyntax objectCreation)
-                        {
-                            // The subscription parameters are not created inline; they are held
-                            // in a variable (and possibly built up before the call), so the set
-                            // of subscribed event names cannot be determined from this call
-                            // site. Treat the whole set as unknowable so the caller suppresses
-                            // its warnings: a warning about missing code must prefer a false
-                            // negative over a false positive.
-                            return false;
-                        }
-
-                        if (!ExtractEventNamesFromSubscribeParameters(context, objectCreation, subscribedEvents))
-                        {
-                            // At least one subscribed event name could not be determined, so the
-                            // subscription set is incomplete. Reporting from an incomplete set would
-                            // warn about an event that is in fact subscribed.
-                            return false;
-                        }
-
-                        amendableEventsArgument ??= GetAmendableEventsArgument(objectCreation);
+                        // The subscription parameters are not created inline; they are held
+                        // in a variable (and possibly built up before the call), so the set
+                        // of subscribed event names cannot be determined from this call
+                        // site. Treat the whole set as unknowable so the caller suppresses
+                        // its warnings: a warning about missing code must prefer a false
+                        // negative over a false positive.
+                        return false;
                     }
+
+                    if (!ExtractEventNamesFromSubscribeParameters(context, objectCreation, subscribedEvents))
+                    {
+                        // At least one subscribed event name could not be determined, so the
+                        // subscription set is incomplete. Reporting from an incomplete set would
+                        // warn about an event that is in fact subscribed.
+                        return false;
+                    }
+
+                    amendableEventsArgument ??= GetAmendableEventsArgument(objectCreation);
                 }
             }
         }
