@@ -8,9 +8,13 @@ public class TestPipeConnection : PipeConnection
     private readonly ObservableEventInvocable<WebDriverBiDiEventArgs> dataSendStartingInvocable = new("connection.dataSendStaring");
     private int receiveCallCount;
 
-    public TestPipeConnection(IPipeServerProcessProvider pipeServerProcessProvider)
+    public TestPipeConnection(IPipeServerProcessProvider pipeServerProcessProvider, TimeProvider? timeProvider = null)
         : base(pipeServerProcessProvider)
     {
+        if (timeProvider is not null)
+        {
+            this.TimeProvider = timeProvider;
+        }
     }
 
     public bool BypassDataSend { get; set; } = true;

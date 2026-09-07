@@ -1708,13 +1708,14 @@ public class TransportTests
         // as disposal behaved before the serialization was added.
         List<LogMessageEventArgs> logs = [];
         TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new()
         {
             StartBarrier = startBarrier,
         };
-        TestTransport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(100),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.OnLogMessage.AddObserver(e =>
         {
@@ -1727,7 +1728,10 @@ public class TransportTests
         Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         Assert.Equal(TransportState.Connecting, transport.State);
 
-        await transport.DisposeAsync();
+        // The shutdown timeout is elapsed on the virtual clock as soon as disposal arms it.
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(disposeTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disposeTask;
 
         Assert.True(transport.IsDisposed);
         lock (logs)
@@ -2192,10 +2196,11 @@ public class TransportTests
         TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<LogMessageEventArgs> logs = [];
 
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -2222,7 +2227,10 @@ public class TransportTests
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        // The shutdown timeout is elapsed on the virtual clock as soon as the disconnect arms it.
+        Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(disconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disconnectTask;
 
         Assert.Contains(logs,
             log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown")
@@ -2242,10 +2250,11 @@ public class TransportTests
         TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<LogMessageEventArgs> logs = [];
 
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -2277,7 +2286,10 @@ public class TransportTests
         // so the queue can never drain during shutdown.
         await connection.RaiseDataReceivedEventAsync(json);
 
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        // The shutdown timeout is elapsed on the virtual clock as soon as the disconnect arms it.
+        Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(disconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disconnectTask;
 
         Assert.Contains(logs,
             log => log.Message.Contains("Timed out waiting for message writer to complete during shutdown")
@@ -4043,10 +4055,11 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         int eventCount = 0;
 
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -4082,7 +4095,10 @@ public class TransportTests
 
         await connection.RaiseRemoteDisconnectedEventAsync();
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        // The shutdown timeout is elapsed on the virtual clock as soon as the reconnect arms it.
+        Task reconnectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await reconnectTask;
 
         Assert.Contains(logs,
             log => log.Message.Contains("Timed out waiting for message processing of the previous connection to complete before reconnecting")
@@ -4110,10 +4126,11 @@ public class TransportTests
         TaskCompletionSource staleMessageProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int eventCount = 0;
 
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -4154,7 +4171,9 @@ public class TransportTests
 
         // The reader is still stuck in the handler, so this reconnect times out waiting for it and
         // installs a new queue while the old one still holds an unread message.
-        await transport.ConnectAsync("ws:localhost", cancellationToken).WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        Task reconnectTask = transport.ConnectAsync("ws:localhost", cancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await reconnectTask;
         Assert.Equal(0, transport.IncomingQueueDepth);
 
         // Releasing the handler lets the previous connection's reader drain that unread message.
@@ -4206,10 +4225,11 @@ public class TransportTests
         List<string> logMessages = [];
         TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        TestTransport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(500),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
             MessageProcessingStarted = () => processingReached.TrySetResult(),
             MessageProcessingGate = () => gate.Task,
         };
@@ -4231,7 +4251,10 @@ public class TransportTests
         await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.RaiseRemoteDisconnectedEventAsync();
 
-        await transport.DisposeAsync();
+        // The shutdown timeout is elapsed on the virtual clock as soon as disposal arms it.
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(disposeTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disposeTask;
 
         lock (logMessages)
         {

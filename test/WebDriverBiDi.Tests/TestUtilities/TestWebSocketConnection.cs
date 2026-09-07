@@ -13,6 +13,14 @@ public class TestWebSocketConnection : WebSocketConnection
     private int receiveCallCount;
     private int stopCallCount;
 
+    public TestWebSocketConnection(TimeProvider? timeProvider = null)
+    {
+        if (timeProvider is not null)
+        {
+            this.TimeProvider = timeProvider;
+        }
+    }
+
     public bool BypassStart { get; set; } = true;
 
     public bool BypassStop { get; set; } = true;

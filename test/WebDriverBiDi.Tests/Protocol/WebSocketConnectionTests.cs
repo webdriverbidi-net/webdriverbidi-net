@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Protocol;
 
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -67,11 +66,18 @@ public class WebSocketConnectionTests : IAsyncDisposable
             portFinder.Stop();
         }
 
-        WebSocketConnection connection = new()
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
-            StartupTimeout = TimeSpan.FromMilliseconds(50)
+            BypassStart = false,
+            StartupTimeout = TimeSpan.FromMilliseconds(50),
         };
-        Assert.Contains($"{0.05} seconds", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync($"ws://127.0.0.1:{port}", TestContext.Current.CancellationToken))).Message);
+
+        // The startup budget is elapsed on the virtual clock as soon as the attempt arms it, whether
+        // the refused socket fails the attempt first or the deadline cancels it.
+        Task startTask = connection.StartAsync($"ws://127.0.0.1:{port}", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(startTask, connection.StartupTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        Assert.Contains($"{0.05} seconds", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await startTask)).Message);
     }
 
     [Fact]
@@ -81,25 +87,22 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // connection but never completes the handshake (or a black-holed host) must not hold
         // StartAsync open past StartupTimeout, so each attempt is bounded by the remaining budget.
         TimeSpan startupTimeout = TimeSpan.FromMilliseconds(200);
-        TestWebSocketConnection connection = new()
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
             BypassStart = false,
             StartupTimeout = startupTimeout,
             ConnectWebSocketOverride = (uri, token) => Task.Delay(Timeout.InfiniteTimeSpan, token),
         };
 
-        Stopwatch stopwatch = Stopwatch.StartNew();
-        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken));
-        stopwatch.Stop();
+        // The attempt can only end because its deadline, armed against the virtual clock, elapsed:
+        // no real time passes, and an attempt that was not bounded would hang here until the
+        // five-second guard inside AdvanceUntilCompletedAsync fired.
+        Task startTask = connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(startTask, startupTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        WebDriverBiDiTimeoutException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await startTask);
 
         Assert.Contains($"{0.2} seconds", exception.Message);
-
-        // The per-attempt deadline is a timer, which may fire a few milliseconds before this
-        // test's stopwatch reads the full timeout, so allow a small tolerance on the lower bound.
-        // The important assertion is the upper bound: the hanging attempt must not outlive the timeout.
-        TimeSpan lowerBound = startupTimeout - TimeSpan.FromMilliseconds(50);
-        Assert.True(stopwatch.Elapsed >= lowerBound, $"StartAsync returned after {stopwatch.Elapsed}, well before the startup timeout elapsed");
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"StartAsync took {stopwatch.Elapsed}; the hanging connect attempt was not bounded by StartupTimeout");
         Assert.False(connection.IsActive);
     }
 
@@ -163,19 +166,21 @@ public class WebSocketConnectionTests : IAsyncDisposable
         TimeSpan startupTimeout = TimeSpan.FromMilliseconds(100);
         TimeSpan attemptDuration = TimeSpan.FromMilliseconds(150);
         int attemptCount = 0;
-        TestWebSocketConnection connection = new()
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
             BypassStart = false,
             StartupTimeout = startupTimeout,
-            ConnectWebSocketOverride = async (uri, token) =>
+            ConnectWebSocketOverride = (uri, token) =>
             {
                 Interlocked.Increment(ref attemptCount);
 
-                // Deliberately ignores the attempt's own cancellation token, so the attempt
-                // outlives the startup budget and then fails the way a remote end that is not
-                // listening does, rather than being canceled by its deadline.
-                await Task.Delay(attemptDuration, TestContext.Current.CancellationToken);
-                throw new WebSocketException("Simulated connection failure after the startup budget elapsed");
+                // The attempt spends more than the whole budget on the virtual clock and deliberately
+                // ignores its own cancellation token (which that advance fires), so it outlives the
+                // startup budget and then fails the way a remote end that is not listening does,
+                // rather than being canceled by its deadline.
+                timeProvider.Advance(attemptDuration);
+                return Task.FromException(new WebSocketException("Simulated connection failure after the startup budget elapsed"));
             },
         };
 
@@ -699,12 +704,13 @@ public class WebSocketConnectionTests : IAsyncDisposable
         TaskCompletionSource<WebSocketReceiveResult> receiveLoopBlock = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource receiveHandlerEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        TestWebSocketConnection connection = new()
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
             BypassStart = false,
             BypassStop = false,
             BypassCloseClientWebSocket = true,
-            ShutdownTimeout = TimeSpan.FromMilliseconds(500),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
             ReceiveHandler = (buffer, cancellationToken, callCount) =>
             {
                 // Deliberately ignore the cancellation token so the receive loop stays blocked even
@@ -735,13 +741,11 @@ public class WebSocketConnectionTests : IAsyncDisposable
             // stopping, so the wait deterministically reaches the ShutdownTimeout bound.
             await receiveHandlerEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
+            // The shutdown timeout is elapsed on the virtual clock as soon as the stop arms it; a
+            // stop whose wait was not bounded by ShutdownTimeout would hang here until the
+            // five-second guard inside AdvanceUntilCompletedAsync fired.
             Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
-            Task settledTask = await Task.WhenAny(stopTask, Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
-            if (settledTask != stopTask)
-            {
-                Assert.Fail("StopAsync did not return within 5 seconds; the wait for the receive loop is not bounded by ShutdownTimeout.");
-            }
-
+            await timeProvider.AdvanceUntilCompletedAsync(stopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
             await stopTask;
 
             string[] logSnapshot;
@@ -1197,13 +1201,14 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await server.StartAsync();
 
         TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestWebSocketConnection connection = new()
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
             BypassStart = false,
             BypassStop = false,
             BypassDataSend = false,
             SendBarrier = sendBarrier,
-            DataTimeout = TimeSpan.FromMilliseconds(20),
+            DataTimeout = TimeSpan.FromSeconds(10),
         };
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
 
@@ -1216,9 +1221,17 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // Wait until the first send has acquired the semaphore and is blocked on the barrier,
         // then attempt a second send which must time out before the barrier releases.
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        Assert.Equal("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync("second data"u8.ToArray(), TestContext.Current.CancellationToken))).Message);
+        // The data timeout is elapsed on the virtual clock as soon as the second send arms it.
+        Task secondSendTask = connection.SendDataAsync("second data"u8.ToArray(), TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(secondSendTask, connection.DataTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        Assert.Equal("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await secondSendTask)).Message);
         sendBarrier.SetResult();
-        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The stop's own shutdown wait is also on the virtual clock, so elapse it the same way should
+        // the receive loop not end promptly.
+        Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(stopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await stopTask;
 
         // The first send may fault with a WebDriverBiDiConnectionException if StopAsync aborted
         // the WebSocket before the send completed. Observe the exception to prevent

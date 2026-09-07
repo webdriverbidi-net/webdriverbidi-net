@@ -75,6 +75,40 @@ internal static class TimeoutUtilities
     }
 
     /// <summary>
+    /// Creates a task that completes after the given delay, measured by the given
+    /// <see cref="TimeProvider"/>, so that a caller supplying a non-system provider (a test using
+    /// virtual time, say) controls when the delay elapses.
+    /// </summary>
+    /// <param name="timeProvider">The provider whose clock measures the delay.</param>
+    /// <param name="delay">The delay, or <see cref="Timeout.InfiniteTimeSpan"/> to wait only for cancellation.</param>
+    /// <param name="cancellationToken">A token that cancels the delay.</param>
+    /// <returns>A task that completes when the delay elapses, or is canceled when the token is.</returns>
+    public static Task DelayAsync(TimeProvider timeProvider, TimeSpan delay, CancellationToken cancellationToken)
+    {
+#if NETSTANDARD2_0
+        return timeProvider.Delay(delay, cancellationToken);
+#else
+        return Task.Delay(delay, timeProvider, cancellationToken);
+#endif
+    }
+
+    /// <summary>
+    /// Creates a <see cref="CancellationTokenSource"/> that cancels after the given delay, measured by
+    /// the given <see cref="TimeProvider"/>.
+    /// </summary>
+    /// <param name="timeProvider">The provider whose clock measures the delay.</param>
+    /// <param name="delay">The delay, or <see cref="Timeout.InfiniteTimeSpan"/> for a source that never cancels on its own.</param>
+    /// <returns>The cancellation token source; the caller disposes it.</returns>
+    public static CancellationTokenSource CreateCancellationTokenSource(TimeProvider timeProvider, TimeSpan delay)
+    {
+#if NETSTANDARD2_0
+        return timeProvider.CreateCancellationTokenSource(delay);
+#else
+        return new CancellationTokenSource(delay, timeProvider);
+#endif
+    }
+
+    /// <summary>
     /// Gets the portion of a timeout budget that remains after the time already spent against it.
     /// </summary>
     /// <param name="timeout">The total budget, or <see cref="Timeout.InfiniteTimeSpan"/> for an unbounded one.</param>

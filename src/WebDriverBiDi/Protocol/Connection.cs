@@ -253,6 +253,15 @@ public abstract class Connection : IAsyncDisposable
     protected ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new(LogMessageEventName);
 
     /// <summary>
+    /// Gets or sets the <see cref="TimeProvider"/> whose clock measures this connection's timeouts:
+    /// <see cref="StartupTimeout"/>, <see cref="ShutdownTimeout"/> and <see cref="DataTimeout"/>.
+    /// Defaults to <see cref="TimeProvider.System"/>. A derived type may substitute another, for
+    /// example to drive the timeouts with virtual time in a test, in the same way that
+    /// <see cref="ObservableEvent{T}"/> exposes its provider to derived types.
+    /// </summary>
+    protected TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
+    /// <summary>
     /// Gets a <see cref="SemaphoreSlim"/> to serialize sending data across the connection, ensuring sending data to be an atomic action.
     /// </summary>
     protected SemaphoreSlim DataSendSemaphore { get; } = new(1, 1);
@@ -314,7 +323,7 @@ public abstract class Connection : IAsyncDisposable
         // Only one send operation at a time can be active on a ClientWebSocket instance,
         // so we must synchronize send access to the socket in case multiple threads are
         // attempting to send commands or other data simultaneously.
-        if (!await this.DataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
+        if (!await this.WaitForSendAccessAsync(cancellationToken).ConfigureAwait(false))
         {
             throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
@@ -543,7 +552,7 @@ public abstract class Connection : IAsyncDisposable
         if (this.DataReceiveTask is not null)
         {
             using CancellationTokenSource shutdownDelayCancelTokenSource = new();
-            Task completedTask = await Task.WhenAny(this.DataReceiveTask, Task.Delay(this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
+            Task completedTask = await Task.WhenAny(this.DataReceiveTask, TimeoutUtilities.DelayAsync(this.TimeProvider, this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
             if (completedTask != this.DataReceiveTask)
             {
                 await this.LogAsync($"Timed out waiting for {this.ConnectionKind} connection receive loop to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -618,6 +627,44 @@ public abstract class Connection : IAsyncDisposable
         }
 
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Waits for exclusive send access, bounded by <see cref="DataTimeout"/> as measured by
+    /// <see cref="TimeProvider"/>.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns><see langword="true"/> if access was acquired; <see langword="false"/> if the timeout elapsed first.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <remarks>
+    /// The timeout is applied by canceling the wait rather than by racing it against a delay, so a
+    /// wait that is abandoned can never acquire the semaphore later and leave it held forever. A
+    /// zero timeout keeps its non-blocking meaning: the semaphore is taken only if it is free now.
+    /// </remarks>
+    private async Task<bool> WaitForSendAccessAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (this.DataSendSemaphore.Wait(0))
+        {
+            return true;
+        }
+
+        if (this.DataTimeout == TimeSpan.Zero)
+        {
+            return false;
+        }
+
+        using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.DataTimeout);
+        using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+        try
+        {
+            await this.DataSendSemaphore.WaitAsync(linkedTokenSource.Token).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 
     private void ReportReceiveLoopFault(Task faultedTask, object? state)

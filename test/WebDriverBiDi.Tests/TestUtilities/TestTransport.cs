@@ -13,8 +13,12 @@ public class TestTransport : Transport
     private int concurrentConnectLockAcquisitions = 0;
     private Func<Task>? afterAcquireLockAsyncCallback;
 
-    public TestTransport(WebSocketConnection connection) : base(connection)
+    public TestTransport(WebSocketConnection connection, TimeProvider? timeProvider = null) : base(connection)
     {
+        if (timeProvider is not null)
+        {
+            this.TimeProvider = timeProvider;
+        }
     }
 
     public long LastTestCommandId => this.LastCommandId;
