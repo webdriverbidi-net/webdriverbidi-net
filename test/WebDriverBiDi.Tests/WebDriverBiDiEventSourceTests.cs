@@ -26,12 +26,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestConnectionOpeningEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-123", "ws://localhost:9222");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(1, evt.EventId);
         Assert.Equal("ConnectionOpening", evt.EventName);
@@ -45,12 +44,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestConnectionOpenedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened("conn-123", "ws://localhost:9222");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(2, evt.EventId);
         Assert.Equal("ConnectionOpened", evt.EventName);
@@ -60,12 +58,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestConnectionClosingEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing("conn-123", "Normal shutdown");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(3, evt.EventId);
         Assert.Equal("ConnectionClosing", evt.EventName);
@@ -77,12 +74,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestConnectionClosedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-123");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(4, evt.EventId);
         Assert.Equal("ConnectionClosed", evt.EventName);
@@ -92,12 +88,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestConnectionErrorEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.ConnectionError("conn-123", "Socket closed unexpectedly");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(5, evt.EventId);
         Assert.Equal("ConnectionError", evt.EventName);
@@ -109,12 +104,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestCommandSendingEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(6, evt.EventId);
         Assert.Equal("CommandSending", evt.EventName);
@@ -127,12 +121,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestCommandCompletedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(1, "session.status", 42);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(7, evt.EventId);
         Assert.Equal("CommandCompleted", evt.EventName);
@@ -146,12 +139,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestCommandTimeoutEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(8, evt.EventId);
         Assert.Equal("CommandTimeout", evt.EventName);
@@ -163,12 +155,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestCommandErrorEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.CommandError(1, "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(9, evt.EventId);
         Assert.Equal("CommandError", evt.EventName);
@@ -182,12 +173,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestEventReceivedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.EventReceived("browsingContext.navigationStarted");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(10, evt.EventId);
         Assert.Equal("EventReceived", evt.EventName);
@@ -199,12 +189,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestUnknownMessageReceivedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.Unknown, 256);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(13, evt.EventId);
         Assert.Equal("UnknownMessageReceived", evt.EventName);
@@ -217,12 +206,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestUnknownMessageReceivedEventEmittedWithSuccessCommandResponseMessage()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.CommandResponse, 256);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(13, evt.EventId);
         Assert.Equal("UnknownMessageReceived", evt.EventName);
@@ -235,12 +223,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestUnknownMessageReceivedEventEmittedWithCommandErrorMessage()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.ErrorResponse, 256);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(13, evt.EventId);
         Assert.Equal("UnknownMessageReceived", evt.EventName);
@@ -253,12 +240,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestUnknownMessageReceivedEventEmittedWithEventMessage()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(IncomingMessageKind.Event, 256);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(13, evt.EventId);
         Assert.Equal("UnknownMessageReceived", evt.EventName);
@@ -271,12 +257,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestProtocolErrorEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.ProtocolError("Invalid JSON", "{\"invalid");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(14, evt.EventId);
         Assert.Equal("ProtocolError", evt.EventName);
@@ -289,12 +274,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestEventHandlerErrorEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError("log.entryAdded", "NullReferenceException");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(15, evt.EventId);
         Assert.Equal("EventHandlerError", evt.EventName);
@@ -307,12 +291,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestPendingCommandCountEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(5);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(16, evt.EventId);
         Assert.Equal("PendingCommandCount", evt.EventName);
@@ -324,12 +307,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestTransportStartedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(17, evt.EventId);
         Assert.Equal("TransportStarted", evt.EventName);
@@ -339,12 +321,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestTransportStoppedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.TransportStopped("Normal shutdown");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(18, evt.EventId);
         Assert.Equal("TransportStopped", evt.EventName);
@@ -356,12 +337,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestCustomModuleRegisteredEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.CustomModuleRegistered("myModule");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(19, evt.EventId);
         Assert.Equal("CustomModuleRegistered", evt.EventName);
@@ -373,12 +353,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestCustomEventRegisteredEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered("myModule.myEvent", "MyEventType");
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(20, evt.EventId);
         Assert.Equal("CustomEventRegistered", evt.EventName);
@@ -391,12 +370,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestMessageStatisticsEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(100, 95, 80, 5);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(21, evt.EventId);
         Assert.Equal("MessageStatistics", evt.EventName);
@@ -411,12 +389,11 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestCommandSendFailedEventEmitted()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(1, "session.status", "System.InvalidOperationException", "Simulated send failure", 12);
-        listener.Dispose();
+        IReadOnlyList<EventWrittenEventArgs> events = listener.Events;
 
-        Assert.Single(listener.Events);
-        EventWrittenEventArgs evt = listener.Events[0];
+        EventWrittenEventArgs evt = Assert.Single(events);
 
         Assert.Equal(22, evt.EventId);
         Assert.Equal("CommandSendFailed", evt.EventName);
@@ -432,19 +409,23 @@ public class WebDriverBiDiEventSourceTests
     [Fact]
     public void TestEventSourceDoesNotEmitWhenDisabled()
     {
-        // Don't create a listener - EventSource should be disabled by default
-        // Just verify no exceptions are thrown
+        // No listener is created here, and every other test in this collection disposes its
+        // listener before completing, so the source must be disabled: the guard the library's
+        // hot paths rely on to skip payload formatting. Emitting while disabled must also be
+        // a no-op rather than an error.
+        Assert.False(WebDriverBiDiEventSource.RaiseEvent.IsEnabled());
+
         WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("test", "ws://test");
         WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "test");
         WebDriverBiDiEventSource.RaiseEvent.EventReceived("test.event");
 
-        // If we get here without exceptions, the test passes
+        Assert.False(WebDriverBiDiEventSource.RaiseEvent.IsEnabled());
     }
 
     [Fact]
     public void TestEventSourceRespectEventLevel()
     {
-        TestEventListener listener = new(EventLevel.Warning);
+        using TestEventListener listener = new(EventLevel.Warning);
 
         // These should not be captured (below Warning level)
         WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("test-respect-level", "ws://test-respect"); // Informational
@@ -453,8 +434,6 @@ public class WebDriverBiDiEventSourceTests
         // These should be captured (Warning and above)
         WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(9999, "test.respect.level", 5000); // Warning
         WebDriverBiDiEventSource.RaiseEvent.ConnectionError("test-respect-level", "error-respect-level"); // Error
-
-        listener.Dispose();
 
         // Should have captured at least the Warning and Error events we just emitted
         // Filter to events with our unique identifiers to avoid test interference
