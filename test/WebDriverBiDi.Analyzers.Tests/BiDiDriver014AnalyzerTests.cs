@@ -1055,4 +1055,126 @@ public class BiDiDriver014AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test, expected);
     }
 
+    /// <summary>
+    /// Tests that an object handed to a method outside the library before the command is sent is not reported: that method may configure it, which the rule cannot see.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_PassedToUserMethod_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        var parameters = new SetTimeZoneOverrideCommandParameters();
+                        Configure(parameters);
+                        await driver.Emulation.SetTimeZoneOverrideAsync(parameters);
+                    }
+
+                    private static void Configure(SetTimeZoneOverrideCommandParameters parameters)
+                    {
+                        parameters.TimeZone = "UTC";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that passing the object to the library command that sends it is not configuration, so a bare parameterless construction is still reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_PassedOnlyToLibraryCommand_ReportsDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        var parameters = {|#0:new SetTimeZoneOverrideCommandParameters()|};
+                        await driver.Emulation.SetTimeZoneOverrideAsync(parameters);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that an object handed to a call that does not resolve is not reported: the callee may configure it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_PassedToUnresolvedMethod_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var parameters = new SetTimeZoneOverrideCommandParameters();
+                        {|CS0103:Configure|}(parameters);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that using the object as an indexer argument, which hands it to nothing that could configure it, does not suppress the report.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_UsedAsIndexerArgument_ReportsDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(Dictionary<object, int> counts)
+                    {
+                        var parameters = {|#0:new SetTimeZoneOverrideCommandParameters()|};
+                        counts[parameters] = 1;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(testCode, expected0);
+    }
 }

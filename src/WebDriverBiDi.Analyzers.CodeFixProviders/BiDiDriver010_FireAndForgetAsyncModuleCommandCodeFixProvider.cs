@@ -44,7 +44,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandCodeFixProvider : Code
         // Only offer the fix where `await` is legal. Adding it inside a synchronous method would
         // replace one compile error's worth of trouble with another (CS4033), so a caller that has to
         // become async first is left to make that decision.
-        if (!IsInAsyncContext(invocation))
+        if (!CodeFixHelpers.IsInAsyncContext(invocation))
         {
             return;
         }
@@ -55,38 +55,6 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandCodeFixProvider : Code
                 createChangedDocument: c => AddAwaitAsync(context.Document, root, invocation, c),
                 equivalenceKey: "AwaitModuleCommand"),
             diagnostic);
-    }
-
-    /// <summary>
-    /// Determines whether <c>await</c> is legal at the given node's position.
-    /// </summary>
-    /// <param name="node">The invocation being fixed.</param>
-    /// <returns><see langword="true"/> if the enclosing function is asynchronous; otherwise <see langword="false"/>.</returns>
-    /// <remarks>
-    /// The nearest enclosing function decides, not any outer one: a synchronous lambda inside an
-    /// <c>async</c> method cannot await, and an <c>async</c> lambda inside a synchronous method can.
-    /// A top-level statement can always await, because the compiler generates an asynchronous entry
-    /// point for it.
-    /// </remarks>
-    private static bool IsInAsyncContext(SyntaxNode node)
-    {
-        SyntaxNode? enclosingFunction = node.Ancestors().FirstOrDefault(ancestor =>
-            ancestor is AnonymousFunctionExpressionSyntax
-                or MethodDeclarationSyntax
-                or LocalFunctionStatementSyntax
-                or GlobalStatementSyntax);
-
-        return enclosingFunction switch
-        {
-            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            MethodDeclarationSyntax method => method.Modifiers.Any(SyntaxKind.AsyncKeyword),
-            LocalFunctionStatementSyntax localFunction => localFunction.Modifiers.Any(SyntaxKind.AsyncKeyword),
-
-            // A top-level statement, for which the compiler generates an asynchronous entry point.
-            // Nothing else reaches here: the diagnostic fires only on a call standing alone as an
-            // expression statement, which is always inside one of these four.
-            _ => true,
-        };
     }
 
     private static Task<Document> AddAwaitAsync(

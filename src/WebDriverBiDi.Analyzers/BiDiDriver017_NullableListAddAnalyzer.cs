@@ -25,6 +25,12 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
     /// </summary>
     public const string DiagnosticId = "BIDI017";
 
+    /// <summary>
+    /// The key of the diagnostic property that carries the fully qualified name of the list's element
+    /// type, for the code fix to insert.
+    /// </summary>
+    public const string ElementTypeFullNamePropertyName = "ElementTypeFullName";
+
     private const string Category = "Usage";
 
     private static readonly LocalizableString Title = "Use ??= when adding to nullable list property";
@@ -124,11 +130,15 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         string propertyName = propertySymbol.Name;
         string elementTypeName = elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 
+        // The message names the element type minimally (Header); the code fix needs a name that
+        // resolves wherever the fix is applied, so it is also recorded fully qualified
+        // (global::WebDriverBiDi.Network.Header) for the fix to insert and let the host simplify.
         ImmutableDictionary<string, string?> properties = ImmutableDictionary.CreateRange(
             new KeyValuePair<string, string?>[]
             {
                 new("PropertyName", propertyName),
                 new("ElementTypeName", elementTypeName),
+                new(ElementTypeFullNamePropertyName, elementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
             });
 
         Diagnostic diagnostic = Diagnostic.Create(

@@ -1503,4 +1503,43 @@ public class BiDiDriver023AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that a command on a custom module whose name does not end in "Module" is reported: any type deriving from the library's Module base class is a module.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WithCommandOnModuleWithoutModuleSuffix_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class GoogleCdp : Module
+                {
+                    public GoogleCdp(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "goog:cdp";
+                    public Task<int> SendAsync() => Task.FromResult(1);
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, GoogleCdp cdp)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await {|#0:cdp.SendAsync()|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SendAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer>(testCode, expected0);
+    }
 }

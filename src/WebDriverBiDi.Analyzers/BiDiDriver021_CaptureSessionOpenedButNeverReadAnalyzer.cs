@@ -67,25 +67,30 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
         // Track whether any read was seen after the most recent StartCapturingTasks.
         Dictionary<string, bool> hasRead = [];
 
+        // Track whether a read appears inside a nested function (a lambda, an anonymous method, or
+        // a local function). Such a read runs when the delegate is invoked, which the textual walk
+        // cannot place, so it is not ordered against the StartCapturingTasks calls; it does mean
+        // the session is read, so it satisfies every StartCapturingTasks in the member.
+        Dictionary<string, bool> hasDeferredRead = [];
+
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            // The walk does not descend into the bodies of nested functions (lambdas, anonymous
-            // methods, local functions): their code runs when the delegate is invoked, not at its
-            // textual position, so a call there must not be judged against the capturing state at
-            // that position. Observer declarations are registered wherever they appear (including
-            // inside nested blocks such as try or using statements); the pre-order walk visits a
-            // declaration before any later use of the variable.
-            foreach (SyntaxNode node in statement.DescendantNodesAndSelf(descendIntoChildren: AnalyzerSymbolHelpers.DoesNotBeginNestedFunction))
+            // Observer declarations are registered wherever they appear: a local declaration
+            // statement, a using declaration, or the declaration of a classic using (T x = ...)
+            // statement, including inside nested blocks such as try statements. The pre-order walk
+            // visits a declaration before any later use of the variable.
+            foreach (SyntaxNode node in statement.DescendantNodesAndSelf())
             {
-                if (node is LocalDeclarationStatementSyntax localDecl)
+                if (node is VariableDeclarationSyntax declaration)
                 {
-                    foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
+                    foreach (VariableDeclaratorSyntax variable in declaration.Variables)
                     {
                         ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
                         if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
                         {
-                            pendingStartCapturingTasks[variable.Identifier.Text] = null;
-                            hasRead[variable.Identifier.Text] = false;
+                            pendingStartCapturingTasks[variable.Identifier.ValueText] = null;
+                            hasRead[variable.Identifier.ValueText] = false;
+                            hasDeferredRead[variable.Identifier.ValueText] = false;
                         }
                     }
 
@@ -113,10 +118,18 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                     continue;
                 }
 
+                // A call inside a nested function runs when the delegate is invoked, not at its
+                // textual position. A StartCapturingTasks there cannot be judged against the
+                // reads that follow it textually, so it is not tracked; a read there is recorded
+                // as deferred.
+                bool insideNestedFunction = invocation.Ancestors()
+                    .TakeWhile(ancestor => ancestor != statement)
+                    .Any(ancestor => !AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(ancestor));
+
                 string methodName = memberAccess.Name.Identifier.ValueText;
                 switch (methodName)
                 {
-                    case "StartCapturingTasks":
+                    case "StartCapturingTasks" when !insideNestedFunction:
                         pendingStartCapturingTasks[receiverName] = invocation.GetLocation();
                         hasRead[receiverName] = false;
                         break;
@@ -124,7 +137,15 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                     case "WaitForCapturedTasksAsync":
                     case "WaitForCapturedTasksCompleteAsync":
                     case "GetCapturedTasks":
-                        hasRead[receiverName] = true;
+                        if (insideNestedFunction)
+                        {
+                            hasDeferredRead[receiverName] = true;
+                        }
+                        else
+                        {
+                            hasRead[receiverName] = true;
+                        }
+
                         break;
                 }
             }
@@ -135,7 +156,7 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
         {
             string variableName = kvp.Key;
             Location? startLocation = kvp.Value;
-            if (startLocation is not null && !hasRead[variableName])
+            if (startLocation is not null && !hasRead[variableName] && !hasDeferredRead[variableName])
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, startLocation, variableName));
             }

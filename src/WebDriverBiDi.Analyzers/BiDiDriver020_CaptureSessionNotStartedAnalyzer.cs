@@ -71,11 +71,11 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     }
 
     private static void TrackObserverDeclarations(
-        LocalDeclarationStatementSyntax localDecl,
+        VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
         Dictionary<string, bool> capturingState)
     {
-        foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
+        foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
             ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
             if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
@@ -111,12 +111,14 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             {
                 ProcessSwitchStatement(switchStatement, context, capturingState);
             }
-            else if (descendant is LocalDeclarationStatementSyntax localDecl)
+            else if (descendant is VariableDeclarationSyntax declaration)
             {
-                // Register observer declarations wherever they appear (including inside nested
-                // blocks such as try or using statements); the pre-order walk visits the
-                // declaration before any later use of the variable.
-                TrackObserverDeclarations(localDecl, context.SemanticModel, capturingState);
+                // Register observer declarations wherever they appear: a local declaration
+                // statement, a using declaration, or the declaration of a classic
+                // using (T x = ...) statement, including inside nested blocks such as try
+                // statements. The pre-order walk visits the declaration before any later use
+                // of the variable.
+                TrackObserverDeclarations(declaration, context.SemanticModel, capturingState);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {

@@ -559,4 +559,44 @@ public class BiDiDriver013AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a long-running operation on a custom module whose name does not end in "Module" is
+    /// reported: any type deriving from the library's Module base class is a module.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NavigateAsync_OnModuleWithoutModuleSuffix_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class GoogleCdp : Module
+                {
+                    public GoogleCdp(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "goog:cdp";
+                    public Task NavigateAsync(string url) => Task.CompletedTask;
+                    public Task NavigateAsync(string url, CancellationToken cancellationToken) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(GoogleCdp cdp)
+                    {
+                        await {|#0:cdp.NavigateAsync("https://example.com")|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("NavigateAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
+    }
 }

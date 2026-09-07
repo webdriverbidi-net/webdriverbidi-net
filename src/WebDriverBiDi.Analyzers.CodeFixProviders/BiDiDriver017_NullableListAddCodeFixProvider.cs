@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Simplification;
 
 /// <summary>
 /// Code fix provider for BIDI017 that wraps the receiver in a null-coalescing assignment (??=)
@@ -44,7 +45,7 @@ public class BiDiDriver017_NullableListAddCodeFixProvider : CodeFixProvider
             .First();
 
         MemberAccessExpressionSyntax memberAccess = (MemberAccessExpressionSyntax)invocation.Expression;
-        string elementTypeName = diagnostic.Properties["ElementTypeName"]!;
+        string elementTypeName = diagnostic.Properties[BiDiDriver017_NullableListAddAnalyzer.ElementTypeFullNamePropertyName]!;
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -66,8 +67,11 @@ public class BiDiDriver017_NullableListAddCodeFixProvider : CodeFixProvider
         // Create: (receiver ??= new List<ElementType>()).Add(...)
         ExpressionSyntax receiver = memberAccess.Expression;
 
-        // Create new List<ElementType>()
-        TypeSyntax elementTypeSyntax = SyntaxFactory.ParseTypeName(elementTypeName);
+        // Create new List<ElementType>(). The element type arrives fully qualified
+        // (global::WebDriverBiDi.Network.Header), which resolves whether or not the file imports the
+        // type's namespace; the simplifier annotation lets the host reduce it to the shortest name
+        // that resolves at the insertion point.
+        TypeSyntax elementTypeSyntax = SyntaxFactory.ParseTypeName(elementTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
         ObjectCreationExpressionSyntax listCreation = SyntaxFactory.ObjectCreationExpression(
             SyntaxFactory.GenericName(
                 SyntaxFactory.Identifier("List"),

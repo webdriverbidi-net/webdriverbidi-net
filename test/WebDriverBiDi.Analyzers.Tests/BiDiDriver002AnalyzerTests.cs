@@ -1034,4 +1034,154 @@ public class BiDiDriver002AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that the same driver name declared in two sibling loop bodies does not crash the analyzer (the second declaration used to be added to an immutable dictionary that already held the key) and is tracked afresh in each body.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterEvent_DriverRedeclaredInSiblingLoopBodies_DoesNotCrashAndReportsOnlyStartedOne()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        foreach (string url in urls)
+                        {
+                            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                            await driver.StartAsync(url);
+                            {|#0:driver.RegisterEvent<string>("test.event", async (e) => { })|};
+                        }
+
+                        foreach (string url in urls)
+                        {
+                            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                            driver.RegisterEvent<string>("test.event", async (e) => { });
+                            await driver.StartAsync(url);
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver002_EventRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("test.event");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver002_EventRegistrationAfterStartAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that a registration in one switch section is not judged against a StartAsync in a different, mutually exclusive section.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterEvent_InSwitchSectionAfterStartInAnotherSection_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string browser)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        switch (browser)
+                        {
+                            case "chrome":
+                                await driver.StartAsync("ws://localhost:9222");
+                                break;
+                            case "firefox":
+                                driver.RegisterEvent<string>("test.event", async (e) => { });
+                                await driver.StartAsync("ws://localhost:9223");
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver002_EventRegistrationAfterStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a registration in a catch clause after a StartAsync in the try block is not reported: the start may have failed, leaving the driver not started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterEvent_InCatchAfterFailedStartInTry_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            driver.RegisterEvent<string>("test.event", async (e) => { });
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver002_EventRegistrationAfterStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a driver declared by a classic <c>await using (T x = ...)</c> statement is tracked like one declared by a local declaration statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterEvent_InClassicUsingStatementDeclaration_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using (BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30)))
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            {|#0:driver.RegisterEvent<string>("test.event", async (e) => { })|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver002_EventRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("test.event");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver002_EventRegistrationAfterStartAnalyzer>(testCode, expected0);
+    }
 }

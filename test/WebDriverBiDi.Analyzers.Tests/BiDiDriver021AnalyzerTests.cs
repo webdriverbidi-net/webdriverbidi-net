@@ -430,4 +430,104 @@ public class BiDiDriver021AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that an observer declared by a classic <c>using (T x = ...)</c> statement is tracked like one declared by a local declaration statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObserverDeclaredInClassicUsingStatement_StartWithoutRead_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        using (EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { }))
+                        {
+                            {|#0:observer.StartCapturingTasks()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that a read inside a lambda (for example one handed to <c>Task.Run</c>) counts as reading the session, wherever the lambda is written: it runs when invoked, which the textual walk cannot place.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartCapturing_ReadInsideLambda_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> before = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        Func<Task> readBefore = () => before.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        before.StartCapturingTasks();
+                        await readBefore();
+
+                        EventObserver<NavigationEventArgs> after = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        after.StartCapturingTasks();
+                        await Task.Run(() => after.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10)));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a StartCapturingTasks inside a lambda is not tracked: it runs when the delegate is invoked, so the reads that follow it textually cannot be judged against it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartCapturingInsideLambda_IsNotTracked()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        Action start = () => observer.StartCapturingTasks();
+                        start();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
+    }
 }

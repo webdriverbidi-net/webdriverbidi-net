@@ -907,4 +907,334 @@ public class BiDiDriver008CodeFixProviderTests
         Assert.Empty(actions);
     }
 
+    /// <summary>
+    /// Tests that a cast nested in a declaration's initializer is rewritten by moving the declaration, and the statements that use its variable, into the pattern block — rather than wrapping the declaration alone, which would leave the later use out of scope (CS0103). A local declared by a moved statement is tracked in turn, so a later use of it moves as well; a statement using none of them stays.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_CastNestedInDeclarationInitializer_KeepsDeclaredVariableInScope()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        dynamic sink = 1;
+                        string realm = ({|#0:(EvaluateResultSuccess)result|}).RealmId;
+                        int alongside = 1;
+                        Console.WriteLine(realm);
+                        sink.Consume(alongside);
+                        Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        dynamic sink = 1;
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            string realm = (success).RealmId;
+                            int alongside = 1;
+                            Console.WriteLine(realm);
+                            sink.Consume(alongside);
+                        }
+                        Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a declaration of several variables is rewritten as a nested conversion, so that no declarator is lost.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_CastInitializingOneOfSeveralDeclarators_KeepsEveryDeclarator()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        EvaluateResultSuccess first = {|#0:(EvaluateResultSuccess)result|}, second = null;
+                        Console.WriteLine(second);
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            EvaluateResultSuccess first = success, second = null;
+                            Console.WriteLine(second);
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast or <c>as</c> initializing a declaration placed directly in a switch section, which has no enclosing block whose statements could move, offers no action.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_DeclarationsDirectlyInSwitchSection_OfferNoCodeAction()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result, int mode)
+                    {
+                        switch (mode)
+                        {
+                            case 1:
+                                var success = {|#0:(EvaluateResultSuccess)result|};
+                                break;
+                            case 2:
+                                var maybe = {|#1:result as EvaluateResultSuccess|};
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+        DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+        testState.ExpectedDiagnostics.Add(expected1);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast inside an expression statement is rewritten by wrapping just that statement,
+    /// which declares nothing that later statements could use.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_CastInExpressionStatement_WrapsThatStatement()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        Console.WriteLine(({|#0:(EvaluateResultSuccess)result|}).RealmId);
+                        Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            Console.WriteLine((success).RealmId);
+                        }
+                        Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast initializing a for-loop variable, whose declaration is not a statement of a
+    /// block, offers no action.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_CastInForInitializer_OffersNoCodeAction()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        for (var success = {|#0:(EvaluateResultSuccess)result|}; success != null; success = null)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an <c>as</c> expression that does not directly initialize a single block-local
+    /// variable — a property initializer, a for-loop initializer, one of several declarators —
+    /// offers no action.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_AsExpressionsNotInitializingASingleLocal_OfferNoCodeAction()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static EvaluateResult result = null!;
+
+                    public EvaluateResultSuccess? Initialized { get; } = {|#0:result as EvaluateResultSuccess|};
+
+                    public void TestMethod()
+                    {
+                        for (var success = {|#1:result as EvaluateResultSuccess|}; success != null; success = null)
+                        {
+                        }
+
+                        EvaluateResultSuccess? first = {|#2:result as EvaluateResultSuccess|}, second = first;
+                        Console.WriteLine(second);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected2 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(2)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+        testState.ExpectedDiagnostics.Add(expected1);
+        testState.ExpectedDiagnostics.Add(expected2);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }
