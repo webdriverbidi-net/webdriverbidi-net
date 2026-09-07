@@ -305,11 +305,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         Task[] collectedTasks = new Task[count];
         int currentCaptureCount = 0;
 
-#if NETSTANDARD2_0
-        using CancellationTokenSource timeoutCancellationTokenSource = this.timeProvider.CreateCancellationTokenSource(timeout);
-#else
-        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout, this.timeProvider);
-#endif
+        using CancellationTokenSource timeoutCancellationTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.timeProvider, timeout);
         using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
         Channel<CapturedTask> channel;
@@ -502,11 +498,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
                 // The delay must be created against this observer's TimeProvider, matching the
                 // capture phase above, so that both phases of the wait are controllable with
                 // virtual time (for example, by a test using a fake provider).
-#if NETSTANDARD2_0
-                Task cancellationTask = this.timeProvider.Delay(remainingTime, linkedTokenSource.Token);
-#else
-                Task cancellationTask = Task.Delay(remainingTime, this.timeProvider, linkedTokenSource.Token);
-#endif
+                Task cancellationTask = TimeoutUtilities.DelayAsync(this.timeProvider, remainingTime, linkedTokenSource.Token);
                 Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
                 if (completedTask == cancellationTask)
                 {

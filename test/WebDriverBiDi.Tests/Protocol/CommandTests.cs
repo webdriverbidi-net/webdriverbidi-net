@@ -200,9 +200,15 @@ public class CommandTests
     public async Task TestWaitForCompletionReturnsFalseOnTimeout()
     {
         TestCommandParameters commandParams = new TestCommandParameters("module.command");
-        Command command = new(1, commandParams);
+        FakeTimeProvider timeProvider = new();
+        Command command = new(1, commandParams, timeProvider);
 
-        bool completed = await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
+        // The wait arms its timer against the provider before its first suspension, so advancing
+        // afterwards elapses the timeout without any real time passing.
+        TimeSpan timeout = TimeSpan.FromSeconds(10);
+        Task<bool> waitTask = command.WaitForCompletionAsync(timeout, TestContext.Current.CancellationToken);
+        timeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
+        bool completed = await waitTask;
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
 
         Assert.False(completed);
@@ -210,6 +216,12 @@ public class CommandTests
         Assert.Null(commandResult);
         Assert.Null(command.ThrownException);
         Assert.False(command.IsCanceled);
+    }
+
+    [Fact]
+    public void TestCannotCreateCommandWithNullTimeProvider()
+    {
+        Assert.Throws<ArgumentNullException>(() => new Command(1, new TestCommandParameters("module.command"), null!));
     }
 
     [Fact]

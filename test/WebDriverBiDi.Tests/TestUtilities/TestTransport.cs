@@ -115,14 +115,14 @@ public class TestTransport : Transport
 
         if (this.ShouldCancelCommand)
         {
-            Command returnedCommand = new Command(this.LastCommandId, commandParameters);
+            Command returnedCommand = new(this.LastCommandId, commandParameters, this.TimeProvider);
             returnedCommand.Cancel();
             return returnedCommand;
         }
 
         if (this.ReturnCustomValue)
         {
-            Command returnedCommand = new(this.LastCommandId, commandParameters);
+            Command returnedCommand = new(this.LastCommandId, commandParameters, this.TimeProvider);
             if (this.CustomReturnValue is null)
             {
                 returnedCommand.SetResult(null!);

@@ -19,14 +19,33 @@ public class Command
 {
     private readonly Stopwatch commandStopwatch = new();
     private readonly TaskCompletionSource<CommandResult> taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TimeProvider timeProvider;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Command" /> class whose completion timeout is
+    /// measured by <see cref="TimeProvider.System"/>.
+    /// </summary>
+    /// <param name="commandId">The ID of the command.</param>
+    /// <param name="commandData">The settings for the command, including parameters.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
+    public Command(long commandId, CommandParameters commandData)
+        : this(commandId, commandData, TimeProvider.System)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Command" /> class.
     /// </summary>
     /// <param name="commandId">The ID of the command.</param>
     /// <param name="commandData">The settings for the command, including parameters.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
-    public Command(long commandId, CommandParameters commandData)
+    /// <param name="timeProvider">
+    /// The <see cref="TimeProvider"/> whose clock measures the timeout passed to
+    /// <see cref="WaitForCompletionAsync"/>. A <see cref="Transport"/> passes its own provider, so a
+    /// transport whose waits run on virtual time (in a test, say) times its commands out on that same
+    /// clock. <see cref="ElapsedMilliseconds"/> is a diagnostic measured against real time regardless.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when the command parameters or the time provider are null.</exception>
+    public Command(long commandId, CommandParameters commandData, TimeProvider timeProvider)
     {
         if (commandData is null)
         {
@@ -36,6 +55,7 @@ public class Command
         this.CommandId = commandId;
         this.CommandParameters = commandData;
         this.CommandName = commandData.MethodName;
+        this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider), "Time provider must not be null");
     }
 
     /// <summary>
@@ -133,7 +153,7 @@ public class Command
         // additional CancellationTokenSource is necessary to be able to cancel
         // the timeout task.
         using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        Task timeoutTask = Task.Delay(timeout, linkedTokenSource.Token);
+        Task timeoutTask = TimeoutUtilities.DelayAsync(this.timeProvider, timeout, linkedTokenSource.Token);
         Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, timeoutTask).ConfigureAwait(false);
         bool commandTaskCompleted = completedTask == this.taskCompletionSource.Task;
         if (commandTaskCompleted)

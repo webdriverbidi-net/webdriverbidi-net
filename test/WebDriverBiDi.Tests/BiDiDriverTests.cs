@@ -538,11 +538,13 @@ public class BiDiDriverTests
         // again, because the test connection never answers it).
         TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         bool unknownMessageReceived = false;
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        TestTransport transport = new(connection, timeProvider);
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1), transport)
+        TimeSpan commandTimeout = TimeSpan.FromSeconds(10);
+        await using BiDiDriver driver = new(commandTimeout, transport)
         {
             UnknownMessageBehavior = TransportErrorBehavior.Terminate,
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
@@ -557,14 +559,19 @@ public class BiDiDriverTests
         });
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken));
+        // The command timeout is elapsed on the virtual clock as soon as the command arms it.
+        Task firstCommandTask = driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(firstCommandTask, commandTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await firstCommandTask);
 
         string lateResponse = """{"type":"success","id":1,"result":{"parameterName":"parameterValue"}}""";
         await connection.RaiseDataReceivedEventAsync(lateResponse);
         await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.False(unknownMessageReceived);
-        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken));
+        Task secondCommandTask = driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(secondCommandTask, commandTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(async () => await secondCommandTask);
     }
 
     [Fact]
