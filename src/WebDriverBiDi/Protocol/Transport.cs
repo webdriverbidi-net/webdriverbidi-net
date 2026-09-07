@@ -908,8 +908,10 @@ public class Transport : IAsyncDisposable
     /// </remarks>
     protected virtual Command CreateCommand(CommandParameters commandData)
     {
+        // The command times out on this transport's clock, so a transport running on virtual time
+        // (in a test, say) times its commands out on that same clock.
         long commandId = this.GetNextCommandId();
-        Command command = new(commandId, commandData);
+        Command command = new(commandId, commandData, this.TimeProvider);
         return command;
     }
 

@@ -1066,4 +1066,84 @@ public class PipeConnectionTests
 
         public Process? PipeServerProcess => this.ReturnNull ? null : this.inner.PipeServerProcess;
     }
+
+    [Fact]
+    public async Task TestSendWithZeroDataTimeoutFailsImmediatelyWhileAnotherSendIsInProgress()
+    {
+        // A zero DataTimeout keeps its non-blocking meaning: send access is taken only if it is
+        // free at that instant, so a send that finds another in progress fails at once, without
+        // arming any timer.
+        using TestPipeServer testPipeServer = new();
+        TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestPipeConnection connection = new(testPipeServer, timeProvider)
+        {
+            BypassDataSend = false,
+            SendBarrier = sendBarrier,
+            DataTimeout = TimeSpan.Zero,
+        };
+
+        TaskCompletionSource firstSendStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.OnDataSendStarting.AddObserver(e => firstSendStarted.TrySetResult());
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        Task firstSendTask = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        await firstSendStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken));
+        Assert.Equal(0, timeProvider.TimerCount);
+
+        sendBarrier.SetResult();
+        testPipeServer.Stop();
+        try
+        {
+            await firstSendTask;
+        }
+        catch (WebDriverBiDiConnectionException)
+        {
+        }
+    }
+
+    [Fact]
+    public async Task TestSendWaitsForInProgressSendToFinish()
+    {
+        // A send that finds another in progress waits for it, and proceeds once the semaphore is
+        // released, without the data timeout elapsing.
+        using TestPipeServer testPipeServer = new();
+        TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            BypassDataSend = false,
+            SendBarrier = sendBarrier,
+            DataTimeout = TimeSpan.FromSeconds(30),
+        };
+
+        int sendsStarted = 0;
+        TaskCompletionSource firstSendStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.OnDataSendStarting.AddObserver(e =>
+        {
+            Interlocked.Increment(ref sendsStarted);
+            firstSendStarted.TrySetResult();
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        Task firstSendTask = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        await firstSendStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The second send is parked on the semaphore: it cannot have started while the first
+        // still holds it.
+        Task secondSendTask = connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken);
+        Assert.False(secondSendTask.IsCompleted);
+        Assert.Equal(1, Volatile.Read(ref sendsStarted));
+
+        sendBarrier.SetResult();
+        await firstSendTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await secondSendTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(2, Volatile.Read(ref sendsStarted));
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+    }
 }

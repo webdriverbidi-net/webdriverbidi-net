@@ -508,7 +508,7 @@ public class WebSocketConnection : Connection
             // or the external cancellation token is canceled), which is the desired fallback behavior.
             if (this.DataReceiveTask is not null)
             {
-                await Task.WhenAny(this.DataReceiveTask, Task.Delay(Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
+                await Task.WhenAny(this.DataReceiveTask, TimeoutUtilities.DelayAsync(this.TimeProvider, Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
             }
 
             await this.LogAsync($"Client state is {this.client.State}").ConfigureAwait(false);
