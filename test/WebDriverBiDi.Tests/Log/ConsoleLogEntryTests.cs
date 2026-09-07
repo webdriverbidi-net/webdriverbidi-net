@@ -13,7 +13,7 @@ public class ConsoleLogEntryTests
     [Fact]
     public void TestCanDeserialize()
     {
-        ulong epochTimestamp = Convert.ToUInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        ulong epochTimestamp = Convert.ToUInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "console",
@@ -51,7 +51,7 @@ public class ConsoleLogEntryTests
     [Fact]
     public void TestCanDeserializeWithArgs()
     {
-        ulong epochTimestamp = Convert.ToUInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        ulong epochTimestamp = Convert.ToUInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "console",

@@ -596,7 +596,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnDomContentLoaded.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -633,7 +633,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnDownloadWillBegin.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -674,7 +674,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnDownloadEnd.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -717,7 +717,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnFragmentNavigated.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -754,7 +754,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnLoad.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -791,7 +791,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnNavigationAborted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -828,7 +828,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnNavigationCommitted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -865,7 +865,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnNavigationFailed.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
@@ -902,7 +902,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnNavigationStarted.AddObserver(e =>
         {
             Assert.Equal("myContext", e.BrowsingContextId);
