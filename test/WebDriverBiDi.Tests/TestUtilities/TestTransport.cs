@@ -8,7 +8,6 @@ using WebDriverBiDi;
 
 public class TestTransport : Transport
 {
-    private TimeSpan messageProcessingDelay = TimeSpan.Zero;
     private int deserializeThrowCount;
     private int disconnectCallCount;
     private int concurrentConnectLockAcquisitions = 0;
@@ -44,8 +43,6 @@ public class TestTransport : Transport
     /// when <see cref="ReturnUncompletedCommand"/> is set.
     /// </summary>
     public Func<TestCommand, bool>? UncompletedCommandBehavior { get; set; }
-
-    public TimeSpan MessageProcessingDelay { get => this.messageProcessingDelay; set => this.messageProcessingDelay = value; }
 
     public CommandResult? CustomReturnValue { get; set; }
 
@@ -260,13 +257,6 @@ public class TestTransport : Transport
             // observe the transport's behavior while a message is still in flight.
             this.MessageProcessingStarted?.Invoke();
             await this.MessageProcessingGate().ConfigureAwait(false);
-        }
-
-        if (this.messageProcessingDelay > TimeSpan.Zero)
-        {
-            // Delay processing so a caller can leave a message pending on the reader loop while it
-            // disconnects, exercising the "process pending incoming messages during shutdown" path.
-            await Task.Delay(this.messageProcessingDelay).ConfigureAwait(false);
         }
 
         await base.ProcessMessageAsync(packet).ConfigureAwait(false);

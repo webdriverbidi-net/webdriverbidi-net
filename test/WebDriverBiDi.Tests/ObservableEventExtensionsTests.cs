@@ -140,9 +140,10 @@ public class ObservableEventExtensionsTests
         await completedInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // The Rx grammar requires OnCompleted to be terminal: even though it threw, OnError must
-        // not follow it. Allow a bounded window for an erroneous OnError to surface.
-        Task firstCompleted = await Task.WhenAny(errorInvoked.Task, Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken));
-        Assert.NotSame(errorInvoked.Task, firstCompleted);
+        // not follow it. Once the delivery loop has ended no further observer call can be made, so
+        // waiting for Completion makes the absence of OnError a deterministic fact.
+        await Assert.IsType<ObservableEventSubscription<TestObservableEventArgs>>(subscription).CompletionTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(errorInvoked.Task.IsCompleted);
     }
 
     [Fact]
@@ -171,10 +172,13 @@ public class ObservableEventExtensionsTests
         await completedInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // The signal above is raised from inside OnCompleted, so the delivery loop has not
-        // necessarily finished unwinding yet. Give it a moment to reach its final state before
+        // necessarily finished unwinding yet. Wait for it to reach its final state before
         // collecting, or the collection races the fault and the assertion below passes for the
-        // wrong reason.
-        await Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
+        // wrong reason. The wait is a continuation that never reads the task's Exception, so it
+        // does not itself observe a fault and cannot mask the very thing the test checks.
+        Task completion = Assert.IsType<ObservableEventSubscription<TestObservableEventArgs>>(subscription).CompletionTask;
+        await completion.ContinueWith(static _ => { }, TaskContinuationOptions.ExecuteSynchronously)
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // Force garbage collection to trigger UnobservedTaskException
         // for any task whose exception was not observed.
@@ -253,6 +257,51 @@ public class ObservableEventExtensionsTests
     /// <summary>
     /// Minimal IObserver implementation driven by delegate callbacks for testing.
     /// </summary>
+    [Fact]
+    public async Task TestSubscriptionCompletionEndsAfterOnCompleted()
+    {
+        TestEventSource testEventSource = new();
+        IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
+
+        bool completedBeforeCompletion = false;
+        ObservableEventSubscription<TestObservableEventArgs>? subscription = null;
+        subscription = Assert.IsType<ObservableEventSubscription<TestObservableEventArgs>>(observable.Subscribe(new DelegateObserver<TestObservableEventArgs>(
+            onCompleted: () => completedBeforeCompletion = !subscription!.CompletionTask.IsCompleted)));
+
+        // Delivery is still running while the subscription is live.
+        Assert.False(subscription.CompletionTask.IsCompleted);
+
+        subscription.Dispose();
+        await subscription.CompletionTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Completion follows OnCompleted, never precedes it.
+        Assert.True(subscription.CompletionTask.IsCompletedSuccessfully);
+        Assert.True(completedBeforeCompletion);
+    }
+
+    [Fact]
+    public async Task TestSubscriptionCompletionEndsAfterOnError()
+    {
+        TestEventSource testEventSource = new();
+        IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
+
+        IDisposable subscription = observable.Subscribe(new DelegateObserver<TestObservableEventArgs>(
+            onNext: _ => throw new InvalidOperationException("observer failure"),
+            onError: _ => throw new InvalidOperationException("error handler failure")));
+
+        await testEventSource.RaiseTestEventAsync("value");
+
+        // OnNext threw, so the loop reported the error and ended on its own, without disposal;
+        // the error handler's own exception is discarded rather than faulting the task.
+        Task completion = Assert.IsType<ObservableEventSubscription<TestObservableEventArgs>>(subscription).CompletionTask;
+        await completion.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(completion.IsCompletedSuccessfully);
+
+        // Disposing after the loop already released the collector is harmless.
+        subscription.Dispose();
+        subscription.Dispose();
+    }
+
     private sealed class DelegateObserver<T> : IObserver<T>
     {
         private readonly Action<T>? onNext;

@@ -132,7 +132,6 @@ public class TransportEventSourceIntegrationTests
                                 }
                             }
                             """;
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);

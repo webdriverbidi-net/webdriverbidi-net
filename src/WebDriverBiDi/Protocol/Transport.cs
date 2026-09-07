@@ -1350,6 +1350,13 @@ public class Transport : IAsyncDisposable
             return;
         }
 
+        // Logged only when there is something to wait for, so a Debug-level observer can see that a
+        // reconnect or a disposal is blocked on the previous session's reader, and for how long at most.
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
+        {
+            await this.LogAsync($"Waiting for message processing of the previous session to complete (timeout: {timeout})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+        }
+
         using CancellationTokenSource processingWaitCancelTokenSource = new();
         Task processingWaitTask = Task.Delay(timeout, processingWaitCancelTokenSource.Token);
         Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, processingWaitTask).ConfigureAwait(false);

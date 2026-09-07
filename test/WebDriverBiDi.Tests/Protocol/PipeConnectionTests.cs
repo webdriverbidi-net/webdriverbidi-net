@@ -332,7 +332,7 @@ public class PipeConnectionTests
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
         connection.OnLogMessage.AddObserver(e =>
         {
-            if (e.Message == "Ending pipe receive loop")
+            if (e.Message.StartsWith("Ending pipe receive loop", StringComparison.Ordinal))
             {
                 receiveLoopEndedSignal.TrySetResult();
             }
@@ -384,7 +384,7 @@ public class PipeConnectionTests
         connection.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
-            if (e.Message == "Ending pipe receive loop")
+            if (e.Message.StartsWith("Ending pipe receive loop", StringComparison.Ordinal))
             {
                 receiveLoopEndedSignal.TrySetResult();
             }
