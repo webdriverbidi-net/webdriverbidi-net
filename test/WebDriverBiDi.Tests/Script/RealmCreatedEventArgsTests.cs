@@ -75,6 +75,55 @@ public class RealmCreatedEventArgsTests
     }
 
     [Fact]
+    public async Task TestTryCastToSpecificRealmTypeReturnsTrue()
+    {
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "window",
+                          "context": "myContext"
+                        }
+                      }
+                      """;
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
+        bool result = eventArgs.TryConvertTo(out WindowRealmInfo? castInfo);
+
+        Assert.True(result);
+        Assert.NotNull(castInfo);
+        Assert.Equal("myRealm", castInfo.RealmId);
+        Assert.Equal("myOrigin", castInfo.Origin);
+        Assert.Equal(RealmType.Window, castInfo.Type);
+    }
+
+    [Fact]
+    public async Task TestTryCastToImproperRealmTypeReturnsFalse()
+    {
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "window",
+                          "context": "myContext"
+                        }
+                      }
+                      """;
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
+        bool result = eventArgs.TryConvertTo(out SharedWorkerRealmInfo? castInfo);
+
+        Assert.False(result);
+        Assert.Null(castInfo);
+    }
+
+    [Fact]
     public async Task TestCopySemantics()
     {
         string json = """
