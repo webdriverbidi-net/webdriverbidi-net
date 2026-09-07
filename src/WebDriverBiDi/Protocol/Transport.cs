@@ -445,6 +445,14 @@ public class Transport : IAsyncDisposable
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the transport is disposed.</exception>
+    /// <remarks>
+    /// Connecting starts a new session and clears the errors the previous session accumulated under
+    /// <see cref="TransportErrorBehavior.Collect"/>. Those errors are thrown only by
+    /// <see cref="DisconnectAsync(CancellationToken)"/>. After a remote disconnect the transport is already in the
+    /// <see cref="TransportState.Disconnected"/> state, so this method proceeds; to observe the errors
+    /// collected up to the disconnect, call <see cref="DisconnectAsync(CancellationToken)"/> (which returns promptly and
+    /// throws them) before reconnecting. Reconnecting directly discards them.
+    /// </remarks>
     public virtual async Task ConnectAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();

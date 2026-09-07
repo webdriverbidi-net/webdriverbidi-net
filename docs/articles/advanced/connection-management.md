@@ -296,6 +296,8 @@ When the browser closes the connection (or a read fails), the connection raises 
 
 To recover, call `StopAsync()` — it returns promptly because the transport is already disconnected, clears the driver's started state so that registration is allowed again, and throws the `AggregateException` of any errors accumulated under `TransportErrorBehavior.Collect` — and then call `StartAsync()` again. `StartAsync` waits (bounded by `Transport.ShutdownTimeout`) for the previous connection's message processing to finish before opening the new connection, so a handler that was still running when the connection dropped cannot interleave with the new session.
 
+The `StopAsync()` call is not optional if you use `Collect` mode. Because the driver is already stopped after a remote disconnect, `StartAsync()` accepts the call directly, but starting a new session clears the previous session's collected errors without throwing them: only `StopAsync()` throws collected errors, exactly as with [`DisposeAsync()`](error-handling.md#collect-mode). Reconnecting without stopping first silently discards everything collected up to the disconnect.
+
 [!code-csharp[Recover From Remote Disconnect](../../code/advanced/ConnectionManagementSamples.cs#RecoverFromRemoteDisconnect)]
 
 ## Error Handling

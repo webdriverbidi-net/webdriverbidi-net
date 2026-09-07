@@ -2924,6 +2924,44 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestReconnectingAfterRemoteDisconnectWithoutDisconnectingDiscardsCollectedExceptions()
+    {
+        // Specifies the documented contract of ConnectAsync: after a remote disconnect the transport
+        // is already disconnected, so a caller may reconnect without calling DisconnectAsync first,
+        // and doing so starts a new session that clears the Collect-mode errors of the old one.
+        // Only DisconnectAsync throws collected errors; a DisconnectAsync after the reconnect sees
+        // the new session's (empty) collection.
+        InvalidOperationException injectedFault = new("simulated outer-loop fault");
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ReadLoopOuterFault = [injectedFault],
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
+            TimeSpan.FromSeconds(5),
+            TransportErrorBehavior.Collect);
+        if (!faultCaptured)
+        {
+            throw new XunitException("the fault-capture continuation should record the injected fault before the safety timeout");
+        }
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        Assert.Equal(TransportState.Disconnected, transport.State);
+
+        // The new session's read loop must not fault, or the disconnect below would throw the new
+        // session's own collected error rather than prove the old one was discarded.
+        transport.ReadLoopOuterFault = null;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+
+        // Had the old session's fault survived the reconnect, this would throw the AggregateException.
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestCollectedExceptionsAreSurfacedOnlyOnceAcrossRepeatedDisconnectCalls()
     {
         // Companion to TestCollectedExceptionsAreSurfacedOnDisconnectAfterRemoteDisconnect:

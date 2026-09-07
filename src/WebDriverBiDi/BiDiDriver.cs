@@ -469,6 +469,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
+    /// <remarks>
+    /// Starting begins a new session and clears the errors the previous session accumulated under
+    /// <see cref="TransportErrorBehavior.Collect"/>. Those errors are thrown only by
+    /// <see cref="StopAsync(CancellationToken)"/>. After a remote disconnect the driver is already stopped
+    /// (<see cref="IsStarted"/> is <see langword="false"/>), so this method proceeds; to observe the errors
+    /// collected up to the disconnect, call <see cref="StopAsync(CancellationToken)"/> (which returns promptly and
+    /// throws them) before starting again. Starting directly discards them.
+    /// </remarks>
     public virtual async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
