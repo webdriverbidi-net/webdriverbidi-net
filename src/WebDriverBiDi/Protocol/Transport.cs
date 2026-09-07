@@ -7,7 +7,6 @@ namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -413,6 +412,15 @@ public class Transport : IAsyncDisposable
     /// captured errors if desired.
     /// </summary>
     protected UnhandledErrorCollection UnhandledErrors { get; } = new();
+
+    /// <summary>
+    /// Gets or sets the <see cref="TimeProvider"/> whose clock measures this transport's
+    /// <see cref="ShutdownTimeout"/> waits. Defaults to <see cref="TimeProvider.System"/>. A derived type
+    /// may substitute another, for example to drive the waits with virtual time in a test, in the same
+    /// way that <see cref="ObservableEvent{T}"/> exposes its provider to derived types. The
+    /// <see cref="Connection"/> measures its own timeouts with its own provider.
+    /// </summary>
+    protected TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     private string TerminationReason
     {
@@ -999,7 +1007,7 @@ public class Transport : IAsyncDisposable
                 await this.Connection.StopAsync(cancellationToken).ConfigureAwait(false);
 
                 using CancellationTokenSource timeoutCancelTokenSource = new();
-                Task timeoutTask = Task.Delay(this.ShutdownTimeout, timeoutCancelTokenSource.Token);
+                Task timeoutTask = TimeoutUtilities.DelayAsync(this.TimeProvider, this.ShutdownTimeout, timeoutCancelTokenSource.Token);
                 bool shutdownTimedOut = false;
 
                 // Mark the incoming message queue as complete for writing, indicating
@@ -1070,7 +1078,7 @@ public class Transport : IAsyncDisposable
     {
         // Account for the two potential waits, one for a concurrent attempt to connect,
         // and one for message processing to complete. Use one shutdown budget for both.
-        Stopwatch disposalStopwatch = Stopwatch.StartNew();
+        long disposalTimestamp = this.TimeProvider.GetTimestamp();
 
         // A connect attempt that is still in flight owns the connect/disconnect semaphore
         // and is actively using the connection; disposing them out from under it would fail
@@ -1084,7 +1092,7 @@ public class Transport : IAsyncDisposable
         // have without this serialization.
         if (this.State == TransportState.Connecting)
         {
-            using CancellationTokenSource lockWaitCancellationTokenSource = new(this.ShutdownTimeout);
+            using CancellationTokenSource lockWaitCancellationTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
             try
             {
                 await this.AcquireConnectionLockAsync(lockWaitCancellationTokenSource.Token).ConfigureAwait(false);
@@ -1112,7 +1120,7 @@ public class Transport : IAsyncDisposable
             // If we lost our connection, we still need to wait for delivered messages to
             // be processed. HandleConnectionDisconnectionAsync closes the queue, but does
             // not wait for message processing.
-            await this.WaitForMessageProcessingCompletionAsync(TimeoutUtilities.GetRemainingTimeout(this.ShutdownTimeout, disposalStopwatch.Elapsed), "Timed out waiting for message processing to complete during disposal").ConfigureAwait(false);
+            await this.WaitForMessageProcessingCompletionAsync(TimeoutUtilities.GetRemainingTimeout(this.ShutdownTimeout, this.TimeProvider.GetElapsedTime(disposalTimestamp)), "Timed out waiting for message processing to complete during disposal").ConfigureAwait(false);
         }
 
         this.PendingCommands.Dispose();
@@ -1358,7 +1366,7 @@ public class Transport : IAsyncDisposable
         }
 
         using CancellationTokenSource processingWaitCancelTokenSource = new();
-        Task processingWaitTask = Task.Delay(timeout, processingWaitCancelTokenSource.Token);
+        Task processingWaitTask = TimeoutUtilities.DelayAsync(this.TimeProvider, timeout, processingWaitCancelTokenSource.Token);
         Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, processingWaitTask).ConfigureAwait(false);
         if (completedTask == this.messageQueueProcessingTask)
         {

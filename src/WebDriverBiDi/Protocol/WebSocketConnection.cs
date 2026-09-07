@@ -6,9 +6,9 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
-using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end over a WebSocket.
@@ -147,7 +147,7 @@ public class WebSocketConnection : Connection
         await this.LogAsync($"Opening connection to URL {url}").ConfigureAwait(false);
         bool connected = false;
         bool startupTimedOut = false;
-        Stopwatch initializationStopwatch = Stopwatch.StartNew();
+        long startupTimestamp = this.TimeProvider.GetTimestamp();
         while (!connected && !startupTimedOut)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -159,13 +159,13 @@ public class WebSocketConnection : Connection
             // CancellationTokenSource constructor a negative delay: an ArgumentOutOfRangeException
             // escaping StartAsync in place of the documented WebDriverBiDiTimeoutException or, at
             // exactly -1 millisecond, an attempt that is never bounded at all.
-            TimeSpan remainingStartupTime = this.StartupTimeout - initializationStopwatch.Elapsed;
+            TimeSpan remainingStartupTime = this.StartupTimeout - this.TimeProvider.GetElapsedTime(startupTimestamp);
             if (remainingStartupTime <= TimeSpan.Zero)
             {
                 break;
             }
 
-            using CancellationTokenSource attemptTimeoutTokenSource = new(remainingStartupTime);
+            using CancellationTokenSource attemptTimeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, remainingStartupTime);
             using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.ConnectionCancellationToken, attemptTimeoutTokenSource.Token);
             try
             {
@@ -202,7 +202,7 @@ public class WebSocketConnection : Connection
                 // to it, so it is clamped to whatever remains. Left unclamped, a remote end that
                 // refuses connections immediately holds startup open for the full retry interval
                 // past StartupTimeout.
-                TimeSpan remainingRetryTime = this.StartupTimeout - initializationStopwatch.Elapsed;
+                TimeSpan remainingRetryTime = this.StartupTimeout - this.TimeProvider.GetElapsedTime(startupTimestamp);
                 if (remainingRetryTime <= TimeSpan.Zero)
                 {
                     break;
@@ -213,7 +213,6 @@ public class WebSocketConnection : Connection
             }
         }
 
-        initializationStopwatch.Stop();
         if (!connected)
         {
             throw new WebDriverBiDiTimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
@@ -416,7 +415,7 @@ public class WebSocketConnection : Connection
     /// </remarks>
     protected virtual Task DelayBeforeRetryAsync(TimeSpan delay, CancellationToken cancellationToken)
     {
-        return Task.Delay(delay, cancellationToken);
+        return TimeoutUtilities.DelayAsync(this.TimeProvider, delay, cancellationToken);
     }
 
     /// <summary>
@@ -492,7 +491,7 @@ public class WebSocketConnection : Connection
     protected virtual async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-        using CancellationTokenSource timeoutTokenSource = new(this.ShutdownTimeout);
+        using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
         using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
         try
         {
