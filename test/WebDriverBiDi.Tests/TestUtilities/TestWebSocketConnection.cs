@@ -40,8 +40,6 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public TaskCompletionSource? SendBarrier { get; set; }
 
-    public TimeSpan? StopDelay { get; set; }
-
     public TaskCompletionSource? StartBarrier { get; set; }
 
     public Func<ArraySegment<byte>, CancellationToken, int, Task<WebSocketReceiveResult>>? ReceiveHandler { get; set; }
@@ -57,6 +55,13 @@ public class TestWebSocketConnection : WebSocketConnection
     /// to simulate a remote end that never completes the handshake.
     /// </summary>
     public Func<Uri, CancellationToken, Task>? ConnectWebSocketOverride { get; set; }
+
+    /// <summary>
+    /// Gets or sets the pause taken before a connection retry. When <see langword="null"/>, the pause is
+    /// recorded in <see cref="AttemptedRetryDelays"/> and returns immediately; otherwise it is recorded and
+    /// the override's task is awaited, so a test can hold the connection inside a retry pause deterministically.
+    /// </summary>
+    public Func<TimeSpan, CancellationToken, Task>? DelayBeforeRetryOverride { get; set; }
 
     public bool Disposed => this.IsDisposed;
 
@@ -152,11 +157,6 @@ public class TestWebSocketConnection : WebSocketConnection
         }
         else
         {
-            if (this.StopDelay.HasValue && this.StopDelay.Value > TimeSpan.Zero)
-            {
-                await Task.Delay(this.StopDelay.Value, cancellationToken).ConfigureAwait(false);
-            }
-
             await base.StopAsync(cancellationToken).ConfigureAwait(false);
         }
     }
@@ -187,7 +187,7 @@ public class TestWebSocketConnection : WebSocketConnection
             this.AttemptedRetryDelays.Add(delay);
         }
 
-        return Task.CompletedTask;
+        return this.DelayBeforeRetryOverride?.Invoke(delay, cancellationToken) ?? Task.CompletedTask;
     }
 
     protected override async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)

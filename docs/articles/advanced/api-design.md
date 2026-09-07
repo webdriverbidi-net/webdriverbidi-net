@@ -237,7 +237,7 @@ The adapter only partially satisfies the full Rx push-stream contract. Be aware 
 
 - **`OnCompleted`** is called only after the subscription handle returned by `Subscribe` is disposed and the internal buffer drains. It is **not** called when the `BiDiDriver` is stopped or disposed — dispose the subscription handle explicitly to trigger completion.
 - **`OnError`** is called if `OnNext` throws. It is **not** called for transport errors or exceptions thrown by other observers on the same event.
-- Each `Subscribe` call creates an independent buffered subscription that counts as one observer against `ObservableEvent<T>.MaxObserverCount`. Dispose the returned handle when done to avoid resource leaks.
+- Each `Subscribe` call creates an independent buffered subscription that counts as one observer against `ObservableEvent<T>.MaxObserverCount`. Dispose the returned handle when done to avoid resource leaks. The handle is an `ObservableEventSubscription<T>`, whose `Completion` task completes once delivery to the observer has ended.
 
 For full details, code samples, and Rx operator usage, see [Events and Observables — IObservable&lt;T&gt; Support](../events-observables.md#iobservablet-support).
 

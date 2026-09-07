@@ -243,10 +243,13 @@ public class BiDiDriverTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         string eventName = "module.event";
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
-            MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName, (e) => Task.CompletedTask);
@@ -268,7 +271,13 @@ public class BiDiDriverTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await driver.StopAsync(TestContext.Current.CancellationToken);
+
+        // The event is held inside the processing loop when the stop begins, so the stop must process
+        // it before completing; releasing the gate afterwards lets that happen without a timed delay.
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task stopTask = driver.StopAsync(TestContext.Current.CancellationToken);
+        gate.TrySetResult();
+        await stopTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Equal(eventName, receivedEvent);
@@ -2069,13 +2078,12 @@ public class BiDiDriverTests
                       """;
         await connection.RaiseDataReceivedEventAsync(json);
         await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Negative check: a feedback loop would keep re-invoking the error observer and
-        // capturing further errors, so after this delay neither count may have grown.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
         Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
 
+        // A feedback loop would keep re-invoking the error observer and capturing further errors,
+        // every one of which would surface as an extra inner exception on stop; the exact count
+        // below is the deterministic negative check.
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(() => driver.StopAsync(TestContext.Current.CancellationToken));
         Assert.Equal(2, exception.InnerExceptions.Count);
         Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("original handler failure"));

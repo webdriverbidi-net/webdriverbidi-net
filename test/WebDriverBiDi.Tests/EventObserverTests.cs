@@ -1745,17 +1745,15 @@ public class EventObserverTests
 
     // Waits (bounded) for a handler task to reach the Faulted state before a test forces GC to probe
     // for UnobservedTaskException. The library's ExecuteSynchronously fault continuation — the one that
-    // observes the exception — runs during the task's transition to Faulted, so once IsFaulted is
-    // observed the exception has already been observed and GC will not raise. Reading IsFaulted does
-    // not itself observe the exception, so this replaces a fixed Task.Delay quantum (which can be too
-    // short on a loaded runner) without defeating the very thing the test checks.
+    // observes the exception — runs during the task's transition to Faulted, before any continuation
+    // registered later, so once this one runs the exception has already been observed and GC will not
+    // raise. A continuation that never touches the task's Exception does not itself observe the
+    // exception, so waiting this way neither polls nor defeats the very thing the test checks.
     private static async Task WaitUntilFaultedAsync(Task task, CancellationToken cancellationToken)
     {
-        DateTime timeout = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (!task.IsFaulted && DateTime.UtcNow < timeout)
-        {
-            await Task.Delay(5, cancellationToken).ConfigureAwait(false);
-        }
+        await task.ContinueWith(static _ => { }, TaskContinuationOptions.ExecuteSynchronously)
+            .WaitAsync(TimeSpan.FromSeconds(5), cancellationToken)
+            .ConfigureAwait(false);
 
         Assert.True(task.IsFaulted, "The handler task did not transition to Faulted within the timeout.");
     }

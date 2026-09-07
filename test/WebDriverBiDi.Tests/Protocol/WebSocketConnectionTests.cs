@@ -568,7 +568,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
                 connectionLog.Add(e.Message);
             }
 
-            if (e.Message == "Ending processing loop in state Aborted")
+            if (e.Message.StartsWith("Ending processing loop in state Aborted", StringComparison.Ordinal))
             {
                 receiveLoopEnded.TrySetResult();
             }
@@ -1572,25 +1572,29 @@ public class WebSocketConnectionTests : IAsyncDisposable
     [Fact]
     public async Task TestStartAsyncThrowsWhenCancellationTokenIsCanceledDuringConnectionRetry()
     {
-        int port;
-        using (TcpListener portFinder = new(IPAddress.Loopback, 0))
-        {
-            portFinder.Start();
-            port = ((IPEndPoint)portFinder.LocalEndpoint).Port;
-            portFinder.Stop();
-        }
-
+        // The first attempt is refused, so the connection enters its retry pause; the pause is
+        // held open by the override and signals that it has been reached, so the token is
+        // canceled while a retry is provably in progress rather than after a timed delay.
+        TaskCompletionSource retryPauseReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using CancellationTokenSource cts = new();
-        WebSocketConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
+            BypassStart = false,
             StartupTimeout = TimeSpan.FromSeconds(5),
+            ConnectWebSocketOverride = (uri, token) => Task.FromException(new WebSocketException("Simulated refused connection")),
+            DelayBeforeRetryOverride = (delay, token) =>
+            {
+                retryPauseReached.TrySetResult();
+                return Task.Delay(Timeout.InfiniteTimeSpan, token);
+            },
         };
 
-        Task startTask = connection.StartAsync($"ws://127.0.0.1:{port}", cts.Token);
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        Task startTask = connection.StartAsync("ws://127.0.0.1:1", cts.Token);
+        await retryPauseReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await startTask);
+        Assert.Single(connection.AttemptedRetryDelays);
     }
 
     [Fact]

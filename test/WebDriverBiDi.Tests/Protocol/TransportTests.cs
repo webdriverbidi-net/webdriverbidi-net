@@ -1309,10 +1309,13 @@ public class TransportTests
         object? receivedData = null;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
-            MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -1333,7 +1336,14 @@ public class TransportTests
                       """;
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        // The event is held inside the processing loop when the disconnect begins, so the disconnect
+        // must process it before completing; releasing the gate afterwards lets that happen without
+        // a timed delay.
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        gate.TrySetResult();
+        await disconnectTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Equal("protocol.event", receivedName);
@@ -1519,12 +1529,12 @@ public class TransportTests
         // The original handler failure is captured after the error event is raised; the
         // error observer's own asynchronous fault is captured without re-raising.
         await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Negative check: a feedback loop would keep re-invoking the error observer and
-        // capturing further errors, so after this delay neither count may have grown.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
         Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
+
+        // A feedback loop would keep re-invoking the error observer and capturing further errors,
+        // every one of which would surface as an extra inner exception on disconnect; the exact
+        // count below is the deterministic negative check.
 
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
         Assert.Equal(2, exception.InnerExceptions.Count);
@@ -1578,12 +1588,12 @@ public class TransportTests
         // Both the original handler failure and the error observer's own failure are
         // captured, the latter without re-raising the error event.
         await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Negative check: a feedback loop would keep re-invoking the error observer and
-        // capturing further errors, so after this delay neither count may have grown.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
         Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
+
+        // A feedback loop would keep re-invoking the error observer and capturing further errors,
+        // every one of which would surface as an extra inner exception on disconnect; the exact
+        // count below is the deterministic negative check.
 
         // Only EventHandlerExceptionBehavior is set to Collect here, so both inner
         // exceptions surfacing on disconnect proves both failures were captured under
@@ -3953,10 +3963,23 @@ public class TransportTests
         TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource releaseHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource secondEventProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource reconnectWaitingTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int eventCount = 0;
 
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            LogLevel = WebDriverBiDiLogLevel.Debug,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("Waiting for message processing of the previous session", StringComparison.Ordinal))
+            {
+                reconnectWaitingTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(async e =>
         {
@@ -3988,11 +4011,14 @@ public class TransportTests
         // The remote end closes the connection while the handler is still executing.
         await connection.RaiseRemoteDisconnectedEventAsync();
 
-        // Reconnecting must block until the previous reader has exited. The fixed delay is a
-        // negative check: the reconnect must still be pending after it elapses.
+        // Reconnecting must block until the previous reader has exited. The Debug log message is
+        // raised only when ConnectAsync has found the previous reader still running and is
+        // entering the wait for it, and log observers run before the wait begins, so receiving
+        // it proves the reconnect is blocked on the reader rather than pending for some other
+        // reason.
         Task reconnectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
-        Task completedTask = await Task.WhenAny(reconnectTask, Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken));
-        Assert.NotSame(reconnectTask, completedTask);
+        await reconnectWaitingTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(reconnectTask.IsCompleted);
 
         releaseHandlerTaskCompletionSource.TrySetResult();
         await reconnectTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
