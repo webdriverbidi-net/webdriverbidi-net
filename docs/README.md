@@ -97,13 +97,14 @@ From the repository root:
 
 ```bash
 dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
+dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
 dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
 docfx metadata docs/docfx.json
 docfx build docs/docfx.json
 ```
 
 These steps:
-1. Build the library in Release (`docfx metadata` reads the API surface from `src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll`)
+1. Build the library and the logging package in Release (`docfx metadata` reads the API surface from `src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll` and `src/WebDriverBiDi.Logging/bin/Release/netstandard2.0/WebDriverBiDi.Logging.dll`; the snippets project builds only their `net10.0` flavour, so without these two steps the `WebDriverBiDi.Logging` namespace is missing from the generated API reference)
 2. Compile the documentation code samples in `docs/code/` (every `[!code-csharp]` region must compile)
 3. Extract API documentation from XML comments (`docfx metadata`)
 4. Process markdown files and generate the complete documentation site in `docs/_site/` (`docfx build`)

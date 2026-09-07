@@ -56,6 +56,13 @@ convenience, the library also builds assemblies targeting the current and immedi
 Support (LTS) versions of .NET, as well as the most recent Standard Term Support (STS) version of .NET.
 At present, that includes .NET 8 (previous LTS), .NET 9 (current STS), and .NET 10 (current LTS).
 
+Building the repository itself requires the .NET 10 SDK: the projects use C# 14
+(`<LangVersion>14</LangVersion>`) and the test projects target `net10.0`. `global.json` does not pin
+an SDK version, so any .NET 10 SDK will do. Consumers of the published package need only one of the
+runtimes listed above; see the
+[Getting Started guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/getting-started.html)
+for consumer prerequisites.
+
 To build the library, after cloning the repository, execute the following in a terminal window
 in the root of your clone:
 
@@ -139,7 +146,8 @@ to provide baseline tracking of performance metrics.
 
 The project uses [GitHub Actions](https://github.com/webdriverbidi-net/webdriverbidi-net/actions) for continuous
 integration (CI). Code coverage statistics are generated and gathered by
-[Coverlet](https://www.nuget.org/packages/coverlet.collector/), and uploaded to
+[Coverlet](https://www.nuget.org/packages/coverlet.MTP/) (the `coverlet.MTP` package, which
+integrates with the Microsoft.Testing.Platform runner the test projects use), and uploaded to
 [coveralls.io](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main). PRs for which
 the code coverage drops from the current percentage on the `main` branch will need to be carefully
 reviewed. For convenience, a task has been configured to collect code coverage statistics when the
@@ -234,11 +242,13 @@ To update the DocFx tooling, you can use the following command:
 
     dotnet tool update -g docfx
 
-To build the documentation, use the following commands. The first step is required because
-`docfx metadata` reads the API surface from the Release `netstandard2.0` build of the main
-library (see `docs/docfx.json`), which the snippets project does not produce by itself:
+To build the documentation, use the following commands. The first two steps are required because
+`docfx metadata` reads the API surface from the Release `netstandard2.0` builds of the main library
+and of the `WebDriverBiDi.Logging` package (see `docs/docfx.json`), which the snippets project does
+not produce by itself (it builds only the `net10.0` flavour of each):
 
     dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
+    dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
     dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
     docfx metadata docs/docfx.json
     docfx build docs/docfx.json

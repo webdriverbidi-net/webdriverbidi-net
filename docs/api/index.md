@@ -173,9 +173,11 @@ To generate the full API documentation locally:
 # Install DocFX if not already installed
 dotnet tool install -g docfx
 
-# Build the library in Release; docfx metadata reads the API surface from
-# src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll
+# Build the library and the logging package in Release; docfx metadata reads the API
+# surface from src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll and
+# src/WebDriverBiDi.Logging/bin/Release/netstandard2.0/WebDriverBiDi.Logging.dll
 dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
+dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
 
 # Compile the documentation code samples (every [!code-csharp] region must compile)
 dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release
