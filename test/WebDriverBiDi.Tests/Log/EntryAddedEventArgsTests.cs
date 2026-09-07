@@ -8,7 +8,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCanDeserializeWithNullText()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
@@ -40,7 +40,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCanDeserializeConsoleLogEntry()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
@@ -78,7 +78,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCanDeserializeConsoleLogEntryWithArgs()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
@@ -122,7 +122,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCopySemantics()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
