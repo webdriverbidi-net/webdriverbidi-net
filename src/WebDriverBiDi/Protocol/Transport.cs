@@ -1304,9 +1304,9 @@ public class Transport : IAsyncDisposable
             : WebDriverBiDiJsonSerializerContext.Default;
     }
 
-    private static ReceivedDataDictionary ConvertPayloadExtensionData(Dictionary<string, JsonElement> extensionData)
+    private static ReceivedDataDictionary ConvertPayloadExtensionData(Dictionary<string, JsonElement>? extensionData)
     {
-        return extensionData.Count == 0 ? ReceivedDataDictionary.EmptyDictionary : JsonConverterUtilities.ConvertIncomingExtensionData(extensionData);
+        return extensionData is null ? ReceivedDataDictionary.EmptyDictionary : JsonConverterUtilities.ConvertIncomingExtensionData(extensionData);
     }
 
     private static string TruncateMessage(string message, int maxLength)
@@ -1417,6 +1417,14 @@ public class Transport : IAsyncDisposable
     /// <returns>The type info for the response envelope.</returns>
     private JsonTypeInfo GetResponseTypeInfo(Command command)
     {
+        // Look the cache up before falling back to GetOrAdd: the factory lambda captures the command
+        // and this transport, so passing it to GetOrAdd allocates a closure on every response, while
+        // the cache misses only once per response type.
+        if (this.responseTypeInfoCache.TryGetValue(command.ResponseType, out JsonTypeInfo? cachedTypeInfo))
+        {
+            return cachedTypeInfo;
+        }
+
         return this.responseTypeInfoCache.GetOrAdd(
             command.ResponseType,
             _ => command.CommandParameters.CreateResponseTypeInfo(this.options) ?? this.options.GetTypeInfo(command.ResponseType));
