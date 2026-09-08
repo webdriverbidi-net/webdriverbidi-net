@@ -81,7 +81,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -97,6 +97,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -119,7 +124,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -136,6 +141,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -164,7 +174,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -179,6 +189,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -205,7 +220,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 // The required "message" field is absent, so the typed error deserialization throws.
@@ -235,7 +250,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -252,6 +267,15 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here, where the wait above has already proved the producer delivered, so that a
+        // fault inside it is reported as itself rather than as whichever assertion below fails first.
+        await responseTask;
+
+        // Awaited here, where the wait above has already proved the producer delivered, so that a
+        // fault inside it is reported as itself rather than as whichever assertion below fails first.
+        await responseTask;
+
         Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
         Assert.Contains("Response did not contain properly formed JSON for response type", command.ThrownException.Message);
     }
@@ -489,7 +513,7 @@ public class TransportTests
         string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -505,6 +529,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -1140,7 +1169,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         static void dataReceivedHandler(ServerDataReceivedEventArgs e) { }
         void connectionHandler(ClientConnectionEventArgs e) { taskCompletionSource.TrySetResult(); }
-        Server server = new();
+        await using Server server = new();
         ServerEventObserver<ServerDataReceivedEventArgs> dataReceivedObserver = server.OnDataReceived.AddObserver(dataReceivedHandler);
         ServerEventObserver<ClientConnectionEventArgs> connectedObserver = server.OnClientConnected.AddObserver(connectionHandler);
         await server.StartAsync();
@@ -1928,7 +1957,7 @@ public class TransportTests
         string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -1944,6 +1973,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         Assert.Equal(1, transport.LastTestCommandId);
     }
 
@@ -2477,9 +2511,13 @@ public class TransportTests
                                 }
                               }
                               """;
-        _ = Task.Run(async () => await connection.RaiseDataReceivedEventAsync(responseJson), TestContext.Current.CancellationToken);
+        Task responseTask = Task.Run(async () => await connection.RaiseDataReceivedEventAsync(responseJson), TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
 
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
         Assert.True(hasResult);
