@@ -41,7 +41,7 @@ await driver.StartAsync("ws://localhost:9222");
 By default, events at `EventLevel.Informational` and above are captured:
 
 ```csharp
-builder.AddLogging(b => b.AddWebDriverBiDi());
+services.AddLogging(builder => builder.AddWebDriverBiDi());
 ```
 
 ### Custom Event Level
@@ -51,8 +51,12 @@ Specify a minimum event level to capture:
 ```csharp
 using System.Diagnostics.Tracing;
 
-builder.AddLogging(b => b.AddWebDriverBiDi(EventLevel.Verbose)); // Capture all events
+services.AddLogging(builder => builder.AddWebDriverBiDi(EventLevel.Verbose)); // Capture all events
 ```
+
+Call `AddWebDriverBiDi` once. The listener is registered with `TryAddSingleton`, so the first call on a
+given service collection wins; a later call is silently ignored, and the level from the first call remains
+in force. Pass the level you want on that first call.
 
 ## Event Level Mapping
 
@@ -86,7 +90,7 @@ services.AddLogging(builder =>
 {
     builder.AddConsole();
     builder.AddWebDriverBiDi();
-    builder.AddFilter("WebDriverBiDi.Logging", LogLevel.Information); // Only Info and above
+    builder.AddFilter("WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger", LogLevel.Information); // Only Info and above
 });
 ```
 
@@ -97,7 +101,7 @@ Or use configuration:
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "WebDriverBiDi.Logging": "Debug"
+      "WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger": "Debug"
     }
   }
 }
@@ -130,12 +134,14 @@ For comprehensive examples including Serilog, Application Insights, custom filte
 
 ## Available Events
 
-WebDriverBiDi emits events for:
-- **Connection lifecycle**: Opening, Opened, Closing, Closed, Error
-- **Command execution**: Sending, Completed, Timeout, Error
-- **Event handling**: EventReceived, EventHandlerError
-- **Protocol processing**: UnknownMessageReceived, ProtocolError
-- **Transport lifecycle**: Started, Stopped
+WebDriverBiDi emits 22 events:
+- **Connection lifecycle**: `ConnectionOpening`, `ConnectionOpened`, `ConnectionClosing`, `ConnectionClosed`, `ConnectionError`
+- **Command execution**: `CommandSending`, `CommandSendFailed`, `CommandCompleted`, `CommandTimeout`, `CommandError`, `CanceledCommandResponseDiscarded`
+- **Event handling**: `EventReceived`, `EventHandlerError`, `AsyncHandlerTaskCount`
+- **Protocol processing**: `UnknownMessageReceived`, `ProtocolError`
+- **Transport lifecycle**: `TransportStarted`, `TransportStopped`
+- **Registration**: `CustomModuleRegistered`, `CustomEventRegistered`
+- **Counters**: `PendingCommandCount`, `MessageStatistics`
 
 See the [observability documentation](https://github.com/webdriverbidi-net/webdriverbidi-net/blob/main/docs/articles/advanced/observability.md) for complete event reference.
 

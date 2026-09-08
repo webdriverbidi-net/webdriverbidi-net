@@ -173,7 +173,7 @@ WebDriverBiDi events will be sent to Application Insights with structured proper
     "LogLevel": {
       "Default": "Information",
       "Microsoft": "Warning",
-      "WebDriverBiDi.Logging": "Debug"
+      "WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger": "Debug"
     },
     "Console": {
       "IncludeScopes": true
@@ -283,10 +283,10 @@ Always dispose EventListener instances:
 
 ## Performance Considerations
 
-- **Zero allocation when not enabled** - EventSource uses [NonEvent] for helper methods
+- **Cheap when not enabled** - each event method checks `IsEnabled` before writing, so nothing is emitted without a listener. It is not allocation-free: a few call sites build their arguments first, such as the exception type name in `CommandSendFailed` and the error type name in `CommandError`
 - **Low overhead** - Minimal impact even with Verbose logging
 - **ETW optimized** - On Windows, uses highly optimized ETW infrastructure
-- **Works with async pipelines** - integrates with the standard async `ILogger` logging infrastructure
+- **Works with the standard logging pipeline** - the `WebDriverBiDi.Logging` bridge forwards events to `ILogger`, whose `Log` method is synchronous
 
 **Overhead:**
 - With no listener attached, event emission is effectively free: the EventSource short-circuits before building any event data.

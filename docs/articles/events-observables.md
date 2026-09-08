@@ -37,6 +37,7 @@ Each event is exposed as an `ObservableEvent<TEventArgs>` property on the releva
 
 [!code-csharp[BrowsingContext Events](../code/events-observables/EventObserverSamples.cs#BrowsingContextEvents)]
 
+<!-- inline-csharp: a list of event member names, not statements -->
 ```csharp
 driver.BrowsingContext.OnLoad                    // Page load complete
 driver.BrowsingContext.OnDomContentLoaded        // DOM ready
@@ -58,6 +59,7 @@ driver.BrowsingContext.OnUserPromptClosed        // Dialog closed
 
 [!code-csharp[Network Events](../code/events-observables/EventObserverSamples.cs#NetworkEvents)]
 
+<!-- inline-csharp: a list of event member names, not statements -->
 ```csharp
 driver.Network.OnBeforeRequestSent     // Request about to be sent
 driver.Network.OnResponseStarted       // Response headers received
@@ -70,6 +72,7 @@ driver.Network.OnAuthRequired          // Authentication needed
 
 [!code-csharp[Log Events](../code/events-observables/EventObserverSamples.cs#LogEvents)]
 
+<!-- inline-csharp: a list of event member names, not statements -->
 ```csharp
 driver.Log.OnEntryAdded               // Console log message
 ```
@@ -78,6 +81,7 @@ driver.Log.OnEntryAdded               // Console log message
 
 [!code-csharp[Script Events](../code/events-observables/EventObserverSamples.cs#ScriptEvents)]
 
+<!-- inline-csharp: a list of event member names, not statements -->
 ```csharp
 driver.Script.OnMessage               // Message from preload script
 driver.Script.OnRealmCreated          // New execution realm
@@ -88,6 +92,7 @@ driver.Script.OnRealmDestroyed        // Realm destroyed
 
 [!code-csharp[Input Events](../code/events-observables/EventObserverSamples.cs#InputEvents)]
 
+<!-- inline-csharp: a list of event member names, not statements -->
 ```csharp
 driver.Input.OnFileDialogOpened       // File selection dialog opened
 ```
@@ -96,6 +101,7 @@ driver.Input.OnFileDialogOpened       // File selection dialog opened
 
 [!code-csharp[Speculation Events](../code/events-observables/EventObserverSamples.cs#SpeculationEvents)]
 
+<!-- inline-csharp: a list of event member names, not statements -->
 ```csharp
 driver.Speculation.OnPrefetchStatusUpdated   // Prefetch status of a resource updated
 ```
@@ -104,6 +110,7 @@ driver.Speculation.OnPrefetchStatusUpdated   // Prefetch status of a resource up
 
 [!code-csharp[Bluetooth Events](../code/events-observables/EventObserverSamples.cs#BluetoothEvents)]
 
+<!-- inline-csharp: a list of event member names, not statements -->
 ```csharp
 driver.Bluetooth.OnCharacteristicEventGenerated   // GATT characteristic event generated
 driver.Bluetooth.OnDescriptorEventGenerated       // GATT descriptor event generated
@@ -309,15 +316,9 @@ The BCL `IObservable<T>.Subscribe` method requires an `IObserver<T>` implementat
 
 Each call to `Subscribe` creates an independent `EventDataCollector<T>` on the source event. A background task drains that collector's channel and calls `observer.OnNext` for each item. When you dispose the handle returned by `Subscribe`, the collector is removed from the event, the channel completes, and `observer.OnCompleted` is called once the drain loop exits.
 
-The handle is an `ObservableEventSubscription<T>` (the BCL `Subscribe` signature types it as `IDisposable`, so cast it to reach the extra member). Its `Completion` task completes once delivery has ended — after `OnCompleted` has returned following disposal, or after `OnError` has returned when `OnNext` threw — so you can await it after disposing to be certain the observer will receive no further calls before tearing down anything the observer uses:
+The handle is an `ObservableEventSubscription<T>` (the BCL `Subscribe` signature types it as `IDisposable`, so cast it to reach the extra member). Its `CompletionTask` completes once delivery has ended — after `OnCompleted` has returned following disposal, or after `OnError` has returned when `OnNext` threw — so you can await it after disposing to be certain the observer will receive no further calls before tearing down anything the observer uses:
 
-```csharp
-ObservableEventSubscription<EntryAddedEventArgs> subscription =
-    (ObservableEventSubscription<EntryAddedEventArgs>)observable.Subscribe(new LogEntryObserver());
-// ...
-subscription.Dispose();
-await subscription.Completion;   // OnCompleted has returned; the observer is quiescent
-```
+[!code-csharp[ToObservable CompletionTask](../code/events-observables/EventObserverSamples.cs#ToObservableCompletionTask)]
 
 ### Contract Notes
 
@@ -449,6 +450,7 @@ When event handlers perform async operations or I/O, you must use asynchronous h
 
 The `ObservableEventHandlerOptions` enum controls how event handlers execute:
 
+<!-- inline-csharp: the library's own enum declaration, quoted for reference -->
 ```csharp
 public enum ObservableEventHandlerOptions
 {
@@ -658,7 +660,7 @@ The two-step design (add observer + subscribe) is intentional to prevent race co
 - Use **data collectors** (`AddDataCollector`) to accumulate events and inspect them on demand — `GetCollectedEventData()` drains the buffer atomically and resets it for the next interval; use `Events` (`IAsyncEnumerable<T>`) to stream items one at a time via `await foreach`; pass an optional filter predicate to `AddDataCollector` to discard unwanted events at collection time
 - Store the observer returned by `AddObserver` when you need to remove it or use the capture API
 - Use `await using` on `EventDataCollector<T>` for automatic cleanup; never leave a collector attached after you no longer need it
-- Use `ToObservable()` to adapt any `ObservableEvent<T>` to `IObservable<T>` — each `Subscribe` call is independent and counts as one observer; dispose the returned handle to stop delivery and trigger `OnCompleted`, and await its `Completion` when you need to know delivery has ended
+- Use `ToObservable()` to adapt any `ObservableEvent<T>` to `IObservable<T>` — each `Subscribe` call is independent and counts as one observer; dispose the returned handle to stop delivery and trigger `OnCompleted`, and await its `CompletionTask` when you need to know delivery has ended
 - Use try/finally or `using` to ensure observers are removed when done (prevents memory leaks)
 - Use `StartCapturingTasks()`/`WaitForCapturedTasksAsync()` to synchronize with events — when `WaitForCapturedTasksAsync` returns a full batch it automatically ends the capture session; an explicit `StopCapturingTasks()` call is a no-op and safe to include for clarity
 - Use `WaitForCapturedTasksCompleteAsync()` to wait for async handlers to complete — it also ends the capture session when the requested number of tasks is collected

@@ -50,11 +50,7 @@ There are two distinct patterns for reset helpers on `CommandParameters` classes
 
 The static property returns a pre-configured instance of the `CommandParameters` class itself. You pass it directly to the command method. This is the most common pattern.
 
-```csharp
-// ResetTimeZoneOverride returns a SetTimeZoneOverrideCommandParameters instance
-await driver.Emulation.SetTimeZoneOverrideAsync(
-    SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride);
-```
+[!code-csharp[Command Level Reset](../../code/api-design/AdditionalDataSamples.cs#CommandLevelReset)]
 
 BIDI014 detects when you use `new SomeCommandParameters()` without setting properties and the class has a command-level reset property, since that is almost certainly a mistake.
 
@@ -64,21 +60,7 @@ The static property returns a typed *value* to assign to a specific property on 
 
 `SetViewportCommandParameters` uses this pattern because viewport dimensions and device pixel ratio can each be reset independently:
 
-```csharp
-// Reset viewport only — leave device pixel ratio unchanged
-await driver.BrowsingContext.SetViewportAsync(
-    new SetViewportCommandParameters
-    {
-        Viewport = SetViewportCommandParameters.ResetToDefaultViewport
-    });
-
-// Reset device pixel ratio only — leave viewport dimensions unchanged
-await driver.BrowsingContext.SetViewportAsync(
-    new SetViewportCommandParameters
-    {
-        DevicePixelRatio = SetViewportCommandParameters.ResetToDefaultDevicePixelRatio
-    });
-```
+[!code-csharp[Property Level Sentinel](../../code/api-design/AdditionalDataSamples.cs#PropertyLevelSentinel)]
 
 Assigning C# `null` to either property omits it from the JSON payload entirely, leaving the current value on the remote end unchanged. The sentinel is the only way to emit an explicit JSON `null` for these fields.
 
@@ -157,6 +139,7 @@ Values are exposed as `ReceivedDataDictionary` entries: strings, `bool`, `long` 
 
 Every module command accepts two optional parameters. **This is the preferred way to set per-command timeouts** when using the module API (e.g., `driver.BrowsingContext.NavigateAsync`). Prefer this over `ExecuteCommandAsync` when you need per-command timeout control:
 
+<!-- inline-csharp: a method signature sketch, not a callable method -->
 ```csharp
 Task<T> CommandAsync(
     CommandParameters? parameters,
@@ -227,6 +210,7 @@ Breaking changes are documented in release notes. When upgrading major versions,
 
 Any `ObservableEvent<T>` can be adapted to the standard BCL `IObservable<T>` interface via the `ToObservable()` extension method. This enables integration with [Reactive Extensions (Rx)](https://github.com/dotnet/reactive) operators and any code that consumes `IObservable<T>`/`IObserver<T>`.
 
+<!-- inline-csharp: uses a placeholder observer type that the reader supplies -->
 ```csharp
 IDisposable subscription = driver.Network.OnBeforeRequestSent
     .ToObservable()
@@ -237,7 +221,7 @@ The adapter only partially satisfies the full Rx push-stream contract. Be aware 
 
 - **`OnCompleted`** is called only after the subscription handle returned by `Subscribe` is disposed and the internal buffer drains. It is **not** called when the `BiDiDriver` is stopped or disposed — dispose the subscription handle explicitly to trigger completion.
 - **`OnError`** is called if `OnNext` throws. It is **not** called for transport errors or exceptions thrown by other observers on the same event.
-- Each `Subscribe` call creates an independent buffered subscription that counts as one observer against `ObservableEvent<T>.MaxObserverCount`. Dispose the returned handle when done to avoid resource leaks. The handle is an `ObservableEventSubscription<T>`, whose `Completion` task completes once delivery to the observer has ended.
+- Each `Subscribe` call creates an independent buffered subscription that counts as one observer against `ObservableEvent<T>.MaxObserverCount`. Dispose the returned handle when done to avoid resource leaks. The handle is an `ObservableEventSubscription<T>`, whose `CompletionTask` completes once delivery to the observer has ended.
 
 For full details, code samples, and Rx operator usage, see [Events and Observables — IObservable&lt;T&gt; Support](../events-observables.md#iobservablet-support).
 

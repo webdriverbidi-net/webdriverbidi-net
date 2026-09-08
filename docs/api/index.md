@@ -208,8 +208,10 @@ All command result classes follow this pattern:
 [!code-csharp[Command Results Pattern](../code/api/ApiIndexSamples.cs#CommandResultsPattern)]
 
 Commands whose protocol result carries no data return `EmptyResult`. It is a `CommandResult` like any
-other, so `AdditionalData` still exposes any extension properties the remote end supplied — from inside the
-result object when it is non-empty, and from the response envelope otherwise.
+other, so extension properties the remote end supplied are still exposed, in the two places they can
+occupy: `AdditionalData` holds properties found inside the (otherwise empty) `result` object, and
+`AdditionalResponseProperties` holds properties found on the response envelope. The two positions are
+never merged, and neither stands in for the other.
 
 #### Event Arguments
 

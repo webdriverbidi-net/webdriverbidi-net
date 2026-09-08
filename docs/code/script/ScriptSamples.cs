@@ -671,10 +671,8 @@ public class ScriptSamples
             Console.WriteLine($"Line: {exception.ExceptionDetails.LineNumber}");
             Console.WriteLine($"Column: {exception.ExceptionDetails.ColumnNumber}");
 
-            if (exception.ExceptionDetails.StackTrace != null)
-            {
-                Console.WriteLine($"Stack: {exception.ExceptionDetails.StackTrace.CallFrames.Count} frames");
-            }
+            // StackTrace is always present; an empty CallFrames list is how "no frames" arrives.
+            Console.WriteLine($"Stack: {exception.ExceptionDetails.StackTrace.CallFrames.Count} frames");
         }
         #endregion
     }
@@ -687,12 +685,17 @@ public class ScriptSamples
         string contextId)
     {
         #region CatchingJavaScriptErrors
+        // script.evaluate evaluates an expression, so a bare top-level `return` is a
+        // JavaScript SyntaxError. Wrap the try/catch in an immediately invoked function
+        // so that the returns belong to a function body and the whole thing is an expression.
         string safeExpression = """
-            try {
-                return dangerousOperation();
-            } catch (error) {
-                return { error: error.message };
-            }
+            (() => {
+                try {
+                    return dangerousOperation();
+                } catch (error) {
+                    return { error: error.message };
+                }
+            })()
             """;
 
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(
@@ -701,7 +704,9 @@ public class ScriptSamples
             true);
 
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
-        // Will always be success, check for error property in result
+
+        // The script itself never throws, so the result is EvaluateResultSuccess whether or not
+        // dangerousOperation() failed; inspect the returned object for the error property.
         #endregion
     }
 
@@ -920,13 +925,11 @@ public class ScriptSamples
             Console.WriteLine($"Line: {exception.ExceptionDetails.LineNumber}");
             Console.WriteLine($"Column: {exception.ExceptionDetails.ColumnNumber}");
 
-            if (exception.ExceptionDetails.StackTrace != null)
+            // StackTrace is always present; an empty CallFrames list is how "no frames" arrives.
+            Console.WriteLine("Stack trace:");
+            foreach (var frame in exception.ExceptionDetails.StackTrace.CallFrames)
             {
-                Console.WriteLine("Stack trace:");
-                foreach (var frame in exception.ExceptionDetails.StackTrace.CallFrames)
-                {
-                    Console.WriteLine($"  at {frame.FunctionName} ({frame.Url}:{frame.LineNumber})");
-                }
+                Console.WriteLine($"  at {frame.FunctionName} ({frame.Url}:{frame.LineNumber})");
             }
 
             // Handle the error appropriately

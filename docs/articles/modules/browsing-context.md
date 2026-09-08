@@ -193,9 +193,13 @@ constructor. Screencast output is written by the remote end for the duration of 
 
 ### Navigation Events
 
-The browsing context module raises navigation events, each carrying `NavigationEventArgs`:
+The browsing context module raises seven navigation events, each carrying `NavigationEventArgs`:
 `OnNavigationStarted`, `OnNavigationCommitted`, `OnFragmentNavigated` (a same-document navigation to a
 URL fragment), `OnDomContentLoaded`, `OnLoad`, `OnNavigationFailed`, and `OnNavigationAborted`.
+
+Three further events accompany a navigation but carry their own argument types: `OnHistoryUpdated`
+(`HistoryUpdatedEventArgs`), `OnDownloadWillBegin` (`DownloadWillBeginEventArgs`) and `OnDownloadEnd`
+(`DownloadEndEventArgs`). The sample below subscribes to those alongside the navigation events.
 
 [!code-csharp[Navigation Events](../../code/modules/BrowsingContextModuleSamples.cs#NavigationEvents)]
 
@@ -220,7 +224,7 @@ the same `DownloadId` and `Url`, along with `Status` (`DownloadEndStatus.Complet
 
 [!code-csharp[Download Events](../../code/modules/BrowsingContextModuleSamples.cs#DownloadEvents)]
 
-> **Note:** Both events must be subscribed to via `session.SubscribeAsync` before they are
+> **Note:** Both events must be subscribed to via `Session.SubscribeAsync` before they are
 > delivered. Use `"browsingContext.downloadWillBegin"` and `"browsingContext.downloadEnd"` as the
 > event names.
 

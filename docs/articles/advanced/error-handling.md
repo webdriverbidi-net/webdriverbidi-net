@@ -18,7 +18,7 @@ Understanding how to handle these errors properly is crucial for building robust
 
 ### Exception Hierarchy
 
-Every exception the library raises derives from `WebDriverBiDiException`, so a single catch clause is always enough to stop a library failure from escaping. The more specific types let you react differently to different failures:
+Every *protocol-level* failure is reported through `WebDriverBiDiException`, so one catch clause covers everything the browser or the connection can do to you. Caller mistakes surface as the usual .NET exceptions instead, which are listed [below](#exception-hierarchy) after the table. The more specific protocol types let you react differently to different failures:
 
 ```
 Exception
@@ -69,8 +69,9 @@ WebDriverBiDi.NET allows you to configure how transport-layer errors are handled
 - Protocol errors (invalid JSON, malformed messages)
 - Unexpected error responses without matching commands
 
-**Late responses are not errors.** When a command times out or is canceled, the browser does not know
-that you stopped waiting and may still answer. The transport remembers recently canceled commands (up to
+**Late responses are not errors.** When a command times out, is canceled by its `CancellationToken`, or is
+canceled directly through `Transport.CancelCommand`, the browser does not know that you stopped waiting and
+may still answer. The transport remembers recently canceled commands (up to
 1,024 of them per connection) and, when such a response or error response arrives, discards it after
 logging a `Debug`-level message through `OnLogMessage` and emitting the `CanceledCommandResponseDiscarded`
 EventSource event. It is **not** counted under `UnknownMessageBehavior` or `UnexpectedErrorBehavior`, so
@@ -84,13 +85,14 @@ Each remembered entry is a `CanceledCommandInfo`, carrying the command's `Comman
 
 | Reason | Meaning |
 |---|---|
-| `Canceled` | The command's `CancellationToken` fired, or the command was canceled directly |
+| `Canceled` | The command's `CancellationToken` fired, or the command was canceled directly through `Transport.CancelCommand` |
 | `TimedOut` | The command's timeout elapsed before a response arrived |
 | `ConnectionClosed` | The command was still pending when the connection closed |
 
 The reason appears in the `Debug` log message and in the `CanceledCommandResponseDiscarded` EventSource
 event's payload, which is how you tell a slow-but-successful command apart from one abandoned at shutdown.
 
+<!-- inline-csharp: the library's own enum declaration, quoted for reference -->
 ```csharp
 public enum TransportErrorBehavior
 {
@@ -311,6 +313,7 @@ Event handlers can be configured with `ObservableEventHandlerOptions` to control
 
 [!code-csharp[Observable Event Handler Options](../../code/error-handling/ErrorHandlingSamples.cs#ObservableEventHandlerOptions)]
 
+<!-- inline-csharp: the library's own enum declaration, quoted for reference -->
 ```csharp
 public enum ObservableEventHandlerOptions
 {

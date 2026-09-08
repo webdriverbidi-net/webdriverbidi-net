@@ -26,9 +26,7 @@ All modules inherit from the `Module` base class:
 
 After registration, retrieve a module by name using `GetModule<T>`:
 
-```csharp
-MyCustomModule myModule = driver.GetModule<MyCustomModule>("myCustom");
-```
+[!code-csharp[Get Module By Name](../../code/advanced/CustomModulesSamples.cs#GetModuleByName)]
 
 This is useful for reaching a module by name when you hold a reference to the driver but not to the module instance you registered. `GetModule<T>` throws `InvalidCastException` if the registered module cannot be cast to `T`, and `ArgumentException` if no module with that name has been registered.
 
@@ -180,30 +178,11 @@ For scenarios requiring custom message processing — for example, injecting tes
 raw frames, or applying transformations to incoming messages — you can subclass `Transport` and
 override `CreateIncomingMessage`:
 
-```csharp
-using WebDriverBiDi.Protocol;
-using System.Buffers;
-
-public class LoggingTransport : Transport
-{
-    public LoggingTransport(Connection connection) : base(connection) { }
-
-    protected override IncomingMessage CreateIncomingMessage(IMemoryOwner<byte> owner, int length)
-    {
-        // Inspect or log the raw message bytes here before handing them to the base implementation.
-        return base.CreateIncomingMessage(owner, length);
-    }
-}
-```
+[!code-csharp[Logging Transport](../../code/advanced/CustomModulesSamples.cs#LoggingTransport)]
 
 Pass your custom transport to `BiDiDriver` via the constructor overload that accepts a `Transport`:
 
-```csharp
-WebSocketConnection connection = new();
-LoggingTransport transport = new(connection);
-await using BiDiDriver driver = new(TimeSpan.FromSeconds(60), transport);
-await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
-```
+[!code-csharp[Use Custom Transport](../../code/advanced/CustomModulesSamples.cs#UseCustomTransport)]
 
 ### Other extension points on `Transport`
 
@@ -212,6 +191,7 @@ await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 | `CreateIncomingMessage` | `protected virtual`. See the raw bytes of every inbound message before they are parsed |
 | `CreateCommand` | `protected virtual`. Build the `Command` envelope — its id, method and parameters — for an outgoing command; override to stamp every command with an extra property |
 | `SendCommandAsync` | `public virtual`. Send a command and get back the `Command` that was queued, without waiting for its response. `BiDiDriver.ExecuteCommandAsync` is the layer above it that waits and deserializes |
+| `CancelCommand` | `public virtual`. Stop waiting for a command sent through `SendCommandAsync`, giving a `CommandCancellationReason`. Returns `false` when the command had already completed, in which case that outcome stands. The command is remembered so that a late response is recognized and discarded rather than reported as an unknown message (see [Error Handling — Transport Error Behavior Configuration](error-handling.md#transport-error-behavior-configuration)) |
 
 Overriding `CreateCommand` is the supported way to add a vendor extension property to every command; adding
 it per call through `CommandParameters.AdditionalData` works too, but goes through reflection-based

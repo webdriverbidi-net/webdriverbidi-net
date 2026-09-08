@@ -1185,6 +1185,26 @@ public static class EventObserverSamples
         #endregion
     }
 
+    /// <summary>
+    /// ToObservable — awaiting delivery completion after disposing the subscription handle.
+    /// </summary>
+    public static async Task ToObservableCompletionTask(BiDiDriver driver)
+    {
+        #region ToObservableCompletionTask
+        IObservable<EntryAddedEventArgs> observable = driver.Log.OnEntryAdded.ToObservable();
+
+        // The BCL Subscribe signature returns IDisposable, so cast to reach CompletionTask.
+        ObservableEventSubscription<EntryAddedEventArgs> subscription =
+            (ObservableEventSubscription<EntryAddedEventArgs>)observable.Subscribe(new LogEntryObserver());
+
+        // ... receive events ...
+        subscription.Dispose();
+
+        // CompletionTask completes once OnCompleted has returned; the observer is now quiescent.
+        await subscription.CompletionTask;
+        #endregion
+    }
+
     private sealed class LogEntryObserver : IObserver<EntryAddedEventArgs>
     {
         public void OnNext(EntryAddedEventArgs e) => Console.WriteLine($"[{e.Level}] {e.Text}");

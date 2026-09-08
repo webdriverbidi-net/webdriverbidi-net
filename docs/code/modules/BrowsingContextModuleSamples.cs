@@ -452,15 +452,16 @@ public static class BrowsingContextModuleSamples
             Background = true,  // Print background colors/images
             Page = new PrintPageParameters()
             {
-                Height = 11,    // Inches
-                Width = 8.5,
+                // Page size and margins are centimeters, not inches. These are US Letter.
+                Height = 27.94,
+                Width = 21.59,
             },
             Margins = new PrintMarginParameters()
             {
-                Top = 0.5,
-                Bottom = 0.5,
-                Left = 0.5,
-                Right = 0.5
+                Top = 1.27,
+                Bottom = 1.27,
+                Left = 1.27,
+                Right = 1.27,
             },
         };
         PrintCommandResult result = await driver.BrowsingContext.PrintAsync(parameters);
@@ -626,7 +627,7 @@ public static class BrowsingContextModuleSamples
         {
             Console.WriteLine($"Context created: {e.BrowsingContextId}");
             Console.WriteLine($"URL: {e.Url}");
-            Console.WriteLine($"Type: {e.OriginalOpener ?? "user-initiated"}");
+            Console.WriteLine($"Original opener: {e.OriginalOpener ?? "user-initiated"}");
         });
 
         // Tab/window closed

@@ -93,14 +93,16 @@ dotnet_diagnostic.BIDI004.severity = none
 
 **Suppress a single occurrence** with a pragma:
 
+<!-- inline-csharp: a suppression example whose point is the diagnostic it suppresses -->
 ```csharp
 #pragma warning disable BIDI009 // command executed before StartAsync (set up in a helper)
-driver.BrowsingContext.NavigateAsync(navParams);
+await driver.BrowsingContext.NavigateAsync(navParams);
 #pragma warning restore BIDI009
 ```
 
 **Suppress on a member** with an attribute:
 
+<!-- inline-csharp: a suppression example whose point is the diagnostic it suppresses -->
 ```csharp
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BIDI006:EventObserver should be disposed", Justification = "Observer lifetime is managed by the test fixture.")]
 public void RegisterObserver() { /* ... */ }
@@ -222,6 +224,7 @@ module is held on its own with no driver to name, and when the driver is a gener
 
 **Warning.** A compile-time-constant value assigned to a command-parameter property falls outside the WebDriver BiDi specification range that the property's `[SpecRange]` attribute declares. A range's upper bound may be exclusive (the specification's CDDL `...` operator), in which case a constant equal to that bound is also flagged. The library deliberately does not validate these ranges at run time—the value is representable on the wire—but a conforming remote end rejects it when the command executes. Only compile-time constants are checked; runtime or dynamic values, `null`, and a property's declared reset sentinel value are never flagged.
 
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
 ```csharp
 // Flagged: Quality's specification range is [0.0, 1.0].
 ImageFormat format = new ImageFormat { Quality = 1.5 };
@@ -239,6 +242,7 @@ This is a `Warning` by design so it never blocks a build; downgrade or suppress 
 
 **Error.** A driver is used after it has been disposed. `BiDiDriver.DisposeAsync` marks the driver disposed before it releases anything, and `StartAsync`, `ExecuteCommandAsync`, `RegisterEvent`, `RegisterModule`, `GetModule` and `RegisterTypeInfoResolverAsync` all throw `ObjectDisposedException` from that point on — as does every module command, which reaches the same guard through `ExecuteCommandAsync`. Disposal is terminal: unlike `StopAsync()`, it cannot be undone by starting again, so the only remedy is a new driver.
 
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
 ```csharp
 BiDiDriver driver = new BiDiDriver();
 await driver.StartAsync(url);
@@ -253,6 +257,7 @@ await driver.StartAsync(url);
 
 `StopAsync()` and a second `DisposeAsync()` are not flagged, because neither throws on a disposed driver, and neither is reaching an observable event through a module property (`driver.Log.OnEntryAdded.AddObserver(...)` touches no disposal guard). The implicit disposal of `await using (driver) { ... }` counts as a disposal for the statements that follow it. Rebinding the variable clears the state:
 
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
 ```csharp
 await driver.DisposeAsync();
 driver = new BiDiDriver();
@@ -267,6 +272,7 @@ The disposal state is tracked per local variable through `if`/`else`, `switch` a
 
 **Warning.** `StartCapturingTasks()` is called on an `EventObserver` that already has an active capture session. An observer permits one session at a time; the second call throws `WebDriverBiDiException`. This is the companion of [BIDI020](#bidi020), which reports the opposite mistake.
 
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
 ```csharp
 observer.StartCapturingTasks();
 
@@ -276,6 +282,7 @@ observer.StartCapturingTasks();
 
 `StopCapturingTasks()` ends the session, and so may a wait: `WaitForCapturedTasksAsync` and `WaitForCapturedTasksCompleteAsync` end it themselves when they collect the full batch they were asked for. Because whether that happened is a runtime outcome, a start after either is never reported:
 
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
 ```csharp
 observer.StartCapturingTasks();
 Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
@@ -290,6 +297,7 @@ As with BIDI020, the state is tracked per local variable and merged across branc
 
 **Info.** The `EventObserver` that `AddObserver` returns is discarded, so nothing can remove the observer later: `Unobserve()` and `Dispose()` are members of that handle, and `RemoveObserver` needs its `Id`.
 
+<!-- inline-csharp: written to trip the analyzer under discussion, so it cannot compile in the snippets project -->
 ```csharp
 // Flagged: nothing can remove this observer.
 driver.Log.OnEntryAdded.AddObserver(entry => Console.WriteLine(entry.Text));
@@ -326,15 +334,19 @@ No analyzer performs whole-program flow analysis; none of them correlate data ac
 |-------|------------------------|-------|
 | **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024, BIDI029, BIDI030 |
 | **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017, BIDI022, BIDI025, BIDI026, BIDI027, BIDI031 |
-| **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast, an assignment) in isolation. | BIDI008, BIDI028 |
+| **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast, an assignment) in isolation. | BIDI008, BIDI022, BIDI028 |
 | **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), BIDI007 and BIDI023 resolve the reference and walk that method body too; BIDI016 inspects only inline `async` lambda handlers and does not follow method references. None of them continue transitively into further methods that the handler body calls. | BIDI007, BIDI016, BIDI023 |
+
+BIDI022 sits in two tiers because it registers two shapes: the `Add` and `TryAdd` invocations, and the indexer and object-initializer assignments. Each is judged on its own, with no correlation between them.
 
 ### What this means in practice
 
 If you split setup across helper methods (common in test frameworks or automation wrappers), analyzers in the **intra-procedural** or **per-invocation** tiers will not correlate calls in different methods:
 
+<!-- inline-csharp: a sketch of two helper methods with elided bodies, not compilable code -->
 ```csharp
-// SetupAsync() — BIDI001/009 tracks driver state here
+// SetupAsync() — `driver` is a field, so nothing here is tracked at all: BIDI001 and
+// BIDI009 begin tracking only at a local declaration whose initializer is a driver.
 async Task SetupAsync() { driver = new BiDiDriver(); await driver.StartAsync(...); }
 
 // TestAsync() — BIDI009 cannot detect that StartAsync was called in SetupAsync
@@ -343,8 +355,21 @@ async Task TestAsync() { driver.RegisterModule(new CustomModule(driver)); } // n
 
 BIDI007 and BIDI023 are the exceptions: they will follow a single hop from an `AddObserver(...)` call to a method reference used as the handler, but they will not walk further than that. BIDI016 analyzes only inline `async` handlers; a handler passed as a method reference is not analyzed. All three treat the three spellings of an inline handler alike — a simple lambda, a parenthesized lambda, and an anonymous method written with the `delegate` keyword.
 
+Every intra-procedural rule takes its analysis roots from the statements of a method, a constructor, or a top-level program, and none of them descends into a lambda, an anonymous method, or a local function, because that code runs when the delegate is invoked rather than where it is written. A driver or an observer *declared inside* one of those is therefore never tracked at all, and no diagnostic is reported for it:
+
+<!-- inline-csharp: written to show what the analyzer does not report, so it cannot compile in the snippets project -->
+```csharp
+// Nothing here is analyzed: the driver is declared inside the lambda.
+Func<Task> run = async () =>
+{
+    BiDiDriver driver = new BiDiDriver();
+    await driver.Session.StatusAsync();   // no BIDI009, though the driver was never started
+};
+```
+
 BIDI009 goes further in the other direction. Because it reports an **Error**, it reports only when it is certain, so it stops tracking a driver that this method hands to something else — passed as an argument, returned, assigned to a field, aliased to another variable, or placed in a collection — since the code it was handed to may start it. The one argument position that does not count is a module's constructor: `driver.RegisterModule(new CustomModule(driver))` hands the driver to a module, which holds it to issue commands and cannot start it.
 
+<!-- inline-csharp: calls an undefined helper to show where tracking stops -->
 ```csharp
 BiDiDriver driver = new BiDiDriver();
 await StartHelperAsync(driver);                 // the driver escapes here

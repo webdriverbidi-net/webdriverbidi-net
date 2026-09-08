@@ -61,10 +61,9 @@ public static class UserAgentClientHintsModuleSamples
     public static async Task CommonBrowserBrands(BiDiDriver driver)
     {
         #region CommonBrowserBrands
-        // Chrome on Windows
-        SetClientHintsOverrideCommandParameters parameters =
-            new SetClientHintsOverrideCommandParameters();
-        parameters.ClientHints = new ClientHintsMetadata
+        // Three complete profiles. Each SetClientHintsOverrideAsync call replaces the previous
+        // override, so pick the one you want to emulate rather than assigning all three in turn.
+        ClientHintsMetadata chromeOnWindows = new ClientHintsMetadata
         {
             Brands = new List<BrandVersion>
             {
@@ -84,8 +83,7 @@ public static class UserAgentClientHintsModuleSamples
             Bitness = "64"
         };
 
-        // Firefox on macOS
-        parameters.ClientHints = new ClientHintsMetadata
+        ClientHintsMetadata firefoxOnMac = new ClientHintsMetadata
         {
             Brands = new List<BrandVersion>
             {
@@ -98,8 +96,7 @@ public static class UserAgentClientHintsModuleSamples
             Mobile = false
         };
 
-        // Mobile Chrome (Android)
-        parameters.ClientHints = new ClientHintsMetadata
+        ClientHintsMetadata chromeOnAndroid = new ClientHintsMetadata
         {
             Brands = new List<BrandVersion>
             {
@@ -113,7 +110,14 @@ public static class UserAgentClientHintsModuleSamples
             Mobile = true
         };
 
+        SetClientHintsOverrideCommandParameters parameters =
+            new SetClientHintsOverrideCommandParameters
+            {
+                ClientHints = chromeOnWindows,   // or firefoxOnMac, or chromeOnAndroid
+            };
+
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
+
         #endregion
     }
 

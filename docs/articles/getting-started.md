@@ -4,7 +4,8 @@ This guide will walk you through installing WebDriverBiDi.NET and setting up you
 
 ## Prerequisites
 
-- **.NET SDK**: Runtime compatible with .NET Standard 2.0, supporting .NET Framework 4.6.1+, .NET Core 2.0+, or .NET 5.0+
+- **Runtime**: The package targets .NET Standard 2.0, so it runs on .NET Framework 4.6.1+, .NET Core 2.0+, and .NET 5.0+. Any SDK that can target your chosen runtime is enough to consume the library
+- **.NET SDK**: 7.0 or later to build the samples in this guide as written, because they use C# 11 raw string literals
 - **IDE**: Visual Studio, Visual Studio Code, or JetBrains Rider
 - **Browser**: A browser with WebDriver BiDi support (Chrome, Edge, Firefox)
 
@@ -133,6 +134,7 @@ dotnet add package WebDriverBiDi
 
 Replace the contents of `Program.cs` with the code below, adding these `using` directives at the top of the file:
 
+<!-- inline-csharp: the using directives the sample needs, quoted on their own -->
 ```csharp
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;

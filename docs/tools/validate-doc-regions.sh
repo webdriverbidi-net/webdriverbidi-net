@@ -180,6 +180,33 @@ while IFS=$'\t' read -r region_path region_name; do
   fi
 done < "$REGIONS_FILE"
 
+echo ""
+echo "=== Checking for unmarked inline C# fences ==="
+echo ""
+
+# docs/README.md forbids pasting C# into markdown: it belongs in docs/code as a region, so that it
+# compiles and cannot drift from the API. The exception is a fragment that could never compile on its
+# own — a list of member names, a signature sketch, a declaration quoted from the library, or code
+# written to trip an analyzer. Each of those must say so with a marker on the line directly above it:
+#
+#     <!-- inline-csharp: why this cannot be a compiled region -->
+#
+# so that the exception is a deliberate, reviewable choice rather than an oversight. A fence inside a
+# blockquote is prose quotation and is not checked.
+INLINE_COUNT=0
+while IFS= read -r mdfile; do
+  while IFS= read -r fence_line; do
+    [ -n "$fence_line" ] || continue
+    marker_line=$((fence_line - 1))
+    if [ "$marker_line" -ge 1 ] && \
+       sed -n "${marker_line}p" "$mdfile" | grep -q '^<!-- inline-csharp:'; then
+      continue
+    fi
+    echo "❌ INLINE: $(display_path "$mdfile"):$fence_line opens a csharp fence with no '<!-- inline-csharp: reason -->' marker above it"
+    INLINE_COUNT=$((INLINE_COUNT + 1))
+  done < <({ grep -n '^```csharp' "$mdfile" 2>/dev/null || true; } | cut -d: -f1)
+done < "$MARKDOWN_FILES"
+
 # Cleanup
 rm "$REGIONS_FILE" "$REFERENCES_FILE" "$REFERENCE_KEYS_FILE" "$MARKDOWN_FILES"
 
@@ -187,13 +214,15 @@ echo ""
 echo "=== Summary ==="
 echo "Stale references (referenced but no region): $STALE_COUNT"
 echo "Unused regions (region but no reference): $UNUSED_COUNT"
+echo "Unmarked inline C# fences: $INLINE_COUNT"
 
-if [ $STALE_COUNT -gt 0 ]; then
+if [ $STALE_COUNT -gt 0 ] || [ $INLINE_COUNT -gt 0 ]; then
   echo ""
-  echo "❌ FAIL: Found $STALE_COUNT stale reference(s)"
+  [ $STALE_COUNT -gt 0 ] && echo "❌ FAIL: Found $STALE_COUNT stale reference(s)"
+  [ $INLINE_COUNT -gt 0 ] && echo "❌ FAIL: Found $INLINE_COUNT unmarked inline C# fence(s)"
   exit 1
 else
   echo ""
-  echo "✅ PASS: All markdown references have corresponding region markers"
+  echo "✅ PASS: All markdown references have corresponding region markers, and every inline C# fence is marked"
   exit 0
 fi

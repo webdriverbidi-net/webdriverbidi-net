@@ -95,7 +95,7 @@ Connections have three timeout properties (default: 10 seconds each):
 
 **ShutdownTimeout**: Graceful shutdown timeout for the underlying connection (e.g., the WebSocket close handshake). Ensures resources are released properly. Note that this is distinct from `Transport.ShutdownTimeout`, described below.
 
-**DataTimeout**: Send/receive operation timeout. Protects against hung connections.
+**DataTimeout**: How long a send waits for exclusive access to the connection while another send is in progress. It does not bound the send or the receive itself, so it is not a guard against a hung connection; a send that waits longer than this fails to acquire access and reports the failure instead of queueing behind the send ahead of it. A zero value keeps its non-blocking meaning: access is taken only if it is free right now.
 
 ### Transport Shutdown Timeout
 
@@ -131,9 +131,7 @@ setting is exposed at all three layers — `BiDiDriver.LogLevel`, `Transport.Log
 `Connection.LogLevel` — and they read and write one value, so setting it anywhere sets it
 everywhere:
 
-```csharp
-driver.LogLevel = WebDriverBiDiLogLevel.Debug;
-```
+[!code-csharp[Set Log Level](../../code/advanced/ConnectionManagementSamples.cs#SetLogLevel)]
 
 | Level | What it adds |
 |-------|--------------|

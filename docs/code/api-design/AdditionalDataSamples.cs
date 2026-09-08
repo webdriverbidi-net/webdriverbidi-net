@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Docs.Code.ApiDesign;
 
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Network;
 
@@ -59,6 +60,40 @@ public static class AdditionalDataSamples
         {
             Console.WriteLine($"Envelope channel: {channel}");
         }
+        #endregion
+    }
+
+    /// <summary>
+    /// Command-level reset: a static property returning a configured parameters instance.
+    /// </summary>
+    public static async Task CommandLevelReset(BiDiDriver driver)
+    {
+        #region CommandLevelReset
+        // ResetTimeZoneOverride returns a SetTimeZoneOverrideCommandParameters instance
+        await driver.Emulation.SetTimeZoneOverrideAsync(
+            SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride);
+        #endregion
+    }
+
+    /// <summary>
+    /// Property-level sentinel: a static value assigned to one property of the parameters object.
+    /// </summary>
+    public static async Task PropertyLevelSentinel(BiDiDriver driver)
+    {
+        #region PropertyLevelSentinel
+        // Reset viewport only — leave device pixel ratio unchanged
+        await driver.BrowsingContext.SetViewportAsync(
+            new SetViewportCommandParameters
+            {
+                Viewport = SetViewportCommandParameters.ResetToDefaultViewport,
+            });
+
+        // Reset device pixel ratio only — leave viewport dimensions unchanged
+        await driver.BrowsingContext.SetViewportAsync(
+            new SetViewportCommandParameters
+            {
+                DevicePixelRatio = SetViewportCommandParameters.ResetToDefaultDevicePixelRatio,
+            });
         #endregion
     }
 }
