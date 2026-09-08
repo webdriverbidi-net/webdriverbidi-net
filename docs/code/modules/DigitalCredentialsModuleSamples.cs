@@ -57,6 +57,7 @@ public static class DigitalCredentialsModuleSamples
         SetVirtualWalletBehaviorCommandParameters @params = new SetVirtualWalletBehaviorCommandParameters(
             VirtualWalletAction.Respond)
         {
+            Protocol = "openid4vp-v1-unsigned",
             Response = credentialResponse
         };
 
@@ -111,25 +112,31 @@ public static class DigitalCredentialsModuleSamples
     }
 
     /// <summary>
-    /// Scope wallet behavior to a specific credential protocol.
+    /// Present the simulated credential under a particular credential protocol.
     /// </summary>
-    public static async Task ScopeToProtocol(BiDiDriver driver)
+    public static async Task SelectProtocol(BiDiDriver driver)
     {
-        #region ScopeToProtocol
+        #region SelectProtocol
         Dictionary<string, object?> credentialResponse = new Dictionary<string, object?>
         {
-            ["token"] = "eyJhbGciOiJFUzI1NiJ9..."
+            ["documents"] = new List<object?>
+            {
+                new Dictionary<string, object?>
+                {
+                    ["docType"] = "org.iso.18013.5.1.mDL"
+                }
+            }
         };
 
         SetVirtualWalletBehaviorCommandParameters @params = new SetVirtualWalletBehaviorCommandParameters(
             VirtualWalletAction.Respond)
         {
-            Protocol = "openid4vp",
+            Protocol = "org-iso-mdoc",
             Response = credentialResponse
         };
 
         await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(@params);
-        Console.WriteLine("Virtual wallet will respond to openid4vp credential requests");
+        Console.WriteLine("Virtual wallet will present the credential as an org-iso-mdoc response");
         #endregion
     }
 
@@ -177,7 +184,7 @@ public static class DigitalCredentialsModuleSamples
         SetVirtualWalletBehaviorCommandParameters @params = new SetVirtualWalletBehaviorCommandParameters(
             VirtualWalletAction.Respond)
         {
-            Protocol = "preview",
+            Protocol = "org-iso-mdoc",
             BrowsingContextId = contextId,
             Response = mdocResponse
         };
