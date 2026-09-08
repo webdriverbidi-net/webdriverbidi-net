@@ -494,6 +494,47 @@ public static class ConnectionManagementSamples
     }
 
     /// <summary>
+    /// Transport.ConnectionLockTimeout bounds the wait for exclusive access to the connection, so an
+    /// operation issued from an observer the transport dispatched fails instead of waiting forever.
+    /// </summary>
+    public static async Task TransportConnectionLockTimeout(string url)
+    {
+        #region TransportConnectionLockTimeout
+        // Connect, disconnect, command send and type-info-resolver registration each take exclusive
+        // access to the connection for the duration of their work. Transport.ConnectionLockTimeout
+        // bounds how long one of them waits while another holds it.
+        WebSocketConnection connection = new WebSocketConnection();
+        Transport transport = new Transport(connection)
+        {
+            // Default is 60 seconds, which is longer than the longest legitimate hold. Lower it only
+            // to fail faster; a value below the longest hold a session can legitimately take will
+            // fail operations that would otherwise have succeeded.
+            ConnectionLockTimeout = TimeSpan.FromSeconds(30),
+        };
+
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+        // An observer that drives the driver must run asynchronously. A synchronous one is invoked
+        // while the operation that produced the message still holds the connection, so a command it
+        // sends waits for access its own caller holds. Such a command fails with
+        // WebDriverBiDiTimeoutException once ConnectionLockTimeout elapses, and the operation it
+        // interrupted then completes normally.
+        driver.OnLogMessage.AddObserver(
+            async (e) =>
+            {
+                if (e.Level >= WebDriverBiDiLogLevel.Warn)
+                {
+                    await driver.Session.StatusAsync();
+                }
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await driver.StartAsync(url);
+        await driver.StopAsync();
+        #endregion
+    }
+
+    /// <summary>
     /// Transport.IncomingQueueDepth exposes the current depth of the incoming message
     /// queue. Intended for operator diagnostics.
     /// </summary>

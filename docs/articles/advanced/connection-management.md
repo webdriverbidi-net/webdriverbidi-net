@@ -112,6 +112,20 @@ Most users never need to tune this. Consider adjusting it only in specialized sc
 
 An event handler that is still running while `StopAsync()` drains the queue may itself try to send a command. Such a command fails immediately with `WebDriverBiDiConnectionException` ("Transport must be connected to a remote end to execute commands") rather than waiting out the shutdown timeout, so a handler cannot deadlock shutdown by sending; it simply observes the exception.
 
+### Transport Connection Lock Timeout
+
+`Transport.ConnectionLockTimeout` (default: 60 seconds) bounds how long an operation waits for exclusive access to the connection while another operation holds it. `ConnectAsync`, `DisconnectAsync`, `SendCommandAsync` and `RegisterTypeInfoResolverAsync` each take that access for the duration of their work, so one of them waits while another is in progress. Ordinary concurrent use never notices the bound: commands issued from several threads at once contend only for as long as a send takes.
+
+The bound exists for one situation, which is otherwise unrecoverable. The transport dispatches observers while it holds the access, so an observer that calls back into the driver asks for access its own caller holds, and the two would wait on each other indefinitely. This is not confined to `Trace`: the connection raises its `SEND >>>` traffic message from inside the send, but the connection and the transport also log around connect and disconnect at the default `Info` level, so an observer that reconnects when it sees "Transport disconnected" reaches the same point.
+
+With the bound in place, the re-entrant operation fails with `WebDriverBiDiTimeoutException` naming the cause, and the operation it interrupted goes on to complete. This is a diagnosable failure rather than a hang, not a licence to re-enter: register any observer that drives the driver with `ObservableEventHandlerOptions.RunHandlerAsynchronously`, so that it no longer runs inside the operation that dispatched it.
+
+[!code-csharp[Transport Connection Lock Timeout](../../code/advanced/ConnectionManagementSamples.cs#TransportConnectionLockTimeout)]
+
+Where the failure surfaces depends on which event the observer was added to. Through `driver.OnLogMessage` or `transport.OnLogMessage` the transport catches the observer's exception and routes it through [`EventHandlerExceptionBehavior`](error-handling.md#transport-error-behavior-configuration), so the interrupted operation still completes. Added directly to `connection.OnLogMessage`, the exception propagates into the send, which then fails as well — as any throwing observer of that event does.
+
+The default is deliberately longer than the longest legitimate hold, so that lowering it is a deliberate choice. A disconnect that exhausts every wait it is allowed holds the access for the connection's close handshake and its receive-loop wait (each bounded by `Connection.ShutdownTimeout`) and then for the message-queue drain (bounded by `Transport.ShutdownTimeout`), roughly 30 seconds at the default settings. Reduce it when you would rather find a re-entrant observer quickly than wait a minute for it; set it to `Timeout.InfiniteTimeSpan` to restore an unbounded wait, and `TimeSpan.Zero` to never wait at all.
+
 ### Buffer Size
 
 Connection buffer size is fixed at 1 MB (2²⁰ bytes):

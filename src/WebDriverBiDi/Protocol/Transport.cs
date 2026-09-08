@@ -136,6 +136,7 @@ public class Transport : IAsyncDisposable
     private int collectedErrorsReportedFlag = 0;
 
     private TimeSpan shutdownTimeout = TimeSpan.FromSeconds(10);
+    private TimeSpan connectionLockTimeout = TimeSpan.FromSeconds(60);
 
     // Message/event sent/received statistics
     private long commandMessagesSent = 0;
@@ -313,6 +314,52 @@ public class Transport : IAsyncDisposable
             }
 
             this.shutdownTimeout = value;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the timeout to wait for exclusive access to this transport's connection while
+    /// another operation holds it. The default is 60 seconds.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="ConnectAsync"/>, <see cref="DisconnectAsync(CancellationToken)"/>,
+    /// <see cref="SendCommandAsync"/> and <see cref="RegisterTypeInfoResolverAsync"/> each take
+    /// exclusive access for the duration of their work, so one of them waits while another is in
+    /// progress. Bounding that wait keeps an operation issued from code this transport itself
+    /// invoked while holding the access — a synchronous observer of <see cref="OnLogMessage"/> that
+    /// sends a command, for example — from waiting on an operation that is itself waiting on the
+    /// observer to return. Such an operation fails with <see cref="WebDriverBiDiTimeoutException"/>
+    /// instead of never completing. An observer that needs to drive the transport should be
+    /// registered with <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> so that
+    /// it does not hold up the operation it was dispatched from.
+    /// </para>
+    /// <para>
+    /// The default is deliberately longer than the longest legitimate hold, so that lowering it is
+    /// a deliberate choice rather than a trap. A disconnect that exhausts every wait it is allowed
+    /// holds the access for the connection's close handshake and for its receive-loop wait (each
+    /// bounded by <see cref="Connection.ShutdownTimeout"/>), and then for the message-queue drain
+    /// (bounded by <see cref="ShutdownTimeout"/>), which is about 30 seconds at the default
+    /// settings. A value shorter than the longest hold a session can legitimately take will fail
+    /// operations that would otherwise have succeeded. <see cref="TimeSpan.Zero"/> never waits, and
+    /// <see cref="Timeout.InfiniteTimeSpan"/> restores an unbounded wait.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
+    /// the maximum timer duration supported by the runtime.
+    /// </exception>
+    public TimeSpan ConnectionLockTimeout
+    {
+        get => this.connectionLockTimeout;
+        set
+        {
+            if (!TimeoutUtilities.IsValidTimeout(value))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), TimeoutUtilities.GetInvalidTimeoutMessage("Connection lock timeout"));
+            }
+
+            this.connectionLockTimeout = value;
         }
     }
 
@@ -685,8 +732,12 @@ public class Transport : IAsyncDisposable
             try
             {
                 // Start timing and raise the command-sending event. The log-message notification for
-                // this command was emitted before the connection lock was acquired (see above) so that
-                // a synchronous log observer cannot deadlock by re-entering the transport.
+                // this command was emitted before the connection lock was acquired (see above), so a
+                // synchronous observer of it re-enters the transport without contending for the lock at
+                // all. That hoist does not cover the connection's own Trace-level traffic message, which
+                // Connection.SendDataAsync raises below while this lock is held: an observer of that
+                // message which re-enters the transport waits for a lock this call holds, and is bounded
+                // by ConnectionLockTimeout rather than waiting indefinitely.
                 command.StartTiming();
                 WebDriverBiDiEventSource.RaiseEvent.CommandSending(command.CommandId, command.CommandName);
 
@@ -1148,9 +1199,49 @@ public class Transport : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous acquire operation.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">
+    /// Thrown when the lock is not acquired within <see cref="ConnectionLockTimeout"/>.
+    /// </exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <remarks>
+    /// <para>
+    /// The uncontended case is the overwhelmingly common one, and it is taken without allocating: the
+    /// timeout machinery is built only once the lock is found to be held. The bound is measured on this
+    /// transport's <see cref="TimeProvider"/>, so a transport running on virtual time waits on that same
+    /// clock.
+    /// </para>
+    /// <para>
+    /// Bounding the wait is what keeps a re-entrant call from hanging forever. This transport dispatches
+    /// observers while holding the lock — the connection raises its own traffic message from inside
+    /// <see cref="Connection.SendDataAsync"/>, and both the connection and this transport log around
+    /// connect and disconnect — so a synchronous observer that calls back into the transport arrives
+    /// here for a lock its own caller holds. It now fails with a
+    /// <see cref="WebDriverBiDiTimeoutException"/> naming the cause, and the operation it interrupted
+    /// proceeds, rather than the two waiting on each other indefinitely.
+    /// </para>
+    /// </remarks>
     protected virtual async Task AcquireConnectionLockAsync(CancellationToken cancellationToken = default)
     {
-        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        // Honor an already-canceled token before the fast path, because SemaphoreSlim.WaitAsync
+        // observes the token even when the semaphore is free, and taking the lock instead would
+        // change that behavior for a caller who has already given up.
+        cancellationToken.ThrowIfCancellationRequested();
+        if (this.connectDisconnectSemaphore.Wait(0))
+        {
+            return;
+        }
+
+        using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ConnectionLockTimeout);
+        using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+        try
+        {
+            await this.connectDisconnectSemaphore.WaitAsync(linkedTokenSource.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // The caller did not cancel, so the linked token can only have fired for the timeout.
+            throw new WebDriverBiDiTimeoutException($"Timed out after {this.ConnectionLockTimeout} waiting for exclusive access to the connection. An operation issued from an observer that this transport invoked while holding that access cannot proceed until the holder finishes; run such an observer asynchronously with ObservableEventHandlerOptions.RunHandlerAsynchronously.");
+        }
     }
 
     /// <summary>
