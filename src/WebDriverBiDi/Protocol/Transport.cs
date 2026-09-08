@@ -128,6 +128,13 @@ public class Transport : IAsyncDisposable
     // enter a circular lock.
     private TaskCompletionSource<int> disconnectOwnedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    // Records a connection loss reported while a connect attempt is still in flight, which
+    // HandleConnectionDisconnectionAsync cannot act on because there is not yet a session to tear
+    // down. ConnectAsync reads and clears it, and fails the attempt rather than publishing the
+    // Connected state over a connection that is already gone. The exception the connection reported
+    // is kept rather than a flag, so the failure names the cause.
+    private WebDriverBiDiConnectionException? connectionLostWhileConnecting;
+
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
     // Backing store for the State property; holds a TransportState value. Zero is
     // TransportState.Disconnected, matching the field's default.
@@ -496,7 +503,12 @@ public class Transport : IAsyncDisposable
     /// <param name="connectionString">The URI used to connect to the web socket.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is already connected to a remote end, or when the <see cref="Connection"/> refuses to open.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">
+    /// Thrown when the transport is already connected to a remote end, when the <see cref="Connection"/>
+    /// refuses to open, or when the connection is lost while the session is being established. The last
+    /// case carries the loss the connection reported as its inner exception; the transport is left
+    /// disconnected, so a further attempt may be made.
+    /// </exception>
     /// <exception cref="WebDriverBiDiTimeoutException">
     /// Propagated from <see cref="Connection.StartAsync"/> when the connection is not established within
     /// its <see cref="Connection.StartupTimeout"/>.
@@ -563,6 +575,11 @@ public class Transport : IAsyncDisposable
             this.incomingMessageQueue = new IncomingMessageQueue();
             Interlocked.Exchange(ref this.disconnectOwnedSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
 
+            // Discard any loss recorded against a previous attempt, so that this attempt is judged
+            // only by what happens to its own connection. This must precede Connection.StartAsync
+            // below, because a loss reported from the moment that call begins belongs to this attempt.
+            Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
+
             this.ResetCollectedErrors();
 
             // Reset the termination reason to its default so a reason carried over from a prior
@@ -582,6 +599,18 @@ public class Transport : IAsyncDisposable
             {
                 // Allow for the possibility of the connection to already being opened.
                 await this.Connection.StartAsync(connectionString, cancellationToken).ConfigureAwait(false);
+            }
+
+            // The connection's receive loop is already running by the time StartAsync returns, so the
+            // remote end can close, or the loop can fail, before the Connected state is published just
+            // below. Record that loss of connection, if it exists.
+            WebDriverBiDiConnectionException? connectionLost = Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
+            if (connectionLost is not null)
+            {
+                // The reader is never started for this attempt, so anything the remote end managed to
+                // push into the queue would otherwise be abandoned holding its pooled buffer.
+                this.incomingMessageQueue.Drain();
+                throw new WebDriverBiDiConnectionException("The connection was lost while the session was being established; the remote end closed it, or the connection reported an error, before the transport finished connecting.", connectionLost);
             }
 
             // Delaying starting the processing loop until after establishing the connection
@@ -1635,8 +1664,16 @@ public class Transport : IAsyncDisposable
     {
         // Fast-path: if already disconnected, no work to do.
         // Prevents deadlock when connection error occurs during DisconnectAsync.
-        if (this.State != TransportState.Connected)
+        TransportState stateAtNotification = this.State;
+        if (stateAtNotification != TransportState.Connected)
         {
+            if (stateAtNotification == TransportState.Connecting)
+            {
+                // The loss arrived while a connect attempt is still in flight, so there is no session to
+                // tear down yet. Record the cause for ConnectAsync to fail the attempt with.
+                Interlocked.CompareExchange(ref this.connectionLostWhileConnecting, connectionException, null);
+            }
+
             return;
         }
 
@@ -2067,6 +2104,29 @@ public class Transport : IAsyncDisposable
         public void DecrementDepth()
         {
             Interlocked.Decrement(ref this.depth);
+        }
+
+        /// <summary>
+        /// Closes this queue to further writes and disposes everything still buffered in it.
+        /// </summary>
+        /// <remarks>
+        /// Used when a queue is abandoned without a reader ever having run over it, which is what a
+        /// failed connect attempt leaves behind. Each buffered <see cref="IncomingMessage"/> owns a
+        /// pooled buffer that only its disposal returns, and <see cref="DecrementDepth"/> is paired with
+        /// each read so that <see cref="Depth"/>, and through it
+        /// <see cref="IncomingQueueDepth"/>, does not go on reporting messages that no longer exist.
+        /// Completing the writer first means a late arrival from a receive loop that has not yet
+        /// unwound fails its write and is disposed by the producer, rather than being added to a queue
+        /// that nothing will drain again.
+        /// </remarks>
+        public void Drain()
+        {
+            this.MessageChannel.Writer.TryComplete();
+            while (this.MessageChannel.Reader.TryRead(out IncomingMessage? bufferedMessage))
+            {
+                this.DecrementDepth();
+                bufferedMessage.Dispose();
+            }
         }
     }
 }

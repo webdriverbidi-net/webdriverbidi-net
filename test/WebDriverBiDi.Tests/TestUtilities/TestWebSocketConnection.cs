@@ -137,9 +137,18 @@ public class TestWebSocketConnection : WebSocketConnection
         await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs());
     }
 
+    /// <summary>
+    /// Gets or sets a signal completed on entry to <see cref="StartAsync"/>, immediately before
+    /// <see cref="StartBarrier"/> is awaited. A test that needs to act while the transport is in the
+    /// Connecting state waits on this, does its work, and then releases the barrier, rather than
+    /// guessing when the connect attempt has reached the connection.
+    /// </summary>
+    public TaskCompletionSource? StartBarrierReached { get; set; }
+
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
         this.ConnectionString = url;
+        this.StartBarrierReached?.TrySetResult();
         if (this.StartBarrier is not null)
         {
             await this.StartBarrier.Task.ConfigureAwait(false);
