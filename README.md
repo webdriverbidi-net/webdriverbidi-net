@@ -144,20 +144,32 @@ is mostly prohibited, and will only be allowed on a very strictly reviewed case-
 The project has some performance benchmarks, using [BenchmarkDotNet](https://benchmarkdotnet.org/)
 to provide baseline tracking of performance metrics.
 
-The project uses [GitHub Actions](https://github.com/webdriverbidi-net/webdriverbidi-net/actions) for continuous
-integration (CI). Code coverage statistics are generated and gathered by
-[Coverlet](https://www.nuget.org/packages/coverlet.MTP/) (the `coverlet.MTP` package, which
-integrates with the Microsoft.Testing.Platform runner the test projects use), and uploaded to
-[coveralls.io](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main). PRs for which
-the code coverage drops from the current percentage on the `main` branch will need to be carefully
+## Continuous Integration (CI)
+
+The project uses [GitHub Actions](https://github.com/webdriverbidi-net/webdriverbidi-net/actions) for CI.
+Code coverage statistics are generated and gathered by [Coverlet](https://www.nuget.org/packages/coverlet.MTP/)
+(the `coverlet.MTP` package, which integrates with the Microsoft.Testing.Platform runner the test projects use),
+and uploaded to [coveralls.io](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main).
+PRs for which the code coverage drops from the current percentage on the `main` branch will need to be carefully
 reviewed. For convenience, a task has been configured to collect code coverage statistics when the
 tests are executed, so to run code coverage locally, you can run the test task from the Command
 Palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>, 
 choose the `Tasks: Run Task` entry, and choose the `dotnet: test with coverage` task).
 
-Some useful plugins in your Visual Studio Code environment for this project are:
-* [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters):
-This plugin allows visualization of code coverage directly within the IDE.
+Coverage is measured in CI twice, in Release by the `unit-tests` job and in Debug by a separate
+`unit-tests-debug` job, because the project's standard is 100% line, branch and method coverage in
+**both** configurations. The two configurations do not instrument the same branches: a gap has been
+observed that a Release run reported and a Debug run did not, so measuring only one of them can miss
+a real regression in the other.
+
+**The two jobs are deliberately separate, and should not be collapsed into a `configuration` matrix
+on `unit-tests`.** They already run concurrently on the same `needs: build` fan-out, so the second
+job costs runner minutes rather than elapsed time, and it finishes well inside the shadow of the
+integration tests, which set the wall-clock critical path. A matrix would save about forty lines of
+setup, but `unit-tests` also packs the analyzer package, verifies its shipped layout, and uploads
+coverage to coveralls; none of those may run twice, so each would need an `if:` guard on the matrix
+value. Those are precisely the steps that exist to catch a packaging mistake before a release, and a
+guard that is wrong fails by silently not checking. The duplication is the cheaper error to make.
 
 ## Benchmarks
 The library tracks performance across five suites covering command object
