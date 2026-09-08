@@ -1280,6 +1280,156 @@ public class TransportTests
     }
 
     [Fact]
+    public void TestConnectionLockTimeoutDefaultValue()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.Equal(TimeSpan.FromSeconds(60), transport.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public void TestConnectionLockTimeoutCanBeSet()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ConnectionLockTimeout = TimeSpan.FromSeconds(5),
+        };
+        Assert.Equal(TimeSpan.FromSeconds(5), transport.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public void TestConnectionLockTimeoutRejectsNegativeValue()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.Throws<ArgumentOutOfRangeException>(() => transport.ConnectionLockTimeout = TimeSpan.FromMilliseconds(-5));
+    }
+
+    [Fact]
+    public void TestConnectionLockTimeoutAllowsInfiniteTimeSpan()
+    {
+        // An infinite value restores the unbounded wait the transport used before the bound existed,
+        // for a consumer who would rather have a hang than a bounded failure.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ConnectionLockTimeout = Timeout.InfiniteTimeSpan,
+        };
+        Assert.Equal(Timeout.InfiniteTimeSpan, transport.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public async Task TestReentrantCommandFromSynchronousTraceLogObserverTimesOutInsteadOfDeadlocking()
+    {
+        // The transport holds the connection lock across Connection.SendDataAsync, which raises the
+        // connection's own Trace-level "SEND >>>" message before it takes the connection's send
+        // semaphore. A synchronous observer of that message that sends a command therefore asks for a
+        // lock its own caller holds. Before ConnectionLockTimeout existed the two waited on each other
+        // forever, and no command timeout applied, because the deadlock happens inside SendCommandAsync
+        // before the command's completion is ever awaited. The nested send must now fail with a
+        // WebDriverBiDiTimeoutException, and the send it interrupted must go on to complete.
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ConnectionLockTimeout = TimeSpan.FromSeconds(5),
+        };
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        // Route the send through the real Connection.SendDataAsync so that it logs the traffic message,
+        // while keeping the connection off an actual socket.
+        connection.BypassStart = false;
+        connection.IsActiveOverride = () => true;
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
+
+        Exception? nestedSendException = null;
+        int nestedSendAttempts = 0;
+        transport.OnLogMessage.AddObserver(async (e) =>
+        {
+            if (!e.Message.StartsWith("SEND >>>", StringComparison.Ordinal) ||
+                Interlocked.Increment(ref nestedSendAttempts) != 1)
+            {
+                return;
+            }
+
+            try
+            {
+                await transport.SendCommandAsync(new TestCommandParameters("module.nestedCommand"));
+            }
+            catch (Exception ex)
+            {
+                nestedSendException = ex;
+            }
+        });
+
+        Task<Command> outerSendTask = transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+
+        // The nested send's lock wait is the only timer armed here, and it is elapsed on the virtual
+        // clock as soon as it is armed, so the test neither waits nor depends on wall-clock timing.
+        await timeProvider.AdvanceUntilCompletedAsync(outerSendTask, transport.ConnectionLockTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        Command outerCommand = await outerSendTask;
+
+        Assert.Equal(1, nestedSendAttempts);
+        Assert.NotNull(nestedSendException);
+        WebDriverBiDiTimeoutException timeoutException = Assert.IsType<WebDriverBiDiTimeoutException>(nestedSendException);
+        Assert.Contains("waiting for exclusive access to the connection", timeoutException.Message);
+        Assert.Equal("module.command", outerCommand.CommandName);
+    }
+
+    [Fact]
+    public async Task TestConnectionLockAcquisitionPropagatesCallerCancellation()
+    {
+        // A caller who cancels while waiting for the lock gets its own cancellation, not the bound's
+        // timeout exception. The two are distinguished by the exception filter on the catch, so this
+        // covers the case where the filter declines to convert.
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider);
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        TaskCompletionSource lockHeldTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseLockTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            lockHeldTaskCompletionSource.TrySetResult();
+            await releaseLockTaskCompletionSource.Task;
+        };
+
+        Task<Command> lockHolderTask = transport.SendCommandAsync(new TestCommandParameters("module.lockHolder"), TestContext.Current.CancellationToken);
+        await lockHeldTaskCompletionSource.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        using CancellationTokenSource cancellationTokenSource = new();
+        int observedTimerCount = timeProvider.TimerCount;
+        Task<Command> contenderTask = transport.SendCommandAsync(new TestCommandParameters("module.contender"), cancellationTokenSource.Token);
+
+        // The contender arms its bound immediately before waiting on the lock, so waiting for the timer
+        // establishes that it is contending rather than racing ahead of it.
+        await timeProvider.WaitForTimerCreatedAsync(observedTimerCount).WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await contenderTask);
+
+        releaseLockTaskCompletionSource.TrySetResult();
+        await lockHolderTask;
+    }
+
+    [Fact]
+    public async Task TestConnectionLockAcquisitionThrowsWhenTokenAlreadyCanceled()
+    {
+        // The lock is free here, so this covers the guard that keeps the uncontended fast path from
+        // taking the lock for a caller that has already given up.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        using CancellationTokenSource cancellationTokenSource = new();
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationTokenSource.Token));
+    }
+
+    [Fact]
     public async Task TestDisconnectWhenNotConnectedDoesNotThrow()
     {
         TestWebSocketConnection connection = new();
