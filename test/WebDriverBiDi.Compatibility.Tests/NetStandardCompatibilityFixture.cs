@@ -9,18 +9,17 @@ using WebDriverBiDi.TestUtilities;
 
 public class NetStandardCompatibilityFixture : IAsyncLifetime
 {
-    // The netstandard2.0 smoke test application only needs a normal framework-dependent
-    // build, not a publish, so we locate the project directory relative to the test
-    // assembly's base directory and build it directly, mirroring
-    // AotCompilationEnvironmentFixture's approach for its own sibling app.
-    private static readonly string SmokeAppProjectDir = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "WebDriverBiDi.NetStandardTestApplication"));
+    // The netstandard2.0 smoke test application only needs a normal framework-dependent build,
+    // not a publish, so it is built directly, mirroring AotCompilationEnvironmentFixture's approach
+    // for its own sibling app. Its project directory is stamped into this assembly by an
+    // AssemblyMetadata item in the project file, so that it does not depend on the shape of this
+    // assembly's own output path.
+    private static readonly string SmokeAppProjectDir = TestProjectDirectory.Resolve(typeof(NetStandardCompatibilityFixture).Assembly, "NetStandardTestApplicationProjectDirectory");
 
     // The pipe-peer application is copied next to this test assembly by the project's None items;
     // the smoke application is handed this path so it can launch the peer for the PipeConnection
     // round trip that exercises the netstandard2.0 pipe code paths.
-    private static readonly string PipePeerDllPath = Path.Combine(
-        AppContext.BaseDirectory, "TestApplications", "WebDriverBiDi.NamedPipeTestApplication.dll");
+    private static readonly string PipePeerDllPath = Path.Combine(AppContext.BaseDirectory, "TestApplications", "WebDriverBiDi.NamedPipeTestApplication.dll");
 
     public string BuildDir { get; private set; } = string.Empty;
 

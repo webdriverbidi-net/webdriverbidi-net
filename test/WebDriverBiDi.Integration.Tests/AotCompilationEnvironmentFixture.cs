@@ -10,10 +10,10 @@ using WebDriverBiDi.TestUtilities;
 
 public class AotCompilationEnvironmentFixture : IAsyncLifetime
 {
-    // The AOT test application must be published as a native binary at test time.
-    // We locate the project directory relative to the test assembly's base directory.
-    private static readonly string SmokeTestProjectDir = Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "WebDriverBiDi.AotTestApplication"));
+    // The AOT test application must be published as a native binary at test time. Its project
+    // directory is stamped into this assembly by an AssemblyMetadata item in the project file, so
+    // that it does not depend on the shape of this assembly's own output path.
+    private static readonly string SmokeTestProjectDir = TestProjectDirectory.Resolve(typeof(AotCompilationEnvironmentFixture).Assembly, "AotTestApplicationProjectDirectory");
 
     public string PublishDir { get; private set; } = string.Empty;
 
