@@ -96,7 +96,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
         // statement's parent; the new statement must be wrapped the same way to sit beside it.
         SyntaxNode newRoot = disposeStatement.Parent is GlobalStatementSyntax globalStatement
             ? root.InsertNodesBefore(globalStatement, new[] { CreateGlobalStatement(root, stopAsyncStatement) })
-            : root.InsertNodesBefore(disposeStatement, new[] { stopAsyncStatement });
+            : CodeFixHelpers.InsertStatementBefore(root, disposeStatement, stopAsyncStatement);
         return document.WithSyntaxRoot(newRoot);
     }
 

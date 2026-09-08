@@ -71,6 +71,39 @@ public class BiDiDriver012AnalyzerTests
     }
 
     [Fact]
+    public async Task DisposeAsync_WithStopAsyncInSameSwitchSection_NoDiagnostic()
+    {
+        // The statements of a switch section are a statement list of their own. A stop written next
+        // to the disposal there must count, just as it does inside a block.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+
+                        switch (mode)
+                        {
+                            case 1:
+                                await driver.StopAsync();
+                                await driver.DisposeAsync();
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
     public async Task DisposeAsync_WithStopAsyncInTryFinally_NoDiagnostic()
     {
         string testCode = """

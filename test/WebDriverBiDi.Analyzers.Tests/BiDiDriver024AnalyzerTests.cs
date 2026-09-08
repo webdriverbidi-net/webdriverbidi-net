@@ -778,4 +778,184 @@ public class BiDiDriver024AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected0);
     }
+    [Fact]
+    public async Task StartAsyncInConditionalExpressionArm_ThenStartAsync_NoDiagnostic()
+    {
+        // Only one arm of a conditional expression runs, so a start in one of them leaves the driver
+        // started on some paths and not on others. Merging the arms the way if/else branches are
+        // merged keeps the later start from being reported.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool connectNow)
+                    {
+                        BiDiDriver driver = new();
+                        await (connectNow ? driver.StartAsync("ws://localhost:9222") : Task.CompletedTask);
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncInSwitchExpressionArm_ThenStartAsync_NoDiagnostic()
+    {
+        // The arms of a switch expression are mutually exclusive in the same way, including an arm
+        // guarded by a when clause.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await (mode switch
+                        {
+                            1 when mode > 0 => driver.StartAsync("ws://localhost:9222"),
+                            _ => Task.CompletedTask,
+                        });
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncBeforeEmptySwitchExpression_ThenStartAsync_ReportsError()
+    {
+        // A switch expression with no arms always throws, so it contributes no path of its own and
+        // leaves the state at the expression untouched: the driver is still started afterward.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+            #pragma warning disable CS8509
+                        Task pending = mode switch { };
+            #pragma warning restore CS8509
+                        await pending;
+                        await {|#0:driver.StartAsync("ws://localhost:9223")|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected0);
+    }
+
+    [Fact]
+    public async Task ReassignedFromConstructor_ThenStartAsync_NoDiagnostic()
+    {
+        // Assigning a new driver to the variable replaces the object the accumulated state describes.
+        // Both the explicit and the target-typed construction produce a driver that is not started.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:9223");
+                        driver = new();
+                        await driver.StartAsync("ws://localhost:9224");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task ReassignedFromFactoryMethod_ThenStartAsync_NoDiagnostic()
+    {
+        // A driver that came from somewhere the walk cannot see has an unknown started state, so the
+        // variable stops being tracked rather than being judged against the previous driver.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        driver = Create();
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+
+                    private static BiDiDriver Create()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AssignmentsToOtherTargets_NoDiagnostic()
+    {
+        // An assignment whose target is not a tracked driver variable, whether it names something
+        // else or is not a bare name at all, leaves the tracked state alone.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private int count;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        int attempts = 0;
+                        attempts = 1;
+                        this.count = attempts;
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
 }

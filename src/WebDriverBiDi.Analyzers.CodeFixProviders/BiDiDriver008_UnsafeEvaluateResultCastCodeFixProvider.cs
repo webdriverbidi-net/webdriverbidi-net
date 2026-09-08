@@ -200,11 +200,11 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
 
         SyntaxNode newRoot = root.ReplaceNode(containingBlock, containingBlock.WithStatements(SyntaxFactory.List(newStatements)));
 
-        // Apply formatting to normalize whitespace, then normalize line endings — Roslyn always uses
-        // \n internally after parsing.
-        newRoot = Formatter.Format(newRoot, document.Project.Solution.Workspace);
-        string normalizedText = newRoot.ToFullString().Replace("\r\n", "\n").Replace("\r", "\n");
-        return document.WithSyntaxRoot(CSharpSyntaxTree.ParseText(normalizedText).GetRoot());
+        // The generated if statement carries Formatter.Annotation, so the host indents it as part of
+        // applying the fix. Formatting the whole root here instead would reformat untouched code, and
+        // reparsing its text would rewrite every line ending in the file to match Roslyn's internal
+        // \n, corrupting a document that uses \r\n.
+        return document.WithSyntaxRoot(newRoot);
     }
 
     private static IEnumerable<ISymbol> GetDeclaredLocals(StatementSyntax statement, SemanticModel semanticModel, CancellationToken cancellationToken)

@@ -27,6 +27,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" PrivateAssets="all" />
+    <!-- Pinned to the same version the analyzer project uses, so the RS rules that police analyzer and
+         code-fix authoring run identically over both projects. Without this reference the version comes
+         in transitively from Microsoft.CodeAnalysis.Common, which is the Roslyn floor rather than the
+         current release, and the two projects would be held to different rule sets. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
