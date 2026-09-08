@@ -87,13 +87,13 @@ If types are not being serialized correctly:
 
 This typically means reflection-based serialization was handling your types in development (JIT mode), masking the fact that they aren't in any source-generated context. Add `[JsonSerializable]` attributes for all custom types and register the context.
 
-### Enums not serializing correctly in AOT
+### Enums with a custom converter
 
-If your custom types use enums with a custom `JsonConverter` (such as `EnumValueJsonConverter<T>`), ensure the enum array type is rooted for AOT. Add a static constructor to your context:
-
-[!code-csharp[AOT Enum Rooting](../../code/advanced/AotCompatibilitySamples.cs#AOTEnumRooting)]
-
-> This pattern requires `using System.Runtime.CompilerServices;` for `RuntimeHelpers`.
+Enums that use `EnumValueJsonConverter<T>` need nothing extra under AOT. The converter reads the
+enum's members through `Enum.GetValues<T>()`, whose specialization roots the `T[]` array type, so the
+compiler generates it without being asked. Earlier versions of this guide recommended rooting that
+array type from a static constructor on your context; that is no longer necessary, and the library no
+longer does it either.
 
 ### Diagnostic events and logging produce nothing under AOT
 
