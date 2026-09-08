@@ -129,15 +129,15 @@ public class BiDiDriver014CodeFixProviderTests
             """
             namespace TestApp
             {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
                 using WebDriverBiDi.Emulation;
 
                 public class TestClass
                 {
-                    public void Use(SetGeolocationOverrideCommandParameters parameters) { }
-
-                    public void TestMethod()
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        this.Use({|#0:new SetGeolocationOverrideCoordinatesCommandParameters()|});
+                        await driver.Emulation.SetGeolocationOverrideAsync({|#0:new SetGeolocationOverrideCoordinatesCommandParameters()|});
                     }
                 }
             }
@@ -145,15 +145,15 @@ public class BiDiDriver014CodeFixProviderTests
             """
             namespace TestApp
             {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
                 using WebDriverBiDi.Emulation;
 
                 public class TestClass
                 {
-                    public void Use(SetGeolocationOverrideCommandParameters parameters) { }
-
-                    public void TestMethod()
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        this.Use(SetGeolocationOverrideCommandParameters.ResetGeolocationOverride);
+                        await driver.Emulation.SetGeolocationOverrideAsync(SetGeolocationOverrideCommandParameters.ResetGeolocationOverride);
                     }
                 }
             }

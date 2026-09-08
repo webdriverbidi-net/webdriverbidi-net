@@ -245,13 +245,29 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
     /// <returns><see langword="true"/> if the observer escapes at this position; otherwise <see langword="false"/>.</returns>
     private static bool IsEscapingPosition(IdentifierNameSyntax identifier)
     {
-        return identifier.Parent switch
+        // A mention is often wrapped before it reaches the construct that decides the observer's
+        // fate. "return (observer);", "return observer!;", "return (IDisposable)observer;" and
+        // "return keep ? observer : null;" all hand the observer to the caller exactly as
+        // "return observer;" does, so the wrappers are peeled off before the position is classified;
+        // without that, each of them reads as a mere use and the observer is reported as undisposed.
+        // Any postfix operator qualifies: the null-forgiving operator is the only one an observer
+        // can carry, since IDisposable has no increment or decrement.
+        SyntaxNode current = identifier;
+        while (current.Parent is ParenthesizedExpressionSyntax
+            or CastExpressionSyntax
+            or ConditionalExpressionSyntax
+            or PostfixUnaryExpressionSyntax)
+        {
+            current = current.Parent;
+        }
+
+        return current.Parent switch
         {
             // Returned to the caller: return observer; or yield return observer;
             ReturnStatementSyntax or YieldStatementSyntax => true,
 
             // Assigned to another target, for example a field: this.observer = observer;
-            AssignmentExpressionSyntax assignment => assignment.Right == identifier,
+            AssignmentExpressionSyntax assignment => assignment.Right == current,
 
             // Handed to a method that takes ownership (disposables.Add(observer)), passed to a
             // constructor, or placed in a tuple — all of which reach here as an argument.

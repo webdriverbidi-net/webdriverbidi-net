@@ -96,15 +96,18 @@ internal sealed class DriverStartStateWalker
 
     private void ProcessNode(SyntaxNode node, Dictionary<string, bool> driverStartedStatus)
     {
-        // Walk the node's descendants in document order. The walk stops at if, switch, and try
-        // statements — including one that is itself the root, which the barrier yields without
-        // descending into — and processes them recursively below with a forked copy of the state
-        // for each mutually exclusive branch.
+        // Walk the node's descendants in document order. The walk stops at every branching construct
+        // — the if, switch and try statements, and the conditional and switch expressions, including
+        // one that is itself the root, which the barrier yields without descending into — and
+        // processes each recursively below with a forked copy of the state for each mutually
+        // exclusive branch.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
             child is not IfStatementSyntax &&
             child is not SwitchStatementSyntax &&
-            child is not TryStatementSyntax))
+            child is not TryStatementSyntax &&
+            child is not ConditionalExpressionSyntax &&
+            child is not SwitchExpressionSyntax))
         {
             switch (descendant)
             {
@@ -118,6 +121,18 @@ internal sealed class DriverStartStateWalker
 
                 case TryStatementSyntax tryStatement:
                     this.ProcessTryStatement(tryStatement, driverStartedStatus);
+                    break;
+
+                case ConditionalExpressionSyntax conditional:
+                    this.ProcessConditionalExpression(conditional, driverStartedStatus);
+                    break;
+
+                case SwitchExpressionSyntax switchExpression:
+                    this.ProcessSwitchExpression(switchExpression, driverStartedStatus);
+                    break;
+
+                case AssignmentExpressionSyntax assignment:
+                    TrackDriverAssignment(assignment, driverStartedStatus);
                     break;
 
                 case VariableDeclarationSyntax declaration:
@@ -151,6 +166,31 @@ internal sealed class DriverStartStateWalker
         }
     }
 
+    private static void TrackDriverAssignment(AssignmentExpressionSyntax assignment, Dictionary<string, bool> driverStartedStatus)
+    {
+        // Assigning to a tracked variable replaces the driver it names, and with it the started state
+        // the walk has accumulated. Keeping the old state would judge calls on the new driver against
+        // the old one's history, which is how an Error-severity rule ends up reporting correct code.
+        if (assignment.Left is not IdentifierNameSyntax identifier ||
+            !driverStartedStatus.ContainsKey(identifier.Identifier.ValueText))
+        {
+            return;
+        }
+
+        if (assignment.Right is ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax)
+        {
+            // A freshly constructed driver has not been started.
+            driverStartedStatus[identifier.Identifier.ValueText] = false;
+        }
+        else
+        {
+            // The driver came from somewhere the walk cannot see, such as a factory method or a
+            // parameter, so its started state is unknown. Tracking stops rather than guessing: an
+            // untracked variable produces no reports at all.
+            driverStartedStatus.Remove(identifier.Identifier.ValueText);
+        }
+    }
+
     private void ProcessIfStatement(IfStatementSyntax ifStatement, Dictionary<string, bool> driverStartedStatus)
     {
         // Invocations in the condition execute unconditionally, before either branch.
@@ -169,6 +209,50 @@ internal sealed class DriverStartStateWalker
         }
 
         MergeAllPaths(driverStartedStatus, [thenBranchStatus, elseBranchStatus]);
+    }
+
+    private void ProcessConditionalExpression(ConditionalExpressionSyntax conditional, Dictionary<string, bool> driverStartedStatus)
+    {
+        // The condition is evaluated before either arm, and exactly one arm is evaluated after it.
+        // That is the same shape as an if statement with an else clause, and it is forked the same
+        // way: without the fork, a StartAsync in one arm would count as started on both paths.
+        this.ProcessNode(conditional.Condition, driverStartedStatus);
+
+        Dictionary<string, bool> whenTrueStatus = new(driverStartedStatus);
+        this.ProcessNode(conditional.WhenTrue, whenTrueStatus);
+
+        Dictionary<string, bool> whenFalseStatus = new(driverStartedStatus);
+        this.ProcessNode(conditional.WhenFalse, whenFalseStatus);
+
+        MergeAllPaths(driverStartedStatus, [whenTrueStatus, whenFalseStatus]);
+    }
+
+    private void ProcessSwitchExpression(SwitchExpressionSyntax switchExpression, Dictionary<string, bool> driverStartedStatus)
+    {
+        // The governing expression is evaluated before any arm, and the arms are mutually exclusive.
+        // Unlike a switch statement, matching no arm does not fall through to the code after the
+        // expression: it throws. The arms are therefore the only paths out, except when there are no
+        // arms at all, in which case nothing after the expression is reached and the state at the
+        // expression is left alone.
+        this.ProcessNode(switchExpression.GoverningExpression, driverStartedStatus);
+
+        List<Dictionary<string, bool>> armStatuses = [];
+        foreach (SwitchExpressionArmSyntax arm in switchExpression.Arms)
+        {
+            Dictionary<string, bool> armStatus = new(driverStartedStatus);
+            if (arm.WhenClause is not null)
+            {
+                this.ProcessNode(arm.WhenClause.Condition, armStatus);
+            }
+
+            this.ProcessNode(arm.Expression, armStatus);
+            armStatuses.Add(armStatus);
+        }
+
+        if (armStatuses.Count > 0)
+        {
+            MergeAllPaths(driverStartedStatus, armStatuses);
+        }
     }
 
     private void ProcessSwitchStatement(SwitchStatementSyntax switchStatement, Dictionary<string, bool> driverStartedStatus)

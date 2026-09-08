@@ -44,21 +44,18 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
 
         // The fix relocates the command after an existing StartAsync call on the same driver
         // in the same block-bodied method. The analyzer also fires in constructors and
-        // top-level programs, and when no StartAsync call exists at all; no fix is possible
-        // in those cases, so none is offered.
+        // top-level programs, where there is no such method; no fix is possible there, so none
+        // is offered.
         MethodDeclarationSyntax? method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
         if (method?.Body is null)
         {
             return;
         }
 
-        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
-        bool startAsyncExists = method.Body.DescendantNodes()
-            .OfType<InvocationExpressionSyntax>()
-            .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && ma.Name.Identifier.ValueText == "StartAsync"
-                && GetRootIdentifierName(ma) == driverVariableName);
-        if (!startAsyncExists)
+        // The analyzer fires on far more shapes than the fix can rewrite safely. Unless a StartAsync
+        // call exists that the command can be moved after without changing whether or how often it
+        // runs, and without stranding a local it declares, no fix is offered.
+        if (FindMoveTargetStatement(method, invocation) is null)
         {
             return;
         }
@@ -85,16 +82,10 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         // Find the method containing this statement
         MethodDeclarationSyntax method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
 
-        // Find the StartAsync statement on the same driver variable as the command. This resolves to
-        // the statement that directly contains the StartAsync call, which may be nested inside a block
-        // (for example a try block) rather than a top-level statement of the method body.
-        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
-        StatementSyntax startAsyncStatement = method.Body!.DescendantNodes()
-            .OfType<InvocationExpressionSyntax>()
-            .First(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                && ma.Name.Identifier.ValueText == "StartAsync"
-                && GetRootIdentifierName(ma) == driverVariableName)
-            .FirstAncestorOrSelf<StatementSyntax>()!;
+        // Find the StartAsync statement on the same driver variable as the command. Registration has
+        // already established that such a statement exists and that moving the command into its block
+        // is safe, so the search cannot come back empty here.
+        StatementSyntax startAsyncStatement = FindMoveTargetStatement(method, invocation)!;
 
         // Track both statements through the transformation
         SyntaxNode trackedMethod = method.TrackNodes(commandStatement, startAsyncStatement);
@@ -135,6 +126,123 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
 
         SyntaxNode newRoot = root.ReplaceNode(method, newMethod);
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    /// <summary>
+    /// Finds the statement holding the StartAsync call that the command should be moved after, or
+    /// <see langword="null"/> when there is no such statement or the move would not be safe.
+    /// </summary>
+    /// <param name="method">The block-bodied method containing the command.</param>
+    /// <param name="invocation">The invocation the diagnostic was reported on.</param>
+    /// <returns>The StartAsync statement to move the command after, or <see langword="null"/>.</returns>
+    private static StatementSyntax? FindMoveTargetStatement(MethodDeclarationSyntax method, InvocationExpressionSyntax invocation)
+    {
+        StatementSyntax commandStatement = invocation.FirstAncestorOrSelf<StatementSyntax>()!;
+        string? driverVariableName = GetRootIdentifierName(invocation.Expression);
+        StatementSyntax? startAsyncStatement = method.Body!.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(inv => inv.Expression is MemberAccessExpressionSyntax ma
+                && ma.Name.Identifier.ValueText == "StartAsync"
+                && GetRootIdentifierName(ma) == driverVariableName)
+            .Select(inv => inv.FirstAncestorOrSelf<StatementSyntax>()!)
+            .FirstOrDefault();
+
+        // The driver may never be started at all, which is the very thing the diagnostic reports.
+        // There is then nothing to move the command after.
+        if (startAsyncStatement is null)
+        {
+            return null;
+        }
+
+        // The command becomes a statement of the block that holds StartAsync, so that block has to
+        // exist. An unbraced embedded statement, as in "if (start) await driver.StartAsync(url);",
+        // has a statement rather than a block for its parent.
+        if (startAsyncStatement.Parent is not BlockSyntax destinationBlock)
+        {
+            return null;
+        }
+
+        if (!IsUnconditionalDescendantOf(destinationBlock, commandStatement.Parent))
+        {
+            return null;
+        }
+
+        return DeclaredLocalsRemainUsable(method, commandStatement, startAsyncStatement, destinationBlock)
+            ? startAsyncStatement
+            : null;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a destination block is reached from the block holding the
+    /// command exactly once, and without any condition.
+    /// </summary>
+    /// <param name="destinationBlock">The block the command would be moved into.</param>
+    /// <param name="commandBlock">The block that currently holds the command.</param>
+    /// <returns><see langword="true"/> if the move is a pure reordering; otherwise, <see langword="false"/>.</returns>
+    private static bool IsUnconditionalDescendantOf(BlockSyntax destinationBlock, SyntaxNode? commandBlock)
+    {
+        // Reordering within one block always preserves execution; so does moving into a nested block
+        // that is entered unconditionally and exactly once, such as the body of a try or a using.
+        // Descending through an if, a loop, a switch section, or a catch or finally clause would
+        // change whether or how often the command runs. Moving the command outward, or sideways into a
+        // lambda or a local function, is no safer, and it is rejected here as well: the walk stops
+        // when it leaves the ancestors of the command's own block without having found it, and
+        // running off the top of the tree ends it too, since null matches none of the shapes below.
+        SyntaxNode? current = destinationBlock;
+        while (!ReferenceEquals(current, commandBlock))
+        {
+            if (current is not (BlockSyntax or TryStatementSyntax or UsingStatementSyntax))
+            {
+                return false;
+            }
+
+            current = current.Parent;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether every local the command statement declares is still usable
+    /// after the statement has moved.
+    /// </summary>
+    /// <param name="method">The block-bodied method containing the command.</param>
+    /// <param name="commandStatement">The statement that would be moved.</param>
+    /// <param name="startAsyncStatement">The statement the command would be moved after.</param>
+    /// <param name="destinationBlock">The block the command would be moved into.</param>
+    /// <returns><see langword="true"/> if no use of a declared local is broken; otherwise, <see langword="false"/>.</returns>
+    private static bool DeclaredLocalsRemainUsable(
+        MethodDeclarationSyntax method,
+        StatementSyntax commandStatement,
+        StatementSyntax startAsyncStatement,
+        BlockSyntax destinationBlock)
+    {
+        // Moving a statement that declares locals moves the declarations, and with them the scope of
+        // the names they introduce. A use that would end up ahead of the new declaration, or outside
+        // the block the declaration lands in, no longer compiles, so no fix is offered for it.
+        if (commandStatement is not LocalDeclarationStatementSyntax declaration)
+        {
+            return true;
+        }
+
+        foreach (VariableDeclaratorSyntax declarator in declaration.Declaration.Variables)
+        {
+            string declaredName = declarator.Identifier.ValueText;
+            foreach (IdentifierNameSyntax reference in method.Body!.DescendantNodes().OfType<IdentifierNameSyntax>())
+            {
+                if (reference.Identifier.ValueText != declaredName)
+                {
+                    continue;
+                }
+
+                if (reference.SpanStart < startAsyncStatement.Span.End || !destinationBlock.Span.Contains(reference.Span))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static string? GetRootIdentifierName(ExpressionSyntax expression)

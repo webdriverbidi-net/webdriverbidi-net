@@ -101,6 +101,47 @@ public class BiDiDriver010CodeFixProviderTests
     }
 
     /// <summary>
+    /// Tests that no fix is offered inside members that cannot be made async. A constructor and a
+    /// property accessor carry executable code but take no async modifier, so awaiting inside one
+    /// would replace the reported problem with a compiler error.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FireAndForgetInMemberThatCannotBeAsync_OffersNoCodeAction()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver;
+
+                    public TestClass(BiDiDriver driver)
+                    {
+                        this.driver = driver;
+                        driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
+                    }
+
+                    public int Count
+                    {
+                        get
+                        {
+                            this.driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
+                            return 0;
+                        }
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer, BiDiDriver010_FireAndForgetAsyncModuleCommandCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Empty(actions);
+    }
+
+    /// <summary>
     /// Tests that the fix is offered inside an async lambda, and that the enclosing method's own
     /// modifier does not decide the question.
     /// </summary>

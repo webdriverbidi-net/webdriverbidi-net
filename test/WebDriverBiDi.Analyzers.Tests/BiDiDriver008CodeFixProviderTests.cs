@@ -18,6 +18,43 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver008CodeFixProviderTests
 {
     /// <summary>
+    /// Tests that the fix leaves the document's line endings alone. The fix used to format the whole
+    /// root and reparse its text with every CRLF rewritten to LF, which changed every line of a CRLF
+    /// document, not the few the fix touched.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_OnCarriageReturnLineFeedDocument_PreservesLineEndings()
+    {
+        string testCode = string.Join(
+            "\r\n",
+            "using WebDriverBiDi.Script;",
+            string.Empty,
+            "namespace TestApp",
+            "{",
+            "    public class TestClass",
+            "    {",
+            "        public void TestMethod(EvaluateResult result)",
+            "        {",
+            "            var success = (EvaluateResultSuccess)result;",
+            "            var value = success.RealmId;",
+            "        }",
+            "    }",
+            "}",
+            string.Empty);
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        CodeAction action = Assert.Single(actions);
+
+        string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
+
+        // The lines the fix never touched keep the endings they came in with. Reformatting and
+        // reparsing the whole root used to rewrite all of them to LF.
+        Assert.Contains("using WebDriverBiDi.Script;\r\n\r\nnamespace TestApp\r\n{\r\n", fixedText);
+        Assert.Contains("    }\r\n}", fixedText);
+    }
+
+    /// <summary>
     /// Tests that code fix provider is registered for direct cast.
     /// Note: Full output validation disabled due to formatter line ending issues.
     /// </summary>

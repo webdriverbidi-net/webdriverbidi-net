@@ -201,6 +201,142 @@ public class BiDiDriver012CodeFixProviderTests
     }
 
     [Fact]
+    public async Task DisposeAsync_InSwitchSection_CodeFixInsertsStopAsyncInSection()
+    {
+        // The statements of a switch section form a statement list of their own, without a block, so
+        // the stop is inserted directly before the disposal rather than wrapped in braces.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+
+                        switch (mode)
+                        {
+                            case 1:
+                                await {|#0:driver.DisposeAsync()|};
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+
+                        switch (mode)
+                        {
+                            case 1:
+                                await driver.StopAsync();
+                                await driver.DisposeAsync();
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task DisposeAsync_InEmbeddedConditionalStatement_CodeFixWrapsInBlock()
+    {
+        // The disposal is the unbraced embedded statement of an if, so it belongs to no statement
+        // list and nothing can be inserted before it. Braces are added around both statements, which
+        // keeps the stop inside the branch instead of hoisting it out where it would run
+        // unconditionally.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool shouldDispose)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+
+                        if (shouldDispose)
+                            await {|#0:driver.DisposeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool shouldDispose)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+
+                        if (shouldDispose)
+                        {
+                            await driver.StopAsync();
+                            await driver.DisposeAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task MultipleDrivers_CodeFixInsertsStopAsyncForFlaggedDriver()
     {
         string testCode = """

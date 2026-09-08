@@ -81,17 +81,17 @@ public class BiDiDriver014AnalyzerTests
     public async Task DerivedInlineParameterlessConstructor_WithInheritedResetProperty_ReportsDiagnostic()
     {
         string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
             using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
                 public class TestClass
                 {
-                    public void Use(SetGeolocationOverrideCommandParameters parameters) { }
-
-                    public void TestMethod()
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        this.Use({|#0:new SetGeolocationOverrideCoordinatesCommandParameters()|});
+                        await driver.Emulation.SetGeolocationOverrideAsync({|#0:new SetGeolocationOverrideCoordinatesCommandParameters()|});
                     }
                 }
             }
@@ -478,25 +478,25 @@ public class BiDiDriver014AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that an inline parameterless constructor used directly as a method argument reports a diagnostic.
+    /// Tests that an inline parameterless constructor used directly as a library command argument reports a diagnostic.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task InlineParameterlessConstructor_AsMethodArgument_ReportsDiagnostic()
+    public async Task InlineParameterlessConstructor_AsLibraryCommandArgument_ReportsDiagnostic()
     {
         string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
             using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
                 public class TestClass
                 {
-                    public void Execute(SetTimeZoneOverrideCommandParameters p) { }
-
-                    public void TestMethod()
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        // Inline constructor with no properties — should fire BIDI014
-                        Execute({|#0:new SetTimeZoneOverrideCommandParameters()|});
+                        // Inline constructor with no properties, sent straight to the command — should fire BIDI014
+                        await driver.Emulation.SetTimeZoneOverrideAsync({|#0:new SetTimeZoneOverrideCommandParameters()|});
                     }
                 }
             }
@@ -513,6 +513,66 @@ public class BiDiDriver014AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an inline parameterless constructor handed to a method outside the library is not
+    /// reported: that method may configure the object, exactly as it may for a variable passed the
+    /// same way.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InlineParameterlessConstructor_AsArgumentToMethodOutsideLibrary_NoDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        this.Configure(new SetTimeZoneOverrideCommandParameters());
+                    }
+
+                    private void Configure(SetTimeZoneOverrideCommandParameters parameters)
+                    {
+                        parameters.TimeZone = "UTC";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test);
+    }
+
+    /// <summary>
+    /// Tests that an inline parameterless constructor used as an indexer argument is not reported.
+    /// An indexer binds to a property rather than a method, so the analyzer cannot tell whether the
+    /// object is configured before it is used.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InlineParameterlessConstructor_AsIndexerArgument_NoDiagnostic()
+    {
+        string test = """
+            using System.Collections.Generic;
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(Dictionary<SetTimeZoneOverrideCommandParameters, string> names)
+                    {
+                        _ = names[new SetTimeZoneOverrideCommandParameters()];
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test);
     }
 
     /// <summary>
@@ -1028,29 +1088,28 @@ public class BiDiDriver014AnalyzerTests
     public async Task TargetTypedParameterlessConstructor_AsArgument_ReportsDiagnostic()
     {
         string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
             using WebDriverBiDi.Emulation;
 
             namespace TestApp
             {
                 public class TestClass
                 {
-                    public void TestMethod()
+                    public async Task TestMethod(BiDiDriver driver)
                     {
-                        Consume({|#0:new()|});
-                    }
-
-                    private static void Consume(SetGeolocationOverrideCoordinatesCommandParameters parameters)
-                    {
+                        await driver.Emulation.SetTimeZoneOverrideAsync({|#0:new()|});
                     }
                 }
             }
             """;
 
+        // The target-typed form binds to the parameter's type; no type name appears in the source.
         DiagnosticResult expected = new DiagnosticResult(
             BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
             Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("SetGeolocationOverrideCoordinatesCommandParameters", "ResetGeolocationOverride");
+            .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer>(test, expected);
     }

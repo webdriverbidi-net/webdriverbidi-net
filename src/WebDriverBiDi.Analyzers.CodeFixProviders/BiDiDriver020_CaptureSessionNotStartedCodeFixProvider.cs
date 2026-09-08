@@ -72,7 +72,7 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
             .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed)
             .WithLeadingTrivia(targetStatement.GetLeadingTrivia());
 
-        SyntaxNode newRoot = root.InsertNodesBefore(targetStatement, new[] { startCapturingStatement });
+        SyntaxNode newRoot = CodeFixHelpers.InsertStatementBefore(root, targetStatement, startCapturingStatement);
         return document.WithSyntaxRoot(newRoot);
     }
 }

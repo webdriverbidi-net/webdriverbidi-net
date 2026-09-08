@@ -367,10 +367,14 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
     private static SyntaxNode GetContainingBlock(SyntaxNode node)
     {
+        // A switch section is a statement list without a block, so it is a containing scope in its
+        // own right. Walking past it to the enclosing block would hide every statement of the section
+        // behind the switch statement as a whole, and a StopAsync written next to the disposal would
+        // go unseen.
         SyntaxNode? current = node.Parent;
         while (true)
         {
-            if (current is BlockSyntax or MethodDeclarationSyntax or ConstructorDeclarationSyntax or CompilationUnitSyntax)
+            if (current is BlockSyntax or SwitchSectionSyntax or MethodDeclarationSyntax or ConstructorDeclarationSyntax or CompilationUnitSyntax)
             {
                 return current!;
             }
@@ -381,9 +385,12 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
     private static bool HasStopAsyncBeforeInBlock(SyntaxNode block, string variableName, InvocationExpressionSyntax disposeAsyncCall)
     {
-        IEnumerable<StatementSyntax> statements = block is BlockSyntax blockSyntax
-            ? blockSyntax.Statements
-            : AnalyzerSymbolHelpers.GetTopLevelStatements(block);
+        IEnumerable<StatementSyntax> statements = block switch
+        {
+            BlockSyntax blockSyntax => blockSyntax.Statements,
+            SwitchSectionSyntax switchSection => switchSection.Statements,
+            _ => AnalyzerSymbolHelpers.GetTopLevelStatements(block),
+        };
 
         return HasStopAsyncBeforeInStatements(statements, variableName, disposeAsyncCall);
     }

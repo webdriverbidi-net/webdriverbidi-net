@@ -146,6 +146,17 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 continue;
             }
 
+            // The object reaches the diagnostic unconfigured only if nothing between here and the
+            // command can configure it, which is the same test the variable form applies in
+            // MarkVariablesPassedOutsideLibrary. A callee the analyzer cannot resolve, one declared
+            // outside the library, or an indexer (whose symbol is a property, not a method) may all
+            // set properties on the object before it is used.
+            IMethodSymbol? callee = semanticModel.GetSymbolInfo(argument.Parent!.Parent!).Symbol as IMethodSymbol;
+            if (callee is null || !AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(callee.ContainingType))
+            {
+                continue;
+            }
+
             context.ReportDiagnostic(Diagnostic.Create(
                 Rule,
                 objectCreation.GetLocation(),

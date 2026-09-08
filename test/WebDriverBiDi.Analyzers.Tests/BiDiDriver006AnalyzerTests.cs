@@ -1096,6 +1096,91 @@ public class BiDiDriver006AnalyzerTests
     }
 
     [Fact]
+    public async Task EventObserver_ReturnedThroughWrappers_NoDiagnostic()
+    {
+        // Parentheses, a cast, the null-forgiving operator and a conditional expression all sit
+        // between the mention of the observer and the return that hands it to the caller. Each still
+        // transfers ownership, so none of them may be read as a mere use of the variable.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public EventObserver<EntryAddedEventArgs> Parenthesized(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return (observer);
+                    }
+
+                    public IDisposable Cast(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return (IDisposable)observer;
+                    }
+
+                    public EventObserver<EntryAddedEventArgs> NullForgiving(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return observer!;
+                    }
+
+                    public EventObserver<EntryAddedEventArgs>? Conditional(BiDiDriver driver, bool keep)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return keep ? observer : null;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task EventObserver_AssignedToFieldThroughWrapper_NoDiagnostic()
+    {
+        // The assignment case reads the wrappers too: the right-hand side is compared against the
+        // outermost wrapper, not the bare mention buried inside it.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private IDisposable? held;
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        this.held = (observer);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task EventObserver_StoredInField_NoDiagnostic()
     {
         // Storing the observer in a field transfers ownership to the field's owner, which disposes it later.

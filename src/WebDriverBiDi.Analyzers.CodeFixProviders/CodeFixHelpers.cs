@@ -14,6 +14,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
 using Microsoft.CodeAnalysis.Text;
 
@@ -228,22 +229,66 @@ internal static class CodeFixHelpers
     /// </remarks>
     internal static bool IsInAsyncContext(SyntaxNode node)
     {
-        SyntaxNode? enclosingFunction = node.Ancestors().FirstOrDefault(ancestor =>
+        // Every member kind that can carry executable code is a stopping point, not only the ones that
+        // can be async. A constructor, an accessor, an operator or a finalizer cannot be made async, so
+        // stopping only at methods and lambdas would walk straight past them to some outer node and
+        // answer for that instead. BIDI010 is reported per operation and BIDI012 registers constructor
+        // declarations, so both do reach these members.
+        SyntaxNode? enclosingMember = node.Ancestors().FirstOrDefault(ancestor =>
             ancestor is AnonymousFunctionExpressionSyntax
                 or MethodDeclarationSyntax
                 or LocalFunctionStatementSyntax
+                or ConstructorDeclarationSyntax
+                or DestructorDeclarationSyntax
+                or OperatorDeclarationSyntax
+                or ConversionOperatorDeclarationSyntax
+                or AccessorDeclarationSyntax
+                or PropertyDeclarationSyntax
+                or IndexerDeclarationSyntax
                 or GlobalStatementSyntax);
 
-        return enclosingFunction switch
+        return enclosingMember switch
         {
             AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             MethodDeclarationSyntax method => method.Modifiers.Any(SyntaxKind.AsyncKeyword),
             LocalFunctionStatementSyntax localFunction => localFunction.Modifiers.Any(SyntaxKind.AsyncKeyword),
 
-            // A top-level statement. Nothing else reaches here: every diagnostic these fixes act on
-            // is reported inside one of these four.
-            _ => true,
+            // A top-level statement, whose generated entry point is asynchronous.
+            GlobalStatementSyntax => true,
+
+            // A member that cannot be async: an expression-bodied property or indexer, an accessor, a
+            // constructor, a finalizer, or an operator. Inserting await here would replace the reported
+            // problem with CS4033, so no fix is offered.
+            _ => false,
         };
+    }
+
+    /// <summary>
+    /// Produces a root in which <paramref name="statementToInsert"/> runs immediately before
+    /// <paramref name="targetStatement"/>.
+    /// </summary>
+    /// <param name="root">The syntax root being rewritten.</param>
+    /// <param name="targetStatement">The statement the new statement must precede.</param>
+    /// <param name="statementToInsert">The statement to insert.</param>
+    /// <returns>The rewritten root.</returns>
+    /// <remarks>
+    /// A statement is only insertable before when it belongs to a statement list, which is to say a
+    /// block or a switch section. The embedded statement of an <c>if</c>, an <c>else</c> or a loop
+    /// (<c>if (x) await driver.DisposeAsync();</c>) belongs to no list, and asking the list editor to
+    /// insert before it throws. Such a statement is replaced by a block holding both statements, which
+    /// keeps the inserted one inside the branch it belongs to rather than hoisting it out.
+    /// </remarks>
+    internal static SyntaxNode InsertStatementBefore(SyntaxNode root, StatementSyntax targetStatement, StatementSyntax statementToInsert)
+    {
+        if (targetStatement.Parent is BlockSyntax or SwitchSectionSyntax)
+        {
+            return root.InsertNodesBefore(targetStatement, new[] { statementToInsert });
+        }
+
+        return root.ReplaceNode(
+            targetStatement,
+            SyntaxFactory.Block(statementToInsert.WithoutLeadingTrivia(), targetStatement.WithoutLeadingTrivia())
+                .WithAdditionalAnnotations(Formatter.Annotation));
     }
 
     /// <summary>
@@ -330,10 +375,13 @@ internal static class CodeFixHelpers
 
     private static List<StatementSyntax>? CollectStatementsToMove(StatementSyntax registrationStatement, StatementSyntax startAsyncStatement)
     {
-        // A registration that is the embedded statement of an if or a loop (not inside a block) is
-        // conditional on that statement; hoisting it above the start would make it unconditional,
-        // and the embedded statement cannot be removed anyway, so no fix is offered.
-        if (registrationStatement.Parent is not BlockSyntax block)
+        // The fix rearranges the statements of a single block, so it is offered only when the
+        // registration is a statement of the very block that holds the start. Anything nested inside an
+        // if, a loop or a try is conditional on that statement — hoisting it above the start would make
+        // it unconditional — and a braced nested block is no different in that respect from an
+        // unbraced embedded statement. Nesting also puts the dependency walk below out of reach of the
+        // outer block, where a local the registration uses may be declared.
+        if (registrationStatement.Parent is not BlockSyntax block || !ReferenceEquals(block, startAsyncStatement.Parent))
         {
             return null;
         }
