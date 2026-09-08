@@ -107,6 +107,7 @@ jobs:
           --
           --filter '*'
           --exporters json
+          --artifacts ${{ github.workspace }}/BenchmarkDotNet.Artifacts
 
       - name: Upload benchmark artifacts
         if: always()
