@@ -313,7 +313,12 @@ public abstract class Connection : IAsyncDisposable
     {
         if (!this.IsActive)
         {
-            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} has not been initialized; you must call the Start method before sending data");
+            // IsActive is false both for a connection that has never been started and for one that has
+            // been closed, whether by StopAsync or by the remote end, and this guard cannot tell the two
+            // apart: neither the socket state nor the pipe's active flag records which it was. The
+            // message therefore names both, rather than telling a caller who did start the connection
+            // that they forgot to.
+            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is not active; it has not been started, or it has already been closed. Call the Start method to open it before sending data.");
         }
 
         // Notify log-message observers before acquiring the send semaphore to avoid

@@ -1148,7 +1148,26 @@ public class WebSocketConnectionTests : IAsyncDisposable
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        Assert.StartsWith($"The WebSocket has not been initialized", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync("This send should fail"u8.ToArray(), TestContext.Current.CancellationToken))).Message);
+        Assert.StartsWith("The WebSocket connection is not active", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync("This send should fail"u8.ToArray(), TestContext.Current.CancellationToken))).Message);
+    }
+
+    [Fact]
+    public async Task TestCannotSendDataOnAConnectionThatHasBeenClosed()
+    {
+        // The send guard fires on IsActive alone, which is false both for a connection that was never
+        // started and for one that has been closed. It cannot distinguish them, so its message must
+        // describe both rather than telling a caller who did start the connection that they forgot to.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        WebSocketConnection connection = new();
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("This send should fail"u8.ToArray(), TestContext.Current.CancellationToken));
+        Assert.Contains("is not active", exception.Message);
+        Assert.Contains("has not been started, or it has already been closed", exception.Message);
     }
 
     [Fact]
