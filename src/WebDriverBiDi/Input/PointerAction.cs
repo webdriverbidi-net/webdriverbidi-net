@@ -76,8 +76,10 @@ public class PointerAction
     public ulong? Twist { get; set; }
 
     /// <summary>
-    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device. If omitted,
-    /// defaults to 0.0.
+    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device. Neither the
+    /// WebDriver BiDi nor the WebDriver classic specification defines a value for this property when it
+    /// is omitted; Pointer Events Level 3 defines the platform default as pi / 2, a pointer
+    /// perpendicular to the surface.
     /// </summary>
     /// <remarks>
     /// Valid values for this property range from 0.0 to 1.5707963267948966 (pi / 2), inclusive. This

@@ -23,9 +23,17 @@ public class SerializationOptions
     /// Gets or sets the maximum depth when serializing DOM nodes from script execution.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Valid values for this property are greater than or equal to zero (or <see cref="InfiniteMaxDomDepth"/>
     /// for no limit). This property does not validate its value; a value outside this range is sent as-is,
     /// and a conforming remote end rejects it when the command is executed.
+    /// </para>
+    /// <para>
+    /// Any negative value means no limit, but only <see cref="InfiniteMaxDomDepth"/> is declared as the
+    /// sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value as out
+    /// of range. That is deliberate, and matches how every other resettable numeric property in the
+    /// library is declared: the named sentinel is the supported way to ask for no limit.
+    /// </para>
     /// </remarks>
     [JsonPropertyName("maxDomDepth")]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
