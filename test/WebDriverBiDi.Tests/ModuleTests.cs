@@ -159,10 +159,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -204,10 +202,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         TestProtocolModule module = new(driver);
 
         EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async e =>
@@ -241,10 +237,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource<Task> faultingTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -311,10 +305,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -356,10 +348,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         TestProtocolModule module = new(driver);
 
         EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async e =>
@@ -393,10 +383,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource<Task> faultingTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);

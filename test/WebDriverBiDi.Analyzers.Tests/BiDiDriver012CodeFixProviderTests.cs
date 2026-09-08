@@ -91,7 +91,7 @@ public class BiDiDriver012CodeFixProviderTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+                        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
                         await driver.StartAsync("ws://localhost:9222");
                         await {|#0:driver.DisposeAsync()|};
                     }
@@ -111,7 +111,7 @@ public class BiDiDriver012CodeFixProviderTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+                        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
                         await driver.StartAsync("ws://localhost:9222");
                         await driver.StopAsync();
                         await driver.DisposeAsync();

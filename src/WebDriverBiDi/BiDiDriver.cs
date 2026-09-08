@@ -364,80 +364,32 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual TimeSpan DefaultCommandTimeout { get; private set; }
 
     /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
-    /// invoked by this driver. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that
-    /// exceptions from event handlers will be caught and logged but will not cause the driver to stop
-    /// processing messages from the transport.
-    /// Exceptions from handlers registered with
-    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> participate in this behavior
-    /// when they are not already owned by task capture. If the caller captures handler tasks
-    /// using <see cref="EventObserver{T}.WaitForCapturedTasksAsync"/>,
-    /// <see cref="EventObserver{T}.WaitForCapturedTasksCompleteAsync"/>,
-    /// or <see cref="EventObserver{T}.GetCapturedTasks"/>,
-    /// those task exceptions remain owned by the caller rather than being surfaced again through the
-    /// transport error pipeline. What decides that ownership is whether a capture session was active
-    /// when the handler ran, not when its task faulted: a task that is <em>already</em> faulted by the
-    /// time the handler returns it — one from
-    /// <see cref="System.Threading.Tasks.Task.FromException(System.Exception)"/>, say, or from an
-    /// <c>async</c> handler that throws before its first <c>await</c> — is captured like any other, and
-    /// its failure belongs to the caller in the same way. A handler that throws <em>before returning a
-    /// task at all</em> leaves nothing to capture; that exception reaches the code raising the event
-    /// directly, and is governed by this property.
-    /// </summary>
-    public virtual TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
-
-    /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when a protocol error is
-    /// received from the remote end. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning
-    /// that exceptions from protocol errors will be caught and logged but will not cause the driver to
-    /// stop processing messages from the transport.
-    /// </summary>
-    public virtual TransportErrorBehavior ProtocolErrorBehavior { get => this.transport.ProtocolErrorBehavior; set => this.transport.ProtocolErrorBehavior = value; }
-
-    /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when an unknown message is
-    /// encountered, such as valid JSON that does not match any protocol data structure. Defaults to
-    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unknown messages will
-    /// be caught and logged, but will not cause the driver to stop processing messages from the transport.
-    /// A response that arrives for a command after that command has timed out or been canceled is not
-    /// an unknown message; it is logged and discarded without affecting this behavior.
-    /// </summary>
-    public virtual TransportErrorBehavior UnknownMessageBehavior { get => this.transport.UnknownMessageBehavior; set => this.transport.UnknownMessageBehavior = value; }
-
-    /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when an unexpected error is
-    /// encountered, such as an error response received with no corresponding command. Defaults to
-    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unexpected errors will
-    /// be caught and logged but will not cause the driver to stop processing messages from the transport.
-    /// An error response that arrives for a command after that command has timed out or been canceled is
-    /// not an unexpected error; it is logged and discarded without affecting this behavior.
-    /// </summary>
-    public virtual TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
-
-    /// <summary>
-    /// Gets or sets the minimum <see cref="WebDriverBiDiLogLevel"/> at which log messages are raised on
-    /// <see cref="OnLogMessage"/>. Defaults to <see cref="WebDriverBiDiLogLevel.Info"/>.
+    /// Gets the tunable settings of the transport this driver communicates through.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// This is one setting for the whole pipeline: the driver, its <see cref="Transport"/> and the
-    /// transport's <see cref="Connection"/> all read and write the same value, so a message from any of
-    /// the three is subject to it.
+    /// The settings live on the transport, and this property is how a driver created with
+    /// <see cref="BiDiDriver()"/> or <see cref="BiDiDriver(TimeSpan)"/> reaches them: those constructors
+    /// create the transport themselves, so there is no other reference to it. A driver constructed with
+    /// <see cref="BiDiDriver(TimeSpan, Transport)"/> may equally use the transport it was handed.
     /// </para>
     /// <para>
-    /// The default excludes <see cref="WebDriverBiDiLogLevel.Debug"/> and
-    /// <see cref="WebDriverBiDiLogLevel.Trace"/>. Set it to <see cref="WebDriverBiDiLogLevel.Debug"/> for
-    /// a message per command sent and answered, or to <see cref="WebDriverBiDiLogLevel.Trace"/> to also
-    /// receive every message exchanged with the remote end, which is how protocol traffic is inspected.
-    /// Trace is not the default because composing those messages decodes each payload into a string.
-    /// <see cref="WebDriverBiDiLogLevel.Off"/> suppresses every message.
-    /// </para>
-    /// <para>
-    /// This governs only <see cref="OnLogMessage"/>. The <see cref="WebDriverBiDiEventSource"/>
-    /// diagnostic events are independent, and are filtered by whatever enables the event source.
+    /// Setting a value here is the same as setting it on the transport; there is no driver-level copy.
     /// </para>
     /// </remarks>
-    public virtual WebDriverBiDiLogLevel LogLevel { get => this.transport.LogLevel; set => this.transport.LogLevel = value; }
+    public virtual ITransportConfiguration TransportConfiguration => this.transport;
+
+    /// <summary>
+    /// Gets the observable state of the transport this driver communicates through.
+    /// </summary>
+    /// <remarks>
+    /// Every value is a snapshot that may be stale by the time the caller observes it, and none of them
+    /// throws at any point of the driver's lifecycle, so they are safe to poll. <see cref="IsStarted"/>
+    /// answers the common question more directly; use
+    /// <see cref="ITransportDiagnostics.State"/> when the states it collapses into
+    /// <see langword="false"/> need to be told apart.
+    /// </remarks>
+    public virtual ITransportDiagnostics TransportDiagnostics => this.transport;
 
     /// <summary>
     /// Gets the callback used to report late observer execution errors to the underlying transport.
@@ -857,12 +809,12 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <see cref="Protocol.Connection.IsLogLevelEnabled"/> and
     /// <see cref="Protocol.Transport.IsLogLevelEnabled"/> answer the same question for their own layer.
     /// <see cref="WebDriverBiDiLogLevel.Off"/> is never enabled. It selects "no messages at all" when
-    /// assigned to <see cref="LogLevel"/>, and is not a level a message can carry; without the explicit
+    /// assigned to <see cref="ITransportConfiguration.LogLevel"/>, and is not a level a message can carry; without the explicit
     /// test it would compare as enabled against every setting, because it is the highest value.
     /// </remarks>
     public bool IsLogLevelEnabled(WebDriverBiDiLogLevel level)
     {
-        return level != WebDriverBiDiLogLevel.Off && level >= this.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
+        return level != WebDriverBiDiLogLevel.Off && level >= this.transport.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
     }
 
     /// <summary>
@@ -915,7 +867,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <para>
     /// This method never throws for a failure in an observer of <see cref="OnLogMessage"/>;
     /// such a failure is routed through the observer-error pipeline, where it is governed
-    /// by <see cref="EventHandlerExceptionBehavior"/>.
+    /// by <see cref="ITransportConfiguration.EventHandlerExceptionBehavior"/>.
     /// </para>
     /// </remarks>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel)

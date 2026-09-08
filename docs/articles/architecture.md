@@ -444,7 +444,7 @@ Connections provide observable events for error monitoring:
 
 ### Event Handler Error Behavior
 
-Event handlers can also throw exceptions. They never propagate to the code that raised the event; the transport captures them and applies `BiDiDriver.EventHandlerExceptionBehavior` (see [Granular Error Control](#granular-error-control) below). `ObservableEventHandlerOptions` only decides whether the handler's task is awaited, not how its exceptions are handled:
+Event handlers can also throw exceptions. They never propagate to the code that raised the event; the transport captures them and applies `BiDiDriver.TransportConfiguration.EventHandlerExceptionBehavior` (see [Granular Error Control](#granular-error-control) below). `ObservableEventHandlerOptions` only decides whether the handler's task is awaited, not how its exceptions are handled:
 
 [!code-csharp[Event Handler Error Behavior](../code/architecture/ArchitectureSamples.cs#EventHandlerErrorBehavior)]
 

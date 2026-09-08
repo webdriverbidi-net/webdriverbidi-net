@@ -166,10 +166,10 @@ The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The 
 >
 > ```csharp
 > BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-> driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
-> driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
-> driver.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
-> driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 > ```
 >
 > See [Error Handling](advanced/error-handling.md) for a full explanation of the four error behavior

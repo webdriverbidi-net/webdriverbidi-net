@@ -188,8 +188,9 @@ public abstract class Connection : IAsyncDisposable
     /// <remarks>
     /// <para>
     /// This is the single setting for the whole log pipeline: <see cref="Transport.LogLevel"/> and
-    /// <see cref="BiDiDriver.LogLevel"/> read and write this property, so setting it on any of the
-    /// three sets it for all of them.
+    /// <see cref="ITransportConfiguration.LogLevel"/>, reached from
+    /// <see cref="BiDiDriver.TransportConfiguration"/>, read and write this property, so setting it on
+    /// any of the three sets it for all of them.
     /// </para>
     /// <para>
     /// The default excludes the two most voluminous levels. Every message this connection sends and

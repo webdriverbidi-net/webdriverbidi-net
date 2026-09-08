@@ -17,7 +17,7 @@ public class LogLevelTests
         BiDiDriver driver = new(TimeSpan.FromSeconds(1), transport);
         Assert.Equal(WebDriverBiDiLogLevel.Info, connection.LogLevel);
         Assert.Equal(WebDriverBiDiLogLevel.Info, transport.LogLevel);
-        Assert.Equal(WebDriverBiDiLogLevel.Info, driver.LogLevel);
+        Assert.Equal(WebDriverBiDiLogLevel.Info, driver.TransportConfiguration.LogLevel);
     }
 
     [Fact]
@@ -27,16 +27,16 @@ public class LogLevelTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromSeconds(1), transport);
 
-        driver.LogLevel = WebDriverBiDiLogLevel.Trace;
+        driver.TransportConfiguration.LogLevel = WebDriverBiDiLogLevel.Trace;
         Assert.Equal(WebDriverBiDiLogLevel.Trace, transport.LogLevel);
         Assert.Equal(WebDriverBiDiLogLevel.Trace, connection.LogLevel);
 
         transport.LogLevel = WebDriverBiDiLogLevel.Warn;
-        Assert.Equal(WebDriverBiDiLogLevel.Warn, driver.LogLevel);
+        Assert.Equal(WebDriverBiDiLogLevel.Warn, driver.TransportConfiguration.LogLevel);
         Assert.Equal(WebDriverBiDiLogLevel.Warn, connection.LogLevel);
 
         connection.LogLevel = WebDriverBiDiLogLevel.Error;
-        Assert.Equal(WebDriverBiDiLogLevel.Error, driver.LogLevel);
+        Assert.Equal(WebDriverBiDiLogLevel.Error, driver.TransportConfiguration.LogLevel);
         Assert.Equal(WebDriverBiDiLogLevel.Error, transport.LogLevel);
     }
 
@@ -153,12 +153,12 @@ public class LogLevelTests
             Assert.Equal(transport.IsLogLevelEnabled(level), driver.IsLogLevelEnabled(level));
         }
 
-        driver.LogLevel = WebDriverBiDiLogLevel.Trace;
+        driver.TransportConfiguration.LogLevel = WebDriverBiDiLogLevel.Trace;
         Assert.True(driver.IsLogLevelEnabled(WebDriverBiDiLogLevel.Trace));
         Assert.True(transport.IsLogLevelEnabled(WebDriverBiDiLogLevel.Trace));
         Assert.True(connection.IsLogLevelEnabled(WebDriverBiDiLogLevel.Trace));
 
-        driver.LogLevel = WebDriverBiDiLogLevel.Off;
+        driver.TransportConfiguration.LogLevel = WebDriverBiDiLogLevel.Off;
         Assert.False(driver.IsLogLevelEnabled(WebDriverBiDiLogLevel.Fatal));
         Assert.False(transport.IsLogLevelEnabled(WebDriverBiDiLogLevel.Fatal));
         Assert.False(connection.IsLogLevelEnabled(WebDriverBiDiLogLevel.Fatal));
@@ -275,7 +275,7 @@ public class LogLevelTests
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection) { ThrowOnDisconnect = true };
         BiDiDriver driver = new(TimeSpan.FromSeconds(1), transport);
-        driver.LogLevel = WebDriverBiDiLogLevel.Off;
+        driver.TransportConfiguration.LogLevel = WebDriverBiDiLogLevel.Off;
         driver.OnLogMessage.AddObserver(e =>
         {
             received.Add(e);
@@ -322,7 +322,7 @@ public class LogLevelTests
         // The transport's own filtering follows the override, and so does the driver, which reads the
         // property virtually.
         Assert.True(transport.IsLogLevelEnabled(WebDriverBiDiLogLevel.Trace));
-        Assert.Equal(WebDriverBiDiLogLevel.Trace, driver.LogLevel);
+        Assert.Equal(WebDriverBiDiLogLevel.Trace, driver.TransportConfiguration.LogLevel);
 
         // The connection still filters its own messages, the protocol traffic among them, by its own
         // level, which is the decoupling a derived transport takes on by overriding.
@@ -343,7 +343,7 @@ public class LogLevelTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromSeconds(1), transport);
         driver.OnLogMessage.AddObserver(e => Task.CompletedTask);
-        driver.LogLevel = setting;
+        driver.TransportConfiguration.LogLevel = setting;
 
         // Off is the highest value, so a bare "level >= this.LogLevel" test would report it enabled
         // against every setting, Off included. It is a filter setting, not a message level.
@@ -382,7 +382,7 @@ public class LogLevelTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         LoggingDriver driver = new(transport);
-        driver.LogLevel = WebDriverBiDiLogLevel.Trace;
+        driver.TransportConfiguration.LogLevel = WebDriverBiDiLogLevel.Trace;
         driver.OnLogMessage.AddObserver(e =>
         {
             received.Add(e);

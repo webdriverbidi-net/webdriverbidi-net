@@ -639,7 +639,7 @@ public class BiDiDriver012AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+                        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
                         await driver.StartAsync("ws://localhost:9222");
                         await driver.DisposeAsync();
                     }
@@ -718,7 +718,7 @@ public class BiDiDriver012AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        driver.UnknownMessageBehavior = TransportErrorBehavior.Collect;
+                        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Collect;
                         await driver.StartAsync("ws://localhost:9222");
                         await driver.StopAsync();
                         await driver.DisposeAsync();
@@ -750,7 +750,7 @@ public class BiDiDriver012AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+                        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
                         await driver.StartAsync("ws://localhost:9222");
                         await driver.DisposeAsync();
                     }
@@ -841,7 +841,7 @@ public class BiDiDriver012AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver first = new();
-                        first.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+                        first.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
                         BiDiDriver second = new();
                         await first.DisposeAsync();
                         await second.DisposeAsync();
@@ -938,7 +938,7 @@ public class BiDiDriver012AnalyzerTests
                     public async Task TestMethod()
                     {
                         await using BiDiDriver {|#0:driver|} = new();
-                        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+                        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
                         await driver.StartAsync("ws://localhost:9222");
                     }
                 }
