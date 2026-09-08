@@ -94,9 +94,23 @@ public class ModuleTests
 
         handler.Unobserve();
         syncEvent.Reset();
+
+        // A second observer gives the negative assertion a causal signal rather than an elapsed-time
+        // one. Observers are notified in the order they were added, and a synchronously-run handler is
+        // awaited before the next observer is notified, so once this one has been called the removed
+        // handler has demonstrably had its turn and did not run. Waiting a fixed 50 ms instead would
+        // pass just as readily when message processing is merely slow, which is the failure the
+        // assertion is meant to catch.
+        ManualResetEventSlim replacementSyncEvent = new(false);
+        using EventObserver<TestEventArgs> replacementHandler = module.OnEventInvoked.AddObserver(e =>
+        {
+            replacementSyncEvent.Set();
+        });
+
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        eventSet = syncEvent.Wait(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
-        Assert.False(eventSet);
+        bool replacementEventSet = replacementSyncEvent.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(replacementEventSet);
+        Assert.False(syncEvent.IsSet);
     }
 
     [Fact]

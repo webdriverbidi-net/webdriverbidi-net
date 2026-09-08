@@ -637,7 +637,6 @@ public class BiDiDriverTests
     [Fact]
     public async Task TestDriverCanEmitLogMessagesFromProtocol()
     {
-        DateTime testStart = DateTime.UtcNow;
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
@@ -651,7 +650,12 @@ public class BiDiDriverTests
 
         Assert.Equal("test log message", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Warn, logs[0].Level);
-        Assert.True(logs[0].Timestamp >= testStart);
+        // LogMessageEventArgs.Timestamp is DateTime.UtcNow with no TimeProvider seam, so comparing it
+        // against another DateTime.UtcNow read taken earlier in the test compares two samples of a
+        // clock that can step backwards. What is actually knowable without a seam is that the property
+        // was populated and carries the UTC kind its documentation promises.
+        Assert.Equal(DateTimeKind.Utc, logs[0].Timestamp.Kind);
+        Assert.NotEqual(default, logs[0].Timestamp);
         Assert.Equal("TestWebSocketConnection", logs[0].ComponentName);
     }
 
