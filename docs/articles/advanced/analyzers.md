@@ -47,6 +47,9 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI026** | Error | An explicit `ExecuteCommandAsync<T>` type argument disagrees with the command's result type (e.g., `ExecuteCommandAsync<WrongResult>(new StatusCommandParameters())`). The generic `CommandParameters<T>` overload no longer applies, so the call binds to the non-generic `CommandParameters` overload, compiles, and then throws `WebDriverBiDiException` at runtime because the response cannot be converted to `T`. A matching or base type argument, or an inferred one, is not reported. Skipped when either type is an open generic type parameter |
 | **BIDI027** | Error | `RegisterEvent()` called with a built-in protocol event name (e.g., `RegisterEvent<T>("log.entryAdded", …)`). Modules register those names in their constructors, so `RegisterEvent` throws `ArgumentException` at runtime. The built-in names are read from the library's `[ObservableEventName]` attributes. Only a compile-time-constant name argument is checked; observe a built-in event through its `ObservableEvent` property instead |
 | **BIDI028** | Warning | A compile-time-constant value assigned to a command-parameter property is outside the WebDriver BiDi specification range declared by `[SpecRange]` (e.g., `new ImageFormat { Quality = 1.5 }`, where `Quality` is `[0.0, 1.0]`). The range is read from the property's `[SpecRange]` attribute; a bound may be open (`±∞`), and an upper bound may be exclusive (the specification's CDDL `...` operator — e.g., `GeolocationCoordinates.Heading` is `[0.0, 360.0)`, so a constant `360.0` is flagged). The library does not validate the range at runtime, so a conforming remote end rejects the value. A property's declared reset sentinel (such as `-1`) is treated as valid, and runtime or dynamic (non-constant) values are never flagged |
+| **BIDI029** | Error | A driver member that throws once the driver is disposed (`StartAsync`, `ExecuteCommandAsync`, `RegisterEvent`, `RegisterModule`, `GetModule`, `RegisterTypeInfoResolverAsync`, or any module command) is called after `DisposeAsync()`, including the implicit disposal of `await using (driver) { ... }`. Disposal is terminal: the driver cannot be restarted. `StopAsync()` and a second `DisposeAsync()` are not reported, because neither throws on a disposed driver, and neither is reaching an observable event through a module property. Tracked per local variable, through `if`/`else`, `switch` and `try`/`catch`/`finally`, and reported only when the driver is disposed on every path that reaches the use; reassigning the variable clears the state |
+| **BIDI030** | Warning | `StartCapturingTasks()` called on an `EventObserver` whose capture session is already active, which throws `WebDriverBiDiException`. The companion of BIDI020. A `StopCapturingTasks()` ends the session; so may a `WaitForCapturedTasksAsync` or `WaitForCapturedTasksCompleteAsync`, which ends it when it collects its full batch, so a start after either is never reported |
+| **BIDI031** | Info | The `EventObserver` returned by `AddObserver` is discarded (the call is a bare expression statement), leaving no handle with which to remove the observer: `Unobserve()` and `Dispose()` are its members, and `RemoveObserver` needs its `Id`. Reported at `Info` because an observer intended to last the life of the driver is a legitimate design; an explicit discard (`_ = ...`) is never reported |
 
 ## Code Fixes
 
@@ -232,6 +235,72 @@ SerializationOptions options = new SerializationOptions { MaxDomDepth = -1 };
 
 This is a `Warning` by design so it never blocks a build; downgrade or suppress it (see [Configuration and Suppression](#configuration-and-suppression)) if you intend to send an out-of-range constant.
 
+### BIDI029
+
+**Error.** A driver is used after it has been disposed. `BiDiDriver.DisposeAsync` marks the driver disposed before it releases anything, and `StartAsync`, `ExecuteCommandAsync`, `RegisterEvent`, `RegisterModule`, `GetModule` and `RegisterTypeInfoResolverAsync` all throw `ObjectDisposedException` from that point on — as does every module command, which reaches the same guard through `ExecuteCommandAsync`. Disposal is terminal: unlike `StopAsync()`, it cannot be undone by starting again, so the only remedy is a new driver.
+
+```csharp
+BiDiDriver driver = new BiDiDriver();
+await driver.StartAsync(url);
+await driver.DisposeAsync();
+
+// Flagged: the driver is disposed.
+await driver.Session.StatusAsync();
+
+// Also flagged: a disposed driver cannot be restarted.
+await driver.StartAsync(url);
+```
+
+`StopAsync()` and a second `DisposeAsync()` are not flagged, because neither throws on a disposed driver, and neither is reaching an observable event through a module property (`driver.Log.OnEntryAdded.AddObserver(...)` touches no disposal guard). The implicit disposal of `await using (driver) { ... }` counts as a disposal for the statements that follow it. Rebinding the variable clears the state:
+
+```csharp
+await driver.DisposeAsync();
+driver = new BiDiDriver();
+
+// Not flagged: the name refers to a different driver now.
+await driver.StartAsync(url);
+```
+
+The disposal state is tracked per local variable through `if`/`else`, `switch` and `try`/`catch`/`finally`, and a use is reported only when the driver is disposed on every path that reaches it — so a dispose in one branch, or one in a `try` whose `catch` uses the driver, is not reported. A driver disposed or reassigned inside a lambda or local function is not tracked at all, since a nested function runs when its delegate is invoked rather than where it is written.
+
+### BIDI030
+
+**Warning.** `StartCapturingTasks()` is called on an `EventObserver` that already has an active capture session. An observer permits one session at a time; the second call throws `WebDriverBiDiException`. This is the companion of [BIDI020](#bidi020), which reports the opposite mistake.
+
+```csharp
+observer.StartCapturingTasks();
+
+// Flagged: a session is already active.
+observer.StartCapturingTasks();
+```
+
+`StopCapturingTasks()` ends the session, and so may a wait: `WaitForCapturedTasksAsync` and `WaitForCapturedTasksCompleteAsync` end it themselves when they collect the full batch they were asked for. Because whether that happened is a runtime outcome, a start after either is never reported:
+
+```csharp
+observer.StartCapturingTasks();
+Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+
+// Not flagged: the wait may have ended the session.
+observer.StartCapturingTasks();
+```
+
+As with BIDI020, the state is tracked per local variable and merged across branches; a start is reported only when a session is certainly active on every path that reaches it.
+
+### BIDI031
+
+**Info.** The `EventObserver` that `AddObserver` returns is discarded, so nothing can remove the observer later: `Unobserve()` and `Dispose()` are members of that handle, and `RemoveObserver` needs its `Id`.
+
+```csharp
+// Flagged: nothing can remove this observer.
+driver.Log.OnEntryAdded.AddObserver(entry => Console.WriteLine(entry.Text));
+
+// Not flagged: the handle is kept, and disposal removes the observer.
+using EventObserver<EntryAddedEventArgs> observer =
+    driver.Log.OnEntryAdded.AddObserver(entry => Console.WriteLine(entry.Text));
+```
+
+This is reported at `Info` rather than as a warning because an observer meant to last as long as the driver is a legitimate design, and one added that way never needs removing. An explicit discard (`_ = driver.Log.OnEntryAdded.AddObserver(...)`) records that intent and is never reported. The rule covers `AddObserver` only; a discarded `AddDataCollector` result is not reported by it.
+
 ## Related Documentation
 
 | Analyzer Topic | See Also |
@@ -240,11 +309,11 @@ This is a `Warning` by design so it never blocks a build; downgrade or suppress 
 | Event subscription (BIDI005) | [Common Pitfalls - Event Subscription](../common-pitfalls.md#event-subscription) |
 | Blocking handlers (BIDI007, BIDI016) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
 | Module commands in event handlers (BIDI023) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
-| Observer disposal (BIDI006) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
-| Collect mode and disposal (BIDI012) | [Error Handling - Collect Mode](error-handling.md#collect-mode) |
+| Observer disposal (BIDI006, BIDI031) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
+| Driver lifecycle and disposal (BIDI012, BIDI029) | [Error Handling - Collect Mode](error-handling.md#collect-mode) |
 | Nullable collections (BIDI017) | [Common Pitfalls - Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
-| Capture session ordering (BIDI020, BIDI021) | [Events and Observables - Event Synchronization](../events-observables.md#event-synchronization) |
+| Capture session ordering (BIDI020, BIDI021, BIDI030) | [Events and Observables - Event Synchronization](../events-observables.md#event-synchronization) |
 | AdditionalData and AOT (BIDI022) | [API Design Guide - Protocol Extensions via AdditionalData](api-design.md#protocol-extensions-via-additionaldata), [AOT Compatibility](aot-compatibility.md) |
 
 ## Known Limitations
@@ -255,8 +324,8 @@ No analyzer performs whole-program flow analysis; none of them correlate data ac
 
 | Scope | What the analyzer sees | Rules |
 |-------|------------------------|-------|
-| **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024 |
-| **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017, BIDI022, BIDI025, BIDI026, BIDI027 |
+| **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021, BIDI024, BIDI029, BIDI030 |
+| **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017, BIDI022, BIDI025, BIDI026, BIDI027, BIDI031 |
 | **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast, an assignment) in isolation. | BIDI008, BIDI028 |
 | **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), BIDI007 and BIDI023 resolve the reference and walk that method body too; BIDI016 inspects only inline `async` lambda handlers and does not follow method references. None of them continue transitively into further methods that the handler body calls. | BIDI007, BIDI016, BIDI023 |
 

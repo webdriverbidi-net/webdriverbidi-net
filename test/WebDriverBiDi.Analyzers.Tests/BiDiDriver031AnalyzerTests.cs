@@ -1,0 +1,251 @@
+// <copyright file="BiDiDriver031AnalyzerTests.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace WebDriverBiDi.Analyzers.Tests;
+
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+
+/// <summary>
+/// Tests for the BiDiDriver031 analyzer.
+/// </summary>
+public class BiDiDriver031AnalyzerTests
+{
+    [Fact]
+    public async Task AddObserver_ResultDiscarded_ReportsInfo()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        {|#0:driver.BrowsingContext.OnLoad.AddObserver(args => { })|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver031_DiscardedObserverResultAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task AddObserver_WithOptionsArgumentDiscarded_ReportsInfo()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        {|#0:driver.BrowsingContext.OnLoad.AddObserver(async args => await Task.Yield(), ObservableEventHandlerOptions.RunHandlerAsynchronously)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver031_DiscardedObserverResultAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task AddObserver_ResultAssignedToVariable_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.Unobserve();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AddObserver_ResultExplicitlyDiscarded_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        _ = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task OtherInvocationStatement_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync(url);
+                        driver.ToString();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task DelegateInvocationWithoutInvokedName_ReportsNothing()
+    {
+        // The invoked name is not syntactically evident here, so the pre-filter admits the invocation and
+        // the resolved symbol (Action.Invoke) is what rules it out.
+        string testCode = """
+            using System;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        new Action(() => { })();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task UnrelatedAddObserverReturningOtherType_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+
+            namespace TestNamespace
+            {
+                public class UnrelatedEvent
+                {
+                    public string AddObserver(Action handler) => "token";
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        UnrelatedEvent unrelated = new();
+                        unrelated.AddObserver(() => { });
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task LateBoundAddObserver_ReportsNothing()
+    {
+        // A dynamic invocation resolves to no symbol, so the return type cannot be examined and nothing
+        // is reported.
+        string testCode = """
+            using System;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(dynamic observableEvent)
+                    {
+                        observableEvent.AddObserver((Action)(() => { }));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AddDataCollectorDiscarded_ReportsNothing()
+    {
+        // Data collectors are outside this rule; only AddObserver returns the EventObserver handle it
+        // describes.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.BrowsingContext.OnLoad.AddDataCollector();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+}
