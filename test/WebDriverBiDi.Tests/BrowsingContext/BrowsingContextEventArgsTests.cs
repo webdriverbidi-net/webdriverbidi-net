@@ -167,7 +167,7 @@ public class BrowsingContextEventArgsTests
 
         observer.StartCapturingTasks();
         await connection.RaiseDataReceivedEventAsync(json);
-        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(1));
+        Assert.True(await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         return eventArgs;
     }
 }

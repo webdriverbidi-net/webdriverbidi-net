@@ -155,7 +155,7 @@ public class EntryAddedEventArgsTests
 
         observer.StartCapturingTasks();
         await connection.RaiseDataReceivedEventAsync(json);
-        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+        Assert.True(await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         return eventArgs;
     }
 }
