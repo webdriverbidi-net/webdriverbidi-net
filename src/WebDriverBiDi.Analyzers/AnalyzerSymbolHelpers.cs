@@ -389,10 +389,19 @@ internal static class AnalyzerSymbolHelpers
             return null;
         }
 
+        // A method group can bind to a symbol whose declaring syntax is neither an ordinary method nor a
+        // local function. The clearest case is a delegate type declared in the same compilation: its
+        // implicit Invoke member reports the DelegateDeclarationSyntax as its declaration, so
+        // `handler.Invoke` passed to AddObserver arrives here as a delegate declaration. There is no
+        // body to inspect in that case, and saying so lets the caller decline to analyze the handler
+        // rather than the analyzer throwing and suppressing itself for the whole file.
         SyntaxNode methodDeclaration = syntaxReference.GetSyntax();
-        return methodDeclaration is MethodDeclarationSyntax methodDecl
-            ? methodDecl.Body ?? (SyntaxNode?)methodDecl.ExpressionBody?.Expression
-            : ((LocalFunctionStatementSyntax)methodDeclaration).Body ?? (SyntaxNode?)((LocalFunctionStatementSyntax)methodDeclaration).ExpressionBody?.Expression;
+        return methodDeclaration switch
+        {
+            MethodDeclarationSyntax method => method.Body ?? (SyntaxNode?)method.ExpressionBody?.Expression,
+            LocalFunctionStatementSyntax localFunction => localFunction.Body ?? (SyntaxNode?)localFunction.ExpressionBody?.Expression,
+            _ => null,
+        };
     }
 
     private static bool HasTypeOrBaseOrInterface(ITypeSymbol? type, params string[] typeNames)

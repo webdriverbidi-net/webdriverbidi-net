@@ -958,4 +958,43 @@ public class BiDiDriver024AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that rebinding the driver variable on one arm of a branch stops the tracking after the
+    /// merge, so a start that follows the branch is not judged against the previous driver's history.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SecondStartAsync_AfterReassignmentInIfBranch_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool flag)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        if (flag)
+                        {
+                            driver = CreateDriver();
+                        }
+
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
 }

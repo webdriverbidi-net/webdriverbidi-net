@@ -27,6 +27,25 @@ internal static class CodeFixHelpers
     private const string RunHandlerAsynchronouslyName = "RunHandlerAsynchronously";
 
     /// <summary>
+    /// Gets the C# language version the document is compiled with.
+    /// </summary>
+    /// <param name="document">The document a fix is being offered for.</param>
+    /// <returns>The effective language version of the document's project.</returns>
+    /// <remarks>
+    /// A fix must not emit syntax the project cannot compile. The library supports consumers on
+    /// <c>netstandard2.0</c> and <c>net472</c>, whose default is C# 7.3, and on <c>net6.0</c> and
+    /// <c>net7.0</c>, whose defaults are C# 10 and C# 11; a fix written only for the newest syntax
+    /// hands all of them code that does not build. The version read here is already the effective
+    /// one, because parse options resolve <c>latest</c>, <c>default</c> and <c>preview</c> to a
+    /// concrete version when they are constructed. A C# fix is only ever offered for a C# document,
+    /// whose project always carries <see cref="CSharpParseOptions"/>, so the cast cannot fail.
+    /// </remarks>
+    internal static LanguageVersion GetLanguageVersion(Document document)
+    {
+        return ((CSharpParseOptions)document.Project.ParseOptions!).LanguageVersion;
+    }
+
+    /// <summary>
     /// Registers the appropriate fix for a diagnostic reported inside the lambda handler of an
     /// <c>AddObserver</c> invocation.
     /// </summary>

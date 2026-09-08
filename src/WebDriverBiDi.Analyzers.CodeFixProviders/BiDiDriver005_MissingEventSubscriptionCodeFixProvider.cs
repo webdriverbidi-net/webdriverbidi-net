@@ -91,7 +91,7 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         InvocationExpressionSyntax addObserverCall = (InvocationExpressionSyntax)root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
         ExpressionSyntax eventsArgument = (ExpressionSyntax)root.FindNode(eventsArgumentSpan, getInnermostNodeForTie: true);
 
-        ExpressionSyntax updatedEventsArgument = AddEventNameToArrayExpression(eventsArgument, BuildEventNameExpression(addObserverCall));
+        ExpressionSyntax updatedEventsArgument = AddEventNameToArrayExpression(eventsArgument, BuildEventNameExpression(addObserverCall), CodeFixHelpers.GetLanguageVersion(document));
         return document.WithSyntaxRoot(root.ReplaceNode(eventsArgument, updatedEventsArgument));
     }
 
@@ -114,7 +114,7 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
             SyntaxFactory.IdentifierName("EventName"));
     }
 
-    private static ExpressionSyntax AddEventNameToArrayExpression(ExpressionSyntax arrayExpression, ExpressionSyntax newElement)
+    private static ExpressionSyntax AddEventNameToArrayExpression(ExpressionSyntax arrayExpression, ExpressionSyntax newElement, LanguageVersion languageVersion)
     {
         // Handle: new[] { "event1", "event2" }
         if (arrayExpression is ImplicitArrayCreationExpressionSyntax implicitArray)
@@ -150,6 +150,25 @@ public class BiDiDriver005_MissingEventSubscriptionCodeFixProvider : CodeFixProv
         // collection expression, and a string constant or ObservableEvent.EventName access — the first
         // two of which are handled above. A shape it cannot read makes the subscription set unknowable
         // and produces no diagnostic, so the fix is never asked about it.
+        //
+        // A collection expression is the natural spelling, but it is C# 12. Emitting one into a project
+        // on an older language version hands the developer a fix that does not compile, and C# 7.3 is
+        // the default for the netstandard2.0 and net472 consumers this library supports. The implicit
+        // array form means the same thing, compiles on every version, and is one of the shapes the
+        // analyzer already reads back, so it is used wherever a collection expression is not available.
+        if (languageVersion < LanguageVersion.CSharp12)
+        {
+            return SyntaxFactory.ImplicitArrayCreationExpression(
+                SyntaxFactory.InitializerExpression(
+                    SyntaxKind.ArrayInitializerExpression,
+                    SyntaxFactory.SeparatedList<ExpressionSyntax>(new SyntaxNodeOrToken[]
+                    {
+                        arrayExpression.WithoutTrivia(),
+                        SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space),
+                        newElement,
+                    })));
+        }
+
         return SyntaxFactory.CollectionExpression(
             SyntaxFactory.SeparatedList<CollectionElementSyntax>(new SyntaxNodeOrToken[]
             {

@@ -2189,4 +2189,83 @@ public class BiDiDriver015AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that a subscription made through a this-qualified driver field is analyzed, and that the
+    /// suggested replacement keeps the <c>this.</c> prefix the surrounding code is written with.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StringLiteral_ThroughThisQualifiedDriverField_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+                    public async Task TestMethod()
+                    {
+                        await this.driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("this.driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a subscription made through a receiver that does not root in a named driver — here
+    /// the result of a factory call — is left alone. There is no name to build a replacement from.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StringLiteral_ThroughUnnamedDriverReceiver_ReportsNothing()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await CreateDriver().Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver(TimeSpan.FromSeconds(30));
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

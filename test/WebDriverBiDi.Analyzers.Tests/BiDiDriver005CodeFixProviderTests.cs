@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -1297,5 +1298,81 @@ public class BiDiDriver005CodeFixProviderTests
 
         (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(testCode);
         Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that the fix amends a single-event subscription with an implicit array rather than a
+    /// collection expression when the project's language version predates C# 12.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_BelowCSharp12_UsesImplicitArrayInsteadOfCollectionExpression()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("network.beforeRequestSent"));
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(
+            testCode,
+            referenceWebDriverBiDi: true,
+            languageVersion: LanguageVersion.CSharp7_3);
+
+        CodeAction action = Assert.Single(actions);
+        string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
+        Assert.Contains("new SubscribeCommandParameters(new[] { \"network.beforeRequestSent\", driver.Log.OnEntryAdded.EventName })", fixedText);
+    }
+
+    /// <summary>
+    /// Tests that the fix amends a single-event subscription with a collection expression when the
+    /// project's language version is C# 12 or later.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_AtCSharp12OrLater_UsesCollectionExpression()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("network.beforeRequestSent"));
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(
+            testCode,
+            referenceWebDriverBiDi: true,
+            languageVersion: LanguageVersion.CSharp12);
+
+        CodeAction action = Assert.Single(actions);
+        string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
+        Assert.Contains("new SubscribeCommandParameters([\"network.beforeRequestSent\", driver.Log.OnEntryAdded.EventName])", fixedText);
     }
 }

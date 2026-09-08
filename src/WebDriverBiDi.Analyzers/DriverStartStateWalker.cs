@@ -306,10 +306,17 @@ internal sealed class DriverStartStateWalker
         // the try is not reported (the library rolls the driver back to not-started when a
         // start fails), while the same call in a catch on a driver that was already started
         // before the try (with nothing in the try stopping it) still is.
+        //
+        // A variable the try block rebound to something the walk cannot see is no longer tracked
+        // after that walk, so its state inside a catch or a finally is unknown. It is left out of
+        // the conservative status rather than read out of a state that no longer holds it.
         Dictionary<string, bool> conservativeStatus = [];
         foreach (string driverName in entryStatus.Keys)
         {
-            conservativeStatus[driverName] = entryStatus[driverName] && tryStatus[driverName];
+            if (tryStatus.TryGetValue(driverName, out bool startedAfterTryBlock))
+            {
+                conservativeStatus[driverName] = entryStatus[driverName] && startedAfterTryBlock;
+            }
         }
 
         List<Dictionary<string, bool>> exitStatuses = [tryStatus];
@@ -379,8 +386,21 @@ internal sealed class DriverStartStateWalker
         // After a branch, a driver counts as started only when every path through it leaves the
         // driver started. A driver declared inside one path is scoped to that path, so only the
         // drivers known at the branch point are merged.
+        //
+        // A path that rebound the variable to something the walk cannot see — a factory call or an
+        // awaited expression — dropped it from that path's state, so after the branch its started
+        // state is unknown. Tracking stops for it, exactly as TrackDriverAssignment does on a
+        // straight-line path, and an untracked variable produces no reports at all. Reading the
+        // dropped key out of that path instead would throw, taking down every rule that shares this
+        // walk for the whole body being analyzed.
         foreach (string driverName in driverStartedStatus.Keys.ToList())
         {
+            if (pathStatuses.Any(pathStatus => !pathStatus.ContainsKey(driverName)))
+            {
+                driverStartedStatus.Remove(driverName);
+                continue;
+            }
+
             driverStartedStatus[driverName] = pathStatuses.All(pathStatus => pathStatus[driverName]);
         }
     }

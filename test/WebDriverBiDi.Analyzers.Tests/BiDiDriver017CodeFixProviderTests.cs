@@ -5,7 +5,11 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -18,6 +22,39 @@ public class BiDiDriver017CodeFixProviderTests
     /// Tests that the code fix correctly applies ??= to the receiver.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task BelowCSharp8_ReportsNothingSoTheFixIsNeverAskedFor()
+    {
+        // The fix emits ??=, which is C# 8, and offers no fallback for older language versions. This
+        // pins the reason that is safe: the diagnostic is reported only for a property whose type is an
+        // annotated nullable reference type, and those annotations arrived in C# 8 too, so below it the
+        // analyzer sees no annotation and reports nothing at all. The same source produces a diagnostic
+        // and a fix on a current language version, which the tests above cover.
+        string testCode = """
+            using System.Collections.Generic;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
+                        parameters.NoProxyAddresses.Add("proxy1");
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver017_NullableListAddAnalyzer, BiDiDriver017_NullableListAddCodeFixProvider>(
+            testCode,
+            referenceWebDriverBiDi: true,
+            languageVersion: LanguageVersion.CSharp7_3);
+
+        Assert.Empty(actions);
+    }
+
     [Fact]
     public async Task CodeFix_WrapsReceiverWithNullCoalescing()
     {
