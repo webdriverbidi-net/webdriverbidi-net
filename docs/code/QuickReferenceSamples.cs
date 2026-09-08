@@ -145,12 +145,12 @@ public static class QuickReferenceSamples
     {
         #region ErrorConfiguration
         // Fail fast during development
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
 
         // Collect for debugging
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
         #endregion
     }
 }

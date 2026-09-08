@@ -99,7 +99,7 @@ Connections have three timeout properties (default: 10 seconds each):
 
 ### Transport Shutdown Timeout
 
-`Transport.ShutdownTimeout` is a separate, transport-level timeout (default: 10 seconds) that controls how long `Transport.DisconnectAsync` waits for its in-memory message-processing task to drain before proceeding. If the processing task does not finish within this window, `DisconnectAsync` logs a warning and proceeds, and any pending commands are canceled. Giving up on the wait does not stop the reader: messages already delivered to the queue go on being processed in the background, and their handlers go on running. What the timeout bounds is how long shutdown waits for them, not whether they run — and a subsequent `StartAsync` waits for that processing to finish, bounded by this same timeout, before opening a new connection.
+`ShutdownTimeout`, reached through `BiDiDriver.TransportConfiguration` (or on a `Transport` directly), is a separate, transport-level timeout (default: 10 seconds) that controls how long `Transport.DisconnectAsync` waits for its in-memory message-processing task to drain before proceeding. If the processing task does not finish within this window, `DisconnectAsync` logs a warning and proceeds, and any pending commands are canceled. Giving up on the wait does not stop the reader: messages already delivered to the queue go on being processed in the background, and their handlers go on running. What the timeout bounds is how long shutdown waits for them, not whether they run — and a subsequent `StartAsync` waits for that processing to finish, bounded by this same timeout, before opening a new connection.
 
 Most users never need to tune this. Consider adjusting it only in specialized scenarios:
 
@@ -114,7 +114,7 @@ An event handler that is still running while `StopAsync()` drains the queue may 
 
 ### Transport Connection Lock Timeout
 
-`Transport.ConnectionLockTimeout` (default: 60 seconds) bounds how long an operation waits for exclusive access to the connection while another operation holds it. `ConnectAsync`, `DisconnectAsync`, `SendCommandAsync` and `RegisterTypeInfoResolverAsync` each take that access for the duration of their work, so one of them waits while another is in progress. Ordinary concurrent use never notices the bound: commands issued from several threads at once contend only for as long as a send takes.
+`ConnectionLockTimeout`, reached through `BiDiDriver.TransportConfiguration` (default: 60 seconds), bounds how long an operation waits for exclusive access to the connection while another operation holds it. `ConnectAsync`, `DisconnectAsync`, `SendCommandAsync` and `RegisterTypeInfoResolverAsync` each take that access for the duration of their work, so one of them waits while another is in progress. Ordinary concurrent use never notices the bound: commands issued from several threads at once contend only for as long as a send takes.
 
 The bound exists for one situation, which is otherwise unrecoverable. The transport dispatches observers while it holds the access, so an observer that calls back into the driver asks for access its own caller holds, and the two would wait on each other indefinitely. This is not confined to `Trace`: the connection raises its `SEND >>>` traffic message from inside the send, but the connection and the transport also log around connect and disconnect at the default `Info` level, so an observer that reconnects when it sees "Transport disconnected" reaches the same point.
 
@@ -141,9 +141,9 @@ Connections provide observable events for diagnostics. This is useful for monito
 ### Log Level
 
 `OnLogMessage` is filtered by a minimum level that defaults to `WebDriverBiDiLogLevel.Info`. The same
-setting is exposed at all three layers — `BiDiDriver.LogLevel`, `Transport.LogLevel` and
-`Connection.LogLevel` — and they read and write one value, so setting it anywhere sets it
-everywhere:
+setting is exposed at all three layers — `BiDiDriver.TransportConfiguration.LogLevel`,
+`Transport.LogLevel` and `Connection.LogLevel` — and they read and write one value, so setting it
+anywhere sets it everywhere:
 
 [!code-csharp[Set Log Level](../../code/advanced/ConnectionManagementSamples.cs#SetLogLevel)]
 
@@ -200,17 +200,17 @@ Internal connection logging:
 
 ## Transport Diagnostics
 
-In addition to the `Connection`-level observable events above, the `Transport` itself exposes read-only diagnostic properties you can sample at any time. These are intended for operators and frameworks that want to understand lifecycle, backlog, and in-flight state without subscribing to an `EventSource`. All are safe to read concurrently with command send and response processing; the returned values are snapshots and may be stale by the time the caller observes them.
+In addition to the `Connection`-level observable events above, the transport exposes read-only diagnostic properties you can sample at any time. Reach them through `BiDiDriver.TransportDiagnostics`, which is an `ITransportDiagnostics` and needs no hand-built transport, so a driver created with `new BiDiDriver()` can be observed like any other. These are intended for operators and frameworks that want to understand lifecycle, backlog, and in-flight state without subscribing to an `EventSource`. All are safe to read concurrently with command send and response processing; none of them throws at any point of the lifecycle; and the returned values are snapshots that may be stale by the time the caller observes them.
 
 ### State
 
-`Transport.State` reports where the transport is in its connection lifecycle as a `TransportState` value: `Disconnected` (the initial state, the state after a completed disconnect, and the state a failed connection attempt rolls back to), `Connecting` (a connection attempt is in flight but not yet complete), or `Connected` (the transport can exchange messages with the remote end). `BiDiDriver.IsStarted` derives from it (it is `true` exactly when the state is `Connected`), and so does registration legality: `RegisterModule` and `RegisterEvent` are rejected once the transport has left `Disconnected`, and become legal again when a stop returns it there.
+`TransportDiagnostics.State` reports where the transport is in its connection lifecycle as a `TransportState` value: `Disconnected` (the initial state, the state after a completed disconnect, and the state a failed connection attempt rolls back to), `Connecting` (a connection attempt is in flight but not yet complete), or `Connected` (the transport can exchange messages with the remote end). `BiDiDriver.IsStarted` derives from it (it is `true` exactly when the state is `Connected`), and so does registration legality: `RegisterModule` and `RegisterEvent` are rejected once the transport has left `Disconnected`, and become legal again when a stop returns it there.
 
 [!code-csharp[Transport State Diagnostic](../../code/advanced/ConnectionManagementSamples.cs#TransportStateDiagnostic)]
 
 ### IncomingQueueDepth
 
-`Transport.IncomingQueueDepth` reports the number of raw messages received from the connection that are waiting to be processed by the transport's reader task. A persistently growing value indicates that event handlers are not keeping up with the incoming message rate; consider using `ObservableEventHandlerOptions.RunHandlerAsynchronously` for I/O-heavy handlers so that they do not block the reader.
+`TransportDiagnostics.IncomingQueueDepth` reports the number of raw messages received from the connection that are waiting to be processed by the transport's reader task. A persistently growing value indicates that event handlers are not keeping up with the incoming message rate; consider using `ObservableEventHandlerOptions.RunHandlerAsynchronously` for I/O-heavy handlers so that they do not block the reader.
 
 Each call to `ConnectAsync` installs a fresh queue whose depth begins at zero, and every message is counted against the queue it was written to. The value therefore reports only the current connection's backlog, even when a reconnect gave up waiting for the previous connection's reader and that reader is still draining what remains of its own queue. Reading it before `ConnectAsync` has ever been called, or after `DisconnectAsync`, returns the depth of the remaining (possibly drained) queue rather than throwing.
 
@@ -218,7 +218,7 @@ Each call to `ConnectAsync` installs a fresh queue whose depth begins at zero, a
 
 ### PendingCommandCount
 
-`Transport.PendingCommandCount` reports the number of commands that have been sent to the remote end and are still awaiting a response. A persistently high value suggests that the remote end is not responding promptly, or that a burst of commands is in flight without corresponding responses yet.
+`TransportDiagnostics.PendingCommandCount` reports the number of commands that have been sent to the remote end and are still awaiting a response. A persistently high value suggests that the remote end is not responding promptly, or that a burst of commands is in flight without corresponding responses yet.
 
 The pending-command collection is cleared during `DisconnectAsync`, so reads after a disconnect typically return zero. Like `IncomingQueueDepth`, this property may be safely read before `ConnectAsync` is called and after `DisconnectAsync`; it returns the current count rather than throwing.
 

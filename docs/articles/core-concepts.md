@@ -318,14 +318,17 @@ For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also 
 |----------|---------|----------------------|
 | `IBiDiCommandExecutor` | Core lifecycle and command execution | Custom modules, test doubles, framework internals that only need to start/stop the driver, execute commands, or register protocol events |
 | `IBiDiDriverConfiguration` | Pre-start extensibility hooks | Registering custom modules and additional JSON type resolvers before `StartAsync()` |
-| `IBiDiDriverEvents` | Driver observability and error-behavior configuration | Subscribing to top-level driver events and adjusting transport error behavior |
+| `IBiDiDriverEvents` | Driver observability | Subscribing to top-level driver events |
+| `ITransportConfiguration` | Tunable transport settings | Adjusting the log level, the transport error behaviors, and the shutdown and connection-lock timeouts, via `BiDiDriver.TransportConfiguration` |
+| `ITransportDiagnostics` | Observable transport state | Polling lifecycle state, incoming queue depth and pending command count, via `BiDiDriver.TransportDiagnostics` |
 
 The hierarchy is intentionally split by capability rather than by end-user workflow:
 
 - `BiDiDriver` is the primary type for applications.
 - `IBiDiCommandExecutor` is the narrow execution surface used by modules and low-level abstractions.
 - `IBiDiDriverConfiguration` covers advanced pre-start customization.
-- `IBiDiDriverEvents` covers top-level events and transport error behavior.
+- `IBiDiDriverEvents` covers top-level driver events.
+- `ITransportConfiguration` and `ITransportDiagnostics` are the transport's settings and its observable state. They are reached from `BiDiDriver.TransportConfiguration` and `BiDiDriver.TransportDiagnostics`, so a driver built with `new BiDiDriver()` can be tuned and observed without constructing a `Transport` by hand. They deliberately exclude the transport's lifecycle and messaging operations, which belong to the driver that owns it.
 
 If you are building a higher-level library on top of WebDriverBiDi.NET, choose the narrowest interface that matches the capability you need. If you are writing application code, ignore the interfaces and use `BiDiDriver`.
 

@@ -546,11 +546,9 @@ public class BiDiDriverTests
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         TimeSpan commandTimeout = TimeSpan.FromSeconds(10);
-        await using BiDiDriver driver = new(commandTimeout, transport)
-        {
-            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
-            UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
-        };
+        await using BiDiDriver driver = new(commandTimeout, transport);
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
         driver.OnUnknownMessageReceived.AddObserver(e => unknownMessageReceived = true);
         driver.OnLogMessage.AddObserver(e =>
         {
@@ -694,11 +692,9 @@ public class BiDiDriverTests
         Server server = new();
         server.OnClientConnected.AddObserver(ConnectionHandler);
         await server.StartAsync();
-        await using BiDiDriver driver = new(TimeSpan.FromSeconds(30))
-        {
-            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
-            UnknownMessageBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(30));
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Collect;
 
         try
         {
@@ -768,11 +764,9 @@ public class BiDiDriverTests
         Server server = new();
         server.OnClientConnected.AddObserver(ConnectionHandler);
         await server.StartAsync();
-        await using BiDiDriver driver = new()
-        {
-            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
-            UnknownMessageBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new();
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Collect;
 
         try
         {
@@ -904,8 +898,8 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.EventHandlerExceptionBehavior);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.EventHandlerExceptionBehavior);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.EventHandlerExceptionBehavior);
     }
 
@@ -915,8 +909,8 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.UnexpectedErrorBehavior);
-        driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.UnexpectedErrorBehavior);
+        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.UnexpectedErrorBehavior);
     }
 
@@ -926,8 +920,8 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.ProtocolErrorBehavior);
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.ProtocolErrorBehavior);
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.ProtocolErrorBehavior);
     }
 
@@ -937,9 +931,60 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.UnknownMessageBehavior);
-        driver.UnknownMessageBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.UnknownMessageBehavior);
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.UnknownMessageBehavior);
+    }
+
+    [Fact]
+    public async Task TestTransportConfigurationIsTheTransportItself()
+    {
+        // The driver keeps no copy of these settings: the property hands back the transport, so a value
+        // set through either reference is seen through the other.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.Same(transport, driver.TransportConfiguration);
+
+        driver.TransportConfiguration.ShutdownTimeout = TimeSpan.FromSeconds(3);
+        Assert.Equal(TimeSpan.FromSeconds(3), transport.ShutdownTimeout);
+
+        transport.ConnectionLockTimeout = TimeSpan.FromSeconds(7);
+        Assert.Equal(TimeSpan.FromSeconds(7), driver.TransportConfiguration.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public async Task TestTransportConfigurationValidatesTimeouts()
+    {
+        // The validation belongs to the transport, and reaching it through the driver does not bypass it.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.Throws<ArgumentOutOfRangeException>(() => driver.TransportConfiguration.ShutdownTimeout = TimeSpan.FromSeconds(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => driver.TransportConfiguration.ConnectionLockTimeout = TimeSpan.FromSeconds(-1));
+    }
+
+    [Fact]
+    public async Task TestTransportDiagnosticsAreReadableThroughoutTheLifecycle()
+    {
+        // None of these throws at any point of the lifecycle, which is what makes them safe to poll.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.Same(transport, driver.TransportDiagnostics);
+
+        Assert.Equal(TransportState.Disconnected, driver.TransportDiagnostics.State);
+        Assert.Equal(0, driver.TransportDiagnostics.IncomingQueueDepth);
+        Assert.Equal(0, driver.TransportDiagnostics.PendingCommandCount);
+
+        await driver.StartAsync("ws://localhost:5555");
+        Assert.Equal(TransportState.Connected, driver.TransportDiagnostics.State);
+        Assert.True(driver.IsStarted);
+
+        await driver.StopAsync();
+        Assert.Equal(TransportState.Disconnected, driver.TransportDiagnostics.State);
+        Assert.False(driver.IsStarted);
+        Assert.Equal(0, driver.TransportDiagnostics.PendingCommandCount);
     }
 
     [Fact]
@@ -2014,7 +2059,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
         driver.OnEventReceived.AddObserver(e =>
         {
@@ -2066,7 +2111,7 @@ public class BiDiDriverTests
             },
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
         driver.OnEventReceived.AddObserver(
             async e =>
@@ -2119,7 +2164,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => throw new WebDriverBiDiException("module dispatch failure"));
         driver.OnEventReceived.AddObserver(e => eventReceivedTaskCompletionSource.TrySetResult());
 
@@ -2153,7 +2198,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => throw new WebDriverBiDiException("module dispatch failure"));
         driver.OnEventReceived.AddObserver(e =>
         {

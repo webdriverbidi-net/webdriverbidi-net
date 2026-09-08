@@ -495,14 +495,15 @@ public class PerformanceSamples
     /// <summary>
     /// Poll Transport.IncomingQueueDepth to detect message backlog.
     /// </summary>
-    public static void QueueDepthMonitoring(Transport transport)
+    public static void QueueDepthMonitoring(BiDiDriver driver)
     {
         #region QueueDepthMonitoring
         // Poll the queue depth on a timer to detect backlog early. The property is
-        // safe to read concurrently with message production and consumption.
+        // safe to read concurrently with message production and consumption, and
+        // never throws, whatever point of the lifecycle the driver is at.
         Timer queueDepthMonitor = new Timer(_ =>
         {
-            int depth = transport.IncomingQueueDepth;
+            int depth = driver.TransportDiagnostics.IncomingQueueDepth;
 
             if (depth > 100)
             {

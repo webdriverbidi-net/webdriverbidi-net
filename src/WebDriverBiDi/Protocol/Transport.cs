@@ -65,7 +65,7 @@ using WebDriverBiDi.JsonConverters;
 /// processing.
 /// </para>
 /// </remarks>
-public class Transport : IAsyncDisposable
+public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDiagnostics
 {
     /// <summary>
     /// Gets the component name for this class to use in log messages.
@@ -279,7 +279,8 @@ public class Transport : IAsyncDisposable
     /// <para>
     /// A derived transport may override this to keep a level of its own rather than share the
     /// connection's. Note what that decouples: <see cref="IsLogLevelEnabled"/> and this transport's
-    /// <c>LogAsync</c> read this property, and so does <see cref="BiDiDriver.LogLevel"/>, so all three
+    /// <c>LogAsync</c> read this property, and so does the driver through
+    /// <see cref="BiDiDriver.TransportConfiguration"/>, so all three
     /// follow the override; the connection keeps filtering its own messages — the <c>SEND</c> and
     /// <c>RECV</c> traffic among them — by <see cref="Protocol.Connection.LogLevel"/>. An override whose
     /// setter also assigns <see cref="Protocol.Connection.LogLevel"/> keeps the whole pipeline together.
