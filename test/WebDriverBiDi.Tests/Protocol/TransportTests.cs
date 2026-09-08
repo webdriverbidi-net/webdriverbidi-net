@@ -318,6 +318,27 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestElapsedMillisecondsRunsWhileTheCommandIsInFlight()
+    {
+        // The remote end never answers, so the command stays pending and its timing stays running.
+        // A running command reports the interval live rather than the frozen value a completed one has.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        TestCommandParameters commandParameters = new("module.command");
+        Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
+
+        Assert.False(command.TryGetResult(out _));
+        long firstReading = command.ElapsedMilliseconds;
+        Assert.True(firstReading >= 0);
+
+        // A second reading of a still-running command never goes backwards. This asserts monotonicity
+        // rather than growth, so it does not depend on how long the test takes to reach this line.
+        Assert.True(command.ElapsedMilliseconds >= firstReading);
+    }
+
+    [Fact]
     public async Task TestSendCommandExceptionRollsBackPendingCommandState()
     {
         TestWebSocketConnection connection = new()

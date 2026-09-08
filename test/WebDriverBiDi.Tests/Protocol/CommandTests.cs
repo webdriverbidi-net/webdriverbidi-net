@@ -407,6 +407,25 @@ public class CommandTests
     }
 
     [Fact]
+    public void TestElapsedMillisecondsIsZeroBeforeTheCommandIsSent()
+    {
+        // Timing starts when a Transport sends the command; a command that has never been sent has no
+        // interval to report.
+        Command command = new(1, new TestCommandParameters("module.command"));
+        Assert.Equal(0, command.ElapsedMilliseconds);
+    }
+
+    [Fact]
+    public void TestElapsedMillisecondsIsZeroWhenTimingNeverStarted()
+    {
+        // Reading it more than once still reports zero: there is no start timestamp to measure from,
+        // and nothing about reading the property starts one.
+        Command command = new(1, new TestCommandParameters("module.command"));
+        Assert.Equal(0, command.ElapsedMilliseconds);
+        Assert.Equal(0, command.ElapsedMilliseconds);
+    }
+
+    [Fact]
     public void TestNullCommandParametersThrows()
     {
         Assert.Throws<ArgumentNullException>(() => new Command(1, null!));

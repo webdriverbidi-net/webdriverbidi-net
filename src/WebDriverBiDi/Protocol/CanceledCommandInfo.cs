@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using System.Diagnostics;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Describes a command that the local end stopped waiting for, so that a response arriving
@@ -18,7 +18,7 @@ using System.Diagnostics;
 /// </remarks>
 public sealed class CanceledCommandInfo
 {
-    private readonly Stopwatch cancellationStopwatch;
+    private readonly long cancellationTimestamp;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CanceledCommandInfo"/> class.
@@ -31,7 +31,7 @@ public sealed class CanceledCommandInfo
         this.CommandName = command.CommandName;
         this.ResponseType = command.ResponseType;
         this.Reason = reason;
-        this.cancellationStopwatch = Stopwatch.StartNew();
+        this.cancellationTimestamp = ElapsedTimeUtilities.GetTimestamp();
     }
 
     /// <summary>
@@ -57,5 +57,5 @@ public sealed class CanceledCommandInfo
     /// <summary>
     /// Gets the time that has elapsed since the command was canceled.
     /// </summary>
-    public TimeSpan TimeSinceCancellation => this.cancellationStopwatch.Elapsed;
+    public TimeSpan TimeSinceCancellation => ElapsedTimeUtilities.GetElapsedTime(this.cancellationTimestamp);
 }
