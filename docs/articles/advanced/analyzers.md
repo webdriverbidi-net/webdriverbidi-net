@@ -320,7 +320,8 @@ This is reported at `Info` rather than as a warning because an observer meant to
 | Blocking handlers (BIDI007, BIDI016) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
 | Module commands in event handlers (BIDI023) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
 | Observer disposal (BIDI006, BIDI031) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
-| Driver lifecycle and disposal (BIDI012, BIDI029) | [Error Handling - Collect Mode](error-handling.md#collect-mode) |
+| Driver lifecycle and disposal (BIDI012) | [Error Handling - Collect Mode](error-handling.md#collect-mode) |
+| Use after disposal (BIDI029) | [Core Concepts - Proper Disposal](../core-concepts.md#proper-disposal) |
 | Nullable collections (BIDI017) | [Common Pitfalls - Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
 | Capture session ordering (BIDI020, BIDI021, BIDI030) | [Events and Observables - Event Synchronization](../events-observables.md#event-synchronization) |

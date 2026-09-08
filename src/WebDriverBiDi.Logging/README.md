@@ -166,7 +166,9 @@ This affects Native AOT publishing only; a normal build, including a trimmed one
 The EventSource bridge has minimal overhead:
 - Events are only processed when logging is enabled
 - Structured properties are created on-demand
-- No allocations when logging is disabled
+- The bridge allocates nothing for an event the target logger has filtered off; the EventSource's own
+  per-event cost still applies at the subscribed level, because the listener is subscribed at that
+  level and the `ILogger.IsEnabled` check runs after the event has been raised
 - Thread-safe and async-friendly
 
 ## See Also

@@ -93,7 +93,9 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     public string? BrowsingContextId { get; set; }
 
     /// <summary>
-    /// Gets or sets the viewport dimensions to set. A null value sets the viewport to the default dimensions.
+    /// Gets or sets the viewport dimensions to set. A <see langword="null"/> value omits the field,
+    /// leaving the current viewport unchanged; assign <see cref="ResetToDefaultViewport"/> to restore
+    /// the default dimensions.
     /// </summary>
     [JsonPropertyName("viewport")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

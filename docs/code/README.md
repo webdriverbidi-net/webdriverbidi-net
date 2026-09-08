@@ -13,7 +13,7 @@ This directory contains C# code snippets that are included in the documentation 
 - `remote-values/` - Snippets for `docs/articles/remote-values.md`
 - `examples/` - Snippets for `docs/articles/examples/*.md` (common-scenarios, console-monitoring, form-submission, network-interception) and for `getting-started.md`, `first-application.md` and `browser-setup.md`
 - `modules/` - Snippets for every guide in `docs/articles/modules/*.md`
-- `advanced/` - Snippets for the remaining `docs/articles/advanced/*.md` guides (AOT compatibility, connection management, custom modules, observability, performance)
+- `advanced/` - Snippets for the remaining `docs/articles/advanced/*.md` guides (AOT compatibility, connection management, custom modules, observability, logging, performance)
 - `api/` - Snippets for `docs/api/index.md`
 - `architecture/` - Snippets for `docs/articles/architecture.md`
 - `IndexSamples.cs` - Snippets for `docs/index.md`

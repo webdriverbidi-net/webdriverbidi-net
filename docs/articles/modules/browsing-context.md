@@ -220,7 +220,8 @@ Three further events accompany a navigation but carry their own argument types: 
 
 `OnDownloadEnd` fires when the download finishes. The event args (`DownloadEndEventArgs`) carry
 the same `DownloadId` and `Url`, along with `Status` (`DownloadEndStatus.Complete` or
-`DownloadEndStatus.Canceled`) and `FilePath` (non-null when the download completed successfully).
+`DownloadEndStatus.Canceled`) and `FilePath` (the path when the download completed and the remote end
+can supply one; otherwise null).
 
 [!code-csharp[Download Events](../../code/modules/BrowsingContextModuleSamples.cs#DownloadEvents)]
 
