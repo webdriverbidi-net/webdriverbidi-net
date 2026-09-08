@@ -312,6 +312,13 @@ The `StopAsync()` call is not optional if you use `Collect` mode. Because the dr
 
 [!code-csharp[Recover From Remote Disconnect](../../code/advanced/ConnectionManagementSamples.cs#RecoverFromRemoteDisconnect)]
 
+### Losing the connection while connecting
+
+A connection can also be lost during `StartAsync`, before the session is ever established. The connection's receive loop is already running by the time it reports that the connection is open, so a remote end that accepts the connection and then immediately closes it — a browser shutting down, an endpoint that rejects the session after the handshake, a Chromium process that exits just after inheriting the pipes — is reported while the transport is still connecting.
+
+`StartAsync` fails in that case with `WebDriverBiDiConnectionException`, carrying whatever the connection reported as its inner exception. The transport is left disconnected, so the attempt can simply be retried; nothing needs to be stopped first. This is deliberately a failure rather than a success followed by a disconnect, because a session that never started is not one a caller can use, and reporting it as started would leave `IsStarted` describing a connection that is already gone.
+
+
 ## Error Handling
 
 ### Common Connection Errors

@@ -1415,6 +1415,99 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestConnectionLostWhileConnectingFailsTheAttempt()
+    {
+        // The connection's receive loop is live before Connection.StartAsync returns, so the remote end
+        // can close while the transport is still Connecting. The loss cannot be handled where it is
+        // reported, because there is no session to tear down yet, so it is recorded and fails the
+        // attempt. Publishing Connected instead would wedge the transport: the receive loop has already
+        // exited, so nothing further would notice, and IsStarted would report true over a dead
+        // connection until the caller happened to stop it.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource startReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+            StartBarrierReached = startReached,
+        };
+        TestTransport transport = new(connection);
+
+        Task connectTask = transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        await startReached.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        startBarrier.TrySetResult();
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connectTask);
+        Assert.Contains("lost while the session was being established", exception.Message);
+        WebDriverBiDiConnectionException reportedLoss = Assert.IsType<WebDriverBiDiConnectionException>(exception.InnerException);
+        Assert.Contains("Remote end closed the connection", reportedLoss.Message);
+
+        // The attempt rolled back, so the transport is left ready for another one rather than stuck
+        // part-way through a session that never started.
+        Assert.Equal(TransportState.Disconnected, transport.State);
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+    }
+
+    [Fact]
+    public async Task TestConnectionErrorWhileConnectingFailsTheAttempt()
+    {
+        // A connection error reported during the same window is recorded through the same path as a
+        // remote close, and names itself as the cause of the failed attempt.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource startReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+            StartBarrierReached = startReached,
+        };
+        TestTransport transport = new(connection);
+
+        Task connectTask = transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        await startReached.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        await connection.RaiseConnectionErrorEventAsync(new InvalidOperationException("Simulated receive failure"));
+        startBarrier.TrySetResult();
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connectTask);
+        WebDriverBiDiConnectionException reportedLoss = Assert.IsType<WebDriverBiDiConnectionException>(exception.InnerException);
+        Assert.Contains("Simulated receive failure", reportedLoss.Message);
+        Assert.Equal(TransportState.Disconnected, transport.State);
+    }
+
+    [Fact]
+    public async Task TestConnectionLostWhileConnectingDrainsBufferedMessages()
+    {
+        // A message delivered before the loss sits in a queue whose reader is never started, holding a
+        // pooled buffer that only its disposal returns. The failing attempt drains and disposes it, and
+        // leaves no phantom depth behind for IncomingQueueDepth to report.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource startReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+            StartBarrierReached = startReached,
+        };
+        TestTransport transport = new(connection);
+
+        Task connectTask = transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        await startReached.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+        Assert.Equal(1, transport.IncomingQueueDepth);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        startBarrier.TrySetResult();
+
+        await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connectTask);
+        Assert.True(owner.IsDisposed, "The buffered message's pooled buffer was not returned by the failed connect attempt.");
+        Assert.Equal(0, transport.IncomingQueueDepth);
+    }
+
+    [Fact]
     public async Task TestConnectionLockAcquisitionThrowsWhenTokenAlreadyCanceled()
     {
         // The lock is free here, so this covers the guard that keeps the uncontended fast path from
