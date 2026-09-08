@@ -254,7 +254,7 @@ public class DownloadEndEventArgsTests
     }
 
     [Fact]
-    public void TestDeserializingWithnullTimestampThrows()
+    public void TestDeserializingWithNullTimestampThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""

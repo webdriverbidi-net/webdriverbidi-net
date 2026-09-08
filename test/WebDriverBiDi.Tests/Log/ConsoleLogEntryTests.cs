@@ -192,7 +192,7 @@ public class ConsoleLogEntryTests
     }
 
     [Fact]
-    public void TestDeserializingWithnullArgsThrows()
+    public void TestDeserializingWithNullArgsThrows()
     {
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);

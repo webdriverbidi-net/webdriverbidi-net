@@ -217,7 +217,7 @@ public class SetClientWindowStateCommandResultTests
     }
 
     [Fact]
-    public void TestDeserializingWithNulldStateValueThrows()
+    public void TestDeserializingWithNullStateValueThrows()
     {
         string json = """
                       {

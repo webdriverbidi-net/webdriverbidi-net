@@ -28,7 +28,7 @@ public class SetTouchOverrideCommandParametersTests
     }
 
     [Fact]
-    public void TestCanSerializeParametersWithScreenOrientation()
+    public void TestCanSerializeParametersWithMaxTouchPoints()
     {
         SetTouchOverrideCommandParameters properties = new()
         {

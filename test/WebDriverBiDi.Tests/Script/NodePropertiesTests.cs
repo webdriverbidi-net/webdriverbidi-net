@@ -384,7 +384,7 @@ public class NodePropertiesTests
     }
 
     [Fact]
-    public void TestCanDeserializeWithOptionalModeValue()
+    public void TestCanDeserializeWithOptionalModeValueOpen()
     {
         string json = """
                       {
@@ -399,6 +399,30 @@ public class NodePropertiesTests
         Assert.Equal(1u, nodeProperties.NodeType);
         Assert.Equal(0u, nodeProperties.ChildNodeCount);
         Assert.Equal(ShadowRootMode.Open, nodeProperties.Mode);
+        Assert.Null(nodeProperties.NodeValue);
+        Assert.Null(nodeProperties.LocalName);
+        Assert.Null(nodeProperties.NamespaceUri);
+        Assert.Null(nodeProperties.Attributes);
+        Assert.Null(nodeProperties.Children);
+        Assert.Null(nodeProperties.ShadowRoot);
+    }
+
+    [Fact]
+    public void TestCanDeserializeWithOptionalModeValueClosed()
+    {
+        string json = """
+                      {
+                        "nodeType": 1,
+                        "childNodeCount": 0,
+                        "mode": "closed"
+                      }
+                      """;
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.NotNull(nodeProperties);
+
+        Assert.Equal(1u, nodeProperties.NodeType);
+        Assert.Equal(0u, nodeProperties.ChildNodeCount);
+        Assert.Equal(ShadowRootMode.Closed, nodeProperties.Mode);
         Assert.Null(nodeProperties.NodeValue);
         Assert.Null(nodeProperties.LocalName);
         Assert.Null(nodeProperties.NamespaceUri);
