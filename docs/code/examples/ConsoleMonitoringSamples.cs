@@ -181,8 +181,9 @@ public static class ConsoleMonitoringSamples
             {
                 Console.WriteLine($"[{e.Level}] {e.Text}");
 
-                // Additional processing for errors/warnings
-                if (e.Source != null && e.Source.BrowsingContextId != null)
+                // Additional processing for errors/warnings. Source is always present;
+                // the browsing context it names is not.
+                if (e.Source.BrowsingContextId != null)
                 {
                     Console.WriteLine($"  Context: {e.Source.BrowsingContextId}");
                 }
@@ -207,7 +208,16 @@ public static class ConsoleMonitoringSamples
 
                 foreach (var arg in e.Arguments)
                 {
-                    Console.WriteLine($"    Type: {arg.Type}, Value: {arg.ConvertTo<StringRemoteValue>().Value}");
+                    // console.log() takes arguments of any type, so test the type instead of
+                    // asserting it. ConvertTo<StringRemoteValue>() throws on the first number,
+                    // and under the default Ignore behavior the handler's output would vanish.
+                    string value = arg switch
+                    {
+                        StringRemoteValue stringArg => stringArg.Value,
+                        ValueHoldingRemoteValue holder => $"{holder.ValueObject}",
+                        _ => $"({arg.Type})",
+                    };
+                    Console.WriteLine($"    Type: {arg.Type}, Value: {value}");
                 }
             }
         });
@@ -243,11 +253,7 @@ public static class ConsoleMonitoringSamples
         {
             string logLine = $"{e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{e.Level,-5}] [{e.Type}] {e.Text}";
 
-            if (e.Source != null)
-            {
-                logLine += $" (Source: {e.Source.RealmId})";
-            }
-
+            logLine += $" (Source: {e.Source.RealmId})";
             logLine += Environment.NewLine;
 
             if (e.StackTrace != null)
@@ -312,7 +318,7 @@ public static class ConsoleMonitoringSamples
             Console.ResetColor();
 
             // Show source for errors
-            if (e.Level == LogLevel.Error && e.Source != null)
+            if (e.Level == LogLevel.Error)
             {
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine($"    Source: {e.Source.RealmId}");
@@ -467,7 +473,8 @@ public class ConsoleAsserter
 
     public void AssertContainsMessage(string expectedText)
     {
-        bool found = logs.Any(l => l.Text.Contains(expectedText));
+        // Text is nullable: a log entry need not carry one.
+        bool found = logs.Any(l => l.Text is not null && l.Text.Contains(expectedText));
         if (!found)
         {
             throw new Exception($"Expected log message containing '{expectedText}', but not found");
@@ -476,7 +483,7 @@ public class ConsoleAsserter
 
     public void AssertDoesNotContain(string unexpectedText)
     {
-        var found = logs.Where(l => l.Text.Contains(unexpectedText)).ToList();
+        var found = logs.Where(l => l.Text is not null && l.Text.Contains(unexpectedText)).ToList();
         if (found.Any())
         {
             throw new Exception($"Found unexpected log message: {found[0].Text}");

@@ -21,24 +21,7 @@ dotnet add package WebDriverBiDi.Logging
 
 Register the bridge with `AddWebDriverBiDi()` on `ILoggingBuilder`:
 
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using WebDriverBiDi;
-using WebDriverBiDi.Logging;
-
-var services = new ServiceCollection();
-services.AddLogging(builder =>
-{
-    builder.AddConsole();
-    builder.AddWebDriverBiDi();
-});
-
-var serviceProvider = services.BuildServiceProvider();
-
-await using var driver = new BiDiDriver();
-await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
-```
+[!code-csharp[Logging Quick Start](../../code/advanced/ObservabilitySamples.cs#LoggingQuickStart)]
 
 The default overload captures events at `EventLevel.Informational` and above.
 
@@ -46,6 +29,7 @@ The default overload captures events at `EventLevel.Informational` and above.
 
 Pass a `System.Diagnostics.Tracing.EventLevel` to capture more or fewer events:
 
+<!-- inline-csharp: two calls on a logging builder the surrounding registration supplies -->
 ```csharp
 builder.AddWebDriverBiDi(EventLevel.Verbose);   // all events, including debug-level
 builder.AddWebDriverBiDi(EventLevel.Warning);   // warnings and errors only
@@ -60,6 +44,11 @@ The `EventLevel` → `LogLevel` mapping applied by `WebDriverBiDiEventSourceLogg
 | `Warning` | `Warning` |
 | `Error` | `Error` |
 | `Critical` | `Critical` |
+
+**Call `AddWebDriverBiDi` once.** The listener is registered with `TryAddSingleton`, so the first call on
+a given service collection is the one that takes effect. A later call is silently ignored, including the
+overload that takes a level, and the level from the first call remains in force. Pass the level you want
+on the first call rather than adding a second one to change it.
 
 ## Log Category Name
 

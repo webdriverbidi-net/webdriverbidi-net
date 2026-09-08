@@ -145,6 +145,12 @@ that every reference points at an existing region. See [code/README.md](code/REA
 
 [!code-csharp[Complete Runnable Example](code/DocsReadmeSamples.cs#CompleteRunnableExample)]
 
+The exception is a fragment that could never compile on its own: a list of member names, a signature
+sketch, a declaration quoted from the library, or code written deliberately to trip an analyzer. Such a
+fragment may stay in the markdown, but the line directly above its fence must carry a marker naming the
+reason, `<!-- inline-csharp: why this cannot be a compiled region -->`, so the exception is a deliberate
+choice rather than an oversight. `validate-doc-regions.sh` fails on any unmarked C# fence.
+
 ### Cross-References
 
 Link to other documentation:

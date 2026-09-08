@@ -698,4 +698,14 @@ public static class CustomConnectionUsage
         await driver.StartAsync(customConnectionString);
         #endregion
     }
+
+    /// <summary>
+    /// Setting the log level at any layer sets it everywhere.
+    /// </summary>
+    public static void SetLogLevel(BiDiDriver driver)
+    {
+        #region SetLogLevel
+        driver.LogLevel = WebDriverBiDiLogLevel.Debug;
+        #endregion
+    }
 }

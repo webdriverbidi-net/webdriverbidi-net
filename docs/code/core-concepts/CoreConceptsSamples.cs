@@ -574,7 +574,7 @@ public static class CoreConceptsSamples
             long number = remoteValue; // JavaScript number -> long
 
             // Check the type
-            Console.WriteLine($"Type: {remoteValue.Type}"); // "number"
+            Console.WriteLine($"Type: {remoteValue.Type}"); // RemoteValueType.Number
         }
         #endregion
     }

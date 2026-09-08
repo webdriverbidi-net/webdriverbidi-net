@@ -159,7 +159,8 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Gets or sets the value of the timeout to wait for exclusive access when sending to or receiving data from the ClientWebSocket.
+    /// Gets or sets the value of the timeout to wait for exclusive access when sending data over the connection.
+    /// It bounds only that wait, not the send itself and not any receive.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds

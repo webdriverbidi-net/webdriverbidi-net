@@ -364,9 +364,9 @@ Command results and event args expose extension properties from two distinct pos
 
 WebDriverBiDi.NET is fully asynchronous and thread-safe for most operations.
 
-### Transport Thread
+### Transport Reader Task
 
-The transport maintains a dedicated thread for WebSocket message processing:
+The transport maintains a dedicated reader task, running on the thread pool rather than on a thread of its own, that processes queued WebSocket messages one at a time:
 
 - **Receives messages** from WebSocket
 - **Deserializes JSON** to objects
@@ -537,7 +537,7 @@ Create a class that extends `Transport` and overrides `CreateIncomingMessage` fo
 
 ### Command Batching
 
-Commands are executed sequentially per connection. To improve performance:
+Commands are sent one at a time over the connection, because the transport serializes the send. The browser may still process them concurrently, so independent commands are worth issuing in parallel:
 
 [!code-csharp[Command Batching](../code/architecture/ArchitectureSamples.cs#CommandBatching)]
 
@@ -563,7 +563,7 @@ Long-running event handlers block message processing:
 - **Commands**: Request-response pattern with type safety
 - **Events**: Observable pattern with async support
 - **Serialization**: System.Text.Json with custom converters
-- **Threading**: Fully async with dedicated message processing thread
+- **Threading**: Fully async, with a dedicated message-processing task on the thread pool
 - **Extensibility**: Custom modules and transport implementations
 
 ## See Also

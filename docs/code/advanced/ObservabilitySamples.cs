@@ -153,6 +153,26 @@ public static class ObservabilitySamples
     }
 
     /// <summary>
+    /// Minimal registration of the WebDriverBiDi.Logging bridge.
+    /// </summary>
+    public static async Task LoggingQuickStart()
+    {
+        #region LoggingQuickStart
+        var services = new ServiceCollection();
+        services.AddLogging(builder =>
+        {
+            builder.AddConsole();
+            builder.AddWebDriverBiDi();
+        });
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var driver = new BiDiDriver();
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
+        #endregion
+    }
+
+    /// <summary>
     /// Basic console application with Microsoft.Extensions.Logging and AddWebDriverBiDi.
     /// </summary>
     public static async Task LoggingBasicConsoleApplication()
@@ -178,8 +198,9 @@ public static class ObservabilitySamples
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Logs will show:
-        // [12:34:56 INF] ConnectionOpening, connectionId=12345, url=ws://localhost:9515/session/YOUR-SESSION-ID
-        // [12:34:56 INF] ConnectionOpened, connectionId=12345, url=ws://localhost:9515/session/YOUR-SESSION-ID
+        // connectionId is Connection.Id, a GUID string assigned when the connection is created.
+        // [12:34:56 INF] ConnectionOpening, connectionId=3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05, url=ws://localhost:9515/session/YOUR-SESSION-ID
+        // [12:34:56 INF] ConnectionOpened, connectionId=3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05, url=ws://localhost:9515/session/YOUR-SESSION-ID
         // [12:34:56 INF] TransportStarted
 
         await driver.Session.StatusAsync();

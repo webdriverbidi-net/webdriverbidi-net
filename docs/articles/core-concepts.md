@@ -261,7 +261,7 @@ WebDriver BiDi operations can fail for various reasons.
 
 ### WebDriverBiDiException
 
-Every exception the library throws derives from `WebDriverBiDiException`. An error response from the browser arrives as `WebDriverBiDiCommandException` (with an `ErrorCode`), a missing response as `WebDriverBiDiTimeoutException`, and a lost connection as `WebDriverBiDiConnectionException`; catching the base type covers them all. See [Error Handling — Exception Hierarchy](advanced/error-handling.md#exception-hierarchy) for the full list.
+Every protocol-level failure is reported through `WebDriverBiDiException`. An error response from the browser arrives as `WebDriverBiDiCommandException` (with an `ErrorCode`), a missing response as `WebDriverBiDiTimeoutException`, and a lost connection as `WebDriverBiDiConnectionException`; catching the base type covers all of those. Caller mistakes are a separate matter: they surface as the usual .NET exceptions, such as `ArgumentNullException`, `ObjectDisposedException` and `InvalidOperationException`. See [Error Handling — Exception Hierarchy](advanced/error-handling.md#exception-hierarchy) for the full list of both.
 
 [!code-csharp[WebDriverBiDiException Handling](../code/core-concepts/CoreConceptsSamples.cs#WebDriverBiDiExceptionHandling)]
 
@@ -429,5 +429,5 @@ Are you implementing browser-specific extensions?
 - Browsing contexts represent tabs/windows/iframes
 - Remote values represent JavaScript data
 - All operations are async
-- Errors are thrown as `WebDriverBiDiException`
+- Protocol failures are thrown as `WebDriverBiDiException`; caller mistakes as the usual .NET exceptions
 

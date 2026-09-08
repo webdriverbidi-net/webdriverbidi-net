@@ -10,10 +10,12 @@ namespace WebDriverBiDi;
 /// </summary>
 /// <remarks>
 /// The protocol defines <c>EmptyResult</c> as extensible, so a remote end may place additional
-/// properties inside the otherwise empty <c>result</c> object. When it does, those properties are
-/// exposed through <see cref="CommandResult.AdditionalData"/> in preference to any extension
-/// properties found on the response envelope; when the result object is empty, the envelope's
-/// extension properties are exposed instead, as for every other command result.
+/// properties inside the otherwise empty <c>result</c> object. Those are exposed through
+/// <see cref="CommandResult.AdditionalData"/>, and extension properties found on the response
+/// envelope through <see cref="CommandResult.AdditionalResponseProperties"/>, exactly as for every
+/// other command result. The two positions are never merged, and neither stands in for the other:
+/// an empty <c>result</c> object leaves <see cref="CommandResult.AdditionalData"/> empty however
+/// many extension properties the envelope carries.
 /// </remarks>
 public record EmptyResult : CommandResult
 {
