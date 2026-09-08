@@ -15,7 +15,6 @@ public class ScreenArea
     /// <summary>
     /// Initializes a new instance of the <see cref="ScreenArea"/> class.
     /// </summary>
-    [JsonConstructor]
     public ScreenArea()
     {
     }
