@@ -5,7 +5,11 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
@@ -94,5 +98,48 @@ public class BiDiDriver006CodeFixProviderTests
             """;
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that no fix is offered when the project's language version predates C# 8, which is when
+    /// the using declaration this fix emits was introduced. The diagnostic still reports; only the
+    /// automated edit is withheld, because there is no equivalent one-line spelling to fall back to.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task BelowCSharp8_OffersNoFix()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> belowCSharp8Actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider>(
+            testCode,
+            referenceWebDriverBiDi: true,
+            languageVersion: LanguageVersion.CSharp7_3);
+
+        Assert.Empty(belowCSharp8Actions);
+
+        // The same source at C# 8 does get a fix, which pins that the empty result above comes from the
+        // language version and not from the diagnostic failing to appear.
+        (IReadOnlyList<CodeAction> cSharp8Actions, Document __) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider>(
+            testCode,
+            referenceWebDriverBiDi: true,
+            languageVersion: LanguageVersion.CSharp8);
+
+        Assert.Single(cSharp8Actions);
     }
 }

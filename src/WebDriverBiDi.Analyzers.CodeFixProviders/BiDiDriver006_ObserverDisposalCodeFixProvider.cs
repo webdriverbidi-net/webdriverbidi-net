@@ -32,6 +32,17 @@ public class BiDiDriver006_ObserverDisposalCodeFixProvider : CodeFixProvider
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
+        // The fix converts the declaration into a using declaration, which is C# 8. Unlike the other
+        // version-sensitive fixes in this package, there is no equivalent one-line spelling to fall back
+        // to: a classic using statement would have to take ownership of the rest of the enclosing block
+        // and re-indent it, which is a different and far more invasive edit than the one offered here.
+        // A project on an older language version keeps the diagnostic, which still says what is wrong,
+        // and is left to dispose the observer in whichever way suits its code.
+        if (CodeFixHelpers.GetLanguageVersion(context.Document) < LanguageVersion.CSharp8)
+        {
+            return;
+        }
+
         SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
         Diagnostic diagnostic = context.Diagnostics.First();

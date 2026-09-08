@@ -104,21 +104,31 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
     /// <returns>The driver's name and type, or <see langword="null"/> if the receiver does not root in one.</returns>
     private static (string Name, ITypeSymbol Type)? GetDriverFromReceiver(SyntaxNodeAnalysisContext context, ExpressionSyntax receiver)
     {
+        // Unwrap the member access chain to the expression that names the driver itself. Both
+        // `driver.Session` and `this.driver.Session` root in a driver, the first as a bare identifier
+        // and the second as a this-qualified field. Unwrapping all the way to a bare identifier would
+        // reach the `this` and give up, which silently skips every call written with the `this.`
+        // prefix that a field conventionally carries. BIDI012 already accepts both spellings.
         ExpressionSyntax current = receiver;
-        while (current is MemberAccessExpressionSyntax memberAccess)
+        while (current is MemberAccessExpressionSyntax memberAccess && memberAccess.Expression is not ThisExpressionSyntax)
         {
             current = memberAccess.Expression;
         }
 
-        if (current is not IdentifierNameSyntax identifier)
+        // The loop stops at a bare expression or at a this-qualified member access, so a member access
+        // reaching here always has `this` for its expression and needs no second test for it.
+        if (current is not IdentifierNameSyntax and not MemberAccessExpressionSyntax)
         {
             return null;
         }
 
+        // The text is kept as written, rather than reduced to the member name, because it becomes the
+        // prefix of the replacement the code fix offers: a receiver written `this.driver` yields
+        // `this.driver.Log.OnEntryAdded.EventName`, which matches the code around it.
         // IsCommandExecutorType accepts a null type and answers false, so no separate null test is needed.
-        ITypeSymbol? type = context.SemanticModel.GetTypeInfo(identifier).Type;
+        ITypeSymbol? type = context.SemanticModel.GetTypeInfo(current).Type;
         return AnalyzerSymbolHelpers.IsCommandExecutorType(type)
-            ? (identifier.Identifier.Text, type!)
+            ? (current.ToString(), type!)
             : null;
     }
 

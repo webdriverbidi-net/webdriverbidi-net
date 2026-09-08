@@ -149,6 +149,8 @@ public static class AnalyzerTestHelpers
     /// <typeparam name="TAnalyzer">The type of analyzer to run.</typeparam>
     /// <typeparam name="TCodeFix">The type of code fix provider to invoke.</typeparam>
     /// <param name="source">The source code to analyze.</param>
+    /// <param name="referenceWebDriverBiDi">Whether the analyzed source needs the library's real types.</param>
+    /// <param name="languageVersion">The C# version the ad-hoc project is parsed with, for fixes whose output depends on it.</param>
     /// <returns>The registered code actions and the analyzed document.</returns>
     /// <remarks>
     /// Use this instead of <see cref="LfCodeFixTest{TAnalyzer, TCodeFix}"/> when the diagnostic is
@@ -156,7 +158,7 @@ public static class AnalyzerTestHelpers
     /// a method passed as a method group); the testing framework rejects such "non-local"
     /// diagnostics before the provider is ever invoked.
     /// </remarks>
-    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source, bool referenceWebDriverBiDi = false)
+    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source, bool referenceWebDriverBiDi = false, LanguageVersion languageVersion = LanguageVersion.Default)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TCodeFix : CodeFixProvider, new()
     {
@@ -171,6 +173,7 @@ public static class AnalyzerTestHelpers
         using AdhocWorkspace workspace = new();
         Project project = workspace.AddProject("TestProject", LanguageNames.CSharp)
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .WithParseOptions(new CSharpParseOptions(languageVersion))
             .AddMetadataReferences(references);
         Document document = project.AddDocument("Test0.cs", source);
 

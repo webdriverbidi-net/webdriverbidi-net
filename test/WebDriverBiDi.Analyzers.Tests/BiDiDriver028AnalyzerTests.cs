@@ -622,6 +622,95 @@ public class BiDiDriver028AnalyzerTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that a non-numeric constant assigned to a ranged property is declined rather than
+    /// converted. An analyzer also runs over code that does not compile, so the constant it is handed
+    /// is not always of the property's type; converting a string would throw, which is reported as
+    /// AD0001 and suppresses this rule for the whole file.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StringConstant_AssignedToRangedProperty_ReportsNothing()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageFormat format = new ImageFormat { Quality = {|#0:"high"|} };
+                    }
+                }
+            }
+            """;
+
+        await VerifyDiagnosticsAsync(
+            testCode,
+            DiagnosticResult.CompilerError("CS0029").WithLocation(0).WithArguments("string", "double?"));
+    }
+
+    /// <summary>
+    /// Tests that a boolean constant assigned to a ranged property is declined for the same reason a
+    /// string is: it is the only other type a C# constant can have, and it does not convert either.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task BooleanConstant_AssignedToRangedProperty_ReportsNothing()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageFormat format = new ImageFormat { Quality = {|#0:true|} };
+                    }
+                }
+            }
+            """;
+
+        await VerifyDiagnosticsAsync(
+            testCode,
+            DiagnosticResult.CompilerError("CS0029").WithLocation(0).WithArguments("bool", "double?"));
+    }
+
+    /// <summary>
+    /// Tests that a char constant assigned to a ranged property is converted through its numeric value
+    /// rather than through IConvertible, which throws for char. A char is the one constant type that
+    /// converts implicitly to a numeric property, so this shape does compile.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CharConstant_OutsideRange_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageFormat format = new ImageFormat { Quality = {|#0:'A'|} };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("'A'", "Quality", "[0, 1]");
+
+        await VerifyDiagnosticsAsync(testCode, expected);
+    }
+
     private static async Task VerifyDiagnosticsAsync(string testCode, params DiagnosticResult[] expected)
     {
         RealAssemblyAnalyzerTest<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer> test = new()

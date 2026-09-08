@@ -1787,4 +1787,242 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that rebinding a tracked variable to a driver the walk cannot see stops the tracking. The
+    /// new driver may already have been started by whatever produced it, and this Error-severity rule
+    /// reports only what is certain.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentFromFactory_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        driver = CreateDriver();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that rebinding a tracked variable to a freshly constructed driver resets its started
+    /// state: the start that preceded the reassignment applied to a driver the variable no longer
+    /// names, so the command that follows runs against one that has never been started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentToNewDriver_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:1234");
+                        driver = new BiDiDriver();
+                        await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that assignments that do not rebind a tracked variable — one whose target is a member
+    /// access rather than a bare name, and one naming a variable the walk never tracked — leave the
+    /// tracked state alone.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_WithUnrelatedAssignments_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver stored;
+
+                    private BiDiDriver untracked;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        this.stored = new BiDiDriver();
+                        untracked = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:1234");
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a rebinding on one arm of an if statement stops the tracking after the merge. The
+    /// variable's started state is unknown on that path, so nothing after the branch is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentInIfBranch_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool flag)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        if (flag)
+                        {
+                            driver = CreateDriver();
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a rebinding inside a try block stops the tracking, both for the catch clause — which
+    /// may begin executing after the rebinding has run — and for the code that follows the statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentInTryBlock_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        try
+                        {
+                            driver = CreateDriver();
+                        }
+                        catch (Exception)
+                        {
+                            await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a rebinding inside a switch section stops the tracking after the merge, the same way
+    /// one inside an if branch does.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentInSwitchSection_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int value)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        switch (value)
+                        {
+                            case 1:
+                                driver = CreateDriver();
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

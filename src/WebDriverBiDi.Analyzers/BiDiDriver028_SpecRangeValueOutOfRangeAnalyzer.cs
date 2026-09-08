@@ -102,7 +102,10 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        double value = ConvertToDouble(constant.Value);
+        if (!TryConvertToDouble(constant.Value, out double value))
+        {
+            return;
+        }
 
         // The reset sentinel deliberately falls outside the range and is valid.
         if (hasSentinel && value == sentinelValue)
@@ -175,18 +178,42 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static double ConvertToDouble(object value)
+    /// <summary>
+    /// Converts a compile-time constant to a double, reporting whether it is numeric at all.
+    /// </summary>
+    /// <param name="value">The constant value assigned to the property.</param>
+    /// <param name="numericValue">When this method returns <see langword="true"/>, the value as a double.</param>
+    /// <returns><see langword="true"/> if the constant is numeric; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// In code that compiles, the left side is always a numeric-typed property, so the constant is a
+    /// numeric type or a char, which converts implicitly to it. An analyzer also runs over code that
+    /// does not compile, which is most of what it sees while a developer is typing, and a constant of
+    /// any other type has to be declined rather than converted: the only remaining possibilities for a
+    /// C# constant are a bool and a string, and <see cref="IConvertible.ToDouble"/> throws for both.
+    /// An exception raised here is reported as AD0001 and suppresses this rule for the whole file.
+    /// </remarks>
+    private static bool TryConvertToDouble(object value, out double numericValue)
     {
-        // The left side is always a numeric-typed property, so the assigned constant is either a
-        // numeric type or a char (which is implicitly convertible to the numeric property type).
         // Every numeric boxed value implements IConvertible.ToDouble, but IConvertible.ToDouble throws
         // for char, so char is converted directly.
         if (value is char charValue)
         {
-            return charValue;
+            numericValue = charValue;
+            return true;
         }
 
-        return ((IConvertible)value).ToDouble(CultureInfo.InvariantCulture);
+        // The numeric type codes are contiguous, running from SByte to Decimal, with Boolean and Char
+        // below them and DateTime and String above. Testing the range rather than listing the eleven
+        // numeric types keeps this to a single decision.
+        TypeCode typeCode = Convert.GetTypeCode(value);
+        if (typeCode is < TypeCode.SByte or > TypeCode.Decimal)
+        {
+            numericValue = 0.0;
+            return false;
+        }
+
+        numericValue = ((IConvertible)value).ToDouble(CultureInfo.InvariantCulture);
+        return true;
     }
 
     private static string FormatRange(double minimum, double maximum, bool minimumExclusive, bool maximumExclusive)

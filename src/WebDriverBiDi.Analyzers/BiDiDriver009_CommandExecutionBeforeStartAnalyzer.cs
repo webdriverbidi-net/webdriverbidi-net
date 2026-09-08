@@ -225,6 +225,72 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         }
     }
 
+    /// <summary>
+    /// Stops tracking every driver that at least one path through a branch stopped tracking, and
+    /// reports the names that survive and can therefore be merged.
+    /// </summary>
+    /// <param name="driverStartedStatus">The state at the branch point, updated in place.</param>
+    /// <param name="pathStatuses">The state at the end of each path through the branch.</param>
+    /// <returns>The names still tracked on every path.</returns>
+    /// <remarks>
+    /// A path that rebound a variable to a driver the walk cannot see dropped it from that path's
+    /// state, so after the branch its started state is unknown. Tracking stops for it, exactly as
+    /// <see cref="TrackDriverAssignment"/> does on a straight-line path, and an untracked variable
+    /// produces no reports at all, which is what this Error-severity rule wants when it cannot be
+    /// certain. Reading the dropped key out of that path instead would throw, which is reported as
+    /// AD0001 and suppresses this rule for the whole file.
+    /// </remarks>
+    private static List<string> DropDriversUntrackedOnAnyPath(
+        Dictionary<string, bool> driverStartedStatus,
+        IReadOnlyList<Dictionary<string, bool>> pathStatuses)
+    {
+        List<string> mergeableDriverNames = [];
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            if (pathStatuses.Any(pathStatus => !pathStatus.ContainsKey(driverName)))
+            {
+                driverStartedStatus.Remove(driverName);
+                continue;
+            }
+
+            mergeableDriverNames.Add(driverName);
+        }
+
+        return mergeableDriverNames;
+    }
+
+    /// <summary>
+    /// Updates the tracked state for an assignment to a driver variable the walk is following.
+    /// </summary>
+    /// <param name="assignment">The assignment to process.</param>
+    /// <param name="driverStartedStatus">The tracked started state, keyed by variable name.</param>
+    /// <remarks>
+    /// Rebinding a tracked variable replaces the driver it names, and with it the history the walk has
+    /// accumulated. A freshly constructed driver has not been started, so tracking continues against
+    /// the new one. A driver from anywhere else — a factory method, an awaited task, a pool — may
+    /// already have been started by whatever produced it, and this rule reports at Error severity, so
+    /// tracking stops rather than judging the new driver against the old one's history. Only names the
+    /// walk already tracks are considered, matching how a declaration starts the tracking.
+    /// </remarks>
+    private static void TrackDriverAssignment(
+        AssignmentExpressionSyntax assignment,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        if (assignment.Left is not IdentifierNameSyntax identifier ||
+            !driverStartedStatus.ContainsKey(identifier.Identifier.ValueText))
+        {
+            return;
+        }
+
+        if (assignment.Right is BaseObjectCreationExpressionSyntax)
+        {
+            driverStartedStatus[identifier.Identifier.ValueText] = false;
+            return;
+        }
+
+        driverStartedStatus.Remove(identifier.Identifier.ValueText);
+    }
+
     private static void ProcessNode(
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
@@ -268,6 +334,10 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 // before any later use of the variable.
                 AnalyzeLocalDeclaration(declaration, semanticModel, driverStartedStatus, escapedNames);
             }
+            else if (descendant is AssignmentExpressionSyntax assignment)
+            {
+                TrackDriverAssignment(assignment, driverStartedStatus);
+            }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
                 CheckInvocation(invocation, context, semanticModel, driverStartedStatus);
@@ -303,7 +373,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // been started, so treating "started on some path only" as not started would flag
         // correct conditional stop/restart patterns with an Error-severity false positive;
         // the Error severity demands that the command fail on every path.
-        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, [thenBranchStatus, elseBranchStatus]))
         {
             driverStartedStatus[driverName] = thenBranchStatus[driverName] || elseBranchStatus[driverName];
         }
@@ -331,10 +401,17 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // must be pessimistic about a driver being started; this rule reports a command on a driver
         // that was *never* started, so it must be optimistic. Both choices keep an Error-severity
         // diagnostic to cases that are certain on every path.
+        //
+        // A variable the try block rebound to a driver the walk cannot see is no longer tracked after
+        // that walk, so its state inside a catch or a finally is unknown. It is left out here rather
+        // than read out of a state that no longer holds it.
         Dictionary<string, bool> mightBeStartedStatus = [];
         foreach (string driverName in entryStatus.Keys)
         {
-            mightBeStartedStatus[driverName] = entryStatus[driverName] || tryStatus[driverName];
+            if (tryStatus.TryGetValue(driverName, out bool startedAfterTryBlock))
+            {
+                mightBeStartedStatus[driverName] = entryStatus[driverName] || startedAfterTryBlock;
+            }
         }
 
         List<Dictionary<string, bool>> exitStatuses = [tryStatus];
@@ -361,7 +438,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // started, matching how the if and switch merges treat mutually exclusive branches: this
         // rule reports only a driver that is not started on every path, so a stop confined to one
         // catch clause must not poison code that follows the statement.
-        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, exitStatuses))
         {
             driverStartedStatus[driverName] = exitStatuses.Any(exitStatus => exitStatus[driverName]);
         }
@@ -395,7 +472,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // path taken when no section matches) participates in the merge alongside every
         // section; when a default section makes that path impossible, including it can only
         // suppress a report, never create a false positive, so default detection is not needed.
-        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, sectionStatuses))
         {
             driverStartedStatus[driverName] = driverStartedStatus[driverName] || sectionStatuses.Any(sectionStatus => sectionStatus[driverName]);
         }

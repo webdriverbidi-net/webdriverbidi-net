@@ -124,31 +124,47 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             || !anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword);
 
         DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
-        IEnumerable<SyntaxNode> blockingOperations = FindBlockingOperations(context, handlerBody, includeSynchronizationPrimitives);
-        foreach (SyntaxNode blockingOp in blockingOperations)
+        IEnumerable<(SyntaxNode Node, string Name)> blockingOperations = FindBlockingOperations(context, handlerBody, includeSynchronizationPrimitives);
+        foreach ((SyntaxNode node, string operationName) in blockingOperations)
         {
-            string operationName = GetBlockingOperationName(blockingOp);
-            Diagnostic diagnostic = Diagnostic.Create(rule, blockingOp.GetLocation(), operationName);
+            Diagnostic diagnostic = Diagnostic.Create(rule, node.GetLocation(), operationName);
             context.ReportDiagnostic(diagnostic);
         }
     }
 
-    private static IEnumerable<SyntaxNode> FindBlockingOperations(
+    /// <summary>
+    /// Finds the blocking operations in a handler body, each paired with the name to report it under.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="handlerBody">The body of the handler to search.</param>
+    /// <param name="includeSynchronizationPrimitives">Whether synchronization primitives count as blocking here.</param>
+    /// <returns>Each blocking operation and the name the diagnostic reports for it.</returns>
+    /// <remarks>
+    /// The name is taken from the bound symbol at the point the operation is recognized, rather than
+    /// recovered from syntax afterwards. How a call is written varies more than its meaning does:
+    /// <c>task.Wait()</c> is a member access, <c>task?.Wait()</c> a member binding, and <c>Sleep(100)</c>
+    /// under a <c>using static</c> a bare name. Reading the name back off the syntax has to enumerate
+    /// those shapes and fails on the ones it does not know, which for an analyzer means an exception
+    /// that suppresses the whole rule for the file.
+    /// </remarks>
+    private static IEnumerable<(SyntaxNode Node, string Name)> FindBlockingOperations(
         SyntaxNodeAnalysisContext context,
         SyntaxNode handlerBody,
         bool includeSynchronizationPrimitives)
     {
-        List<SyntaxNode> blockingOps = [];
+        List<(SyntaxNode Node, string Name)> blockingOps = [];
 
         if (includeSynchronizationPrimitives)
         {
-            blockingOps.AddRange(handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<LockStatementSyntax>());
+            blockingOps.AddRange(handlerBody.DescendantNodesAndSelf(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
+                .OfType<LockStatementSyntax>()
+                .Select(lockStatement => ((SyntaxNode)lockStatement, "lock")));
         }
 
         // Do not descend into a nested lambda, anonymous method or local function: its body runs only
         // when that delegate is invoked, not on the dispatching thread. Task.Run(() => Thread.Sleep(...))
         // is the very remedy this rule recommends, so reporting inside it would flag the fix.
-        IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
+        IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodesAndSelf(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<InvocationExpressionSyntax>();
 
         foreach (InvocationExpressionSyntax invocation in invocations)
@@ -161,7 +177,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
             if (IsBlockingMethod(methodSymbol, includeSynchronizationPrimitives))
             {
-                blockingOps.Add(invocation);
+                blockingOps.Add((invocation, methodSymbol.Name + "()"));
                 continue;
             }
 
@@ -172,13 +188,13 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 IMethodSymbol? getAwaiterSymbol = context.SemanticModel.GetSymbolInfo(getAwaiterCall).Symbol as IMethodSymbol;
                 if (getAwaiterSymbol is { Name: "GetAwaiter" })
                 {
-                    blockingOps.Add(invocation);
+                    blockingOps.Add((invocation, methodSymbol.Name + "()"));
                     continue;
                 }
             }
         }
 
-        IEnumerable<MemberAccessExpressionSyntax> memberAccesses = handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
+        IEnumerable<MemberAccessExpressionSyntax> memberAccesses = handlerBody.DescendantNodesAndSelf(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<MemberAccessExpressionSyntax>();
 
         foreach (MemberAccessExpressionSyntax memberAccess in memberAccesses)
@@ -189,7 +205,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 ITypeSymbol? expressionType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
                 if (expressionType is { Name: "Task" or "ValueTask" })
                 {
-                    blockingOps.Add(memberAccess);
+                    blockingOps.Add((memberAccess, memberAccess.Name.Identifier.Text));
                 }
             }
         }
@@ -214,13 +230,4 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         };
     }
 
-    private static string GetBlockingOperationName(SyntaxNode blockingOperation)
-    {
-        return blockingOperation switch
-        {
-            LockStatementSyntax => "lock",
-            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess } => memberAccess.Name.Identifier.Text + "()",
-            _ => ((MemberAccessExpressionSyntax)blockingOperation).Name.Identifier.Text,
-        };
-    }
 }
