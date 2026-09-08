@@ -14,8 +14,9 @@ using System.Text.Json.Serialization;
 /// Unlike most emulation commands, this one has no global form: the specification requires the command to
 /// name a scope, so a call that leaves both <see cref="Contexts"/> and <see cref="UserContexts"/> empty is
 /// rejected with <see cref="ErrorCode.InvalidArgument"/>. Add at least one browsing context or user context
-/// before executing the command. Commands such as <c>emulation.setNetworkConditions</c> do accept an
-/// unscoped call and apply the screen orientation override as the default for new contexts; this one does not.
+/// before executing the command. <c>emulation.setNetworkConditions</c>, by contrast, does accept an
+/// unscoped call, and applies the network conditions it was given as the session default for
+/// contexts created later; this command has no such default.
 /// </remarks>
 public class SetScreenOrientationOverrideCommandParameters : CommandParameters<SetScreenOrientationOverrideCommandResult>
 {

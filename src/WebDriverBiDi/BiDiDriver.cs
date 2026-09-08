@@ -375,12 +375,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <see cref="EventObserver{T}.WaitForCapturedTasksCompleteAsync"/>,
     /// or <see cref="EventObserver{T}.GetCapturedTasks"/>,
     /// those task exceptions remain owned by the caller rather than being surfaced again through the
-    /// transport error pipeline. This applies to handler tasks that fault <em>asynchronously</em>
-    /// (they were still running when the handler returned). A handler task that is <em>already</em>
-    /// faulted when the handler returns — a synchronous failure, such as a task from
-    /// <see cref="System.Threading.Tasks.Task.FromException(System.Exception)"/> or an <c>async</c>
-    /// handler that throws before its first <c>await</c> — is both captured and re-surfaced through
-    /// the transport error pipeline.
+    /// transport error pipeline. What decides that ownership is whether a capture session was active
+    /// when the handler ran, not when its task faulted: a task that is <em>already</em> faulted by the
+    /// time the handler returns it — one from
+    /// <see cref="System.Threading.Tasks.Task.FromException(System.Exception)"/>, say, or from an
+    /// <c>async</c> handler that throws before its first <c>await</c> — is captured like any other, and
+    /// its failure belongs to the caller in the same way. A handler that throws <em>before returning a
+    /// task at all</em> leaves nothing to capture; that exception reaches the code raising the event
+    /// directly, and is governed by this property.
     /// </summary>
     public virtual TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
 

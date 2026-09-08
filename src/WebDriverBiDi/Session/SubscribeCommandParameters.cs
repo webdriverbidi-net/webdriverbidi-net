@@ -21,7 +21,7 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class for a single event.
     /// </summary>
-    /// <param name="eventName">The event to which to subscribe or unsubscribe.</param>
+    /// <param name="eventName">The event to which to subscribe.</param>
     /// <param name="contexts">The list of browsing context IDs for which to subscribe to the specified event.</param>
     /// <param name="userContexts">The list of user context IDs for which to subscribe to the specified event.</param>
     public SubscribeCommandParameters(string eventName, IList<string>? contexts = null, IList<string>? userContexts = null)
@@ -39,7 +39,7 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// of the specification, and accepting it would only defer a certain failure to the
     /// remote end.
     /// </remarks>
-    /// <param name="events">The list of events to which to subscribe or unsubscribe.</param>
+    /// <param name="events">The list of events to which to subscribe.</param>
     /// <param name="contexts">The list of browsing context IDs for which to subscribe to the specified events.</param>
     /// <param name="userContexts">The list of user context IDs for which to subscribe to the specified events.</param>
     /// <exception cref="ArgumentException">Thrown when no events are specified in the events list.</exception>
@@ -69,7 +69,7 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     public override string MethodName => "session.subscribe";
 
     /// <summary>
-    /// Gets the list of events to which to subscribe or unsubscribe.
+    /// Gets the list of events to which to subscribe.
     /// </summary>
     [JsonPropertyName("events")]
     public List<string> Events => this.eventList;

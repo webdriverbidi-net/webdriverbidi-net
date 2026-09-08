@@ -60,10 +60,9 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// Gets the list of arguments to pass to the function.
     /// </summary>
     /// <remarks>
-    /// This property uses an internal serializable property to distinguish between omitting
-    /// the property from the JSON payload (empty list) and sending an empty array.
-    /// When the list is empty, the property is not included in the command; when populated,
-    /// the list is sent to the remote end.
+    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
+    /// empty array. An empty list therefore means "not specified": the property is omitted from the
+    /// JSON payload entirely. Add entries to the list to pass arguments to the function.
     /// </remarks>
     [JsonIgnore]
     public List<LocalValue> Arguments { get; } = [];
