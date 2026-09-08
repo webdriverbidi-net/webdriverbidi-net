@@ -28,7 +28,7 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
     }
 
     [Fact]
-    public void TestCanSerializeParametersWithLocale()
+    public void TestCanSerializeParametersWithTimeZone()
     {
         SetTimeZoneOverrideCommandParameters properties = new()
         {

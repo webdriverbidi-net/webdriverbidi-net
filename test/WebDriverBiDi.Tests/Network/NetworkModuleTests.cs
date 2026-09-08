@@ -512,7 +512,7 @@ public class NetworkModuleTests
     }
 
     [Fact]
-    public async Task TestCanReceiveBeforeRequestSendEvent()
+    public async Task TestCanReceiveBeforeRequestSentEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));

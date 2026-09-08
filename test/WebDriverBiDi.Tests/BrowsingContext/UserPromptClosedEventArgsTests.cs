@@ -160,7 +160,7 @@ public class UserPromptClosedEventArgsTests
     }
 
     [Fact]
-    public void TestDeserializeWithnullAcceptedValueThrows()
+    public void TestDeserializeWithNullAcceptedValueThrows()
     {
         string json = """
                       {

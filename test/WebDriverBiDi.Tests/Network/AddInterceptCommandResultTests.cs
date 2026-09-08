@@ -55,7 +55,7 @@ public class AddInterceptCommandResultTests
     }
 
     [Fact]
-    public void TestDeserializingWithNullnterceptThrows()
+    public void TestDeserializingWithNullInterceptThrows()
     {
         string json = """
                       {
