@@ -310,6 +310,172 @@ public class WebDriverBiDiConventionTests
         Assert.True(unexpected.Count == 0 && missing.Count == 0, $"The set of commands taking optional parameters changed. Update this list and the documented tables together. Newly optional: {string.Join(", ", unexpected)}. No longer optional: {string.Join(", ", missing)}.");
     }
 
+    [Fact]
+    public void TestEveryModuleCommandTakesATimeoutOverrideAndCancellationToken()
+    {
+        // Every module command ends with the same two optional arguments, so that any command can be
+        // given a per-call timeout and can be canceled. BIDI004 and BIDI013 report call sites that omit
+        // the token, which only makes sense while every command offers one. A command added without
+        // them compiles and ships, and nothing else notices.
+        List<string> offenders = [];
+        int commandCount = 0;
+        foreach ((Module module, MethodInfo method, ParameterInfo _) in GetModuleCommandMethods())
+        {
+            commandCount++;
+            string name = $"{module.GetType().Name}.{method.Name}";
+            ParameterInfo[] parameters = method.GetParameters();
+            if (parameters.Length != 3)
+            {
+                offenders.Add($"{name} takes {parameters.Length} parameters; expected the command parameters, a timeout override and a cancellation token");
+                continue;
+            }
+
+            if (parameters[1].ParameterType != typeof(TimeSpan?) || parameters[1].Name != "timeoutOverride" || !parameters[1].IsOptional)
+            {
+                offenders.Add($"{name} second parameter is '{parameters[1].ParameterType.Name} {parameters[1].Name}' (optional: {parameters[1].IsOptional}); expected an optional 'TimeSpan? timeoutOverride'");
+            }
+
+            if (parameters[2].ParameterType != typeof(CancellationToken) || parameters[2].Name != "cancellationToken" || !parameters[2].IsOptional)
+            {
+                offenders.Add($"{name} third parameter is '{parameters[2].ParameterType.Name} {parameters[2].Name}' (optional: {parameters[2].IsOptional}); expected an optional 'CancellationToken cancellationToken'");
+            }
+        }
+
+        // A floor rather than an inventory, so adding a command does not break it. It fails if the
+        // reflection walk stops finding commands, which would otherwise let the check above pass by
+        // sweeping nothing at all. There are 82 today.
+        Assert.True(commandCount >= 80, $"The command sweep found only {commandCount} module commands; the walk is broken.");
+        Assert.True(offenders.Count == 0, $"Every module command must end with 'TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default'. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    [Fact]
+    public void TestEveryCommandMethodNameIsQualifiedByItsOwnModule()
+    {
+        // A command's MethodName is the wire method, and the protocol spells it "<module>.<command>".
+        // The module segment must be the module the parameters type belongs to: a copy-paste that
+        // leaves the wrong prefix produces a command the remote end rejects, or worse, routes to a
+        // different module's command, and no compiler check can see it.
+        Dictionary<string, string> moduleNameByNamespace = [];
+        foreach (Module module in GetDriverModules())
+        {
+            moduleNameByNamespace[module.GetType().Namespace!] = module.ModuleName;
+        }
+
+        List<string> offenders = [];
+        int parametersTypeCount = 0;
+        foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
+        {
+            if (type.IsAbstract || !typeof(CommandParameters).IsAssignableFrom(type))
+            {
+                continue;
+            }
+
+            parametersTypeCount++;
+
+            if (!moduleNameByNamespace.TryGetValue(type.Namespace ?? string.Empty, out string? expectedModuleName))
+            {
+                offenders.Add($"{type.FullName} is a CommandParameters type in a namespace that owns no module, so its method name cannot be checked");
+                continue;
+            }
+
+            // The property is a constant expression on every parameters type, so it can be read
+            // without running a constructor; several of them require arguments.
+            string methodName = ((CommandParameters)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(type)).MethodName;
+            string[] segments = methodName.Split('.');
+            if (segments.Length != 2 || segments[0].Length == 0 || segments[1].Length == 0)
+            {
+                offenders.Add($"{type.FullName} declares MethodName '{methodName}'; expected exactly '<module>.<command>'");
+                continue;
+            }
+
+            if (segments[0] != expectedModuleName)
+            {
+                offenders.Add($"{type.FullName} declares MethodName '{methodName}', whose module segment is '{segments[0]}'; the module in its namespace is '{expectedModuleName}'");
+            }
+        }
+
+        // A floor, for the same reason as the command sweep above. There are 88 today.
+        Assert.True(parametersTypeCount >= 85, $"The parameters-type sweep found only {parametersTypeCount} types; the walk is broken.");
+        Assert.True(offenders.Count == 0, $"Every command's MethodName must be '<module>.<command>' with the module segment naming the module that owns it. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    [Fact]
+    public void TestEveryObservableEventPropertyIsNamedWithTheOnPrefix()
+    {
+        // Callers discover events by name, and every one of them reads "driver.<Module>.On<Event>".
+        // The sweep covers the transport-level types as well as the modules, because Connection,
+        // Transport and BiDiDriver expose observable events of their own on the same footing.
+        List<string> offenders = [];
+        int eventPropertyCount = 0;
+        foreach ((Module module, PropertyInfo property) in GetModuleObservableEventProperties())
+        {
+            eventPropertyCount++;
+            if (!IsOnPrefixed(property.Name))
+            {
+                offenders.Add($"{module.GetType().Name}.{property.Name}");
+            }
+        }
+
+        foreach (Type type in new[] { typeof(WebDriverBiDi.Protocol.Connection), typeof(WebDriverBiDi.Protocol.Transport), typeof(BiDiDriver) })
+        {
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (property.PropertyType.IsGenericType &&
+                    property.PropertyType.GetGenericTypeDefinition() == typeof(ObservableEvent<>))
+                {
+                    eventPropertyCount++;
+                    if (!IsOnPrefixed(property.Name))
+                    {
+                        offenders.Add($"{type.Name}.{property.Name}");
+                    }
+                }
+            }
+        }
+
+        // A floor, for the same reason as the sweeps above: 29 module events plus the transport-level
+        // ones today.
+        Assert.True(eventPropertyCount >= 30, $"The observable-event sweep found only {eventPropertyCount} properties; the walk is broken.");
+        Assert.True(offenders.Count == 0, $"Every ObservableEvent<T> property must be named On<Event>. Offenders: {string.Join(", ", offenders)}");
+    }
+
+    [Fact]
+    public void TestReceivedTypesExposeNoMutableCollectionType()
+    {
+        // A received type hands the caller data the library deserialized. Exposing the concrete
+        // List<>, Dictionary<,> or HashSet<> would let a caller mutate what the library parsed, and
+        // would freeze the storage choice into the public API; the library projects them read-only
+        // instead. The backing storage stays internal, so only public members are examined.
+        HashSet<Type> mutableDefinitions = [typeof(List<>), typeof(Dictionary<,>), typeof(HashSet<>)];
+        List<string> offenders = [];
+        int receivedTypeCount = 0;
+        foreach (Type type in typeof(CommandResult).Assembly.GetTypes())
+        {
+            if (!IsReceivedType(type))
+            {
+                continue;
+            }
+
+            receivedTypeCount++;
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                Type propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                if (propertyType.IsGenericType && mutableDefinitions.Contains(propertyType.GetGenericTypeDefinition()))
+                {
+                    offenders.Add($"{type.FullName}.{property.Name} is declared as {propertyType.Name}");
+                }
+            }
+        }
+
+        // A floor, for the same reason as the sweeps above. There are 112 today.
+        Assert.True(receivedTypeCount >= 105, $"The received-type sweep found only {receivedTypeCount} types; the walk is broken.");
+        Assert.True(offenders.Count == 0, $"A received type must expose collections as read-only projections, not as List<>, Dictionary<,> or HashSet<>. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    private static bool IsOnPrefixed(string propertyName)
+    {
+        return propertyName.Length > 2 && propertyName.StartsWith("On", StringComparison.Ordinal) && char.IsUpper(propertyName[2]);
+    }
+
     private static bool HasPublicStaticResetMember(Type parametersType)
     {
         // Inherited statics count: a derived parameters type whose reset helper lives on its base (as
