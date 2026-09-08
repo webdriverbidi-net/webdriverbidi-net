@@ -76,4 +76,19 @@ public class InitiatorTests
                       """;
         Assert.Contains("value 'invalid' is not valid for enum type", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<Initiator>(json)).Message);
     }
+
+    [Fact]
+    public void TestCanDeserializePreflightInitiatorType()
+    {
+        // "preflight" reaches InitiatorType.Preflight only through the enum converter's case-insensitive
+        // match; no other test asserts that member against the wire.
+        string json = """
+                      {
+                        "type": "preflight"
+                      }
+                      """;
+        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json);
+        Assert.NotNull(initiator);
+        Assert.Equal(InitiatorType.Preflight, initiator.Type);
+    }
 }

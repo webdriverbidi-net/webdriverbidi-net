@@ -286,6 +286,25 @@ public class PrintCommandParametersTests
     }
 
     [Fact]
+    public void TestCanSerializeParametersWithPortraitOrientation()
+    {
+        // Portrait is produced only by the enum converter's ToLowerInvariant fallback, so nothing else
+        // in the suite would notice if its wire string changed.
+        PrintCommandParameters properties = new("myContextId")
+        {
+            Orientation = PrintOrientation.Portrait
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+
+        Assert.True(serialized.ContainsKey("orientation"));
+        JToken? orientation = serialized["orientation"];
+        Assert.NotNull(orientation);
+        Assert.Equal(JTokenType.String, orientation.Type);
+        Assert.Equal("portrait", orientation.Value<string>());
+    }
+
+    [Fact]
     public void TestCanSerializeParametersWithNullOrientation()
     {
         PrintCommandParameters properties = new("myContextId")

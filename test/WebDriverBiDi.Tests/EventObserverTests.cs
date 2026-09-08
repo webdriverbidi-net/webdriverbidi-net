@@ -310,6 +310,7 @@ public class EventObserverTests
         using CancellationTokenSource handlerCancellationTokenSource = new();
         List<Task> handlerTasks = [];
         object handlerTasksLock = new();
+
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             e =>
@@ -388,7 +389,13 @@ public class EventObserverTests
         using CancellationTokenSource handlerCancellationTokenSource = new();
         List<Task> handlerTasks = [];
         object handlerTasksLock = new();
-        TestEventSource testEventSource = new();
+
+        // Virtual time: the handlers never finish by design, so the completion phase can only end by
+        // timing out. Driving that on the system clock spends the timeout in real seconds for no added
+        // confidence, and the fake-clock pattern is already used elsewhere in this file.
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+        TestTimeProvider timeProvider = new();
+        TestEventSource testEventSource = new(timeProvider);
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             e =>
             {
@@ -420,7 +427,9 @@ public class EventObserverTests
         // immediately and the remaining timeout is spent waiting for slow execution.
         await bothStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout, TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(waitTask, timeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        bool fulfilled = await waitTask;
         Assert.False(fulfilled);
 
         // Capture session is auto-closed once count tasks are collected.
@@ -1100,7 +1109,12 @@ public class EventObserverTests
 
         TaskCompletionSource allowFaultTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestEventSource testEventSource = new();
+
+        // Virtual time, for the same reason as the execution-timeout test above: the handler is held
+        // open deliberately, so the completion phase can only end by timing out.
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+        TestTimeProvider timeProvider = new();
+        TestEventSource testEventSource = new(timeProvider);
         Task? faultingTask = null;
         async Task FaultingHandlerAsync(TestObservableEventArgs _)
         {
@@ -1127,7 +1141,9 @@ public class EventObserverTests
 
         // The event is captured but the handler is still blocked, so the completion phase
         // times out and the method returns false, abandoning the WhenAll wrapper.
-        bool completed = await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
+        Task<bool> completionTask = observer.WaitForCapturedTasksCompleteAsync(1, timeout, TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(completionTask, timeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        bool completed = await completionTask;
         Assert.False(completed);
 
         // Let the handler fault after the wait has been abandoned.

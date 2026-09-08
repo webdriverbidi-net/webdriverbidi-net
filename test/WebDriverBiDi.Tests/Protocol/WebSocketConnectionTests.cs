@@ -1041,6 +1041,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
             portFinder.Stop();
         }
 
+        // This attempt deliberately runs on the real clock. Injecting a TimeProvider requires
+        // TestWebSocketConnection, which overrides DelayBeforeRetryAsync so a test can observe the
+        // attempted pause without waiting for it — and that override is the only thing standing
+        // between this test and the real retry-delay path, which nothing else exercises. The 200 ms
+        // budget is an upper bound on a loopback connection that is refused at once, so the cost is
+        // small and buys coverage of code that would otherwise be untested.
         WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromMilliseconds(200),
@@ -1130,14 +1136,21 @@ public class WebSocketConnectionTests : IAsyncDisposable
         server.Certificate = certificate;
         await server.StartAsync();
 
-        WebSocketConnection connection = new()
+        // The budget runs on the virtual clock. A 10 ms real budget was not only slow-by-a-little, it
+        // was a race in both directions: a handshake that happened to complete inside it would have
+        // failed the test.
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
+            BypassStart = false,
             StartupTimeout = TimeSpan.FromMilliseconds(10),
         };
 
         // We expect this to fail with a timeout, but it verifies that the connection
         // attempts to connect to the correct URL and that the URL is accepted as valid.
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.StartAsync($"wss://localhost:{server.Port}", TestContext.Current.CancellationToken));
+        Task startTask = connection.StartAsync($"wss://localhost:{server.Port}", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(startTask, connection.StartupTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await startTask);
     }
 
     [Fact]

@@ -83,6 +83,32 @@ public class CookieTests
     }
 
     [Fact]
+    public void TestCanDeserializeCookieWithSameSiteDefault()
+    {
+        // "default" is the same-site value a remote end sends when the cookie did not specify one. It
+        // reaches CookieSameSiteValue.Default only through the enum converter's case-insensitive match,
+        // and no other test asserts that member against the wire.
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "default",
+                        "size": 100
+                      }
+                      """;
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, this.options);
+        Assert.NotNull(cookie);
+        Assert.Equal(CookieSameSiteValue.Default, cookie.SameSite);
+    }
+
+    [Fact]
     public void TestCanDeserializeCookieWithSameSiteNone()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
