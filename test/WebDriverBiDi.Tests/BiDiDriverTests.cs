@@ -977,11 +977,11 @@ public class BiDiDriverTests
         Assert.Equal(0, driver.TransportDiagnostics.IncomingQueueDepth);
         Assert.Equal(0, driver.TransportDiagnostics.PendingCommandCount);
 
-        await driver.StartAsync("ws://localhost:5555");
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
         Assert.Equal(TransportState.Connected, driver.TransportDiagnostics.State);
         Assert.True(driver.IsStarted);
 
-        await driver.StopAsync();
+        await driver.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal(TransportState.Disconnected, driver.TransportDiagnostics.State);
         Assert.False(driver.IsStarted);
         Assert.Equal(0, driver.TransportDiagnostics.PendingCommandCount);
