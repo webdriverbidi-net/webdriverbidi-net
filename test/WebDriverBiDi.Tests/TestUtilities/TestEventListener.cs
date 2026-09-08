@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
+using System.Diagnostics;
 using System.Diagnostics.Tracing;
 
 /// <summary>
@@ -72,7 +73,8 @@ public class TestEventListener : EventListener
 
     public List<EventWrittenEventArgs> GetEventsForEventName(TimeSpan timeout, params string[] eventNames)
     {
-        DateTime timeoutTime = DateTime.Now.Add(timeout);
+        // Use a Stopwatch to verify that a system clock adjustment can not shorten or extend the wait.
+        Stopwatch elapsed = Stopwatch.StartNew();
         lock (this.eventListObject)
         {
             List<EventWrittenEventArgs> foundEvents = this.events.Where(e => eventNames.Contains(e.EventName)).ToList();
@@ -81,7 +83,7 @@ public class TestEventListener : EventListener
             // spinning; wake on a new event or when the remaining timeout elapses.
             while (timeout > TimeSpan.Zero && foundEvents.Count == 0)
             {
-                TimeSpan remaining = timeoutTime - DateTime.Now;
+                TimeSpan remaining = timeout - elapsed.Elapsed;
                 if (remaining <= TimeSpan.Zero)
                 {
                     break;

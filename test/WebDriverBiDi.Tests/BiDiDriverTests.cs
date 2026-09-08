@@ -1,5 +1,7 @@
 namespace WebDriverBiDi;
 
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -951,12 +953,19 @@ public class BiDiDriverTests
         TaskCompletionSource delayCommandInFlightTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource delayResponseGateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        // Each responder is kept so the test can await it at the end: an exception thrown while
+        // building or raising a response would otherwise surface only as the consumer's timeout.
+        ConcurrentBag<Task> responderTasks = [];
+
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(e =>
         {
-            Task.Run(async () =>
+            responderTasks.Add(Task.Run(async () =>
             {
-                DateTime start = DateTime.Now;
+                // Stopwatch, not DateTime.Now: the elapsed value is asserted below, and the wall
+                // clock is not monotonic, so a clock adjustment between the two reads could make
+                // the delayed command appear to have taken less time than the fast one.
+                long start = Stopwatch.GetTimestamp();
                 if (e.SentCommandName is not null && e.SentCommandName.Contains("delay"))
                 {
                     delayCommandInFlightTaskCompletionSource.TrySetResult();
@@ -967,7 +976,7 @@ public class BiDiDriverTests
                     await delayCommandInFlightTaskCompletionSource.Task;
                 }
 
-                TimeSpan elapsed = DateTime.Now - start;
+                TimeSpan elapsed = Stopwatch.GetElapsedTime(start);
                 string eventJson = $$"""
                                    {
                                      "type": "success",
@@ -979,7 +988,7 @@ public class BiDiDriverTests
                                    }
                                    """;
                 await connection.RaiseDataReceivedEventAsync(eventJson);
-            });
+            }));
             return Task.CompletedTask;
         });
 
@@ -1008,6 +1017,8 @@ public class BiDiDriverTests
         Assert.Equal($"command result value for {delayCommandName}", results[0].Value);
         Assert.Equal($"command result value for {commandName}", results[1].Value);
         Assert.True(results[0].ElapsedMilliseconds >= results[1].ElapsedMilliseconds);
+
+        await Task.WhenAll(responderTasks);
     }
 
     [Fact]

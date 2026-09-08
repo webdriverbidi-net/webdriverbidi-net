@@ -247,13 +247,18 @@ public class ModuleTests
         };
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<Task> faultingTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         module.OnEventInvoked.AddObserver(e =>
         {
             TaskCompletionSource firstTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TaskCompletionSource secondTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Run(
+            // Published through a TaskCompletionSource rather than assigned to a captured local, so
+            // that the test reads the task only after the handler has stored it. The test awaits it
+            // at the end, which is what turns a failure inside this producer into its own error
+            // rather than an unobserved exception.
+            Task faultingTask = Task.Run(
                 async () =>
                 {
                     try
@@ -267,6 +272,7 @@ public class ModuleTests
                         handlerCompleted.TrySetResult(true);
                     }
                 });
+            faultingTaskSource.TrySetResult(faultingTask);
 
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -294,6 +300,10 @@ public class ModuleTests
         Assert.Equal(2, innerAggregateException.InnerExceptions.Count);
         Assert.Single(innerAggregateException.InnerExceptions.OfType<InvalidOperationException>(), e => e.Message == "First aggregate failure");
         Assert.Single(innerAggregateException.InnerExceptions.OfType<WebDriverBiDiException>(), e => e.Message == "Second aggregate failure");
+
+        // Awaited so that a failure inside the handler's producer is reported as itself.
+        Task producerTask = await faultingTaskSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await producerTask;
     }
 
     [Fact]
@@ -389,13 +399,18 @@ public class ModuleTests
         };
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<Task> faultingTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         module.OnEventInvoked.AddObserver(e =>
         {
             TaskCompletionSource firstTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TaskCompletionSource secondTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Run(
+            // Published through a TaskCompletionSource rather than assigned to a captured local, so
+            // that the test reads the task only after the handler has stored it. The test awaits it
+            // at the end, which is what turns a failure inside this producer into its own error
+            // rather than an unobserved exception.
+            Task faultingTask = Task.Run(
                 async () =>
                 {
                     try
@@ -409,6 +424,7 @@ public class ModuleTests
                         handlerCompleted.TrySetResult(true);
                     }
                 });
+            faultingTaskSource.TrySetResult(faultingTask);
 
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -436,6 +452,10 @@ public class ModuleTests
         Assert.Equal(2, innerAggregateException.InnerExceptions.Count);
         Assert.Single(innerAggregateException.InnerExceptions.OfType<InvalidOperationException>(), e => e.Message == "First aggregate failure");
         Assert.Single(innerAggregateException.InnerExceptions.OfType<WebDriverBiDiException>(), e => e.Message == "Second aggregate failure");
+
+        // Awaited so that a failure inside the handler's producer is reported as itself.
+        Task producerTask = await faultingTaskSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await producerTask;
     }
 
     [Fact]

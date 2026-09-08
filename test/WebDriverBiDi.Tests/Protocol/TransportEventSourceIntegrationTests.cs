@@ -117,7 +117,7 @@ public class TransportEventSourceIntegrationTests
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate response
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -134,6 +134,10 @@ public class TransportEventSourceIntegrationTests
             TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
 
         // CommandCompleted is raised on the reader task; block for it (the signalled listener wakes as
         // soon as it fires) so the snapshot below deterministically contains it and the preceding
@@ -173,7 +177,7 @@ public class TransportEventSourceIntegrationTests
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate error response
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -190,6 +194,9 @@ public class TransportEventSourceIntegrationTests
             TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited so that a fault inside the Task is reported as itself rather than as whichever assertion below fails first.
+        await responseTask;
 
         // CommandError is raised on the reader task; block for it (the signalled listener wakes as soon
         // as it fires) rather than snapshotting immediately and racing.
