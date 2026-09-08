@@ -70,6 +70,18 @@ in-memory echo connection with zero simulated latency:
   queue write/read, response deserialization, and TaskCompletionSource
   completion. The echo connection isolates library overhead from any real
   I/O cost.
+- **ExecuteCommandRoundTripWithCancellationToken**: The same round trip made
+  with a real `CancellationToken`, which is the shape BIDI004 and BIDI013 ask
+  callers to write. Passing a token is what makes `Connection.SendDataAsync`
+  build and dispose a linked `CancellationTokenSource` per send, and what makes
+  the one in `Command.WaitForCompletionAsync` register a callback rather than
+  none; neither happens for `CancellationToken.None`. The difference between
+  the two methods is the price of passing a token through the round trip.
+
+The echo connection synthesizes its response in `SendConnectionDataAsync`, the
+seam a real connection writes bytes at, so both methods pay for the base class's
+send orchestration — the `IsActive` checks, the trace-guarded log call, and the
+send semaphore — exactly as a real send does.
 
 ## Understanding Results
 
