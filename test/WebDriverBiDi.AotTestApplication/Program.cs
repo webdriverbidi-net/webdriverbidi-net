@@ -10,6 +10,7 @@ using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Input;
+using WebDriverBiDi.Log;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
@@ -76,7 +77,15 @@ try
     await driver.Session.NewSessionAsync(new NewCommandParameters());
     Console.WriteLine("Session created.");
 
-    await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.BrowsingContext.OnLoad.EventName]));
+    // log.entryAdded is subscribed alongside the load event so that the run below can deserialize a
+    // log.LogLevel. That is the one enum in the library reached only through EnumValueJsonConverter<T>
+    // and its StringEnumValueConverter<T>, whose constructor enumerates the enum's members with
+    // Enum.GetValues<T>() and reads their attributes. Native AOT is the only configuration in which
+    // that could fail, and this application is the only place the suite runs natively compiled code.
+    EntryAddedEventArgs? capturedLogEntry = null;
+    EventObserver<EntryAddedEventArgs> logObserver = driver.Log.OnEntryAdded.AddObserver((e) => capturedLogEntry = e);
+
+    await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.BrowsingContext.OnLoad.EventName, driver.Log.OnEntryAdded.EventName]));
 
     GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
     if (tree.ContextTree.Count == 0)
@@ -237,6 +246,26 @@ try
 
     Console.WriteLine($"Script exception captured: {scriptException.ExceptionDetails.Text}");
 
+    // A console call raises log.entryAdded, whose level is a log.LogLevel. The specification maps the
+    // "warn" console method to the "warn" level, so the expected value does not depend on the browser.
+    logObserver.StartCapturingTasks();
+    EvaluateCommandParameters consoleParams = new("console.warn('aot probe')", new ContextTarget(contextId), true);
+    await driver.Script.EvaluateAsync(consoleParams);
+    await logObserver.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10));
+
+    if (capturedLogEntry is null)
+    {
+        throw new InvalidOperationException("No log.entryAdded event was received for the console call.");
+    }
+
+    Console.WriteLine($"Log entry captured: level={capturedLogEntry.Level}, text='{capturedLogEntry.Text}'");
+    if (capturedLogEntry.Level != LogLevel.Warn)
+    {
+        throw new InvalidOperationException($"Expected LogLevel.Warn but got {capturedLogEntry.Level}");
+    }
+
+    logObserver.Dispose();
+
     // An error response deserializes into WebDriverBiDiCommandException with its error code.
     try
     {
@@ -252,7 +281,7 @@ try
         }
     }
 
-    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, callFunction, a custom command through a registered resolver, decimal/array/map values, the polymorphic argument kinds, input.performActions, a script exception and an error response.");
+    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, callFunction, a custom command through a registered resolver, decimal/array/map values, the polymorphic argument kinds, input.performActions, a log entry level, a script exception and an error response.");
     return 0;
 }
 catch (Exception ex)

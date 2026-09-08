@@ -129,21 +129,6 @@ public class AotSampleCommandParameters
     public AotSampleEnum MyEnum { get; set; }
 }
 
-/// <summary>
-/// AOT enum fix: root enum array type via static constructor.
-/// Use this pattern when custom types use enums with custom JsonConverter.
-/// </summary>
-#region AOTEnumRooting
-[JsonSerializable(typeof(AotSampleCommandParameters))]
-public partial class AotSampleModuleJsonSerializerContext : JsonSerializerContext
-{
-    static AotSampleModuleJsonSerializerContext()
-    {
-        RuntimeHelpers.RunClassConstructor(typeof(AotSampleEnum[]).TypeHandle);
-    }
-}
-#endregion
-
 public class ModuleACommandParameters : CommandParameters<ModuleACommandResult>
 {
     [JsonIgnore]

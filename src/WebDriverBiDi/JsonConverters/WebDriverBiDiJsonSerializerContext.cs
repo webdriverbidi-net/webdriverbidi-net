@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.JsonConverters;
 
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Bluetooth;
@@ -526,102 +525,4 @@ using WebDriverBiDi.WebExtension;
 [ExcludeFromCodeCoverage]
 public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
 {
-    // Root enum array types for AOT. StringEnumValueConverter<T> (used by
-    // EnumValueJsonConverter<T>) calls Enum.GetValues<T>() on .NET 8 and later,
-    // which requires the T[] array type to exist at runtime. A static constructor
-    // ensures the AOT compiler generates these array types.
-    static WebDriverBiDiJsonSerializerContext()
-    {
-        RuntimeHelpers.RunClassConstructor(typeof(ErrorCode[]).TypeHandle);
-
-        // Bluetooth enums
-        RuntimeHelpers.RunClassConstructor(typeof(AdapterState[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(CharacteristicEventGeneratedType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(DescriptorEventGeneratedType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(SimulateCharacteristicResponseType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(SimulateCharacteristicType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(SimulateDescriptorResponseType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(SimulateDescriptorType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(SimulateServiceType[]).TypeHandle);
-
-        // Browser enums
-        RuntimeHelpers.RunClassConstructor(typeof(ClientWindowState[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(DownloadBehaviorType[]).TypeHandle);
-
-        // BrowsingContext enums
-        RuntimeHelpers.RunClassConstructor(typeof(CreateType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(DownloadEndStatus[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(InnerTextMatchType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(PrintOrientation[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ReadinessState[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ScreenshotOrigin[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(UserPromptType[]).TypeHandle);
-
-        // DigitalCredentials enums
-        RuntimeHelpers.RunClassConstructor(typeof(VirtualWalletAction[]).TypeHandle);
-
-        // Emulation enums
-        RuntimeHelpers.RunClassConstructor(typeof(AnyHoverMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(AnyPointerMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ColorGamutMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(DisplayModeMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(DynamicRangeMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(EnvironmentBlendingMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ForcedColorsMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ForcedColorsModeTheme[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(HoverMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(InvertedColorsMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(NavControlsMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(OverflowBlockMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(OverflowInlineMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(PointerMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(PrefersColorSchemeFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(PrefersContrastMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedDataMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedMotionMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(PrefersReducedTransparencyMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ScanMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationNatural[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ScriptingMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ScrollbarType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(UpdateMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(VideoColorGamutMediaFeatureValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(VideoDynamicRangeMediaFeatureValue[]).TypeHandle);
-
-        // Input enums
-        RuntimeHelpers.RunClassConstructor(typeof(PointerType[]).TypeHandle);
-
-        // Log enums
-        RuntimeHelpers.RunClassConstructor(typeof(Log.LogLevel[]).TypeHandle);
-
-        // Network enums
-        RuntimeHelpers.RunClassConstructor(typeof(BytesValueType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(CacheBehavior[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(CollectorType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ContinueWithAuthActionType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(CookieSameSiteValue[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(DataType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(InitiatorType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(InterceptPhase[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(UrlPatternType[]).TypeHandle);
-
-        // Permissions enums
-        RuntimeHelpers.RunClassConstructor(typeof(PermissionState[]).TypeHandle);
-
-        // Script enums
-        RuntimeHelpers.RunClassConstructor(typeof(EvaluateResultType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(IncludeShadowTreeSerializationOption[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(RealmType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(RemoteValueType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ResultOwnership[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(ShadowRootMode[]).TypeHandle);
-
-        // Session enums
-        RuntimeHelpers.RunClassConstructor(typeof(ProxyType[]).TypeHandle);
-        RuntimeHelpers.RunClassConstructor(typeof(UserPromptHandlerType[]).TypeHandle);
-
-        // Speculation enums
-        RuntimeHelpers.RunClassConstructor(typeof(PreloadingStatus[]).TypeHandle);
-    }
 }
