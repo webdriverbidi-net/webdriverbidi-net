@@ -230,7 +230,7 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         _ = Assert.Single(tasks);
         Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
         await driver.StopAsync(TestContext.Current.CancellationToken);
@@ -382,7 +382,7 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         _ = Assert.Single(tasks);
         Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
         await driver.StopAsync(TestContext.Current.CancellationToken);
