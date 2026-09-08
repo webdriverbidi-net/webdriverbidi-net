@@ -173,6 +173,68 @@ jobs:
           files: test/coverage/lcov-library.*.info test/coverage/lcov-analyzers.*.info test/coverage/lcov-logging.*.info
           format: lcov
 
+  # Deliberately a job of its own rather than a `configuration` matrix on unit-tests; see the
+  # continuous integration section in README.md before collapsing the two.
+  unit-tests-debug:
+    name: Unit tests (Debug coverage)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Debug --no-restore -warnaserror
+
+      - name: Test WebDriverBiDi library (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-library
+
+      - name: Enforce library coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-library.*.info
+
+      - name: Test Roslyn analyzers (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Analyzers]*"
+          --coverlet-include "[WebDriverBiDi.Analyzers.CodeFixProviders]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-analyzers
+
+      - name: Enforce analyzer coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-analyzers.*.info
+
+      - name: Test structured logging library (with coverage)
+        run: >
+          dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Debug --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-include "[WebDriverBiDi.Logging]*"
+          --results-directory test/coverage-debug --coverlet-file-prefix lcov-logging
+
+      - name: Enforce logging coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95 test/coverage-debug/lcov-logging.*.info
+
+      - name: Enforce combined coverage thresholds
+        run: >
+          ./scripts/check-lcov-thresholds.sh --min-line 95 --min-branch 95 --min-method 95
+          test/coverage-debug/lcov-library.*.info
+          test/coverage-debug/lcov-analyzers.*.info
+          test/coverage-debug/lcov-logging.*.info
+
   unit-tests-windows:
     name: Unit tests (Windows)
     needs: build
