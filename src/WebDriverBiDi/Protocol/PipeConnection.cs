@@ -152,7 +152,12 @@ public class PipeConnection : Connection
     /// connected, or the receive loop from a previous session is still running after a bounded
     /// wait (see the remarks on <see cref="StopAsync(CancellationToken)"/>).
     /// </exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="OperationCanceledException">
+    /// Thrown when <paramref name="cancellationToken"/> is already canceled when this method is called.
+    /// The token is not observed after that point: unlike opening a WebSocket, starting a pipe connection
+    /// performs no cancellable I/O, and the one wait it does perform, for a previous session's receive
+    /// loop to finish, is bounded by <see cref="Connection.ShutdownTimeout"/> rather than by the token.
+    /// </exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to start a disposed connection.</exception>
     public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
@@ -176,6 +181,12 @@ public class PipeConnection : Connection
         {
             throw new WebDriverBiDiConnectionException($"The pipe connection is already active for {this.ConnectionString}; call the Stop method to disconnect before calling Start");
         }
+
+        // Honor a caller who has already given up, as WebSocketConnection.StartAsync does before its
+        // first connect attempt. Nothing beyond this point is cancellable, so this is the one place the
+        // token can be observed; it is tested after the argument and state checks so that a genuine
+        // misuse is still reported as such.
+        cancellationToken.ThrowIfCancellationRequested();
 
         // StopAsync may have abandoned the previous session's receive loop still blocked in
         // a pipe read that did not honor cancellation (see the remarks on StopAsync).

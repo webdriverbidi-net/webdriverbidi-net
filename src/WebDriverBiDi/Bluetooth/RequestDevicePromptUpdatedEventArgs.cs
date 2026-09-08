@@ -9,7 +9,8 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Object containing event data for events raised when a Bluetooth device prompt is requested.
+/// Object containing event data for events raised when an open Bluetooth device prompt is updated,
+/// carrying the prompt and the set of devices discovered for it so far.
 /// </summary>
 public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
 {

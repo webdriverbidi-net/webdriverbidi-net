@@ -281,14 +281,22 @@ public class Transport : IAsyncDisposable
 
     /// <summary>
     /// Gets or sets the timeout to wait for message processing to complete during shutdown.
-    /// If message processing does not complete within this timeout, the shutdown will proceed
-    /// without waiting for the remaining processing to finish. Messages still in the queue
-    /// will not be processed, and any pending commands will be canceled. The default is 10 seconds.
+    /// If message processing does not complete within this timeout, the shutdown stops waiting and
+    /// proceeds, and any pending commands are canceled. The default is 10 seconds.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// This timeout applies to waiting for the incoming message queue to empty, to waiting for
     /// the messages in the queue to be processed, and, during disposal, to waiting for an
     /// in-flight connect attempt to complete before the transport's resources are released.
+    /// </para>
+    /// <para>
+    /// Abandoning the wait does not stop the reader. Messages already delivered to the queue go on
+    /// being processed in the background, and their handlers go on running; what this timeout bounds is
+    /// how long the shutdown waits for them, not whether they run. A subsequent <see cref="ConnectAsync"/>
+    /// waits for that processing to finish, bounded by this same timeout, before opening a new
+    /// connection.
+    /// </para>
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds

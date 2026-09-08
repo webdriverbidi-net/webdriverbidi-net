@@ -99,7 +99,7 @@ Connections have three timeout properties (default: 10 seconds each):
 
 ### Transport Shutdown Timeout
 
-`Transport.ShutdownTimeout` is a separate, transport-level timeout (default: 10 seconds) that controls how long `Transport.DisconnectAsync` waits for its in-memory message-processing task to drain before proceeding. If the processing task does not finish within this window, `DisconnectAsync` logs a warning and proceeds; messages still in the queue will not be processed, and any pending commands are canceled.
+`Transport.ShutdownTimeout` is a separate, transport-level timeout (default: 10 seconds) that controls how long `Transport.DisconnectAsync` waits for its in-memory message-processing task to drain before proceeding. If the processing task does not finish within this window, `DisconnectAsync` logs a warning and proceeds, and any pending commands are canceled. Giving up on the wait does not stop the reader: messages already delivered to the queue go on being processed in the background, and their handlers go on running. What the timeout bounds is how long shutdown waits for them, not whether they run — and a subsequent `StartAsync` waits for that processing to finish, bounded by this same timeout, before opening a new connection.
 
 Most users never need to tune this. Consider adjusting it only in specialized scenarios:
 

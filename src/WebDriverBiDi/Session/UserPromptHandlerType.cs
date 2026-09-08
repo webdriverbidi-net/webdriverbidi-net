@@ -9,7 +9,8 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// The types of user prompts.
+/// The ways a user prompt handler can respond to a prompt. The kind of prompt a handler applies to is
+/// chosen by which <see cref="UserPromptHandler"/> property the value is assigned to.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<UserPromptHandlerType>))]
 public enum UserPromptHandlerType

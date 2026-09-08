@@ -169,6 +169,23 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestStartingWithAlreadyCanceledTokenThrows()
+    {
+        // Starting a pipe connection performs no cancellable I/O, so entry is the one point at which
+        // the caller's token can be observed; a caller who has already given up is honored there.
+        using TestPipeServer testPipeServer = new();
+        PipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        using CancellationTokenSource canceledTokenSource = new();
+        canceledTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await connection.StartAsync("pipe://local", canceledTokenSource.Token));
+        Assert.False(connection.IsActive);
+
+        testPipeServer.Stop();
+    }
+
+    [Fact]
     public async Task TestStartingWithoutStoppingThrows()
     {
         using TestPipeServer testPipeServer = new();
