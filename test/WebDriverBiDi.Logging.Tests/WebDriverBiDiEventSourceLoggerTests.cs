@@ -22,6 +22,26 @@ public class WebDriverBiDiEventSourceLoggerTests
     }
 
     [Fact]
+    public void Constructor_WhenLoggerIsNull_LeavesNoListenerAttached()
+    {
+        // The base EventListener constructor subscribes before any derived body runs, and EventListener
+        // keeps every listener in a static list, so a constructor that threw after that point would leave
+        // an orphan the caller never received and can never dispose, holding the source enabled at
+        // LogAlways for the life of the process. A full collection does not reclaim it, because that
+        // static list is a strong reference, so the only observable is the source's own state.
+        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "warm-up", 1);
+        Assert.False(
+            WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+            "Another EventListener already has the WebDriverBiDi EventSource enabled at Verbose, so this test cannot measure what the throwing constructor left behind.");
+
+        Assert.Throws<ArgumentNullException>(() => new WebDriverBiDiEventSourceLogger(null!));
+
+        Assert.False(
+            WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+            "A constructor that threw left an EventListener attached to the WebDriverBiDi EventSource, which nothing can now dispose.");
+    }
+
+    [Fact]
     public void OnEventWritten_ForwardsInformationalEventToLogger()
     {
         TestLogger fakeLogger = new();
