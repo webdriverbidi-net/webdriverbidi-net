@@ -155,7 +155,7 @@ public class ScriptSamples
 
         if (objectResult is EvaluateResultSuccess objectSuccess)
         {
-            objectSuccess.Result.TryConvertTo(out NodeRemoteValue? divElement);
+            objectSuccess.Result.TryAs(out NodeRemoteValue? divElement);
 
             // Call getAttribute method
             string functionDefinition = "(element, attrName) => element.getAttribute(attrName)";
@@ -346,7 +346,7 @@ public class ScriptSamples
         {
             if (e.ChannelId == "myChannel")
             {
-                Console.WriteLine($"Message from preload: {e.Data.ConvertTo<StringRemoteValue>().Value}");
+                Console.WriteLine($"Message from preload: {e.Data.As<StringRemoteValue>().Value}");
             }
         });
 
@@ -435,13 +435,13 @@ public class ScriptSamples
             switch (value.Type)
             {
                 case RemoteValueType.String:
-                    string str = value.ConvertTo<StringRemoteValue>().Value;
+                    string str = value.As<StringRemoteValue>().Value;
                     break;
                 case RemoteValueType.Number:
-                    long num = value.ConvertTo<NumberRemoteValue>();
+                    long num = value.As<NumberRemoteValue>();
                     break;
                 case RemoteValueType.Boolean:
-                    bool flag = value.ConvertTo<BooleanRemoteValue>().Value;
+                    bool flag = value.As<BooleanRemoteValue>().Value;
                     break;
                 case RemoteValueType.Null:
                 case RemoteValueType.Undefined:
@@ -479,8 +479,8 @@ public class ScriptSamples
         {
             // Access as RemoteValueDictionary
             RemoteValueDictionary dict = obj.Value;
-            Console.WriteLine($"Name: {dict["name"].ConvertTo<StringRemoteValue>().Value}");
-            Console.WriteLine($"Age: {dict["age"].ConvertTo<NumberRemoteValue>().Value}");
+            Console.WriteLine($"Name: {dict["name"].As<StringRemoteValue>().Value}");
+            Console.WriteLine($"Age: {dict["age"].As<NumberRemoteValue>().Value}");
         }
         #endregion
     }
@@ -510,7 +510,7 @@ public class ScriptSamples
             Console.WriteLine($"Array length: {list.Count}");
             foreach (RemoteValue item in list)
             {
-                Console.WriteLine($"  Item: {item.ConvertTo<NumberRemoteValue>().Value}");
+                Console.WriteLine($"  Item: {item.As<NumberRemoteValue>().Value}");
             }
         }
         #endregion
@@ -535,7 +535,7 @@ public class ScriptSamples
             RemoteValue elementRemoteValue = success.Result;
 
             // Check if it's a node
-            if (elementRemoteValue.TryConvertTo(out NodeRemoteValue element))
+            if (elementRemoteValue.TryAs(out NodeRemoteValue element))
             {
                 // Get node properties
                 NodeProperties nodeProps = element.Value;
@@ -771,7 +771,7 @@ public class ScriptSamples
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
             Console.WriteLine($"Channel: {e.ChannelId}");
-            Console.WriteLine($"Data: {e.Data.ConvertTo<StringRemoteValue>().Value}");
+            Console.WriteLine($"Data: {e.Data.As<StringRemoteValue>().Value}");
             Console.WriteLine($"Source context: {e.Source.BrowsingContextId}");
         });
 
@@ -812,7 +812,7 @@ public class ScriptSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("button")));
 
-        locateResult.Nodes[0].TryConvertTo(out NodeRemoteValue? element);
+        locateResult.Nodes[0].TryAs(out NodeRemoteValue? element);
 
         // Click element
         CallFunctionCommandParameters clickParams = new CallFunctionCommandParameters(
@@ -916,7 +916,7 @@ public class ScriptSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            string text = success.Result.ConvertTo<StringRemoteValue>().Value;
+            string text = success.Result.As<StringRemoteValue>().Value;
             Console.WriteLine($"Text: {text}");
         }
         else if (result is EvaluateResultException exception)

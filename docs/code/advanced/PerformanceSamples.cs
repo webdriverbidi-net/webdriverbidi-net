@@ -197,9 +197,9 @@ public class PerformanceSamples
             success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
             RemoteValueDictionary data = remoteValue.Value;
-            string actualTitle = data["title"].ConvertTo<StringRemoteValue>().Value;
-            string actualUrl = data["url"].ConvertTo<StringRemoteValue>().Value;
-            long actualLinkCount = data["linkCount"].ConvertTo<NumberRemoteValue>();
+            string actualTitle = data["title"].As<StringRemoteValue>().Value;
+            string actualUrl = data["url"].As<StringRemoteValue>().Value;
+            long actualLinkCount = data["linkCount"].As<NumberRemoteValue>();
         }
         #endregion
     }

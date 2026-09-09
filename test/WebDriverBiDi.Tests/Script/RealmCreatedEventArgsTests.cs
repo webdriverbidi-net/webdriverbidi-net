@@ -67,7 +67,7 @@ public class RealmCreatedEventArgsTests
                       """;
         RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
-        WindowRealmInfo castInfo = eventArgs.ConvertTo<WindowRealmInfo>();
+        WindowRealmInfo castInfo = eventArgs.As<WindowRealmInfo>();
 
         Assert.Equal("myRealm", castInfo.RealmId);
         Assert.Equal("myOrigin", castInfo.Origin);
@@ -91,7 +91,7 @@ public class RealmCreatedEventArgsTests
                       """;
         RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
-        bool result = eventArgs.TryConvertTo(out WindowRealmInfo? castInfo);
+        bool result = eventArgs.TryAs(out WindowRealmInfo? castInfo);
 
         Assert.True(result);
         Assert.NotNull(castInfo);
@@ -117,7 +117,7 @@ public class RealmCreatedEventArgsTests
                       """;
         RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
-        bool result = eventArgs.TryConvertTo(out SharedWorkerRealmInfo? castInfo);
+        bool result = eventArgs.TryAs(out SharedWorkerRealmInfo? castInfo);
 
         Assert.False(result);
         Assert.Null(castInfo);

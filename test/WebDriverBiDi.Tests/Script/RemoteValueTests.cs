@@ -1538,7 +1538,23 @@ public class RemoteValueTests
     }
 
     [Fact]
-    public void TestValueAsWithIncorrectType()
+    public void TestCanCastToProperType()
+    {
+        string json = """
+                      {
+                        "type": "string",
+                        "value": "myValue"
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.NotNull(remoteValue);
+        Assert.IsType<StringRemoteValue>(remoteValue);
+        StringRemoteValue stringRemoteValue = remoteValue.As<StringRemoteValue>();
+        Assert.Equal("myValue", stringRemoteValue.Value);
+    }
+
+    [Fact]
+    public void TestCannotCastToImproperType()
     {
         string json = """
                       {
@@ -1549,7 +1565,7 @@ public class RemoteValueTests
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.NotNull(remoteValue);
 
-        Assert.Equal($"RemoteValue of type '{remoteValue.Type}' cannot be converted to type 'StringRemoteValue'", Assert.ThrowsAny<WebDriverBiDiException>(() => remoteValue.ConvertTo<StringRemoteValue>().Value).Message);
+        Assert.Equal($"RemoteValue of type '{remoteValue.Type}' cannot be cast to type 'StringRemoteValue'", Assert.ThrowsAny<WebDriverBiDiException>(() => remoteValue.As<StringRemoteValue>().Value).Message);
     }
 
     [Fact]
@@ -1693,7 +1709,25 @@ public class RemoteValueTests
     }
 
     [Fact]
-    public void TestConvertNonNodeRemoteValueToSharedReferenceThrows()
+    public void TestTryCastToProperTypeReturnsTrue()
+    {
+        string json = """
+                      {
+                        "type": "string",
+                        "value": "myValue"
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.NotNull(remoteValue);
+        Assert.IsType<StringRemoteValue>(remoteValue);
+        bool result = remoteValue.TryAs(out StringRemoteValue? stringRemoteValue);
+        Assert.True(result);
+        Assert.NotNull(stringRemoteValue);
+        Assert.Equal("myValue", stringRemoteValue.Value);
+    }
+
+    [Fact]
+    public void TestTryCastToImproperTypeReturnsFalse()
     {
         string json = """
                       {
@@ -1707,6 +1741,6 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.NotNull(remoteValue);
-        Assert.False(remoteValue.TryConvertTo(out NodeRemoteValue? _));
+        Assert.False(remoteValue.TryAs(out NodeRemoteValue? _));
     }
 }

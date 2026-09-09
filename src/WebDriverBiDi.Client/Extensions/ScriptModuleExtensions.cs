@@ -146,7 +146,7 @@ public static class ScriptModuleExtensions
             CollectionRemoteValue collectionRemoteValue => collectionRemoteValue.Value,
             NullRemoteValue _ => null,
             UndefinedRemoteValue _ => null,
-            _ => value.ConvertTo<ObjectReferenceRemoteValue>().ToRemoteObjectReference(),
+            _ => value.As<ObjectReferenceRemoteValue>().ToRemoteObjectReference(),
         };
 
         return (T?)valueObject;

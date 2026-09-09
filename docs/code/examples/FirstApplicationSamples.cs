@@ -105,10 +105,10 @@ public static class FirstApplicationSamples
             {
                 RemoteValueDictionary info = infoValue.Value;
                 Console.WriteLine("Page Analysis:");
-                Console.WriteLine($"  URL: {info["url"].ConvertTo<StringRemoteValue>().Value}");
-                Console.WriteLine($"  Links: {info["linkCount"].ConvertTo<NumberRemoteValue>().Value}");
-                Console.WriteLine($"  Headings: {info["headingCount"].ConvertTo<NumberRemoteValue>().Value}");
-                Console.WriteLine($"  Paragraphs: {info["paragraphCount"].ConvertTo<NumberRemoteValue>().Value}");
+                Console.WriteLine($"  URL: {info["url"].As<StringRemoteValue>().Value}");
+                Console.WriteLine($"  Links: {info["linkCount"].As<NumberRemoteValue>().Value}");
+                Console.WriteLine($"  Headings: {info["headingCount"].As<NumberRemoteValue>().Value}");
+                Console.WriteLine($"  Paragraphs: {info["paragraphCount"].As<NumberRemoteValue>().Value}");
             }
 
             // Take a screenshot

@@ -113,7 +113,7 @@ try
         throw new InvalidOperationException($"Script evaluation failed: result type was {evalResult.ResultType}");
     }
 
-    string? title = success.Result.ConvertTo<StringRemoteValue>().Value;
+    string? title = success.Result.As<StringRemoteValue>().Value;
     Console.WriteLine($"Page title: {title}");
 
     if (title is null || !title.Contains("WebDriverBiDi.NET", StringComparison.OrdinalIgnoreCase))
@@ -133,7 +133,7 @@ try
         throw new InvalidOperationException($"CallFunction failed: result type was {callResult.ResultType}");
     }
 
-    string? greeting = callSuccess.Result.ConvertTo<StringRemoteValue>().Value;
+    string? greeting = callSuccess.Result.As<StringRemoteValue>().Value;
     Console.WriteLine($"CallFunction result: {greeting}");
 
     if (greeting != "Hello, World!")
@@ -159,7 +159,7 @@ try
         throw new InvalidOperationException($"Decimal callFunction failed: result type was {decimalResult.ResultType}");
     }
 
-    double doubled = decimalSuccess.Result.ConvertTo<NumberRemoteValue>().Value;
+    double doubled = decimalSuccess.Result.As<NumberRemoteValue>().Value;
     Console.WriteLine($"Decimal argument doubled: {doubled}");
     if (doubled != 5)
     {
@@ -174,10 +174,10 @@ try
         throw new InvalidOperationException($"Array evaluate failed: result type was {arrayResult.ResultType}");
     }
 
-    RemoteValueList array = arraySuccess.Result.ConvertTo<CollectionRemoteValue>().Value
+    RemoteValueList array = arraySuccess.Result.As<CollectionRemoteValue>().Value
         ?? throw new InvalidOperationException("Array remote value had no value.");
     Console.WriteLine($"Array remote value with {array.Count} entries");
-    if (array.Count != 3 || array[0].ConvertTo<NumberRemoteValue>().Value != 1 || array[1].ConvertTo<StringRemoteValue>().Value != "two" || !array[2].ConvertTo<BooleanRemoteValue>().Value)
+    if (array.Count != 3 || array[0].As<NumberRemoteValue>().Value != 1 || array[1].As<StringRemoteValue>().Value != "two" || !array[2].As<BooleanRemoteValue>().Value)
     {
         throw new InvalidOperationException("Array remote value did not round-trip.");
     }
@@ -189,10 +189,10 @@ try
         throw new InvalidOperationException($"Map evaluate failed: result type was {mapResult.ResultType}");
     }
 
-    RemoteValueDictionary map = mapSuccess.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value
+    RemoteValueDictionary map = mapSuccess.Result.As<KeyValuePairCollectionRemoteValue>().Value
         ?? throw new InvalidOperationException("Map remote value had no value.");
     Console.WriteLine($"Map remote value with {map.Count} entries");
-    if (map.Count != 1 || map["answer"].ConvertTo<NumberRemoteValue>().Value != 42)
+    if (map.Count != 1 || map["answer"].As<NumberRemoteValue>().Value != 42)
     {
         throw new InvalidOperationException("Map remote value did not round-trip.");
     }
@@ -220,7 +220,7 @@ try
         throw new InvalidOperationException($"Polymorphic callFunction failed: result type was {polymorphicResult.ResultType}");
     }
 
-    string? polymorphic = polymorphicSuccess.Result.ConvertTo<StringRemoteValue>().Value;
+    string? polymorphic = polymorphicSuccess.Result.As<StringRemoteValue>().Value;
     Console.WriteLine($"Polymorphic arguments round-tripped: {polymorphic}");
     if (polymorphic != "mapValue|objectValue|ab+c|2026|9007199254740993|2|2")
     {
