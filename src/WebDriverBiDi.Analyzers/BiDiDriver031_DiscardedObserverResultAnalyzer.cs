@@ -32,13 +32,11 @@ public class BiDiDriver031_DiscardedObserverResultAnalyzer : DiagnosticAnalyzer
 
     private const string Category = "Design";
 
-    private static readonly string[] AddObserverMethodNames = ["AddObserver"];
+    private static readonly LocalizableString Title = "Event subscription handle discarded";
 
-    private static readonly LocalizableString Title = "EventObserver result discarded";
+    private static readonly LocalizableString MessageFormat = "The {0} returned by '{1}' is discarded, so this subscription can never be removed. Keep the returned handle if it should not last for the lifetime of the event.";
 
-    private static readonly LocalizableString MessageFormat = "The EventObserver returned by 'AddObserver' is discarded, so this observer can never be removed. Keep the returned observer if it should not last for the lifetime of the event.";
-
-    private static readonly LocalizableString Description = "AddObserver returns the EventObserver that represents the subscription, and that handle is the only way to remove it: Unobserve and Dispose are its members, and RemoveObserver needs its Id. Discarding the result registers a handler that stays for the life of the observable event. Assign the result to a variable (or a using declaration) when the observer should be removed before then.";
+    private static readonly LocalizableString Description = "AddObserver, AddDataCollector, and Subscribe on a ToObservable() sequence each return the handle that represents the subscription, and that handle is the only way to remove it: Dispose is its member, an observer also accepts Unobserve, and RemoveObserver needs an observer's Id. Discarding the result registers something that stays for the life of the observable event and, for a collector or a subscription, keeps queueing events. Assign the result to a variable (or a using declaration) when the subscription should be removed before then.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -74,21 +72,16 @@ public class BiDiDriver031_DiscardedObserverResultAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, AddObserverMethodNames))
+        if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, AnalyzerSymbolHelpers.EventSubscriptionHandleMethodNames))
         {
             return;
         }
 
-        if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol methodSymbol)
+        if (AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, invocation) is not { } handle)
         {
             return;
         }
 
-        if (methodSymbol.Name != "AddObserver" || !AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
-        {
-            return;
-        }
-
-        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
+        context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), handle.HandleTypeName, handle.MethodName));
     }
 }

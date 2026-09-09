@@ -64,11 +64,13 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
                 : SyntaxFactory.ParseExpression("System.Threading.CancellationToken"),
             SyntaxFactory.IdentifierName("None"));
 
+        string tokenParameterName = FindTokenParameterName(semanticModel, invocation, context.CancellationToken);
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Add CancellationToken.None parameter",
                 createChangedDocument: c => AddTokenArgumentAsync(
-                    context.Document, invocation, noneExpression, c),
+                    context.Document, invocation, noneExpression, tokenParameterName, c),
                 equivalenceKey: "AddCancellationTokenNone"),
             diagnostic);
 
@@ -81,7 +83,7 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
                 CodeAction.Create(
                     title: $"Add {tokenName} parameter",
                     createChangedDocument: c => AddTokenArgumentAsync(
-                        context.Document, invocation, SyntaxFactory.IdentifierName(tokenName), c),
+                        context.Document, invocation, SyntaxFactory.IdentifierName(tokenName), tokenParameterName, c),
                     equivalenceKey: "AddCancellationTokenParameter"),
                 diagnostic);
         }
@@ -148,10 +150,56 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
         return firstMatch;
     }
 
+    /// <summary>
+    /// Finds the name of the cancellation-token parameter the inserted argument has to name.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="invocation">The call being fixed.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The parameter's name.</returns>
+    /// <remarks>
+    /// Both analyzers that this fix serves report calls on a <c>Module</c> subclass as well as on the
+    /// driver, and a user-written module declares its own methods, whose token parameter can be called
+    /// anything. Naming the argument <c>cancellationToken</c> regardless produces CS1739 on such a
+    /// method. The name is read from whichever overload supplies the parameter, matching how the
+    /// analyzer decided to report in the first place.
+    /// </remarks>
+    private static string FindTokenParameterName(
+        SemanticModel semanticModel,
+        InvocationExpressionSyntax invocation,
+        CancellationToken cancellationToken)
+    {
+        // The analyzer resolved this call and confirmed that some overload of it takes a token, so both
+        // the method symbol and the parameter are there to be found.
+        IMethodSymbol method = (IMethodSymbol)semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol!;
+
+        // The call binds either to a method with an optional token parameter of its own or to one whose
+        // sibling overload takes the token; the first is preferred, because that is the parameter the
+        // argument will actually bind to.
+        IParameterSymbol tokenParameter = FindTokenParameter(method)
+            ?? method.ContainingType.GetMembers(method.Name)
+                .OfType<IMethodSymbol>()
+                .Select(FindTokenParameter)
+                .First(parameter => parameter is not null)!;
+
+        return tokenParameter.Name;
+    }
+
+    /// <summary>
+    /// Finds a method's cancellation-token parameter, if it has one.
+    /// </summary>
+    /// <param name="method">The method to inspect.</param>
+    /// <returns>The parameter, or <see langword="null"/>.</returns>
+    private static IParameterSymbol? FindTokenParameter(IMethodSymbol method)
+    {
+        return method.Parameters.FirstOrDefault(parameter => parameter.Type.Name == "CancellationToken");
+    }
+
     private static async Task<Document> AddTokenArgumentAsync(
         Document document,
         InvocationExpressionSyntax invocation,
         ExpressionSyntax tokenExpression,
+        string tokenParameterName,
         CancellationToken cancellationToken)
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
@@ -161,7 +209,7 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
         // would bind to that parameter and fail to compile; naming the argument targets the token
         // parameter regardless of the intervening optional parameters.
         ArgumentSyntax tokenArgument = SyntaxFactory.Argument(tokenExpression)
-            .WithNameColon(SyntaxFactory.NameColon("cancellationToken"));
+            .WithNameColon(SyntaxFactory.NameColon(tokenParameterName));
 
         ArgumentListSyntax newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
         InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);

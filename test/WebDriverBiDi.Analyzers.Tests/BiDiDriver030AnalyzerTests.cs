@@ -272,9 +272,11 @@ public class BiDiDriver030AnalyzerTests
     }
 
     [Fact]
-    public async Task StartInsideConditionOfIf_ReportsWarning()
+    public async Task ReadInsideConditionOfIf_EndsTheSessionForBothBranches()
     {
-        // A call in the condition executes unconditionally, so a start there precedes both branches.
+        // A call in the condition executes unconditionally, before either branch and before anything
+        // that follows the if. The read there ends the session, so neither later start is a duplicate.
+        // Were the condition not walked, the start after the if would be reported.
         string testCode = """
             using System;
             using System.Threading.Tasks;
@@ -285,33 +287,24 @@ public class BiDiDriver030AnalyzerTests
             {
                 public class TestClass
                 {
-                    public bool Capture(EventObserver<NavigationEventArgs> observer)
-                    {
-                        observer.StartCapturingTasks();
-                        return true;
-                    }
-
-                    public void TestMethod()
+                    public async Task TestMethod(bool flag)
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
                         observer.StartCapturingTasks();
-                        if (this.Capture(observer))
+                        if (await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5)))
                         {
-                            {|#0:observer.StartCapturingTasks()|};
+                            observer.StartCapturingTasks();
+                            observer.StopCapturingTasks();
                         }
+
+                        observer.StartCapturingTasks();
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("observer");
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
     }
 
     [Fact]
@@ -489,5 +482,111 @@ public class BiDiDriver030AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task StartAfterObserverPassedToHelper_NoDiagnostic()
+    {
+        // The helper may end the session, which this rule cannot see, so the second start is not known
+        // to be a duplicate.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private static void Release(EventObserver<NavigationEventArgs> target)
+                    {
+                        target.StopCapturingTasks();
+                    }
+
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        Release(observer);
+                        observer.StartCapturingTasks();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAfterLambdaStopsCapturing_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        Action release = () => observer.StopCapturingTasks();
+                        release();
+                        observer.StartCapturingTasks();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartOnAKeptObserver_StillReportsWhenAnotherEscapes()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private static void Release(EventObserver<NavigationEventArgs> target)
+                    {
+                        target.StopCapturingTasks();
+                    }
+
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> handedOut = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        EventObserver<NavigationEventArgs> kept = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        handedOut.StartCapturingTasks();
+                        Release(handedOut);
+                        handedOut.StartCapturingTasks();
+                        kept.StartCapturingTasks();
+                        {|#0:kept.StartCapturingTasks()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("kept");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
     }
 }

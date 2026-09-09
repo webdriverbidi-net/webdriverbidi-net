@@ -2025,4 +2025,104 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task Command_WhenALocalFunctionRebindsTheDriver_NoDiagnostic()
+    {
+        // A nested function runs when its delegate is invoked, so an assignment inside one leaves the
+        // variable naming a driver this walk cannot see, which may already have been started.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(DriverPool pool)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        async Task ConnectAsync()
+                        {
+                            driver = await pool.RentStartedAsync();
+                        }
+
+                        await ConnectAsync();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+
+                public class DriverPool
+                {
+                    public Task<BiDiDriver> RentStartedAsync() => Task.FromResult(new BiDiDriver());
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_WhenALambdaRebindsTheDriver_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(DriverPool pool)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Func<Task> connect = async () => driver = await pool.RentStartedAsync();
+                        await connect();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+
+                public class DriverPool
+                {
+                    public Task<BiDiDriver> RentStartedAsync() => Task.FromResult(new BiDiDriver());
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_WhenALambdaAssignsTheDriverToAField_NoDiagnostic()
+    {
+        // The driver on the right of an assignment is handed to something else, and that is an escape
+        // wherever it is written, including inside a nested function.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver? shared;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Action publish = () => this.shared = driver;
+                        publish();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

@@ -48,6 +48,12 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
             return;
         }
 
+        SemanticModel semanticModel = (await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false))!;
+        if (!IsRewriteFaithful(conversion, semanticModel, context.CancellationToken))
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Use pattern matching with 'is' expression",
@@ -94,6 +100,183 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
 
         return statement is ExpressionStatementSyntax
             || statement is LocalDeclarationStatementSyntax { Parent: BlockSyntax };
+    }
+
+    /// <summary>
+    /// Finds the index of the last statement that moves into the generated <c>if</c> block along with
+    /// the declaration, or -1 when no statement follows it into the block.
+    /// </summary>
+    /// <param name="declaration">The declaration the conversion belongs to.</param>
+    /// <param name="containingBlock">The block holding the declaration.</param>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The index of the last statement to move, or -1.</returns>
+    /// <remarks>
+    /// A declaration's variables are visible to the rest of the block, so every statement through the
+    /// last one that uses any of them has to move — including intervening statements that use none of
+    /// them. Stopping at the first non-referencing statement would leave a later use outside the
+    /// pattern variable's scope (CS0103/CS0165). The locals those moved statements declare move with
+    /// them, so a later use of one of <em>those</em> pulls its statement in as well.
+    /// </remarks>
+    private static int FindLastMovedStatementIndex(
+        LocalDeclarationStatementSyntax declaration,
+        BlockSyntax containingBlock,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        HashSet<ISymbol> movedSymbols = new(GetDeclaredLocals(declaration, semanticModel, cancellationToken), SymbolEqualityComparer.Default);
+        int declarationIndex = containingBlock.Statements.IndexOf(declaration);
+        int lastReferencingIndex = -1;
+        for (int i = declarationIndex + 1; i < containingBlock.Statements.Count; i++)
+        {
+            if (StatementReferencesAny(containingBlock.Statements[i], movedSymbols, semanticModel, cancellationToken))
+            {
+                for (int moved = lastReferencingIndex + 1; moved <= i; moved++)
+                {
+                    movedSymbols.UnionWith(GetDeclaredLocals(containingBlock.Statements[moved], semanticModel, cancellationToken));
+                }
+
+                lastReferencingIndex = i;
+            }
+        }
+
+        return lastReferencingIndex;
+    }
+
+    /// <summary>
+    /// Determines whether wrapping the statements this fix would move in an <c>if</c> leaves code that
+    /// still compiles and still does what the original did for the case the conversion fails.
+    /// </summary>
+    /// <param name="conversion">The cast or <c>as</c> expression.</param>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns><see langword="true"/> if the rewrite is faithful; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <para>
+    /// Statements that always leave the member cease to do so once they sit inside an <c>if</c>: the
+    /// code after it becomes reachable, and a method that returns a value no longer returns on every
+    /// path (CS0161). <c>var success = (EvaluateResultSuccess)result; return success.Result;</c> is the
+    /// short form of that. Control-flow analysis answers it exactly, so only the shapes that would stop
+    /// compiling are declined.
+    /// </para>
+    /// <para>
+    /// An <c>as</c> conversion yields <see langword="null"/> when the test fails, and a null guard is
+    /// how the author handles that. The pattern variable is never null inside the block, so a guard
+    /// that leaves the member — <c>if (success is null) { return; }</c> — becomes dead code and stops
+    /// covering the failing case, which would then fall out of the <c>if</c> and carry on. A guard that
+    /// merely wraps the work changes nothing and still converts.
+    /// </para>
+    /// </remarks>
+    private static bool IsRewriteFaithful(
+        ExpressionSyntax conversion,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        StatementSyntax statement = conversion.FirstAncestorOrSelf<StatementSyntax>()!;
+        if (statement is not LocalDeclarationStatementSyntax declaration || statement.Parent is not BlockSyntax containingBlock)
+        {
+            // An expression statement is wrapped on its own.
+            return EndPointIsReachable(semanticModel, statement, statement);
+        }
+
+        int declarationIndex = containingBlock.Statements.IndexOf(declaration);
+        int lastReferencingIndex = FindLastMovedStatementIndex(declaration, containingBlock, semanticModel, cancellationToken);
+        int lastReplacedIndex = lastReferencingIndex >= 0 ? lastReferencingIndex : declarationIndex;
+        if (!EndPointIsReachable(semanticModel, containingBlock.Statements[declarationIndex], containingBlock.Statements[lastReplacedIndex]))
+        {
+            return false;
+        }
+
+        if (conversion is CastExpressionSyntax)
+        {
+            return true;
+        }
+
+        // A declarator in a document that compiles always has a symbol.
+        ISymbol declaredVariable = semanticModel.GetDeclaredSymbol(declaration.Declaration.Variables[0], cancellationToken)!;
+        return !HasExitingNullGuard(containingBlock, declarationIndex, lastReplacedIndex, declaredVariable, semanticModel, cancellationToken);
+    }
+
+    /// <summary>
+    /// Determines whether control can reach the end of the given run of statements.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="firstStatement">The first statement of the run.</param>
+    /// <param name="lastStatement">The last statement of the run.</param>
+    /// <returns><see langword="true"/> if the end point is reachable; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The runs asked about here are always statements of a block that the diagnostic was reported in,
+    /// so the analysis always succeeds.
+    /// </remarks>
+    private static bool EndPointIsReachable(SemanticModel semanticModel, StatementSyntax firstStatement, StatementSyntax lastStatement)
+    {
+        ControlFlowAnalysis analysis = ReferenceEquals(firstStatement, lastStatement)
+            ? semanticModel.AnalyzeControlFlow(firstStatement)!
+            : semanticModel.AnalyzeControlFlow(firstStatement, lastStatement)!;
+        return analysis.EndPointIsReachable;
+    }
+
+    /// <summary>
+    /// Determines whether any statement that would move into the <c>if</c> block tests the declared
+    /// variable for null and leaves the member when the test succeeds.
+    /// </summary>
+    /// <param name="containingBlock">The block holding the declaration.</param>
+    /// <param name="declarationIndex">The index of the declaration.</param>
+    /// <param name="lastReplacedIndex">The index of the last statement that moves.</param>
+    /// <param name="declaredVariable">The local the conversion initializes.</param>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns><see langword="true"/> if such a guard is present; otherwise, <see langword="false"/>.</returns>
+    private static bool HasExitingNullGuard(
+        BlockSyntax containingBlock,
+        int declarationIndex,
+        int lastReplacedIndex,
+        ISymbol declaredVariable,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        for (int i = declarationIndex + 1; i <= lastReplacedIndex; i++)
+        {
+            foreach (IfStatementSyntax ifStatement in containingBlock.Statements[i].DescendantNodesAndSelf().OfType<IfStatementSyntax>())
+            {
+                if (IsNullTestOf(ifStatement.Condition, declaredVariable, semanticModel, cancellationToken)
+                    && !EndPointIsReachable(semanticModel, ifStatement.Statement, ifStatement.Statement))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether an expression tests the given variable for being null.
+    /// </summary>
+    /// <param name="condition">The condition to inspect.</param>
+    /// <param name="declaredVariable">The local the conversion initializes.</param>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns><see langword="true"/> if the expression is such a test; otherwise, <see langword="false"/>.</returns>
+    private static bool IsNullTestOf(
+        ExpressionSyntax condition,
+        ISymbol declaredVariable,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        // Both spellings of the test, in either operand order: `success == null` and `success is null`.
+        ExpressionSyntax? tested = condition switch
+        {
+            BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.EqualsExpression) =>
+                binary.Right.IsKind(SyntaxKind.NullLiteralExpression) ? binary.Left
+                    : binary.Left.IsKind(SyntaxKind.NullLiteralExpression) ? binary.Right : null,
+            IsPatternExpressionSyntax { Pattern: ConstantPatternSyntax constant } isPattern
+                when constant.Expression.IsKind(SyntaxKind.NullLiteralExpression) => isPattern.Expression,
+            _ => null,
+        };
+
+        return tested is not null
+            && SymbolEqualityComparer.Default.Equals(semanticModel.GetSymbolInfo(tested, cancellationToken).Symbol, declaredVariable);
     }
 
     private static async Task<Document> ConvertToPatternMatchingAsync(
@@ -148,21 +331,8 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // block with the conversion replaced by the pattern variable, so that
         // `RemoteValue value = ((EvaluateResultSuccess)result).Result;` keeps `value` in scope for
         // the statements that follow it.
-        HashSet<ISymbol> movedSymbols = new(GetDeclaredLocals(declaration, semanticModel, cancellationToken), SymbolEqualityComparer.Default);
         int declarationIndex = containingBlock.Statements.IndexOf(declaration);
-        int lastReferencingIndex = -1;
-        for (int i = declarationIndex + 1; i < containingBlock.Statements.Count; i++)
-        {
-            if (StatementReferencesAny(containingBlock.Statements[i], movedSymbols, semanticModel, cancellationToken))
-            {
-                for (int moved = lastReferencingIndex + 1; moved <= i; moved++)
-                {
-                    movedSymbols.UnionWith(GetDeclaredLocals(containingBlock.Statements[moved], semanticModel, cancellationToken));
-                }
-
-                lastReferencingIndex = i;
-            }
-        }
+        int lastReferencingIndex = FindLastMovedStatementIndex(declaration, containingBlock, semanticModel, cancellationToken);
 
         List<StatementSyntax> ifBlockStatements = [];
         if (directDeclaration is null)

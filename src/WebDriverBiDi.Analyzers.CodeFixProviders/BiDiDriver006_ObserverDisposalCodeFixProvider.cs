@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -53,6 +54,12 @@ public class BiDiDriver006_ObserverDisposalCodeFixProvider : CodeFixProvider
             .OfType<LocalDeclarationStatementSyntax>()
             .First();
 
+        SemanticModel semanticModel = (await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false))!;
+        if (!CanBecomeUsingDeclaration(declaration, semanticModel, context.CancellationToken))
+        {
+            return;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: "Add 'using' declaration",
@@ -60,6 +67,54 @@ public class BiDiDriver006_ObserverDisposalCodeFixProvider : CodeFixProvider
                     context.Document, declaration, c),
                 equivalenceKey: "AddUsingDeclaration"),
             diagnostic);
+    }
+
+    /// <summary>
+    /// Determines whether the declaration can become a <c>using</c> declaration and still compile.
+    /// </summary>
+    /// <param name="declaration">The declaration the diagnostic is on.</param>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns><see langword="true"/> if the rewrite compiles; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A <c>using</c> declaration cannot sit directly in a switch section (CS8647), because the scope
+    /// it would be disposed at is not delimited there, and its variable is read-only, so a later
+    /// assignment to it does not compile (CS1656). Neither shape can be rewritten by adding the
+    /// keyword alone, so no fix is offered; the diagnostic still says what is wrong. Passing the
+    /// observer by reference, which would assign to it in the same way, needs no test here: the
+    /// analyzer treats every argument as an escape and reports nothing to fix.
+    /// </remarks>
+    private static bool CanBecomeUsingDeclaration(
+        LocalDeclarationStatementSyntax declaration,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (declaration.Parent is SwitchSectionSyntax)
+        {
+            return false;
+        }
+
+        // A declarator in a document that compiles always has a symbol.
+        List<ISymbol> declaredVariables = [];
+        foreach (VariableDeclaratorSyntax variable in declaration.Declaration.Variables)
+        {
+            declaredVariables.Add(semanticModel.GetDeclaredSymbol(variable, cancellationToken)!);
+        }
+
+        // The whole file is searched rather than the statements after the declaration, because an
+        // assignment inside a nested function can be written above the declaration and still run
+        // after it.
+        SyntaxNode scope = declaration.SyntaxTree.GetRoot(cancellationToken);
+        foreach (AssignmentExpressionSyntax assignment in scope.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        {
+            ISymbol? target = semanticModel.GetSymbolInfo(assignment.Left, cancellationToken).Symbol;
+            if (declaredVariables.Any(variable => SymbolEqualityComparer.Default.Equals(target, variable)))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static async Task<Document> AddUsingDeclarationAsync(

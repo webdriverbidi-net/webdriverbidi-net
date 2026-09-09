@@ -455,8 +455,11 @@ public class BiDiDriver012CodeFixProviderTests
     }
 
     [Fact]
-    public async Task AwaitUsingDeclaration_CodeFixInsertsStopAsyncBeforeFinalReturn()
+    public async Task AwaitUsingDeclaration_WhenTheFinalReturnObservesTheDriver_OffersNoFix()
     {
+        // StopAsync has to go before the return, or it never runs; in front of this return it would
+        // change the answer from true to false. There is no correct position, so no fix is offered and
+        // the diagnostic stands for the author to resolve.
         string testCode = """
             using WebDriverBiDi;
             using System.Threading.Tasks;
@@ -475,6 +478,45 @@ public class BiDiDriver012CodeFixProviderTests
             }
             """;
 
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AwaitUsingDeclaration_WhenTheFinalReturnIgnoresTheDriver_InsertsStopAsyncBeforeIt()
+    {
+        // The return does not observe the driver, so the inserted statement both runs and leaves the
+        // returned value alone.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task<int> TestMethod()
+                    {
+                        await using BiDiDriver {|#0:driver|} = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        return 42;
+                    }
+                }
+            }
+            """;
+
         string fixedCode = """
             using WebDriverBiDi;
             using System.Threading.Tasks;
@@ -483,12 +525,12 @@ public class BiDiDriver012CodeFixProviderTests
             {
                 public class TestClass
                 {
-                    public async Task<bool> TestMethod()
+                    public async Task<int> TestMethod()
                     {
                         await using BiDiDriver driver = new();
                         await driver.StartAsync("ws://localhost:9222");
                         await driver.StopAsync();
-                        return driver.IsStarted;
+                        return 42;
                     }
                 }
             }
@@ -504,6 +546,168 @@ public class BiDiDriver012CodeFixProviderTests
         {
             TestCode = testCode,
             FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithBlockEndingInReturn_InsertsStopAsyncBeforeTheReturn()
+    {
+        // Appending after the return would leave the inserted statement unreachable, so it never ran.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task<int> TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using ({|#0:driver|})
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            return 42;
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task<int> TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using (driver)
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            await driver.StopAsync();
+                            return 42;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithSingleReturnStatementBody_InsertsStopAsyncBeforeIt()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task<int> TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using ({|#0:driver|})
+                            return 42;
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task<int> TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using (driver)
+                        {
+                            await driver.StopAsync();
+                            return 42;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WhenTheClosingThrowObservesTheDriver_OffersNoFix()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using ({|#0:driver|})
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            throw new InvalidOperationException(driver.IsStarted.ToString());
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
         };
         testState.ExpectedDiagnostics.Add(expected);
 
@@ -1034,6 +1238,65 @@ public class BiDiDriver012CodeFixProviderTests
             FixedCode = fixedCode,
         };
         testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AwaitUsingStatement_WithEmptyBlock_AppendsStopAsync()
+    {
+        // An empty body has no closing statement to insert in front of, so the stop is appended.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using ({|#0:driver|})
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await using (driver)
+                        {
+                            await driver.StopAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }

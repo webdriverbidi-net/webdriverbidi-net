@@ -504,4 +504,171 @@ public class BiDiDriver004CodeFixProviderTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    [Fact]
+    public async Task CustomModuleWithADifferentlyNamedTokenParameter_NamesTheArgumentAfterIt()
+    {
+        // The rule reports calls on user-written Module subclasses, whose token parameter can be named
+        // anything. Hard-coding "cancellationToken:" would produce CS1739 here.
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestNamespace
+            {
+                public class CustomModule : Module
+                {
+                    public CustomModule(BiDiDriver driver)
+                        : base(driver)
+                    {
+                    }
+
+                    public override string ModuleName => "custom";
+
+                    public Task EvaluateAsync(CancellationToken token = default) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(CustomModule module)
+                    {
+                        await {|#0:module.EvaluateAsync()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestNamespace
+            {
+                public class CustomModule : Module
+                {
+                    public CustomModule(BiDiDriver driver)
+                        : base(driver)
+                    {
+                    }
+
+                    public override string ModuleName => "custom";
+
+                    public Task EvaluateAsync(CancellationToken token = default) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(CustomModule module)
+                    {
+                        await module.EvaluateAsync(token: CancellationToken.None);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("EvaluateAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            CodeActionIndex = 0,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task CustomModuleWhoseTokenIsOnASiblingOverload_NamesTheArgumentAfterIt()
+    {
+        // The call binds to the overload without a token, so the name comes from the sibling that has
+        // one, which is the overload the argument makes the call bind to.
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestNamespace
+            {
+                public class CustomModule : Module
+                {
+                    public CustomModule(BiDiDriver driver)
+                        : base(driver)
+                    {
+                    }
+
+                    public override string ModuleName => "custom";
+
+                    public Task EvaluateAsync() => Task.CompletedTask;
+
+                    public Task EvaluateAsync(CancellationToken abortToken) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(CustomModule module)
+                    {
+                        await {|#0:module.EvaluateAsync()|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Protocol;
+
+            namespace TestNamespace
+            {
+                public class CustomModule : Module
+                {
+                    public CustomModule(BiDiDriver driver)
+                        : base(driver)
+                    {
+                    }
+
+                    public override string ModuleName => "custom";
+
+                    public Task EvaluateAsync() => Task.CompletedTask;
+
+                    public Task EvaluateAsync(CancellationToken abortToken) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(CustomModule module)
+                    {
+                        await module.EvaluateAsync(abortToken: CancellationToken.None);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("EvaluateAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer, BiDiDriver004_CancellationTokenSuggestionCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            CodeActionIndex = 0,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

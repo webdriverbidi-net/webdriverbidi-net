@@ -82,7 +82,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
 
     /// <summary>
     /// Collects the names of local variables that this member hands to something else, or that a nested
-    /// function could start or stop.
+    /// function could start, stop, or rebind.
     /// </summary>
     /// <param name="body">The member body being analyzed.</param>
     /// <param name="semanticModel">The semantic model for the member.</param>
@@ -92,7 +92,11 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         HashSet<string> escapedNames = [];
         foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            if (IsEscapingPosition(identifier, semanticModel) || IsStartedOrStoppedInsideNestedFunction(identifier, body))
+            // The nested-function classification is asked first so that each predicate answers only for
+            // the shape it owns: the driver on the right of an assignment is an escape wherever it is
+            // written, and this order lets that case reach the escape check rather than being absorbed
+            // by the rebind test.
+            if (IsStartedStoppedOrReboundInsideNestedFunction(identifier, body) || IsEscapingPosition(identifier, semanticModel))
             {
                 escapedNames.Add(identifier.Identifier.ValueText);
             }
@@ -155,29 +159,38 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     }
 
     /// <summary>
-    /// Determines whether a mention of a variable inside a nested function starts or stops it.
+    /// Determines whether a mention of a variable inside a nested function starts it, stops it, or
+    /// rebinds it to a different driver.
     /// </summary>
     /// <param name="identifier">The mention of the variable.</param>
     /// <param name="body">The member body being analyzed.</param>
     /// <returns><see langword="true"/> if a nested function can change the variable's started state; otherwise <see langword="false"/>.</returns>
     /// <remarks>
     /// A nested function runs when its delegate is invoked, not where it is declared, so a
-    /// <c>StartAsync</c> or <c>StopAsync</c> inside one can change the driver's state at a point this
-    /// rule's textual walk cannot place. Only those two calls make the state unknown: a nested function
-    /// that merely issues commands on the driver leaves the state alone, and treating every capture as
-    /// an escape would stop the rule reporting a genuine error elsewhere in the same method.
+    /// <c>StartAsync</c>, a <c>StopAsync</c>, or an assignment inside one can change the driver's state
+    /// at a point this rule's textual walk cannot place. An assignment counts because the variable then
+    /// names a driver that came from somewhere else and may already be started, which is the same
+    /// reason <see cref="TrackDriverAssignment"/> stops tracking such a rebind on a straight-line path.
+    /// Only those mentions make the state unknown: a nested function that merely issues commands on the
+    /// driver leaves the state alone, and treating every capture as an escape would stop the rule
+    /// reporting a genuine error elsewhere in the same method.
     /// </remarks>
-    private static bool IsStartedOrStoppedInsideNestedFunction(IdentifierNameSyntax identifier, SyntaxNode body)
+    private static bool IsStartedStoppedOrReboundInsideNestedFunction(IdentifierNameSyntax identifier, SyntaxNode body)
     {
-        if (identifier.Parent is not MemberAccessExpressionSyntax memberAccess ||
-            memberAccess.Expression != identifier ||
-            memberAccess.Parent is not InvocationExpressionSyntax)
+        bool changesStartedState = identifier.Parent switch
         {
-            return false;
-        }
+            // Rebound to another driver: driver = await pool.RentStartedAsync();
+            AssignmentExpressionSyntax assignment => assignment.Left == identifier,
 
-        string methodName = memberAccess.Name.Identifier.ValueText;
-        if (methodName != "StartAsync" && methodName != "StopAsync")
+            // Started or stopped: driver.StartAsync() or driver.StopAsync().
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Expression == identifier
+                && memberAccess.Parent is InvocationExpressionSyntax
+                && memberAccess.Name.Identifier.ValueText is "StartAsync" or "StopAsync",
+
+            _ => false,
+        };
+
+        if (!changesStartedState)
         {
             return false;
         }
@@ -220,7 +233,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             ITypeSymbol? typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value).Type;
             if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo))
             {
-                driverStartedStatus[variable.Identifier.Text] = false;
+                driverStartedStatus[variable.Identifier.ValueText] = false;
             }
         }
     }
@@ -539,7 +552,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 ITypeSymbol? type = semanticModel.GetTypeInfo(identifier).Type;
                 if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                 {
-                    return identifier.Identifier.Text;
+                    return identifier.Identifier.ValueText;
                 }
             }
 
@@ -550,7 +563,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 ITypeSymbol? type = semanticModel.GetTypeInfo(nestedIdentifier).Type;
                 if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                 {
-                    return nestedIdentifier.Identifier.Text;
+                    return nestedIdentifier.Identifier.ValueText;
                 }
             }
         }
