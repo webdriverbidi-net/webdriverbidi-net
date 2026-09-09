@@ -38,6 +38,6 @@ public class ImageSize
     /// </remarks>
     [JsonPropertyName("maxHeight")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [SpecRange(1.0, double.PositiveInfinity, MinimumExclusive = true)]
+    [SpecRange(1.0, double.PositiveInfinity)]
     public ulong? MaxHeight { get; set; }
 }
