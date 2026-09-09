@@ -56,13 +56,13 @@ public abstract record RealmInfo
     public RealmType Type { get; internal set; } = RealmType.Window;
 
     /// <summary>
-    /// Converts this <see cref="RealmInfo"/> to a type-specific realm info, throwing if it is not of that
-    /// type. Use <see cref="TryConvertTo{T}"/> to test without throwing.
+    /// Casts this <see cref="RealmInfo"/> to a type-specific realm info, throwing if it is not of that
+    /// type. Use <see cref="TryAs{T}"/> to test without throwing.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
     /// <returns>This instance cast to the specified correct type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if this RealmInfo is not the specified type.</exception>
-    public T ConvertTo<T>()
+    public T As<T>()
         where T : RealmInfo
     {
         if (this is T castValue)
@@ -74,13 +74,13 @@ public abstract record RealmInfo
     }
 
     /// <summary>
-    /// Attempts to convert this <see cref="RealmInfo"/> to a type-specific realm info, returning
+    /// Attempts to cast this <see cref="RealmInfo"/> to a type-specific realm info, returning
     /// <see langword="false"/> rather than throwing when it is not of that type.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
-    /// <param name="result">When this method returns, contains the converted value or null if the conversion failed.</param>
-    /// <returns><see langword="true"/> if the conversion was successful; otherwise, <see langword="false"/>.</returns>
-    public bool TryConvertTo<T>([NotNullWhen(true)] out T? result)
+    /// <param name="result">When this method returns, contains the cast value or null if the cast failed.</param>
+    /// <returns><see langword="true"/> if the cast was successful; otherwise, <see langword="false"/>.</returns>
+    public bool TryAs<T>([NotNullWhen(true)] out T? result)
         where T : RealmInfo
     {
         if (this is T converted)

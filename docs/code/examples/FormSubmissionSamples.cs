@@ -281,7 +281,7 @@ public static class FormSubmissionSamples
             if (inputResult is EvaluateResultSuccess inputSuccess)
             {
                 RemoteValue inputElementRemoteValue = inputSuccess.Result;
-                inputElementRemoteValue.TryConvertTo(out NodeRemoteValue inputElement);
+                inputElementRemoteValue.TryAs(out NodeRemoteValue inputElement);
                 Console.WriteLine($"Found input element: {inputElement.SharedId}");
 
                 // Click the input to focus it
@@ -326,7 +326,7 @@ public static class FormSubmissionSamples
 
                 if (phoneResult is EvaluateResultSuccess phoneSuccess)
                 {
-                    phoneSuccess.Result.TryConvertTo(out NodeRemoteValue? phoneElement);
+                    phoneSuccess.Result.TryAs(out NodeRemoteValue? phoneElement);
 
                     // Click phone field
                     PerformActionsCommandParameters clickPhoneParams = new PerformActionsCommandParameters(contextId);
@@ -370,7 +370,7 @@ public static class FormSubmissionSamples
                 if (buttonResult is EvaluateResultSuccess buttonSuccess)
                 {
                     RemoteValue buttonElementRemoteValue = buttonSuccess.Result;
-                    buttonElementRemoteValue.TryConvertTo(out NodeRemoteValue buttonElement);
+                    buttonElementRemoteValue.TryAs(out NodeRemoteValue buttonElement);
                     Console.WriteLine($"Found submit button: {buttonElement.SharedId}");
 
                     // Set up navigation observer
@@ -521,7 +521,7 @@ public static class FormSubmissionSamples
                 target,
                 true));
 
-        string currentUrl = ((EvaluateResultSuccess)urlResult).Result.ConvertTo<StringRemoteValue>().Value;
+        string currentUrl = ((EvaluateResultSuccess)urlResult).Result.As<StringRemoteValue>().Value;
         if (currentUrl.Contains("/success"))
         {
             Console.WriteLine("Form submitted successfully!");

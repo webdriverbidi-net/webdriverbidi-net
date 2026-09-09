@@ -170,7 +170,7 @@ its payload (`StringRemoteValue` to `string`, `BooleanRemoteValue` to `bool`, `D
 `NumberRemoteValue` additionally converts implicitly to `long` and to `int` by way of its
 `ToLong()` and `ToInt()` methods. Those last two are narrowing, and they are deliberately implicit
 anyway: the conversion is the idiom the documentation teaches (`long number =
-remoteValue.ConvertTo<NumberRemoteValue>();` is a published sample in
+remoteValue.As<NumberRemoteValue>();` is a published sample in
 `docs/articles/remote-values.md`), the narrowing is spelled out in the XML remarks on each operator
 and on `ToInt()`/`ToLong()`, and the saturating behavior those methods implement by hand is better
 defined than the primitive cast, which is undefined for `NaN` and out-of-range values on .NET

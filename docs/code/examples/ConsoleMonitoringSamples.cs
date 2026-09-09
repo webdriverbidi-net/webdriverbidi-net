@@ -209,7 +209,7 @@ public static class ConsoleMonitoringSamples
                 foreach (var arg in e.Arguments)
                 {
                     // console.log() takes arguments of any type, so test the type instead of
-                    // asserting it. ConvertTo<StringRemoteValue>() throws on the first number,
+                    // asserting it. As<StringRemoteValue>() throws on the first number,
                     // and under the default Ignore behavior the handler's output would vanish.
                     string value = arg switch
                     {

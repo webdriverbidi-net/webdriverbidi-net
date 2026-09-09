@@ -55,13 +55,31 @@ public abstract record RemoteValue
     public abstract LocalValue ToLocalValue();
 
     /// <summary>
-    /// Attempts to convert this <see cref="RemoteValue"/> to the specified type-specific RemoteValue type,
+    /// Casts this <see cref="RemoteValue"/> to the specified type-specific RemoteValue type, throwing if
+    /// it is not of that type. Use <see cref="TryAs{T}"/> to test without throwing.
+    /// </summary>
+    /// <typeparam name="T">The type-specific RemoteValue type to cast to.</typeparam>
+    /// <returns>This RemoteValue, cast to the specified type-specific RemoteValue type.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if this RemoteValue cannot be cast to the specified type.</exception>
+    public T As<T>()
+        where T : RemoteValue
+    {
+        if (this is T converted)
+        {
+            return converted;
+        }
+
+        throw new WebDriverBiDiException($"RemoteValue of type '{this.Type}' cannot be cast to type '{typeof(T).Name}'");
+    }
+
+    /// <summary>
+    /// Attempts to cast this <see cref="RemoteValue"/> to the specified type-specific RemoteValue type,
     /// returning <see langword="false"/> rather than throwing when it is not of that type.
     /// </summary>
-    /// <typeparam name="T">The type-specific RemoteValue type to convert to.</typeparam>
-    /// <param name="result">When this method returns, contains the converted value or null if the conversion failed.</param>
-    /// <returns><see langword="true"/> if the conversion was successful; otherwise, <see langword="false"/>.</returns>
-    public bool TryConvertTo<T>([NotNullWhen(true)] out T? result)
+    /// <typeparam name="T">The type-specific RemoteValue type to cast to.</typeparam>
+    /// <param name="result">When this method returns, contains the cast value or null if the cast failed.</param>
+    /// <returns><see langword="true"/> if the cast was successful; otherwise, <see langword="false"/>.</returns>
+    public bool TryAs<T>([NotNullWhen(true)] out T? result)
         where T : RemoteValue
     {
         if (this is T converted)
@@ -72,23 +90,5 @@ public abstract record RemoteValue
 
         result = null;
         return false;
-    }
-
-    /// <summary>
-    /// Converts this <see cref="RemoteValue"/> to the specified type-specific RemoteValue type, throwing if
-    /// it is not of that type. Use <see cref="TryConvertTo{T}"/> to test without throwing.
-    /// </summary>
-    /// <typeparam name="T">The type-specific RemoteValue type to convert to.</typeparam>
-    /// <returns>This RemoteValue, converted to the specified type-specific RemoteValue type.</returns>
-    /// <exception cref="WebDriverBiDiException">Thrown if this RemoteValue cannot be converted to the specified type.</exception>
-    public T ConvertTo<T>()
-        where T : RemoteValue
-    {
-        if (this is T converted)
-        {
-            return converted;
-        }
-
-        throw new WebDriverBiDiException($"RemoteValue of type '{this.Type}' cannot be converted to type '{typeof(T).Name}'");
     }
 }

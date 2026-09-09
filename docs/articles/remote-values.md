@@ -22,7 +22,7 @@ Each enum member corresponds to the protocol's wire value for that type, which i
 
 The library deserializes each value into a concrete subclass rather than a single generic type:
 
-- **`RemoteValue`** (abstract base) – all remote values expose `Type`, `ConvertTo<T>()`, `TryConvertTo<T>()`, and `ToLocalValue()`
+- **`RemoteValue`** (abstract base) – all remote values expose `Type`, `As<T>()`, `TryAs<T>()`, and `ToLocalValue()`
 - **`ValueHoldingRemoteValue<T>`** – subclass for values that carry a .NET payload; exposes a typed `Value` property
 - **`ObjectReferenceRemoteValue`** – subclass for JavaScript objects that can be referenced by handle; exposes `Handle` and `InternalId`, and `ToRemoteObjectReference()` to build a reference
 - **`NodeRemoteValue`** – derives directly from `RemoteValue`, exposes a `NodeProperties? Value` (via `ITypeSafeRemoteValue<NodeProperties?>`), and implements `IObjectReferenceRemoteValue`, providing `SharedId`, `ToSharedReference()` and `ToRemoteObjectReference()`
@@ -58,13 +58,13 @@ The library deserializes each value into a concrete subclass rather than a singl
 | `Window` | `"window"` | `WindowProxyRemoteValue` | `WindowProxyProperties` |
 | `Function`, `Promise`, etc. | various | `ObjectReferenceRemoteValue` | _(none; use `Handle`)_ |
 
-`RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].ConvertTo<SpecificType>().Value` to extract values. String keys are compared by value; keys that are themselves `RemoteValue` objects (JavaScript `Map` entries keyed by objects) are compared by reference, because each denotes a distinct object on the remote end even when two serialize identically — enumerate the dictionary to read those entries. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].ConvertTo<SpecificType>().Value` to extract elements.
+`RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].As<SpecificType>().Value` to extract values. String keys are compared by value; keys that are themselves `RemoteValue` objects (JavaScript `Map` entries keyed by objects) are compared by reference, because each denotes a distinct object on the remote end even when two serialize identically — enumerate the dictionary to read those entries. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].As<SpecificType>().Value` to extract elements.
 
 ## Accessing Values
 
-### Using ConvertTo<T>() and Pattern Matching
+### Using As<T>() and Pattern Matching
 
-Remote values are deserialized into their concrete types. Use C# pattern matching to check and cast in one step, or use `ConvertTo<T>()` to perform a casting conversion (throws if the type is wrong) and `TryConvertTo<T>()` for a safe try-pattern:
+Remote values are deserialized into their concrete types. Use C# pattern matching to check and cast in one step, or use `As<T>()` to cast directly (throwing if the type is wrong) and `TryAs<T>()` for a safe try-pattern:
 
 [!code-csharp[Number Values](../code/remote-values/RemoteValuesSamples.cs#ValueAsNumber)]
 

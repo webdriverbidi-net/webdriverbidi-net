@@ -135,8 +135,8 @@ public static class PreloadScriptSamples
                     e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
                 {
                     RemoteValueDictionary data = dataRemoteValue.Value;
-                    Console.WriteLine($"Page ready: {data["ready"].ConvertTo<BooleanRemoteValue>().Value}");
-                    Console.WriteLine($"Load time: {data["loadTime"].ConvertTo<NumberRemoteValue>().Value}ms");
+                    Console.WriteLine($"Page ready: {data["ready"].As<BooleanRemoteValue>().Value}");
+                    Console.WriteLine($"Load time: {data["loadTime"].As<NumberRemoteValue>().Value}ms");
 
                     pageLoadedSignal.SetResult("complete");
                 }
@@ -246,7 +246,7 @@ public static class PreloadScriptSamples
         if (await Task.WhenAny(elementTask, timeoutTask) == elementTask)
         {
             RemoteValueDictionary data = await elementTask;
-            Console.WriteLine($"✅ Element found: {data["text"].ConvertTo<StringRemoteValue>().Value}");
+            Console.WriteLine($"✅ Element found: {data["text"].As<StringRemoteValue>().Value}");
         }
         else
         {
@@ -327,7 +327,7 @@ public static class PreloadScriptSamples
         if (await Task.WhenAny(elementTask, timeoutTask) == elementTask)
         {
             RemoteValueDictionary data = await elementTask;
-            Console.WriteLine($"✅ Element found: {data["text"].ConvertTo<StringRemoteValue>().Value}");
+            Console.WriteLine($"✅ Element found: {data["text"].As<StringRemoteValue>().Value}");
         }
         else
         {
@@ -376,9 +376,9 @@ public static class PreloadScriptSamples
         {
             if (e.ChannelId == "fetchInterceptor")
             {
-                RemoteValueDictionary data = e.Data.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+                RemoteValueDictionary data = e.Data.As<KeyValuePairCollectionRemoteValue>().Value;
                 fetchCalls.Add(data);
-                Console.WriteLine($"🌐 Fetch intercepted: {data["url"].ConvertTo<StringRemoteValue>().Value}");
+                Console.WriteLine($"🌐 Fetch intercepted: {data["url"].As<StringRemoteValue>().Value}");
             }
         });
 
@@ -428,7 +428,7 @@ public static class PreloadScriptSamples
         {
             if (e.ChannelId == "performanceMonitor")
             {
-                performanceData = e.Data.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+                performanceData = e.Data.As<KeyValuePairCollectionRemoteValue>().Value;
             }
         });
 
@@ -450,10 +450,10 @@ public static class PreloadScriptSamples
         if (performanceData != null)
         {
             Console.WriteLine("\n⏱️ Performance Metrics:");
-            Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"].ConvertTo<NumberRemoteValue>().Value}ms");
-            Console.WriteLine($"  Load Complete: {performanceData["loadComplete"].ConvertTo<NumberRemoteValue>().Value}ms");
-            Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].ConvertTo<NumberRemoteValue>().Value}ms");
-            Console.WriteLine($"  Total Time: {performanceData["totalTime"].ConvertTo<NumberRemoteValue>().Value}ms");
+            Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"].As<NumberRemoteValue>().Value}ms");
+            Console.WriteLine($"  Load Complete: {performanceData["loadComplete"].As<NumberRemoteValue>().Value}ms");
+            Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].As<NumberRemoteValue>().Value}ms");
+            Console.WriteLine($"  Total Time: {performanceData["totalTime"].As<NumberRemoteValue>().Value}ms");
         }
         #endregion
     }

@@ -222,7 +222,7 @@ public class PageUtilitiesModule : Module
             success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
             RemoteValueDictionary data = remoteValue.Value;
-            return data["found"].ConvertTo<BooleanRemoteValue>().Value;
+            return data["found"].As<BooleanRemoteValue>().Value;
         }
 
         return false;
@@ -314,9 +314,9 @@ public class PageUtilitiesModule : Module
         {
             result[kvp.Key.ToString() ?? ""] = kvp.Value.Type switch
             {
-                RemoteValueType.String => kvp.Value.ConvertTo<StringRemoteValue>().Value ?? "",
-                RemoteValueType.Number => (object?)kvp.Value.ConvertTo<NumberRemoteValue>().Value ?? 0,
-                RemoteValueType.Boolean => kvp.Value.ConvertTo<BooleanRemoteValue>().Value,
+                RemoteValueType.String => kvp.Value.As<StringRemoteValue>().Value ?? "",
+                RemoteValueType.Number => (object?)kvp.Value.As<NumberRemoteValue>().Value ?? 0,
+                RemoteValueType.Boolean => kvp.Value.As<BooleanRemoteValue>().Value,
                 RemoteValueType.Null or RemoteValueType.Undefined => (object?)null!,
                 _ => (kvp.Value as ValueHoldingRemoteValue)?.ValueObject ?? (object)""
             };
@@ -408,8 +408,8 @@ public class TestUtilitiesModule : Module
             success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
             RemoteValueDictionary dimensions = remoteValue.Value;
-            long width = dimensions["width"].ConvertTo<NumberRemoteValue>();
-            long height = dimensions["height"].ConvertTo<NumberRemoteValue>();
+            long width = dimensions["width"].As<NumberRemoteValue>();
+            long height = dimensions["height"].As<NumberRemoteValue>();
 
             // Capture screenshot with full page dimensions
             CaptureScreenshotCommandParameters screenshotParams =
@@ -444,7 +444,7 @@ public class TestUtilitiesModule : Module
             success.Result is CollectionRemoteValue remoteValue)
         {
             RemoteValueList links = remoteValue.Value;
-            return links.Select(l => l.ConvertTo<StringRemoteValue>().Value ?? "").ToList();
+            return links.Select(l => l.As<StringRemoteValue>().Value ?? "").ToList();
         }
 
         return new List<string>();
