@@ -68,7 +68,7 @@ public class PartialCookie
     public bool? Secure { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the cookie is a same-site cookie.
+    /// Gets or sets the SameSite policy of the cookie.
     /// </summary>
     [JsonPropertyName("sameSite")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

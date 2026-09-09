@@ -228,14 +228,8 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("elementWatcher"));
 
-        // Run the preload script in a named sandbox: it still sees the page's DOM, but its
-        // globals (and any it creates) are isolated from the page's own scripts, so neither
-        // side can observe or interfere with the other.
         AddPreloadScriptCommandParameters preloadParams =
-            new AddPreloadScriptCommandParameters(waitForElementScript)
-            {
-                Sandbox = "elementWatcherSandbox",
-            };
+            new AddPreloadScriptCommandParameters(waitForElementScript);
         preloadParams.Arguments.Add(channel);
 
         await driver.Script.AddPreloadScriptAsync(preloadParams);
@@ -259,12 +253,6 @@ public static class PreloadScriptSamples
             Console.WriteLine("❌ Timeout waiting for element");
         }
 
-        // Later evaluations that must see the preload script's globals target the same sandbox.
-        EvaluateResult sandboxState = await driver.Script.EvaluateAsync(
-            new EvaluateCommandParameters(
-                "typeof checkForElement",
-                new ContextTarget(contextId) { Sandbox = "elementWatcherSandbox" },
-                true));
         #endregion
     }
 
@@ -305,17 +293,19 @@ public static class PreloadScriptSamples
 
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
-            if (e.ChannelId == "elementWatcher")
+            if (e.ChannelId == "elementWatcher" &&
+                e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
             {
-                RemoteValueDictionary data = e.Data.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+                RemoteValueDictionary data = dataRemoteValue.Value;
                 elementFoundSignal.SetResult(data);
             }
         });
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("elementWatcher"));
 
-        // Running the script in a named sandbox isolates it from the page's own
-        // JavaScript: the page cannot see or interfere with the watcher.
+        // Running the script in a named sandbox isolates it from the page's own JavaScript. It
+        // still sees the page's DOM, but its globals (and any it creates) are invisible to the
+        // page's scripts, so neither side can observe or interfere with the other.
         AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(waitForElementScript)
             {
@@ -343,6 +333,14 @@ public static class PreloadScriptSamples
         {
             Console.WriteLine("❌ Timeout waiting for element");
         }
+
+        // A later evaluation that must see the preload script's globals has to target the same
+        // sandbox; evaluated against the page instead, checkForElement is undefined.
+        EvaluateResult sandboxState = await driver.Script.EvaluateAsync(
+            new EvaluateCommandParameters(
+                "typeof checkForElement",
+                new ContextTarget(contextId) { Sandbox = "elementWatcherSandbox" },
+                true));
         #endregion
     }
 

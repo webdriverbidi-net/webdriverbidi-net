@@ -1330,4 +1330,216 @@ public class BiDiDriver023AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a module command issued inside a <c>Task.Run</c> lambda is not reported. The lambda's
+    /// body runs when that delegate is invoked, off the dispatching thread — which is the remedy this
+    /// rule recommends, so reporting inside it would flag the fix itself.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WithModuleCommandInsideTaskRunLambda_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Run(async () =>
+                                await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com")));
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+
+    /// <summary>
+    /// Tests that a call on a user type deriving from an unrelated base class named <c>Module</c> is
+    /// not reported, even inside a genuine event handler. The module test matched the base type by
+    /// simple name, so any <c>*Module</c> deriving from any <c>Module</c> was treated as the library's.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WithForeignModuleCommand_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace ThirdParty
+            {
+                public abstract class Module { }
+
+                public class RegistrationModule : Module
+                {
+                    public Task<int> LoadAsync() => Task.FromResult(0);
+                }
+            }
+
+            namespace TestApp
+            {
+                using ThirdParty;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, RegistrationModule registration)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await registration.LoadAsync();
+                        });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a module command inside a handler written as an anonymous method reports a warning.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WrittenAsAnonymousMethod_ReportsWarning()
+    {
+        string test = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(async delegate (EntryAddedEventArgs args)
+                        {
+                            await {|#0:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("NavigateAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that ExecuteCommandAsync in a handler reports a warning. It sends a command over the same
+    /// connection a module command does, so reaching the command through the executor rather than
+    /// through a module is a spelling difference, not a different hazard.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WithExecuteCommandAsync_ReportsWarning()
+    {
+        string test = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a command on a custom module whose name does not end in "Module" is reported: any type deriving from the library's Module base class is a module.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_WithCommandOnModuleWithoutModuleSuffix_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class GoogleCdp : Module
+                {
+                    public GoogleCdp(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "goog:cdp";
+                    public Task<int> SendAsync() => Task.FromResult(1);
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, GoogleCdp cdp)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await {|#0:cdp.SendAsync()|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SendAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer>(testCode, expected0);
+    }
 }

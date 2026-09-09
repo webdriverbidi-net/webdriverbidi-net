@@ -17,7 +17,6 @@ public class CapabilitiesRequest
     /// </summary>
     [JsonPropertyName("alwaysMatch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public CapabilityRequest? AlwaysMatch { get; set; }
 
     /// <summary>
@@ -25,6 +24,5 @@ public class CapabilitiesRequest
     /// </summary>
     [JsonPropertyName("firstMatch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public List<CapabilityRequest>? FirstMatch { get; set; }
 }

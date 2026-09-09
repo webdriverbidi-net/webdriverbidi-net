@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -24,8 +25,10 @@ public class BiDiDriver005CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_InTopLevelProgram_NoFixOffered()
+    public async Task AddObserver_InTopLevelProgram_FixIsOffered()
     {
+        // The subscription to amend is found from the span the analyzer recorded, not by walking up to
+        // an enclosing method declaration, so a top-level program is fixed like any other body.
         string testCode = """
             using System;
             using WebDriverBiDi;
@@ -36,6 +39,16 @@ public class BiDiDriver005CodeFixProviderTests
             await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "network.beforeRequestSent" }));
             """;
 
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+            driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+            await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "network.beforeRequestSent", driver.Log.OnEntryAdded.EventName }));
+            """;
+
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithArguments("log.entryAdded");
@@ -43,7 +56,7 @@ public class BiDiDriver005CodeFixProviderTests
         RealAssemblyCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
-            FixedCode = testCode,
+            FixedCode = fixedCode,
             TestState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
             FixedState = { OutputKind = Microsoft.CodeAnalysis.OutputKind.ConsoleApplication },
         };
@@ -404,7 +417,7 @@ public class BiDiDriver005CodeFixProviderTests
     }
 
     [Fact]
-    public async Task SubscribeAsync_WithNonArrayArgument_DiagnosticFires()
+    public async Task SubscribeAsync_WithNonArrayArgument_NoDiagnostic()
     {
         // SubscribeAsync called with a variable reference rather than an array literal.
         // AddEventNameToArrayExpression falls through all branches and returns the
@@ -476,21 +489,16 @@ public class BiDiDriver005CodeFixProviderTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
                         await driver.Session.SubscribeAsync(new SubscribeCommandParameters(events));
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("log.entryAdded");
 
         // The fix is registered but returns document unchanged; verify the diagnostic only.
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode, expected);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer>(testCode);
     }
 
     /// <summary>
@@ -571,7 +579,7 @@ public class BiDiDriver005CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_SubscribeAsyncWithNoArguments_IsNoOp()
+    public async Task CodeFix_SubscribeAsyncWithNoArguments_OffersNoCodeAction()
     {
         // SYNTHETIC: keeps a hand-written stub. It calls SubscribeAsync() with no arguments to exercise
         // the fix's zero-argument early return. The real SessionModule.SubscribeAsync always requires a
@@ -650,7 +658,6 @@ public class BiDiDriver005CodeFixProviderTests
         {
             TestCode = testCode,
             FixedCode = testCode,
-            NumberOfIncrementalIterations = 1,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
@@ -665,7 +672,7 @@ public class BiDiDriver005CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_SubscribeAsyncWithObjectInitializerArgument_IsNoOp()
+    public async Task SubscribeAsync_WithObjectInitializerArgument_NoDiagnostic()
     {
         // SYNTHETIC: keeps a hand-written stub. It constructs SubscribeCommandParameters via
         // object-initializer syntax with a settable Events property (no constructor argument list) to
@@ -734,7 +741,7 @@ public class BiDiDriver005CodeFixProviderTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
                         // Object initializer — no constructor ArgumentList, so ArgumentList is null.
                         await driver.Session.SubscribeAsync(new SubscribeCommandParameters { Events = new[] { "network.beforeRequestSent" } });
                     }
@@ -742,20 +749,13 @@ public class BiDiDriver005CodeFixProviderTests
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("log.entryAdded");
 
         LfCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
-            NumberOfIncrementalIterations = 1,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -768,7 +768,7 @@ public class BiDiDriver005CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_SubscribeAsyncWithTargetTypedNewArgument_IsNoOp()
+    public async Task CodeFix_SubscribeAsyncWithTargetTypedNewArgument_AddsEventName()
     {
         string testCode = """
             using System;
@@ -784,8 +784,29 @@ public class BiDiDriver005CodeFixProviderTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
-                        // Argument is a target-typed new, not an ObjectCreationExpression.
+                        // Argument is a target-typed new; the fix reads it as a BaseObjectCreationExpression.
                         await driver.Session.SubscribeAsync(new("network.beforeRequestSent"));
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        // Argument is a target-typed new; the fix reads it as a BaseObjectCreationExpression.
+                        await driver.Session.SubscribeAsync(new(["network.beforeRequestSent", driver.Log.OnEntryAdded.EventName]));
                     }
                 }
             }
@@ -800,7 +821,7 @@ public class BiDiDriver005CodeFixProviderTests
         RealAssemblyCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
-            FixedCode = testCode,
+            FixedCode = fixedCode,
             NumberOfIncrementalIterations = 1,
         };
         testState.ExpectedDiagnostics.Add(expected);
@@ -815,7 +836,7 @@ public class BiDiDriver005CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_SubscribeAsyncWithVariableEventsArray_IsNoOp()
+    public async Task SubscribeAsync_WithVariableEventsArray_NoDiagnostic()
     {
         string testCode = """
             using System;
@@ -830,7 +851,7 @@ public class BiDiDriver005CodeFixProviderTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-                        {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
 
                         // The events argument is a variable, not an array-creation or collection
                         // expression, so the fix has nothing it can rewrite in place.
@@ -841,19 +862,12 @@ public class BiDiDriver005CodeFixProviderTests
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver005_MissingEventSubscriptionAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
-            .WithLocation(0)
-            .WithArguments("log.entryAdded");
 
         RealAssemblyCodeFixTest<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider> testState = new()
         {
             TestCode = testCode,
             FixedCode = testCode,
-            NumberOfIncrementalIterations = 1,
         };
-        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -996,7 +1010,7 @@ public class BiDiDriver005CodeFixProviderTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task UnresolvableSingleArgument_CodeFixLeavesCallUnchanged()
+    public async Task UnresolvableSingleArgument_OffersNoCodeAction()
     {
         // SYNTHETIC: keeps a hand-written stub. This test drives the fix through
         // AnalyzerTestHelpers.GetCodeActionsAsync, an ad-hoc workspace that references only the .NET
@@ -1083,9 +1097,282 @@ public class BiDiDriver005CodeFixProviderTests
             }
             """;
 
-        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(testCode);
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(testCode);
+        Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that no code action is offered when the parameters are constructed with an object
+    /// initializer and no argument list. The analyzer can still read the subscription set, so it
+    /// reports; the fix has no argument list to amend, and an action that changed nothing would be
+    /// misleading.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObjectInitializerWithoutArgumentList_OffersNoCodeAction()
+    {
+        // SYNTHETIC: keeps a hand-written stub, because the real parameters type has no parameterless
+        // constructor and so cannot be written with an object initializer and no argument list. The
+        // subscribed set is still readable (the initializer names no events), so the analyzer reports;
+        // the fix has no argument list to amend, and must therefore offer nothing.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiDriver { }
+
+                public class BiDiDriver : IBiDiDriver
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public LogModule Log { get; } = new LogModule();
+                    public NetworkModule Network { get; } = new NetworkModule();
+                    public SessionModule Session { get; } = new SessionModule();
+                }
+
+                public class LogModule
+                {
+                    [ObservableEventName("log.entryAdded")]
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
+                }
+
+                public class NetworkModule
+                {
+                    [ObservableEventName("network.beforeRequestSent")]
+                    public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent { get; } = new ObservableEvent<BeforeRequestSentEventArgs>("network.beforeRequestSent");
+                }
+
+                public class SessionModule
+                {
+                    public Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters parameters) => Task.FromResult(new SubscribeCommandResult());
+                }
+
+                public class SubscribeCommandParameters
+                {
+                    public SubscribeCommandParameters() { }
+                    public SubscribeCommandParameters(string eventName) { }
+                    public SubscribeCommandParameters(string[] events) { }
+                    public string[] Contexts { get; set; } = new string[0];
+                }
+
+                public class SubscribeCommandResult { }
+
+                public class WebDriverBiDiEventArgs { }
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+                public class BeforeRequestSentEventArgs : WebDriverBiDiEventArgs { }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public ObservableEvent(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
+                }
+
+                public class EventObserver<T> where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                [AttributeUsage(AttributeTargets.Property)]
+                public class ObservableEventNameAttribute : Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters { Contexts = new string[0] });
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(testCode);
+        Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that no code action is offered when the parameters are constructed with an empty
+    /// argument list. The analyzer reads that as naming no events and reports; the fix has no events
+    /// argument to amend, so it must offer nothing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParametersConstructedWithNoArguments_OffersNoCodeAction()
+    {
+        // SYNTHETIC: keeps a hand-written stub, because the real parameters type has no parameterless
+        // constructor.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiDriver { }
+
+                public class BiDiDriver : IBiDiDriver
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public LogModule Log { get; } = new LogModule();
+                    public NetworkModule Network { get; } = new NetworkModule();
+                    public SessionModule Session { get; } = new SessionModule();
+                }
+
+                public class LogModule
+                {
+                    [ObservableEventName("log.entryAdded")]
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
+                }
+
+                public class NetworkModule
+                {
+                    [ObservableEventName("network.beforeRequestSent")]
+                    public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent { get; } = new ObservableEvent<BeforeRequestSentEventArgs>("network.beforeRequestSent");
+                }
+
+                public class SessionModule
+                {
+                    public Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters parameters) => Task.FromResult(new SubscribeCommandResult());
+                }
+
+                public class SubscribeCommandParameters
+                {
+                    public SubscribeCommandParameters() { }
+                    public SubscribeCommandParameters(string eventName) { }
+                    public SubscribeCommandParameters(string[] events) { }
+                    public string[] Contexts { get; set; } = new string[0];
+                }
+
+                public class SubscribeCommandResult { }
+
+                public class WebDriverBiDiEventArgs { }
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+                public class BeforeRequestSentEventArgs : WebDriverBiDiEventArgs { }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public ObservableEvent(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
+                }
+
+                public class EventObserver<T> where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                [AttributeUsage(AttributeTargets.Property)]
+                public class ObservableEventNameAttribute : Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(testCode);
+        Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that the fix amends a single-event subscription with an implicit array rather than a
+    /// collection expression when the project's language version predates C# 12.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_BelowCSharp12_UsesImplicitArrayInsteadOfCollectionExpression()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("network.beforeRequestSent"));
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(
+            testCode,
+            referenceWebDriverBiDi: true,
+            languageVersion: LanguageVersion.CSharp7_3);
+
         CodeAction action = Assert.Single(actions);
         string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
-        Assert.Equal(testCode, fixedText);
+        Assert.Contains("new SubscribeCommandParameters(new[] { \"network.beforeRequestSent\", driver.Log.OnEntryAdded.EventName })", fixedText);
+    }
+
+    /// <summary>
+    /// Tests that the fix amends a single-event subscription with a collection expression when the
+    /// project's language version is C# 12 or later.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_AtCSharp12OrLater_UsesCollectionExpression()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("network.beforeRequestSent"));
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver005_MissingEventSubscriptionAnalyzer, BiDiDriver005_MissingEventSubscriptionCodeFixProvider>(
+            testCode,
+            referenceWebDriverBiDi: true,
+            languageVersion: LanguageVersion.CSharp12);
+
+        CodeAction action = Assert.Single(actions);
+        string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
+        Assert.Contains("new SubscribeCommandParameters([\"network.beforeRequestSent\", driver.Log.OnEntryAdded.EventName])", fixedText);
     }
 }

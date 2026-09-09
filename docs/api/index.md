@@ -173,9 +173,11 @@ To generate the full API documentation locally:
 # Install DocFX if not already installed
 dotnet tool install -g docfx
 
-# Build the library in Release; docfx metadata reads the API surface from
-# src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll
+# Build the library and the logging package in Release; docfx metadata reads the API
+# surface from src/WebDriverBiDi/bin/Release/netstandard2.0/WebDriverBiDi.dll and
+# src/WebDriverBiDi.Logging/bin/Release/netstandard2.0/WebDriverBiDi.Logging.dll
 dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
+dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
 
 # Compile the documentation code samples (every [!code-csharp] region must compile)
 dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release
@@ -204,6 +206,12 @@ All command parameter classes follow this pattern:
 All command result classes follow this pattern:
 
 [!code-csharp[Command Results Pattern](../code/api/ApiIndexSamples.cs#CommandResultsPattern)]
+
+Commands whose protocol result carries no data return `EmptyResult`. It is a `CommandResult` like any
+other, so extension properties the remote end supplied are still exposed, in the two places they can
+occupy: `AdditionalData` holds properties found inside the (otherwise empty) `result` object, and
+`AdditionalResponseProperties` holds properties found on the response envelope. The two positions are
+never merged, and neither stands in for the other.
 
 #### Event Arguments
 

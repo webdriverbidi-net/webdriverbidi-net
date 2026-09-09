@@ -45,7 +45,7 @@ public class RemoteValueListJsonConverterTests
     public void TestDeserializingInvalidArrayThrows()
     {
         string json = "\"not-an-array\"";
-        Assert.Contains($"JSON value could not be converted", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } })).Message);
+        Assert.Contains($"must be an array", Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RemoteValueList>(json, new JsonSerializerOptions { Converters = { new RemoteValueListJsonConverter() } })).Message);
     }
 
     [Fact]

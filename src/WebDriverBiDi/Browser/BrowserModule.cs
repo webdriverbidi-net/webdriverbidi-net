@@ -32,7 +32,7 @@ public sealed class BrowserModule : Module
     /// <summary>
     /// Terminates all WebDriver sessions and cleans up automation state in the remote browser instance.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
@@ -44,7 +44,7 @@ public sealed class BrowserModule : Module
     /// <summary>
     /// Creates a new user context for the browser.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An object describing information about the user context created.</returns>
@@ -56,7 +56,7 @@ public sealed class BrowserModule : Module
     /// <summary>
     /// Gets the list of information about the client windows for the current browser.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>A read-only list of the client windows open in this browser.</returns>
@@ -68,7 +68,7 @@ public sealed class BrowserModule : Module
     /// <summary>
     /// Gets the list of open user contexts for the browser.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>A read-only list of the user contexts open in this browser.</returns>

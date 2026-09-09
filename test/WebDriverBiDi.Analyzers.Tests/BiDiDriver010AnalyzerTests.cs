@@ -1614,4 +1614,201 @@ public class BiDiDriver010AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a user type deriving from an unrelated base class named <c>Module</c> is not treated
+    /// as a WebDriver BiDi module. Matching the base type on its simple name alone claimed types this
+    /// library has nothing to do with — a class deriving from <c>Autofac.Module</c>, for example — and
+    /// reported an ordinary fire-and-forget call at Error severity.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FireAndForgetOnForeignModuleBaseClass_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace ThirdParty
+            {
+                public abstract class Module { }
+            }
+
+            namespace TestNamespace
+            {
+                using ThirdParty;
+
+                public class RegistrationModule : Module
+                {
+                    public Task<int> LoadAsync() => Task.FromResult(0);
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(RegistrationModule registration)
+                    {
+                        registration.LoadAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a discarded <c>ExecuteCommandAsync</c> call on the driver is reported: it sends a command over the same connection a module command does.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_FireAndForget_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that a discarded call to a user method that merely shares the name <c>ExecuteCommandAsync</c> is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_OnUnrelatedType_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class Sender
+                {
+                    public Task<int> ExecuteCommandAsync() => Task.FromResult(1);
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(Sender sender)
+                    {
+                        sender.ExecuteCommandAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a discarded module command made through a null-conditional receiver (<c>driver?.Session.StatusAsync()</c>) is reported: the conditional access as a whole is what is discarded.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_ThroughNullConditionalReceiver_FireAndForget_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver? driver)
+                    {
+                        driver?{|#0:.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that a module command made through a null-conditional receiver whose result is consumed is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleCommand_ThroughNullConditionalReceiver_Awaited_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver? driver)
+                    {
+                        Task<StatusCommandResult>? pending = driver?.Session.StatusAsync();
+                        if (pending is not null)
+                        {
+                            await pending;
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a command on a custom module whose name does not end in "Module" is reported: any type deriving from the library's Module base class is a module.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ModuleSubclassWithoutModuleSuffix_FireAndForget_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class GoogleCdp : Module
+                {
+                    public GoogleCdp(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "goog:cdp";
+                    public Task<int> SendAsync() => Task.FromResult(1);
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(GoogleCdp cdp)
+                    {
+                        {|#0:cdp.SendAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("SendAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected0);
+    }
 }

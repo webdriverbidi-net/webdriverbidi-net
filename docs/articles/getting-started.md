@@ -4,7 +4,8 @@ This guide will walk you through installing WebDriverBiDi.NET and setting up you
 
 ## Prerequisites
 
-- **.NET SDK**: Runtime compatible with .NET Standard 2.0, supporting .NET Framework 4.6.1+, .NET Core 2.0+, or .NET 5.0+
+- **Runtime**: The package targets .NET Standard 2.0, so it runs on .NET Framework 4.6.1+, .NET Core 2.0+, and .NET 5.0+. Any SDK that can target your chosen runtime is enough to consume the library
+- **.NET SDK**: 7.0 or later to build the samples in this guide as written, because they use C# 11 raw string literals
 - **IDE**: Visual Studio, Visual Studio Code, or JetBrains Rider
 - **Browser**: A browser with WebDriver BiDi support (Chrome, Edge, Firefox)
 
@@ -29,7 +30,7 @@ Install-Package WebDriverBiDi
 `dotnet add package` records the current release automatically, which is the recommended way to add the reference. Because the library is in the **0.x** series — where any release, including a patch increment, may change or remove public API — pin an exact version in your `.csproj` so that an update is always a deliberate choice rather than a wildcard that can pull in a breaking change:
 
 ```xml
-<PackageReference Include="WebDriverBiDi" Version="0.0.55" />
+<PackageReference Include="WebDriverBiDi" Version="0.0.57" />
 ```
 
 > Check [NuGet](https://www.nuget.org/packages/WebDriverBiDi) for the latest version, and see [API Design and Compatibility](advanced/api-design.md#versioning-and-compatibility) for the versioning policy.
@@ -133,6 +134,7 @@ dotnet add package WebDriverBiDi
 
 Replace the contents of `Program.cs` with the code below, adding these `using` directives at the top of the file:
 
+<!-- inline-csharp: the using directives the sample needs, quoted on their own -->
 ```csharp
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
@@ -164,10 +166,10 @@ The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The 
 >
 > ```csharp
 > BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-> driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
-> driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
-> driver.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
-> driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 > ```
 >
 > See [Error Handling](advanced/error-handling.md) for a full explanation of the four error behavior

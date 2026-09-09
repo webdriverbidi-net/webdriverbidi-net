@@ -66,7 +66,7 @@ public class BiDiDriver026_ExecuteCommandResultTypeMismatchAnalyzer : Diagnostic
             return;
         }
 
-        if (genericName.Identifier.Text != "ExecuteCommandAsync")
+        if (genericName.Identifier.ValueText != "ExecuteCommandAsync")
         {
             return;
         }

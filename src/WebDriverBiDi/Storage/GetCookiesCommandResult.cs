@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Storage;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 using WebDriverBiDi.Network;
 
 /// <summary>
@@ -41,5 +42,6 @@ public record GetCookiesCommandResult : CommandResult
     [JsonPropertyName("cookies")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<Cookie>))]
     internal List<Cookie> SerializableCookies { get; set; } = [];
 }

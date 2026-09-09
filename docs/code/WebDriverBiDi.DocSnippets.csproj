@@ -9,12 +9,19 @@
     <!-- The advisory analyzers (Info/Warning severity) suggest best practices that focused
          documentation snippets deliberately omit for brevity — passing a CancellationToken to every
          call (BIDI004/013), pairing every AddObserver with a Session.SubscribeAsync (BIDI005), disposing
-         every observer (BIDI006), etc. BIDI009 is intra-procedural and cannot see StartAsync when a
-         sample receives an already-started driver as a parameter (the common doc pattern), so it
-         false-positives here. These are suppressed for the samples; the remaining Error-level rules
-         (BIDI001/002/003/010/020) stay active so a genuine lifecycle mistake in a sample still fails
-         the build. -->
-    <NoWarn>$(NoWarn);CS1998;BIDI004;BIDI005;BIDI006;BIDI007;BIDI008;BIDI009;BIDI013;BIDI014;BIDI015;BIDI016;BIDI017;BIDI021;BIDI022;BIDI023</NoWarn>
+         every observer (BIDI006), keeping the observer AddObserver returns (BIDI031), etc.
+
+         BIDI009 is suppressed for the same reason, not because it misfires: a snippet that exists to
+         show a timeout override or a method signature constructs its driver with `new BiDiDriver()` and
+         goes straight to the command, omitting the StartAsync call that a real program would make. The
+         analyzer sees exactly that and is right to report it. (It tracks `new`-initialised locals only,
+         so a sample that receives an already-started driver as a parameter is not reported at all —
+         that shape needs no suppression.)
+
+         The remaining Error-level rules (BIDI001/002/003/010/020/024/026/027/029) stay active so a
+         genuine lifecycle mistake in a sample still fails the build, as does BIDI030, whose subject —
+         starting a capture session twice — a sample has no reason to do. -->
+    <NoWarn>$(NoWarn);CS1998;BIDI004;BIDI005;BIDI006;BIDI007;BIDI008;BIDI009;BIDI013;BIDI014;BIDI015;BIDI016;BIDI017;BIDI021;BIDI022;BIDI023;BIDI031</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Result for getting realms using the script.getRealms command.
@@ -32,5 +33,6 @@ public record GetRealmsCommandResult : CommandResult
     [JsonPropertyName("realms")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<RealmInfo>))]
     internal List<RealmInfo> SerializableRealms { get; set; } = [];
 }

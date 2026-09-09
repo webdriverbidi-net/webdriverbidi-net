@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -33,5 +34,6 @@ public record LocateNodesCommandResult : CommandResult
     [JsonPropertyName("nodes")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<NodeRemoteValue>))]
     internal List<NodeRemoteValue> SerializableNodes { get; set; } = [];
 }

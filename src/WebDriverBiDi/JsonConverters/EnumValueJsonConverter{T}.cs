@@ -16,14 +16,6 @@ using System.Text.Json.Serialization;
 public class EnumValueJsonConverter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T> : JsonConverter<T>
     where T : struct, Enum
 {
-    private static readonly Lazy<StringEnumValueConverter<T>> StringEnumConverter = new();
-
-    /// <summary>
-    /// Gets the shared string-to-enum conversion table for <typeparamref name="T"/>, so other
-    /// library code converting the same enum does not build a duplicate of it.
-    /// </summary>
-    internal static StringEnumValueConverter<T> SharedStringConverter => StringEnumConverter.Value;
-
     /// <summary>
     /// Deserializes the JSON string to an enum value.
     /// </summary>
@@ -43,7 +35,7 @@ public class EnumValueJsonConverter<[DynamicallyAccessedMembers(DynamicallyAcces
         string stringValue = reader.GetString()!;
         try
         {
-            return StringEnumConverter.Value.GetValue(stringValue);
+            return StringEnumValueConverter<T>.Shared.GetValue(stringValue);
         }
         catch (ArgumentException)
         {
@@ -64,13 +56,13 @@ public class EnumValueJsonConverter<[DynamicallyAccessedMembers(DynamicallyAcces
     {
         try
         {
-            if (StringEnumConverter.Value.NullSentinelValue is T sentinelValue && EqualityComparer<T>.Default.Equals(sentinelValue, value))
+            if (StringEnumValueConverter<T>.Shared.NullSentinelValue is T sentinelValue && EqualityComparer<T>.Default.Equals(sentinelValue, value))
             {
                 writer.WriteNullValue();
                 return;
             }
 
-            string stringValue = StringEnumConverter.Value.GetString(value);
+            string stringValue = StringEnumValueConverter<T>.Shared.GetString(value);
             writer.WriteStringValue(stringValue);
         }
         catch (ArgumentException)

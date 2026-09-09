@@ -128,4 +128,33 @@ public class WheelSourceActionsTests
         Assert.False(string.IsNullOrEmpty(first.Id));
         Assert.NotEqual(first.Id, second.Id);
     }
+
+    [Fact]
+    public void TestCanSerializeEveryRegisteredWheelSourceActionType()
+    {
+        // See the note in KeySourceActionsTests: an unregistered derived type is a serialization
+        // failure at send time, not a compile or unit-test failure.
+        WheelSourceActions properties = new();
+        properties.Actions.Add(new WheelScrollAction());
+        properties.Actions.Add(new PauseAction());
+
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(properties));
+        Assert.Equal("wheel", serialized["type"]?.Value<string>());
+        Assert.Equal(2, serialized["actions"]?.Value<JArray>()?.Count);
+        AssertActionType(serialized, 0, "scroll");
+        AssertActionType(serialized, 1, "pause");
+    }
+
+    /// <summary>
+    /// Asserts that the action at the given index in the serialized "actions" array carries the
+    /// expected polymorphic "type" discriminator.
+    /// </summary>
+    private static void AssertActionType(JObject serialized, int index, string expectedType)
+    {
+        JArray? actionsArray = serialized["actions"]?.Value<JArray>();
+        Assert.NotNull(actionsArray);
+        JObject? action = actionsArray[index].Value<JObject>();
+        Assert.NotNull(action);
+        Assert.Equal(expectedType, action["type"]?.Value<string>());
+    }
 }

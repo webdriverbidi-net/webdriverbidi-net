@@ -8,7 +8,8 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides information about a record retrieved when scanning for Bluetooth devices.
+/// Provides the data for a single simulated Bluetooth advertisement: the peripheral that sent it, the
+/// strength at which it was received, and the scan record it advertised.
 /// </summary>
 public class SimulateAdvertisementScanEntry
 {
@@ -26,8 +27,13 @@ public class SimulateAdvertisementScanEntry
     }
 
     /// <summary>
-    /// Gets or sets the physical address of the simulated Bluetooth device, or a prefix of it.
+    /// Gets or sets the physical address of the simulated Bluetooth peripheral that sent this
+    /// advertisement.
     /// </summary>
+    /// <remarks>
+    /// The address identifies the peripheral exactly, rather than by prefix: the remote end looks it up
+    /// among the adapter's simulated devices, and creates a device for the address if none exists yet.
+    /// </remarks>
     [JsonPropertyName("deviceAddress")]
     public string DeviceAddress { get; set; }
 

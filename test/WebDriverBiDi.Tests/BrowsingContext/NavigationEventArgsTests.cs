@@ -12,7 +12,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestCanDeserialize()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -34,7 +34,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestCanDeserializeWithNavigationId()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -54,7 +54,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestCanDeserializeWithUserContext()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -76,7 +76,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestCopySemantics()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -94,7 +94,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingContextValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "url": "http://example.com",
@@ -108,7 +108,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidContextValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": {},
@@ -123,7 +123,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithNullContextValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": null,
@@ -138,7 +138,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingUrlValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -152,7 +152,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidUrlValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -167,7 +167,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithNullUrlValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -195,7 +195,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidTimestampValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -210,7 +210,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithNullTimestampValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -225,7 +225,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingNavigationValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -239,7 +239,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidNavigationValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -254,7 +254,7 @@ public class NavigationEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidUserContextValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",

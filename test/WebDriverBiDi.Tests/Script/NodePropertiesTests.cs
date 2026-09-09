@@ -4,6 +4,11 @@ using System.Text.Json;
 
 public class NodePropertiesTests
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        RespectNullableAnnotations = true,
+    };
+
     [Fact]
     public void TestCanDeserialize()
     {
@@ -13,7 +18,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -36,7 +41,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
         NodeProperties copy = nodeProperties with { };
 
@@ -52,7 +57,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -64,7 +69,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -75,7 +80,7 @@ public class NodePropertiesTests
                         "nodeType": 1
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -87,7 +92,7 @@ public class NodePropertiesTests
                         "childNodeCount": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -100,7 +105,7 @@ public class NodePropertiesTests
                         "nodeValue": "myNodeValue"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -124,7 +129,7 @@ public class NodePropertiesTests
                         "nodeValue": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -137,7 +142,7 @@ public class NodePropertiesTests
                         "localName": "myLocalName"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -161,7 +166,7 @@ public class NodePropertiesTests
                         "localName": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -174,7 +179,7 @@ public class NodePropertiesTests
                         "namespaceURI": "myNamespace"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -198,7 +203,7 @@ public class NodePropertiesTests
                         "namespaceURI": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -213,7 +218,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -242,7 +247,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         // Access Attributes property twice to verify caching behavior
@@ -265,7 +270,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -280,7 +285,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -295,7 +300,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -317,7 +322,7 @@ public class NodePropertiesTests
                         ]
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -342,7 +347,7 @@ public class NodePropertiesTests
                         "children": []
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -367,7 +372,7 @@ public class NodePropertiesTests
                         "children": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -380,11 +385,11 @@ public class NodePropertiesTests
                         "children": [ "invalid" ]
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
-    public void TestCanDeserializeWithOptionalModeValue()
+    public void TestCanDeserializeWithOptionalModeValueOpen()
     {
         string json = """
                       {
@@ -393,12 +398,36 @@ public class NodePropertiesTests
                         "mode": "open"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
         Assert.Equal(0u, nodeProperties.ChildNodeCount);
         Assert.Equal(ShadowRootMode.Open, nodeProperties.Mode);
+        Assert.Null(nodeProperties.NodeValue);
+        Assert.Null(nodeProperties.LocalName);
+        Assert.Null(nodeProperties.NamespaceUri);
+        Assert.Null(nodeProperties.Attributes);
+        Assert.Null(nodeProperties.Children);
+        Assert.Null(nodeProperties.ShadowRoot);
+    }
+
+    [Fact]
+    public void TestCanDeserializeWithOptionalModeValueClosed()
+    {
+        string json = """
+                      {
+                        "nodeType": 1,
+                        "childNodeCount": 0,
+                        "mode": "closed"
+                      }
+                      """;
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
+        Assert.NotNull(nodeProperties);
+
+        Assert.Equal(1u, nodeProperties.NodeType);
+        Assert.Equal(0u, nodeProperties.ChildNodeCount);
+        Assert.Equal(ShadowRootMode.Closed, nodeProperties.Mode);
         Assert.Null(nodeProperties.NodeValue);
         Assert.Null(nodeProperties.LocalName);
         Assert.Null(nodeProperties.NamespaceUri);
@@ -417,7 +446,7 @@ public class NodePropertiesTests
                         "mode": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -430,7 +459,7 @@ public class NodePropertiesTests
                         "mode": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 
     [Fact]
@@ -450,7 +479,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
         Assert.NotNull(nodeProperties);
 
         Assert.Equal(1u, nodeProperties.NodeType);
@@ -465,6 +494,30 @@ public class NodePropertiesTests
     }
 
     [Fact]
+    public void TestCanDeserializeWithNullShadowRoot()
+    {
+        string json = """
+                      {
+                        "nodeType": 1,
+                        "childNodeCount": 0,
+                        "shadowRoot": null
+                      }
+                      """;
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, this.options);
+        Assert.NotNull(nodeProperties);
+
+        Assert.Equal(1u, nodeProperties.NodeType);
+        Assert.Equal(0u, nodeProperties.ChildNodeCount);
+        Assert.Null(nodeProperties.NodeValue);
+        Assert.Null(nodeProperties.LocalName);
+        Assert.Null(nodeProperties.NamespaceUri);
+        Assert.Null(nodeProperties.Attributes);
+        Assert.Null(nodeProperties.Children);
+        Assert.Null(nodeProperties.ShadowRoot);
+        Assert.Null(nodeProperties.Mode);
+    }
+
+    [Fact]
     public void TestDeserializeWithInvalidShadowRootTypeThrows()
     {
         string json = """
@@ -474,6 +527,6 @@ public class NodePropertiesTests
                         "shadowRoot": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<NodeProperties>(json, this.options));
     }
 }

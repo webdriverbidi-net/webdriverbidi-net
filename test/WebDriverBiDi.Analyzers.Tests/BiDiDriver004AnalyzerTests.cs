@@ -361,15 +361,16 @@ public class BiDiDriver004AnalyzerTests
     }
 
     /// <summary>
-    /// Tests FixableDiagnosticIds property.
+    /// Tests that the provider fixes both rules that report the same shape: BIDI004 and BIDI013.
     /// </summary>
     [Fact]
-    public void FixableDiagnosticIds_ContainsBIDI004()
+    public void FixableDiagnosticIds_ContainsBIDI004AndBIDI013()
     {
         BiDiDriver004_CancellationTokenSuggestionCodeFixProvider provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
 
         Assert.Contains(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, provider.FixableDiagnosticIds);
-        Assert.Single(provider.FixableDiagnosticIds);
+        Assert.Contains(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, provider.FixableDiagnosticIds);
+        Assert.Equal(2, provider.FixableDiagnosticIds.Length);
     }
 
     /// <summary>
@@ -604,4 +605,300 @@ public class BiDiDriver004AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a long-running call made through the null-conditional operator is still reported.
+    /// Such a call's invocation expression is a <c>MemberBindingExpressionSyntax</c> rather than a
+    /// member access, which the analyzer's syntactic name pre-filter must recognize; treating it as
+    /// unnamed would still be correct but slower, and failing to recognize it would lose the diagnostic.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetTreeAsync_ThroughConditionalAccess_ReportsInfo()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BrowsingContextModule module)
+                    {
+                        _ = module?{|#0:.GetTreeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("GetTreeAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that invoking a delegate returned by another call is handled without a diagnostic. Such an
+    /// invocation has no syntactically evident method name, so the name pre-filter must fall through to
+    /// the semantic model rather than assume a non-match.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InvocationOfReturnedDelegate_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GetAction()();
+                    }
+
+                    private static Action GetAction() => () => { };
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a long-running method name invoked on a <c>dynamic</c> receiver does not report a
+    /// diagnostic. The name matches, so the pre-filter admits the call, but a late-bound invocation
+    /// resolves to no symbol; the analyzer's null-symbol guard must return rather than dereference it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetTreeAsync_OnDynamicReceiver_DoesNotReportDiagnostic()
+    {
+        string test = """
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(dynamic receiver)
+                    {
+                        receiver.GetTreeAsync();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a user's own type whose name ends in "Module" and which is declared in the global
+    /// namespace is not treated as a library module. It exercises the global-namespace path of the
+    /// library-namespace test, which a type declared outside any namespace reaches.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task UserTypeNamedModule_InGlobalNamespace_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            public class GlobalHelperModule
+            {
+                public Task EvaluateAsync(string script) => Task.CompletedTask;
+
+                public Task EvaluateAsync(string script, CancellationToken cancellationToken) => Task.CompletedTask;
+            }
+
+            public class GlobalTestClass
+            {
+                public async Task TestMethod(GlobalHelperModule helper)
+                {
+                    await helper.EvaluateAsync("document.title");
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that invoking a delegate whose variable name happens to match a long-running method is
+    /// not reported. The syntactic pre-filter matches on that name and admits the call, but the call
+    /// resolves to the delegate's <c>Invoke</c> method; the authoritative name test against the
+    /// resolved symbol is what rejects it, even though the delegate's containing type is
+    /// module-shaped and its <c>Invoke</c> does take a cancellation token.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DelegateVariableNamedForLongRunningMethod_DoesNotReportDiagnostic()
+    {
+        string test = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public delegate Task ScriptRunnerModule(string script, CancellationToken cancellationToken = default);
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(ScriptRunnerModule EvaluateAsync)
+                    {
+                        await EvaluateAsync("document.title");
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a user type recognised through the <c>IBiDiCommandExecutor</c> interface — rather
+    /// than by its own name — is treated as a command executor. A wrapper or test double implementing
+    /// the interface is a driver for this rule's purposes just as <c>BiDiDriver</c> is.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_OnInterfaceImplementer_ReportsInfo()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class RecordingExecutor : IBiDiCommandExecutor
+                {
+                    public TimeSpan DefaultCommandTimeout => TimeSpan.Zero;
+
+                    public bool IsStarted => true;
+
+                    public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+                    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+                    public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+                        where T : CommandResult => throw new NotImplementedException();
+
+                    public Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+                        where T : CommandResult => throw new NotImplementedException();
+
+                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+                    {
+                    }
+
+                    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(RecordingExecutor executor)
+                    {
+                        await {|#0:executor.ExecuteCommandAsync(new StatusCommandParameters())|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+
+    /// <summary>
+    /// Tests that a type implementing a user's own interface that merely shares the name
+    /// <c>IBiDiCommandExecutor</c> is not treated as a command executor. The interface match requires
+    /// the library's namespace, exactly as the base-class match does.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_OnForeignInterfaceImplementer_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace UserApp
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task<int> ExecuteCommandAsync(string name);
+                }
+
+                public class RecordingExecutor : IBiDiCommandExecutor
+                {
+                    public Task<int> ExecuteCommandAsync(string name) => Task.FromResult(0);
+
+                    public Task<int> ExecuteCommandAsync(string name, CancellationToken cancellationToken) => Task.FromResult(0);
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(RecordingExecutor executor)
+                    {
+                        await executor.ExecuteCommandAsync("status");
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver004_CancellationTokenSuggestionAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
 }

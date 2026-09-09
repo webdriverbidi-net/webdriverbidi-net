@@ -105,12 +105,14 @@ public static class ConnectionManagementSamples
     public static void ProtocolTrafficLogging(WebSocketConnection connection)
     {
         #region ProtocolTrafficLogging
+        // Traffic messages are Trace level, which the default minimum of Info excludes. Raising the
+        // level is what turns them on: until you do, the payload is never even decoded into a string,
+        // so leaving the observer in place costs nothing.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             // A connection emits every message it sends and receives at Trace level,
-            // prefixed with "SEND >>>" or "RECV <<<". The messages are only produced
-            // when this event has at least one observer, so there is no cost to leaving
-            // the instrumentation in place until you subscribe.
+            // prefixed with "SEND >>>" or "RECV <<<".
             if (e.Level == WebDriverBiDiLogLevel.Trace)
             {
                 Console.WriteLine(e.Message);
@@ -461,20 +463,15 @@ public static class ConnectionManagementSamples
     public static async Task TransportShutdownTimeout(string url)
     {
         #region TransportShutdownTimeout
-        // Advanced: construct the transport explicitly so we can tune Transport.ShutdownTimeout.
-        // This is distinct from Connection.ShutdownTimeout (which controls the underlying
-        // WebSocket/pipe close handshake). Transport.ShutdownTimeout governs how long
-        // DisconnectAsync waits for the incoming-message processing task to complete.
-        WebSocketConnection connection = new WebSocketConnection();
-        Transport transport = new Transport(connection)
-        {
-            // Default is 10 seconds. Reduce for fail-fast behavior in tests, or
-            // increase if you have long-running event handlers that should be given
-            // more time to finish during shutdown.
-            ShutdownTimeout = TimeSpan.FromSeconds(2),
-        };
+        // Transport.ShutdownTimeout is distinct from Connection.ShutdownTimeout (which controls the
+        // underlying WebSocket/pipe close handshake). It governs how long DisconnectAsync waits for
+        // the incoming-message processing task to complete.
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        // Default is 10 seconds. Reduce for fail-fast behavior in tests, or increase if you have
+        // long-running event handlers that should be given more time to finish during shutdown.
+        driver.TransportConfiguration.ShutdownTimeout = TimeSpan.FromSeconds(2);
+
         await driver.StartAsync(url);
 
         try
@@ -492,16 +489,50 @@ public static class ConnectionManagementSamples
     }
 
     /// <summary>
+    /// Transport.ConnectionLockTimeout bounds the wait for exclusive access to the connection, so an
+    /// operation issued from an observer the transport dispatched fails instead of waiting forever.
+    /// </summary>
+    public static async Task TransportConnectionLockTimeout(string url)
+    {
+        #region TransportConnectionLockTimeout
+        // Connect, disconnect, command send and type-info-resolver registration each take exclusive
+        // access to the connection for the duration of their work. ConnectionLockTimeout bounds how
+        // long one of them waits while another holds it.
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+        // Default is 60 seconds, which is longer than the longest legitimate hold. Lower it only to
+        // fail faster; a value below the longest hold a session can legitimately take will fail
+        // operations that would otherwise have succeeded.
+        driver.TransportConfiguration.ConnectionLockTimeout = TimeSpan.FromSeconds(30);
+
+        // An observer that drives the driver must run asynchronously. A synchronous one is invoked
+        // while the operation that produced the message still holds the connection, so a command it
+        // sends waits for access its own caller holds. Such a command fails with
+        // WebDriverBiDiTimeoutException once ConnectionLockTimeout elapses, and the operation it
+        // interrupted then completes normally.
+        driver.OnLogMessage.AddObserver(
+            async (e) =>
+            {
+                if (e.Level >= WebDriverBiDiLogLevel.Warn)
+                {
+                    await driver.Session.StatusAsync();
+                }
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await driver.StartAsync(url);
+        await driver.StopAsync();
+        #endregion
+    }
+
+    /// <summary>
     /// Transport.IncomingQueueDepth exposes the current depth of the incoming message
     /// queue. Intended for operator diagnostics.
     /// </summary>
     public static async Task TransportIncomingQueueDepthDiagnostic(string url)
     {
         #region TransportIncomingQueueDepthDiagnostic
-        // Construct the transport explicitly so we can read its diagnostic properties.
-        WebSocketConnection connection = new WebSocketConnection();
-        Transport transport = new Transport(connection);
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(url);
 
         try
@@ -509,7 +540,7 @@ public static class ConnectionManagementSamples
             // A persistently growing value indicates that event handlers are not
             // keeping up with the incoming message rate. Consider using
             // ObservableEventHandlerOptions.RunHandlerAsynchronously for I/O-heavy handlers.
-            int depth = transport.IncomingQueueDepth;
+            int depth = driver.TransportDiagnostics.IncomingQueueDepth;
             if (depth > 100)
             {
                 Logger.Warn($"Incoming message queue depth is high: {depth}");
@@ -529,16 +560,14 @@ public static class ConnectionManagementSamples
     public static async Task TransportPendingCommandCountDiagnostic(string url)
     {
         #region TransportPendingCommandCountDiagnostic
-        WebSocketConnection connection = new WebSocketConnection();
-        Transport transport = new Transport(connection);
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(url);
 
         try
         {
             // A persistently high value suggests that the remote end is not
             // responding promptly, or that a burst of commands is in flight.
-            int pending = transport.PendingCommandCount;
+            int pending = driver.TransportDiagnostics.PendingCommandCount;
             if (pending > 50)
             {
                 Logger.Warn($"Pending command count is high: {pending}");
@@ -558,20 +587,18 @@ public static class ConnectionManagementSamples
     public static async Task TransportStateDiagnostic(string url)
     {
         #region TransportStateDiagnostic
-        WebSocketConnection connection = new WebSocketConnection();
-        Transport transport = new Transport(connection);
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Before StartAsync the transport is Disconnected; module and event
         // registration is legal only in this state.
-        Console.WriteLine($"Before start: {transport.State}");
+        Console.WriteLine($"Before start: {driver.TransportDiagnostics.State}");
 
         await driver.StartAsync(url);
         try
         {
             // Connected: the transport can exchange messages, and
             // driver.IsStarted derives from this state.
-            Console.WriteLine($"After start: {transport.State}");
+            Console.WriteLine($"After start: {driver.TransportDiagnostics.State}");
         }
         finally
         {
@@ -580,7 +607,7 @@ public static class ConnectionManagementSamples
 
         // A completed stop returns the transport to Disconnected, making
         // registration legal again.
-        Console.WriteLine($"After stop: {transport.State}");
+        Console.WriteLine($"After stop: {driver.TransportDiagnostics.State}");
         #endregion
     }
 
@@ -694,6 +721,16 @@ public static class CustomConnectionUsage
         Transport transport = new Transport(customConnection);
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync(customConnectionString);
+        #endregion
+    }
+
+    /// <summary>
+    /// Setting the log level at any layer sets it everywhere.
+    /// </summary>
+    public static void SetLogLevel(BiDiDriver driver)
+    {
+        #region SetLogLevel
+        driver.TransportConfiguration.LogLevel = WebDriverBiDiLogLevel.Debug;
         #endregion
     }
 }

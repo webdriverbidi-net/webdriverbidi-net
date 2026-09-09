@@ -44,9 +44,10 @@ public static class ObservableEventExtensions
     /// </para>
     /// <para>
     /// The subscription handle returned by <see cref="IObservable{T}.Subscribe"/> is an
-    /// <see cref="EventDataCollector{T}"/>. Disposing it removes the subscription from the
+    /// <see cref="ObservableEventSubscription{T}"/>. Disposing it removes the subscription from the
     /// source event, completes the internal channel, and triggers <see cref="IObserver{T}.OnCompleted"/>
-    /// once the drain loop exits.
+    /// once the drain loop exits; its <see cref="ObservableEventSubscription{T}.CompletionTask"/> task
+    /// completes when that has happened.
     /// </para>
     /// </remarks>
     public static IObservable<T> ToObservable<T>(this ObservableEvent<T> source)
@@ -85,13 +86,14 @@ public static class ObservableEventExtensions
         /// </summary>
         /// <param name="observer">The observer to receive notifications.</param>
         /// <returns>
-        /// An <see cref="IDisposable"/> (backed by <see cref="EventDataCollector{T}"/>) that, when
-        /// disposed, stops event delivery and triggers <see cref="IObserver{T}.OnCompleted"/>.
+        /// An <see cref="ObservableEventSubscription{T}"/> that, when disposed, stops event delivery
+        /// and triggers <see cref="IObserver{T}.OnCompleted"/>, and whose
+        /// <see cref="ObservableEventSubscription{T}.CompletionTask"/> completes once delivery has ended.
         /// </returns>
         public IDisposable Subscribe(IObserver<T> observer)
         {
             EventDataCollector<T> collector = this.source.AddDataCollector();
-            _ = Task.Run(async () =>
+            Task deliveryTask = Task.Run(async () =>
             {
                 try
                 {
@@ -129,7 +131,7 @@ public static class ObservableEventExtensions
                     // of IObserver<T>, so we will swallow all exceptions here.
                 }
             });
-            return collector;
+            return new ObservableEventSubscription<T>(collector, deliveryTask);
         }
     }
 }

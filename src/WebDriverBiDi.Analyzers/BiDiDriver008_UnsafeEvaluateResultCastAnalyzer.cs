@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Analyzers;
 
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -68,8 +69,9 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
         // Check if the expression is of type EvaluateResult (base type)
         if (IsEvaluateResultBaseType(expressionType))
         {
-            // Check if this cast is already inside a safe context (like try-catch or is expression)
-            if (IsInSafeContext(castExpression))
+            // A cast that cannot fail is not unsafe: one whose failure is caught, or one that runs
+            // only after the operand's type has been established.
+            if (IsInProtectedTryBlock(context, castExpression) || IsGuardedByTypeTest(context, castExpression))
             {
                 return;
             }
@@ -121,26 +123,301 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsInSafeContext(CastExpressionSyntax castExpression)
+    private static bool IsInProtectedTryBlock(SyntaxNodeAnalysisContext context, CastExpressionSyntax castExpression)
     {
-        // Check if the cast is inside a try-catch block
-        SyntaxNode? current = castExpression.Parent;
+        // A cast is protected only when it sits in the *try block* of a try statement that has a catch
+        // clause able to catch an InvalidCastException. Treating any enclosing try statement as
+        // protection was wrong three ways: a try/finally catches nothing at all; a catch of an
+        // unrelated type (IOException, say) never sees the cast failure; and a cast inside a catch or
+        // finally block of the try is not covered by that try at all.
+        SyntaxNode? current = castExpression;
         while (current != null)
         {
-            if (current is TryStatementSyntax)
-            {
-                return true;
-            }
-
-            // Stop at method boundary
-            if (current is MethodDeclarationSyntax || current is LocalFunctionStatementSyntax)
+            // Stop at a method boundary; a try statement outside it does not enclose this code.
+            // A lambda body is deliberately *not* treated as a boundary here: a lambda declared and
+            // invoked inside the try does run under its catch, and this rule has no way to tell that
+            // apart from one stored for later, so the existing behaviour is left alone.
+            if (current is MethodDeclarationSyntax or LocalFunctionStatementSyntax)
             {
                 break;
+            }
+
+            if (current.Parent is TryStatementSyntax tryStatement
+                && tryStatement.Block == current
+                && HasCatchForInvalidCast(context, tryStatement))
+            {
+                return true;
             }
 
             current = current.Parent;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Determines whether a try statement has a catch clause that would catch an
+    /// <see cref="InvalidCastException"/>.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="tryStatement">The try statement enclosing the cast.</param>
+    /// <returns><see langword="true"/> if a catch clause covers an invalid cast; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// An untyped <c>catch</c> catches everything. A typed one covers the cast when its type is
+    /// <see cref="InvalidCastException"/> or one of its base types. A clause carrying a <c>when</c>
+    /// filter is still treated as covering: the filter may reject at run time, but the common idiom
+    /// <c>catch (Exception ex) when (ex is InvalidCastException)</c> is deliberate handling, and
+    /// reporting it would be a false positive on code that already does the right thing.
+    /// </remarks>
+    private static bool HasCatchForInvalidCast(SyntaxNodeAnalysisContext context, TryStatementSyntax tryStatement)
+    {
+        INamedTypeSymbol? invalidCastException = context.Compilation.GetTypeByMetadataName("System.InvalidCastException");
+        foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
+        {
+            if (catchClause.Declaration is null)
+            {
+                return true;
+            }
+
+            // The clause covers the cast when the caught type is InvalidCastException itself or one
+            // of its base types (SystemException, Exception, object). The walk therefore runs up
+            // InvalidCastException's own chain looking for the caught type — not up the caught type's
+            // chain, which would match only InvalidCastException itself and would report the ordinary
+            // catch (Exception) as unprotected.
+            ITypeSymbol? caughtType = context.SemanticModel.GetTypeInfo(catchClause.Declaration.Type).Type;
+            for (ITypeSymbol? current = invalidCastException; current is not null; current = current.BaseType)
+            {
+                if (SymbolEqualityComparer.Default.Equals(current, caughtType))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether the cast runs only after a test has established that the operand is of the
+    /// target type, so that the cast cannot fail.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="castExpression">The cast.</param>
+    /// <returns><see langword="true"/> if a type test guards the cast; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Two tests establish the type: the discriminator the library exposes for exactly this purpose,
+    /// <c>result.ResultType == EvaluateResultType.Success</c> (or <c>Exception</c>), and a type test,
+    /// <c>result is EvaluateResultSuccess</c>. The test guards the cast when the cast sits in the
+    /// then-branch of an <c>if</c> on it, in the true arm of a conditional expression on it, on the
+    /// right of an <c>&amp;&amp;</c> whose left operand is it, in a <c>switch</c> section every label
+    /// of which selects it, or after an <c>if</c> on its negation whose body leaves the enclosing
+    /// block (a return, throw, break or continue guard). Only a syntactically identical operand counts:
+    /// the test and the cast must name the same expression.
+    /// </remarks>
+    private static bool IsGuardedByTypeTest(SyntaxNodeAnalysisContext context, CastExpressionSyntax castExpression)
+    {
+        // The target type resolved when the cast was classified as an EvaluateResult-derived cast.
+        TypeTest test = new(context.SemanticModel, castExpression.Expression, context.SemanticModel.GetTypeInfo(castExpression.Type).Type!);
+
+        SyntaxNode child = castExpression;
+        for (SyntaxNode? current = castExpression.Parent; current is not null; child = current, current = current.Parent)
+        {
+            // A guard outside the member, or outside a nested function, does not hold inside it: a
+            // nested function's body runs when the delegate is invoked, not where it is written.
+            if (current is MethodDeclarationSyntax || !AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(current))
+            {
+                break;
+            }
+
+            ExpressionSyntax? condition = current switch
+            {
+                IfStatementSyntax ifStatement when ifStatement.Statement == child => ifStatement.Condition,
+                ConditionalExpressionSyntax conditional when conditional.WhenTrue == child => conditional.Condition,
+                BinaryExpressionSyntax logicalAnd when logicalAnd.IsKind(SyntaxKind.LogicalAndExpression) && logicalAnd.Right == child => logicalAnd.Left,
+                _ => null,
+            };
+
+            if (condition is not null && test.IsEstablishedBy(condition))
+            {
+                return true;
+            }
+
+            if (current is SwitchSectionSyntax section && test.IsEstablishedBySwitchSection(section))
+            {
+                return true;
+            }
+
+            if (current is BlockSyntax block && child is StatementSyntax statement && test.IsEstablishedByEarlyExitBefore(block, statement))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Recognizes the conditions that establish, or rule out, that a given operand is of a given
+    /// <c>EvaluateResult</c>-derived type.
+    /// </summary>
+    private sealed class TypeTest
+    {
+        private readonly SemanticModel semanticModel;
+        private readonly ExpressionSyntax operand;
+        private readonly ITypeSymbol targetType;
+
+        // The EvaluateResultType member that corresponds to the target type: Success for
+        // EvaluateResultSuccess, Exception for EvaluateResultException.
+        private readonly string discriminatorValueName;
+
+        public TypeTest(SemanticModel semanticModel, ExpressionSyntax operand, ITypeSymbol targetType)
+        {
+            this.semanticModel = semanticModel;
+            this.operand = Unparenthesize(operand);
+            this.targetType = targetType;
+            this.discriminatorValueName = targetType.Name.Substring("EvaluateResult".Length);
+        }
+
+        /// <summary>
+        /// Determines whether a condition being true establishes the operand's type.
+        /// </summary>
+        /// <param name="condition">The condition.</param>
+        /// <returns><see langword="true"/> if the condition establishes the type; otherwise <see langword="false"/>.</returns>
+        public bool IsEstablishedBy(ExpressionSyntax condition)
+        {
+            return Unparenthesize(condition) switch
+            {
+                // Either conjunct being true is enough: both hold when the whole condition does.
+                BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.LogicalAndExpression)
+                    => this.IsEstablishedBy(binary.Left) || this.IsEstablishedBy(binary.Right),
+                BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.EqualsExpression)
+                    => this.IsDiscriminatorComparison(binary.Left, binary.Right) || this.IsDiscriminatorComparison(binary.Right, binary.Left),
+                BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.IsExpression)
+                    => this.IsOperand(binary.Left) && this.IsTargetType(binary.Right),
+                IsPatternExpressionSyntax isPattern
+                    => this.IsOperand(isPattern.Expression) && this.IsTargetTypePattern(isPattern.Pattern),
+                _ => false,
+            };
+        }
+
+        /// <summary>
+        /// Determines whether a condition being false establishes the operand's type — the shape of an
+        /// early-exit guard, <c>if (result.ResultType != EvaluateResultType.Success) return;</c>.
+        /// </summary>
+        /// <param name="condition">The condition.</param>
+        /// <returns><see langword="true"/> if the condition's negation establishes the type; otherwise <see langword="false"/>.</returns>
+        public bool IsNegatedBy(ExpressionSyntax condition)
+        {
+            return Unparenthesize(condition) switch
+            {
+                // When a disjunction is false every disjunct is false, so one of them ruling the
+                // type out is enough.
+                BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.LogicalOrExpression)
+                    => this.IsNegatedBy(binary.Left) || this.IsNegatedBy(binary.Right),
+                BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.NotEqualsExpression)
+                    => this.IsDiscriminatorComparison(binary.Left, binary.Right) || this.IsDiscriminatorComparison(binary.Right, binary.Left),
+                PrefixUnaryExpressionSyntax logicalNot when logicalNot.IsKind(SyntaxKind.LogicalNotExpression)
+                    => this.IsEstablishedBy(logicalNot.Operand),
+                IsPatternExpressionSyntax { Pattern: UnaryPatternSyntax notPattern } isPattern when notPattern.IsKind(SyntaxKind.NotPattern)
+                    => this.IsOperand(isPattern.Expression) && this.IsTargetTypePattern(notPattern.Pattern),
+                _ => false,
+            };
+        }
+
+        /// <summary>
+        /// Determines whether every label of a switch section selects the operand's type, either by
+        /// switching on the discriminator (<c>case EvaluateResultType.Success:</c>) or by a type
+        /// pattern on the operand itself (<c>case EvaluateResultSuccess:</c>).
+        /// </summary>
+        /// <param name="section">The switch section.</param>
+        /// <returns><see langword="true"/> if the section runs only for the operand's type; otherwise <see langword="false"/>.</returns>
+        public bool IsEstablishedBySwitchSection(SwitchSectionSyntax section)
+        {
+            // A section always belongs to a switch statement and always carries at least one label.
+            // `case EvaluateResultSuccess:` parses as a case label whose value is a name, not as a
+            // pattern label; it is a type test when that name resolves to the target type.
+            ExpressionSyntax governing = ((SwitchStatementSyntax)section.Parent!).Expression;
+            return section.Labels.All(label => label switch
+            {
+                CaseSwitchLabelSyntax caseLabel => this.IsDiscriminatorComparison(governing, caseLabel.Value)
+                    || (this.IsOperand(governing) && this.IsTargetType(caseLabel.Value)),
+                CasePatternSwitchLabelSyntax patternLabel => (patternLabel.Pattern is ConstantPatternSyntax constant && this.IsDiscriminatorComparison(governing, constant.Expression))
+                    || (this.IsOperand(governing) && this.IsTargetTypePattern(patternLabel.Pattern)),
+                _ => false,
+            });
+        }
+
+        /// <summary>
+        /// Determines whether a statement in a block is preceded by an <c>if</c> that leaves the block
+        /// whenever the operand is not of the target type.
+        /// </summary>
+        /// <param name="block">The block.</param>
+        /// <param name="statement">The statement containing the cast.</param>
+        /// <returns><see langword="true"/> if an early exit guards the statement; otherwise <see langword="false"/>.</returns>
+        public bool IsEstablishedByEarlyExitBefore(BlockSyntax block, StatementSyntax statement)
+        {
+            return block.Statements
+                .TakeWhile(preceding => preceding != statement)
+                .Any(preceding => preceding is IfStatementSyntax { Else: null } guard
+                    && AlwaysExits(guard.Statement)
+                    && this.IsNegatedBy(guard.Condition));
+        }
+
+        private static ExpressionSyntax Unparenthesize(ExpressionSyntax expression)
+        {
+            ExpressionSyntax current = expression;
+            while (current is ParenthesizedExpressionSyntax parenthesized)
+            {
+                current = parenthesized.Expression;
+            }
+
+            return current;
+        }
+
+        private static bool AlwaysExits(StatementSyntax statement)
+        {
+            return statement switch
+            {
+                ReturnStatementSyntax or ThrowStatementSyntax or BreakStatementSyntax or ContinueStatementSyntax => true,
+                BlockSyntax block => block.Statements.Count > 0 && AlwaysExits(block.Statements[block.Statements.Count - 1]),
+                _ => false,
+            };
+        }
+
+        private bool IsOperand(ExpressionSyntax expression)
+        {
+            return SyntaxFactory.AreEquivalent(Unparenthesize(expression), this.operand);
+        }
+
+        private bool IsTargetType(ExpressionSyntax type)
+        {
+            return SymbolEqualityComparer.Default.Equals(this.semanticModel.GetTypeInfo(type).Type, this.targetType);
+        }
+
+        private bool IsTargetTypePattern(PatternSyntax pattern)
+        {
+            // `is EvaluateResultSuccess success`, `is EvaluateResultSuccess { ... }`, and the bare name
+            // in `is not EvaluateResultSuccess` or `case EvaluateResultSuccess when ...:`, which the
+            // parser reads as a constant pattern and the compiler binds as a type.
+            ExpressionSyntax? type = pattern switch
+            {
+                DeclarationPatternSyntax declarationPattern => declarationPattern.Type,
+                RecursivePatternSyntax recursivePattern => recursivePattern.Type,
+                ConstantPatternSyntax constantPattern => constantPattern.Expression,
+                _ => null,
+            };
+
+            return type is not null && this.IsTargetType(type);
+        }
+
+        private bool IsDiscriminatorComparison(ExpressionSyntax discriminator, ExpressionSyntax value)
+        {
+            // result.ResultType compared with the EvaluateResultType member for the target type.
+            return Unparenthesize(discriminator) is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ResultType" } access
+                && this.IsOperand(access.Expression)
+                && this.semanticModel.GetSymbolInfo(value).Symbol is IFieldSymbol field
+                && field.Name == this.discriminatorValueName
+                && AnalyzerSymbolHelpers.IsLibraryTypeNamed(field.ContainingType, "EvaluateResultType");
+        }
     }
 }

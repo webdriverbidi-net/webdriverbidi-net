@@ -8,7 +8,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCanDeserializeWithNullText()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
@@ -40,7 +40,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCanDeserializeConsoleLogEntry()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
@@ -78,7 +78,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCanDeserializeConsoleLogEntryWithArgs()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
@@ -122,7 +122,7 @@ public class EntryAddedEventArgsTests
     [Fact]
     public async Task TestCopySemantics()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "type": "event",
@@ -155,7 +155,7 @@ public class EntryAddedEventArgsTests
 
         observer.StartCapturingTasks();
         await connection.RaiseDataReceivedEventAsync(json);
-        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+        Assert.True(await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         return eventArgs;
     }
 }

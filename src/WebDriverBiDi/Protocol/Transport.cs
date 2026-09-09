@@ -65,7 +65,7 @@ using WebDriverBiDi.JsonConverters;
 /// processing.
 /// </para>
 /// </remarks>
-public class Transport : IAsyncDisposable
+public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDiagnostics
 {
     /// <summary>
     /// Gets the component name for this class to use in log messages.
@@ -93,6 +93,14 @@ public class Transport : IAsyncDisposable
     private readonly ConcurrentDictionary<string, EventMessageRegistration> eventMessageTypes = [];
     private readonly ConcurrentDictionary<Type, JsonTypeInfo> responseTypeInfoCache = [];
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
+
+    // Guards the publication of the Connecting state against work that is only legal while this
+    // transport is disconnected (see TryExecuteWhileDisconnected). It is deliberately an instance
+    // lock: the state it protects is per-transport, and the action passed to
+    // TryExecuteWhileDisconnected runs while the lock is held, so a process-wide lock would let
+    // one transport's registration block every other transport in the process.
+    private readonly object connectionStateLock = new();
+
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
     private readonly EventObserver<ConnectionDisconnectedEventArgs> connectionRemoteDisconnectObserver;
@@ -108,35 +116,7 @@ public class Transport : IAsyncDisposable
         RespectNullableAnnotations = true,
     };
 
-    // We are using an unbounded channel by design. This decision was
-    // carefully considered, as the rate of incoming messages is unlikely
-    // to cause memory issues by exceeding the rate of processing. Should
-    // real-world usage indicate otherwise, we will update this behavior
-    // with a bounded channel, and add monitoring of the queue depth to
-    // the transport events. Reassignment of this variable happens only
-    // under the connection lock, so is thread-safe.
-    private Channel<IncomingMessage> incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
-    {
-        SingleReader = true,
-        SingleWriter = true,
-    });
-
-    // Interlocked-maintained mirror of the unread depth of incomingMessageQueue.
-    // The SingleConsumerUnboundedChannel implementation returned by
-    // Channel.CreateUnbounded<T>(new UnboundedChannelOptions { SingleReader = true,
-    // SingleWriter = true }) does not support ChannelReader<T>.Count (CanCount is
-    // false), so we maintain the depth ourselves: increment after a successful
-    // Writer.TryWrite, decrement after a successful Reader.TryRead, and reset
-    // alongside any channel replacement.
-    //
-    // This counter is used solely for observability (WebDriverBiDiEventSource
-    // PendingCommandCount events) and does not affect correctness. There is a
-    // narrow window during reconnect where a TryWrite in flight on the old
-    // channel can apply its increment after the reset-to-zero that accompanies
-    // channel replacement, producing a transient over-count. The window closes
-    // as soon as that write completes, and the value self-corrects on the next
-    // TryRead. No data is lost and no messages are misrouted as a result.
-    private int incomingQueueDepth;
+    private IncomingMessageQueue incomingMessageQueue = new();
 
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
@@ -148,6 +128,13 @@ public class Transport : IAsyncDisposable
     // enter a circular lock.
     private TaskCompletionSource<int> disconnectOwnedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    // Records a connection loss reported while a connect attempt is still in flight, which
+    // HandleConnectionDisconnectionAsync cannot act on because there is not yet a session to tear
+    // down. ConnectAsync reads and clears it, and fails the attempt rather than publishing the
+    // Connected state over a connection that is already gone. The exception the connection reported
+    // is kept rather than a flag, so the failure names the cause.
+    private WebDriverBiDiConnectionException? connectionLostWhileConnecting;
+
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
     // Backing store for the State property; holds a TransportState value. Zero is
     // TransportState.Disconnected, matching the field's default.
@@ -156,6 +143,7 @@ public class Transport : IAsyncDisposable
     private int collectedErrorsReportedFlag = 0;
 
     private TimeSpan shutdownTimeout = TimeSpan.FromSeconds(10);
+    private TimeSpan connectionLockTimeout = TimeSpan.FromSeconds(60);
 
     // Message/event sent/received statistics
     private long commandMessagesSent = 0;
@@ -277,15 +265,47 @@ public class Transport : IAsyncDisposable
     public TransportErrorBehavior UnexpectedErrorBehavior { get => this.UnhandledErrors.UnexpectedErrorBehavior; set => this.UnhandledErrors.UnexpectedErrorBehavior = value; }
 
     /// <summary>
-    /// Gets or sets the timeout to wait for message processing to complete during shutdown.
-    /// If message processing does not complete within this timeout, the shutdown will proceed
-    /// without waiting for the remaining processing to finish. Messages still in the queue
-    /// will not be processed, and any pending commands will be canceled. The default is 10 seconds.
+    /// Gets or sets the minimum <see cref="WebDriverBiDiLogLevel"/> at which log messages are raised.
+    /// Defaults to <see cref="WebDriverBiDiLogLevel.Info"/>.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// By default this is the same setting as <see cref="Protocol.Connection.LogLevel"/> on the connection
+    /// this transport wraps, which holds it for the whole pipeline; setting it here sets it for the
+    /// connection's messages as well as this transport's own. Raise it to
+    /// <see cref="WebDriverBiDiLogLevel.Debug"/> for per-command messages, or to
+    /// <see cref="WebDriverBiDiLogLevel.Trace"/> to also see the raw protocol traffic the connection logs.
+    /// </para>
+    /// <para>
+    /// A derived transport may override this to keep a level of its own rather than share the
+    /// connection's. Note what that decouples: <see cref="IsLogLevelEnabled"/> and this transport's
+    /// <c>LogAsync</c> read this property, and so does the driver through
+    /// <see cref="BiDiDriver.TransportConfiguration"/>, so all three
+    /// follow the override; the connection keeps filtering its own messages — the <c>SEND</c> and
+    /// <c>RECV</c> traffic among them — by <see cref="Protocol.Connection.LogLevel"/>. An override whose
+    /// setter also assigns <see cref="Protocol.Connection.LogLevel"/> keeps the whole pipeline together.
+    /// </para>
+    /// </remarks>
+    public virtual WebDriverBiDiLogLevel LogLevel { get => this.Connection.LogLevel; set => this.Connection.LogLevel = value; }
+
+    /// <summary>
+    /// Gets or sets the timeout to wait for message processing to complete during shutdown.
+    /// If message processing does not complete within this timeout, the shutdown stops waiting and
+    /// proceeds, and any pending commands are canceled. The default is 10 seconds.
+    /// </summary>
+    /// <remarks>
+    /// <para>
     /// This timeout applies to waiting for the incoming message queue to empty, to waiting for
     /// the messages in the queue to be processed, and, during disposal, to waiting for an
     /// in-flight connect attempt to complete before the transport's resources are released.
+    /// </para>
+    /// <para>
+    /// Abandoning the wait does not stop the reader. Messages already delivered to the queue go on
+    /// being processed in the background, and their handlers go on running; what this timeout bounds is
+    /// how long the shutdown waits for them, not whether they run. A subsequent <see cref="ConnectAsync"/>
+    /// waits for that processing to finish, bounded by this same timeout, before opening a new
+    /// connection.
+    /// </para>
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
@@ -306,6 +326,59 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets or sets the timeout to wait for exclusive access to this transport's connection while
+    /// another operation holds it. The default is 60 seconds.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="ConnectAsync"/>, <see cref="DisconnectAsync(CancellationToken)"/>,
+    /// <see cref="SendCommandAsync"/> and <see cref="RegisterTypeInfoResolverAsync"/> each take
+    /// exclusive access for the duration of their work, so one of them waits while another is in
+    /// progress. Bounding that wait keeps an operation issued from code this transport itself
+    /// invoked while holding the access — a synchronous observer of <see cref="OnLogMessage"/> that
+    /// sends a command, for example — from waiting on an operation that is itself waiting on the
+    /// observer to return. Such an operation fails with <see cref="WebDriverBiDiTimeoutException"/>
+    /// instead of never completing. An observer that needs to drive the transport should be
+    /// registered with <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> so that
+    /// it does not hold up the operation it was dispatched from.
+    /// </para>
+    /// <para>
+    /// The default is deliberately longer than the longest legitimate hold, so that lowering it is
+    /// a deliberate choice rather than a trap. A disconnect that exhausts every wait it is allowed
+    /// holds the access for the connection's close handshake and for its receive-loop wait (each
+    /// bounded by <see cref="Connection.ShutdownTimeout"/>), and then for the message-queue drain
+    /// (bounded by <see cref="ShutdownTimeout"/>), which is about 30 seconds at the default
+    /// settings. A value shorter than the longest hold a session can legitimately take will fail
+    /// operations that would otherwise have succeeded. <see cref="TimeSpan.Zero"/> never waits, and
+    /// <see cref="Timeout.InfiniteTimeSpan"/> restores an unbounded wait.
+    /// </para>
+    /// <para>
+    /// Handling a lost connection waits for the access too, on the connection's receive loop. A wait
+    /// abandoned there leaves the session standing rather than tearing it down without the access:
+    /// the transport stays <see cref="TransportState.Connected"/>, its pending commands end at their
+    /// own timeouts, and a <see cref="WebDriverBiDiLogLevel.Warn"/> message naming the cause is
+    /// raised on <see cref="OnLogMessage"/>.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
+    /// the maximum timer duration supported by the runtime.
+    /// </exception>
+    public TimeSpan ConnectionLockTimeout
+    {
+        get => this.connectionLockTimeout;
+        set
+        {
+            if (!TimeoutUtilities.IsValidTimeout(value))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), TimeoutUtilities.GetInvalidTimeoutMessage("Connection lock timeout"));
+            }
+
+            this.connectionLockTimeout = value;
+        }
+    }
+
+    /// <summary>
     /// Gets the number of messages currently buffered in the incoming message queue and
     /// waiting to be processed by the reader task.
     /// </summary>
@@ -318,18 +391,15 @@ public class Transport : IAsyncDisposable
     /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
     /// </para>
     /// <para>
-    /// The value reflects the queue for the <em>current</em> connection. The counter is reset
-    /// to zero on each call to <see cref="ConnectAsync"/> alongside the channel replacement.
-    /// Reading this property before <see cref="ConnectAsync"/> has ever been called, or after
+    /// The value reflects the queue for the <em>current</em> connection. Each call to
+    /// <see cref="ConnectAsync"/> installs a fresh queue whose depth begins at zero, and every
+    /// message is counted against the queue it was written to for as long as that queue is being
+    /// drained. A reconnect that gives up waiting for the previous connection's reader therefore
+    /// reports only the current connection's backlog, even while the previous reader is still
+    /// draining what remains of its own queue. Reading this property before
+    /// <see cref="ConnectAsync"/> has ever been called, or after
     /// <see cref="DisconnectAsync(CancellationToken)"/>, returns the depth of the remaining
     /// (possibly drained) queue rather than throwing.
-    /// </para>
-    /// <para>
-    /// <strong>Reconnect transient overcount:</strong> The reset and channel replacement occur
-    /// together under the connect/disconnect semaphore, but a <c>TryWrite</c> call already
-    /// in progress on the old channel will increment the counter after the reset. This produces
-    /// a brief positive overcount (never a negative value) during reconnect. The effect is
-    /// observability-only and resolves on the next message dispatch.
     /// </para>
     /// <para>
     /// <strong>Thread Safety:</strong> This property is safe to read concurrently with message
@@ -337,7 +407,7 @@ public class Transport : IAsyncDisposable
     /// the caller observes it.
     /// </para>
     /// </remarks>
-    public virtual int IncomingQueueDepth => Interlocked.CompareExchange(ref this.incomingQueueDepth, 0, 0);
+    public virtual int IncomingQueueDepth => this.incomingMessageQueue.Depth;
 
     /// <summary>
     /// Gets the number of commands that have been sent to the remote end and are
@@ -413,6 +483,15 @@ public class Transport : IAsyncDisposable
     /// </summary>
     protected UnhandledErrorCollection UnhandledErrors { get; } = new();
 
+    /// <summary>
+    /// Gets or sets the <see cref="TimeProvider"/> whose clock measures this transport's
+    /// <see cref="ShutdownTimeout"/> waits. Defaults to <see cref="TimeProvider.System"/>. A derived type
+    /// may substitute another, for example to drive the waits with virtual time in a test, in the same
+    /// way that <see cref="ObservableEvent{T}"/> exposes its provider to derived types. The
+    /// <see cref="Connection"/> measures its own timeouts with its own provider.
+    /// </summary>
+    protected TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
     private string TerminationReason
     {
         get
@@ -429,12 +508,35 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
-    /// <param name="websocketUri">The URI used to connect to the web socket.</param>
+    /// <param name="connectionString">The URI used to connect to the web socket.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is already connected to a remote end.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">
+    /// Thrown when the transport is already connected to a remote end, when the <see cref="Connection"/>
+    /// refuses to open, or when the connection is lost while the session is being established. The last
+    /// case carries the loss the connection reported as its inner exception; the transport is left
+    /// disconnected, so a further attempt may be made.
+    /// </exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">
+    /// Propagated from <see cref="Connection.StartAsync"/> when the connection is not established within
+    /// its <see cref="Connection.StartupTimeout"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Propagated from <see cref="Connection.StartAsync"/> when <paramref name="connectionString"/> is not
+    /// acceptable to the connection. <see cref="WebSocketConnection"/> throws this when the value is not a
+    /// valid absolute URI, or when its scheme is neither <c>ws</c> nor <c>wss</c>.
+    /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public virtual async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
+    /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the transport is disposed.</exception>
+    /// <remarks>
+    /// Connecting starts a new session and clears the errors the previous session accumulated under
+    /// <see cref="TransportErrorBehavior.Collect"/>. Those errors are thrown only by
+    /// <see cref="DisconnectAsync(CancellationToken)"/>. After a remote disconnect the transport is already in the
+    /// <see cref="TransportState.Disconnected"/> state, so this method proceeds; to observe the errors
+    /// collected up to the disconnect, call <see cref="DisconnectAsync(CancellationToken)"/> (which returns promptly and
+    /// throws them) before reconnecting. Reconnecting directly discards them.
+    /// </remarks>
+    public virtual async Task ConnectAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
         await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
@@ -449,9 +551,16 @@ public class Transport : IAsyncDisposable
             // example the driver's registration guard) treat the transport as no longer idle for the
             // entire duration of the connect attempt, not only once it completes. The finally below
             // rolls this back to Disconnected if the attempt fails before reaching Connected.
-            this.State = TransportState.Connecting;
+            // The publication is made under the connection state lock so that it cannot interleave
+            // with work another thread is performing under TryExecuteWhileDisconnected: such work
+            // either completes entirely before this transport stops being idle, or observes the
+            // transport as no longer idle and is rejected.
+            lock (this.connectionStateLock)
+            {
+                this.State = TransportState.Connecting;
+            }
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, websocketUri);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.Id, connectionString);
             await this.LogAsync("Transport connecting", WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
 
             // SendCommandAsync requires that the pending commands collection be
@@ -469,28 +578,15 @@ public class Transport : IAsyncDisposable
             // connection may not be complete, even if the reader is completed during
             // disconnect. Wait for that processing to complete before recreating the
             // message processing task.
-            if (!this.messageQueueProcessingTask.IsCompleted)
-            {
-                using CancellationTokenSource previousProcessingWaitCancelTokenSource = new();
-                Task previousProcessingWaitTask = Task.Delay(this.ShutdownTimeout, previousProcessingWaitCancelTokenSource.Token);
-                Task previousProcessingCompletedTask = await Task.WhenAny(this.messageQueueProcessingTask, previousProcessingWaitTask).ConfigureAwait(false);
-                if (previousProcessingCompletedTask == this.messageQueueProcessingTask)
-                {
-                    previousProcessingWaitCancelTokenSource.Cancel();
-                }
-                else
-                {
-                    await this.LogAsync("Timed out waiting for message processing of the previous connection to complete before reconnecting", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-                }
-            }
+            await this.WaitForMessageProcessingCompletionAsync(this.ShutdownTimeout, "Timed out waiting for message processing of the previous connection to complete before reconnecting").ConfigureAwait(false);
 
-            this.incomingMessageQueue = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
-            {
-                SingleReader = true,
-                SingleWriter = true,
-            });
-            Interlocked.Exchange(ref this.incomingQueueDepth, 0);
+            this.incomingMessageQueue = new IncomingMessageQueue();
             Interlocked.Exchange(ref this.disconnectOwnedSignal, new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously));
+
+            // Discard any loss recorded against a previous attempt, so that this attempt is judged
+            // only by what happens to its own connection. This must precede Connection.StartAsync
+            // below, because a loss reported from the moment that call begins belongs to this attempt.
+            Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
 
             this.ResetCollectedErrors();
 
@@ -510,7 +606,19 @@ public class Transport : IAsyncDisposable
             if (!this.Connection.IsActive)
             {
                 // Allow for the possibility of the connection to already being opened.
-                await this.Connection.StartAsync(websocketUri, cancellationToken).ConfigureAwait(false);
+                await this.Connection.StartAsync(connectionString, cancellationToken).ConfigureAwait(false);
+            }
+
+            // The connection's receive loop is already running by the time StartAsync returns, so the
+            // remote end can close, or the loop can fail, before the Connected state is published just
+            // below. Record that loss of connection, if it exists.
+            WebDriverBiDiConnectionException? connectionLost = Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
+            if (connectionLost is not null)
+            {
+                // The reader is never started for this attempt, so anything the remote end managed to
+                // push into the queue would otherwise be abandoned holding its pooled buffer.
+                this.incomingMessageQueue.Drain();
+                throw new WebDriverBiDiConnectionException("The connection was lost while the session was being established; the remote end closed it, or the connection reported an error, before the transport finished connecting.", connectionLost);
             }
 
             // Delaying starting the processing loop until after establishing the connection
@@ -518,7 +626,7 @@ public class Transport : IAsyncDisposable
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
             this.State = TransportState.Connected;
-            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync());
+            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync(), CancellationToken.None);
 
             // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
             // its inner loop, so under normal operation this continuation never fires. It
@@ -534,7 +642,7 @@ public class Transport : IAsyncDisposable
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
 
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.Id, websocketUri);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.Id, connectionString);
             WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
         }
         finally
@@ -559,6 +667,12 @@ public class Transport : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="AggregateException">
+    /// Thrown when <see cref="TransportErrorBehavior.Collect"/> is configured for any error category and one
+    /// or more errors were collected during the session. The aggregated exceptions describe the collected
+    /// errors. They are thrown at most once per session, by whichever disconnect claims them.
+    /// </exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
         await this.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
@@ -573,10 +687,16 @@ public class Transport : IAsyncDisposable
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
     /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
+        if (commandData is null)
+        {
+            throw new ArgumentNullException(nameof(commandData), "Command parameters must not be null");
+        }
+
         if (this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
         {
             await this.DisconnectAsync(false).ConfigureAwait(false);
@@ -596,7 +716,7 @@ public class Transport : IAsyncDisposable
         }
 
         // Capture the current pending command collection ID to allow us to detect
-        // if the connection has been disconnected and reconnected before we actuall
+        // if the connection has been disconnected and reconnected before we actually
         // send the command down the wire.
         string currentPendingCommandCollectionId = this.PendingCommands.Id;
 
@@ -627,7 +747,7 @@ public class Transport : IAsyncDisposable
         // non-reentrant lock the notifying call already holds. The command is already created and
         // serialized here, so its name and id are available, and this keeps the notification ordered
         // ahead of the send.
-        if (this.OnLogMessage.CurrentObserverCount > 0)
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
         {
             await this.LogAsync($"Sending command data for command '{command.CommandName}' (command ID: {command.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
@@ -649,8 +769,12 @@ public class Transport : IAsyncDisposable
             try
             {
                 // Start timing and raise the command-sending event. The log-message notification for
-                // this command was emitted before the connection lock was acquired (see above) so that
-                // a synchronous log observer cannot deadlock by re-entering the transport.
+                // this command was emitted before the connection lock was acquired (see above), so a
+                // synchronous observer of it re-enters the transport without contending for the lock at
+                // all. That hoist does not cover the connection's own Trace-level traffic message, which
+                // Connection.SendDataAsync raises below while this lock is held: an observer of that
+                // message which re-enters the transport waits for a lock this call holds, and is bounded
+                // by ConnectionLockTimeout rather than waiting indefinitely.
                 command.StartTiming();
                 WebDriverBiDiEventSource.RaiseEvent.CommandSending(command.CommandId, command.CommandName);
 
@@ -741,6 +865,25 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets a value indicating whether a message at the given level would be raised on
+    /// <see cref="OnLogMessage"/>, so that a caller can avoid building a message that would be discarded.
+    /// </summary>
+    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
+    /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The transport uses this for its per-command <see cref="WebDriverBiDiLogLevel.Debug"/> messages,
+    /// each of which composes a string naming the command; a custom transport should use it for the same
+    /// purpose.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> is never enabled. It selects "no messages at all" when
+    /// assigned to <see cref="LogLevel"/>, and is not a level a message can carry; without the explicit
+    /// test it would compare as enabled against every setting, because it is the highest value.
+    /// </remarks>
+    public bool IsLogLevelEnabled(WebDriverBiDiLogLevel level)
+    {
+        return level != WebDriverBiDiLogLevel.Off && level >= this.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
+    }
+
+    /// <summary>
     /// Registers an event message to be recognized when received from the connection.
     /// </summary>
     /// <typeparam name="T">The type of data to be returned in the event.</typeparam>
@@ -807,6 +950,39 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Tries to execute the given action while this Transport is disconnected.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <returns><see langword="true"/> if the Transport was disconnected and the execution completed; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <para>
+    /// The state is tested and <paramref name="action"/> is executed under the same lock that
+    /// <see cref="ConnectAsync"/> takes to publish <see cref="TransportState.Connecting"/>, which is what
+    /// makes the pair atomic with respect to a connect attempt beginning on another thread. This is the
+    /// mechanism behind the driver's registration guard: a registration either completes in full while the
+    /// transport is still idle, or is rejected because the transport is not.
+    /// </para>
+    /// <para>
+    /// <paramref name="action"/> runs while the lock is held, so it must not block, must not wait on
+    /// another thread, and must not re-enter this transport's connection lifecycle. It may call members
+    /// that are themselves thread-safe and non-blocking, as the driver's registration actions do.
+    /// </para>
+    /// </remarks>
+    internal bool TryExecuteWhileDisconnected(Action action)
+    {
+        lock (this.connectionStateLock)
+        {
+            if (this.State == TransportState.Disconnected)
+            {
+                action();
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Adds an event message type to the map of known event message types.
     /// </summary>
     /// <param name="eventName">The name of the event.</param>
@@ -828,8 +1004,10 @@ public class Transport : IAsyncDisposable
     /// </remarks>
     protected virtual Command CreateCommand(CommandParameters commandData)
     {
+        // The command times out on this transport's clock, so a transport running on virtual time
+        // (in a test, say) times its commands out on that same clock.
         long commandId = this.GetNextCommandId();
-        Command command = new(commandId, commandData);
+        Command command = new(commandId, commandData, this.TimeProvider);
         return command;
     }
 
@@ -927,7 +1105,7 @@ public class Transport : IAsyncDisposable
                 await this.Connection.StopAsync(cancellationToken).ConfigureAwait(false);
 
                 using CancellationTokenSource timeoutCancelTokenSource = new();
-                Task timeoutTask = Task.Delay(this.ShutdownTimeout, timeoutCancelTokenSource.Token);
+                Task timeoutTask = TimeoutUtilities.DelayAsync(this.TimeProvider, this.ShutdownTimeout, timeoutCancelTokenSource.Token);
                 bool shutdownTimedOut = false;
 
                 // Mark the incoming message queue as complete for writing, indicating
@@ -939,9 +1117,9 @@ public class Transport : IAsyncDisposable
                 // must be awaited separately. TryComplete is used rather than Complete
                 // because the queue may already have been completed by a remote disconnect
                 // or connection error that raced with this call.
-                this.incomingMessageQueue.Writer.TryComplete();
-                Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.Reader.Completion, timeoutTask).ConfigureAwait(false);
-                if (messageQueueReaderCompleteTask != this.incomingMessageQueue.Reader.Completion)
+                this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
+                Task messageQueueReaderCompleteTask = await Task.WhenAny(this.incomingMessageQueue.MessageChannel.Reader.Completion, timeoutTask).ConfigureAwait(false);
+                if (messageQueueReaderCompleteTask != this.incomingMessageQueue.MessageChannel.Reader.Completion)
                 {
                     shutdownTimedOut = true;
                     await this.LogAsync("Timed out waiting for message writer to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -979,7 +1157,7 @@ public class Transport : IAsyncDisposable
                 // implementation). Both of these statements are no-ops if the try block completed
                 // successfully, allowing a subsequent ConnectAsync to not wait for the full shutdown
                 // timeout before reconnecting.
-                this.incomingMessageQueue.Writer.TryComplete();
+                this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
                 this.PendingCommands.Clear();
             }
         }
@@ -996,6 +1174,10 @@ public class Transport : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
+        // Account for the two potential waits, one for a concurrent attempt to connect,
+        // and one for message processing to complete. Use one shutdown budget for both.
+        long disposalTimestamp = this.TimeProvider.GetTimestamp();
+
         // A connect attempt that is still in flight owns the connect/disconnect semaphore
         // and is actively using the connection; disposing them out from under it would fail
         // the attempt with ObjectDisposedException rather than its normal rollback.
@@ -1008,7 +1190,7 @@ public class Transport : IAsyncDisposable
         // have without this serialization.
         if (this.State == TransportState.Connecting)
         {
-            using CancellationTokenSource lockWaitCancellationTokenSource = new(this.ShutdownTimeout);
+            using CancellationTokenSource lockWaitCancellationTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
             try
             {
                 await this.AcquireConnectionLockAsync(lockWaitCancellationTokenSource.Token).ConfigureAwait(false);
@@ -1031,6 +1213,13 @@ public class Transport : IAsyncDisposable
                 await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
         }
+        else
+        {
+            // If we lost our connection, we still need to wait for delivered messages to
+            // be processed. HandleConnectionDisconnectionAsync closes the queue, but does
+            // not wait for message processing.
+            await this.WaitForMessageProcessingCompletionAsync(TimeoutUtilities.GetRemainingTimeout(this.ShutdownTimeout, this.TimeProvider.GetElapsedTime(disposalTimestamp)), "Timed out waiting for message processing to complete during disposal").ConfigureAwait(false);
+        }
 
         this.PendingCommands.Dispose();
         this.connectionDataReceivedObserver.Dispose();
@@ -1047,9 +1236,49 @@ public class Transport : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous acquire operation.</returns>
+    /// <exception cref="WebDriverBiDiTimeoutException">
+    /// Thrown when the lock is not acquired within <see cref="ConnectionLockTimeout"/>.
+    /// </exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <remarks>
+    /// <para>
+    /// The uncontended case is the overwhelmingly common one, and it is taken without allocating: the
+    /// timeout machinery is built only once the lock is found to be held. The bound is measured on this
+    /// transport's <see cref="TimeProvider"/>, so a transport running on virtual time waits on that same
+    /// clock.
+    /// </para>
+    /// <para>
+    /// Bounding the wait is what keeps a re-entrant call from hanging forever. This transport dispatches
+    /// observers while holding the lock — the connection raises its own traffic message from inside
+    /// <see cref="Connection.SendDataAsync"/>, and both the connection and this transport log around
+    /// connect and disconnect — so a synchronous observer that calls back into the transport arrives
+    /// here for a lock its own caller holds. It now fails with a
+    /// <see cref="WebDriverBiDiTimeoutException"/> naming the cause, and the operation it interrupted
+    /// proceeds, rather than the two waiting on each other indefinitely.
+    /// </para>
+    /// </remarks>
     protected virtual async Task AcquireConnectionLockAsync(CancellationToken cancellationToken = default)
     {
-        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        // Honor an already-canceled token before the fast path, because SemaphoreSlim.WaitAsync
+        // observes the token even when the semaphore is free, and taking the lock instead would
+        // change that behavior for a caller who has already given up.
+        cancellationToken.ThrowIfCancellationRequested();
+        if (this.connectDisconnectSemaphore.Wait(0))
+        {
+            return;
+        }
+
+        using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ConnectionLockTimeout);
+        using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+        try
+        {
+            await this.connectDisconnectSemaphore.WaitAsync(linkedTokenSource.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // The caller did not cancel, so the linked token can only have fired for the timeout.
+            throw new WebDriverBiDiTimeoutException($"Timed out after {this.ConnectionLockTimeout} waiting for exclusive access to the connection. An operation issued from an observer that this transport invoked while holding that access cannot proceed until the holder finishes; run such an observer asynchronously with ObservableEventHandlerOptions.RunHandlerAsynchronously.");
+        }
     }
 
     /// <summary>
@@ -1073,10 +1302,14 @@ public class Transport : IAsyncDisposable
     /// <returns>A task representing the asynchronous message-processing loop.</returns>
     protected virtual async Task ReadIncomingMessagesAsync()
     {
-        // Capture the queue this reader is bound to. Reading the field directly
-        // in the below code may lead to accessing the wrong reader in the
-        // reconnect-after-disconnect scenario, because the channel gets recreated.
-        ChannelReader<IncomingMessage> reader = this.incomingMessageQueue.Reader;
+        // Capture the queue this reader is bound to, and read and count against that capture for
+        // the life of the loop. Reading the field directly in the code below would address the
+        // wrong queue in the reconnect-after-disconnect scenario: a reconnect that gives up
+        // waiting for this loop replaces the field while the loop is still draining the queue it
+        // started on, so a depth adjustment made against the field would be applied to the new
+        // connection's queue for a message that was never on it.
+        IncomingMessageQueue queue = this.incomingMessageQueue;
+        ChannelReader<IncomingMessage> reader = queue.MessageChannel.Reader;
 
         // In theory, we could accomplish this with an `await foreach` using
         // IAsyncEnumerable, but this would require additional dependencies,
@@ -1087,7 +1320,7 @@ public class Transport : IAsyncDisposable
         {
             while (reader.TryRead(out IncomingMessage? packet))
             {
-                Interlocked.Decrement(ref this.incomingQueueDepth);
+                queue.DecrementDepth();
                 try
                 {
                     await this.ProcessMessageAsync(packet).ConfigureAwait(false);
@@ -1225,9 +1458,9 @@ public class Transport : IAsyncDisposable
             : WebDriverBiDiJsonSerializerContext.Default;
     }
 
-    private static ReceivedDataDictionary ConvertPayloadExtensionData(Dictionary<string, JsonElement> extensionData)
+    private static ReceivedDataDictionary ConvertPayloadExtensionData(Dictionary<string, JsonElement>? extensionData)
     {
-        return extensionData.Count == 0 ? ReceivedDataDictionary.EmptyDictionary : JsonConverterUtilities.ConvertIncomingExtensionData(extensionData);
+        return extensionData is null ? ReceivedDataDictionary.EmptyDictionary : JsonConverterUtilities.ConvertIncomingExtensionData(extensionData);
     }
 
     private static string TruncateMessage(string message, int maxLength)
@@ -1242,6 +1475,45 @@ public class Transport : IAsyncDisposable
 #else
         return string.Concat(message.AsSpan(0, maxLength), "...");
 #endif
+    }
+
+    /// <summary>
+    /// Waits, bounded by <see cref="ShutdownTimeout"/>, for the message-processing task to finish, logging a
+    /// warning and returning if it does not.
+    /// </summary>
+    /// <param name="timeout">How long to wait before giving up, or <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.</param>
+    /// <param name="timeoutLogMessage">The warning to log if the task does not finish within the timeout.</param>
+    /// <returns>A task representing the asynchronous wait.</returns>
+    /// <remarks>
+    /// The task completes once the incoming message queue has been marked complete for writing and its remaining
+    /// messages have been dispatched. Every caller therefore completes the queue first; this method only waits.
+    /// It never throws, so a caller on a teardown path is not derailed by a stuck message handler.
+    /// </remarks>
+    private async Task WaitForMessageProcessingCompletionAsync(TimeSpan timeout, string timeoutLogMessage)
+    {
+        if (this.messageQueueProcessingTask.IsCompleted)
+        {
+            return;
+        }
+
+        // Logged only when there is something to wait for, so a Debug-level observer can see that a
+        // reconnect or a disposal is blocked on the previous session's reader, and for how long at most.
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
+        {
+            await this.LogAsync($"Waiting for message processing of the previous session to complete (timeout: {timeout})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
+        }
+
+        using CancellationTokenSource processingWaitCancelTokenSource = new();
+        Task processingWaitTask = TimeoutUtilities.DelayAsync(this.TimeProvider, timeout, processingWaitCancelTokenSource.Token);
+        Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, processingWaitTask).ConfigureAwait(false);
+        if (completedTask == this.messageQueueProcessingTask)
+        {
+            processingWaitCancelTokenSource.Cancel();
+        }
+        else
+        {
+            await this.LogAsync(timeoutLogMessage, WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+        }
     }
 
     private void SetDisposed()
@@ -1306,6 +1578,14 @@ public class Transport : IAsyncDisposable
     /// <returns>The type info for the response envelope.</returns>
     private JsonTypeInfo GetResponseTypeInfo(Command command)
     {
+        // Look the cache up before falling back to GetOrAdd: the factory lambda captures the command
+        // and this transport, so passing it to GetOrAdd allocates a closure on every response, while
+        // the cache misses only once per response type.
+        if (this.responseTypeInfoCache.TryGetValue(command.ResponseType, out JsonTypeInfo? cachedTypeInfo))
+        {
+            return cachedTypeInfo;
+        }
+
         return this.responseTypeInfoCache.GetOrAdd(
             command.ResponseType,
             _ => command.CommandParameters.CreateResponseTypeInfo(this.options) ?? this.options.GetTypeInfo(command.ResponseType));
@@ -1359,14 +1639,17 @@ public class Transport : IAsyncDisposable
         // connection's receive loop can outlive that (see PipeConnection.StopAsync), so a
         // late message must be disposed here to return its pooled buffer rather than being
         // dropped on the floor.
+        // Capture the queue once, so that the write and the count it produces cannot address
+        // different queues if a reconnect replaces the field between them.
+        IncomingMessageQueue queue = this.incomingMessageQueue;
         IncomingMessage message = this.CreateIncomingMessage(e.BufferOwner, e.DataLength);
-        if (!this.incomingMessageQueue.Writer.TryWrite(message))
+        if (!queue.MessageChannel.Writer.TryWrite(message))
         {
             message.Dispose();
             return Task.CompletedTask;
         }
 
-        Interlocked.Increment(ref this.incomingQueueDepth);
+        queue.IncrementDepth();
         return Task.CompletedTask;
     }
 
@@ -1389,8 +1672,16 @@ public class Transport : IAsyncDisposable
     {
         // Fast-path: if already disconnected, no work to do.
         // Prevents deadlock when connection error occurs during DisconnectAsync.
-        if (this.State != TransportState.Connected)
+        TransportState stateAtNotification = this.State;
+        if (stateAtNotification != TransportState.Connected)
         {
+            if (stateAtNotification == TransportState.Connecting)
+            {
+                // The loss arrived while a connect attempt is still in flight, so there is no session to
+                // tear down yet. Record the cause for ConnectAsync to fail the attempt with.
+                Interlocked.CompareExchange(ref this.connectionLostWhileConnecting, connectionException, null);
+            }
+
             return;
         }
 
@@ -1403,22 +1694,34 @@ public class Transport : IAsyncDisposable
         Task firstCompletedTask = await Task.WhenAny(lockAcquisitionTask, disconnectOwnershipTask).ConfigureAwait(false);
         if (firstCompletedTask != lockAcquisitionTask)
         {
-            // DisconnectAsync owns the teardown. The pending lock wait completes when
-            // DisconnectAsync releases the lock, which happens only after this loop finishes;
-            // hand the lock straight back at that point so nothing is left acquired.
-            _ = lockAcquisitionTask.ContinueWith(
-                static (_, state) => ((Transport)state!).ReleaseConnectionLock(),
-                this,
-                CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+            // DisconnectAsync owns the teardown. The wait left outstanding here is settled by the
+            // helper, which hands the lock back if the wait is granted and leaves it alone if the
+            // wait is abandoned instead.
+            _ = this.ReleaseConnectionLockWhenAcquiredAsync(lockAcquisitionTask);
+            return;
+        }
+
+        // Task.WhenAny reports the first task to complete, and an abandoned wait has completed, so
+        // awaiting the acquisition is what tells a granted access from an abandoned one. Neither the
+        // teardown nor the release below may run without the access.
+        try
+        {
+            await lockAcquisitionTask.ConfigureAwait(false);
+        }
+        catch (WebDriverBiDiTimeoutException)
+        {
+            // Tearing down without the access could interleave with a reconnect and close the
+            // pending commands of a session this loss has nothing to do with. The loss still
+            // surfaces, just not immediately: the connection is closed, so pending commands end at
+            // their own timeouts and the next send fails.
+            await this.LogAsync($"Timed out after {this.ConnectionLockTimeout} waiting for exclusive access to the connection to handle a connection loss; the transport was left connected and its pending commands left to time out. Stop the transport to tear the session down.", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             return;
         }
 
         try
         {
             // Only process if we were connected (or thought we were).
-            // If we're still in DisonnectAsync, we'll run after it releases the lock,
+            // If we're still in DisconnectAsync, we'll run after it releases the lock,
             // so we'll see the correct post-connect state.
             if (this.State != TransportState.Connected)
             {
@@ -1444,7 +1747,7 @@ public class Transport : IAsyncDisposable
             // reader may itself need that lock (e.g., to send a command, which will
             // fail because the transport is now disconnected). ConnectAsync waits for
             // the reader to finish before starting a new session.
-            this.incomingMessageQueue.Writer.TryComplete();
+            this.incomingMessageQueue.MessageChannel.Writer.TryComplete();
 
             // Log appropriate statistics and information.
             WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(Interlocked.Read(ref this.commandMessagesSent), Interlocked.Read(ref this.commandResponseMessagesReceived), Interlocked.Read(ref this.eventMessagesReceived), Interlocked.Read(ref this.errorMessagesReceived));
@@ -1454,6 +1757,32 @@ public class Transport : IAsyncDisposable
         {
             this.ReleaseConnectionLock();
         }
+    }
+
+    /// <summary>
+    /// Hands the connection lock back once a wait that was left outstanding is granted, and does
+    /// nothing if that wait is abandoned instead.
+    /// </summary>
+    /// <param name="lockAcquisitionTask">The outstanding wait for the connection lock.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// The wait is the one <see cref="HandleConnectionDisconnectionAsync"/> leaves outstanding when
+    /// <see cref="DisconnectAsync(bool, CancellationToken)"/> wins the ownership race. Releasing an
+    /// abandoned wait would raise the semaphore's count and let two operations hold the connection at
+    /// once; awaiting it also observes the failure a discarded task would leave unobserved.
+    /// </remarks>
+    private async Task ReleaseConnectionLockWhenAcquiredAsync(Task lockAcquisitionTask)
+    {
+        try
+        {
+            await lockAcquisitionTask.ConfigureAwait(false);
+        }
+        catch (WebDriverBiDiTimeoutException)
+        {
+            return;
+        }
+
+        this.ReleaseConnectionLock();
     }
 
     private void LogMessageProcessingFault(Task faultedTask, object? state)
@@ -1489,7 +1818,7 @@ public class Transport : IAsyncDisposable
                     // result object (AdditionalData) and on the response envelope (AdditionalResponseProperties).
                     commandResult.AdditionalData = ConvertPayloadExtensionData(packet.CollectPayloadExtensionData("result", this.options.GetTypeInfo(commandResult.GetType())));
                     commandResult.AdditionalResponseProperties = response.AdditionalData;
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
                     {
                         await this.LogAsync($"Received result for command '{executedCommand.CommandName}' (command ID: {executedCommand.CommandId})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     }
@@ -1533,7 +1862,7 @@ public class Transport : IAsyncDisposable
                     // Stop timing and log error
                     executedCommand.StopTiming();
                     WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value, executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
                     {
                         await this.LogAsync($"Received error response for command '{executedCommand.CommandName}' (command ID: {errorMessage.CommandId.Value})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                     }
@@ -1565,7 +1894,7 @@ public class Transport : IAsyncDisposable
             // existing in the pending command collection), resolve the command so that
             // the caller does not have to wait for the full command timeout. Note that
             // the invalid error payload is deliberately not routed to the transport
-            // unandled error pipeline.
+            // unhandled error pipeline.
             if (packet.TryGetCommandId(out long commandId) && this.PendingCommands.RemovePendingCommand(commandId, out Command? executedCommand))
             {
                 executedCommand.StopTiming();
@@ -1604,7 +1933,7 @@ public class Transport : IAsyncDisposable
             }
 
             WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
-            if (this.OnLogMessage.CurrentObserverCount > 0)
+            if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
             {
                 await this.LogAsync($"Received event {eventName}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             }
@@ -1635,7 +1964,7 @@ public class Transport : IAsyncDisposable
     {
         long millisecondsSinceCancellation = (long)canceledCommand.TimeSinceCancellation.TotalMilliseconds;
         WebDriverBiDiEventSource.RaiseEvent.CanceledCommandResponseDiscarded(canceledCommand.CommandId, canceledCommand.CommandName, canceledCommand.Reason, millisecondsSinceCancellation);
-        if (this.OnLogMessage.CurrentObserverCount > 0)
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Debug))
         {
             await this.LogAsync($"Discarding late response for command '{canceledCommand.CommandName}' (command ID: {canceledCommand.CommandId}); the command was canceled ({canceledCommand.Reason}) {millisecondsSinceCancellation} ms before this response arrived", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
@@ -1643,6 +1972,11 @@ public class Transport : IAsyncDisposable
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
+        if (!this.IsLogLevelEnabled(level))
+        {
+            return;
+        }
+
         await this.NotifyLogMessageObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
@@ -1678,7 +2012,7 @@ public class Transport : IAsyncDisposable
     {
         // Throws the collected Collect-mode exceptions for the current session, if any are
         // pending and this call successfully claims them via ClaimCollectedErrors.
-        // Claiming is reset for each new session by ResetCollectedErrors, called
+        // Claiming is reset for each new session by ResetCollectedErrors.
         if (throwCollectedExceptions && this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions) && this.ClaimCollectedErrors())
         {
             throw this.CreateTerminationException(collectedExceptions, TransportErrorBehavior.Collect);
@@ -1749,5 +2083,96 @@ public class Transport : IAsyncDisposable
         // the event that produced it.
         bool notifyObservers = errorInfo.ObservableEventName != EventHandlerErrorOccurredEventName;
         await this.ReportEventObserverErrorAsync(errorInfo, notifyObservers).ConfigureAwait(false);
+    }
+
+    private sealed class IncomingMessageQueue
+    {
+        private int depth = 0;
+
+        public IncomingMessageQueue()
+        {
+            // We are using an unbounded channel by design. This decision was
+            // carefully considered, as the rate of incoming messages is unlikely
+            // to cause memory issues by exceeding the rate of processing. Should
+            // real-world usage indicate otherwise, we will update this behavior
+            // with a bounded channel, and add monitoring of the queue depth to
+            // the transport events.
+            this.MessageChannel = Channel.CreateUnbounded<IncomingMessage>(new UnboundedChannelOptions()
+            {
+                SingleReader = true,
+                SingleWriter = true,
+            });
+        }
+
+        /// <summary>
+        /// Gets the channel that received incoming messages.
+        /// </summary>
+        public Channel<IncomingMessage> MessageChannel { get; }
+
+        /// <summary>
+        /// Gets the current count of the unread received incoming messages.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Interlocked-maintained mirror of the unread depth of <see cref="MessageChannel"/>.
+        /// The SingleConsumerUnboundedChannel implementation returned by
+        /// Channel.CreateUnbounded&lt;T&gt;(new UnboundedChannelOptions { SingleReader = true,
+        /// SingleWriter = true }) does not support ChannelReader&lt;T&gt;.Count (CanCount is
+        /// false), so the depth is maintained here: incremented after a successful
+        /// Writer.TryWrite, decremented after a successful Reader.TryRead.
+        /// </para>
+        /// <para>
+        /// The count belongs to this queue alone, which is what keeps it accurate across a
+        /// reconnect. A connect installs a new queue rather than resetting a shared counter, and
+        /// both the producer and the reader capture the queue they are operating on, so a write
+        /// and the increment it produces cannot address different queues, and a reader still
+        /// draining a previous connection's queue cannot decrement the current one. The value is
+        /// therefore never negative and carries no transient over-count.
+        /// </para>
+        /// <para>
+        /// This counter is used solely for observability, through
+        /// <see cref="IncomingQueueDepth"/>; it does not affect correctness.
+        /// </para>
+        /// </remarks>
+        public int Depth => Interlocked.CompareExchange(ref this.depth, 0, 0);
+
+        /// <summary>
+        /// Increments the queue depth.
+        /// </summary>
+        public void IncrementDepth()
+        {
+            Interlocked.Increment(ref this.depth);
+        }
+
+        /// <summary>
+        /// Decrements the queue depth.
+        /// </summary>
+        public void DecrementDepth()
+        {
+            Interlocked.Decrement(ref this.depth);
+        }
+
+        /// <summary>
+        /// Closes this queue to further writes and disposes everything still buffered in it.
+        /// </summary>
+        /// <remarks>
+        /// Used when a queue is abandoned without a reader ever having run over it, which is what a
+        /// failed connect attempt leaves behind. Each buffered <see cref="IncomingMessage"/> owns a
+        /// pooled buffer that only its disposal returns, and <see cref="DecrementDepth"/> is paired with
+        /// each read so that <see cref="Depth"/>, and through it
+        /// <see cref="IncomingQueueDepth"/>, does not go on reporting messages that no longer exist.
+        /// Completing the writer first means a late arrival from a receive loop that has not yet
+        /// unwound fails its write and is disposed by the producer, rather than being added to a queue
+        /// that nothing will drain again.
+        /// </remarks>
+        public void Drain()
+        {
+            this.MessageChannel.Writer.TryComplete();
+            while (this.MessageChannel.Reader.TryRead(out IncomingMessage? bufferedMessage))
+            {
+                this.DecrementDepth();
+                bufferedMessage.Dispose();
+            }
+        }
     }
 }

@@ -1077,4 +1077,783 @@ public class BiDiDriver008AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a cast in a try block whose catch is the ordinary catch (Exception) is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EvaluateResult_CastInTryCatchException_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        try
+                        {
+                            var success = (EvaluateResultSuccess)result;
+                            var title = success.Result;
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast in a try block whose catch is a base type of InvalidCastException is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EvaluateResult_CastInTryCatchSystemException_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        try
+                        {
+                            var success = (EvaluateResultSuccess)result;
+                            var title = success.Result;
+                        }
+                        catch (SystemException)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast in a try block whose catch carries a when filter, a deliberate handling idiom is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EvaluateResult_CastInTryCatchWithFilter_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        try
+                        {
+                            var success = (EvaluateResultSuccess)result;
+                            var title = success.Result;
+                        }
+                        catch (Exception ex) when (ex is InvalidCastException)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast in a try statement that has no catch clause at all, so nothing handles the failure is reported. Treating any enclosing try statement as protection
+    /// suppressed this.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EvaluateResult_CastInTryFinally_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        try
+                        {
+                            var success = {|#0:(EvaluateResultSuccess)result|};
+                            var title = success.Result;
+                        }
+                        finally
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast whose only catch clause catches an unrelated exception type is reported. Treating any enclosing try statement as protection
+    /// suppressed this.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EvaluateResult_CastInTryCatchUnrelatedType_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.IO;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        try
+                        {
+                            var success = {|#0:(EvaluateResultSuccess)result|};
+                            var title = success.Result;
+                        }
+                        catch (IOException)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast in the catch block of a try statement, which that try does not cover is reported. Treating any enclosing try statement as protection
+    /// suppressed this.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EvaluateResult_CastInCatchBlock_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        try
+                        {
+                        }
+                        catch (Exception)
+                        {
+                            var success = {|#0:(EvaluateResultSuccess)result|};
+                            var title = success.Result;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a cast in the then-branch of an <c>if</c> on the library's discriminator (<c>result.ResultType == EvaluateResultType.Success</c>) is not reported, in either operand order and through parentheses.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedByDiscriminatorIf_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if (result.ResultType == EvaluateResultType.Success)
+                        {
+                            var success = (EvaluateResultSuccess)result;
+                        }
+
+                        if ((EvaluateResultType.Exception == (result).ResultType))
+                        {
+                            var exception = (EvaluateResultException)(result);
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a cast in the then-branch of an <c>if</c> on a type test of the operand is not reported, for the <c>is T</c>, <c>is T x</c> and <c>is T { }</c> spellings.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedByTypeTestIf_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if (result is EvaluateResultSuccess)
+                        {
+                            var success = (EvaluateResultSuccess)result;
+                        }
+
+                        if (result is EvaluateResultSuccess named)
+                        {
+                            var success = (EvaluateResultSuccess)result;
+                        }
+
+                        if (result is EvaluateResultSuccess { })
+                        {
+                            var success = (EvaluateResultSuccess)result;
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a guard reaches a cast on the right of an <c>&amp;&amp;</c>, in the true arm of a conditional expression, and through a conjunction in an <c>if</c> condition.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedByConjunctionOrConditionalOrAndOperand_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public string TestMethod(EvaluateResult result, bool flag)
+                    {
+                        string first = result.ResultType == EvaluateResultType.Success && ((EvaluateResultSuccess)result).RealmId.Length > 0 ? "a" : "b";
+                        string second = result is EvaluateResultSuccess ? ((EvaluateResultSuccess)result).RealmId : "none";
+                        if (flag && result.ResultType == EvaluateResultType.Success)
+                        {
+                            return ((EvaluateResultSuccess)result).RealmId;
+                        }
+
+                        if (result is EvaluateResultSuccess && flag)
+                        {
+                            return ((EvaluateResultSuccess)result).RealmId;
+                        }
+
+                        return first + second;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a cast in a switch section selected by the discriminator value, by a constant pattern of it, or by a type pattern on the operand is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedBySwitchSection_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        switch (result.ResultType)
+                        {
+                            case EvaluateResultType.Success:
+                                var success = (EvaluateResultSuccess)result;
+                                break;
+                            case EvaluateResultType.Exception when result is not null:
+                                var exception = (EvaluateResultException)result;
+                                break;
+                        }
+
+                        switch (result)
+                        {
+                            case EvaluateResultSuccess when result.RealmId.Length > 0:
+                                var guarded = (EvaluateResultSuccess)result;
+                                break;
+                            case EvaluateResultSuccess:
+                                var typed = (EvaluateResultSuccess)result;
+                                break;
+                            case EvaluateResultException { } exception:
+                                var declared = (EvaluateResultException)result;
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a cast after an <c>if</c> that leaves the block whenever the operand is not of the target type is not reported, for the <c>!=</c>, <c>is not</c>, <c>!(is)</c> and <c>||</c> spellings and for a block body ending in a throw.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_AfterEarlyExitGuard_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void NotEqualsGuard(EvaluateResult result)
+                    {
+                        if (result.ResultType != EvaluateResultType.Success)
+                        {
+                            return;
+                        }
+
+                        var first = (EvaluateResultSuccess)result;
+                    }
+
+                    public void IsNotGuard(EvaluateResult result)
+                    {
+                        if (result is not EvaluateResultSuccess) return;
+                        var second = (EvaluateResultSuccess)result;
+                    }
+
+                    public void LogicalNotGuard(EvaluateResult result)
+                    {
+                        if (!(result is EvaluateResultSuccess))
+                        {
+                            Console.WriteLine("no");
+                            throw new InvalidOperationException();
+                        }
+
+                        var third = (EvaluateResultSuccess)result;
+                    }
+
+                    public void DisjunctionGuard(EvaluateResult result, bool flag)
+                    {
+                        foreach (int i in new[] { 1 })
+                        {
+                            if (flag || result.ResultType != EvaluateResultType.Success)
+                            {
+                                continue;
+                            }
+
+                            var fourth = (EvaluateResultSuccess)result;
+                        }
+
+                        while (flag)
+                        {
+                            if (EvaluateResultType.Success != result.ResultType)
+                            {
+                                break;
+                            }
+
+                            var fifth = (EvaluateResultSuccess)result;
+                        }
+
+                        do
+                        {
+                            if (result.ResultType != EvaluateResultType.Success || flag)
+                            {
+                                break;
+                            }
+
+                            var sixth = (EvaluateResultSuccess)result;
+                        }
+                        while (flag);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a guard for the other result type, for a different operand, in the else-branch, in a switch section with an unrelated label, or an early-exit guard whose body does not exit, does not suppress the report.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_WithGuardThatDoesNotEstablishTheType_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result, EvaluateResult other, bool flag)
+                    {
+                        if (result.ResultType == EvaluateResultType.Exception)
+                        {
+                            var first = {|#0:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (other is EvaluateResultSuccess)
+                        {
+                            var second = {|#1:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (result is EvaluateResultSuccess)
+                        {
+                        }
+                        else
+                        {
+                            var third = {|#2:(EvaluateResultSuccess)result|};
+                        }
+
+                        switch (result.ResultType)
+                        {
+                            case EvaluateResultType.Success:
+                            default:
+                                var fourth = {|#3:(EvaluateResultSuccess)result|};
+                                break;
+                        }
+
+                        if (result.ResultType != EvaluateResultType.Success)
+                        {
+                            Console.WriteLine("not exiting");
+                        }
+
+                        var fifth = {|#4:(EvaluateResultSuccess)result|};
+
+                        if (result.ResultType != EvaluateResultType.Success && flag)
+                        {
+                            return;
+                        }
+
+                        var sixth = {|#5:(EvaluateResultSuccess)result|};
+                        var seventh = flag ? "x" : ({|#6:(EvaluateResultSuccess)result|}).RealmId;
+                        var eighth = flag || ({|#7:(EvaluateResultSuccess)result|}).RealmId.Length > 0;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected2 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(2)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected3 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(3)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected4 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(4)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected5 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(5)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected6 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(6)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected7 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(7)
+            .WithArguments("EvaluateResultSuccess");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected0, expected1, expected2, expected3, expected4, expected5, expected6, expected7);
+    }
+
+    /// <summary>
+    /// Tests that a guard outside a lambda does not protect a cast inside it: the lambda runs when invoked, not where it is written.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_InsideLambdaUnderGuard_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if (result is EvaluateResultSuccess)
+                        {
+                            Func<string> read = () => ({|#0:(EvaluateResultSuccess)result|}).RealmId;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that comparisons that are not the discriminator test — a different member, a non-enum value, a not-equals in a positive guard, a pattern that is not a type pattern — do not suppress the report.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedByUnrelatedComparisons_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result, EvaluateResult other, EvaluateResultType type, bool flag)
+                    {
+                        if (result.RealmId == "x")
+                        {
+                            var first = {|#0:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (result.ResultType == type)
+                        {
+                            var second = {|#1:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (result.ResultType != EvaluateResultType.Success)
+                        {
+                            var third = {|#2:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (result is { RealmId: "x" })
+                        {
+                            var fourth = {|#3:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (result is not null)
+                        {
+                            var fifth = {|#4:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (result is var anything)
+                        {
+                            var sixth = {|#5:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (other is EvaluateResultSuccess named)
+                        {
+                            var otherNamed = {|#7:(EvaluateResultSuccess)result|};
+                        }
+
+                        if (result is not { RealmId: "x" })
+                        {
+                            return;
+                        }
+
+                        if (other is not EvaluateResultSuccess)
+                        {
+                            return;
+                        }
+
+                        if (!flag)
+                        {
+                            return;
+                        }
+
+                        var afterGuards = {|#8:(EvaluateResultSuccess)result|};
+
+                        if (!(result.ResultType == EvaluateResultType.Exception))
+                        {
+                        }
+
+                        if (result is not EvaluateResultException)
+                        {
+                        }
+
+                        var seventh = {|#6:(EvaluateResultSuccess)result|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected2 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(2)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected3 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(3)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected4 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(4)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected5 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(5)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected6 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(6)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected7 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(7)
+            .WithArguments("EvaluateResultSuccess");
+
+        DiagnosticResult expected8 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(8)
+            .WithArguments("EvaluateResultSuccess");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected0, expected1, expected2, expected3, expected4, expected5, expected6, expected7, expected8);
+    }
+
+    /// <summary>
+    /// Tests that comparing the discriminator with a same-named member of an unrelated enum is not
+    /// the library's type test, so the cast is still reported (alongside the compiler's own complaint).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedByComparisonWithUnrelatedEnum_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public enum Outcome
+                {
+                    Success,
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if ({|CS0019:result.ResultType == Outcome.Success|})
+                        {
+                            var success = {|#0:(EvaluateResultSuccess)result|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected0);
+    }
 }

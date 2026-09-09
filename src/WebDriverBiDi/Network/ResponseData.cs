@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Data of a network response.
@@ -166,6 +167,7 @@ public record ResponseData
     /// </summary>
     [JsonPropertyName("authChallenges")]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<AuthChallenge>))]
     internal List<AuthChallenge>? SerializableAuthChallenges { get; set; }
 
     /// <summary>
@@ -174,6 +176,7 @@ public record ResponseData
     [JsonPropertyName("headers")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<Header>))]
     internal List<Header> SerializableHeaders { get; set; } = [];
 
     /// <summary>

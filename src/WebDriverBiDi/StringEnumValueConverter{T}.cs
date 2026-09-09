@@ -19,8 +19,9 @@ using System.Reflection;
 public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T>
     where T : struct, Enum
 {
+    private static readonly Lazy<StringEnumValueConverter<T>> SharedInstance = new();
+
     private readonly T? defaultValue;
-    private readonly T? nullSentinelValue;
     private readonly Dictionary<T, string> enumValuesToStrings = [];
     private readonly Dictionary<string, T> stringToEnumValues = [];
 
@@ -39,7 +40,7 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
         StringEnumNullSentinelValueAttribute<T>? nullSentinelValueAttribute = enumType.GetCustomAttribute<StringEnumNullSentinelValueAttribute<T>>();
         if (nullSentinelValueAttribute is not null)
         {
-            this.nullSentinelValue = nullSentinelValueAttribute.NullSentinelValue;
+            this.NullSentinelValue = nullSentinelValueAttribute.NullSentinelValue;
         }
 
         // A note about the below structure. We use Enum.GetValues<T>() to support AOT
@@ -79,7 +80,19 @@ public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAcc
     /// <summary>
     /// Gets the value indicating a null should be serialized in JSON, if any.
     /// </summary>
-    public T? NullSentinelValue => this.nullSentinelValue;
+    public T? NullSentinelValue { get; }
+
+    /// <summary>
+    /// Gets the conversion table for <typeparamref name="T"/> shared by the whole library.
+    /// </summary>
+    /// <remarks>
+    /// Building the table reads the attributes of every member of <typeparamref name="T"/> by
+    /// reflection, and the result is immutable, so the library builds one table per enumerated type
+    /// and shares it rather than having each consumer construct a duplicate. It lives here, beside
+    /// the table it caches, so that a consumer needing a conversion does not have to reach through
+    /// an unrelated concern to obtain one.
+    /// </remarks>
+    internal static StringEnumValueConverter<T> Shared => SharedInstance.Value;
 
     /// <summary>
     /// Gets the enumerated value corresponding to the specified string. If the string does

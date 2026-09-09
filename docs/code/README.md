@@ -6,14 +6,14 @@ This directory contains C# code snippets that are included in the documentation 
 
 - `error-handling/` - Snippets for `docs/articles/advanced/error-handling.md`
 - `api-design/` - Snippets for `docs/articles/advanced/api-design.md`
-- `events-observables/` - Snippets for `docs/articles/events-observables.md`
-- `core-concepts/` - Snippets for `docs/articles/core-concepts.md`
+- `events-observables/` - Snippets for `docs/articles/events-observables.md` and `docs/articles/modules/session.md`
+- `core-concepts/` - Snippets for `docs/articles/core-concepts.md` and `docs/articles/advanced/aot-compatibility.md`
 - `common-pitfalls/` - Snippets for `docs/articles/common-pitfalls.md`
-- `script/` - Snippets for `docs/articles/modules/script.md`, `docs/articles/examples/preload-scripts.md`
+- `script/` - Snippets for `docs/articles/modules/script.md`, `docs/articles/examples/preload-scripts.md` and `docs/articles/advanced/error-handling.md`
 - `remote-values/` - Snippets for `docs/articles/remote-values.md`
 - `examples/` - Snippets for `docs/articles/examples/*.md` (common-scenarios, console-monitoring, form-submission, network-interception) and for `getting-started.md`, `first-application.md` and `browser-setup.md`
 - `modules/` - Snippets for every guide in `docs/articles/modules/*.md`
-- `advanced/` - Snippets for the remaining `docs/articles/advanced/*.md` guides (AOT compatibility, connection management, custom modules, observability, performance)
+- `advanced/` - Snippets for the remaining `docs/articles/advanced/*.md` guides (AOT compatibility, connection management, custom modules, observability, logging, performance)
 - `api/` - Snippets for `docs/api/index.md`
 - `architecture/` - Snippets for `docs/articles/architecture.md`
 - `IndexSamples.cs` - Snippets for `docs/index.md`

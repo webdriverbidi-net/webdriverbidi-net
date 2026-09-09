@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Browser;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Result for getting the current client windows for the browser.getClientWindows command.
@@ -32,5 +33,6 @@ public record GetClientWindowsCommandResult : CommandResult
     [JsonPropertyName("clientWindows")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<ClientWindowInfo>))]
     internal List<ClientWindowInfo> SerializableClientWindows { get; set; } = [];
 }

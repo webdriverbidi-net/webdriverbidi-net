@@ -856,4 +856,383 @@ public class BiDiDriver003AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that RegisterTypeInfoResolverAsync after a StartAsync call written with a <c>.ConfigureAwait(false)</c> continuation is still reported.
+    /// The wrapper is the outermost invocation, so without unwrapping the chain the analyzer sees a
+    /// call it does not recognize and never marks the driver as started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterStartAsyncWithConfigureAwait_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222").ConfigureAwait(false);
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that RegisterTypeInfoResolverAsync after a StartAsync call written with a blocking <c>.Wait()</c> is still reported.
+    /// The wrapper is the outermost invocation, so without unwrapping the chain the analyzer sees a
+    /// call it does not recognize and never marks the driver as started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterStartAsyncWithBlockingWait_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.StartAsync("ws://localhost:9222").Wait();
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that RegisterTypeInfoResolverAsync after a StartAsync call written with a blocking <c>.ConfigureAwait(false).GetAwaiter().GetResult()</c> chain is still reported.
+    /// The wrapper is the outermost invocation, so without unwrapping the chain the analyzer sees a
+    /// call it does not recognize and never marks the driver as started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterStartAsyncWithGetAwaiterGetResult_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.StartAsync("ws://localhost:9222").ConfigureAwait(false).GetAwaiter().GetResult();
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that starting a driver instance returned by another call does not mark a differently
+    /// obtained local as started. The StartAsync receiver is itself an invocation, so this also pins
+    /// that only the known task-chaining wrappers are unwrapped: unwrapping every
+    /// invocation-receivered member access would discard the StartAsync call entirely.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterStartAsyncOnDifferentReturnedDriver_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = GetDriver();
+                        await GetDriver().StartAsync("ws://localhost:9222");
+                        driver.RegisterTypeInfoResolverAsync(resolver);
+                    }
+
+                    private static BiDiDriver GetDriver() => new BiDiDriver(TimeSpan.FromSeconds(30));
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that declaring the start task, rather than assigning it, is still recognized as starting the
+    /// driver. The connect attempt begins at the call in both spellings.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterStartAsyncDeclaredAsTask_ReportsError()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        Task startTask = driver.StartAsync("ws://localhost:9222");
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                        await startTask;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the same driver name declared in two sibling loop bodies does not crash the analyzer (the second declaration used to be added to an immutable dictionary that already held the key) and is tracked afresh in each body.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_DriverRedeclaredInSiblingLoopBodies_DoesNotCrashAndReportsOnlyStartedOne()
+    {
+        string testCode = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver, string[] urls)
+                    {
+                        foreach (string url in urls)
+                        {
+                            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                            await driver.StartAsync(url);
+                            await {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                        }
+
+                        foreach (string url in urls)
+                        {
+                            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                            await driver.RegisterTypeInfoResolverAsync(resolver);
+                            await driver.StartAsync(url);
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a registration in one switch section is not judged against a StartAsync in a different, mutually exclusive section.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_InSwitchSectionAfterStartInAnotherSection_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver, string browser)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        switch (browser)
+                        {
+                            case "chrome":
+                                await driver.StartAsync("ws://localhost:9222");
+                                break;
+                            case "firefox":
+                                await driver.RegisterTypeInfoResolverAsync(resolver);
+                                await driver.StartAsync("ws://localhost:9223");
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a registration in a catch clause after a StartAsync in the try block is not reported: the start may have failed, leaving the driver not started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_InCatchAfterFailedStartInTry_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (WebDriverBiDiException)
+                        {
+                            await driver.RegisterTypeInfoResolverAsync(resolver);
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a driver declared by a classic <c>await using (T x = ...)</c> statement is tracked like one declared by a local declaration statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_InClassicUsingStatementDeclaration_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        await using (BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30)))
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            await {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

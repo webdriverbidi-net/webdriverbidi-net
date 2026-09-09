@@ -6,7 +6,8 @@
 namespace WebDriverBiDi.Storage;
 
 /// <summary>
-/// The Storage module contains commands and events relating to browser storage such as cookies.
+/// The Storage module contains commands relating to browser storage such as cookies. The
+/// specification defines no events for this module.
 /// </summary>
 public sealed class StorageModule : Module
 {
@@ -32,7 +33,7 @@ public sealed class StorageModule : Module
     /// <summary>
     /// Gets cookies from the browser session.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
@@ -56,7 +57,7 @@ public sealed class StorageModule : Module
     /// <summary>
     /// Deletes cookies from the browser session.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>

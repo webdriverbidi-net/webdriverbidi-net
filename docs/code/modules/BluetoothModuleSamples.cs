@@ -129,12 +129,12 @@ public static class BluetoothModuleSamples
 
         await driver.Bluetooth.SimulatePreconnectedPeripheralAsync(deviceParams);
 
-        // Trigger Bluetooth scan in page
+        // Navigate to page with Bluetooth functionality
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, "https://example.com")
             { Wait = ReadinessState.Complete });
 
-        // Navigate to page with Bluetooth functionality
+        // Trigger Bluetooth scan in page
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
                 @"navigator.bluetooth.requestDevice({

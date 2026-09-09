@@ -31,8 +31,6 @@ public class SetVirtualWalletBehaviorCommandParameters : CommandParameters<SetVi
     /// Gets or sets the action to take with the virtual wallet.
     /// </summary>
     [JsonPropertyName("action")]
-    [JsonRequired]
-    [JsonInclude]
     public VirtualWalletAction Action { get; set; }
 
     /// <summary>
@@ -43,8 +41,22 @@ public class SetVirtualWalletBehaviorCommandParameters : CommandParameters<SetVi
     public string? BrowsingContextId { get; set; }
 
     /// <summary>
-    /// Gets or sets the protocol identifier to use for the virtual wallet behavior.
+    /// Gets or sets the protocol identifier the simulated credential is presented under.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is not a filter: it names the protocol of the credential the wallet returns, and its value
+    /// reaches the page as the presented credential's protocol. Only <see cref="BrowsingContextId"/>
+    /// scopes the behavior.
+    /// </para>
+    /// <para>
+    /// This property and <see cref="Response"/> are required together when <see cref="Action"/> is
+    /// <see cref="VirtualWalletAction.Respond"/>, and must both be omitted for every other action. The
+    /// value must be one of the protocol identifiers enumerated by the Digital Credentials API. This
+    /// property does not validate either rule; a conforming remote end answers with an "invalid argument"
+    /// error when the command is executed.
+    /// </para>
+    /// </remarks>
     [JsonPropertyName("protocol")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Protocol { get; set; }
@@ -52,6 +64,12 @@ public class SetVirtualWalletBehaviorCommandParameters : CommandParameters<SetVi
     /// <summary>
     /// Gets or sets the response object to use as the credential data.
     /// </summary>
+    /// <remarks>
+    /// This property and <see cref="Protocol"/> are required together when <see cref="Action"/> is
+    /// <see cref="VirtualWalletAction.Respond"/>, and must both be omitted for every other action. This
+    /// property does not validate that rule; a conforming remote end answers with an "invalid argument"
+    /// error when the command is executed.
+    /// </remarks>
     [JsonPropertyName("response")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, object?>? Response { get; set; }

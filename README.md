@@ -56,6 +56,13 @@ convenience, the library also builds assemblies targeting the current and immedi
 Support (LTS) versions of .NET, as well as the most recent Standard Term Support (STS) version of .NET.
 At present, that includes .NET 8 (previous LTS), .NET 9 (current STS), and .NET 10 (current LTS).
 
+Building the repository itself requires the .NET 10 SDK: the projects use C# 14
+(`<LangVersion>14</LangVersion>`) and the test projects target `net10.0`. `global.json` does not pin
+an SDK version, so any .NET 10 SDK will do. Consumers of the published package need only one of the
+runtimes listed above; see the
+[Getting Started guide](https://webdriverbidi-net.github.io/webdriverbidi-net/articles/getting-started.html)
+for consumer prerequisites.
+
 To build the library, after cloning the repository, execute the following in a terminal window
 in the root of your clone:
 
@@ -137,19 +144,32 @@ is mostly prohibited, and will only be allowed on a very strictly reviewed case-
 The project has some performance benchmarks, using [BenchmarkDotNet](https://benchmarkdotnet.org/)
 to provide baseline tracking of performance metrics.
 
-The project uses [GitHub Actions](https://github.com/webdriverbidi-net/webdriverbidi-net/actions) for continuous
-integration (CI). Code coverage statistics are generated and gathered by
-[Coverlet](https://www.nuget.org/packages/coverlet.collector/), and uploaded to
-[coveralls.io](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main). PRs for which
-the code coverage drops from the current percentage on the `main` branch will need to be carefully
+## Continuous Integration (CI)
+
+The project uses [GitHub Actions](https://github.com/webdriverbidi-net/webdriverbidi-net/actions) for CI.
+Code coverage statistics are generated and gathered by [Coverlet](https://www.nuget.org/packages/coverlet.MTP/)
+(the `coverlet.MTP` package, which integrates with the Microsoft.Testing.Platform runner the test projects use),
+and uploaded to [coveralls.io](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main).
+PRs for which the code coverage drops from the current percentage on the `main` branch will need to be carefully
 reviewed. For convenience, a task has been configured to collect code coverage statistics when the
 tests are executed, so to run code coverage locally, you can run the test task from the Command
 Palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>, 
 choose the `Tasks: Run Task` entry, and choose the `dotnet: test with coverage` task).
 
-Some useful plugins in your Visual Studio Code environment for this project are:
-* [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters):
-This plugin allows visualization of code coverage directly within the IDE.
+Coverage is measured in CI twice, in Release by the `unit-tests` job and in Debug by a separate
+`unit-tests-debug` job, because the project's standard is 100% line, branch and method coverage in
+**both** configurations. The two configurations do not instrument the same branches: a gap has been
+observed that a Release run reported and a Debug run did not, so measuring only one of them can miss
+a real regression in the other.
+
+**The two jobs are deliberately separate, and should not be collapsed into a `configuration` matrix
+on `unit-tests`.** They already run concurrently on the same `needs: build` fan-out, so the second
+job costs runner minutes rather than elapsed time, and it finishes well inside the shadow of the
+integration tests, which set the wall-clock critical path. A matrix would save about forty lines of
+setup, but `unit-tests` also packs the analyzer package, verifies its shipped layout, and uploads
+coverage to coveralls; none of those may run twice, so each would need an `if:` guard on the matrix
+value. Those are precisely the steps that exist to catch a packaging mistake before a release, and a
+guard that is wrong fails by silently not checking. The duplication is the cheaper error to make.
 
 ## Benchmarks
 The library tracks performance across five suites covering command object
@@ -161,12 +181,13 @@ workflow runs it on every PR that touches the main library or the
 benchmarks themselves, posting a per-benchmark delta table as a PR comment
 relative to a committed baseline.
 
-The numbers below are a snapshot taken on 2026-08-27, measured on an Apple
-Silicon development machine. They are representative, not canonical: the CI
-runner (`ubuntu-latest`, x64) produces different absolute numbers and is the
-reference hardware for the committed baseline. See
-[REPORTING.md](test/WebDriverBiDi.Benchmarks/REPORTING.md) for how to
-interpret results and operate the baseline workflow.
+The numbers below are a sample taken on 2026-09-08 on one Apple Silicon
+development machine. They are **not representative**: absolute figures move with
+hardware, OS, runtime version and machine load, and the CI runner
+(`ubuntu-latest`, x64) is the reference hardware for the committed baseline. Use
+them to see the shape of the costs, not to predict your own. See
+[REPORTING.md](test/WebDriverBiDi.Benchmarks/REPORTING.md) for how to interpret
+results and operate the baseline workflow.
 
 **Runtime environment**
 - BenchmarkDotNet 0.15.8
@@ -178,44 +199,52 @@ interpret results and operate the baseline workflow.
 
 | Method                          | Mean       | Allocated |
 |-------------------------------- |-----------:|----------:|
-| CreateSimpleCommand             |   7.44 ns  |     136 B |
-| CreateComplexCommand            |  12.85 ns  |     224 B |
-| CreateNetworkInterceptCommand   |  35.60 ns  |     384 B |
-| CreateScriptEvaluateCommand     |  10.12 ns  |     176 B |
-| CreateScriptCallFunctionCommand |  36.18 ns  |     424 B |
+| CreateSimpleCommand             |    7.10 ns |     144 B |
+| CreateComplexCommand            |   13.15 ns |     232 B |
+| CreateNetworkInterceptCommand   |   38.02 ns |     480 B |
+| CreateScriptEvaluateCommand     |    9.82 ns |     176 B |
+| CreateScriptCallFunctionCommand |   36.11 ns |     424 B |
 
 **SerializationBenchmarks** — JSON serialization/deserialization of protocol messages
 
 | Method                         | Mean         | Allocated |
 |------------------------------- |-------------:|----------:|
-| SerializeCommandParameters     |    165.0 ns  |     696 B |
-| DeserializeCommandResult       |     89.5 ns  |     320 B |
-| DeserializeNetworkEvent        |  1,834.2 ns  |   2,624 B |
-| DeserializeSimpleRemoteValue   |    268.7 ns  |     208 B |
-| DeserializeComplexRemoteValue  |  1,816.1 ns  |   1,024 B |
+| SerializeCommandParameters     |    170.12 ns |     704 B |
+| DeserializeCommandResult       |     96.04 ns |     320 B |
+| DeserializeNetworkEvent        |  1,998.92 ns |   3,088 B |
+| DeserializeSimpleRemoteValue   |    271.84 ns |     208 B |
+| DeserializeComplexRemoteValue  |  1,949.32 ns |   1,024 B |
 
 **PendingCommandCollectionBenchmarks** — transport pending-command bookkeeping
 
 | Method                  | Mean      | Allocated |
 |------------------------ |----------:|----------:|
-| AddRemovePendingCommand |  46.79 ns |      48 B |
+| AddRemovePendingCommand |  47.25 ns |      48 B |
 
 **EventDispatchBenchmarks** — `ObservableEvent<T>.NotifyObserversAsync` dispatch cost
 
-| Method               | ObserverCount | Mean          | Allocated |
-|--------------------- |-------------- |--------------:|----------:|
-| NotifyObservers      | 1             |     19.17 ns  |       0 B |
-| NotifyAsyncObservers | 1             |    313.22 ns  |     303 B |
-| NotifyObservers      | 4             |     71.33 ns  |       0 B |
-| NotifyAsyncObservers | 4             |  1,273.30 ns  |   1,197 B |
-| NotifyObservers      | 16            |    228.86 ns  |       0 B |
-| NotifyAsyncObservers | 16            |  5,052.46 ns  |   4,807 B |
+| Method               | ObserverCount | Mean         | Allocated |
+|--------------------- |-------------- |-------------:|----------:|
+| NotifyObservers      | 1             |     19.44 ns |       0 B |
+| NotifyAsyncObservers | 1             |    312.73 ns |     304 B |
+| NotifyObservers      | 4             |     72.87 ns |       0 B |
+| NotifyAsyncObservers | 4             |  1,217.97 ns |   1,216 B |
+| NotifyObservers      | 16            |    241.06 ns |       0 B |
+| NotifyAsyncObservers | 16            |  4,952.73 ns |   4,864 B |
 
 **CommandExecutionBenchmarks** — end-to-end `BiDiDriver.ExecuteCommandAsync` round trip via echo connection
 
-| Method                  | Mean      | Allocated |
-|------------------------ |----------:|----------:|
-| ExecuteCommandRoundTrip |  4.491 μs |   3.45 KB |
+| Method                                       | Mean        | Allocated |
+|--------------------------------------------- |------------:|----------:|
+| ExecuteCommandRoundTrip                      | 4,077.99 ns |   2,984 B |
+| ExecuteCommandRoundTripWithCancellationToken | 4,314.89 ns |   3,064 B |
+
+The second method makes the same call with a `CancellationToken`, which is the
+shape [BIDI004 and BIDI013](docs/articles/advanced/analyzers.md) ask callers to
+write. The difference between the two is what passing a token costs on a round
+trip: the connection builds a linked `CancellationTokenSource` per send only
+when a token is supplied, and the one the pending command builds registers a
+callback on the caller's source rather than none.
 
 To run the suite yourself:
 
@@ -234,11 +263,13 @@ To update the DocFx tooling, you can use the following command:
 
     dotnet tool update -g docfx
 
-To build the documentation, use the following commands. The first step is required because
-`docfx metadata` reads the API surface from the Release `netstandard2.0` build of the main
-library (see `docs/docfx.json`), which the snippets project does not produce by itself:
+To build the documentation, use the following commands. The first two steps are required because
+`docfx metadata` reads the API surface from the Release `netstandard2.0` builds of the main library
+and of the `WebDriverBiDi.Logging` package (see `docs/docfx.json`), which the snippets project does
+not produce by itself (it builds only the `net10.0` flavour of each):
 
     dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release
+    dotnet build src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj --configuration Release
     dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
     docfx metadata docs/docfx.json
     docfx build docs/docfx.json

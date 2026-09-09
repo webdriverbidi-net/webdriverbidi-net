@@ -103,17 +103,23 @@ internal static class AnalyzerSymbolHelpers
 
     /// <summary>
     /// Gets the body syntax node for a handler expression passed to AddObserver.
-    /// Returns the lambda body, or resolves a method reference to its body.
+    /// Returns the body of an anonymous function, or resolves a method reference to its body.
     /// </summary>
     /// <param name="context">The analysis context.</param>
     /// <param name="expression">The handler expression.</param>
     /// <returns>The body syntax node, or <see langword="null"/> if it cannot be resolved.</returns>
+    /// <remarks>
+    /// Matching <see cref="AnonymousFunctionExpressionSyntax"/> covers all three spellings of an inline
+    /// handler at once: a simple lambda, a parenthesized lambda, and an anonymous method written with the
+    /// <c>delegate</c> keyword. All three declare their body on that base type. Matching the two lambda
+    /// forms individually would silently exempt <c>delegate (…) { … }</c> handlers from every rule that
+    /// inspects a handler body, which is a legal spelling with exactly the same hazards.
+    /// </remarks>
     internal static SyntaxNode? GetHandlerBody(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
     {
         return expression switch
         {
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Body,
-            ParenthesizedLambdaExpressionSyntax parenthesizedLambda => parenthesizedLambda.Body,
+            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.Body,
             IdentifierNameSyntax identifierName => GetMethodBodyFromSymbol(context, identifierName),
             MemberAccessExpressionSyntax memberAccess => GetMethodBodyFromSymbol(context, memberAccess),
             _ => null,
@@ -121,19 +127,19 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
-    /// Determines whether a type is a library module: its name ends in <c>"Module"</c> and it either
-    /// derives from the abstract <c>Module</c> base class or is declared within the
-    /// <c>WebDriverBiDi</c> namespace. Requiring more than the <c>"*Module"</c> name avoids matching
-    /// unrelated user types that merely end in <c>"Module"</c> (they neither derive from <c>Module</c>
-    /// nor live in the library's namespace).
+    /// Determines whether a type is a library module: it derives from the abstract <c>Module</c> base
+    /// class, whatever it is named — a custom <c>class GoogleCdp : Module</c> is registered and used
+    /// exactly as one named <c>GoogleCdpModule</c> would be — or it is a <c>"*Module"</c> type
+    /// declared within the <c>WebDriverBiDi</c> namespace. Unrelated user types that merely end in
+    /// <c>"Module"</c> neither derive from <c>Module</c> nor live in the library's namespace, and are
+    /// not matched.
     /// </summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> if the type is a library module; otherwise <see langword="false"/>.</returns>
     internal static bool IsLibraryModuleType(ITypeSymbol? type)
     {
         return type is INamedTypeSymbol named
-            && named.Name.EndsWith("Module", System.StringComparison.Ordinal)
-            && (IsModuleSubclass(named) || IsInWebDriverBiDiNamespace(named));
+            && (IsModuleSubclass(named) || (named.Name.EndsWith("Module", System.StringComparison.Ordinal) && IsInWebDriverBiDiNamespace(named)));
     }
 
     /// <summary>
@@ -145,13 +151,79 @@ internal static class AnalyzerSymbolHelpers
     /// <returns><see langword="true"/> if the type is declared in the WebDriverBiDi namespace; otherwise <see langword="false"/>.</returns>
     internal static bool IsInWebDriverBiDiNamespace(INamedTypeSymbol type)
     {
-        // A named type always has a containing namespace (the global namespace at worst).
-        // Match the library's root namespace exactly, or one of its sub-namespaces via the
-        // dotted prefix; a bare prefix match would also claim a user's own namespace that
-        // merely begins with the same characters (WebDriverBiDiExtensions, for example),
-        // branding the user's types with this library's diagnostics.
-        string namespaceName = type.ContainingNamespace!.ToString();
-        return namespaceName == "WebDriverBiDi" || namespaceName.StartsWith("WebDriverBiDi.", System.StringComparison.Ordinal);
+        // The library's root namespace exactly, or one of its sub-namespaces. A bare prefix match
+        // would also claim a user's own namespace that merely begins with the same characters
+        // (WebDriverBiDiExtensions, for example), branding the user's types with this library's
+        // diagnostics; asking whether the outermost enclosing namespace *is* WebDriverBiDi draws
+        // that distinction exactly, and does so without formatting the fully qualified name.
+        // Composing the name (ContainingNamespace.ToString()) allocates a string on every call, and
+        // this runs once per base type and per implemented interface of every symbol the analyzers
+        // inspect, so the walk is the cheaper of the two identical tests.
+        //
+        // A named type always has a containing namespace (the global namespace at worst), and only
+        // the global namespace has no container, so the loop always terminates.
+        INamespaceSymbol containingNamespace = type.ContainingNamespace!;
+        if (containingNamespace.IsGlobalNamespace)
+        {
+            return false;
+        }
+
+        while (!containingNamespace.ContainingNamespace.IsGlobalNamespace)
+        {
+            containingNamespace = containingNamespace.ContainingNamespace;
+        }
+
+        return containingNamespace.Name == "WebDriverBiDi";
+    }
+
+    /// <summary>
+    /// Determines whether a type is the library's type of the given simple name, rather than an
+    /// unrelated type that merely shares the name.
+    /// </summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <param name="name">The simple name of the library type.</param>
+    /// <returns><see langword="true"/> if the type is the library's; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Matching on the simple name alone claims types this library has nothing to do with: a user class
+    /// deriving from <c>Autofac.Module</c>, for example, would be treated as a WebDriver BiDi module and
+    /// reported by BIDI010 at Error severity. Requiring the WebDriverBiDi namespace as well is the same
+    /// guard <see cref="IsInWebDriverBiDiNamespace"/> already applies to <c>BiDiDriver</c> and
+    /// <c>IBiDiCommandExecutor</c>.
+    /// </remarks>
+    internal static bool IsLibraryTypeNamed(ITypeSymbol? type, string name)
+    {
+        return type is INamedTypeSymbol named
+            && named.Name == name
+            && IsInWebDriverBiDiNamespace(named);
+    }
+
+    /// <summary>
+    /// Determines whether an invocation could be a call to one of the named methods, judged from
+    /// syntax alone. Used as a pre-filter ahead of the semantic model, whose <c>GetSymbolInfo</c> is
+    /// far more expensive than a name comparison and would otherwise be run for every invocation in
+    /// every compiled file.
+    /// </summary>
+    /// <param name="invocation">The invocation to inspect.</param>
+    /// <param name="methodNames">The method names of interest.</param>
+    /// <returns><see langword="false"/> only when the invocation definitely names none of the methods; otherwise <see langword="true"/>.</returns>
+    /// <remarks>
+    /// This is a conservative filter, never an answer: it returns <see langword="true"/> whenever the
+    /// invoked name is not syntactically evident (a delegate produced by another expression, say), so
+    /// the caller still resolves the symbol and applies its own authoritative name test. Names are
+    /// compared by <c>ValueText</c> rather than <c>Text</c> so that a verbatim identifier
+    /// (<c>@ExecuteCommandAsync</c>) is not filtered out here and silently robbed of its diagnostic.
+    /// </remarks>
+    internal static bool CouldInvokeAnyOf(InvocationExpressionSyntax invocation, string[] methodNames)
+    {
+        SimpleNameSyntax? invokedName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
+            SimpleNameSyntax simpleName => simpleName,
+            _ => null,
+        };
+
+        return invokedName is null || methodNames.Contains(invokedName.Identifier.ValueText);
     }
 
     /// <summary>
@@ -283,6 +355,148 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
+    /// Collects the names of variables that the given body hands to other code, so that a rule which
+    /// tracks a variable's state across a single member can stop tracking them.
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <returns>The set of names whose state cannot be known from this member alone.</returns>
+    /// <remarks>
+    /// A variable passed to a method, returned, stored elsewhere, or used to initialize another
+    /// variable can be operated on by code the analyzer cannot see, so its state after that point is
+    /// unknown. Rules that walk a member textually collect these names up front rather than at the
+    /// point of escape, because the other code may run before or after the tracked call textually.
+    /// Being on the left of an assignment is not an escape: that rebinds the name rather than handing
+    /// the object out, and a rule that tracks assignments handles it directly.
+    /// </remarks>
+    internal static HashSet<string> FindVariablesHandedToOtherCode(SyntaxNode body)
+    {
+        HashSet<string> escapedNames = [];
+        foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
+        {
+            bool escapes = identifier.Parent switch
+            {
+                // Returned to the caller: return observer; or yield return observer;
+                ReturnStatementSyntax or YieldStatementSyntax => true,
+
+                // Stored somewhere this member does not own: this.observer = observer;
+                AssignmentExpressionSyntax assignment => assignment.Right == identifier,
+
+                // Passed to a method or constructor that may operate on it: BeginCapture(observer);
+                ArgumentSyntax => true,
+
+                // Placed in a collection expression or an initializer, or used to initialize another
+                // variable that may be operated on under its own name.
+                ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
+
+                _ => false,
+            };
+
+            if (escapes)
+            {
+                escapedNames.Add(identifier.Identifier.ValueText);
+            }
+        }
+
+        return escapedNames;
+    }
+
+    /// <summary>
+    /// Collects the names of variables on which one of the given methods is called from inside a
+    /// nested function (a lambda, an anonymous method, or a local function).
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <param name="methodNames">The names of the methods that change the state being tracked.</param>
+    /// <returns>The set of names whose state a nested function can change.</returns>
+    /// <remarks>
+    /// A nested function runs when its delegate is invoked, not where it is written, so a call inside
+    /// one changes the variable's state at a point a textual walk cannot place. Only calls that change
+    /// the tracked state count: treating every capture as unknown would stop a rule reporting a genuine
+    /// problem elsewhere in the same member.
+    /// </remarks>
+    internal static HashSet<string> FindVariablesChangedInsideNestedFunctions(SyntaxNode body, string[] methodNames)
+    {
+        HashSet<string> changedNames = [];
+        foreach (InvocationExpressionSyntax invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
+                memberAccess.Expression is not IdentifierNameSyntax receiver ||
+                !methodNames.Contains(memberAccess.Name.Identifier.ValueText))
+            {
+                continue;
+            }
+
+            // The invocation came from the body's descendants, so the body is always an ancestor and
+            // always stops the walk.
+            bool insideNestedFunction = invocation.Ancestors()
+                .TakeWhile(ancestor => ancestor != body)
+                .Any(ancestor => !DoesNotBeginNestedFunction(ancestor));
+
+            if (insideNestedFunction)
+            {
+                changedNames.Add(receiver.Identifier.ValueText);
+            }
+        }
+
+        return changedNames;
+    }
+
+    /// <summary>
+    /// The names of the methods that hand back a disposable handle for an event subscription.
+    /// </summary>
+    internal static readonly string[] EventSubscriptionHandleMethodNames = ["AddObserver", "AddDataCollector", "Subscribe"];
+
+    /// <summary>
+    /// Gets the name of the disposable handle type an invocation returns, for the three calls that
+    /// hand one back.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="invocation">The invocation to inspect.</param>
+    /// <returns>The handle type's name and the name of the method that returned it, or <see langword="null"/> when the call returns no handle.</returns>
+    /// <remarks>
+    /// <c>AddObserver</c> and <c>AddDataCollector</c> are recognised by their return types.
+    /// <c>Subscribe</c> is not: <see cref="IObservable{T}"/> declares it as returning
+    /// <see cref="IDisposable"/>, so the receiver is what identifies the call — an
+    /// <see cref="IObservable{T}"/> of a library event-args type can only have come from this
+    /// library's <c>ToObservable</c>.
+    /// </remarks>
+    internal static (string HandleTypeName, string MethodName)? GetEventSubscriptionHandle(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
+    {
+        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        {
+            return null;
+        }
+
+        if (method.Name == "AddObserver" && IsLibraryTypeNamed(method.ReturnType, "EventObserver"))
+        {
+            return ("EventObserver", method.Name);
+        }
+
+        if (method.Name == "AddDataCollector" && IsLibraryTypeNamed(method.ReturnType, "EventDataCollector"))
+        {
+            return ("EventDataCollector", method.Name);
+        }
+
+        return method.Name == "Subscribe" && IsLibraryEventObservable(semanticModel, invocation)
+            ? ("ObservableEventSubscription", method.Name)
+            : null;
+    }
+
+    /// <summary>
+    /// Determines whether an invocation's receiver is an observable over this library's event
+    /// arguments.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="invocation">The invocation to inspect.</param>
+    /// <returns><see langword="true"/> if the receiver is such an observable; otherwise <see langword="false"/>.</returns>
+    private static bool IsLibraryEventObservable(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax memberAccess
+            && semanticModel.GetTypeInfo(memberAccess.Expression).Type is INamedTypeSymbol { Name: "IObservable", TypeArguments.Length: 1 } observable
+            && observable.TypeArguments[0] is INamedTypeSymbol eventArgsType
+            && IsInWebDriverBiDiNamespace(eventArgsType);
+    }
+
+    /// <summary>
     /// Determines whether a Module type has <c>Module</c> anywhere in its base-type chain.
     /// </summary>
     /// <param name="type">The type to inspect.</param>
@@ -292,7 +506,7 @@ internal static class AnalyzerSymbolHelpers
         INamedTypeSymbol? current = type!.BaseType;
         while (current != null)
         {
-            if (current.Name == "Module")
+            if (IsLibraryTypeNamed(current, "Module"))
             {
                 return true;
             }
@@ -317,10 +531,19 @@ internal static class AnalyzerSymbolHelpers
             return null;
         }
 
+        // A method group can bind to a symbol whose declaring syntax is neither an ordinary method nor a
+        // local function. The clearest case is a delegate type declared in the same compilation: its
+        // implicit Invoke member reports the DelegateDeclarationSyntax as its declaration, so
+        // `handler.Invoke` passed to AddObserver arrives here as a delegate declaration. There is no
+        // body to inspect in that case, and saying so lets the caller decline to analyze the handler
+        // rather than the analyzer throwing and suppressing itself for the whole file.
         SyntaxNode methodDeclaration = syntaxReference.GetSyntax();
-        return methodDeclaration is MethodDeclarationSyntax methodDecl
-            ? methodDecl.Body ?? (SyntaxNode?)methodDecl.ExpressionBody?.Expression
-            : ((LocalFunctionStatementSyntax)methodDeclaration).Body ?? (SyntaxNode?)((LocalFunctionStatementSyntax)methodDeclaration).ExpressionBody?.Expression;
+        return methodDeclaration switch
+        {
+            MethodDeclarationSyntax method => method.Body ?? (SyntaxNode?)method.ExpressionBody?.Expression,
+            LocalFunctionStatementSyntax localFunction => localFunction.Body ?? (SyntaxNode?)localFunction.ExpressionBody?.Expression,
+            _ => null,
+        };
     }
 
     private static bool HasTypeOrBaseOrInterface(ITypeSymbol? type, params string[] typeNames)
@@ -330,12 +553,17 @@ internal static class AnalyzerSymbolHelpers
             // Require the matched type to be declared in the WebDriverBiDi namespace so a user's own
             // type that merely shares a name (for example a class named BiDiDriver, or an interface
             // named IBiDiCommandExecutor, in another namespace) is not treated as the library type.
-            if (current is INamedTypeSymbol namedCurrent && typeNames.Contains(namedCurrent.Name) && IsInWebDriverBiDiNamespace(namedCurrent))
+            if (current is not INamedTypeSymbol namedCurrent)
+            {
+                continue;
+            }
+
+            if (typeNames.Contains(namedCurrent.Name) && IsInWebDriverBiDiNamespace(namedCurrent))
             {
                 return true;
             }
 
-            if (current is INamedTypeSymbol namedType && namedType.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name) && IsInWebDriverBiDiNamespace(interfaceType)))
+            if (namedCurrent.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name) && IsInWebDriverBiDiNamespace(interfaceType)))
             {
                 return true;
             }

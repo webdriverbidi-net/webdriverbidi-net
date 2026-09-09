@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Object containing event data for the event raised when a script realm is created.
 /// </summary>
@@ -37,14 +39,28 @@ public record RealmCreatedEventArgs : WebDriverBiDiEventArgs
     public RealmType Type { get => this.info.Type; }
 
     /// <summary>
-    /// Gets this RealmCreatedEventArgs instance as a RealmInfo containing type-specific realm info.
+    /// Converts the underlying realm info to a type-specific realm info, throwing if it is not of that
+    /// type. Use <see cref="TryConvertTo{T}"/> to test without throwing.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
     /// <returns>The underlying RealmInfo cast to the specified type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if this RealmInfo is not the specified type.</exception>
-    public T As<T>()
+    public T ConvertTo<T>()
         where T : RealmInfo
     {
-        return this.info.As<T>();
+        return this.info.ConvertTo<T>();
+    }
+
+    /// <summary>
+    /// Attempts to convert the underlying realm info to a type-specific realm info, returning
+    /// <see langword="false"/> rather than throwing when it is not of that type.
+    /// </summary>
+    /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
+    /// <param name="result">When this method returns, contains the converted value or null if the conversion failed.</param>
+    /// <returns><see langword="true"/> if the conversion was successful; otherwise, <see langword="false"/>.</returns>
+    public bool TryConvertTo<T>([NotNullWhen(true)] out T? result)
+        where T : RealmInfo
+    {
+        return this.info.TryConvertTo(out result);
     }
 }

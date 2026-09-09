@@ -38,9 +38,9 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
         // Find the object creation expression that triggered the diagnostic
-        ObjectCreationExpressionSyntax objectCreation = root!.FindToken(diagnosticSpan.Start)
+        BaseObjectCreationExpressionSyntax objectCreation = root!.FindToken(diagnosticSpan.Start)
             .Parent!.AncestorsAndSelf()
-            .OfType<ObjectCreationExpressionSyntax>()
+            .OfType<BaseObjectCreationExpressionSyntax>()
             .First();
 
         // Get the constructed type name, the reset property name, and the type that declares the
@@ -60,7 +60,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
 
     private static async Task<Document> ReplaceWithResetPropertyAsync(
         Document document,
-        ObjectCreationExpressionSyntax objectCreation,
+        BaseObjectCreationExpressionSyntax objectCreation,
         string typeName,
         string declaringTypeName,
         string resetPropertyName,
@@ -73,9 +73,10 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         // fully-qualified or aliased name) as written at the construction site, so the replacement
         // resolves in the same way the `new` expression did. When the reset property is inherited from
         // a base type, fall back to the base type's simple name (which is in scope whenever the derived
-        // type is, as they share a namespace).
+        // type is, as they share a namespace). The target-typed form `new()` writes no type at all,
+        // so there the analyzer-supplied simple name is the only name available.
         ExpressionSyntax resetPropertyReceiver = typeName == declaringTypeName
-            ? SyntaxFactory.ParseExpression(objectCreation.Type.ToString())
+            ? SyntaxFactory.ParseExpression(objectCreation is ObjectCreationExpressionSyntax explicitCreation ? explicitCreation.Type.ToString() : typeName)
             : SyntaxFactory.IdentifierName(declaringTypeName);
 
         MemberAccessExpressionSyntax resetPropertyAccess = SyntaxFactory.MemberAccessExpression(

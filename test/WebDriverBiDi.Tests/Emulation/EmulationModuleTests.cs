@@ -5,7 +5,7 @@ using TestUtilities;
 public class EmulationModuleTests
 {
     [Fact]
-    public async Task TestSetForcedColorsModeThemeOverrideCommandWithCoordinates()
+    public async Task TestSetForcedColorsModeThemeOverrideCommand()
     {
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(async e =>
@@ -55,7 +55,7 @@ public class EmulationModuleTests
     }
 
     [Fact]
-    public async Task TestSetLocaleOverrideCommandWithCoordinates()
+    public async Task TestSetLocaleOverrideCommand()
     {
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(async e =>
@@ -80,7 +80,7 @@ public class EmulationModuleTests
     }
 
     [Fact]
-    public async Task TestSetMediaFeaturesOverrideOverrideCommandWithCoordinates()
+    public async Task TestSetMediaFeaturesOverrideCommand()
     {
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(async e =>
@@ -105,7 +105,7 @@ public class EmulationModuleTests
     }
 
     [Fact]
-    public async Task TestSetNetworkConditionsCommandWithCoordinates()
+    public async Task TestSetNetworkConditionsCommand()
     {
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(async e =>
@@ -233,7 +233,7 @@ public class EmulationModuleTests
     }
 
     [Fact]
-    public async Task TestSetTimeZoneOverrideCommandWithCoordinates()
+    public async Task TestSetTimeZoneOverrideCommand()
     {
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(async e =>
@@ -258,7 +258,7 @@ public class EmulationModuleTests
     }
 
     [Fact]
-    public async Task TestSetTouchOverrideCommandWithCoordinates()
+    public async Task TestSetTouchOverrideCommand()
     {
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(async e =>

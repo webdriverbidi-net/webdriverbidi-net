@@ -81,7 +81,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -97,6 +97,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -119,7 +124,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -136,6 +141,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -164,7 +174,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -179,6 +189,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -205,7 +220,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 // The required "message" field is absent, so the typed error deserialization throws.
@@ -235,7 +250,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -252,8 +267,26 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here, where the wait above has already proved the producer delivered, so that a
+        // fault inside it is reported as itself rather than as whichever assertion below fails first.
+        await responseTask;
+
+        // Awaited here, where the wait above has already proved the producer delivered, so that a
+        // fault inside it is reported as itself rather than as whichever assertion below fails first.
+        await responseTask;
+
         Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
         Assert.Contains("Response did not contain properly formed JSON for response type", command.ThrownException.Message);
+    }
+
+    [Fact]
+    public async Task TestSendingWithNullParametersThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        await Assert.ThrowsAnyAsync<ArgumentNullException>(async () => await transport.SendCommandAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -282,6 +315,27 @@ public class TransportTests
         Assert.False(hasResult);
         Assert.Null(commandResult);
         Assert.Null(command.ThrownException);
+    }
+
+    [Fact]
+    public async Task TestElapsedMillisecondsRunsWhileTheCommandIsInFlight()
+    {
+        // The remote end never answers, so the command stays pending and its timing stays running.
+        // A running command reports the interval live rather than the frozen value a completed one has.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+
+        TestCommandParameters commandParameters = new("module.command");
+        Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
+
+        Assert.False(command.TryGetResult(out _));
+        long firstReading = command.ElapsedMilliseconds;
+        Assert.True(firstReading >= 0);
+
+        // A second reading of a still-running command never goes backwards. This asserts monotonicity
+        // rather than growth, so it does not depend on how long the test takes to reach this line.
+        Assert.True(command.ElapsedMilliseconds >= firstReading);
     }
 
     [Fact]
@@ -465,6 +519,8 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -478,7 +534,7 @@ public class TransportTests
         string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -494,6 +550,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         bool hasResult = command.TryGetResult(out CommandResult? actualResult);
         Assert.True(hasResult);
         Assert.NotNull(actualResult);
@@ -523,6 +584,8 @@ public class TransportTests
         // deadlock, and the bounded wait below would time out.
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
 
         int reentrantSendCount = 0;
@@ -1127,7 +1190,7 @@ public class TransportTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         static void dataReceivedHandler(ServerDataReceivedEventArgs e) { }
         void connectionHandler(ClientConnectionEventArgs e) { taskCompletionSource.TrySetResult(); }
-        Server server = new();
+        await using Server server = new();
         ServerEventObserver<ServerDataReceivedEventArgs> dataReceivedObserver = server.OnDataReceived.AddObserver(dataReceivedHandler);
         ServerEventObserver<ClientConnectionEventArgs> connectedObserver = server.OnClientConnected.AddObserver(connectionHandler);
         await server.StartAsync();
@@ -1238,6 +1301,249 @@ public class TransportTests
     }
 
     [Fact]
+    public void TestConnectionLockTimeoutDefaultValue()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.Equal(TimeSpan.FromSeconds(60), transport.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public void TestConnectionLockTimeoutCanBeSet()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ConnectionLockTimeout = TimeSpan.FromSeconds(5),
+        };
+        Assert.Equal(TimeSpan.FromSeconds(5), transport.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public void TestConnectionLockTimeoutRejectsNegativeValue()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.Throws<ArgumentOutOfRangeException>(() => transport.ConnectionLockTimeout = TimeSpan.FromMilliseconds(-5));
+    }
+
+    [Fact]
+    public void TestConnectionLockTimeoutAllowsInfiniteTimeSpan()
+    {
+        // An infinite value restores the unbounded wait the transport used before the bound existed,
+        // for a consumer who would rather have a hang than a bounded failure.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ConnectionLockTimeout = Timeout.InfiniteTimeSpan,
+        };
+        Assert.Equal(Timeout.InfiniteTimeSpan, transport.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public async Task TestReentrantCommandFromSynchronousTraceLogObserverTimesOutInsteadOfDeadlocking()
+    {
+        // The transport holds the connection lock across Connection.SendDataAsync, which raises the
+        // connection's own Trace-level "SEND >>>" message before it takes the connection's send
+        // semaphore. A synchronous observer of that message that sends a command therefore asks for a
+        // lock its own caller holds. Before ConnectionLockTimeout existed the two waited on each other
+        // forever, and no command timeout applied, because the deadlock happens inside SendCommandAsync
+        // before the command's completion is ever awaited. The nested send must now fail with a
+        // WebDriverBiDiTimeoutException, and the send it interrupted must go on to complete.
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ConnectionLockTimeout = TimeSpan.FromSeconds(5),
+        };
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        // Route the send through the real Connection.SendDataAsync so that it logs the traffic message,
+        // while keeping the connection off an actual socket.
+        connection.BypassStart = false;
+        connection.IsActiveOverride = () => true;
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
+
+        Exception? nestedSendException = null;
+        int nestedSendAttempts = 0;
+        transport.OnLogMessage.AddObserver(async (e) =>
+        {
+            if (!e.Message.StartsWith("SEND >>>", StringComparison.Ordinal) ||
+                Interlocked.Increment(ref nestedSendAttempts) != 1)
+            {
+                return;
+            }
+
+            try
+            {
+                await transport.SendCommandAsync(new TestCommandParameters("module.nestedCommand"));
+            }
+            catch (Exception ex)
+            {
+                nestedSendException = ex;
+            }
+        });
+
+        Task<Command> outerSendTask = transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+
+        // The nested send's lock wait is the only timer armed here, and it is elapsed on the virtual
+        // clock as soon as it is armed, so the test neither waits nor depends on wall-clock timing.
+        await timeProvider.AdvanceUntilCompletedAsync(outerSendTask, transport.ConnectionLockTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        Command outerCommand = await outerSendTask;
+
+        Assert.Equal(1, nestedSendAttempts);
+        Assert.NotNull(nestedSendException);
+        WebDriverBiDiTimeoutException timeoutException = Assert.IsType<WebDriverBiDiTimeoutException>(nestedSendException);
+        Assert.Contains("waiting for exclusive access to the connection", timeoutException.Message);
+        Assert.Equal("module.command", outerCommand.CommandName);
+    }
+
+    [Fact]
+    public async Task TestConnectionLockAcquisitionPropagatesCallerCancellation()
+    {
+        // A caller who cancels while waiting for the lock gets its own cancellation, not the bound's
+        // timeout exception. The two are distinguished by the exception filter on the catch, so this
+        // covers the case where the filter declines to convert.
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider);
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        TaskCompletionSource lockHeldTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseLockTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            lockHeldTaskCompletionSource.TrySetResult();
+            await releaseLockTaskCompletionSource.Task;
+        };
+
+        Task<Command> lockHolderTask = transport.SendCommandAsync(new TestCommandParameters("module.lockHolder"), TestContext.Current.CancellationToken);
+        await lockHeldTaskCompletionSource.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        using CancellationTokenSource cancellationTokenSource = new();
+        int observedTimerCount = timeProvider.TimerCount;
+        Task<Command> contenderTask = transport.SendCommandAsync(new TestCommandParameters("module.contender"), cancellationTokenSource.Token);
+
+        // The contender arms its bound immediately before waiting on the lock, so waiting for the timer
+        // establishes that it is contending rather than racing ahead of it.
+        await timeProvider.WaitForTimerCreatedAsync(observedTimerCount).WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await contenderTask);
+
+        releaseLockTaskCompletionSource.TrySetResult();
+        await lockHolderTask;
+    }
+
+    [Fact]
+    public async Task TestConnectionLostWhileConnectingFailsTheAttempt()
+    {
+        // The connection's receive loop is live before Connection.StartAsync returns, so the remote end
+        // can close while the transport is still Connecting. The loss cannot be handled where it is
+        // reported, because there is no session to tear down yet, so it is recorded and fails the
+        // attempt. Publishing Connected instead would wedge the transport: the receive loop has already
+        // exited, so nothing further would notice, and IsStarted would report true over a dead
+        // connection until the caller happened to stop it.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource startReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+            StartBarrierReached = startReached,
+        };
+        TestTransport transport = new(connection);
+
+        Task connectTask = transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        await startReached.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        startBarrier.TrySetResult();
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connectTask);
+        Assert.Contains("lost while the session was being established", exception.Message);
+        WebDriverBiDiConnectionException reportedLoss = Assert.IsType<WebDriverBiDiConnectionException>(exception.InnerException);
+        Assert.Contains("Remote end closed the connection", reportedLoss.Message);
+
+        // The attempt rolled back, so the transport is left ready for another one rather than stuck
+        // part-way through a session that never started.
+        Assert.Equal(TransportState.Disconnected, transport.State);
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+    }
+
+    [Fact]
+    public async Task TestConnectionErrorWhileConnectingFailsTheAttempt()
+    {
+        // A connection error reported during the same window is recorded through the same path as a
+        // remote close, and names itself as the cause of the failed attempt.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource startReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+            StartBarrierReached = startReached,
+        };
+        TestTransport transport = new(connection);
+
+        Task connectTask = transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        await startReached.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        await connection.RaiseConnectionErrorEventAsync(new InvalidOperationException("Simulated receive failure"));
+        startBarrier.TrySetResult();
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connectTask);
+        WebDriverBiDiConnectionException reportedLoss = Assert.IsType<WebDriverBiDiConnectionException>(exception.InnerException);
+        Assert.Contains("Simulated receive failure", reportedLoss.Message);
+        Assert.Equal(TransportState.Disconnected, transport.State);
+    }
+
+    [Fact]
+    public async Task TestConnectionLostWhileConnectingDrainsBufferedMessages()
+    {
+        // A message delivered before the loss sits in a queue whose reader is never started, holding a
+        // pooled buffer that only its disposal returns. The failing attempt drains and disposes it, and
+        // leaves no phantom depth behind for IncomingQueueDepth to report.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource startReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+            StartBarrierReached = startReached,
+        };
+        TestTransport transport = new(connection);
+
+        Task connectTask = transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        await startReached.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+        Assert.Equal(1, transport.IncomingQueueDepth);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        startBarrier.TrySetResult();
+
+        await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connectTask);
+        Assert.True(owner.IsDisposed, "The buffered message's pooled buffer was not returned by the failed connect attempt.");
+        Assert.Equal(0, transport.IncomingQueueDepth);
+    }
+
+    [Fact]
+    public async Task TestConnectionLockAcquisitionThrowsWhenTokenAlreadyCanceled()
+    {
+        // The lock is free here, so this covers the guard that keeps the uncontended fast path from
+        // taking the lock for a caller that has already given up.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+
+        using CancellationTokenSource cancellationTokenSource = new();
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationTokenSource.Token));
+    }
+
+    [Fact]
     public async Task TestDisconnectWhenNotConnectedDoesNotThrow()
     {
         TestWebSocketConnection connection = new();
@@ -1296,10 +1602,13 @@ public class TransportTests
         object? receivedData = null;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
-            MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -1320,7 +1629,14 @@ public class TransportTests
                       """;
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+
+        // The event is held inside the processing loop when the disconnect begins, so the disconnect
+        // must process it before completing; releasing the gate afterwards lets that happen without
+        // a timed delay.
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        gate.TrySetResult();
+        await disconnectTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Equal("protocol.event", receivedName);
@@ -1506,12 +1822,12 @@ public class TransportTests
         // The original handler failure is captured after the error event is raised; the
         // error observer's own asynchronous fault is captured without re-raising.
         await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Negative check: a feedback loop would keep re-invoking the error observer and
-        // capturing further errors, so after this delay neither count may have grown.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
         Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
+
+        // A feedback loop would keep re-invoking the error observer and capturing further errors,
+        // every one of which would surface as an extra inner exception on disconnect; the exact
+        // count below is the deterministic negative check.
 
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
         Assert.Equal(2, exception.InnerExceptions.Count);
@@ -1565,12 +1881,12 @@ public class TransportTests
         // Both the original handler failure and the error observer's own failure are
         // captured, the latter without re-raising the error event.
         await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Negative check: a feedback loop would keep re-invoking the error observer and
-        // capturing further errors, so after this delay neither count may have grown.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
         Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
+
+        // A feedback loop would keep re-invoking the error observer and capturing further errors,
+        // every one of which would surface as an extra inner exception on disconnect; the exact
+        // count below is the deterministic negative check.
 
         // Only EventHandlerExceptionBehavior is set to Collect here, so both inner
         // exceptions surfacing on disconnect proves both failures were captured under
@@ -1685,13 +2001,14 @@ public class TransportTests
         // as disposal behaved before the serialization was added.
         List<LogMessageEventArgs> logs = [];
         TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new()
         {
             StartBarrier = startBarrier,
         };
-        TestTransport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(100),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.OnLogMessage.AddObserver(e =>
         {
@@ -1704,7 +2021,10 @@ public class TransportTests
         Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         Assert.Equal(TransportState.Connecting, transport.State);
 
-        await transport.DisposeAsync();
+        // The shutdown timeout is elapsed on the virtual clock as soon as disposal arms it.
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(disposeTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disposeTask;
 
         Assert.True(transport.IsDisposed);
         lock (logs)
@@ -1788,8 +2108,8 @@ public class TransportTests
                       """;
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect);
         Assert.True(errorPropagated);
 
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
@@ -1832,8 +2152,8 @@ public class TransportTests
                       """;
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
         Assert.True(errorPropagated);
 
         string commandName = "module.command";
@@ -1901,7 +2221,7 @@ public class TransportTests
         string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -1917,6 +2237,11 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
+
         Assert.Equal(1, transport.LastTestCommandId);
     }
 
@@ -2169,10 +2494,11 @@ public class TransportTests
         TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<LogMessageEventArgs> logs = [];
 
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -2199,7 +2525,10 @@ public class TransportTests
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        // The shutdown timeout is elapsed on the virtual clock as soon as the disconnect arms it.
+        Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(disconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disconnectTask;
 
         Assert.Contains(logs,
             log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown")
@@ -2219,10 +2548,11 @@ public class TransportTests
         TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<LogMessageEventArgs> logs = [];
 
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -2254,7 +2584,10 @@ public class TransportTests
         // so the queue can never drain during shutdown.
         await connection.RaiseDataReceivedEventAsync(json);
 
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        // The shutdown timeout is elapsed on the virtual clock as soon as the disconnect arms it.
+        Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(disconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disconnectTask;
 
         Assert.Contains(logs,
             log => log.Message.Contains("Timed out waiting for message writer to complete during shutdown")
@@ -2442,9 +2775,13 @@ public class TransportTests
                                 }
                               }
                               """;
-        _ = Task.Run(async () => await connection.RaiseDataReceivedEventAsync(responseJson), TestContext.Current.CancellationToken);
+        Task responseTask = Task.Run(async () => await connection.RaiseDataReceivedEventAsync(responseJson), TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+
+        // Awaited here so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
 
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
         Assert.True(hasResult);
@@ -2911,6 +3248,44 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestReconnectingAfterRemoteDisconnectWithoutDisconnectingDiscardsCollectedExceptions()
+    {
+        // Specifies the documented contract of ConnectAsync: after a remote disconnect the transport
+        // is already disconnected, so a caller may reconnect without calling DisconnectAsync first,
+        // and doing so starts a new session that clears the Collect-mode errors of the old one.
+        // Only DisconnectAsync throws collected errors; a DisconnectAsync after the reconnect sees
+        // the new session's (empty) collection.
+        InvalidOperationException injectedFault = new("simulated outer-loop fault");
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ReadLoopOuterFault = [injectedFault],
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
+            TimeSpan.FromSeconds(5),
+            TransportErrorBehavior.Collect);
+        if (!faultCaptured)
+        {
+            throw new XunitException("the fault-capture continuation should record the injected fault before the safety timeout");
+        }
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+        Assert.Equal(TransportState.Disconnected, transport.State);
+
+        // The new session's read loop must not fault, or the disconnect below would throw the new
+        // session's own collected error rather than prove the old one was discarded.
+        transport.ReadLoopOuterFault = null;
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+
+        // Had the old session's fault survived the reconnect, this would throw the AggregateException.
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestCollectedExceptionsAreSurfacedOnlyOnceAcrossRepeatedDisconnectCalls()
     {
         // Companion to TestCollectedExceptionsAreSurfacedOnDisconnectAfterRemoteDisconnect:
@@ -3189,6 +3564,8 @@ public class TransportTests
         {
             AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
@@ -3306,6 +3683,8 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Ignore,
             AfterUnhandledErrorCaptured = () => taskCompletionSource.TrySetResult(),
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
@@ -3404,6 +3783,155 @@ public class TransportTests
     public async Task TestConnectionErrorWhileDisconnectHoldsLockDoesNotDeadlock()
     {
         await RunDeadlockScenarioAsync(connection => connection.SignalConnectionError());
+    }
+
+    /// <summary>
+    /// A connection loss whose wait for the connection lock is abandoned must leave the session
+    /// standing rather than tear it down without the lock, and must not release a lock it never
+    /// acquired.
+    /// </summary>
+    /// <remarks>
+    /// The lock is held here by a command send rather than by a disconnect, so no ownership signal is
+    /// raised and the abandoned wait is the only task that can win the race. An implementation that
+    /// reads winning the race as holding the lock releases a lock the send still holds.
+    /// </remarks>
+    [Fact]
+    public async Task TestConnectionLossWithAbandonedLockWaitLeavesSessionStanding()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        TestReceiveLoopWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+
+        // Never wait for the lock, so the handler's wait is abandoned the instant it finds it held.
+        transport.ConnectionLockTimeout = TimeSpan.Zero;
+
+        // Raised when the handler gives up, or by the teardown a broken implementation performs
+        // instead, which logs at the same level: either way the send below is released, so a failure
+        // here is a failed assertion rather than a hang.
+        TaskCompletionSource connectionLossHandled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        string? warningMessage = null;
+        using EventObserver<LogMessageEventArgs> logObserver = transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Level == WebDriverBiDiLogLevel.Warn)
+            {
+                warningMessage ??= e.Message;
+                connectionLossHandled.TrySetResult();
+            }
+        });
+
+        // Fires once, while SendCommandAsync holds the lock: dispatch the connection loss there, and
+        // hold the send until the handler has dealt with it.
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            connection.SignalRemoteClose();
+            await connectionLossHandled.Task;
+        };
+
+        // An over-release surfaces here as a SemaphoreFullException from the send's own release.
+        await transport.SendCommandAsync(new TestCommandParameters("module.command"), testCancellationToken);
+
+        Assert.NotNull(warningMessage);
+        Assert.Contains("waiting for exclusive access to the connection to handle a connection loss", warningMessage);
+
+        // The session was left standing, with the pending command collection still open.
+        Assert.Equal(TransportState.Connected, transport.State);
+        Assert.Equal(1, transport.TestPendingCommandCount);
+
+        await transport.DisposeAsync();
+    }
+
+    /// <summary>
+    /// A wait for the connection lock that is left outstanding when DisconnectAsync wins the ownership
+    /// race, and is then abandoned rather than granted, must not release the lock the disconnect
+    /// holds.
+    /// </summary>
+    /// <remarks>
+    /// The companion of the scenario above, on the other side of the race. An implementation that
+    /// hands the lock back regardless of how the wait settled either faults the disconnect's own
+    /// release or silently leaves the semaphore admitting a second holder; the probe at the end of
+    /// this test rules out both.
+    /// </remarks>
+    [Fact]
+    public async Task TestOutstandingLockWaitAbandonedWhileDisconnectOwnsTeardownDoesNotReleaseLock()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        TestReceiveLoopWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        transport.ConnectionLockTimeout = TimeSpan.Zero;
+
+        TaskCompletionSource handlerWaitStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource openHandlerWait = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handlerWaitAbandoned = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Acquisition 1 is DisconnectAsync's; acquisition 2 is the connection-loss handler's. Holding
+        // the handler's wait keeps it outstanding, so the ownership signal wins the race.
+        int lockAcquisitionAttempts = 0;
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            if (Interlocked.Increment(ref lockAcquisitionAttempts) == 2)
+            {
+                handlerWaitStarted.TrySetResult();
+                await openHandlerWait.Task;
+            }
+        };
+
+        transport.AcquireLockFailedCallback = () => handlerWaitAbandoned.TrySetResult();
+
+        // Fires once, while DisconnectAsync holds the lock: end the receive loop, then hold the
+        // disconnect until the handler's wait is outstanding, forcing the interleaving.
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            connection.SignalRemoteClose();
+            await handlerWaitStarted.Task;
+        };
+
+        // "Transport disconnected" is logged inside DisconnectAsync's critical section, so the lock is
+        // still held here: open the handler's wait so that it finds the lock held and is abandoned,
+        // and hold the disconnect until that has happened.
+        using EventObserver<LogMessageEventArgs> logObserver = transport.OnLogMessage.AddObserver(async e =>
+        {
+            if (e.Message == "Transport disconnected")
+            {
+                openHandlerWait.TrySetResult();
+                await handlerWaitAbandoned.Task;
+            }
+        });
+
+        // An over-release before the disconnect's own release faults it with a SemaphoreFullException,
+        // which surfaces here.
+        Task disconnectTask = transport.DisconnectAsync(testCancellationToken);
+        Task settledTask = await Task.WhenAny(disconnectTask, Task.Delay(DeadlockDetectionTimeout, testCancellationToken));
+        if (settledTask != disconnectTask)
+        {
+            Assert.Fail($"DisconnectAsync did not complete within {DeadlockDetectionTimeout.TotalSeconds} seconds.");
+        }
+
+        await disconnectTask;
+        Assert.True(handlerWaitAbandoned.Task.IsCompleted, "The connection-loss handler's wait for the lock should have been abandoned.");
+
+        // An over-release after it leaves no exception behind, so probe the invariant directly: with a
+        // holder parked in its critical section, a second wait must still be abandoned.
+        transport.BeforeAcquireLockCallback = null;
+        TaskCompletionSource lockHeld = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseLockHolder = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            lockHeld.TrySetResult();
+            await releaseLockHolder.Task;
+        };
+
+        Task reconnectTask = transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await lockHeld.Task;
+        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(
+            async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), testCancellationToken));
+
+        releaseLockHolder.TrySetResult();
+        await reconnectTask;
+        await transport.DisposeAsync();
     }
 
     /// <summary>
@@ -3605,6 +4133,8 @@ public class TransportTests
         {
             UnknownMessageBehavior = TransportErrorBehavior.Terminate,
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         transport.OnUnknownMessageReceived.AddObserver(e => unknownMessageReceived = true);
         transport.OnLogMessage.AddObserver(e =>
         {
@@ -3649,6 +4179,8 @@ public class TransportTests
         {
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
         };
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         transport.OnErrorEventReceived.AddObserver(e => errorEventReceived = true);
         transport.OnLogMessage.AddObserver(e =>
         {
@@ -3894,10 +4426,23 @@ public class TransportTests
         TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource releaseHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource secondEventProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource reconnectWaitingTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int eventCount = 0;
 
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        Transport transport = new(connection)
+        {
+            LogLevel = WebDriverBiDiLogLevel.Debug,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("Waiting for message processing of the previous session", StringComparison.Ordinal))
+            {
+                reconnectWaitingTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(async e =>
         {
@@ -3929,11 +4474,14 @@ public class TransportTests
         // The remote end closes the connection while the handler is still executing.
         await connection.RaiseRemoteDisconnectedEventAsync();
 
-        // Reconnecting must block until the previous reader has exited. The fixed delay is a
-        // negative check: the reconnect must still be pending after it elapses.
+        // Reconnecting must block until the previous reader has exited. The Debug log message is
+        // raised only when ConnectAsync has found the previous reader still running and is
+        // entering the wait for it, and log observers run before the wait begins, so receiving
+        // it proves the reconnect is blocked on the reader rather than pending for some other
+        // reason.
         Task reconnectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
-        Task completedTask = await Task.WhenAny(reconnectTask, Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken));
-        Assert.NotSame(reconnectTask, completedTask);
+        await reconnectWaitingTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(reconnectTask.IsCompleted);
 
         releaseHandlerTaskCompletionSource.TrySetResult();
         await reconnectTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -3958,10 +4506,11 @@ public class TransportTests
         List<LogMessageEventArgs> logs = [];
         int eventCount = 0;
 
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        TestTransport transport = new(connection, timeProvider)
         {
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e =>
@@ -3997,7 +4546,10 @@ public class TransportTests
 
         await connection.RaiseRemoteDisconnectedEventAsync();
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        // The shutdown timeout is elapsed on the virtual clock as soon as the reconnect arms it.
+        Task reconnectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await reconnectTask;
 
         Assert.Contains(logs,
             log => log.Message.Contains("Timed out waiting for message processing of the previous connection to complete before reconnecting")
@@ -4009,6 +4561,81 @@ public class TransportTests
         Assert.Equal(0, transport.IncomingQueueDepth);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestReconnectAfterTimedOutHandlerDoesNotCorruptQueueDepth()
+    {
+        // A reconnect that gives up waiting for a stuck handler leaves the previous connection's
+        // reader still draining the previous connection's queue. Those reads must be counted
+        // against the queue the messages actually came from, not against the queue the new
+        // connection is filling; otherwise the depth reported for the new connection is
+        // decremented for messages that were never on it, and goes negative.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource firstHandlerBlockedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseFirstHandlerTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource staleMessageProcessedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int eventCount = 0;
+
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            int currentCount = Interlocked.Increment(ref eventCount);
+            if (currentCount == 1)
+            {
+                firstHandlerBlockedTaskCompletionSource.TrySetResult();
+                releaseFirstHandlerTaskCompletionSource.Task.GetAwaiter().GetResult();
+            }
+            else
+            {
+                staleMessageProcessedTaskCompletionSource.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+
+        await transport.ConnectAsync("ws:localhost", cancellationToken);
+
+        // Two messages reach the first connection's queue. The reader takes the first, decrementing
+        // that queue's depth, and then blocks in the handler, so the second is left unread on it.
+        await connection.RaiseDataReceivedEventAsync(json);
+        await firstHandlerBlockedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await connection.RaiseDataReceivedEventAsync(json);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // The reader is still stuck in the handler, so this reconnect times out waiting for it and
+        // installs a new queue while the old one still holds an unread message.
+        Task reconnectTask = transport.ConnectAsync("ws:localhost", cancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
+        await reconnectTask;
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        // Releasing the handler lets the previous connection's reader drain that unread message.
+        releaseFirstHandlerTaskCompletionSource.SetResult();
+        await staleMessageProcessedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        // The drain belonged to the previous connection's queue, so the current connection's depth
+        // is untouched by it.
+        Assert.Equal(0, transport.IncomingQueueDepth);
+
+        await transport.DisconnectAsync(cancellationToken);
     }
 
     [Fact]
@@ -4037,6 +4664,141 @@ public class TransportTests
         Assert.True(owner.IsDisposed);
         Assert.False(eventReceived);
         Assert.Equal(0, transport.IncomingQueueDepth);
+    }
+
+    [Fact]
+    public async Task TestDisposeWaitsForMessageProcessingAfterConnectionLoss()
+    {
+        // Connection loss completes the incoming message queue but deliberately does not await the reader,
+        // because the handler runs on the connection's receive loop. Disposal must do that waiting, or it
+        // tears down resources while observers are still being notified. The gate is never opened, so the
+        // wait can only end by timing out - which is exactly what proves disposal waited at all.
+        List<string> logMessages = [];
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logMessages)
+            {
+                logMessages.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        // The message is now held inside the processing loop, so the reader cannot complete.
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // The shutdown timeout is elapsed on the virtual clock as soon as disposal arms it.
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(disposeTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disposeTask;
+
+        lock (logMessages)
+        {
+            Assert.Contains("Timed out waiting for message processing to complete during disposal", logMessages);
+        }
+
+        gate.TrySetResult();
+    }
+
+    [Fact]
+    public async Task TestDisposeReturnsOnceMessageProcessingCompletesAfterConnectionLoss()
+    {
+        // The companion to the timeout case: when the in-flight message finishes, disposal stops waiting and
+        // completes without logging the timeout warning.
+        List<string> logMessages = [];
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(30),
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logMessages)
+            {
+                logMessages.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // Release the held message, then dispose: the reader drains and disposal returns without timing out.
+        gate.TrySetResult();
+        await transport.DisposeAsync();
+
+        lock (logMessages)
+        {
+            Assert.DoesNotContain("Timed out waiting for message processing to complete during disposal", logMessages);
+        }
+    }
+
+    [Fact]
+    public async Task TestDisposeWaitsIndefinitelyForMessageProcessingWhenShutdownTimeoutIsInfinite()
+    {
+        // An unbounded ShutdownTimeout cannot be consumed by an earlier wait, so the remaining-budget
+        // calculation must hand the message-processing wait an infinite timeout rather than arithmetic on
+        // Timeout.InfiniteTimeSpan, which is negative and would make the wait give up at once.
+        List<string> logMessages = [];
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ShutdownTimeout = Timeout.InfiniteTimeSpan,
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logMessages)
+            {
+                logMessages.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
+        await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
+
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        // Disposal must still be waiting on the held message; releasing it is what lets disposal finish.
+        ValueTask disposeTask = transport.DisposeAsync();
+        gate.TrySetResult();
+        await disposeTask.AsTask().WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+
+        lock (logMessages)
+        {
+            Assert.DoesNotContain("Timed out waiting for message processing to complete during disposal", logMessages);
+        }
     }
 
     [Fact]

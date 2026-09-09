@@ -48,8 +48,8 @@ public abstract class FileExtractor
         process.StartInfo.CreateNoWindow = true;
         process.Start();
 
-        string stdout = await process.StandardOutput.ReadToEndAsync();
-        string stderr = await process.StandardError.ReadToEndAsync();
+        string stdout = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+        string stderr = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);
         if (!process.WaitForExit(timeout.Value.TotalMilliseconds > int.MaxValue ? int.MaxValue : Convert.ToInt32(timeout.Value.TotalMilliseconds)))
         {
             process.Kill();

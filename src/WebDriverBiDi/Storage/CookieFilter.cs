@@ -74,7 +74,7 @@ public class CookieFilter
     public bool? Secure { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the cookie is a same-site cookie to use in querying for cookies.
+    /// Gets or sets the SameSite policy of the cookie to use in querying for cookies.
     /// </summary>
     [JsonPropertyName("sameSite")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

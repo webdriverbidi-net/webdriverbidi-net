@@ -4,7 +4,7 @@ This tutorial walks you through creating a complete WebDriverBiDi.NET applicatio
 
 ## Prerequisites
 
-- .NET SDK 6.0 or higher installed (for building this tutorial)
+- .NET SDK 7.0 or higher installed, to build the samples in this tutorial as written; they use C# 11 raw string literals. The library itself needs only a runtime compatible with .NET Standard 2.0
 - A browser with WebDriver BiDi support (Chrome, Edge, or Firefox)
 - Basic knowledge of C# and async/await
 
@@ -50,6 +50,7 @@ Copy the `webSocketUrl` value from the response (it will look like `ws://localho
 
 Replace the contents of `Program.cs` with the code below, adding these `using` directives at the top of the file:
 
+<!-- inline-csharp: the using directives the sample needs, quoted on their own -->
 ```csharp
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
@@ -110,10 +111,10 @@ Creates a driver with a 30-second command timeout and connects to the browser. T
 > immediately rather than being swallowed:
 >
 > ```csharp
-> driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
-> driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
-> driver.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
-> driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
+> driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 > ```
 >
 > See [Error Handling](advanced/error-handling.md) for a full explanation of the four error behavior

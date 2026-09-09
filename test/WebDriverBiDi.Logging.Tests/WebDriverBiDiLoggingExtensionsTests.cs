@@ -71,6 +71,35 @@ public class WebDriverBiDiLoggingExtensionsTests
     }
 
     [Fact]
+    public void AddWebDriverBiDi_AfterProviderIsDisposed_StopsForwardingEvents()
+    {
+        // The listener is a container-owned singleton, so disposing the provider disposes it, and
+        // EventListener.Dispose unsubscribes it from the EventSource. An event raised after that must
+        // reach nothing: a listener left subscribed would go on writing through an ILogger the
+        // application has already torn down. The sibling tests all raise their events inside the
+        // using block, so nothing else covers the state after disposal.
+        ServiceCollection services = new();
+        TestLogger fakeLogger = new();
+        services.AddSingleton<ILogger<WebDriverBiDiEventSourceLogger>>(fakeLogger);
+        services.AddLogging(b => b.AddWebDriverBiDi(EventLevel.Verbose));
+
+        ServiceProvider provider = services.BuildServiceProvider();
+        _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("disposal-test");
+
+        // Established first so the assertion below means "stopped forwarding" rather than
+        // "never started forwarding", which would pass even if the bridge were inert.
+        WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "TransportStarted");
+
+        provider.Dispose();
+        fakeLogger.Clear();
+
+        WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
+
+        Assert.Empty(fakeLogger.Entries);
+    }
+
+    [Fact]
     public void AddWebDriverBiDi_RegistersWebDriverBiDiEventSourceLogger()
     {
         ServiceCollection services = new();
@@ -114,10 +143,9 @@ public class WebDriverBiDiLoggingExtensionsTests
             WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
         }
 
-        TestLogger.LogEntry entry = fakeLogger.Entries
-            .Where(e => e.EventId.Name == "CommandTimeout")
-            .Last();
-        Assert.Equal("CommandTimeout", entry.EventId.Name);
+        // The Warning event was forwarded and the Verbose one was not. 
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "CommandTimeout");
+        Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
     }
 
     /// <summary>

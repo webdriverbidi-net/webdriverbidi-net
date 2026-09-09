@@ -99,7 +99,7 @@ public class GetClientWindowsCommandResultTests
     }
 
     [Fact]
-    public void TestDeserializingWithNulllientWindowsThrows()
+    public void TestDeserializingWithNullClientWindowsThrows()
     {
         string json = """
                       {

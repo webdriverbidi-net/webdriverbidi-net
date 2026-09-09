@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Result for getting the tree of browsing contexts using the browsingContext.getTree command.
@@ -32,5 +33,6 @@ public record GetTreeCommandResult : CommandResult
     [JsonPropertyName("contexts")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<BrowsingContextInfo>))]
     internal List<BrowsingContextInfo> SerializableContextTree { get; set; } = [];
 }

@@ -110,7 +110,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
             List<object> serializable = new(this.PageRanges.Count);
             foreach (PageRange range in this.PageRanges)
             {
-                serializable.Add(range.IsString ? range.StringValue : range.IntValue);
+                serializable.Add(range.IsString ? range.StringValue : range.NumericValue);
             }
 
             return serializable;

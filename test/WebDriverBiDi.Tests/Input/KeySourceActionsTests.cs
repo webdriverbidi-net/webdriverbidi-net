@@ -110,4 +110,36 @@ public class KeySourceActionsTests
         Assert.False(string.IsNullOrEmpty(first.Id));
         Assert.NotEqual(first.Id, second.Id);
     }
+
+    [Fact]
+    public void TestCanSerializeEveryRegisteredKeySourceActionType()
+    {
+        // Every type registered with [JsonDerivedType] on IKeySourceAction must serialize; an
+        // unregistered runtime type makes System.Text.Json throw NotSupportedException at send time,
+        // which no test of the individual action classes would catch.
+        KeySourceActions properties = new();
+        properties.Actions.Add(new KeyDownAction("a"));
+        properties.Actions.Add(new KeyUpAction("a"));
+        properties.Actions.Add(new PauseAction());
+
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(properties));
+        Assert.Equal("key", serialized["type"]?.Value<string>());
+        Assert.Equal(3, serialized["actions"]?.Value<JArray>()?.Count);
+        AssertActionType(serialized, 0, "keyDown");
+        AssertActionType(serialized, 1, "keyUp");
+        AssertActionType(serialized, 2, "pause");
+    }
+
+    /// <summary>
+    /// Asserts that the action at the given index in the serialized "actions" array carries the
+    /// expected polymorphic "type" discriminator.
+    /// </summary>
+    private static void AssertActionType(JObject serialized, int index, string expectedType)
+    {
+        JArray? actionsArray = serialized["actions"]?.Value<JArray>();
+        Assert.NotNull(actionsArray);
+        JObject? action = actionsArray[index].Value<JObject>();
+        Assert.NotNull(action);
+        Assert.Equal(expectedType, action["type"]?.Value<string>());
+    }
 }

@@ -70,9 +70,24 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "color" CSS media feature.
     /// Use <see cref="ResetColorValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetColorValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </para>
+    /// <para>
+    /// Any negative value resets the emulation, but only <see cref="ResetColorValue"/> is declared as the
+    /// reset sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value
+    /// as out of range. That is deliberate, and matches how every other resettable numeric property in
+    /// the library is declared: the named sentinel is the supported way to ask for a reset.
+    /// </para>
+    /// </remarks>
     [JsonPropertyName("color")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetColorValue)]
     public long? Color { get; set; }
 
     /// <summary>
@@ -87,9 +102,24 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "color-index" CSS media feature.
     /// Use <see cref="ResetColorIndexValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetColorIndexValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </para>
+    /// <para>
+    /// Any negative value resets the emulation, but only <see cref="ResetColorIndexValue"/> is declared as the
+    /// reset sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value
+    /// as out of range. That is deliberate, and matches how every other resettable numeric property in
+    /// the library is declared: the named sentinel is the supported way to ask for a reset.
+    /// </para>
+    /// </remarks>
     [JsonPropertyName("color-index")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetColorIndexValue)]
     public long? ColorIndex { get; set; }
 
     /// <summary>
@@ -129,9 +159,17 @@ public class MediaFeatures
     /// Use <see cref="ResetGridValue"/> to reset the emulation.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The only valid values for this property are zero (0) and one (1) (or <see cref="ResetGridValue"/>
     /// to reset the emulation). This property does not validate its value; a value other than those is
     /// sent as-is, and a conforming remote end rejects it when the command is executed.
+    /// </para>
+    /// <para>
+    /// Any negative value resets the emulation, but only <see cref="ResetGridValue"/> is declared as the
+    /// reset sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value
+    /// as out of range. That is deliberate, and matches how every other resettable numeric property in
+    /// the library is declared: the named sentinel is the supported way to ask for a reset.
+    /// </para>
     /// </remarks>
     [JsonPropertyName("grid")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -143,9 +181,24 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "horizontal-viewport-segments" CSS media feature.
     /// Use <see cref="ResetHorizontalViewportSegmentsValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetHorizontalViewportSegmentsValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </para>
+    /// <para>
+    /// Any negative value resets the emulation, but only <see cref="ResetHorizontalViewportSegmentsValue"/> is declared as the
+    /// reset sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value
+    /// as out of range. That is deliberate, and matches how every other resettable numeric property in
+    /// the library is declared: the named sentinel is the supported way to ask for a reset.
+    /// </para>
+    /// </remarks>
     [JsonPropertyName("horizontal-viewport-segments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetHorizontalViewportSegmentsValue)]
     public long? HorizontalViewportSegments { get; set; }
 
     /// <summary>
@@ -168,9 +221,24 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "monochrome" CSS media feature.
     /// Use <see cref="ResetMonochromeValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetMonochromeValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </para>
+    /// <para>
+    /// Any negative value resets the emulation, but only <see cref="ResetMonochromeValue"/> is declared as the
+    /// reset sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value
+    /// as out of range. That is deliberate, and matches how every other resettable numeric property in
+    /// the library is declared: the named sentinel is the supported way to ask for a reset.
+    /// </para>
+    /// </remarks>
     [JsonPropertyName("monochrome")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetMonochromeValue)]
     public long? Monochrome { get; set; }
 
     /// <summary>
@@ -273,9 +341,24 @@ public class MediaFeatures
     /// Gets or sets the value to emulate for the "vertical-viewport-segments" CSS media feature.
     /// Use <see cref="ResetVerticalViewportSegmentsValue"/> to reset the emulation.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Valid values for this property are greater than or equal to zero (or
+    /// <see cref="ResetVerticalViewportSegmentsValue"/> to reset the emulation). This property does not validate its
+    /// value; a value outside this range is sent as-is, and a conforming remote end rejects it when
+    /// the command is executed.
+    /// </para>
+    /// <para>
+    /// Any negative value resets the emulation, but only <see cref="ResetVerticalViewportSegmentsValue"/> is declared as the
+    /// reset sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value
+    /// as out of range. That is deliberate, and matches how every other resettable numeric property in
+    /// the library is declared: the named sentinel is the supported way to ask for a reset.
+    /// </para>
+    /// </remarks>
     [JsonPropertyName("vertical-viewport-segments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<long, NegativeLongSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, HasSentinel = true, SentinelValue = ResetVerticalViewportSegmentsValue)]
     public long? VerticalViewportSegments { get; set; }
 
     /// <summary>

@@ -45,12 +45,23 @@ public abstract class Connection : IAsyncDisposable
     /// </summary>
     public const string LoggerComponentName = "Connection";
 
+    /// <summary>
+    /// The prefix for logging message content during a send operation.
+    /// </summary>
+    protected const string LogSendMessagePrefix = "SEND >>> ";
+
+    /// <summary>
+    /// The prefix for logging message content during a receive operation.
+    /// </summary>
+    protected const string LogReceiveMessagePrefix = "RECV <<< ";
+
     // Default buffer size is 2^20 bytes, or 1MB.
     private const int BufferSizeInBytes = 1 << 20;
     private const string DataReceivedEventName = "connection.dataReceived";
     private const string LogMessageEventName = "connection.logMessage";
     private const string ConnectionErrorEventName = "connection.connectionError";
     private const string RemoteDisconnectedEventName = "connection.remoteDisconnected";
+
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
     private TimeSpan startupTimeout = DefaultTimeout;
@@ -148,7 +159,8 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Gets or sets the value of the timeout to wait for exclusive access when sending to or receiving data from the ClientWebSocket.
+    /// Gets or sets the value of the timeout to wait for exclusive access when sending data over the connection.
+    /// It bounds only that wait, not the send itself and not any receive.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
@@ -169,10 +181,34 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets or sets the minimum <see cref="WebDriverBiDiLogLevel"/> at which this connection raises
+    /// <see cref="OnLogMessage"/>. Messages below this level are never built or raised. Defaults to
+    /// <see cref="WebDriverBiDiLogLevel.Info"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the single setting for the whole log pipeline: <see cref="Transport.LogLevel"/> and
+    /// <see cref="ITransportConfiguration.LogLevel"/>, reached from
+    /// <see cref="BiDiDriver.TransportConfiguration"/>, read and write this property, so setting it on
+    /// any of the three sets it for all of them.
+    /// </para>
+    /// <para>
+    /// The default excludes the two most voluminous levels. Every message this connection sends and
+    /// receives is logged at <see cref="WebDriverBiDiLogLevel.Trace"/>, and each such message is decoded
+    /// from UTF-8 into a string only when that level is enabled, so raising the level to
+    /// <see cref="WebDriverBiDiLogLevel.Trace"/> to inspect protocol traffic also opts in to that cost.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> suppresses every message, including
+    /// <see cref="WebDriverBiDiLogLevel.Fatal"/>; it is only meaningful here, and is never the level of a
+    /// message that is raised.
+    /// </para>
+    /// </remarks>
+    public WebDriverBiDiLogLevel LogLevel { get; set; } = WebDriverBiDiLogLevel.Info;
+
+    /// <summary>
     /// Gets an observable event that notifies when data is received from this connection.
     /// </summary>
     /// <remarks>
-    /// Due to the the shared-memory nature of the data received, one, and only one,
+    /// Due to the shared-memory nature of the data received, one, and only one,
     /// <see cref="EventObserver{ConnectionDataReceivedEventArgs}"/> can be observing this
     /// event at a time. Attempting to connect a second observer will throw an exception.
     /// </remarks>
@@ -217,6 +253,15 @@ public abstract class Connection : IAsyncDisposable
     /// Gets an ObservableEventInvocable that subclasses can use to raise the OnLogMessage event.
     /// </summary>
     protected ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new(LogMessageEventName);
+
+    /// <summary>
+    /// Gets or sets the <see cref="TimeProvider"/> whose clock measures this connection's timeouts:
+    /// <see cref="StartupTimeout"/>, <see cref="ShutdownTimeout"/> and <see cref="DataTimeout"/>.
+    /// Defaults to <see cref="TimeProvider.System"/>. A derived type may substitute another, for
+    /// example to drive the timeouts with virtual time in a test, in the same way that
+    /// <see cref="ObservableEvent{T}"/> exposes its provider to derived types.
+    /// </summary>
+    protected TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
     /// Gets a <see cref="SemaphoreSlim"/> to serialize sending data across the connection, ensuring sending data to be an atomic action.
@@ -269,24 +314,23 @@ public abstract class Connection : IAsyncDisposable
     {
         if (!this.IsActive)
         {
-            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} has not been initialized; you must call the Start method before sending data");
+            // IsActive is false both for a connection that has never been started and for one that has
+            // been closed, whether by StopAsync or by the remote end, and this guard cannot tell the two
+            // apart: neither the socket state nor the pipe's active flag records which it was. The
+            // message therefore names both, rather than telling a caller who did start the connection
+            // that they forgot to.
+            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is not active; it has not been started, or it has already been closed. Call the Start method to open it before sending data.");
         }
 
         // Notify log-message observers before acquiring the send semaphore to avoid
-        // potential deadlocks in a malformed observer on the logging event.
-        if (this.OnLogMessage.CurrentObserverCount > 0)
-        {
-#if NET5_0_OR_GREATER
-            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.Span)}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data.ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-        }
+        // potential deadlocks in a malformed observer on the logging event. Decoding the payload for
+        // the message is only worth doing when a Trace message would actually be raised.
+        await this.LogMessageContentAsync(LogSendMessagePrefix, data, data.Length).ConfigureAwait(false);
 
         // Only one send operation at a time can be active on a ClientWebSocket instance,
         // so we must synchronize send access to the socket in case multiple threads are
         // attempting to send commands or other data simultaneously.
-        if (!await this.DataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
+        if (!await this.WaitForSendAccessAsync(cancellationToken).ConfigureAwait(false))
         {
             throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
@@ -342,6 +386,25 @@ public abstract class Connection : IAsyncDisposable
         }
 
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a message at the given level would be raised on
+    /// <see cref="OnLogMessage"/>, so that a caller can avoid building a message that would be discarded.
+    /// </summary>
+    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
+    /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Test this before composing any log message whose construction is not free. The connection uses it
+    /// for the <c>SEND</c> and <c>RECV</c> traffic messages, whose construction decodes the whole payload
+    /// from UTF-8; a custom <see cref="Connection"/> should use it for the same purpose.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> is never enabled. It selects "no messages at all" when
+    /// assigned to <see cref="LogLevel"/>, and is not a level a message can carry; without the explicit
+    /// test it would compare as enabled against every setting, because it is the highest value.
+    /// </remarks>
+    public bool IsLogLevelEnabled(WebDriverBiDiLogLevel level)
+    {
+        return level != WebDriverBiDiLogLevel.Off && level >= this.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
     }
 
     /// <summary>
@@ -496,7 +559,7 @@ public abstract class Connection : IAsyncDisposable
         if (this.DataReceiveTask is not null)
         {
             using CancellationTokenSource shutdownDelayCancelTokenSource = new();
-            Task completedTask = await Task.WhenAny(this.DataReceiveTask, Task.Delay(this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
+            Task completedTask = await Task.WhenAny(this.DataReceiveTask, TimeoutUtilities.DelayAsync(this.TimeProvider, this.ShutdownTimeout, shutdownDelayCancelTokenSource.Token)).ConfigureAwait(false);
             if (completedTask != this.DataReceiveTask)
             {
                 await this.LogAsync($"Timed out waiting for {this.ConnectionKind} connection receive loop to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
@@ -519,6 +582,30 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Logs the content of an incoming or outgoing message at the <see cref="WebDriverBiDiLogLevel.Trace"/> level.
+    /// </summary>
+    /// <param name="logPrefix">The prefix identifying the direction, either <see cref="LogSendMessagePrefix"/> or <see cref="LogReceiveMessagePrefix"/>.</param>
+    /// <param name="messageData">The buffer containing the message, which may be longer than <paramref name="messageLength"/> when it comes from a pool.</param>
+    /// <param name="messageLength">The length of the message within <paramref name="messageData"/>.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// If the <see cref="LogLevel"/> property is set to other than
+    /// <see cref="WebDriverBiDiLogLevel.Trace"/>, or if there are no
+    /// observers on the OnLogMessage event, this method does nothing.
+    /// </remarks>
+    protected async Task LogMessageContentAsync(string logPrefix, ReadOnlyMemory<byte> messageData, int messageLength)
+    {
+        if (this.IsLogLevelEnabled(WebDriverBiDiLogLevel.Trace))
+        {
+#if NET5_0_OR_GREATER
+            await this.LogAsync($"{logPrefix}{Encoding.UTF8.GetString(messageData.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#else
+            await this.LogAsync($"{logPrefix}{Encoding.UTF8.GetString(messageData.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
+#endif
+        }
+    }
+
+    /// <summary>
     /// Asynchronously raises a logging event at the Info log level.
     /// </summary>
     /// <param name="message">The log message to raise in the event.</param>
@@ -534,9 +621,57 @@ public abstract class Connection : IAsyncDisposable
     /// <param name="message">The log message to raise in the event.</param>
     /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> at which to raise the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// A message below <see cref="LogLevel"/> is discarded here rather than raised. Callers whose
+    /// message is expensive to compose should also test <see cref="IsLogLevelEnabled"/> first, because the
+    /// message has already been built by the time it reaches this method.
+    /// </remarks>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
+        if (!this.IsLogLevelEnabled(level))
+        {
+            return;
+        }
+
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Waits for exclusive send access, bounded by <see cref="DataTimeout"/> as measured by
+    /// <see cref="TimeProvider"/>.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns><see langword="true"/> if access was acquired; <see langword="false"/> if the timeout elapsed first.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <remarks>
+    /// The timeout is applied by canceling the wait rather than by racing it against a delay, so a
+    /// wait that is abandoned can never acquire the semaphore later and leave it held forever. A
+    /// zero timeout keeps its non-blocking meaning: the semaphore is taken only if it is free now.
+    /// </remarks>
+    private async Task<bool> WaitForSendAccessAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (this.DataSendSemaphore.Wait(0))
+        {
+            return true;
+        }
+
+        if (this.DataTimeout == TimeSpan.Zero)
+        {
+            return false;
+        }
+
+        using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.DataTimeout);
+        using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
+        try
+        {
+            await this.DataSendSemaphore.WaitAsync(linkedTokenSource.Token).ConfigureAwait(false);
+            return true;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 
     private void ReportReceiveLoopFault(Task faultedTask, object? state)

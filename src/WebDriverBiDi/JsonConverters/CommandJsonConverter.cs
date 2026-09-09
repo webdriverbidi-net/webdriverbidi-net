@@ -24,6 +24,18 @@ using WebDriverBiDi.Protocol;
 public class CommandJsonConverter : JsonConverter<Command>
 {
     /// <summary>
+    /// The property names the command envelope writes itself. An entry in
+    /// <see cref="Command.AdditionalCommandProperties"/> under one of these names would be emitted as a
+    /// second property of the same name alongside the one the envelope already wrote.
+    /// </summary>
+    private static readonly HashSet<string> ReservedEnvelopePropertyNames = new(StringComparer.Ordinal)
+    {
+        "id",
+        "method",
+        "params",
+    };
+
+    /// <summary>
     /// Deserializes the JSON string to a Command object.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
@@ -57,6 +69,13 @@ public class CommandJsonConverter : JsonConverter<Command>
     /// <see cref="BiDiDriver.RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver, CancellationToken)"/>
     /// before sending a command that uses it.
     /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="WebDriverBiDiSerializationException">
+    /// Thrown when an extension-data entry would shadow a property the message already writes: an entry in
+    /// <see cref="Command.AdditionalCommandProperties"/> named <c>id</c>, <c>method</c> or <c>params</c>, or an
+    /// entry in <see cref="CommandParameters.AdditionalData"/> whose name matches one the parameters type
+    /// serializes.
+    /// </exception>
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = "AdditionalCommandProperties entries are typed as object by design; see remarks.")]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = "AdditionalCommandProperties entries are typed as object by design; see remarks.")]
     public override void Write(Utf8JsonWriter writer, Command value, JsonSerializerOptions options)
@@ -66,16 +85,21 @@ public class CommandJsonConverter : JsonConverter<Command>
             throw new ArgumentNullException(nameof(value));
         }
 
+        // Resolve the parameters type info and validate both extension-data dictionaries before writing
+        // anything, so a command that cannot be represented is rejected outright rather than emitted as a
+        // message whose meaning depends on how the remote end resolves a duplicate property name.
+        // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
+        // to remove warnings when publishing AOT compiled applications.
+        JsonTypeInfo paramsTypeInfo = options.GetTypeInfo(value.CommandParameters.GetType());
+        ThrowIfEnvelopePropertyIsShadowed(value);
+        ThrowIfParametersPropertyIsShadowed(value.CommandParameters, paramsTypeInfo);
+
         writer.WriteStartObject();
         writer.WritePropertyName("id");
         writer.WriteNumberValue(value.CommandId);
         writer.WritePropertyName("method");
         writer.WriteStringValue(value.CommandName);
         writer.WritePropertyName("params");
-
-        // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
-        // to remove warnings when publishing AOT compiled applications.
-        JsonTypeInfo paramsTypeInfo = options.GetTypeInfo(value.CommandParameters.GetType());
         JsonSerializer.Serialize(writer, value.CommandParameters, paramsTypeInfo);
 
         // This will now serialize the additional overflow properties for the
@@ -87,5 +111,48 @@ public class CommandJsonConverter : JsonConverter<Command>
         }
 
         writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// Throws when an envelope-level extension property would be written under a name the envelope itself uses.
+    /// </summary>
+    /// <param name="command">The command being serialized.</param>
+    /// <exception cref="WebDriverBiDiSerializationException">Thrown when such an entry is present.</exception>
+    private static void ThrowIfEnvelopePropertyIsShadowed(Command command)
+    {
+        foreach (KeyValuePair<string, object?> pair in command.AdditionalCommandProperties)
+        {
+            if (ReservedEnvelopePropertyNames.Contains(pair.Key))
+            {
+                throw new WebDriverBiDiSerializationException($"Could not serialize command '{command.CommandName}' (command ID: {command.CommandId}): the AdditionalCommandProperties entry '{pair.Key}' uses a property name the command envelope writes itself, which would produce a duplicate property in the message. Rename the entry; 'id', 'method' and 'params' are reserved.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Throws when a parameters-level extension property would be written under a name the parameters type
+    /// already serializes.
+    /// </summary>
+    /// <param name="parameters">The command parameters being serialized.</param>
+    /// <param name="parametersTypeInfo">The type info through which the parameters are serialized.</param>
+    /// <exception cref="WebDriverBiDiSerializationException">Thrown when such an entry is present.</exception>
+    /// <remarks>
+    /// Only properties the serializer can write are considered: a member the type ignores, or one that has no
+    /// getter, consumes no name in the payload, and the extension-data property itself holds these entries
+    /// rather than competing with them.
+    /// </remarks>
+    private static void ThrowIfParametersPropertyIsShadowed(CommandParameters parameters, JsonTypeInfo parametersTypeInfo)
+    {
+        // AdditionalData is empty for all but a handful of commands, so this loop usually does not run at all.
+        foreach (KeyValuePair<string, object?> pair in parameters.AdditionalData)
+        {
+            foreach (JsonPropertyInfo property in parametersTypeInfo.Properties)
+            {
+                if (!property.IsExtensionData && property.Get is not null && string.Equals(property.Name, pair.Key, StringComparison.Ordinal))
+                {
+                    throw new WebDriverBiDiSerializationException($"Could not serialize command '{parameters.MethodName}': the AdditionalData entry '{pair.Key}' uses a property name that {parameters.GetType()} already serializes, which would produce a duplicate property in the command parameters. Rename the entry, or set the typed property instead.");
+                }
+            }
+        }
     }
 }

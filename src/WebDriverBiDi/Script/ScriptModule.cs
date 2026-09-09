@@ -48,7 +48,7 @@ public sealed class ScriptModule : Module
     public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed => this.invocableRealmDestroyedObservableEvent;
 
     /// <summary>
-    /// Gets an observable event that notifies when a preload script sends data to the client.
+    /// Gets an observable event that notifies when a script sends data to the client over a channel.
     /// </summary>
     [ObservableEventName(MessageEventName)]
     public ObservableEvent<MessageEventArgs> OnMessage => this.invocableMessageObservableEvent;
@@ -109,10 +109,10 @@ public sealed class ScriptModule : Module
     /// <summary>
     /// Gets the realms associated with a given browsing context and realm type.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>The result of the command containing IDs of the realms.</returns>
+    /// <returns>The result of the command containing information about the realms.</returns>
     public Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters ?? new(), timeoutOverride, cancellationToken);

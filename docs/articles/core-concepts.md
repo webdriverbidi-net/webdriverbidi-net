@@ -53,7 +53,7 @@ The `RegisterModule` method is thread-safe and can be called concurrently from m
 
 [!code-csharp[Thread Safe Registration](../code/core-concepts/CoreConceptsSamples.cs#ThreadSafeRegistration)]
 
-Thread safety is enforced using an internal lock that ensures the check against `IsStarted` and the module addition are atomic operations. However, the timing restriction still applies—all registrations must complete before `StartAsync()` is called.
+Thread safety is enforced using an internal lock that makes the lifecycle check and the module addition atomic. The check is against the transport's state rather than `IsStarted`: registration is rejected as soon as the transport leaves `Disconnected`, which happens when a connect begins, not when it completes. Registration is legal again once a teardown returns the transport to `Disconnected`.
 
 #### Command Timeout Configuration
 
@@ -261,7 +261,7 @@ WebDriver BiDi operations can fail for various reasons.
 
 ### WebDriverBiDiException
 
-Every exception the library throws derives from `WebDriverBiDiException`. An error response from the browser arrives as `WebDriverBiDiCommandException` (with an `ErrorCode`), a missing response as `WebDriverBiDiTimeoutException`, and a lost connection as `WebDriverBiDiConnectionException`; catching the base type covers them all. See [Error Handling — Exception Hierarchy](advanced/error-handling.md#exception-hierarchy) for the full list.
+Every protocol-level failure is reported through `WebDriverBiDiException`. An error response from the browser arrives as `WebDriverBiDiCommandException` (with an `ErrorCode`), a missing response as `WebDriverBiDiTimeoutException`, and a lost connection as `WebDriverBiDiConnectionException`; catching the base type covers all of those. Caller mistakes are a separate matter: they surface as the usual .NET exceptions, such as `ArgumentNullException`, `ObjectDisposedException` and `InvalidOperationException`. See [Error Handling — Exception Hierarchy](advanced/error-handling.md#exception-hierarchy) for the full list of both.
 
 [!code-csharp[WebDriverBiDiException Handling](../code/core-concepts/CoreConceptsSamples.cs#WebDriverBiDiExceptionHandling)]
 
@@ -318,14 +318,17 @@ For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also 
 |----------|---------|----------------------|
 | `IBiDiCommandExecutor` | Core lifecycle and command execution | Custom modules, test doubles, framework internals that only need to start/stop the driver, execute commands, or register protocol events |
 | `IBiDiDriverConfiguration` | Pre-start extensibility hooks | Registering custom modules and additional JSON type resolvers before `StartAsync()` |
-| `IBiDiDriverEvents` | Driver observability and error-behavior configuration | Subscribing to top-level driver events and adjusting transport error behavior |
+| `IBiDiDriverEvents` | Driver observability | Subscribing to top-level driver events |
+| `ITransportConfiguration` | Tunable transport settings | Adjusting the log level, the transport error behaviors, and the shutdown and connection-lock timeouts, via `BiDiDriver.TransportConfiguration` |
+| `ITransportDiagnostics` | Observable transport state | Polling lifecycle state, incoming queue depth and pending command count, via `BiDiDriver.TransportDiagnostics` |
 
 The hierarchy is intentionally split by capability rather than by end-user workflow:
 
 - `BiDiDriver` is the primary type for applications.
 - `IBiDiCommandExecutor` is the narrow execution surface used by modules and low-level abstractions.
 - `IBiDiDriverConfiguration` covers advanced pre-start customization.
-- `IBiDiDriverEvents` covers top-level events and transport error behavior.
+- `IBiDiDriverEvents` covers top-level driver events.
+- `ITransportConfiguration` and `ITransportDiagnostics` are the transport's settings and its observable state. They are reached from `BiDiDriver.TransportConfiguration` and `BiDiDriver.TransportDiagnostics`, so a driver built with `new BiDiDriver()` can be tuned and observed without constructing a `Transport` by hand. They deliberately exclude the transport's lifecycle and messaging operations, which belong to the driver that owns it.
 
 If you are building a higher-level library on top of WebDriverBiDi.NET, choose the narrowest interface that matches the capability you need. If you are writing application code, ignore the interfaces and use `BiDiDriver`.
 
@@ -429,5 +432,5 @@ Are you implementing browser-specific extensions?
 - Browsing contexts represent tabs/windows/iframes
 - Remote values represent JavaScript data
 - All operations are async
-- Errors are thrown as `WebDriverBiDiException`
+- Protocol failures are thrown as `WebDriverBiDiException`; caller mistakes as the usual .NET exceptions
 

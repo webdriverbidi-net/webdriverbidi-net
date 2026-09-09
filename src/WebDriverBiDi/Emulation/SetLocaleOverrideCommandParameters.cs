@@ -10,6 +10,15 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setLocaleOverride command.
 /// </summary>
+/// <remarks>
+/// Unlike most emulation commands, this one has no global form: the specification requires the command to
+/// name a scope, so a call that leaves both <see cref="Contexts"/> and <see cref="UserContexts"/> empty is
+/// rejected with <see cref="ErrorCode.InvalidArgument"/>. Add at least one browsing context or user context
+/// before executing the command. <c>emulation.setNetworkConditions</c>, by contrast, does accept an
+/// unscoped call, and applies the network conditions it was given as the session-wide default,
+/// applied to every context that has no per-context or per-user-context override; this command has no
+/// such default.
+/// </remarks>
 public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOverrideCommandResult>
 {
     /// <summary>
@@ -40,7 +49,6 @@ public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOve
     /// locale tag (e.g., "en-US", "pt-BR", etc.). When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("locale")]
-    [JsonInclude]
     public string? Locale { get; set; }
 
     /// <summary>

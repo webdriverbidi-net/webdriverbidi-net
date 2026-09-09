@@ -1249,4 +1249,880 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a StopAsync confined to a catch clause does not poison a command that follows the
+    /// try statement. Without forking state across try/catch, the flat walk saw the stop and reported
+    /// the later command at Error severity — on code where the catch rethrows, so the command is only
+    /// ever reached when the catch did not run.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandAfterTryWithStopAsyncInCatch_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                        catch (Exception)
+                        {
+                            await driver.StopAsync();
+                            throw;
+                        }
+
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a command inside a catch clause is not reported when the try block started the
+    /// driver. The catch may begin after any prefix of the try, so the start may already have run.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInCatchAfterStartAsyncInTry_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        catch (Exception)
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a command in a try block on a driver that was never started is still reported.
+    /// Forking state across try/catch must not turn the rule off inside a try statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInTryWithoutStartAsync_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a command in a finally block on a driver that was never started is still reported,
+    /// and that the finally walk participates in the state merged after the statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInFinallyWithoutStartAsync_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                        }
+                        finally
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a catch filter is walked, so a command in the filter expression on a never-started
+    /// driver is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInCatchFilterWithoutStartAsync_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                        }
+                        catch (Exception) when ({|#0:driver.Session.StatusAsync()|} is not null)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task Command_AfterDriverPassedToHelper_NoDiagnostic()
+    {
+        // The helper may start the driver, which this rule cannot see. Reporting an Error here would be
+        // reporting on correct code, so the driver's state is treated as unknown once it escapes.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await StartHelperAsync(driver);
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static async Task StartHelperAsync(BiDiDriver driver)
+                    {
+                        await driver.StartAsync("ws://localhost:1234");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_AfterDriverStoredInField_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver? stored;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        this.stored = driver;
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_WhenALambdaStartsTheDriver_NoDiagnostic()
+    {
+        // A nested function runs when its delegate is invoked, not where it is declared, so a StartAsync
+        // inside one puts the driver's state beyond what a textual walk can determine.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Func<Task> starter = async () => await driver.StartAsync("ws://localhost:1234");
+                        await starter();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_WhenALambdaOnlyIssuesCommands_StillReportsError()
+    {
+        // Treating every capture as an escape would lose this genuine error. Only a StartAsync or
+        // StopAsync inside a nested function makes the state unknown.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Func<Task> later = async () => await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithSpan(14, 19, 14, 76)
+            .WithArguments("ExecuteCommandAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task Command_AfterDriverReturnedToCaller_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task<BiDiDriver> TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        return driver;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_AfterDriverAliasedToAnotherLocal_NoDiagnostic()
+    {
+        // The alias may be started instead, and this rule tracks names rather than the object behind them.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        BiDiDriver alias = driver;
+                        await alias.StartAsync("ws://localhost:1234");
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_AfterDriverPlacedInObjectInitializer_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        List<BiDiDriver> tracked = new List<BiDiDriver> { driver };
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_AfterDriverPlacedInCollectionExpression_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        List<BiDiDriver> tracked = [driver];
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a driver declared by a classic <c>await using (T x = ...)</c> statement is tracked like one declared by a local declaration statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandInClassicUsingStatementDeclaration_BeforeStart_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        await using (BiDiDriver driver = new())
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that handing the driver to a module's constructor, the documented way to register a custom module, is not treated as an escape: a module holds the driver and cannot start it, so a command before the start is still reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Command_AfterDriverPassedToCustomModuleConstructor_StillReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.RegisterModule(new CustomModule(driver));
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that handing the driver to the constructor of a type that is not a module remains an escape: that type may start the driver.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Command_AfterDriverPassedToNonModuleConstructor_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class Holder
+                {
+                    public Holder(BiDiDriver driver)
+                    {
+                        driver.StartAsync("ws://localhost:9222").Wait();
+                    }
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        Holder holder = new Holder(driver);
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that rebinding a tracked variable to a driver the walk cannot see stops the tracking. The
+    /// new driver may already have been started by whatever produced it, and this Error-severity rule
+    /// reports only what is certain.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentFromFactory_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        driver = CreateDriver();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that rebinding a tracked variable to a freshly constructed driver resets its started
+    /// state: the start that preceded the reassignment applied to a driver the variable no longer
+    /// names, so the command that follows runs against one that has never been started.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentToNewDriver_ReportsError()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:1234");
+                        driver = new BiDiDriver();
+                        await {|#0:driver.ExecuteCommandAsync(new StatusCommandParameters())|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("ExecuteCommandAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that assignments that do not rebind a tracked variable — one whose target is a member
+    /// access rather than a bare name, and one naming a variable the walk never tracked — leave the
+    /// tracked state alone.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_WithUnrelatedAssignments_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver stored;
+
+                    private BiDiDriver untracked;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        this.stored = new BiDiDriver();
+                        untracked = new BiDiDriver();
+                        await driver.StartAsync("ws://localhost:1234");
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a rebinding on one arm of an if statement stops the tracking after the merge. The
+    /// variable's started state is unknown on that path, so nothing after the branch is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentInIfBranch_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool flag)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        if (flag)
+                        {
+                            driver = CreateDriver();
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a rebinding inside a try block stops the tracking, both for the catch clause — which
+    /// may begin executing after the rebinding has run — and for the code that follows the statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentInTryBlock_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        try
+                        {
+                            driver = CreateDriver();
+                        }
+                        catch (Exception)
+                        {
+                            await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a rebinding inside a switch section stops the tracking after the merge, the same way
+    /// one inside an if branch does.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommandAsync_AfterReassignmentInSwitchSection_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int value)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        switch (value)
+                        {
+                            case 1:
+                                driver = CreateDriver();
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static BiDiDriver CreateDriver()
+                    {
+                        return new BiDiDriver();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_WhenALocalFunctionRebindsTheDriver_NoDiagnostic()
+    {
+        // A nested function runs when its delegate is invoked, so an assignment inside one leaves the
+        // variable naming a driver this walk cannot see, which may already have been started.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(DriverPool pool)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        async Task ConnectAsync()
+                        {
+                            driver = await pool.RentStartedAsync();
+                        }
+
+                        await ConnectAsync();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+
+                public class DriverPool
+                {
+                    public Task<BiDiDriver> RentStartedAsync() => Task.FromResult(new BiDiDriver());
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_WhenALambdaRebindsTheDriver_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(DriverPool pool)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Func<Task> connect = async () => driver = await pool.RentStartedAsync();
+                        await connect();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+
+                public class DriverPool
+                {
+                    public Task<BiDiDriver> RentStartedAsync() => Task.FromResult(new BiDiDriver());
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task Command_WhenALambdaAssignsTheDriverToAField_NoDiagnostic()
+    {
+        // The driver on the right of an assignment is handed to something else, and that is an escape
+        // wherever it is written, including inside a nested function.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver? shared;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        Action publish = () => this.shared = driver;
+                        publish();
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

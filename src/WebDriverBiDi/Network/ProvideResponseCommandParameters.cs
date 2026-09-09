@@ -38,7 +38,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </summary>
     [JsonPropertyName("body")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public BytesValue? Body { get; set; }
 
     /// <summary>
@@ -60,7 +59,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </remarks>
     [JsonPropertyName("cookies")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public List<SetCookieHeader>? Cookies { get; set; }
 
     /// <summary>
@@ -69,10 +67,10 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// <remarks>
     /// <para>
     /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
-    /// settable, because the protocol gives a present-but-empty array its own meaning. The remote end steps
-    /// for <c>network.provideResponse</c> state: "If command parameters contains "headers": Let headers be an empty
-    /// header list" and then append each entry, so sending <c>[]</c> replaces the header list with none, while
-    /// omitting the field keeps the original header list.
+    /// settable, because the protocol gives a present-but-empty array its own meaning. When
+    /// <c>network.provideResponse</c> is given a <c>headers</c> field, the remote end builds the response's
+    /// header list from that field alone. Sending <c>[]</c> therefore produces a response with no headers,
+    /// while omitting the field lets the remote end supply its own.
     /// </para>
     /// <para>
     /// When <see langword="null"/>, the property is not included in the command; when an empty list, an
@@ -81,7 +79,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </remarks>
     [JsonPropertyName("headers")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public List<Header>? Headers { get; set; }
 
     /// <summary>
@@ -89,7 +86,6 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </summary>
     [JsonPropertyName("reasonPhrase")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public string? ReasonPhrase { get; set; }
 
     /// <summary>
@@ -97,6 +93,5 @@ public class ProvideResponseCommandParameters : CommandParameters<ProvideRespons
     /// </summary>
     [JsonPropertyName("statusCode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public ulong? StatusCode { get; set; }
 }

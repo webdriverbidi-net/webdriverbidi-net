@@ -8,7 +8,8 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Properties of a channel used to initiate passing information back from the browser from a preload script.
+/// Properties of a channel used to pass information back from the browser to the client. A channel reaches
+/// the browser either in a preload script or as a <c>script.callFunction</c> argument.
 /// </summary>
 public class ChannelProperties
 {
@@ -32,7 +33,6 @@ public class ChannelProperties
     /// </summary>
     [JsonPropertyName("serializationOptions")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
@@ -40,6 +40,5 @@ public class ChannelProperties
     /// </summary>
     [JsonPropertyName("ownership")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public ResultOwnership? Ownership { get; set; }
 }

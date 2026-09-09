@@ -65,7 +65,7 @@ public class BiDiDriver025_AsyncVoidEventHandlerAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (memberAccess.Name.Identifier.Text != "AddObserver")
+        if (memberAccess.Name.Identifier.ValueText != "AddObserver")
         {
             return;
         }
@@ -78,7 +78,7 @@ public class BiDiDriver025_AsyncVoidEventHandlerAnalyzer : DiagnosticAnalyzer
 
         // Only the library's AddObserver, which returns EventObserver<T>, is of interest; a same-named
         // method on an unrelated type is not.
-        if (methodSymbol.ReturnType is not INamedTypeSymbol { Name: "EventObserver" })
+        if (!AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
         {
             return;
         }

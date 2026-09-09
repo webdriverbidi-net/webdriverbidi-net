@@ -569,4 +569,243 @@ public class BiDiDriver007CodeFixProviderTests
         }
 
         """;
+
+    /// <summary>
+    /// Tests that an expression-bodied handler returning a conditional expression is rewritten to await the parenthesized conditional: <c>await cond ? a : b</c> would re-parse as <c>(await cond) ? a : b</c>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_ExpressionBodiedConditional_CodeFixParenthesizesAwaitedExpression()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, Task<Task> pending)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => args == null ? Task.CompletedTask : {|#0:pending.Result|});
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, Task<Task> pending)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Yield();
+                            await (args == null ? Task.CompletedTask : pending.Result);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Result");
+
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that <c>return cond ? Task.Delay(1) : Task.CompletedTask;</c> is awaited as a whole rather than being dropped because its text ends in <c>Task.CompletedTask</c>; also covers the binary, cast, switch and assignment operands that need parentheses under <c>await</c>, and the spellings of <c>Task.CompletedTask</c> that are dropped.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_ReturningConditionalWhoseSecondArmIsCompletedTask_CodeFixAwaitsWholeConditional()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static Task pending = Task.CompletedTask;
+
+                    public void TestMethod(BiDiDriver driver, Task? maybe, object boxed, int mode)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args =>
+                        {
+                            {|#0:Thread.Sleep(1)|};
+                            if (mode == 1)
+                            {
+                                return mode > 0 ? Task.Delay(1) : Task.CompletedTask;
+                            }
+
+                            if (mode == 2)
+                            {
+                                return maybe ?? Task.CompletedTask;
+                            }
+
+                            if (mode == 3)
+                            {
+                                return (Task)boxed;
+                            }
+
+                            if (mode == 4)
+                            {
+                                return mode switch { 4 => Task.Delay(4), _ => Task.CompletedTask };
+                            }
+
+                            if (mode == 5)
+                            {
+                                return pending = Task.Delay(5);
+                            }
+
+                            if (mode == 6)
+                            {
+                                return (Task.CompletedTask);
+                            }
+
+                            if (mode == 7)
+                            {
+                                return System.Threading.Tasks.Task.CompletedTask;
+                            }
+
+                            if (mode == 8)
+                            {
+                                return TestApp.Holder.CompletedTask;
+                            }
+
+                            return Holder.CompletedTask;
+                        });
+                    }
+                }
+
+                public static class Holder
+                {
+                    public static Task CompletedTask => Task.CompletedTask;
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static Task pending = Task.CompletedTask;
+
+                    public void TestMethod(BiDiDriver driver, Task? maybe, object boxed, int mode)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Yield();
+                            Thread.Sleep(1);
+                            if (mode == 1)
+                            {
+                                {
+                                    await (mode > 0 ? Task.Delay(1) : Task.CompletedTask);
+                                    return;
+                                }
+                            }
+
+                            if (mode == 2)
+                            {
+                                {
+                                    await (maybe ?? Task.CompletedTask);
+                                    return;
+                                }
+                            }
+
+                            if (mode == 3)
+                            {
+                                {
+                                    await ((Task)boxed);
+                                    return;
+                                }
+                            }
+
+                            if (mode == 4)
+                            {
+                                {
+                                    await (mode switch { 4 => Task.Delay(4), _ => Task.CompletedTask });
+                                    return;
+                                }
+                            }
+
+                            if (mode == 5)
+                            {
+                                {
+                                    await (pending = Task.Delay(5));
+                                    return;
+                                }
+                            }
+
+                            if (mode == 6)
+                            {
+                                return;
+                            }
+
+                            if (mode == 7)
+                            {
+                                return;
+                            }
+
+                            if (mode == 8)
+                            {
+                                {
+                                    await TestApp.Holder.CompletedTask;
+                                    return;
+                                }
+                            }
+
+                            await Holder.CompletedTask;
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+
+                public static class Holder
+                {
+                    public static Task CompletedTask => Task.CompletedTask;
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

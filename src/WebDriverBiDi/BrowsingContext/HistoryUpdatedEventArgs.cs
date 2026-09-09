@@ -50,7 +50,7 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     public string? UserContextId { get; internal set; }
 
     /// <summary>
-    /// Gets the timestamp of the navigation in UTC.
+    /// Gets the timestamp of the history update in UTC.
     /// </summary>
     [JsonIgnore]
     public DateTime Timestamp { get; internal set; } = DateTimeUtilities.UnixEpoch;

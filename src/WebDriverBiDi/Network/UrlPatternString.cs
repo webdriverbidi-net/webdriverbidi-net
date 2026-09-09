@@ -34,6 +34,5 @@ public class UrlPatternString : UrlPattern
     /// Gets or sets the pattern to match.
     /// </summary>
     [JsonPropertyName("pattern")]
-    [JsonInclude]
     public string Pattern { get; set; }
 }

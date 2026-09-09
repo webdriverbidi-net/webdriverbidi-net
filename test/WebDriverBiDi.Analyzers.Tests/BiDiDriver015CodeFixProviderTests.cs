@@ -15,7 +15,9 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver015CodeFixProviderTests
 {
     /// <summary>
-    /// Tests that code fix replaces string literal with EventName property.
+    /// Tests that a literal is reported when the driver is a parameter. This previously asserted no
+    /// diagnostic on the stated grounds that BIDI015 needs a matching AddObserver call — which it does
+    /// not; the rule was silent only because it searched for a local driver declaration.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -72,7 +74,7 @@ public class BiDiDriver015CodeFixProviderTests
     }
 
     [Fact]
-    public async Task StringLiteralWithNoObserver_NoDiagnostic()
+    public async Task StringLiteralWithDriverAsParameter_ReportsWarning()
     {
         // A string literal matching a known event name appears in SubscribeAsync,
         // but there is no AddObserver call for that event.
@@ -141,13 +143,17 @@ public class BiDiDriver015CodeFixProviderTests
                 {
                     public async Task TestMethod(BiDiDriver driver)
                     {
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { "log.entryAdded" }));
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer>(testCode);
+                DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer>(testCode, expected);
     }
 
     /// <summary>
@@ -196,6 +202,68 @@ public class BiDiDriver015CodeFixProviderTests
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
             .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
+        RealAssemblyCodeFixTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, BiDiDriver015_StringLiteralInsteadOfEventNameCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the replacement offered for a subscription made through a this-qualified driver
+    /// field keeps the <c>this.</c> prefix, so the fixed line matches the code around it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_ThroughThisQualifiedDriverField_KeepsThisPrefix()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+                    public async Task TestMethod()
+                    {
+                        await this.driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private readonly BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+                    public async Task TestMethod()
+                    {
+                        await this.driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { this.driver.Log.OnEntryAdded.EventName }));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("this.driver.Log.OnEntryAdded.EventName", "log.entryAdded");
 
         RealAssemblyCodeFixTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, BiDiDriver015_StringLiteralInsteadOfEventNameCodeFixProvider> testState = new()
         {

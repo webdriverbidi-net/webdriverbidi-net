@@ -175,4 +175,66 @@ public class BiDiDriver003CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a local the registration depends on, declared after the start, moves with it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_DependingOnLocalDeclaredAfterStart_CodeFixMovesDeclarationToo()
+    {
+        string testCode = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        IJsonTypeInfoResolver resolver = new DefaultJsonTypeInfoResolver();
+                        await {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        IJsonTypeInfoResolver resolver = new DefaultJsonTypeInfoResolver();
+                        await driver.RegisterTypeInfoResolverAsync(resolver);
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyCodeFixTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, BiDiDriver003_TypeInfoResolverRegistrationAfterStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Simplification;
 
 /// <summary>
 /// Code fix provider for BIDI017 that wraps the receiver in a null-coalescing assignment (??=)
@@ -44,7 +45,7 @@ public class BiDiDriver017_NullableListAddCodeFixProvider : CodeFixProvider
             .First();
 
         MemberAccessExpressionSyntax memberAccess = (MemberAccessExpressionSyntax)invocation.Expression;
-        string elementTypeName = diagnostic.Properties["ElementTypeName"]!;
+        string elementTypeName = diagnostic.Properties[BiDiDriver017_NullableListAddAnalyzer.ElementTypeFullNamePropertyName]!;
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -66,16 +67,29 @@ public class BiDiDriver017_NullableListAddCodeFixProvider : CodeFixProvider
         // Create: (receiver ??= new List<ElementType>()).Add(...)
         ExpressionSyntax receiver = memberAccess.Expression;
 
-        // Create new List<ElementType>()
-        TypeSyntax elementTypeSyntax = SyntaxFactory.ParseTypeName(elementTypeName);
-        ObjectCreationExpressionSyntax listCreation = SyntaxFactory.ObjectCreationExpression(
+        // Create new List<ElementType>(). The element type arrives fully qualified
+        // (global::WebDriverBiDi.Network.Header), which resolves whether or not the file imports the
+        // type's namespace; the simplifier annotation lets the host reduce it to the shortest name
+        // that resolves at the insertion point. List itself is qualified for the same reason: adding to
+        // one of these properties needs no using for System.Collections.Generic, so a file that
+        // legitimately lacks one would otherwise be handed a fix that does not compile.
+        TypeSyntax elementTypeSyntax = SyntaxFactory.ParseTypeName(elementTypeName).WithAdditionalAnnotations(Simplifier.Annotation);
+        TypeSyntax listTypeSyntax = SyntaxFactory.QualifiedName(
+            SyntaxFactory.ParseName("global::System.Collections.Generic"),
             SyntaxFactory.GenericName(
                 SyntaxFactory.Identifier("List"),
-                SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(elementTypeSyntax))),
+                SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(elementTypeSyntax))))
+            .WithAdditionalAnnotations(Simplifier.Annotation);
+        ObjectCreationExpressionSyntax listCreation = SyntaxFactory.ObjectCreationExpression(
+            listTypeSyntax,
             SyntaxFactory.ArgumentList(),
             null);
 
-        // Create receiver ??= new List<ElementType>()
+        // Create receiver ??= new List<ElementType>(). No fallback is needed for a language version
+        // without ??=, which arrived in C# 8: the diagnostic this fixes is reported only for a property
+        // whose type is an annotated nullable reference type, and those annotations arrived in C# 8 as
+        // well. Below it the analyzer sees no annotation, reports nothing, and this fix is never asked
+        // for. BIDI017CodeFixProviderTests pins that.
         AssignmentExpressionSyntax coalescingAssignment = SyntaxFactory.AssignmentExpression(
             SyntaxKind.CoalesceAssignmentExpression,
             receiver,

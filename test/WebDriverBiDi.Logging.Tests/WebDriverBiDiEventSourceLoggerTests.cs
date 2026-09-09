@@ -22,6 +22,26 @@ public class WebDriverBiDiEventSourceLoggerTests
     }
 
     [Fact]
+    public void Constructor_WhenLoggerIsNull_LeavesNoListenerAttached()
+    {
+        // The base EventListener constructor subscribes before any derived body runs, and EventListener
+        // keeps every listener in a static list, so a constructor that threw after that point would leave
+        // an orphan the caller never received and can never dispose, holding the source enabled at
+        // LogAlways for the life of the process. A full collection does not reclaim it, because that
+        // static list is a strong reference, so the only observable is the source's own state.
+        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "warm-up", 1);
+        Assert.False(
+            WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+            "Another EventListener already has the WebDriverBiDi EventSource enabled at Verbose, so this test cannot measure what the throwing constructor left behind.");
+
+        Assert.Throws<ArgumentNullException>(() => new WebDriverBiDiEventSourceLogger(null!));
+
+        Assert.False(
+            WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+            "A constructor that threw left an EventListener attached to the WebDriverBiDi EventSource, which nothing can now dispose.");
+    }
+
+    [Fact]
     public void OnEventWritten_ForwardsInformationalEventToLogger()
     {
         TestLogger fakeLogger = new();
@@ -133,6 +153,68 @@ public class WebDriverBiDiEventSourceLoggerTests
         // already existed when the listener was constructed.
         Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "ConnectionOpening");
         Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
+    }
+
+    [Fact]
+    public void OnEventWritten_DropsEventAboveMinimumLevel_WhenDeliveredBeforeConstructorSubscribes()
+    {
+        // Regression test for the base-constructor ordering window: OnEventSourceCreated (run during
+        // the base EventListener constructor) enables an already-existing WebDriverBiDi EventSource at
+        // the default EventLevel.LogAlways, because this instance's minimum level is not assigned until
+        // the constructor body runs. The constructor re-subscribes at the configured level, but an event
+        // written by another thread inside that window is still delivered at the default level, so
+        // OnEventWritten must enforce the configured minimum itself. Capture a real Verbose event args
+        // and invoke OnEventWritten directly on a Warning-level listener to reproduce that delivery:
+        // the normal path cannot, because the constructor has by then lowered the source's own level.
+        EventWrittenEventArgs? capturedArgs = null;
+        using (WebDriverBiDiArgsCapturingListener capture = new(args => capturedArgs ??= args))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
+        }
+
+        Assert.NotNull(capturedArgs);
+        Assert.Equal(EventLevel.Verbose, capturedArgs!.Level);
+
+        TestLogger fakeLogger = new();
+        using WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Warning);
+
+        MethodInfo onEventWritten = typeof(WebDriverBiDiEventSourceLogger).GetMethod(
+            "OnEventWritten",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        onEventWritten.Invoke(eventSourceLogger, new object[] { capturedArgs! });
+
+        Assert.Empty(fakeLogger.Entries);
+    }
+
+    [Fact]
+    public void Constructor_LowersEventSourceLevel_WhenEventSourceAlreadyExists()
+    {
+        // Touch the source first so it is guaranteed to pre-exist, which is the ordering that
+        // previously left it enabled at LogAlways: OnEventSourceCreated runs from the base
+        // EventListener constructor, before the configured level has been assigned.
+        WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "warm-up", 1);
+
+        // IsEnabled answers for the source across every EventListener in the process, not for this one
+        // alone, so it measures what this listener subscribed at only while nothing else has the source
+        // enabled above Warning. Establishing that first means a process where something else is
+        // listening fails here, saying so, rather than at the assertion below, where the same reading
+        // would look like the constructor having failed to lower the level.
+        Assert.False(
+            WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+            "Another EventListener already has the WebDriverBiDi EventSource enabled at Verbose, so this test cannot measure the level its own listener subscribes at.");
+
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Warning))
+        {
+            // The listener discards sub-Warning events either way; what matters here is that the source
+            // itself no longer reports them as enabled, so they are never formatted or dispatched at all.
+            Assert.False(
+                WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+                "The constructor left the EventSource enabled at Verbose for a listener configured at Warning, so the re-subscription that lowers the level did not take effect.");
+            Assert.True(
+                WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Warning, EventKeywords.None),
+                "The constructor left the EventSource disabled at the level the listener was configured for.");
+        }
     }
 
     [Fact]

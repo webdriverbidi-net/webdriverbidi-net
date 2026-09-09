@@ -542,11 +542,11 @@ public class ErrorHandlingSamples
     /// </summary>
     public static void SetErrorBehaviorOnDriver(BiDiDriver driver)
     {
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
 
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
     }
 
     /// <summary>

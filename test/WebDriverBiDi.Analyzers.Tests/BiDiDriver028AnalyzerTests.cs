@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.Testing;
 /// command-parameter property whose value is outside the WebDriver BiDi specification range declared
 /// by <c>SpecRangeAttribute</c>.
 /// </summary>
-public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
+public class BiDiDriver028AnalyzerTests
 {
     [Fact]
     public async Task ObjectInitializer_QualityAboveRange_ReportsWarning()
@@ -254,6 +254,194 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
     }
 
     [Fact]
+    public async Task DevicePixelRatio_SentinelAndValuesAboveZero_NoDiagnostic()
+    {
+        // devicePixelRatio is (float .gt 0.0) with a reset sentinel of -1, so the sentinel and any
+        // value above zero are both acceptable.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        SetViewportCommandParameters sentinel = new SetViewportCommandParameters { DevicePixelRatio = -1 };
+                        SetViewportCommandParameters fractional = new SetViewportCommandParameters { DevicePixelRatio = 0.5 };
+                        SetViewportCommandParameters whole = new SetViewportCommandParameters { DevicePixelRatio = 2 };
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task DevicePixelRatio_ZeroAndUndeclaredNegative_ReportsWarning()
+    {
+        // Zero equals the exclusive minimum, so it is out of range. A negative value other than the
+        // declared sentinel is reported too: the remote end resets on any negative, but the named
+        // sentinel is the supported way to ask for that.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(SetViewportCommandParameters parameters)
+                    {
+                        SetViewportCommandParameters zero = new SetViewportCommandParameters { DevicePixelRatio = {|#0:0|} };
+                        parameters.DevicePixelRatio = {|#1:-2|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult zeroExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("0", "DevicePixelRatio", "(0, ∞]");
+
+        DiagnosticResult negativeExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("-2", "DevicePixelRatio", "(0, ∞]");
+
+        await VerifyDiagnosticsAsync(testCode, zeroExpected, negativeExpected);
+    }
+
+    [Fact]
+    public async Task JsUintMediaFeatures_SentinelAndNonNegativeValues_NoDiagnostic()
+    {
+        // color, color-index, monochrome and the two viewport-segment counts are js-uint, so zero and
+        // above are acceptable, as is each feature's own reset sentinel.
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        MediaFeatures sentinels = new MediaFeatures
+                        {
+                            Color = MediaFeatures.ResetColorValue,
+                            ColorIndex = MediaFeatures.ResetColorIndexValue,
+                            Monochrome = MediaFeatures.ResetMonochromeValue,
+                            HorizontalViewportSegments = MediaFeatures.ResetHorizontalViewportSegmentsValue,
+                            VerticalViewportSegments = MediaFeatures.ResetVerticalViewportSegmentsValue,
+                        };
+                        MediaFeatures values = new MediaFeatures
+                        {
+                            Color = 0,
+                            ColorIndex = 256,
+                            Monochrome = 8,
+                            HorizontalViewportSegments = 2,
+                            VerticalViewportSegments = 1,
+                        };
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task JsUintMediaFeatures_UndeclaredNegative_ReportsWarning()
+    {
+        // js-uint admits no negative value, and only the declared sentinel is exempt.
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(MediaFeatures features)
+                    {
+                        MediaFeatures below = new MediaFeatures { Color = {|#0:-2|} };
+                        features.VerticalViewportSegments = {|#1:-3|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult colorExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("-2", "Color", "[0, ∞]");
+
+        DiagnosticResult segmentsExpected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("-3", "VerticalViewportSegments", "[0, ∞]");
+
+        await VerifyDiagnosticsAsync(testCode, colorExpected, segmentsExpected);
+    }
+
+    [Fact]
+    public async Task ExclusiveMinimum_ValueEqualToMinimum_ReportsWarning()
+    {
+        // ImageSize.MaxWidth is (js-uint .gt 1): the bound is exclusive, so 1 is out of range even
+        // though it equals the declared minimum.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageSize size = new ImageSize { MaxWidth = {|#0:1|} };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("1", "MaxWidth", "(1, \u221E]");
+
+        await VerifyDiagnosticsAsync(testCode, expected);
+    }
+
+    [Fact]
+    public async Task ExclusiveMinimum_ValueAboveMinimum_NoDiagnostic()
+    {
+        // 2 is the smallest value the exclusive bound admits; a larger value is equally fine.
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageSize size = new ImageSize { MaxWidth = 2 };
+                        ImageSize other = new ImageSize();
+                        other.MaxHeight = 1024;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer>(testCode);
+    }
+
+    [Fact]
     public async Task PropertyWithoutSpecRange_NoDiagnostic()
     {
         // GeolocationCoordinates.Altitude is a double? property with no [SpecRange] attribute.
@@ -432,6 +620,95 @@ public class BiDiDriver028SpecRangeValueOutOfRangeAnalyzerTests
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a non-numeric constant assigned to a ranged property is declined rather than
+    /// converted. An analyzer also runs over code that does not compile, so the constant it is handed
+    /// is not always of the property's type; converting a string would throw, which is reported as
+    /// AD0001 and suppresses this rule for the whole file.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StringConstant_AssignedToRangedProperty_ReportsNothing()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageFormat format = new ImageFormat { Quality = {|#0:"high"|} };
+                    }
+                }
+            }
+            """;
+
+        await VerifyDiagnosticsAsync(
+            testCode,
+            DiagnosticResult.CompilerError("CS0029").WithLocation(0).WithArguments("string", "double?"));
+    }
+
+    /// <summary>
+    /// Tests that a boolean constant assigned to a ranged property is declined for the same reason a
+    /// string is: it is the only other type a C# constant can have, and it does not convert either.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task BooleanConstant_AssignedToRangedProperty_ReportsNothing()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageFormat format = new ImageFormat { Quality = {|#0:true|} };
+                    }
+                }
+            }
+            """;
+
+        await VerifyDiagnosticsAsync(
+            testCode,
+            DiagnosticResult.CompilerError("CS0029").WithLocation(0).WithArguments("bool", "double?"));
+    }
+
+    /// <summary>
+    /// Tests that a char constant assigned to a ranged property is converted through its numeric value
+    /// rather than through IConvertible, which throws for char. A char is the one constant type that
+    /// converts implicitly to a numeric property, so this shape does compile.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CharConstant_OutsideRange_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        ImageFormat format = new ImageFormat { Quality = {|#0:'A'|} };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("'A'", "Quality", "[0, 1]");
+
+        await VerifyDiagnosticsAsync(testCode, expected);
     }
 
     private static async Task VerifyDiagnosticsAsync(string testCode, params DiagnosticResult[] expected)

@@ -14,7 +14,7 @@ public class TransportEventSourceIntegrationTests
     [Fact]
     public async Task TestTransportEmitsConnectionOpeningAndOpenedEvents()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -36,13 +36,12 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("TransportStarted", events[2].EventName);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsConnectionClosingAndClosedEvents()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -66,14 +65,13 @@ public class TransportEventSourceIntegrationTests
         Assert.NotNull(payload2);
         Assert.Equal("Normal shutdown", payload2[0]);
 
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestReconnectResetsTerminationReasonFromPriorTerminate()
     {
         TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
@@ -103,13 +101,12 @@ public class TransportEventSourceIntegrationTests
         Assert.NotNull(stopped.Payload);
         Assert.Equal("Normal shutdown", stopped.Payload[0]);
 
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsCommandSendingAndCompletedEvents()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -120,7 +117,7 @@ public class TransportEventSourceIntegrationTests
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate response
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -132,12 +129,15 @@ public class TransportEventSourceIntegrationTests
                                 }
                             }
                             """;
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
                 await connection.RaiseDataReceivedEventAsync(json);
             },
             TestContext.Current.CancellationToken);
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Awaited so that a fault inside the Task is reported as itself rather
+        // than as whichever assertion below fails first.
+        await responseTask;
 
         // CommandCompleted is raised on the reader task; block for it (the signalled listener wakes as
         // soon as it fires) so the snapshot below deterministically contains it and the preceding
@@ -161,13 +161,12 @@ public class TransportEventSourceIntegrationTests
         Assert.IsType<long>(completedPayload[2]); // elapsed time
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsCommandErrorEvent()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -178,7 +177,7 @@ public class TransportEventSourceIntegrationTests
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
 
         // Simulate error response
-        _ = Task.Run(
+        Task responseTask = Task.Run(
             async () =>
             {
                 string json = """
@@ -196,6 +195,9 @@ public class TransportEventSourceIntegrationTests
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
+        // Awaited so that a fault inside the Task is reported as itself rather than as whichever assertion below fails first.
+        await responseTask;
+
         // CommandError is raised on the reader task; block for it (the signalled listener wakes as soon
         // as it fires) rather than snapshotting immediately and racing.
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromSeconds(5), "CommandError");
@@ -212,13 +214,12 @@ public class TransportEventSourceIntegrationTests
         Assert.Equal("Session not found", errorPayload[4]);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsCommandSendFailedEventWhenSendThrows()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new()
         {
             SendWebSocketDataOverride = _ => throw new InvalidOperationException("Simulated send failure"),
@@ -257,13 +258,12 @@ public class TransportEventSourceIntegrationTests
         Assert.DoesNotContain(events, e => e.EventName == "CommandError");
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsCommandSendFailedEventWhenSendIsCanceled()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using CancellationTokenSource cancellationTokenSource = new();
         TestWebSocketConnection connection = new()
@@ -306,34 +306,54 @@ public class TransportEventSourceIntegrationTests
         Assert.DoesNotContain(events, e => e.EventName == "CommandError");
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsEventReceivedEvent()
     {
-        // This test verifies EventReceived is emitted by directly checking if the method
-        // is callable. Full integration testing of event flow is covered by TransportTests.
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
 
-        // Directly emit the event to verify it works
-        WebDriverBiDiEventSource.RaiseEvent.EventReceived("test.event");
+        // The transport writes EventReceived before it dispatches the event to observers, so once
+        // the observer has run the event is already in the listener: no timed wait is needed.
+        TaskCompletionSource observerInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            observerInvoked.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        listener.ClearEvents(); // Clear connection events
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await connection.RaiseDataReceivedEventAsync(json);
+        await observerInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("EventReceived");
-        Assert.Single(events);
+        EventWrittenEventArgs eventReceived = Assert.Single(events);
 
-        ReadOnlyCollection<object?>? payload0 = events[0].Payload;
+        ReadOnlyCollection<object?>? payload0 = eventReceived.Payload;
         Assert.NotNull(payload0);
-        Assert.Equal("test.event", payload0[0]);
+        Assert.Equal("protocol.event", payload0[0]);
 
-        listener.Dispose();
-        await Task.CompletedTask; // Satisfy async requirement
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
     public async Task TestTransportEmitsUnknownMessageReceivedEvent()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -355,13 +375,12 @@ public class TransportEventSourceIntegrationTests
         Assert.IsType<int>(unknownPayload[1]); // message length
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsUnknownMessageReceivedEventWithNullType()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -383,13 +402,12 @@ public class TransportEventSourceIntegrationTests
         Assert.IsType<int>(unknownPayload[1]); // message length
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsProtocolErrorEventForInvalidEventJson()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("test.event");
@@ -419,37 +437,65 @@ public class TransportEventSourceIntegrationTests
         Assert.NotEmpty((string)protocolPayload[1]!); // message snippet
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsEventHandlerErrorEvent()
     {
-        // This test verifies EventHandlerError is emitted by directly checking if the method
-        // is callable. Full integration testing of error handling is covered by TransportTests.
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            throw new WebDriverBiDiException("Test exception message");
+        });
 
-        // Directly emit the event to verify it works
-        WebDriverBiDiEventSource.RaiseEvent.EventHandlerError("test.event", "Test exception message");
+        // The transport writes EventHandlerError before it raises OnEventHandlerErrorOccurred, so
+        // once that observer has run the event is already in the listener: no timed wait is needed.
+        TaskCompletionSource errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            errorReported.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
+        listener.ClearEvents(); // Clear connection events
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await connection.RaiseDataReceivedEventAsync(json);
+        await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         List<EventWrittenEventArgs> events = listener.GetEventsForEventName("EventHandlerError");
-        Assert.Single(events);
-
-        EventWrittenEventArgs handlerError = events[0];
+        EventWrittenEventArgs handlerError = Assert.Single(events);
         ReadOnlyCollection<object?>? handlerPayload = handlerError.Payload;
         Assert.NotNull(handlerPayload);
 
-        Assert.Equal("test.event", handlerPayload[0]);
+        Assert.Equal("protocol.event", handlerPayload[0]);
         Assert.Equal("Test exception message", handlerPayload[1]);
 
-        listener.Dispose();
-        await Task.CompletedTask; // Satisfy async requirement
+        // Collect mode surfaces the collected handler failure when the transport disconnects.
+        AggregateException exception = await Assert.ThrowsAsync<AggregateException>(
+            async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
+        Assert.IsType<WebDriverBiDiException>(exception.InnerException);
     }
 
     [Fact]
     public async Task TestTransportEmitsConnectionErrorEvent()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -467,13 +513,12 @@ public class TransportEventSourceIntegrationTests
         Assert.NotNull(connectionPayload);
         Assert.Contains("Connection lost", (string)connectionPayload[1]!);
 
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsConnectionErrorEventWhenTakingFastPath()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -492,13 +537,12 @@ public class TransportEventSourceIntegrationTests
         Assert.NotNull(errorPayload);
         Assert.Contains("Connection lost during shutdown", (string)errorPayload[1]!);
 
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsPendingCommandCountEvent()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
@@ -517,16 +561,17 @@ public class TransportEventSourceIntegrationTests
         Assert.IsType<int>(countPayload[0]);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 
     [Fact]
     public async Task TestTransportEmitsCanceledCommandResponseDiscardedEvent()
     {
-        TestEventListener listener = new();
+        using TestEventListener listener = new();
         TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Message.Contains("Discarding late response"))
@@ -554,6 +599,5 @@ public class TransportEventSourceIntegrationTests
         Assert.True((long)payload[3]! >= 0);
 
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-        listener.Dispose();
     }
 }

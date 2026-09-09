@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Browser;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Result for getting user contexts using the browser.getUserContexts command.
@@ -32,5 +33,6 @@ public record GetUserContextsCommandResult : CommandResult
     [JsonPropertyName("userContexts")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<UserContextInfo>))]
     internal List<UserContextInfo> SerializableUserContexts { get; set; } = [];
 }

@@ -73,4 +73,58 @@ internal static class TimeoutUtilities
         string infiniteSuffix = allowInfinite ? ", or Timeout.InfiniteTimeSpan" : string.Empty;
         return $"{description} must be a non-negative TimeSpan value no greater than {MaxTimeout} ({(long)MaxTimeout.TotalMilliseconds} milliseconds){infiniteSuffix}";
     }
+
+    /// <summary>
+    /// Creates a task that completes after the given delay, measured by the given
+    /// <see cref="TimeProvider"/>, so that a caller supplying a non-system provider (a test using
+    /// virtual time, say) controls when the delay elapses.
+    /// </summary>
+    /// <param name="timeProvider">The provider whose clock measures the delay.</param>
+    /// <param name="delay">The delay, or <see cref="Timeout.InfiniteTimeSpan"/> to wait only for cancellation.</param>
+    /// <param name="cancellationToken">A token that cancels the delay.</param>
+    /// <returns>A task that completes when the delay elapses, or is canceled when the token is.</returns>
+    public static Task DelayAsync(TimeProvider timeProvider, TimeSpan delay, CancellationToken cancellationToken)
+    {
+#if NETSTANDARD2_0
+        return timeProvider.Delay(delay, cancellationToken);
+#else
+        return Task.Delay(delay, timeProvider, cancellationToken);
+#endif
+    }
+
+    /// <summary>
+    /// Creates a <see cref="CancellationTokenSource"/> that cancels after the given delay, measured by
+    /// the given <see cref="TimeProvider"/>.
+    /// </summary>
+    /// <param name="timeProvider">The provider whose clock measures the delay.</param>
+    /// <param name="delay">The delay, or <see cref="Timeout.InfiniteTimeSpan"/> for a source that never cancels on its own.</param>
+    /// <returns>The cancellation token source; the caller disposes it.</returns>
+    public static CancellationTokenSource CreateCancellationTokenSource(TimeProvider timeProvider, TimeSpan delay)
+    {
+#if NETSTANDARD2_0
+        return timeProvider.CreateCancellationTokenSource(delay);
+#else
+        return new CancellationTokenSource(delay, timeProvider);
+#endif
+    }
+
+    /// <summary>
+    /// Gets the portion of a timeout budget that remains after the time already spent against it.
+    /// </summary>
+    /// <param name="timeout">The total budget, or <see cref="Timeout.InfiniteTimeSpan"/> for an unbounded one.</param>
+    /// <param name="elapsed">The time already spent against the budget.</param>
+    /// <returns>
+    /// The remaining budget, never negative; <see cref="Timeout.InfiniteTimeSpan"/> when the budget is unbounded,
+    /// since an unbounded budget cannot be consumed.
+    /// </returns>
+    public static TimeSpan GetRemainingTimeout(TimeSpan timeout, TimeSpan elapsed)
+    {
+        if (timeout == Timeout.InfiniteTimeSpan)
+        {
+            return Timeout.InfiniteTimeSpan;
+        }
+
+        // An exhausted budget yields zero, so prevent a negative TimeSpan from being returned.
+        return TimeSpan.FromTicks(Math.Max(0L, (timeout - elapsed).Ticks));
+    }
 }

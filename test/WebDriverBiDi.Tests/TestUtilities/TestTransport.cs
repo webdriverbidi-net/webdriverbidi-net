@@ -8,14 +8,17 @@ using WebDriverBiDi;
 
 public class TestTransport : Transport
 {
-    private TimeSpan messageProcessingDelay = TimeSpan.Zero;
     private int deserializeThrowCount;
     private int disconnectCallCount;
     private int concurrentConnectLockAcquisitions = 0;
     private Func<Task>? afterAcquireLockAsyncCallback;
 
-    public TestTransport(WebSocketConnection connection) : base(connection)
+    public TestTransport(WebSocketConnection connection, TimeProvider? timeProvider = null) : base(connection)
     {
+        if (timeProvider is not null)
+        {
+            this.TimeProvider = timeProvider;
+        }
     }
 
     public long LastTestCommandId => this.LastCommandId;
@@ -45,8 +48,6 @@ public class TestTransport : Transport
     /// </summary>
     public Func<TestCommand, bool>? UncompletedCommandBehavior { get; set; }
 
-    public TimeSpan MessageProcessingDelay { get => this.messageProcessingDelay; set => this.messageProcessingDelay = value; }
-
     public CommandResult? CustomReturnValue { get; set; }
 
     public int DisconnectCallCount => this.disconnectCallCount;
@@ -66,6 +67,11 @@ public class TestTransport : Transport
     public Action? AfterAcquireLockCallback { get; set; }
 
     /// <summary>
+    /// Optional callback invoked when a wait for the connection lock is abandoned rather than granted.
+    /// </summary>
+    public Action? AcquireLockFailedCallback { get; set; }
+
+    /// <summary>
     /// Optional asynchronous callback invoked once, immediately after the next acquisition of
     /// the connection lock, and then cleared. Because the lock is held while it runs, the
     /// callback can deterministically stage work that must overlap the lock holder's critical
@@ -83,7 +89,20 @@ public class TestTransport : Transport
     /// Transport unhandled error mechanism.
     /// Used for precise test synchronization.
     /// </summary>
+    /// <summary>
+    /// Gets or sets a gate awaited by the message-processing loop before each message is processed. Use it to
+    /// hold a message in flight deterministically instead of relying on a timed delay.
+    /// </summary>
+    public Func<Task>? MessageProcessingGate { get; set; }
+
+    /// <summary>
+    /// Gets or sets a callback invoked when the message-processing loop reaches the gate, before awaiting it.
+    /// </summary>
+    public Action? MessageProcessingStarted { get; set; }
+
     public Action? AfterUnhandledErrorCaptured { get; set; }
+
+    private TaskCompletionSource unhandledErrorCapturedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
     /// Gets or sets the number of remaining calls to <see cref="DeserializeMessage"/>
@@ -101,14 +120,14 @@ public class TestTransport : Transport
 
         if (this.ShouldCancelCommand)
         {
-            Command returnedCommand = new Command(this.LastCommandId, commandParameters);
+            Command returnedCommand = new(this.LastCommandId, commandParameters, this.TimeProvider);
             returnedCommand.Cancel();
             return returnedCommand;
         }
 
         if (this.ReturnCustomValue)
         {
-            Command returnedCommand = new(this.LastCommandId, commandParameters);
+            Command returnedCommand = new(this.LastCommandId, commandParameters, this.TimeProvider);
             if (this.CustomReturnValue is null)
             {
                 returnedCommand.SetResult(null!);
@@ -149,24 +168,41 @@ public class TestTransport : Transport
         this.AddEventMessageType(eventName, type);
     }
 
+    /// <summary>
+    /// Waits until the late-fault continuation has recorded an exception into the transport's
+    /// collected-error store for the given behavior. Waiting only for the handler body to complete is not
+    /// sufficient, because the capture happens on a continuation after the handler returns.
+    /// </summary>
+    /// <param name="timeout">A safety bound. The wait ends when the error is captured, not when this elapses.</param>
+    /// <param name="errorBehavior">The behavior whose collected errors are of interest.</param>
+    /// <returns><see langword="true"/> if an error was captured for that behavior.</returns>
+    /// <remarks>
+    /// Each capture completes the current signal and installs a fresh one, so a wait resumes on the next
+    /// capture rather than on a timer. The signal is snapshotted <em>before</em> the predicate is tested: a
+    /// capture landing between the two would otherwise complete a signal this loop has already replaced,
+    /// and the wait would hang until the safety bound even though the condition it wanted had been met.
+    /// </remarks>
     public async Task<bool> WaitForCollectedEventHandlerExceptionAsync(TimeSpan timeout, TransportErrorBehavior errorBehavior)
     {
-        // This test needs to wait until the late-fault continuation has actually
-        // recorded the exception into the transport's collected-error store.
-        // Waiting only for the handler body to complete is not sufficient.
         UnhandledErrorCollection unhandledErrors = this.UnhandledErrors;
-        DateTime endTime = DateTime.UtcNow + timeout;
-        while (DateTime.UtcNow < endTime)
+        using CancellationTokenSource safetyBound = new(timeout);
+        while (true)
         {
+            Task nextCapture = Volatile.Read(ref this.unhandledErrorCapturedSignal).Task;
             if (unhandledErrors.HasUnhandledErrors(errorBehavior))
             {
                 return true;
             }
 
-            await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
+            try
+            {
+                await nextCapture.WaitAsync(safetyBound.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return unhandledErrors.HasUnhandledErrors(errorBehavior);
+            }
         }
-
-        return unhandledErrors.HasUnhandledErrors(errorBehavior);
     }
 
     /// <summary>
@@ -224,11 +260,12 @@ public class TestTransport : Transport
 
     protected override async Task ProcessMessageAsync(IncomingMessage packet)
     {
-        if (this.messageProcessingDelay > TimeSpan.Zero)
+        if (this.MessageProcessingGate is not null)
         {
-            // Delay processing so a caller can leave a message pending on the reader loop while it
-            // disconnects, exercising the "process pending incoming messages during shutdown" path.
-            await Task.Delay(this.messageProcessingDelay).ConfigureAwait(false);
+            // Hold the message-processing loop deterministically, without a timed delay, so a test can
+            // observe the transport's behavior while a message is still in flight.
+            this.MessageProcessingStarted?.Invoke();
+            await this.MessageProcessingGate().ConfigureAwait(false);
         }
 
         await base.ProcessMessageAsync(packet).ConfigureAwait(false);
@@ -255,7 +292,17 @@ public class TestTransport : Transport
             await this.BeforeAcquireLockCallback().ConfigureAwait(false);
         }
 
-        await base.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await base.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (WebDriverBiDiTimeoutException)
+        {
+            // Signalled before the rethrow, so a test observes the abandonment before the code under
+            // test does.
+            this.AcquireLockFailedCallback?.Invoke();
+            throw;
+        }
 
         this.AfterAcquireLockCallback?.Invoke();
 
@@ -312,6 +359,15 @@ public class TestTransport : Transport
     protected override void CaptureUnhandledError(UnhandledErrorKind errorType, Exception ex, string terminalReason)
     {
         base.CaptureUnhandledError(errorType, ex, terminalReason);
+
+        // Release anyone waiting on the previous signal and arm a fresh one, so a later capture can be
+        // awaited too. Exchanging before completing means a waiter that snapshotted the old signal is
+        // woken, while one arriving afterwards waits on the new one.
+        TaskCompletionSource capturedSignal = Interlocked.Exchange(
+            ref this.unhandledErrorCapturedSignal,
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        capturedSignal.TrySetResult();
+
         this.AfterUnhandledErrorCaptured?.Invoke();
     }
 }

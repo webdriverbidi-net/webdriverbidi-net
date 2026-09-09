@@ -9,7 +9,7 @@ The Digital Credentials module allows you to:
 - Simulate a wallet that presents a predefined credential response
 - Simulate a wallet that declines or cancels a credential request
 - Leave credential requests in a pending state to test timeouts
-- Scope wallet behavior to a specific browsing context or credential protocol
+- Scope wallet behavior to a specific browsing context
 - Clear any active simulated wallet behavior
 
 ## Accessing the Module
@@ -36,7 +36,34 @@ Simulate a successful presentation by returning a predefined response object:
 
 [!code-csharp[Respond with Credential](../../code/modules/DigitalCredentialsModuleSamples.cs#RespondWithCredential)]
 
-The `Response` property accepts any `Dictionary<string, object?>` whose shape matches the protocol-specific credential response your application expects.
+`Protocol` and `Response` are a required pair for `VirtualWalletAction.Respond`: a conforming remote end
+answers with `invalid argument` if either is missing. Every other action requires both to be *absent*, so
+`Decline`, `Wait` and `Clear` are sent with neither.
+
+The `Response` property accepts any `Dictionary<string, object?>` whose shape matches the credential
+response your application expects for the protocol you name.
+
+### Choosing the Credential Protocol
+
+`Protocol` is not a filter. It names the protocol the simulated credential is presented under, and its
+value is written into the credential the page receives as `DigitalCredential.protocol`:
+
+[!code-csharp[Select Protocol](../../code/modules/DigitalCredentialsModuleSamples.cs#SelectProtocol)]
+
+The value must be one of the identifiers enumerated by `DigitalCredentialProtocol` in the
+[Digital Credentials API](https://www.w3.org/TR/digital-credentials/); anything else is rejected with
+`invalid argument`. At the time of writing those are:
+
+| Identifier | Kind |
+|------------|------|
+| `openid4vp-v1-unsigned` | Presentation |
+| `openid4vp-v1-signed` | Presentation |
+| `openid4vp-v1-multisigned` | Presentation |
+| `org-iso-mdoc` | Presentation |
+| `openid4vci-v1` | Issuance |
+
+Identifiers are added to that enumeration as user agents adopt new protocols, so check the specification
+rather than treating this list as closed.
 
 ### Leaving the Request Pending
 
@@ -52,28 +79,23 @@ Remove any previously configured virtual wallet behavior, returning to the brows
 
 ## Scoping Behavior
 
-### Scoping to a Browsing Context
-
-Apply the wallet behavior only to a specific tab or frame by setting the `Context` property:
+The browsing context is the only axis the command scopes by. Apply the wallet behavior to a specific tab
+or frame by setting the `BrowsingContextId` property; omit it and the behavior becomes the session
+default:
 
 [!code-csharp[Scope to Context](../../code/modules/DigitalCredentialsModuleSamples.cs#ScopeToContext)]
 
-### Scoping to a Protocol
-
-Target a specific credential exchange protocol (e.g., `"openid4vp"`, `"preview"`) with the `Protocol` property:
-
-[!code-csharp[Scope to Protocol](../../code/modules/DigitalCredentialsModuleSamples.cs#ScopeToProtocol)]
-
-When `Protocol` is omitted the behavior applies to all credential protocols.
-
 ## VirtualWalletAction Values
 
-| Value | Description |
-|-------|-------------|
-| `VirtualWalletAction.Decline` | Simulates a user cancellation; the credential request is aborted |
-| `VirtualWalletAction.Respond` | Returns the object supplied in `Response` as the credential data |
-| `VirtualWalletAction.Wait` | Leaves the active promise unsettled; useful for timeout or concurrency tests |
-| `VirtualWalletAction.Clear` | Removes any active virtual wallet behavior |
+| Value | Description | `Protocol` and `Response` |
+|-------|-------------|---------------------------|
+| `VirtualWalletAction.Decline` | Simulates a user cancellation; the credential request is aborted | Both must be omitted |
+| `VirtualWalletAction.Respond` | Returns the object supplied in `Response` as the credential data | Both are required |
+| `VirtualWalletAction.Wait` | Leaves the active promise unsettled; useful for timeout or concurrency tests | Both must be omitted |
+| `VirtualWalletAction.Clear` | Removes any active virtual wallet behavior | Both must be omitted |
+
+Supplying either property with an action other than `Respond`, or omitting either one with `Respond`, is
+answered with `invalid argument`.
 
 ## Common Patterns
 
@@ -100,7 +122,7 @@ When `Protocol` is omitted the behavior applies to all credential protocols.
 1. **Set behavior before navigation**: Configure the virtual wallet before navigating to the page that triggers a credential request.
 2. **Clear behavior between tests**: Call `SetVirtualWalletBehaviorAsync` with `VirtualWalletAction.Clear` after each test to avoid state leaking between test cases.
 3. **Use context scoping for isolation**: When running multiple contexts in parallel, scope the wallet behavior to a specific context to prevent interference.
-4. **Match the response shape to your protocol**: The `Response` dictionary must conform to the structure expected by the credential protocol your application uses.
+4. **Match the response shape to your protocol**: `Respond` requires `Protocol` as well as `Response`, and the `Response` dictionary must conform to the structure expected by the protocol you name.
 5. **Test all action paths**: Verify your application handles `Decline`, `Respond`, and `Wait` (timeout) outcomes.
 
 ## Common Issues
@@ -119,8 +141,8 @@ When `Protocol` is omitted the behavior applies to all credential protocols.
 **Problem**: The page throws an error when processing the credential response.
 
 **Solution**:
-- Verify the `Response` dictionary matches the protocol-specific schema your application expects.
-- Use the `Protocol` property to scope the response to the correct credential exchange protocol.
+- Verify the `Response` dictionary matches the schema your application expects for the protocol named in `Protocol`.
+- Confirm `Protocol` names the protocol the page actually requested; its value reaches the page as `DigitalCredential.protocol`.
 - Check browser console errors for schema validation messages.
 
 ### Behavior Persists After Test

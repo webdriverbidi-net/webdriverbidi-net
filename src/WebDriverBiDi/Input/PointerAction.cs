@@ -21,21 +21,28 @@ public class PointerAction
     }
 
     /// <summary>
-    /// Gets or sets the width of the pointer in pixels. If omitted, defaults to 1.
+    /// Gets or sets the width of the pointer in pixels. Neither the WebDriver BiDi nor the WebDriver
+    /// classic specification defines a value for this property when it is omitted; Pointer Events
+    /// Level 3 defines the platform default as 1 for a device that reports no contact geometry.
     /// </summary>
     [JsonPropertyName("width")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? Width { get; set; }
 
     /// <summary>
-    /// Gets or sets the height of the pointer in pixels. If omitted, defaults to 1.
+    /// Gets or sets the height of the pointer in pixels. Neither the WebDriver BiDi nor the WebDriver
+    /// classic specification defines a value for this property when it is omitted; Pointer Events
+    /// Level 3 defines the platform default as 1 for a device that reports no contact geometry.
     /// </summary>
     [JsonPropertyName("height")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? Height { get; set; }
 
     /// <summary>
-    /// Gets or sets the pressure of the pointer on the surface. If omitted, defaults to 0.0.
+    /// Gets or sets the pressure of the pointer on the surface. Neither the WebDriver BiDi nor the
+    /// WebDriver classic specification defines a value for this property when it is omitted; under
+    /// Pointer Events Level 3, hardware that does not report pressure gives 0.0 when no button is
+    /// active and 0.5 when one is.
     /// </summary>
     /// <remarks>
     /// Valid values for this property range from 0.0 to 1.0, inclusive. This property does not
@@ -49,7 +56,10 @@ public class PointerAction
     public double? Pressure { get; set; }
 
     /// <summary>
-    /// Gets or sets the tangential pressure of the pointer on the surface. If omitted, defaults to 0.0.
+    /// Gets or sets the tangential pressure of the pointer on the surface. Neither the WebDriver BiDi
+    /// nor the WebDriver classic specification defines a value for this property when it is omitted;
+    /// Pointer Events Level 3 defines the platform default as 0.0 for hardware that does not report
+    /// tangential pressure.
     /// </summary>
     /// <remarks>
     /// Valid values for this property range from -1.0 to 1.0, inclusive. This property does not
@@ -63,7 +73,9 @@ public class PointerAction
     public double? TangentialPressure { get; set; }
 
     /// <summary>
-    /// Gets or sets the twist of the pointer in degrees on the surface. If omitted, defaults to 0.
+    /// Gets or sets the twist of the pointer in degrees on the surface. Neither the WebDriver BiDi nor
+    /// the WebDriver classic specification defines a value for this property when it is omitted;
+    /// Pointer Events Level 3 defines the platform default as 0.
     /// </summary>
     /// <remarks>
     /// Valid values for this property range from 0 to 359, inclusive. This property does not
@@ -76,8 +88,10 @@ public class PointerAction
     public ulong? Twist { get; set; }
 
     /// <summary>
-    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device. If omitted,
-    /// defaults to 0.0.
+    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device. Neither the
+    /// WebDriver BiDi nor the WebDriver classic specification defines a value for this property when it
+    /// is omitted; Pointer Events Level 3 defines the platform default as pi / 2, a pointer
+    /// perpendicular to the surface.
     /// </summary>
     /// <remarks>
     /// Valid values for this property range from 0.0 to 1.5707963267948966 (pi / 2), inclusive. This
@@ -92,7 +106,9 @@ public class PointerAction
 
     /// <summary>
     /// Gets or sets the azimuth angle (angle from "north," or a line directly up from the point of contact)
-    /// of the pointer device. If omitted, defaults to 0.0.
+    /// of the pointer device. Neither the WebDriver BiDi nor the WebDriver classic specification defines a
+    /// value for this property when it is omitted; Pointer Events Level 3 defines the platform default
+    /// as 0.0.
     /// </summary>
     /// <remarks>
     /// Valid values for this property range from 0.0 to 6.283185307179586 (2 * pi), inclusive. This

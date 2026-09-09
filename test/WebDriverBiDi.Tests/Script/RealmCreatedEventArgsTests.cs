@@ -67,11 +67,60 @@ public class RealmCreatedEventArgsTests
                       """;
         RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
         Assert.NotNull(eventArgs);
-        WindowRealmInfo castInfo = eventArgs.As<WindowRealmInfo>();
+        WindowRealmInfo castInfo = eventArgs.ConvertTo<WindowRealmInfo>();
 
         Assert.Equal("myRealm", castInfo.RealmId);
         Assert.Equal("myOrigin", castInfo.Origin);
         Assert.Equal(RealmType.Window, castInfo.Type);
+    }
+
+    [Fact]
+    public async Task TestTryCastToSpecificRealmTypeReturnsTrue()
+    {
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "window",
+                          "context": "myContext"
+                        }
+                      }
+                      """;
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
+        bool result = eventArgs.TryConvertTo(out WindowRealmInfo? castInfo);
+
+        Assert.True(result);
+        Assert.NotNull(castInfo);
+        Assert.Equal("myRealm", castInfo.RealmId);
+        Assert.Equal("myOrigin", castInfo.Origin);
+        Assert.Equal(RealmType.Window, castInfo.Type);
+    }
+
+    [Fact]
+    public async Task TestTryCastToImproperRealmTypeReturnsFalse()
+    {
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "script.realmCreated",
+                        "params": {
+                          "realm": "myRealm",
+                          "origin": "myOrigin",
+                          "type": "window",
+                          "context": "myContext"
+                        }
+                      }
+                      """;
+        RealmCreatedEventArgs? eventArgs = await this.GenerateEventArgs(json);
+        Assert.NotNull(eventArgs);
+        bool result = eventArgs.TryConvertTo(out SharedWorkerRealmInfo? castInfo);
+
+        Assert.False(result);
+        Assert.Null(castInfo);
     }
 
     [Fact]
@@ -106,7 +155,7 @@ public class RealmCreatedEventArgsTests
 
         observer.StartCapturingTasks();
         await connection.RaiseDataReceivedEventAsync(json);
-        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+        Assert.True(await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         return eventArgs;
     }
 }

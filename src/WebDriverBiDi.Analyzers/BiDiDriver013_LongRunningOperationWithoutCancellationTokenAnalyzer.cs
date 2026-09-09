@@ -56,6 +56,15 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
+
+        // Rule out the overwhelming majority of invocations on their name alone, before paying for
+        // the semantic model. IsLongRunningMethod below remains the authoritative test, against the
+        // resolved symbol's name; this only avoids binding calls that cannot possibly match.
+        if (!AnalyzerSymbolHelpers.CouldInvokeAnyOf(invocation, LongRunningOperations))
+        {
+            return;
+        }
+
         IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
 
         if (methodSymbol == null)
@@ -103,7 +112,9 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
 
     private static bool IsTargetType(INamedTypeSymbol? type)
     {
-        return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || AnalyzerSymbolHelpers.IsLibraryModuleType(type) || type is { Name: "EventObserver", IsGenericType: true };
+        return AnalyzerSymbolHelpers.IsCommandExecutorType(type)
+            || AnalyzerSymbolHelpers.IsLibraryModuleType(type)
+            || (type is { IsGenericType: true } && AnalyzerSymbolHelpers.IsLibraryTypeNamed(type, "EventObserver"));
     }
 
     // Operations known to be potentially long-running. Hoisted to a static field to avoid allocating

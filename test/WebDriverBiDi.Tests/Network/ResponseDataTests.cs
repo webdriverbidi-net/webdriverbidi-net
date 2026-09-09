@@ -504,8 +504,8 @@ public class ResponseDataTests
                       }
                       """;
         JsonException exception = Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json));
-        Assert.Contains("JSON value could not be converted", exception.Message);
-        Assert.Contains("authChallenges", exception.Message);
+        Assert.Contains("must be an array", exception.Message);
+        Assert.Equal("$.authChallenges", exception.Path);
     }
 
     [Fact]
@@ -529,8 +529,8 @@ public class ResponseDataTests
                       }
                       """;
         JsonException exception = Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<ResponseData>(json));
-        Assert.Contains("JSON value could not be converted", exception.Message);
-        Assert.Contains("headers", exception.Message);
+        Assert.Contains("must be an array", exception.Message);
+        Assert.Equal("$.headers", exception.Path);
     }
 
     [Fact]

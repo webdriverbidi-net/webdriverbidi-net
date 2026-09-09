@@ -127,7 +127,7 @@ public static class NetworkModuleSamples
             Console.WriteLine($"Method: {e.Request.Method}");
             Console.WriteLine($"URL: {e.Request.Url}");
             Console.WriteLine($"Request ID: {e.Request.RequestId}");
-            Console.WriteLine($"Timestamp: {e.Request.Timings.TimeOrigin}");
+            Console.WriteLine($"Time origin: {e.Request.Timings.TimeOrigin}");
             Console.WriteLine($"Is Blocked: {e.IsBlocked}");
         });
         #endregion

@@ -63,7 +63,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        if (memberAccess.Name.Identifier.Text != "AddObserver")
+        if (memberAccess.Name.Identifier.ValueText != "AddObserver")
         {
             return;
         }
@@ -74,7 +74,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        if (methodSymbol.ReturnType is not INamedTypeSymbol { Name: "EventObserver" })
+        if (!AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
         {
             return;
         }
@@ -110,10 +110,11 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
 
     private static bool IsAsyncHandler(ExpressionSyntax expression)
     {
+        // Every inline handler form carries its async keyword on this base type, so matching it covers
+        // anonymous methods (delegate (…) { … }) as well as both lambda spellings.
         return expression switch
         {
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
-            ParenthesizedLambdaExpressionSyntax parenthesizedLambda => parenthesizedLambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
+            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             _ => false,
         };
     }
@@ -124,7 +125,9 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
     {
         List<(SyntaxNode, string)> patterns = [];
 
-        IEnumerable<LockStatementSyntax> lockStatements = handlerBody.DescendantNodes()
+        // Do not descend into a nested lambda, anonymous method or local function: its body runs only
+        // when that delegate is invoked, not on the dispatching thread that this rule is about.
+        IEnumerable<LockStatementSyntax> lockStatements = handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<LockStatementSyntax>();
 
         foreach (LockStatementSyntax lockStmt in lockStatements)
@@ -132,7 +135,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             patterns.Add((lockStmt, "lock statement"));
         }
 
-        IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes()
+        IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction)
             .OfType<InvocationExpressionSyntax>();
 
         foreach (InvocationExpressionSyntax invocation in invocations)

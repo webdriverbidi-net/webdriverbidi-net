@@ -6,7 +6,8 @@
 namespace WebDriverBiDi.Session;
 
 /// <summary>
-/// The Session module contains commands and events for monitoring the status of the remote end.
+/// The Session module contains commands for monitoring the status of the remote end and for managing
+/// event subscriptions. The specification defines no events for this module.
 /// </summary>
 public sealed class SessionModule : Module
 {
@@ -32,7 +33,7 @@ public sealed class SessionModule : Module
     /// <summary>
     /// Gets the status of the current connection.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing the information about the remote end status.</returns>
@@ -44,7 +45,7 @@ public sealed class SessionModule : Module
     /// <summary>
     /// Creates a new session.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing the information about the new session.</returns>
@@ -80,7 +81,7 @@ public sealed class SessionModule : Module
     /// <summary>
     /// Ends the current session.
     /// </summary>
-    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>

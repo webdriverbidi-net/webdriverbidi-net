@@ -6,6 +6,11 @@ using WebDriverBiDi.TestUtilities;
 
 public class PipeConnectionTests
 {
+    // A safety bound, not a timing expectation: the reads it guards complete as soon as the child echoes,
+    // so this only turns a hang into a failure. It is deliberately far larger than any plausible dotnet
+    // process start so that a slow or loaded CI machine cannot fail the test.
+    private static readonly TimeSpan DataEchoSafetyBound = TimeSpan.FromSeconds(30);
+
     [Fact]
     public void TestConstructorThrowsForNullProcessProvider()
     {
@@ -31,11 +36,12 @@ public class PipeConnectionTests
 
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
-        bool dataSendSuccess = testPipeServer.WaitForDataSent(TimeSpan.FromSeconds(1));
-        testPipeServer.Stop();
-        Assert.True(dataSendSuccess);
 
-        string output = testPipeServer.GetSentData();
+        using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCancellation.CancelAfter(DataEchoSafetyBound);
+        string output = await testPipeServer.ReadSentDataAsync("Hello".Length, readCancellation.Token);
+        testPipeServer.Stop();
+
         Assert.Equal("Hello", output);
     }
 
@@ -163,6 +169,23 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestStartingWithAlreadyCanceledTokenThrows()
+    {
+        // Starting a pipe connection performs no cancellable I/O, so entry is the one point at which
+        // the caller's token can be observed; a caller who has already given up is honored there.
+        using TestPipeServer testPipeServer = new();
+        PipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        using CancellationTokenSource canceledTokenSource = new();
+        canceledTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await connection.StartAsync("pipe://local", canceledTokenSource.Token));
+        Assert.False(connection.IsActive);
+
+        testPipeServer.Stop();
+    }
+
+    [Fact]
     public async Task TestStartingWithoutStoppingThrows()
     {
         using TestPipeServer testPipeServer = new();
@@ -265,6 +288,8 @@ public class PipeConnectionTests
         TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
         PipeConnection connection = new(testPipeServer);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e => receivedData.Add(e.Message));
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
@@ -315,16 +340,17 @@ public class PipeConnectionTests
         TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         List<string> receivedData = [];
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer)
+        TestTimeProvider timeProvider = new();
+        TestPipeConnection connection = new(testPipeServer, timeProvider)
         {
             ReceiveBlockSignal = receiveBlockSignal,
             ReceiveBlockEnteredSignal = receiveBlockEnteredSignal,
-            ShutdownTimeout = TimeSpan.FromMilliseconds(50),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
         connection.OnLogMessage.AddObserver(e =>
         {
-            if (e.Message == "Ending pipe receive loop")
+            if (e.Message.StartsWith("Ending pipe receive loop", StringComparison.Ordinal))
             {
                 receiveLoopEndedSignal.TrySetResult();
             }
@@ -336,12 +362,18 @@ public class PipeConnectionTests
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await receiveBlockEnteredSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // StopAsync times out waiting for the blocked read and abandons the loop.
-        await connection.StopAsync(TestContext.Current.CancellationToken);
+        // StopAsync times out waiting for the blocked read and abandons the loop; the shutdown
+        // timeout is elapsed on the virtual clock as soon as the stop arms it.
+        Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(stopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await stopTask;
         Assert.False(connection.IsActive);
 
-        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(
-            () => connection.StartAsync("pipe://local", TestContext.Current.CancellationToken));
+        // The restart gives the abandoned loop a bounded chance to finish, on the virtual clock,
+        // before refusing.
+        Task refusedStartTask = connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(refusedStartTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(() => refusedStartTask);
         Assert.Contains("receive loop from a previous session", exception.Message);
 
         // Release the blocked read. The loop observes its canceled token and exits without
@@ -355,7 +387,11 @@ public class PipeConnectionTests
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         Assert.True(connection.IsActive);
 
-        await connection.StopAsync(TestContext.Current.CancellationToken);
+        // A pipe read does not observe cancellation, so this stop also ends by its shutdown timeout,
+        // which is on the virtual clock.
+        Task finalStopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(finalStopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await finalStopTask;
         testPipeServer.Stop();
     }
 
@@ -367,16 +403,17 @@ public class PipeConnectionTests
         TaskCompletionSource receiveBlockEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer)
+        TestTimeProvider timeProvider = new();
+        TestPipeConnection connection = new(testPipeServer, timeProvider)
         {
             ReceiveBlockSignal = receiveBlockSignal,
             ReceiveBlockEnteredSignal = receiveBlockEnteredSignal,
-            ShutdownTimeout = TimeSpan.FromMilliseconds(50),
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
         };
         connection.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
-            if (e.Message == "Ending pipe receive loop")
+            if (e.Message.StartsWith("Ending pipe receive loop", StringComparison.Ordinal))
             {
                 receiveLoopEndedSignal.TrySetResult();
             }
@@ -397,8 +434,11 @@ public class PipeConnectionTests
         // The receive loop is blocked on receiveBlockSignal and ignores the cancellation
         // token that StopAsync signals, simulating a pipe read that does not unblock
         // promptly on cancellation. StopAsync must not hang waiting for it; it should
-        // return once ShutdownTimeout elapses and log a warning.
-        await connection.StopAsync(TestContext.Current.CancellationToken);
+        // return once ShutdownTimeout elapses and log a warning. The timeout is elapsed on the
+        // virtual clock as soon as the stop arms it.
+        Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(stopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await stopTask;
 
         Assert.False(connection.IsActive);
         Assert.Contains(logs, log =>
@@ -420,11 +460,12 @@ public class PipeConnectionTests
     {
         using TestPipeServer testPipeServer = new();
         TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestPipeConnection connection = new(testPipeServer)
+        TestTimeProvider timeProvider = new();
+        TestPipeConnection connection = new(testPipeServer, timeProvider)
         {
             BypassDataSend = false,
             SendBarrier = sendBarrier,
-            DataTimeout = TimeSpan.FromMilliseconds(20),
+            DataTimeout = TimeSpan.FromSeconds(10),
         };
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -437,7 +478,10 @@ public class PipeConnectionTests
         // Wait until the first send has acquired the semaphore and is blocked on the barrier,
         // then attempt a second send which must time out before the barrier releases.
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken));
+        // The data timeout is elapsed on the virtual clock as soon as the second send arms it.
+        Task secondSendTask = connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(secondSendTask, connection.DataTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await secondSendTask);
         sendBarrier.SetResult();
         testPipeServer.Stop();
 
@@ -584,7 +628,11 @@ public class PipeConnectionTests
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
-        testPipeServer.WaitForDataSent(TimeSpan.FromSeconds(1));
+
+        using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCancellation.CancelAfter(DataEchoSafetyBound);
+        Assert.Equal("Hello", await testPipeServer.ReadSentDataAsync("Hello".Length, readCancellation.Token));
+
         await connection.StopAsync(TestContext.Current.CancellationToken);
         testPipeServer.Stop();
         await connection.DisposeAsync();
@@ -642,6 +690,11 @@ public class PipeConnectionTests
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello world"));
 #pragma warning restore xUnit1051
         testPipeServer.Stop();
+
+        // The name of this test is a claim about which token the send used, so assert it: with no
+        // caller token there is nothing to link, and the connection's own token is passed straight
+        // down. Previously the test asserted nothing at all and passed whatever token was used.
+        Assert.Equal(connection.ObservedConnectionCancellationToken, connection.LastSendCancellationToken);
     }
 
     [Fact]
@@ -654,7 +707,7 @@ public class PipeConnectionTests
         await connection.DisposeAsync();
         testPipeServer.Stop();
 
-        Assert.Contains("pipes have been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("pipes have been disposed", (await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -943,6 +996,80 @@ public class PipeConnectionTests
         public Process? PipeServerProcess => this.unstartedProcess;
     }
 
+    [Fact]
+    public async Task TestAMessageAndItsTerminatorReachThePipeInOneWrite()
+    {
+        // The null terminator frames the message, so the two must not be separable. Written as two
+        // operations, a token canceled after the first completed would leave an unterminated message in
+        // the pipe and put every later message one frame boundary out of step, with nothing able to
+        // repair it. Asserting the count is what makes that impossible to reintroduce: a behavioral test
+        // would have to cancel in the window between the two writes, and after this fix there is no such
+        // window to aim at.
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+
+        byte[] message = Encoding.UTF8.GetBytes("{\"id\":1}");
+        await connection.WriteFramedMessageAsync(message, TestContext.Current.CancellationToken);
+
+        byte[] frame = Assert.Single(connection.RecordedPipeWrites);
+        Assert.Equal(message.Length + 1, frame.Length);
+        Assert.Equal("{\"id\":1}", Encoding.UTF8.GetString(frame, 0, message.Length));
+        Assert.Equal(0, frame[message.Length]);
+    }
+
+    [Fact]
+    public async Task TestAnEmptyMessageIsStillTerminated()
+    {
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+
+        await connection.WriteFramedMessageAsync(ReadOnlyMemory<byte>.Empty, TestContext.Current.CancellationToken);
+
+        byte[] frame = Assert.Single(connection.RecordedPipeWrites);
+        Assert.Equal([0], frame);
+    }
+
+    [Fact]
+    public async Task TestAnAlreadyCanceledSendWritesNoPartialFrame()
+    {
+        // Cancellation is honored up to the first byte. What must never happen is a canceled send that
+        // has nonetheless put part of a frame into the pipe.
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+        using CancellationTokenSource cancellationTokenSource = new();
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await connection.WriteFramedMessageAsync(Encoding.UTF8.GetBytes("hello"), cancellationTokenSource.Token));
+
+        // One write was attempted and it carried the whole frame; the cancellation stopped it before any
+        // byte reached the pipe, rather than after a payload without its terminator.
+        byte[] attempted = Assert.Single(connection.RecordedPipeWrites);
+        Assert.Equal(6, attempted.Length);
+        Assert.Equal(0, attempted[5]);
+    }
+
+    [Fact]
+    public async Task TestTheFrameSentToTheRemoteEndIsNullTerminated()
+    {
+        // The same invariant observed from the other side of a real pipe, so that the framing test above
+        // cannot pass against a connection that frames correctly but writes somewhere else.
+        using TestPipeServer testPipeServer = new();
+        PipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken);
+
+        using CancellationTokenSource readCancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCancellation.CancelAfter(DataEchoSafetyBound);
+        string output = await testPipeServer.ReadSentDataAsync("Hello".Length, readCancellation.Token);
+        testPipeServer.Stop();
+
+        Assert.Equal("Hello", output);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
+
     private sealed class MutableProcessPipeProvider : IPipeServerProcessProvider
     {
         private readonly IPipeServerProcessProvider inner;
@@ -955,5 +1082,85 @@ public class PipeConnectionTests
         public bool ReturnNull { get; set; }
 
         public Process? PipeServerProcess => this.ReturnNull ? null : this.inner.PipeServerProcess;
+    }
+
+    [Fact]
+    public async Task TestSendWithZeroDataTimeoutFailsImmediatelyWhileAnotherSendIsInProgress()
+    {
+        // A zero DataTimeout keeps its non-blocking meaning: send access is taken only if it is
+        // free at that instant, so a send that finds another in progress fails at once, without
+        // arming any timer.
+        using TestPipeServer testPipeServer = new();
+        TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestPipeConnection connection = new(testPipeServer, timeProvider)
+        {
+            BypassDataSend = false,
+            SendBarrier = sendBarrier,
+            DataTimeout = TimeSpan.Zero,
+        };
+
+        TaskCompletionSource firstSendStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.OnDataSendStarting.AddObserver(e => firstSendStarted.TrySetResult());
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        Task firstSendTask = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        await firstSendStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken));
+        Assert.Equal(0, timeProvider.TimerCount);
+
+        sendBarrier.SetResult();
+        testPipeServer.Stop();
+        try
+        {
+            await firstSendTask;
+        }
+        catch (WebDriverBiDiConnectionException)
+        {
+        }
+    }
+
+    [Fact]
+    public async Task TestSendWaitsForInProgressSendToFinish()
+    {
+        // A send that finds another in progress waits for it, and proceeds once the semaphore is
+        // released, without the data timeout elapsing.
+        using TestPipeServer testPipeServer = new();
+        TaskCompletionSource sendBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestPipeConnection connection = new(testPipeServer)
+        {
+            BypassDataSend = false,
+            SendBarrier = sendBarrier,
+            DataTimeout = TimeSpan.FromSeconds(30),
+        };
+
+        int sendsStarted = 0;
+        TaskCompletionSource firstSendStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.OnDataSendStarting.AddObserver(e =>
+        {
+            Interlocked.Increment(ref sendsStarted);
+            firstSendStarted.TrySetResult();
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        Task firstSendTask = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
+        await firstSendStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The second send is parked on the semaphore: it cannot have started while the first
+        // still holds it.
+        Task secondSendTask = connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken);
+        Assert.False(secondSendTask.IsCompleted);
+        Assert.Equal(1, Volatile.Read(ref sendsStarted));
+
+        sendBarrier.SetResult();
+        await firstSendTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await secondSendTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(2, Volatile.Read(ref sendsStarted));
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
     }
 }

@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides information about a browsing context.
@@ -86,5 +87,6 @@ public record BrowsingContextInfo
     [JsonPropertyName("children")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<BrowsingContextInfo>))]
     internal List<BrowsingContextInfo>? SerializableChildren { get; set; }
 }

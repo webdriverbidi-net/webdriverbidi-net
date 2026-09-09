@@ -18,7 +18,7 @@ Understanding how to handle these errors properly is crucial for building robust
 
 ### Exception Hierarchy
 
-Every exception the library raises derives from `WebDriverBiDiException`, so a single catch clause is always enough to stop a library failure from escaping. The more specific types let you react differently to different failures:
+Every *protocol-level* failure is reported through `WebDriverBiDiException`, so one catch clause covers everything the browser or the connection can do to you. Caller mistakes surface as the usual .NET exceptions instead, which are listed [below](#exception-hierarchy) after the table. The more specific protocol types let you react differently to different failures:
 
 ```
 Exception
@@ -35,14 +35,14 @@ Exception
 |------|-------------|------------------|
 | `WebDriverBiDiCommandException` | The browser answers a command with an error response | From the command call (`NavigateAsync`, `ExecuteCommandAsync`, ...) |
 | `WebDriverBiDiProtocolException` | The browser sends an error response that matches no pending command | Never from a command call; routed through `UnexpectedErrorBehavior` (logged, collected, or thrown from the next command) |
-| `WebDriverBiDiTimeoutException` | No response arrives within the command timeout; or a connection does not open within its `StartupTimeout` | From the command call, or from `StartAsync` |
-| `WebDriverBiDiConnectionException` | Sending while not connected; starting an already-started driver; the connection drops while a command is in flight; the connection cannot be opened | From the command call, or from `StartAsync` |
+| `WebDriverBiDiTimeoutException` | No response arrives within the command timeout; a connection does not open within its `StartupTimeout`; a send does not obtain exclusive access to the connection within its `DataTimeout`; or an operation does not obtain exclusive access to the connection within `Transport.ConnectionLockTimeout` (see [Transport Connection Lock Timeout](connection-management.md#transport-connection-lock-timeout)) | From the command call, or from `StartAsync` or `StopAsync` |
+| `WebDriverBiDiConnectionException` | Sending while not connected; starting an already-started driver; the connection drops while a command is in flight; the connection cannot be opened; or the connection is lost while the session is being established (see [Losing the connection while connecting](connection-management.md#losing-the-connection-while-connecting)) | From the command call, or from `StartAsync` |
 | `WebDriverBiDiSerializationException` | Command parameters cannot be serialized, or a response cannot be deserialized | From the command call. Malformed messages that belong to no command are routed through `ProtocolErrorBehavior` instead |
 | `WebDriverBiDiException` (directly) | A command is canceled or returns no result or a result of the wrong type; a duplicate command ID; a `RemoteValue.ConvertTo<T>()` or `LocalValue` conversion fails; event arguments of an unexpected type | From the call that performed the conversion or command |
 
 `WebDriverBiDiErrorResponseException` is the abstract base of the two types that carry a structured error from the browser. It exposes `ErrorDetails` (the raw `ErrorResult`), `ErrorCode` (the `ErrorCode` enum value, or `ErrorCode.UnsetErrorCode` for an unrecognized error string), `ProtocolErrorType`, `ProtocolErrorMessage`, and `RemoteStackTrace`. Prefer `ErrorCode` over inspecting `Message` when deciding how to react.
 
-Library calls also throw the usual .NET exceptions for caller mistakes: `ArgumentNullException`/`ArgumentOutOfRangeException` (null parameters, negative timeouts), `ObjectDisposedException` (using a disposed driver), `InvalidOperationException` (registering a module, event, or resolver after `StartAsync`), and `OperationCanceledException` (a canceled `CancellationToken`). `StopAsync` throws `AggregateException` when errors were accumulated under `TransportErrorBehavior.Collect`, and the next command throws `AggregateException` under `Terminate` when more than one error accumulated (see [Transport Error Behavior Configuration](#transport-error-behavior-configuration)).
+Library calls also throw the usual .NET exceptions for caller mistakes: `ArgumentNullException`/`ArgumentOutOfRangeException` (null parameters, negative timeouts), `ArgumentException` (a connection string the connection cannot accept, such as a `StartAsync` URL that is not an absolute `ws`/`wss` URI), `ObjectDisposedException` (using a disposed driver), `InvalidOperationException` (registering a module, event, or resolver after `StartAsync`), and `OperationCanceledException` (a canceled `CancellationToken`). `StopAsync` throws `AggregateException` when errors were accumulated under `TransportErrorBehavior.Collect`, and the next command throws `AggregateException` under `Terminate` when more than one error accumulated (see [Transport Error Behavior Configuration](#transport-error-behavior-configuration)).
 
 Catching each type:
 
@@ -69,8 +69,9 @@ WebDriverBiDi.NET allows you to configure how transport-layer errors are handled
 - Protocol errors (invalid JSON, malformed messages)
 - Unexpected error responses without matching commands
 
-**Late responses are not errors.** When a command times out or is canceled, the browser does not know
-that you stopped waiting and may still answer. The transport remembers recently canceled commands (up to
+**Late responses are not errors.** When a command times out, is canceled by its `CancellationToken`, or is
+canceled directly through `Transport.CancelCommand`, the browser does not know that you stopped waiting and
+may still answer. The transport remembers recently canceled commands (up to
 1,024 of them per connection) and, when such a response or error response arrives, discards it after
 logging a `Debug`-level message through `OnLogMessage` and emitting the `CanceledCommandResponseDiscarded`
 EventSource event. It is **not** counted under `UnknownMessageBehavior` or `UnexpectedErrorBehavior`, so
@@ -78,6 +79,20 @@ a slow navigation that times out and then completes does not terminate the sessi
 Only a response whose command ID was never issued (or was canceled so long ago that it has been forgotten)
 is treated as an unknown message or unexpected error.
 
+Each remembered entry is a `CanceledCommandInfo`, carrying the command's `CommandId` and `CommandName`, the
+`ResponseType` the answer would have been deserialized to, the `TimeSinceCancellation`, and a `Reason` of type
+`CommandCancellationReason`:
+
+| Reason | Meaning |
+|---|---|
+| `Canceled` | The command's `CancellationToken` fired, or the command was canceled directly through `Transport.CancelCommand` |
+| `TimedOut` | The command's timeout elapsed before a response arrived |
+| `ConnectionClosed` | The command was still pending when the connection closed |
+
+The reason appears in the `Debug` log message and in the `CanceledCommandResponseDiscarded` EventSource
+event's payload, which is how you tell a slow-but-successful command apart from one abandoned at shutdown.
+
+<!-- inline-csharp: the library's own enum declaration, quoted for reference -->
 ```csharp
 public enum TransportErrorBehavior
 {
@@ -298,6 +313,7 @@ Event handlers can be configured with `ObservableEventHandlerOptions` to control
 
 [!code-csharp[Observable Event Handler Options](../../code/error-handling/ErrorHandlingSamples.cs#ObservableEventHandlerOptions)]
 
+<!-- inline-csharp: the library's own enum declaration, quoted for reference -->
 ```csharp
 public enum ObservableEventHandlerOptions
 {
@@ -441,7 +457,7 @@ When multiple handlers are registered, they all execute in sequence. With synchr
 | "Cannot add command; pending command collection is closed" | Command sent during or after shutdown | Avoid sending commands from event handlers during `StopAsync` or `DisconnectAsync`. |
 | "Cannot register a type info resolver after the transport is connected" | `RegisterTypeInfoResolverAsync` called after `StartAsync` | Register type resolvers before calling `StartAsync`. |
 | "This observable event only allows N observer(s)" | Too many observers added to an event with `MaxObserverCount` | Remove observers with `Unobserve()` or `Dispose()` before adding new ones. |
-| "This observable event only allows 1 observer" on `OnDataReceived` | `OnDataReceived` transfers ownership of a pooled buffer, so it admits only the `Transport` | Do not observe `OnDataReceived`. To inspect traffic, observe `OnLogMessage` and filter for `Trace` level. See [Connection Management](connection-management.md). |
+| "This observable event only allows 1 observer" on `OnDataReceived` | `OnDataReceived` transfers ownership of a pooled buffer, so it admits only the `Transport` | Do not observe `OnDataReceived`. To inspect traffic, set `LogLevel` to `Trace` and observe `OnLogMessage`. See [Connection Management](connection-management.md). |
 | "The provided connection already has a listener for its OnDataReceived event" | A `Transport` was constructed over a connection whose `OnDataReceived` was already observed | Remove the observer; the `Transport` requires exclusive use of that event. |
 
 ### Connection Diagnostics

@@ -26,11 +26,11 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private const string Category = "Usage";
 
-    private static readonly LocalizableString Title = "EventObserver should be disposed";
+    private static readonly LocalizableString Title = "Event subscription handle should be disposed";
 
-    private static readonly LocalizableString MessageFormat = "EventObserver '{0}' is not disposed. Consider using a 'using' statement or calling Unobserve()/Dispose() when done.";
+    private static readonly LocalizableString MessageFormat = "{0} '{1}' is not disposed. Consider using a 'using' statement or calling Dispose() when done.";
 
-    private static readonly LocalizableString Description = "EventObserver instances should be disposed to unregister event handlers and prevent memory leaks. Use a 'using' statement or explicitly call Unobserve() or Dispose() when the observer is no longer needed.";
+    private static readonly LocalizableString Description = "The handle returned by AddObserver, AddDataCollector, or Subscribe on a ToObservable() sequence keeps the subscription alive, and a handle that is never disposed keeps receiving and queueing events, which is a memory leak. Use a 'using' statement or explicitly dispose the handle when it is no longer needed; an observer also accepts Unobserve().";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -56,8 +56,8 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
     {
-        // Find all local variable declarations that store AddObserver() results
-        Dictionary<string, LocalDeclarationStatementSyntax> observerVariables = [];
+        // Find all local variable declarations that store an event subscription handle.
+        Dictionary<string, (LocalDeclarationStatementSyntax Declaration, string HandleTypeName)> observerVariables = [];
 
         IEnumerable<LocalDeclarationStatementSyntax> localDeclarations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node)
             .OfType<LocalDeclarationStatementSyntax>();
@@ -66,12 +66,10 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         {
             foreach (VariableDeclaratorSyntax variable in localDeclaration.Declaration.Variables)
             {
-                if (variable.Initializer?.Value is InvocationExpressionSyntax invocation)
+                if (variable.Initializer?.Value is InvocationExpressionSyntax invocation
+                    && AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, invocation) is { } handle)
                 {
-                    if (IsAddObserverCall(context, invocation))
-                    {
-                        observerVariables[variable.Identifier.Text] = localDeclaration;
-                    }
+                    observerVariables[variable.Identifier.ValueText] = (localDeclaration, handle.HandleTypeName);
                 }
             }
         }
@@ -81,11 +79,11 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Check if observers are disposed
-        foreach (KeyValuePair<string, LocalDeclarationStatementSyntax> kvp in observerVariables)
+        // Check if the handles are disposed
+        foreach (KeyValuePair<string, (LocalDeclarationStatementSyntax Declaration, string HandleTypeName)> kvp in observerVariables)
         {
             string variableName = kvp.Key;
-            LocalDeclarationStatementSyntax declaration = kvp.Value;
+            LocalDeclarationStatementSyntax declaration = kvp.Value.Declaration;
 
             // Check if it's in a using statement
             if (IsInUsingStatement(declaration))
@@ -100,32 +98,11 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             }
 
             // Report diagnostic on just the variable identifier
-            VariableDeclaratorSyntax variable = declaration.Declaration.Variables.First(v => v.Identifier.Text == variableName);
+            VariableDeclaratorSyntax variable = declaration.Declaration.Variables.First(v => v.Identifier.ValueText == variableName);
             Location location = variable.Identifier.GetLocation();
-            Diagnostic diagnostic = Diagnostic.Create(Rule, location, variableName);
+            Diagnostic diagnostic = Diagnostic.Create(Rule, location, kvp.Value.HandleTypeName, variableName);
             context.ReportDiagnostic(diagnostic);
         }
-    }
-
-    private static bool IsAddObserverCall(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return false;
-        }
-
-        if (memberAccess.Name.Identifier.Text != "AddObserver")
-        {
-            return false;
-        }
-
-        IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-        if (methodSymbol == null)
-        {
-            return false;
-        }
-
-        return methodSymbol.ReturnType is INamedTypeSymbol { Name: "EventObserver" };
     }
 
     private static bool IsInUsingStatement(LocalDeclarationStatementSyntax declaration)
@@ -141,42 +118,50 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private static bool IsObserverHandled(SyntaxNode node, string variableName)
     {
-        // The observer is not leaked when it is disposed directly, released through
+        // The observer is not leaked when it is disposed directly, disposed by a classic
+        // using (observer) { ... } statement, released through
         // ObservableEvent.RemoveObserver(observer.Id), returned to the caller, or stored elsewhere
         // (for example assigned to a field) so another owner disposes it later.
         return HasDisposalCall(node, variableName)
+            || IsDisposedByUsingStatement(node, variableName)
             || IsReleasedViaRemoveObserver(node, variableName)
             || IsReturnedOrStored(node, variableName);
     }
 
     private static bool HasDisposalCall(SyntaxNode node, string variableName)
     {
-        // Look for method invocations on the variable
-        IEnumerable<InvocationExpressionSyntax> invocations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>();
-
-        foreach (InvocationExpressionSyntax invocation in invocations)
+        // Look for disposal invocations on the variable, spelled either observer.Dispose() or
+        // observer?.Dispose(). The conditional form binds its member through a
+        // MemberBindingExpression whose receiver is the enclosing ConditionalAccessExpression.
+        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
         {
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            (ExpressionSyntax? receiver, SimpleNameSyntax? methodName) = invocation.Expression switch
             {
-                // Check if the expression is calling a method on our variable
-                string? expressionName = null;
-                if (memberAccess.Expression is IdentifierNameSyntax identifier)
-                {
-                    expressionName = identifier.Identifier.Text;
-                }
+                MemberAccessExpressionSyntax memberAccess => (memberAccess.Expression, memberAccess.Name),
+                MemberBindingExpressionSyntax memberBinding when invocation.Parent is ConditionalAccessExpressionSyntax conditionalAccess
+                    => (conditionalAccess.Expression, memberBinding.Name),
+                _ => (null, null),
+            };
 
-                if (expressionName == variableName)
-                {
-                    string methodName = memberAccess.Name.Identifier.Text;
-                    if (methodName == "Unobserve" || methodName == "Dispose" || methodName == "DisposeAsync")
-                    {
-                        return true;
-                    }
-                }
+            if (receiver is IdentifierNameSyntax identifier
+                && identifier.Identifier.ValueText == variableName
+                && methodName!.Identifier.ValueText is "Unobserve" or "Dispose" or "DisposeAsync")
+            {
+                return true;
             }
         }
 
         return false;
+    }
+
+    private static bool IsDisposedByUsingStatement(SyntaxNode node, string variableName)
+    {
+        // using (observer) { ... } and await using (observer) { ... } dispose the observer when the
+        // statement completes; the observer is the statement's expression, not a declaration.
+        return AnalyzerSymbolHelpers.GetBodyDescendantNodes(node)
+            .OfType<UsingStatementSyntax>()
+            .Any(usingStatement => usingStatement.Expression is IdentifierNameSyntax identifier
+                && identifier.Identifier.ValueText == variableName);
     }
 
     private static bool IsReleasedViaRemoveObserver(SyntaxNode node, string variableName)
@@ -186,7 +171,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
         {
             if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
-                memberAccess.Name.Identifier.Text != "RemoveObserver")
+                memberAccess.Name.Identifier.ValueText != "RemoveObserver")
             {
                 continue;
             }
@@ -194,7 +179,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
             {
                 if (argument.Expression is MemberAccessExpressionSyntax argumentAccess &&
-                    argumentAccess.Name.Identifier.Text == "Id" &&
+                    argumentAccess.Name.Identifier.ValueText == "Id" &&
                     argumentAccess.Expression is IdentifierNameSyntax argumentIdentifier &&
                     argumentIdentifier.Identifier.Text == variableName)
                 {
@@ -208,38 +193,75 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private static bool IsReturnedOrStored(SyntaxNode node, string variableName)
     {
-        // Returned to the caller: return observer;
-        foreach (ReturnStatementSyntax returnStatement in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<ReturnStatementSyntax>())
+        // The observer escapes this method — so its disposal is no longer this method's business —
+        // whenever the variable appears in a position that hands it to something else. One walk over
+        // the body finds every mention of the name and classifies it by the syntax that encloses it;
+        // a mention that merely *uses* the observer (observer.Dispose(), a null test, a using
+        // statement) has a parent that is not in the list below and is correctly not treated as an
+        // escape.
+        foreach (IdentifierNameSyntax identifier in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<IdentifierNameSyntax>())
         {
-            if (returnStatement.Expression is IdentifierNameSyntax returned && returned.Identifier.Text == variableName)
+            if (identifier.Identifier.Text != variableName)
+            {
+                continue;
+            }
+
+            if (IsEscapingPosition(identifier))
             {
                 return true;
-            }
-        }
-
-        // Assigned to another target (for example a field): this.observer = observer;
-        foreach (AssignmentExpressionSyntax assignment in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<AssignmentExpressionSyntax>())
-        {
-            if (assignment.Right is IdentifierNameSyntax assigned && assigned.Identifier.Text == variableName)
-            {
-                return true;
-            }
-        }
-
-        // Handed off to a method that takes ownership, for example a CompositeDisposable:
-        // disposables.Add(observer). Passing the observer itself as an argument to any invocation
-        // transfers responsibility for its disposal to the callee, so it is not a leak here.
-        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
-        {
-            foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
-            {
-                if (argument.Expression is IdentifierNameSyntax argumentIdentifier && argumentIdentifier.Identifier.Text == variableName)
-                {
-                    return true;
-                }
             }
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Determines whether a mention of the observer variable hands it to something else.
+    /// </summary>
+    /// <param name="identifier">The mention of the variable.</param>
+    /// <returns><see langword="true"/> if the observer escapes at this position; otherwise <see langword="false"/>.</returns>
+    private static bool IsEscapingPosition(IdentifierNameSyntax identifier)
+    {
+        // A mention is often wrapped before it reaches the construct that decides the observer's
+        // fate. "return (observer);", "return observer!;", "return (IDisposable)observer;" and
+        // "return keep ? observer : null;" all hand the observer to the caller exactly as
+        // "return observer;" does, so the wrappers are peeled off before the position is classified;
+        // without that, each of them reads as a mere use and the observer is reported as undisposed.
+        // Any postfix operator qualifies: the null-forgiving operator is the only one an observer
+        // can carry, since IDisposable has no increment or decrement.
+        SyntaxNode current = identifier;
+        while (current.Parent is ParenthesizedExpressionSyntax
+            or CastExpressionSyntax
+            or ConditionalExpressionSyntax
+            or PostfixUnaryExpressionSyntax)
+        {
+            current = current.Parent;
+        }
+
+        return current.Parent switch
+        {
+            // Returned to the caller: return observer; or yield return observer;
+            ReturnStatementSyntax or YieldStatementSyntax => true,
+
+            // Assigned to another target, for example a field: this.observer = observer;
+            AssignmentExpressionSyntax assignment => assignment.Right == current,
+
+            // Handed to a method that takes ownership (disposables.Add(observer)), passed to a
+            // constructor, or placed in a tuple — all of which reach here as an argument.
+            ArgumentSyntax => true,
+
+            // Placed in a collection expression: List<IDisposable> owned = [observer];
+            ExpressionElementSyntax => true,
+
+            // Placed in an array, object or collection initializer:
+            // List<IDisposable> owned = new() { observer };
+            InitializerExpressionSyntax => true,
+
+            // Used to initialize another variable, which may itself be disposed:
+            // IDisposable owned = observer;
+            EqualsValueClauseSyntax => true,
+
+            _ => false,
+        };
     }
 }

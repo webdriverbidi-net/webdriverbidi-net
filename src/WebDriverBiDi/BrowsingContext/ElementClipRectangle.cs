@@ -27,13 +27,11 @@ public class ElementClipRectangle : ClipRectangle
     /// Gets the type of clip rectangle.
     /// </summary>
     [JsonPropertyName("type")]
-    [JsonInclude]
     public override string Type => "element";
 
     /// <summary>
     /// Gets or sets the element to use to clip the screenshot.
     /// </summary>
     [JsonPropertyName("element")]
-    [JsonInclude]
     public SharedReference Element { get; set; }
 }

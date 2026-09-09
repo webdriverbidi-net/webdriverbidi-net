@@ -42,11 +42,20 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
     /// </summary>
     /// <param name="logger">The ILogger instance to forward events to.</param>
     /// <param name="minimumLevel">The minimum EventLevel to capture. Defaults to Informational.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="logger"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// The argument is checked in the constructor initializer rather than in a body, because the base
+    /// <see cref="EventListener"/> constructor subscribes this instance to the EventSource before any
+    /// body runs. Throwing after that point would leave the subscription in place on an object the
+    /// caller never receives and so can never dispose, and <see cref="EventListener"/> keeps every
+    /// listener in a static list, so the orphan would go on holding the source enabled at
+    /// <see cref="EventLevel.LogAlways"/> for the life of the process. Arguments to a constructor
+    /// initializer are evaluated before the base constructor runs, so the exception is thrown before
+    /// there is a listener to orphan.
+    /// </remarks>
     public WebDriverBiDiEventSourceLogger(ILogger logger, EventLevel minimumLevel = EventLevel.Informational)
+        : this(CreateResolvedLoggerFactory(logger), minimumLevel)
     {
-        ILogger resolvedLogger = logger ?? throw new ArgumentNullException(nameof(logger));
-        this.logger = new Lazy<ILogger>(() => resolvedLogger);
-        this.minimumLevel = minimumLevel;
     }
 
     /// <summary>
@@ -67,12 +76,19 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         // WebDriverBiDiLoggingExtensions.AddWebDriverBiDi), so no null guard is needed.
         this.logger = logger;
         this.minimumLevel = minimumLevel;
+        this.EnableConfiguredEvents();
     }
 
     /// <summary>
     /// Called when an EventSource is created. Enables the WebDriverBiDi EventSource.
     /// </summary>
     /// <param name="eventSource">The EventSource that was created.</param>
+    /// <remarks>
+    /// For a source created after this listener exists, the configured minimum level is already assigned and
+    /// this subscribes at it. For a source that already existed, the base <see cref="EventListener"/> constructor
+    /// calls this before the derived constructor body runs, so the level read here is still the default; the
+    /// constructor re-subscribes at the configured level once it is known.
+    /// </remarks>
     protected override void OnEventSourceCreated(EventSource eventSource)
     {
         if (eventSource.Name == "WebDriverBiDi")
@@ -155,6 +171,18 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         target.Log(logLevel, eventId, state, null, FormatMessage);
     }
 
+    /// <summary>
+    /// Wraps an already-resolved logger in the factory the listener holds, after checking it is not null.
+    /// </summary>
+    /// <param name="logger">The ILogger instance to forward events to.</param>
+    /// <returns>A factory returning that logger.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="logger"/> is <see langword="null"/>.</exception>
+    private static Lazy<ILogger> CreateResolvedLoggerFactory(ILogger logger)
+    {
+        ILogger resolvedLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+        return new Lazy<ILogger>(() => resolvedLogger);
+    }
+
     private static LogLevel MapEventLevel(EventLevel level)
     {
         return level switch
@@ -195,5 +223,22 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
         }
 
         return "WebDriverBiDi event";
+    }
+
+    /// <summary>
+    /// Subscribes to the WebDriverBiDi event source at the configured minimum level.
+    /// </summary>
+    /// <remarks>
+    /// Called from each constructor, after the minimum level is assigned, to correct the subscription for a
+    /// source that already existed when this listener was created: the base constructor enabled it through
+    /// <see cref="OnEventSourceCreated"/> while the level was still the default of
+    /// <see cref="EventLevel.LogAlways"/>, which leaves the source reporting itself enabled for every event.
+    /// Each such event is then formatted and dispatched only for the listener to discard it. Re-subscribing
+    /// lowers the source's own level so that work is never done. Enabling an already-enabled source updates
+    /// its level rather than adding a second subscription, so this is safe on either ordering.
+    /// </remarks>
+    private void EnableConfiguredEvents()
+    {
+        this.EnableEvents(WebDriverBiDiEventSource.RaiseEvent, this.minimumLevel);
     }
 }

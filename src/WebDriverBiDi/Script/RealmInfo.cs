@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
@@ -21,7 +22,7 @@ using WebDriverBiDi.JsonConverters;
 [DiscriminatedDerivedType(typeof(PaintWorkletRealmInfo), "paint-worklet")]
 [DiscriminatedDerivedType(typeof(AudioWorkletRealmInfo), "audio-worklet")]
 [DiscriminatedDerivedType(typeof(WorkletRealmInfo), "worklet")]
-public record RealmInfo
+public abstract record RealmInfo
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="RealmInfo"/> class.
@@ -55,19 +56,40 @@ public record RealmInfo
     public RealmType Type { get; internal set; } = RealmType.Window;
 
     /// <summary>
-    /// Gets this instance of a RealmInfo as a type-specific realm info.
+    /// Converts this <see cref="RealmInfo"/> to a type-specific realm info, throwing if it is not of that
+    /// type. Use <see cref="TryConvertTo{T}"/> to test without throwing.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
     /// <returns>This instance cast to the specified correct type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if this RealmInfo is not the specified type.</exception>
-    public T As<T>()
+    public T ConvertTo<T>()
         where T : RealmInfo
     {
-        if (this is not T castValue)
+        if (this is T castValue)
         {
-            throw new WebDriverBiDiException($"This RealmInfo cannot be cast to {typeof(T)}");
+            return castValue;
         }
 
-        return castValue;
+        throw new WebDriverBiDiException($"This RealmInfo cannot be cast to {typeof(T)}");
+    }
+
+    /// <summary>
+    /// Attempts to convert this <see cref="RealmInfo"/> to a type-specific realm info, returning
+    /// <see langword="false"/> rather than throwing when it is not of that type.
+    /// </summary>
+    /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
+    /// <param name="result">When this method returns, contains the converted value or null if the conversion failed.</param>
+    /// <returns><see langword="true"/> if the conversion was successful; otherwise, <see langword="false"/>.</returns>
+    public bool TryConvertTo<T>([NotNullWhen(true)] out T? result)
+        where T : RealmInfo
+    {
+        if (this is T converted)
+        {
+            result = converted;
+            return true;
+        }
+
+        result = null;
+        return false;
     }
 }

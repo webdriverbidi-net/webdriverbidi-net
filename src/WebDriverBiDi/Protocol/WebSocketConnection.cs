@@ -6,10 +6,9 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
-using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
-using System.Text;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end over a WebSocket.
@@ -52,6 +51,11 @@ public class WebSocketConnection : Connection
 
     private ClientWebSocket client = new();
 
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
+    // Set by StopAsync before the close handshake begins, and read by the receive loop, which runs on
+    // its own task.
+    private int isLocalCloseInitiatedFlag = 0;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketConnection" /> class.
     /// </summary>
@@ -70,6 +74,28 @@ public class WebSocketConnection : Connection
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the close now in progress was initiated by this end.
+    /// </summary>
+    /// <remarks>
+    /// A local close is completed by the remote end answering the close handshake, which ends the receive
+    /// loop the same way a remote-initiated close does. The receive loop cannot tell the two apart from the
+    /// socket state alone, so <see cref="StopAsync(CancellationToken)"/> records which case it is.
+    /// </remarks>
+    private bool IsLocalCloseInitiated
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isLocalCloseInitiatedFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isLocalCloseInitiatedFlag, flagValue);
+        }
+    }
+
+    /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
     /// </summary>
     /// <param name="url">The connection string used to connect to the remote end. It must be a valid URL.</param>
@@ -79,8 +105,14 @@ public class WebSocketConnection : Connection
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is already connected.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="url"/> is not a valid absolute URI, or does not have a WebSocket scheme.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when attempting to start a disposed connection.</exception>
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
+        if (this.IsDisposed)
+        {
+            throw new ObjectDisposedException(nameof(WebSocketConnection), "This connection has been disposed; the connection cannot be restarted after disposal.");
+        }
+
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? websocketUri))
         {
             throw new ArgumentException($"The value '{url}' is not a valid absolute URI", nameof(url));
@@ -109,10 +141,13 @@ public class WebSocketConnection : Connection
 
         this.ResetConnectionCancellation();
 
+        // A previous session may have ended with a local close; this session has not.
+        this.IsLocalCloseInitiated = false;
+
         await this.LogAsync($"Opening connection to URL {url}").ConfigureAwait(false);
         bool connected = false;
         bool startupTimedOut = false;
-        Stopwatch initializationStopwatch = Stopwatch.StartNew();
+        long startupTimestamp = this.TimeProvider.GetTimestamp();
         while (!connected && !startupTimedOut)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -124,13 +159,13 @@ public class WebSocketConnection : Connection
             // CancellationTokenSource constructor a negative delay: an ArgumentOutOfRangeException
             // escaping StartAsync in place of the documented WebDriverBiDiTimeoutException or, at
             // exactly -1 millisecond, an attempt that is never bounded at all.
-            TimeSpan remainingStartupTime = this.StartupTimeout - initializationStopwatch.Elapsed;
+            TimeSpan remainingStartupTime = this.StartupTimeout - this.TimeProvider.GetElapsedTime(startupTimestamp);
             if (remainingStartupTime <= TimeSpan.Zero)
             {
                 break;
             }
 
-            using CancellationTokenSource attemptTimeoutTokenSource = new(remainingStartupTime);
+            using CancellationTokenSource attemptTimeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, remainingStartupTime);
             using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.ConnectionCancellationToken, attemptTimeoutTokenSource.Token);
             try
             {
@@ -167,18 +202,17 @@ public class WebSocketConnection : Connection
                 // to it, so it is clamped to whatever remains. Left unclamped, a remote end that
                 // refuses connections immediately holds startup open for the full retry interval
                 // past StartupTimeout.
-                TimeSpan remainingRetryTime = this.StartupTimeout - initializationStopwatch.Elapsed;
+                TimeSpan remainingRetryTime = this.StartupTimeout - this.TimeProvider.GetElapsedTime(startupTimestamp);
                 if (remainingRetryTime <= TimeSpan.Zero)
                 {
                     break;
                 }
 
                 TimeSpan retryDelay = remainingRetryTime < ConnectionRetryInterval ? remainingRetryTime : ConnectionRetryInterval;
-                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+                await this.DelayBeforeRetryAsync(retryDelay, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        initializationStopwatch.Stop();
         if (!connected)
         {
             throw new WebDriverBiDiTimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
@@ -207,10 +241,17 @@ public class WebSocketConnection : Connection
         await this.LogAsync($"Closing connection").ConfigureAwait(false);
         if (this.client.State != WebSocketState.Open)
         {
+            // The socket is no longer open, so this call starts no close handshake. The receive loop may still
+            // be unwinding from a close the remote end began; leaving the flag clear lets it report that
+            // disconnection even though it finishes while this method runs.
             await this.LogAsync($"Client state is {this.client.State}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
         }
         else
         {
+            // This end is starting the handshake, so the close that ends the receive loop is ours. Record it
+            // before the handshake begins: CloseClientWebSocketAsync awaits the receive loop, so the loop can
+            // reach its graceful-exit check while this method is still running.
+            this.IsLocalCloseInitiated = true;
             await this.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -236,7 +277,15 @@ public class WebSocketConnection : Connection
             // MemoryPool<byte>.Shared is backed by ArrayPool, so TryGetArray always succeeds here.
             // We need the underlying array to pass to ReceiveAsync, which requires ArraySegment<byte>.
             MemoryMarshal.TryGetArray(receivedDataBufferOwner.Memory.Slice(0, this.BufferSize), out ArraySegment<byte> socketFrameBuffer);
-            while (this.client.State != WebSocketState.Closed && !connectionCancellationToken.IsCancellationRequested)
+
+            // A Close frame from the remote end is the remote end closing, and it is what ends this loop.
+            // The socket reaching WebSocketState.Closed is the same thing seen through the local state
+            // machine, and it is kept as a condition because a close this end started ends the loop that
+            // way. It is not enough on its own: acknowledging the frame leaves the socket Closed only when
+            // the socket itself saw the frame, and where it lands in CloseSent instead, a loop waiting for
+            // Closed would receive forever on a connection the remote end has already finished with.
+            bool remoteCloseFrameReceived = false;
+            while (!remoteCloseFrameReceived && this.client.State != WebSocketState.Closed && !connectionCancellationToken.IsCancellationRequested)
             {
                 // Only one receive operation at a time can be active on a ClientWebSocket instance,
                 // so we should synchronize receive access to the socket. However, this receive
@@ -251,7 +300,8 @@ public class WebSocketConnection : Connection
                 {
                     // The server is notifying us that the connection will close, and we did
                     // not initiate the close; send acknowledgement
-                    if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
+                    remoteCloseFrameReceived = receiveResult.MessageType == WebSocketMessageType.Close;
+                    if (remoteCloseFrameReceived && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
                         await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", connectionCancellationToken).ConfigureAwait(false);
@@ -274,16 +324,7 @@ public class WebSocketConnection : Connection
                                 // returns the buffer to the pool on disposal, so no second copy is needed.
                                 messageBuffer.Append(socketFrameBuffer.AsSpan(0, receiveResult.Count));
                                 IMemoryOwner<byte> messageBufferOwner = messageBuffer.TakeOwnership(out int messageLength);
-
-                                if (this.OnLogMessage.CurrentObserverCount > 0)
-                                {
-#if NET5_0_OR_GREATER
-                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-                                }
-
+                                await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageBufferOwner.Memory, messageLength).ConfigureAwait(false);
                                 await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
                             }
                             else
@@ -293,15 +334,7 @@ public class WebSocketConnection : Connection
                                 if (messageLength > 0)
                                 {
                                     IMemoryOwner<byte> messageBufferOwner = TakeOwnershipOfReceivedData(socketFrameBuffer.Array!, messageLength);
-                                    if (this.OnLogMessage.CurrentObserverCount > 0)
-                                    {
-#if NET5_0_OR_GREATER
-                                        await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-                                        await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageBufferOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-                                    }
-
+                                    await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageBufferOwner.Memory, messageLength).ConfigureAwait(false);
                                     await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
                                 }
                             }
@@ -318,8 +351,11 @@ public class WebSocketConnection : Connection
                 }
             }
 
-            // If the loop exited without cancellation, the remote end closed the connection gracefully.
-            if (!connectionCancellationToken.IsCancellationRequested)
+            // If the loop exited without cancellation, and this end did not start the close, the remote end
+            // closed the connection gracefully. A close this end initiated ends the loop the same way once the
+            // remote end answers the handshake, but it is not a remote disconnection and must not be reported
+            // as one.
+            if (!connectionCancellationToken.IsCancellationRequested && !this.IsLocalCloseInitiated)
             {
                 await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
             }
@@ -372,6 +408,23 @@ public class WebSocketConnection : Connection
 
             this.client.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Pauses between connection attempts.
+    /// </summary>
+    /// <param name="delay">The length of the pause, already clamped to the remaining startup budget.</param>
+    /// <param name="cancellationToken">A cancellation token used to cancel the pause.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Exposed as a seam so that a test can observe whether a pause was attempted, and how long it would
+    /// have been, without waiting for one. Whether the pause is skipped when the startup budget is already
+    /// spent is a decision this class makes; asserting it through elapsed wall-clock time would make the
+    /// test's result depend on how loaded the machine is.
+    /// </remarks>
+    protected virtual Task DelayBeforeRetryAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        return TimeoutUtilities.DelayAsync(this.TimeProvider, delay, cancellationToken);
     }
 
     /// <summary>
@@ -447,7 +500,7 @@ public class WebSocketConnection : Connection
     protected virtual async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-        using CancellationTokenSource timeoutTokenSource = new(this.ShutdownTimeout);
+        using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
         using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
         try
         {
@@ -464,7 +517,7 @@ public class WebSocketConnection : Connection
             // or the external cancellation token is canceled), which is the desired fallback behavior.
             if (this.DataReceiveTask is not null)
             {
-                await Task.WhenAny(this.DataReceiveTask, Task.Delay(Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
+                await Task.WhenAny(this.DataReceiveTask, TimeoutUtilities.DelayAsync(this.TimeProvider, Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
             }
 
             await this.LogAsync($"Client state is {this.client.State}").ConfigureAwait(false);

@@ -78,7 +78,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        if (memberAccess.Name.Identifier.Text != "AddObserver")
+        if (memberAccess.Name.Identifier.ValueText != "AddObserver")
         {
             return;
         }
@@ -89,7 +89,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        if (methodSymbol.ReturnType is not INamedTypeSymbol { Name: "EventObserver" })
+        if (!AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver"))
         {
             return;
         }
@@ -131,7 +131,10 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
     {
         List<(InvocationExpressionSyntax, string)> results = [];
 
-        foreach (InvocationExpressionSyntax innerInvocation in handlerBody.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>())
+        // Do not descend into a nested lambda, anonymous method or local function: its body runs only
+        // when that delegate is invoked, not at this point in the handler. Offloading work with
+        // Task.Run(() => ...) is a remedy these rules recommend, so reporting inside it would flag the fix.
+        foreach (InvocationExpressionSyntax innerInvocation in handlerBody.DescendantNodesAndSelf(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<InvocationExpressionSyntax>())
         {
             IMethodSymbol? innerMethod = context.SemanticModel.GetSymbolInfo(innerInvocation).Symbol as IMethodSymbol;
             if (innerMethod == null)
@@ -152,11 +155,16 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
 
     private static bool IsModuleCommandMethod(IMethodSymbol method)
     {
-        if (!method.ContainingType.Name.EndsWith("Module", System.StringComparison.Ordinal))
+        // ExecuteCommandAsync sends a command over the same connection a module command does, so awaiting
+        // it from a synchronous handler deadlocks in exactly the same way. Reaching a command through the
+        // executor rather than through a module is a spelling difference, not a different hazard. Both
+        // of its overloads return Task<T>, so it needs no separate return-type test.
+        if (method.Name == "ExecuteCommandAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType))
         {
-            return false;
+            return true;
         }
 
+        // Any type deriving from the library's Module base class is a module, whatever it is named.
         if (!AnalyzerSymbolHelpers.IsModuleSubclass(method.ContainingType))
         {
             return false;

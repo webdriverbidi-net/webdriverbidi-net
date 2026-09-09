@@ -15,6 +15,9 @@ namespace WebDriverBiDi.Benchmarks;
 /// When a command is sent, this connection synthesizes a success response
 /// bearing the same command ID and fires it back synchronously via
 /// <see cref="Connection.OnDataReceived"/>, simulating a no-latency remote end.
+/// The synthesis happens in <see cref="SendConnectionDataAsync"/>, the seam a real
+/// connection writes its bytes at, so that a benchmark running through this class
+/// still pays for the base class's send orchestration.
 /// </summary>
 /// <remarks>
 /// This connection is only suitable for benchmarking. It performs no real
@@ -47,25 +50,34 @@ public sealed class BenchmarkEchoConnection : Connection
     }
 
     /// <inheritdoc/>
-    public override async Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// <para>
+    /// The echo is implemented here, at the transport-write seam, rather than by overriding
+    /// <see cref="Connection.SendDataAsync"/>. That keeps the whole of the base send orchestration
+    /// inside the measurement: the two <see cref="Connection.IsActive"/> checks, the trace-guarded
+    /// <c>LogMessageContentAsync</c> call, the send semaphore and its release, and the linked
+    /// <see cref="CancellationTokenSource"/> built for a caller-supplied token. Overriding
+    /// <c>SendDataAsync</c> skipped all of it, so a benchmark documented as end-to-end library
+    /// overhead measured less than the library actually does on a send.
+    /// </para>
+    /// <para>
+    /// Everything here runs synchronously on the sender's stack, inside the send semaphore. That is
+    /// safe because the transport's data-received observer only writes the message to its unbounded
+    /// channel and returns; the reader task that completes the command runs separately, so it cannot
+    /// re-enter a send while this one still holds the semaphore.
+    /// </para>
+    /// </remarks>
+    protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
         // Extract the command ID from the outgoing JSON and synthesize a
-        // matching success response. Everything runs synchronously on the
-        // sender's stack; the transport layer's incoming-message channel
-        // decouples this from the sender's await on WaitForCompletionAsync.
-        long commandId = ExtractCommandId(data);
+        // matching success response. The transport layer's incoming-message
+        // channel decouples this from the sender's await on WaitForCompletionAsync.
+        long commandId = ExtractCommandId(messageBuffer);
         byte[] response = BuildSuccessResponse(commandId);
         IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(response.Length);
         response.CopyTo(owner.Memory);
         await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(owner, response.Length)).ConfigureAwait(false);
     }
-
-    /// <inheritdoc/>
-    /// <remarks>
-    /// Never invoked: this connection fully overrides <see cref="SendDataAsync"/> to synthesize a
-    /// response rather than writing to a transport, so the base send orchestration is bypassed.
-    /// </remarks>
-    protected override Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     /// <inheritdoc/>
     protected override Task ReceiveDataAsync() => Task.CompletedTask;

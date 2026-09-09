@@ -1,4 +1,4 @@
-namespace WebDriverBiDi;
+namespace WebDriverBiDi.Conventions;
 
 using System.Reflection;
 using System.Text.Json.Serialization;

@@ -6,12 +6,21 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing information about a Node object.
 /// </summary>
 public record NodeProperties
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NodeProperties"/> class.
+    /// </summary>
+    [JsonConstructor]
+    internal NodeProperties()
+    {
+    }
+
     /// <summary>
     /// Gets the type of node.
     /// </summary>
@@ -88,7 +97,7 @@ public record NodeProperties
     }
 
     /// <summary>
-    /// Gets the mode of the shadow root, if one is present.
+    /// Gets the mode of this node when it is a shadow root; otherwise null.
     /// </summary>
     [JsonPropertyName("mode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -109,6 +118,7 @@ public record NodeProperties
     [JsonPropertyName("children")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<NodeRemoteValue>))]
     internal List<NodeRemoteValue>? SerializableChildren { get; set; }
 
     /// <summary>
@@ -117,5 +127,6 @@ public record NodeProperties
     [JsonPropertyName("attributes")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullValueDictionaryJsonConverter<string>))]
     internal Dictionary<string, string>? SerializableAttributes { get; set; }
 }

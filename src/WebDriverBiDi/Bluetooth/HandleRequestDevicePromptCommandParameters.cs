@@ -37,21 +37,18 @@ public class HandleRequestDevicePromptCommandParameters : CommandParameters<Hand
     /// Gets or sets the ID of the browsing context for which to handle the prompt.
     /// </summary>
     [JsonPropertyName("context")]
-    [JsonInclude]
     public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the prompt to handle.
     /// </summary>
     [JsonPropertyName("prompt")]
-    [JsonInclude]
     public string PromptId { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether to accept the prompt.
     /// </summary>
     [JsonPropertyName("accept")]
-    [JsonInclude]
     public bool Accept { get; }
 
     /// <summary>

@@ -61,6 +61,14 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // Track BiDiDriver variables and whether StartAsync has been called
         Dictionary<string, bool> driverStartedStatus = [];
 
+        // A driver that this method hands to something else may be started by that other code, which
+        // this rule cannot see. Its started state is therefore unknown from the outset, so it is never
+        // tracked and never reported on. Collecting the escaping names up front, rather than at the
+        // point of escape, is what the Error severity of this rule demands: the helper that starts the
+        // driver may be called before or after the command textually, and a wrong Error on correct
+        // code is worse than a missed report.
+        HashSet<string> escapedNames = FindEscapedVariableNames(context.Node, semanticModel);
+
         // Walk through all statements in the method
         IEnumerable<StatementSyntax> statements = AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node);
 
@@ -68,16 +76,139 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         {
             // ProcessNode registers driver declarations and checks driver method calls,
             // wherever in the statement's subtree they appear.
-            ProcessNode(statement, context, semanticModel, driverStartedStatus);
+            ProcessNode(statement, context, semanticModel, driverStartedStatus, escapedNames);
         }
     }
 
-    private static void AnalyzeLocalDeclaration(
-        LocalDeclarationStatementSyntax localDecl,
-        SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+    /// <summary>
+    /// Collects the names of local variables that this member hands to something else, or that a nested
+    /// function could start, stop, or rebind.
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns>The set of names whose started state cannot be known from this member alone.</returns>
+    private static HashSet<string> FindEscapedVariableNames(SyntaxNode body, SemanticModel semanticModel)
     {
-        foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
+        HashSet<string> escapedNames = [];
+        foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
+        {
+            // The nested-function classification is asked first so that each predicate answers only for
+            // the shape it owns: the driver on the right of an assignment is an escape wherever it is
+            // written, and this order lets that case reach the escape check rather than being absorbed
+            // by the rebind test.
+            if (IsStartedStoppedOrReboundInsideNestedFunction(identifier, body) || IsEscapingPosition(identifier, semanticModel))
+            {
+                escapedNames.Add(identifier.Identifier.ValueText);
+            }
+        }
+
+        return escapedNames;
+    }
+
+    /// <summary>
+    /// Determines whether a mention of a variable hands it to something else, so that other code could
+    /// start it.
+    /// </summary>
+    /// <param name="identifier">The mention of the variable.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns><see langword="true"/> if the variable escapes at this position; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// This mirrors the escape classification in BIDI006. A mention that merely uses the driver
+    /// (<c>driver.Session.StatusAsync()</c>, a null test, a using statement) has a parent that is not in
+    /// the list below and is correctly not treated as an escape.
+    /// </remarks>
+    private static bool IsEscapingPosition(IdentifierNameSyntax identifier, SemanticModel semanticModel)
+    {
+        return identifier.Parent switch
+        {
+            // Returned to the caller: return driver; or yield return driver;
+            ReturnStatementSyntax or YieldStatementSyntax => true,
+
+            // Assigned to another target, for example a field: this.driver = driver;
+            AssignmentExpressionSyntax assignment => assignment.Right == identifier,
+
+            // Passed to a method or constructor that may start it: await StartHelperAsync(driver);
+            ArgumentSyntax argument => !IsModuleConstructionArgument(argument, semanticModel),
+
+            // Placed in a collection expression, an initializer, or used to initialize another
+            // variable that may itself be started.
+            ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
+
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Determines whether an argument hands the driver to the constructor of a module.
+    /// </summary>
+    /// <param name="argument">The argument mentioning the driver.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns><see langword="true"/> if the argument constructs a module; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The documented way to add a custom module is <c>driver.RegisterModule(new CustomModule(driver))</c>:
+    /// the driver is passed to the module's constructor, which hands it to the <c>Module</c> base class
+    /// so the module can issue commands through it later. A module holds the driver; it does not start
+    /// it. Treating that argument as an escape would switch this rule off for every method that
+    /// registers a custom module, which is precisely the set-up code the rule exists to check.
+    /// </remarks>
+    private static bool IsModuleConstructionArgument(ArgumentSyntax argument, SemanticModel semanticModel)
+    {
+        return argument.Parent is ArgumentListSyntax { Parent: BaseObjectCreationExpressionSyntax creation }
+            && semanticModel.GetTypeInfo(creation).Type is INamedTypeSymbol createdType
+            && AnalyzerSymbolHelpers.IsModuleSubclass(createdType);
+    }
+
+    /// <summary>
+    /// Determines whether a mention of a variable inside a nested function starts it, stops it, or
+    /// rebinds it to a different driver.
+    /// </summary>
+    /// <param name="identifier">The mention of the variable.</param>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <returns><see langword="true"/> if a nested function can change the variable's started state; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A nested function runs when its delegate is invoked, not where it is declared, so a
+    /// <c>StartAsync</c>, a <c>StopAsync</c>, or an assignment inside one can change the driver's state
+    /// at a point this rule's textual walk cannot place. An assignment counts because the variable then
+    /// names a driver that came from somewhere else and may already be started, which is the same
+    /// reason <see cref="TrackDriverAssignment"/> stops tracking such a rebind on a straight-line path.
+    /// Only those mentions make the state unknown: a nested function that merely issues commands on the
+    /// driver leaves the state alone, and treating every capture as an escape would stop the rule
+    /// reporting a genuine error elsewhere in the same method.
+    /// </remarks>
+    private static bool IsStartedStoppedOrReboundInsideNestedFunction(IdentifierNameSyntax identifier, SyntaxNode body)
+    {
+        bool changesStartedState = identifier.Parent switch
+        {
+            // Rebound to another driver: driver = await pool.RentStartedAsync();
+            AssignmentExpressionSyntax assignment => assignment.Left == identifier,
+
+            // Started or stopped: driver.StartAsync() or driver.StopAsync().
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Expression == identifier
+                && memberAccess.Parent is InvocationExpressionSyntax
+                && memberAccess.Name.Identifier.ValueText is "StartAsync" or "StopAsync",
+
+            _ => false,
+        };
+
+        if (!changesStartedState)
+        {
+            return false;
+        }
+
+        // The identifier came from the body's descendants, so the body is always an ancestor and always
+        // stops the walk.
+        return identifier.Ancestors()
+            .TakeWhile(ancestor => ancestor != body)
+            .Any(ancestor => ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax);
+    }
+
+    private static void AnalyzeLocalDeclaration(
+        VariableDeclarationSyntax declaration,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
+    {
+        foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
             if (variable.Initializer == null)
             {
@@ -94,48 +225,131 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 continue;
             }
 
+            if (escapedNames.Contains(variable.Identifier.ValueText))
+            {
+                continue;
+            }
+
             ITypeSymbol? typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value).Type;
             if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo))
             {
-                driverStartedStatus[variable.Identifier.Text] = false;
+                driverStartedStatus[variable.Identifier.ValueText] = false;
             }
         }
+    }
+
+    /// <summary>
+    /// Stops tracking every driver that at least one path through a branch stopped tracking, and
+    /// reports the names that survive and can therefore be merged.
+    /// </summary>
+    /// <param name="driverStartedStatus">The state at the branch point, updated in place.</param>
+    /// <param name="pathStatuses">The state at the end of each path through the branch.</param>
+    /// <returns>The names still tracked on every path.</returns>
+    /// <remarks>
+    /// A path that rebound a variable to a driver the walk cannot see dropped it from that path's
+    /// state, so after the branch its started state is unknown. Tracking stops for it, exactly as
+    /// <see cref="TrackDriverAssignment"/> does on a straight-line path, and an untracked variable
+    /// produces no reports at all, which is what this Error-severity rule wants when it cannot be
+    /// certain. Reading the dropped key out of that path instead would throw, which is reported as
+    /// AD0001 and suppresses this rule for the whole file.
+    /// </remarks>
+    private static List<string> DropDriversUntrackedOnAnyPath(
+        Dictionary<string, bool> driverStartedStatus,
+        IReadOnlyList<Dictionary<string, bool>> pathStatuses)
+    {
+        List<string> mergeableDriverNames = [];
+        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        {
+            if (pathStatuses.Any(pathStatus => !pathStatus.ContainsKey(driverName)))
+            {
+                driverStartedStatus.Remove(driverName);
+                continue;
+            }
+
+            mergeableDriverNames.Add(driverName);
+        }
+
+        return mergeableDriverNames;
+    }
+
+    /// <summary>
+    /// Updates the tracked state for an assignment to a driver variable the walk is following.
+    /// </summary>
+    /// <param name="assignment">The assignment to process.</param>
+    /// <param name="driverStartedStatus">The tracked started state, keyed by variable name.</param>
+    /// <remarks>
+    /// Rebinding a tracked variable replaces the driver it names, and with it the history the walk has
+    /// accumulated. A freshly constructed driver has not been started, so tracking continues against
+    /// the new one. A driver from anywhere else — a factory method, an awaited task, a pool — may
+    /// already have been started by whatever produced it, and this rule reports at Error severity, so
+    /// tracking stops rather than judging the new driver against the old one's history. Only names the
+    /// walk already tracks are considered, matching how a declaration starts the tracking.
+    /// </remarks>
+    private static void TrackDriverAssignment(
+        AssignmentExpressionSyntax assignment,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        if (assignment.Left is not IdentifierNameSyntax identifier ||
+            !driverStartedStatus.ContainsKey(identifier.Identifier.ValueText))
+        {
+            return;
+        }
+
+        if (assignment.Right is BaseObjectCreationExpressionSyntax)
+        {
+            driverStartedStatus[identifier.Identifier.ValueText] = false;
+            return;
+        }
+
+        driverStartedStatus.Remove(identifier.Identifier.ValueText);
     }
 
     private static void ProcessNode(
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the
         // tracked started state. The walk does not descend into the bodies of nested functions
         // (lambdas, anonymous methods, local functions): their code runs when the delegate is
         // invoked, not at the textual position where it is declared — for example when an event
         // handler fires after the connection is started — so it must not be judged against the
-        // driver's started state at this point in the method. It also stops at if and switch
+        // driver's started state at this point in the method. It also stops at if, switch, and try
         // statements — including one that is itself the root, which the barrier yields without
         // descending into — and processes them recursively below with a forked copy of the
         // state for each mutually exclusive branch.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
             child is not IfStatementSyntax &&
-            child is not SwitchStatementSyntax))
+            child is not SwitchStatementSyntax &&
+            child is not TryStatementSyntax))
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
-                ProcessIfStatement(ifStatement, context, semanticModel, driverStartedStatus);
+                ProcessIfStatement(ifStatement, context, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
-                ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus);
+                ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus, escapedNames);
             }
-            else if (descendant is LocalDeclarationStatementSyntax localDecl)
+            else if (descendant is TryStatementSyntax tryStatement)
             {
-                // Register driver declarations wherever they appear (including inside nested
-                // blocks such as try or using statements); the pre-order walk visits the
-                // declaration before any later use of the variable.
-                AnalyzeLocalDeclaration(localDecl, semanticModel, driverStartedStatus);
+                ProcessTryStatement(tryStatement, context, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is VariableDeclarationSyntax declaration)
+            {
+                // Register driver declarations wherever they appear: a local declaration
+                // statement, a using declaration, the declaration of a classic
+                // using (T x = ...) statement, or a for initializer, including inside nested
+                // blocks such as try statements. The pre-order walk visits the declaration
+                // before any later use of the variable.
+                AnalyzeLocalDeclaration(declaration, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is AssignmentExpressionSyntax assignment)
+            {
+                TrackDriverAssignment(assignment, driverStartedStatus);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
@@ -148,22 +362,23 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         IfStatementSyntax ifStatement,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
-        ProcessNode(ifStatement.Condition, context, semanticModel, driverStartedStatus);
+        ProcessNode(ifStatement.Condition, context, semanticModel, driverStartedStatus, escapedNames);
 
         // The branches are mutually exclusive, so each arm is walked against its own copy of
         // the state at the branch point: a StopAsync in one arm must not poison a command in
         // the other. An else-if chain arrives here as an else clause whose statement is itself
         // an if statement, which ProcessNode routes back into this method.
         Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
-        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranchStatus);
+        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranchStatus, escapedNames);
 
         Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
         if (ifStatement.Else is not null)
         {
-            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranchStatus);
+            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranchStatus, escapedNames);
         }
 
         // After the branch, a driver counts as not started only when every path through the
@@ -171,9 +386,74 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // been started, so treating "started on some path only" as not started would flag
         // correct conditional stop/restart patterns with an Error-severity false positive;
         // the Error severity demands that the command fail on every path.
-        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, [thenBranchStatus, elseBranchStatus]))
         {
             driverStartedStatus[driverName] = thenBranchStatus[driverName] || elseBranchStatus[driverName];
+        }
+    }
+
+    private static void ProcessTryStatement(
+        TryStatementSyntax tryStatement,
+        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
+    {
+        Dictionary<string, bool> entryStatus = new(driverStartedStatus);
+        Dictionary<string, bool> tryStatus = new(driverStartedStatus);
+        ProcessNode(tryStatement.Block, context, semanticModel, tryStatus, escapedNames);
+
+        // A catch clause (or a finally block) may begin executing after any prefix of the try block
+        // has run, so inside one a driver counts as started when *any* partial execution of the try
+        // could leave it started: the disjunction of the state at try entry and the state after the
+        // full try walk. A StartAsync inside the try may already have run (started after the try is
+        // true), and a StopAsync inside the try may not have run yet (started at entry is true).
+        //
+        // This is the mirror image of the same walk in BIDI024, which conjoins the two instead. The
+        // polarity follows from what each rule reports: BIDI024 reports a *duplicate* start, so it
+        // must be pessimistic about a driver being started; this rule reports a command on a driver
+        // that was *never* started, so it must be optimistic. Both choices keep an Error-severity
+        // diagnostic to cases that are certain on every path.
+        //
+        // A variable the try block rebound to a driver the walk cannot see is no longer tracked after
+        // that walk, so its state inside a catch or a finally is unknown. It is left out here rather
+        // than read out of a state that no longer holds it.
+        Dictionary<string, bool> mightBeStartedStatus = [];
+        foreach (string driverName in entryStatus.Keys)
+        {
+            if (tryStatus.TryGetValue(driverName, out bool startedAfterTryBlock))
+            {
+                mightBeStartedStatus[driverName] = entryStatus[driverName] || startedAfterTryBlock;
+            }
+        }
+
+        List<Dictionary<string, bool>> exitStatuses = [tryStatus];
+        foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
+        {
+            Dictionary<string, bool> catchStatus = new(mightBeStartedStatus);
+            if (catchClause.Filter is not null)
+            {
+                ProcessNode(catchClause.Filter.FilterExpression, context, semanticModel, catchStatus, escapedNames);
+            }
+
+            ProcessNode(catchClause.Block, context, semanticModel, catchStatus, escapedNames);
+            exitStatuses.Add(catchStatus);
+        }
+
+        if (tryStatement.Finally is not null)
+        {
+            Dictionary<string, bool> finallyStatus = new(mightBeStartedStatus);
+            ProcessNode(tryStatement.Finally.Block, context, semanticModel, finallyStatus, escapedNames);
+            exitStatuses.Add(finallyStatus);
+        }
+
+        // After the try statement, a driver counts as started when any completion path leaves it
+        // started, matching how the if and switch merges treat mutually exclusive branches: this
+        // rule reports only a driver that is not started on every path, so a stop confined to one
+        // catch clause must not poison code that follows the statement.
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, exitStatuses))
+        {
+            driverStartedStatus[driverName] = exitStatuses.Any(exitStatus => exitStatus[driverName]);
         }
     }
 
@@ -181,10 +461,11 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         SwitchStatementSyntax switchStatement,
         SyntaxNodeAnalysisContext context,
         SemanticModel semanticModel,
-        Dictionary<string, bool> driverStartedStatus)
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
     {
         // The governing expression executes unconditionally, before any section.
-        ProcessNode(switchStatement.Expression, context, semanticModel, driverStartedStatus);
+        ProcessNode(switchStatement.Expression, context, semanticModel, driverStartedStatus, escapedNames);
 
         // Sections are mutually exclusive in the same way if/else branches are.
         List<Dictionary<string, bool>> sectionStatuses = [];
@@ -193,7 +474,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             Dictionary<string, bool> sectionStatus = new(driverStartedStatus);
             foreach (StatementSyntax sectionStatement in section.Statements)
             {
-                ProcessNode(sectionStatement, context, semanticModel, sectionStatus);
+                ProcessNode(sectionStatement, context, semanticModel, sectionStatus, escapedNames);
             }
 
             sectionStatuses.Add(sectionStatus);
@@ -204,7 +485,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // path taken when no section matches) participates in the merge alongside every
         // section; when a default section makes that path impossible, including it can only
         // suppress a report, never create a false positive, so default detection is not needed.
-        foreach (string driverName in driverStartedStatus.Keys.ToList())
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, sectionStatuses))
         {
             driverStartedStatus[driverName] = driverStartedStatus[driverName] || sectionStatuses.Any(sectionStatus => sectionStatus[driverName]);
         }
@@ -271,7 +552,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 ITypeSymbol? type = semanticModel.GetTypeInfo(identifier).Type;
                 if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                 {
-                    return identifier.Identifier.Text;
+                    return identifier.Identifier.ValueText;
                 }
             }
 
@@ -282,7 +563,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 ITypeSymbol? type = semanticModel.GetTypeInfo(nestedIdentifier).Type;
                 if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                 {
-                    return nestedIdentifier.Identifier.Text;
+                    return nestedIdentifier.Identifier.ValueText;
                 }
             }
         }
@@ -337,7 +618,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         INamedTypeSymbol? currentType = type as INamedTypeSymbol;
         while (currentType != null)
         {
-            if (currentType.Name == "CommandResult")
+            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(currentType, "CommandResult"))
             {
                 return true;
             }
@@ -354,7 +635,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         INamedTypeSymbol? currentType = type!.BaseType;
         while (currentType != null)
         {
-            if (currentType.Name == "Module")
+            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(currentType, "Module"))
             {
                 return true;
             }

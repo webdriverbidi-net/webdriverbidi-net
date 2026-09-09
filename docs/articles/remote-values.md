@@ -10,6 +10,7 @@ When you execute JavaScript in the browser, the results are returned as `RemoteV
 
 Every `RemoteValue` has a `Type` property indicating the JavaScript type. It is a `RemoteValueType` enumeration value, not a string, so compare it against enum members:
 
+<!-- inline-csharp: a shape sketch with an elided body -->
 ```csharp
 if (remoteValue.Type == RemoteValueType.Node)
 {

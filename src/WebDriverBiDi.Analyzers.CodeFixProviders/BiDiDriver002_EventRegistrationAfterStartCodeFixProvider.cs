@@ -8,12 +8,9 @@ namespace WebDriverBiDi.Analyzers;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
@@ -32,92 +29,15 @@ public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixP
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken)
-            .ConfigureAwait(false);
+        SyntaxNode root = (await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false))!;
 
         Diagnostic diagnostic = context.Diagnostics.First();
-        Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
-
-        InvocationExpressionSyntax invocation = root!.FindToken(diagnosticSpan.Start)
+        InvocationExpressionSyntax invocation = root.FindToken(diagnostic.Location.SourceSpan.Start)
             .Parent!.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .First();
 
-        // The fix moves the registration before a top-level statement of the same
-        // block-bodied method that calls StartAsync on the same driver. The analyzer also
-        // fires in constructors and top-level programs, where that shape is absent; no fix
-        // is possible there, so none is offered.
-        MethodDeclarationSyntax? method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
-        bool startAsyncStatementExists = method?.Body is not null && method.Body.Statements
-            .Any(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                    && ma.Name.Identifier.Text == "StartAsync"
-                    && GetRootIdentifierName(ma) == driverVariableName));
-        if (!startAsyncStatementExists)
-        {
-            return;
-        }
-
-        context.RegisterCodeFix(
-            CodeAction.Create(
-                title: "Move event registration before StartAsync",
-                createChangedDocument: c => MoveEventRegistrationBeforeStartAsync(
-                    context.Document, invocation, c),
-                equivalenceKey: "MoveEventRegistrationBeforeStartAsync"),
-            diagnostic);
-    }
-
-    private static async Task<Document> MoveEventRegistrationBeforeStartAsync(
-        Document document,
-        InvocationExpressionSyntax invocation,
-        CancellationToken cancellationToken)
-    {
-        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
-
-        // Find the statement containing the event registration
-        StatementSyntax registerStatement = invocation.FirstAncestorOrSelf<StatementSyntax>()!;
-
-        // Find the method containing this statement
-        MethodDeclarationSyntax method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>()!;
-
-        // Find the StartAsync call on the same driver variable as the event registration.
-        string driverVariableName = GetRootIdentifierName(invocation.Expression)!;
-        StatementSyntax startAsyncStatement = method.Body!.Statements
-            .First(s => s.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma
-                    && ma.Name.Identifier.Text == "StartAsync"
-                    && GetRootIdentifierName(ma) == driverVariableName));
-
-        // Track both statements through the transformation
-        SyntaxNode trackedMethod = method.TrackNodes(registerStatement, startAsyncStatement);
-
-        // Get the current tracked register statement and remove it
-        StatementSyntax trackedRegisterStatement = trackedMethod.GetCurrentNode(registerStatement)!;
-        SyntaxNode methodWithoutRegister = trackedMethod.RemoveNode(trackedRegisterStatement, SyntaxRemoveOptions.KeepNoTrivia)!;
-
-        // Get the current tracked StartAsync statement
-        StatementSyntax updatedStartAsyncStatement = methodWithoutRegister.GetCurrentNode(startAsyncStatement)!;
-
-        // Insert the register statement before StartAsync
-        StatementSyntax registerStatementCopy = trackedRegisterStatement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
-        SyntaxNode newMethod = methodWithoutRegister.InsertNodesBefore(updatedStartAsyncStatement, new[] { registerStatementCopy });
-
-        SyntaxNode newRoot = root.ReplaceNode(method, newMethod);
-        return document.WithSyntaxRoot(newRoot);
-    }
-
-    private static string? GetRootIdentifierName(ExpressionSyntax expression)
-    {
-        // expression is always a MemberAccessExpressionSyntax when called from this provider.
-        ExpressionSyntax current = ((MemberAccessExpressionSyntax)expression).Expression;
-        while (current is MemberAccessExpressionSyntax nestedAccess)
-        {
-            current = nestedAccess.Expression;
-        }
-
-        // The receiver chain may not end in a simple identifier (for example, a driver held in
-        // a field accessed through `this`); such receivers are not fixable and yield no name.
-        return (current as IdentifierNameSyntax)?.Identifier.Text;
+        // The shared fix moves the RegisterEvent statement, and any local declarations it depends on, above the StartAsync statement on the same driver.
+        CodeFixHelpers.RegisterMoveBeforeStartAsyncFix(context, diagnostic, invocation, "Move event registration before StartAsync", "MoveEventRegistrationBeforeStartAsync");
     }
 }

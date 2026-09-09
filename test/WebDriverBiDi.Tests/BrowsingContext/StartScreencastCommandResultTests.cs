@@ -61,7 +61,7 @@ public class SrartScrenncastCommandResultTests
     }
 
     [Fact]
-    public async Task TestDeserializingWithMissingPathdThrows()
+    public async Task TestDeserializingWithMissingPathThrows()
     {
         string json = """
                       {

@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi;
 
-using System.Buffers;
 using System.Runtime.ExceptionServices;
 
 /// <summary>
@@ -19,9 +18,11 @@ using System.Runtime.ExceptionServices;
 /// This class is thread-safe. <see cref="AddObserver(Func{T, Task}, ObservableEventHandlerOptions, string)"/>,
 /// <see cref="RemoveObserver"/>, <see cref="NotifyObserversAsync"/>, and <see cref="CurrentObserverCount"/> may be called
 /// concurrently from multiple threads. Observer registration and removal are serialized via an
-/// internal lock. Notification takes a snapshot of observers under the lock before invoking
-/// handlers, so long-running handlers do not block registration. See <see cref="EventObserver{T}"/>
-/// for thread-safety of checkpoint methods on observers.
+/// internal lock, which each publishes a new array of the observers in notification order.
+/// Notification reads that array without taking the lock and iterates it to completion, so a
+/// long-running handler neither blocks registration nor is disturbed by one, and an observer added or
+/// removed while an event is being dispatched takes effect from the next event. See
+/// <see cref="EventObserver{T}"/> for thread-safety of checkpoint methods on observers.
 /// </para>
 /// </remarks>
 public class ObservableEvent<T>
@@ -29,7 +30,17 @@ public class ObservableEvent<T>
 {
     private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
-    private int observerCount = 0;
+
+    // The observers in notification order, rebuilt whenever one is added or removed and published as
+    // a whole. It is never mutated in place, so a notification can iterate it without a lock and
+    // without copying: the array it read stays intact for the whole dispatch even as registration
+    // continues on other threads. Ordering can only change when the set changes, which is why the
+    // sort belongs here rather than in the notification path it used to run on every event.
+    //
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
+    // The comparand equals the value being exchanged, so a read neither changes the field nor needs
+    // a value to write, exactly as the int flags elsewhere in this library are read.
+    private EventObserver<T>[] sortedObservers = [];
     private uint observerSequence = 0;
 
     /// <summary>
@@ -57,7 +68,7 @@ public class ObservableEvent<T>
     /// <summary>
     /// Gets the current number of observers, including data collectors, that are observing this event.
     /// </summary>
-    public int CurrentObserverCount => Interlocked.CompareExchange(ref this.observerCount, 0, 0);
+    public int CurrentObserverCount => Interlocked.CompareExchange(ref this.sortedObservers, null!, null!).Length;
 
     /// <summary>
     /// Gets the reporter used to surface observer failures that occur after the handler has
@@ -91,11 +102,15 @@ public class ObservableEvent<T>
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the user attempts to add more observers than this event allows.
-    /// </exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when the user attempts to add more observers than this event allows.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when a null handler is passed.</exception>
     public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
+        if (handler is null)
+        {
+            throw new ArgumentNullException(nameof(handler), "Handler cannot be null");
+        }
+
         Func<T, Task> wrappedHandler = handlerOptions == ObservableEventHandlerOptions.RunHandlerAsynchronously
             ? args => Task.Run(() => handler(args))
             : args =>
@@ -124,9 +139,8 @@ public class ObservableEvent<T>
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the user attempts to add more observers than this event allows.
-    /// </exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when the user attempts to add more observers than this event allows.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when a null handler is passed.</exception>
     /// <example>
     /// <code>
     /// // Synchronous handler (default) - for quick in-memory work
@@ -140,6 +154,11 @@ public class ObservableEvent<T>
     /// </example>
     public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
+        if (handler is null)
+        {
+            throw new ArgumentNullException(nameof(handler), "Handler cannot be null");
+        }
+
         return this.CreateObserver(handler, handlerOptions, description, EventObserverPriority.NormalObserverPriority);
     }
 
@@ -184,7 +203,7 @@ public class ObservableEvent<T>
         {
             if (this.observers.Remove(observerId))
             {
-                Interlocked.Decrement(ref this.observerCount);
+                this.UpdateSortedObserverList();
             }
         }
     }
@@ -195,14 +214,8 @@ public class ObservableEvent<T>
     /// <returns>A string that represents the current object.</returns>
     public override string ToString()
     {
-        // Make a copy of the observers under the lock to avoid holding the
-        // lock while building the string.
-        List<EventObserver<T>> observerList;
-        lock (this.observerLock)
-        {
-            observerList = [.. this.observers.Values];
-        }
-
+        // The published array is never mutated in place, so it can be read without the lock.
+        IEnumerable<EventObserver<T>> observerList = Interlocked.CompareExchange(ref this.sortedObservers, null!, null!);
         return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", observerList)}";
     }
 
@@ -238,88 +251,40 @@ public class ObservableEvent<T>
     /// <exception cref="AggregateException">Thrown when multiple observer handlers throw an exception.</exception>
     protected async Task NotifyObserversAsync(T notifyData)
     {
-        // Snapshot the observers under the lock so that iteration is safe
-        // even if observers are added or removed concurrently. The lock is
-        // released before invoking any handlers, so long-running handlers
-        // do not block observer registration. The copy is cheap because
-        // observer counts are typically very small (1–15 references).
-        EventObserver<T>? singleObserver = null;
-        EventObserver<T>[]? snapshot = null;
-        int snapshotCount = 0;
-        lock (this.observerLock)
+        // Read the observers without taking the lock. The array is replaced wholesale when the set
+        // changes and never written in place, so the one read here is a stable snapshot for the whole
+        // dispatch, and registration on another thread neither blocks nor is blocked by it. It arrives
+        // already in notification order, so there is nothing to copy and nothing to sort per event.
+        EventObserver<T>[] observersToNotify = Interlocked.CompareExchange(ref this.sortedObservers, null!, null!);
+
+        // Performance optimization: if there are no observers, we have nothing
+        // to notify, so we can return early.
+        if (observersToNotify.Length == 0)
         {
-            snapshotCount = this.observerCount;
-            if (snapshotCount > 0)
-            {
-                if (snapshotCount == 1)
-                {
-                    foreach (EventObserver<T> observer in this.observers.Values)
-                    {
-                        singleObserver = observer;
-                        break;
-                    }
-                }
-                else
-                {
-                    // We use an ArrayPool here as a micro-optimization for performance.
-                    // The perf gain is real, but marginal for the common case of 2-15
-                    // observers. One thing to note, the actual array returned by the
-                    // pool might be larger than the actual number of observers, so we
-                    // have to take that into account in subsequent processing.
-                    snapshot = ArrayPool<EventObserver<T>>.Shared.Rent(snapshotCount);
-                    int i = 0;
-                    foreach (EventObserver<T> obs in this.observers.Values)
-                    {
-                        snapshot[i++] = obs;
-                    }
-                }
-            }
+            return;
         }
 
         // Performance optimization: if there is one and only one observer, we
         // can notify it directly. Exceptions occurring during the notification
         // should propagate properly.
-        if (singleObserver is not null)
+        if (observersToNotify.Length == 1)
         {
-            await singleObserver.NotifyAsync(notifyData).ConfigureAwait(false);
+            await observersToNotify[0].NotifyAsync(notifyData).ConfigureAwait(false);
             return;
-        }
-
-        // Performance optimization: if there are no observers, we have nothing
-        // to notify, so we can return early.
-        if (snapshot is null)
-        {
-            return;
-        }
-
-        if (snapshotCount > 1)
-        {
-            // Using this overload, because the length of snapshot might be larger
-            // than the number of observers.
-            Array.Sort(snapshot, 0, snapshotCount);
         }
 
         List<Exception>? exceptions = null;
-        try
+        foreach (EventObserver<T> observer in observersToNotify)
         {
-            // Because the length of snapshot might be larger, we have to use an
-            // indexed for loop instead of a foreach.
-            for (int i = 0; i < snapshotCount; i++)
+            try
             {
-                try
-                {
-                    await snapshot[i].NotifyAsync(notifyData).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    exceptions ??= [];
-                    exceptions.Add(ex);
-                }
+                await observer.NotifyAsync(notifyData).ConfigureAwait(false);
             }
-        }
-        finally
-        {
-            ArrayPool<EventObserver<T>>.Shared.Return(snapshot, clearArray: true);
+            catch (Exception ex)
+            {
+                exceptions ??= [];
+                exceptions.Add(ex);
+            }
         }
 
         if (exceptions is not null)
@@ -345,6 +310,26 @@ public class ObservableEvent<T>
         }
     }
 
+    /// <summary>
+    /// Rebuilds and publishes the array of observers in notification order. Must be called while
+    /// holding <see cref="observerLock"/>, after the backing dictionary has been changed.
+    /// </summary>
+    /// <remarks>
+    /// A fresh array is built rather than the existing one being edited, so that a notification already
+    /// iterating the previous array is unaffected by this change. The interlocked exchange that
+    /// publishes it provides the barrier that pairs with the interlocked read in
+    /// <see cref="NotifyObserversAsync"/>, so a reader on another thread sees a fully built array.
+    /// </remarks>
+    private void UpdateSortedObserverList()
+    {
+        EventObserver<T>[] updated = new EventObserver<T>[this.observers.Count];
+        this.observers.Values.CopyTo(updated, 0);
+
+        // Data collectors first, then by the sequence in which observers were added.
+        Array.Sort(updated);
+        Interlocked.Exchange(ref this.sortedObservers, updated);
+    }
+
     private EventObserver<T> CreateObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "", EventObserverPriority priority = EventObserverPriority.NormalObserverPriority)
     {
         lock (this.observerLock)
@@ -357,7 +342,7 @@ public class ObservableEvent<T>
             this.observerSequence += 1;
             EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerSequence, priority);
             this.observers.Add(observer.Id, observer);
-            Interlocked.Increment(ref this.observerCount);
+            this.UpdateSortedObserverList();
             return observer;
         }
     }

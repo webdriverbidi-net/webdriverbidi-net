@@ -54,7 +54,6 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonPropertyName("resultOwnership")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public ResultOwnership? ResultOwnership { get; set; }
 
     /// <summary>
@@ -62,7 +61,6 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonPropertyName("serializationOptions")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
@@ -70,6 +68,5 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonPropertyName("userActivation")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public bool? UserActivation { get; set; }
 }

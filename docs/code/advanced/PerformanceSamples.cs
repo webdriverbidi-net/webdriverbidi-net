@@ -495,14 +495,15 @@ public class PerformanceSamples
     /// <summary>
     /// Poll Transport.IncomingQueueDepth to detect message backlog.
     /// </summary>
-    public static void QueueDepthMonitoring(Transport transport)
+    public static void QueueDepthMonitoring(BiDiDriver driver)
     {
         #region QueueDepthMonitoring
         // Poll the queue depth on a timer to detect backlog early. The property is
-        // safe to read concurrently with message production and consumption.
+        // safe to read concurrently with message production and consumption, and
+        // never throws, whatever point of the lifecycle the driver is at.
         Timer queueDepthMonitor = new Timer(_ =>
         {
-            int depth = transport.IncomingQueueDepth;
+            int depth = driver.TransportDiagnostics.IncomingQueueDepth;
 
             if (depth > 100)
             {
@@ -593,7 +594,7 @@ public class PerformanceSamples
         }
         finally
         {
-            pool.Release(driver);
+            await pool.ReleaseAsync(driver);
         }
         #endregion
     }
@@ -926,18 +927,24 @@ public class DriverPool
         return driver;
     }
 
-    public void Release(BiDiDriver driver)
+    public async Task ReleaseAsync(BiDiDriver driver)
     {
+        bool returnedToPool;
         lock (availableDrivers)
         {
-            if (availableDrivers.Count < maxPoolSize)
+            returnedToPool = availableDrivers.Count < maxPoolSize;
+            if (returnedToPool)
             {
                 availableDrivers.Push(driver);
             }
-            else
-            {
-                driver.StopAsync().Wait();
-            }
+        }
+
+        // Shut the surplus driver down outside the lock, and await it rather than blocking with
+        // .Wait(): blocking here would hold the lock across I/O and can deadlock, and a faulted
+        // StopAsync would surface as an AggregateException instead of the original exception.
+        if (!returnedToPool)
+        {
+            await driver.StopAsync();
         }
 
         semaphore.Release();

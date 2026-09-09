@@ -36,6 +36,14 @@ a glyph:
 | ⚠️ | Mean time +25% or allocations +10% vs. baseline |
 | 🔴 | Mean time +50% or allocations +25% vs. baseline |
 | `(new)` | Benchmark has no matching entry in the baseline |
+| `(removed)` | The baseline has this benchmark but this run did not produce it — it was deleted or renamed |
+
+Allocation deltas against a baseline that allocated nothing are reported in
+bytes rather than as a percentage, because a percentage change from zero is
+undefined: `0 B ✅` when the benchmark still allocates nothing, and
+`+<n> B 🔴` when it has started allocating. A zero-allocation baseline is a
+real baseline, and going from zero to any allocation is a regression worth
+failing a review over.
 
 GitHub-hosted runners are shared hardware, so expect some run-to-run
 variance. Treat sub-20% changes on a single benchmark as noise; treat a
@@ -106,8 +114,9 @@ Update the baseline when:
   promotes `ubuntu-24.04`), which can shift absolute numbers across the
   board.
 - The benchmark set itself has changed substantially: benchmarks added,
-  removed, or renamed. New/renamed benchmarks render as `(new)` until the
-  baseline is refreshed.
+  removed, or renamed. New benchmarks render as `(new)` until the baseline is
+  refreshed; a rename produces both a `(new)` row for the new name and a
+  `(removed)` row for the old one.
 
 The mechanics are identical to seeding. Run the **Benchmark Baseline**
 workflow, download the artifact, drop the files into `baselines/`, open a

@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Values used for the simulation of descriptors.
+/// Values used for the simulation of descriptor responses.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<SimulateDescriptorResponseType>))]
 public enum SimulateDescriptorResponseType

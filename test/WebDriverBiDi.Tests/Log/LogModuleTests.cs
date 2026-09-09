@@ -25,7 +25,7 @@ public class LogModuleTests
             taskCompletionSource.TrySetResult();
         });
 
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string eventJson = $$"""
                            {
                              "type": "event",
@@ -58,7 +58,7 @@ public class LogModuleTests
         LogModule module = driver.Log;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnEntryAdded.AddObserver(e =>
         {
             Assert.Equal("console", e.Type);

@@ -24,7 +24,6 @@ public class PermissionDescriptor
     /// <summary>
     /// Gets or sets the name of the permission.
     /// </summary>
-    [JsonRequired]
     [JsonPropertyName("name")]
     public string Name { get; set; }
 

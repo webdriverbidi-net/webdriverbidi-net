@@ -8,6 +8,7 @@
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Linq;
@@ -152,6 +153,26 @@ public static class ObservabilitySamples
     }
 
     /// <summary>
+    /// Minimal registration of the WebDriverBiDi.Logging bridge.
+    /// </summary>
+    public static async Task LoggingQuickStart()
+    {
+        #region LoggingQuickStart
+        var services = new ServiceCollection();
+        services.AddLogging(builder =>
+        {
+            builder.AddConsole();
+            builder.AddWebDriverBiDi();
+        });
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        await using var driver = new BiDiDriver();
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
+        #endregion
+    }
+
+    /// <summary>
     /// Basic console application with Microsoft.Extensions.Logging and AddWebDriverBiDi.
     /// </summary>
     public static async Task LoggingBasicConsoleApplication()
@@ -177,16 +198,17 @@ public static class ObservabilitySamples
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Logs will show:
-        // [12:34:56 INF] ConnectionOpening, connectionId=12345, url=ws://localhost:9515/session/YOUR-SESSION-ID
-        // [12:34:56 INF] ConnectionOpened, connectionId=12345, url=ws://localhost:9515/session/YOUR-SESSION-ID
+        // connectionId is Connection.Id, a GUID string assigned when the connection is created.
+        // [12:34:56 INF] ConnectionOpening, connectionId=3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05, url=ws://localhost:9515/session/YOUR-SESSION-ID
+        // [12:34:56 INF] ConnectionOpened, connectionId=3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05, url=ws://localhost:9515/session/YOUR-SESSION-ID
         // [12:34:56 INF] TransportStarted
 
         await driver.Session.StatusAsync();
 
         // Logs will show:
-        // [12:34:56 INF] TransportStarted
         // [12:34:56 INF] CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
-        // (CommandSending is a Verbose-level event and is not emitted at EventLevel.Informational)
+        // (CommandSending is a Verbose-level event and is not emitted at EventLevel.Informational;
+        //  TransportStarted is raised once, when the transport connects, and is already shown above)
         #endregion
     }
 
@@ -450,7 +472,13 @@ public class ErrorTracker : EventListener
         if (eventData.Level == EventLevel.Error)
         {
             errorCount++;
-            string error = $"{eventData.EventName}: {string.Join(", ", eventData.PayloadNames)}";
+            // Pair each payload name with its value; joining PayloadNames alone records the shape of
+            // the event and none of its detail, so every error of a given kind looks identical.
+            ReadOnlyCollection<string>? names = eventData.PayloadNames;
+            ReadOnlyCollection<object?>? values = eventData.Payload;
+            IEnumerable<string> payload = Enumerable.Range(0, Math.Min(names?.Count ?? 0, values?.Count ?? 0))
+                .Select(index => $"{names![index]}={values![index]}");
+            string error = $"{eventData.EventName}: {string.Join(", ", payload)}";
             recentErrors.Add(error);
 
             // Keep only last 100 errors

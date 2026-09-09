@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Log;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -42,5 +43,6 @@ public class ConsoleLogEntry : LogEntry
     [JsonPropertyName("args")]
     [JsonRequired]
     [JsonInclude]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<RemoteValue>))]
     internal List<RemoteValue> SerializableArgs { get; set; } = [];
 }

@@ -23,6 +23,7 @@ public class CommandExecutionBenchmarks
     private BenchmarkEchoConnection connection = null!;
     private BiDiDriver driver = null!;
     private BenchmarkCommandParameters parameters = null!;
+    private CancellationTokenSource cancellationTokenSource = null!;
 
     /// <summary>
     /// Creates the driver wired to an echo connection and starts the transport.
@@ -35,6 +36,10 @@ public class CommandExecutionBenchmarks
         this.driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
         this.driver.StartAsync("benchmark://localhost").GetAwaiter().GetResult();
         this.parameters = new BenchmarkCommandParameters();
+
+        // Created once, outside the measurement, so that the token-passing benchmark below measures
+        // what each call costs rather than the one-off cost of creating a source to take a token from.
+        this.cancellationTokenSource = new CancellationTokenSource();
     }
 
     /// <summary>
@@ -44,6 +49,7 @@ public class CommandExecutionBenchmarks
     public void Cleanup()
     {
         this.driver.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        this.cancellationTokenSource.Dispose();
     }
 
     /// <summary>
@@ -57,6 +63,30 @@ public class CommandExecutionBenchmarks
     public async Task ExecuteCommandRoundTrip()
     {
         await this.driver.ExecuteCommandAsync<BenchmarkCommandResult>(this.parameters).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The same round trip, made with a real <see cref="CancellationToken"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the shape the library's own analyzers ask callers to write: BIDI004 and BIDI013 report
+    /// a long-running command issued without a token. It is also the only shape that exercises the
+    /// linked <see cref="CancellationTokenSource"/> that <c>Connection.SendDataAsync</c> builds and
+    /// disposes per send, because that code is skipped when the token is
+    /// <see cref="CancellationToken.None"/>. Run beside <see cref="ExecuteCommandRoundTrip"/>, the
+    /// pair prices that registration.
+    /// </para>
+    /// <para>
+    /// The token comes from a source created in <see cref="Setup"/> and never canceled, so the
+    /// measured path is the ordinary one where the command completes normally.
+    /// </para>
+    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous benchmark operation.</returns>
+    [Benchmark]
+    public async Task ExecuteCommandRoundTripWithCancellationToken()
+    {
+        await this.driver.ExecuteCommandAsync<BenchmarkCommandResult>(this.parameters, cancellationToken: this.cancellationTokenSource.Token).ConfigureAwait(false);
     }
 
     /// <summary>

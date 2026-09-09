@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Session;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object representing a manual proxy to be used by the browser.
@@ -67,5 +68,6 @@ public class ManualProxyConfiguration : ProxyConfiguration
     /// </summary>
     [JsonPropertyName("noProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(NonNullElementListJsonConverter<string>))]
     public List<string>? NoProxyAddresses { get; set; }
 }

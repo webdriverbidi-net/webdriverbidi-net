@@ -31,6 +31,5 @@ public class RemoveDataCollectorCommandParameters : CommandParameters<RemoveData
     /// Gets or sets the ID of the data collector to remove.
     /// </summary>
     [JsonPropertyName("collector")]
-    [JsonInclude]
     public string CollectorId { get; set; }
 }

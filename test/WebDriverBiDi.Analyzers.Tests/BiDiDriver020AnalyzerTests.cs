@@ -671,4 +671,296 @@ public class BiDiDriver020AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that an observer declared by a classic <c>using (T x = ...)</c> statement is tracked like one declared by a local declaration statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WaitInsideClassicUsingStatementDeclaration_WithoutStartCapturing_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        using (EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { }))
+                        {
+                            await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected0);
+    }
+
+    [Fact]
+    public async Task WaitAfterObserverPassedToHelper_NoDiagnostic()
+    {
+        // The helper may open the session, which this rule's textual walk cannot see, so the observer's
+        // capturing state is unknown and an Error here would be wrong.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private static void BeginCapture(EventObserver<NavigationEventArgs> target)
+                    {
+                        target.StartCapturingTasks();
+                    }
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        BeginCapture(observer);
+                        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterLambdaStartsCapturing_NoDiagnostic()
+    {
+        // A nested function runs when its delegate is invoked, not where it is written, so a
+        // StartCapturingTasks inside one puts the session beyond what a textual walk can place.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        Action begin = () => observer.StartCapturingTasks();
+                        begin();
+                        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterObserverStoredInAField_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private EventObserver<NavigationEventArgs>? shared;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        this.shared = observer;
+                        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterObserverPlacedInACollection_NoDiagnostic()
+    {
+        // A collection expression element and a collection initializer both hand the observer to code
+        // that may open a session on it.
+        string testCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> first = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        EventObserver<NavigationEventArgs> second = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        EventObserver<NavigationEventArgs>[] pooled = [first];
+                        List<EventObserver<NavigationEventArgs>> listed = new List<EventObserver<NavigationEventArgs>> { second };
+                        await first.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                        await second.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterObserverAliasedToAnotherLocal_NoDiagnostic()
+    {
+        // The alias may have a session opened on it under its own name, so neither name is tracked.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        EventObserver<NavigationEventArgs> alias = observer;
+                        alias.StartCapturingTasks();
+                        await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterObserverYielded_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Collections.Generic;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public IEnumerable<EventObserver<NavigationEventArgs>> TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        yield return observer;
+                        _ = observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterObserverReturned_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public EventObserver<NavigationEventArgs> TestMethod(bool early)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        if (early)
+                        {
+                            return observer;
+                        }
+
+                        _ = observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                        return observer;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitOnAnUnrelatedObserverStillReportsWhenAnotherEscapes_ReportsError()
+    {
+        // Treating an escape as method-wide would lose this genuine error. Only the escaping name stops
+        // being tracked.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private static void BeginCapture(EventObserver<NavigationEventArgs> target)
+                    {
+                        target.StartCapturingTasks();
+                    }
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> handedOut = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        EventObserver<NavigationEventArgs> kept = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        BeginCapture(handedOut);
+                        await handedOut.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5));
+                        await {|#0:kept.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(5))|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksCompleteAsync", "kept");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
 }

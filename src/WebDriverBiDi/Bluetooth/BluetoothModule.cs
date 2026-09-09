@@ -39,19 +39,22 @@ public sealed class BluetoothModule : Module
     }
 
     /// <summary>
-    /// Gets an observable event that notifies when a Bluetooth device generates a characteristic event.
+    /// Gets an observable event that notifies when a characteristic event is generated on a simulated
+    /// Bluetooth device.
     /// </summary>
     [ObservableEventName(CharacteristicEventGeneratedEventName)]
     public ObservableEvent<CharacteristicEventGeneratedEventArgs> OnCharacteristicEventGenerated => this.invocableCharacteristicEventGeneratedObservableEvent;
 
     /// <summary>
-    /// Gets an observable event that notifies when a Bluetooth device generates a descriptor event.
+    /// Gets an observable event that notifies when a descriptor event is generated on a simulated
+    /// Bluetooth device.
     /// </summary>
     [ObservableEventName(DescriptorEventGeneratedEventName)]
     public ObservableEvent<DescriptorEventGeneratedEventArgs> OnDescriptorEventGenerated => this.invocableDescriptorEventGeneratedObservableEvent;
 
     /// <summary>
-    /// Gets an observable event that notifies when a Bluetooth device attempts a GATT connection.
+    /// Gets an observable event that notifies when the page attempts a GATT connection to a simulated
+    /// Bluetooth device.
     /// </summary>
     [ObservableEventName(GattConnectionAttemptedEventName)]
     public ObservableEvent<GattConnectionAttemptedEventArgs> OnGattConnectionAttempted => this.invocableGattConnectionAttemptedObservableEvent;

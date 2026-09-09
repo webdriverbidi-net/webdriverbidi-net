@@ -13,6 +13,10 @@ using WebDriverBiDi.JsonConverters;
 /// </summary>
 public class SetViewportCommandParameters : CommandParameters<SetViewportCommandResult>
 {
+    // The value ResetToDefaultDevicePixelRatio returns. It is declared as a constant because an
+    // attribute argument must be one, and shared with that property so the two cannot drift apart.
+    private const double ResetDevicePixelRatioSentinel = -1;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SetViewportCommandParameters"/> class.
     /// </summary>
@@ -73,7 +77,7 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// pixel ratio unchanged.
     /// </para>
     /// </remarks>
-    public static double ResetToDefaultDevicePixelRatio => -1;
+    public static double ResetToDefaultDevicePixelRatio => ResetDevicePixelRatioSentinel;
 
     /// <summary>
     /// Gets the method name of the command.
@@ -89,7 +93,9 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     public string? BrowsingContextId { get; set; }
 
     /// <summary>
-    /// Gets or sets the viewport dimensions to set. A null value sets the viewport to the default dimensions.
+    /// Gets or sets the viewport dimensions to set. A <see langword="null"/> value omits the field,
+    /// leaving the current viewport unchanged; assign <see cref="ResetToDefaultViewport"/> to restore
+    /// the default dimensions.
     /// </summary>
     [JsonPropertyName("viewport")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -100,16 +106,23 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// Gets or sets the device pixel ratio of the viewport.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Valid values for this property are greater than 0.0. This property does not validate its value;
     /// a value outside this range is sent as-is, and a conforming remote end rejects it when the command
-    /// is executed. Assigning <see cref="ResetToDefaultDevicePixelRatio"/> (any negative value) instead
-    /// signals the remote end to reset the device pixel ratio to its default. This property carries no
-    /// <see cref="SpecRangeAttribute"/> because the negative reset sentinel makes a single valid range
-    /// inexpressible.
+    /// is executed. Assigning <see cref="ResetToDefaultDevicePixelRatio"/> instead signals the remote end
+    /// to reset the device pixel ratio to its default.
+    /// </para>
+    /// <para>
+    /// Any negative value resets, but only <see cref="ResetToDefaultDevicePixelRatio"/> is declared as the
+    /// reset sentinel of the <see cref="SpecRangeAttribute"/>, so tooling reports another negative value as
+    /// out of range. That is deliberate, and matches how every other resettable numeric property in the
+    /// library is declared: the named sentinel is the supported way to ask for a reset.
+    /// </para>
     /// </remarks>
     [JsonPropertyName("devicePixelRatio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(SentinelNullJsonConverter<double, NegativeDoubleSentinelChecker>))]
+    [SpecRange(0.0, double.PositiveInfinity, MinimumExclusive = true, HasSentinel = true, SentinelValue = ResetDevicePixelRatioSentinel)]
     public double? DevicePixelRatio { get; set; }
 
     /// <summary>

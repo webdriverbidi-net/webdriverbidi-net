@@ -9,7 +9,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using System.Text;
 
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end over anonymous pipes.
@@ -34,8 +33,8 @@ using System.Text;
 /// <strong>Protocol details:</strong>
 /// <list type="bullet">
 /// <item><description>Messages are null-terminated JSON strings (each message ends with \0)</description></item>
-/// <item><description>On Unix systems: Browser reads from file descriptor 3, writes to file descriptor 4</description></item>
-/// <item><description>On Windows: Uses named pipe handles</description></item>
+/// <item><description>Two anonymous pipes are created on every platform and their handles are inherited by the browser process</description></item>
+/// <item><description>On Unix systems the browser reads from file descriptor 3 and writes to file descriptor 4; on Windows it receives the inherited handles</description></item>
 /// <item><description>Requires <see cref="IPipeServerProcessProvider"/> for process lifecycle management</description></item>
 /// </list>
 /// </para>
@@ -153,18 +152,24 @@ public class PipeConnection : Connection
     /// connected, or the receive loop from a previous session is still running after a bounded
     /// wait (see the remarks on <see cref="StopAsync(CancellationToken)"/>).
     /// </exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="OperationCanceledException">
+    /// Thrown when <paramref name="cancellationToken"/> is already canceled when this method is called.
+    /// The token is not observed after that point: unlike opening a WebSocket, starting a pipe connection
+    /// performs no cancellable I/O, and the one wait it does perform, for a previous session's receive
+    /// loop to finish, is bounded by <see cref="Connection.ShutdownTimeout"/> rather than by the token.
+    /// </exception>
+    /// <exception cref="ObjectDisposedException">Thrown when attempting to start a disposed connection.</exception>
     public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
+        if (this.IsDisposed)
+        {
+            throw new ObjectDisposedException(nameof(PipeConnection), "The pipes have been disposed; the connection cannot be restarted after disposal.");
+        }
+
         Process? pipeServerProcess = this.processProvider.PipeServerProcess;
         if (pipeServerProcess is null)
         {
-            throw new WebDriverBiDiConnectionException("External process has not been set. Call SetExternalProcess before StartAsync.");
-        }
-
-        if (this.IsDisposed)
-        {
-            throw new WebDriverBiDiConnectionException("The pipes have been disposed; the connection cannot be restarted after disposal.");
+            throw new WebDriverBiDiConnectionException("External process has not been set. Make sure IPipeServerProcessProvider.PipeServerProcess is valid before StartAsync.");
         }
 
         if (!IsProcessRunning(pipeServerProcess))
@@ -176,6 +181,12 @@ public class PipeConnection : Connection
         {
             throw new WebDriverBiDiConnectionException($"The pipe connection is already active for {this.ConnectionString}; call the Stop method to disconnect before calling Start");
         }
+
+        // Honor a caller who has already given up, as WebSocketConnection.StartAsync does before its
+        // first connect attempt. Nothing beyond this point is cancellable, so this is the one place the
+        // token can be observed; it is tested after the argument and state checks so that a genuine
+        // misuse is still reported as such.
+        cancellationToken.ThrowIfCancellationRequested();
 
         // StopAsync may have abandoned the previous session's receive loop still blocked in
         // a pipe read that did not honor cancellation (see the remarks on StopAsync).
@@ -272,18 +283,63 @@ public class PipeConnection : Connection
     /// <param name="messageBuffer">The data to write to the pipe.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <para>
+    /// The message and the null terminator that frames it are written as a single operation, so that
+    /// cancellation cannot separate them. Written as two cancellable writes, a token canceled after the
+    /// first one completes would leave an unterminated message in the pipe; the remote end would then read
+    /// that message and the next one as a single malformed message, and every message after it would be
+    /// framed one boundary out of step. Nothing later in the session can repair that, and the caller
+    /// receives only the cancellation, so the corruption would surface as unrelated failures.
+    /// </para>
+    /// <para>
+    /// Cancellation is therefore honored up to the point the first byte is written, and not after it: the
+    /// flush that follows the write uses <see cref="CancellationToken.None"/>, because by then the bytes
+    /// are already committed to the stream.
+    /// </para>
+    /// </remarks>
     protected virtual async Task WritePipeDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
-        // Write the data followed by a null terminator
+        // Copy the message and its null terminator into one buffer so that a single write emits the whole
+        // frame. The rented array is usually longer than the frame, so every use below is bounded by
+        // frameLength rather than by the array's own length.
+        int frameLength = messageBuffer.Length + 1;
+        byte[] frame = ArrayPool<byte>.Shared.Rent(frameLength);
+        try
+        {
+            messageBuffer.CopyTo(frame);
+            frame[messageBuffer.Length] = 0;
+            await this.WriteToPipeAsync(frame, 0, frameLength, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(frame);
+        }
+
+        await this.pipeToProcess.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously writes bytes to the underlying pipe of this connection.
+    /// </summary>
+    /// <param name="buffer">The buffer containing the bytes to write.</param>
+    /// <param name="offset">The offset in the buffer at which the bytes to write begin.</param>
+    /// <param name="count">The number of bytes to write.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// This is the counterpart of <see cref="ReadPipeDataAsync"/> for the outbound direction, and is the
+    /// single point at which bytes reach the pipe. <see cref="WritePipeDataAsync"/> calls it exactly once
+    /// per message, with the message and its null terminator already assembled into one buffer, which is
+    /// what keeps cancellation from splitting a frame.
+    /// </remarks>
+    protected virtual async Task WriteToPipeAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
+    {
 #if NET5_0_OR_GREATER
-        await this.pipeToProcess.WriteAsync(messageBuffer, cancellationToken).ConfigureAwait(false);
-        await this.pipeToProcess.WriteAsync(new ReadOnlyMemory<byte>([0]), cancellationToken).ConfigureAwait(false);
+        await this.pipeToProcess.WriteAsync(new ReadOnlyMemory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
 #else
-        byte[] data = messageBuffer.ToArray();
-        await this.pipeToProcess.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
-        await this.pipeToProcess.WriteAsync(new byte[] { 0 }, 0, 1, cancellationToken).ConfigureAwait(false);
+        await this.pipeToProcess.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
 #endif
-        await this.pipeToProcess.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -353,16 +409,7 @@ public class PipeConnection : Connection
                         if (messageBuffer.HasData)
                         {
                             IMemoryOwner<byte> messageOwner = messageBuffer.TakeOwnership(out int messageLength);
-
-                            if (this.OnLogMessage.CurrentObserverCount > 0)
-                            {
-#if NET5_0_OR_GREATER
-                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageOwner.Memory.Span.Slice(0, messageLength))}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#else
-                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageOwner.Memory.Slice(0, messageLength).ToArray())}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
-#endif
-                            }
-
+                            await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageOwner.Memory, messageLength).ConfigureAwait(false);
                             await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
                         }
 

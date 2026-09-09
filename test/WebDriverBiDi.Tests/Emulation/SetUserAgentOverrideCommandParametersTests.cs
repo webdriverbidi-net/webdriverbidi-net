@@ -28,7 +28,7 @@ public class SetUserAgentOverrideCoordinatesCommandParametersTests
     }
 
     [Fact]
-    public void TestCanSerializeParametersWithLocale()
+    public void TestCanSerializeParametersWithUserAgent()
     {
         SetUserAgentOverrideCommandParameters properties = new()
         {

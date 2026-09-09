@@ -8,7 +8,9 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing event data for the event raised when a preload script sends a message to the client.
+/// Object containing event data for the event raised when a script sends a message to the client over a
+/// channel. The script may be a preload script or one passed a channel as a <c>script.callFunction</c>
+/// argument.
 /// </summary>
 public record MessageEventArgs : WebDriverBiDiEventArgs
 {

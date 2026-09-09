@@ -44,14 +44,12 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// Gets the set of <see cref="DataType"/> values associated with this data collector.
     /// </summary>
     [JsonPropertyName("dataTypes")]
-    [JsonInclude]
     public HashSet<DataType> DataTypes { get; } = [];
 
     /// <summary>
     /// Gets or sets the maximum encoded data size for this collector in bytes.
     /// </summary>
     [JsonPropertyName("maxEncodedDataSize")]
-    [JsonInclude]
     public ulong MaxEncodedDataSize { get; set; }
 
     /// <summary>
@@ -59,17 +57,16 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// </summary>
     [JsonPropertyName("collectorType")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public CollectorType? CollectorType { get; set; }
 
     /// <summary>
     /// Gets the list of browsing context IDs for which to collect network data.
     /// </summary>
     /// <remarks>
-    /// This property uses an internal serializable property to distinguish between omitting
-    /// the property from the JSON payload (empty list) and sending an empty array.
-    /// When the list is empty, the property is not included in the command; when populated,
-    /// the list is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
     [JsonIgnore]
     public List<string> Contexts { get; } = [];
@@ -78,10 +75,10 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// Gets the list of user context IDs for which to collect network data.
     /// </summary>
     /// <remarks>
-    /// This property uses an internal serializable property to distinguish between omitting
-    /// the property from the JSON payload (empty list) and sending an empty array.
-    /// When the list is empty, the property is not included in the command; when populated,
-    /// the list is sent to the remote end.
+    /// The protocol requires this property, when present, to contain at least one entry.
+    /// An empty list therefore means "not specified": the property is omitted from the JSON
+    /// payload entirely, and an empty array is never sent. Add entries to the list to scope
+    /// the command.
     /// </remarks>
     [JsonIgnore]
     public List<string> UserContexts { get; } = [];

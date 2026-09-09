@@ -184,13 +184,11 @@ public static class ArchitectureSamples
     {
         #region TerminateMode
         // Throws on next command call after error occurs
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30))
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-            ProtocolErrorBehavior = TransportErrorBehavior.Terminate,
-            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
-            UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
-        };
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
         try
         {
             await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
@@ -302,7 +300,7 @@ public static class ArchitectureSamples
         // transport captures them and applies EventHandlerExceptionBehavior (Ignore by
         // default: logged and discarded; Collect: thrown from StopAsync; Terminate: thrown
         // from the next command). This applies to synchronous handlers...
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
             ProcessLogEntry(e);  // If this throws, the transport captures the exception
@@ -326,7 +324,7 @@ public static class ArchitectureSamples
     {
         #region EventHandlerExceptionBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
 
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -357,7 +355,7 @@ public static class ArchitectureSamples
     {
         #region ProtocolErrorBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
 
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
@@ -383,7 +381,7 @@ public static class ArchitectureSamples
     {
         #region UnknownMessageBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Ignore;
 
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
@@ -402,7 +400,7 @@ public static class ArchitectureSamples
     {
         #region UnexpectedErrorBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 
         try
         {
@@ -427,10 +425,10 @@ public static class ArchitectureSamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Different strategies for different error types
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;  // Collect handler errors
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;        // Fail fast on protocol errors
-        driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;         // Ignore unknown messages
-        driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;       // Collect unexpected errors
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;  // Collect handler errors
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;        // Fail fast on protocol errors
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Ignore;         // Ignore unknown messages
+        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;       // Collect unexpected errors
 
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 

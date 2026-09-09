@@ -31,7 +31,5 @@ public class StopScreencastCommandParameters : CommandParameters<StopScreencastC
     /// Gets or sets the ID of the screencast to stop.
     /// </summary>
     [JsonPropertyName("screencast")]
-    [JsonInclude]
-    [JsonRequired]
     public string ScreencastId { get; set; }
 }

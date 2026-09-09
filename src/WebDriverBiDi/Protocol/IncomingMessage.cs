@@ -83,7 +83,7 @@ public class IncomingMessage : IDisposable
                 if (this.document is not null)
                 {
                     // If the document for this message packet has been successfully
-                    // deserialzed and a root element accessed, look for a "type"
+                    // deserialized and a root element accessed, look for a "type"
                     // property in the root element, and, if its value is a string,
                     // capture that value as the message type. Otherwise, the packet
                     // type is "unknown".
@@ -167,35 +167,38 @@ public class IncomingMessage : IDisposable
     /// </summary>
     /// <param name="payloadPropertyName">The name of the envelope property holding the payload.</param>
     /// <param name="payloadTypeInfo">The type info of the type the payload was deserialized to.</param>
-    /// <returns>The extension properties, keyed by name; empty when there are none, or when the payload type
-    /// captures its own extension data.</returns>
+    /// <returns>The extension properties, keyed by name; <see langword="null"/> when there are none, or when
+    /// the payload type captures its own extension data.</returns>
     /// <remarks>
     /// The payload type's <see cref="JsonTypeInfo.Properties"/> is metadata, so this works identically
     /// under reflection and under source generation, including for consumer-defined types. A property is
     /// considered defined by the type only if the serializer can assign it; a member marked
     /// <see cref="System.Text.Json.Serialization.JsonIgnoreAttribute"/> does not consume a wire property of the same name.
     /// </remarks>
-    internal Dictionary<string, JsonElement> CollectPayloadExtensionData(string payloadPropertyName, JsonTypeInfo payloadTypeInfo)
+    internal Dictionary<string, JsonElement>? CollectPayloadExtensionData(string payloadPropertyName, JsonTypeInfo payloadTypeInfo)
     {
-        // The payload has already been deserialized to the payload type, so it is present and an object.
-        Dictionary<string, JsonElement> extensionData = [];
         IList<JsonPropertyInfo> definedProperties = payloadTypeInfo.Properties;
         for (int i = 0; i < definedProperties.Count; i++)
         {
             if (definedProperties[i].IsExtensionData)
             {
                 // The payload type declares its own [JsonExtensionData] member and has kept the leftovers itself.
-                return extensionData;
+                return null;
             }
         }
 
+        // The payload has already been deserialized to the payload type, so it is present and an object.
         // Payload objects and their types both have at most a few dozen properties, so a linear scan per
-        // wire property is cheaper than building and caching a lookup, and needs no shared state.
+        // wire property is cheaper than building and caching a lookup, and needs no shared state. The
+        // dictionary is allocated only once a property turns out not to be consumed by the type: this runs
+        // for every response and every event, and almost none of them carry extension properties.
+        Dictionary<string, JsonElement>? extensionData = null;
         foreach (JsonProperty property in this.payloadElement.GetProperty(payloadPropertyName).EnumerateObject())
         {
             if (!IsConsumedBy(definedProperties, property.Name))
             {
                 // Clone so the value outlives this message's pooled buffer.
+                extensionData ??= [];
                 extensionData[property.Name] = property.Value.Clone();
             }
         }
@@ -266,7 +269,7 @@ public class IncomingMessage : IDisposable
     /// <summary>
     /// Attempts to deserialize the payload of the incoming message as an event message.
     /// </summary>
-    /// <param name="eventTypeInfo">The <see cref="JsonTypeInfo"/> for the type-specifc event data.</param>
+    /// <param name="eventTypeInfo">The <see cref="JsonTypeInfo"/> for the type-specific event data.</param>
     /// <param name="eventMessage">When this method returns, contains the <see cref="EventMessage"/> contained in the incoming message.</param>
     /// <returns><see langword="true"/> if the incoming message contains valid event data; otherwise, <see langword="false"/>.</returns>
     internal bool TryDeserializeEventMessage(JsonTypeInfo eventTypeInfo, [NotNullWhen(true)] out EventMessage? eventMessage)

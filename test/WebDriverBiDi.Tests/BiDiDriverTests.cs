@@ -1,5 +1,7 @@
 namespace WebDriverBiDi;
 
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -243,10 +245,13 @@ public class BiDiDriverTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         string eventName = "module.event";
+        TaskCompletionSource processingReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
-            MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
+            MessageProcessingStarted = () => processingReached.TrySetResult(),
+            MessageProcessingGate = () => gate.Task,
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName, (e) => Task.CompletedTask);
@@ -268,7 +273,13 @@ public class BiDiDriverTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await driver.StopAsync(TestContext.Current.CancellationToken);
+
+        // The event is held inside the processing loop when the stop begins, so the stop must process
+        // it before completing; releasing the gate afterwards lets that happen without a timed delay.
+        await processingReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task stopTask = driver.StopAsync(TestContext.Current.CancellationToken);
+        gate.TrySetResult();
+        await stopTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.Equal(eventName, receivedEvent);
@@ -529,13 +540,15 @@ public class BiDiDriverTests
         // again, because the test connection never answers it).
         TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         bool unknownMessageReceived = false;
+        TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1), transport)
-        {
-            UnknownMessageBehavior = TransportErrorBehavior.Terminate,
-            UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
-        };
+        TestTransport transport = new(connection, timeProvider);
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
+        TimeSpan commandTimeout = TimeSpan.FromSeconds(10);
+        await using BiDiDriver driver = new(commandTimeout, transport);
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Terminate;
+        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
         driver.OnUnknownMessageReceived.AddObserver(e => unknownMessageReceived = true);
         driver.OnLogMessage.AddObserver(e =>
         {
@@ -546,14 +559,19 @@ public class BiDiDriverTests
         });
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken));
+        // The command timeout is elapsed on the virtual clock as soon as the command arms it.
+        Task firstCommandTask = driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(firstCommandTask, commandTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await firstCommandTask);
 
         string lateResponse = """{"type":"success","id":1,"result":{"parameterName":"parameterValue"}}""";
         await connection.RaiseDataReceivedEventAsync(lateResponse);
         await discardedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.False(unknownMessageReceived);
-        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken));
+        Task secondCommandTask = driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(secondCommandTask, commandTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(async () => await secondCommandTask);
     }
 
     [Fact]
@@ -619,7 +637,6 @@ public class BiDiDriverTests
     [Fact]
     public async Task TestDriverCanEmitLogMessagesFromProtocol()
     {
-        DateTime testStart = DateTime.UtcNow;
         List<LogMessageEventArgs> logs = [];
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
@@ -633,7 +650,12 @@ public class BiDiDriverTests
 
         Assert.Equal("test log message", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Warn, logs[0].Level);
-        Assert.True(logs[0].Timestamp >= testStart);
+        // LogMessageEventArgs.Timestamp is DateTime.UtcNow with no TimeProvider seam, so comparing it
+        // against another DateTime.UtcNow read taken earlier in the test compares two samples of a
+        // clock that can step backwards. What is actually knowable without a seam is that the property
+        // was populated and carries the UTC kind its documentation promises.
+        Assert.Equal(DateTimeKind.Utc, logs[0].Timestamp.Kind);
+        Assert.NotEqual(default, logs[0].Timestamp);
         Assert.Equal("TestWebSocketConnection", logs[0].ComponentName);
     }
 
@@ -674,11 +696,9 @@ public class BiDiDriverTests
         Server server = new();
         server.OnClientConnected.AddObserver(ConnectionHandler);
         await server.StartAsync();
-        await using BiDiDriver driver = new(TimeSpan.FromSeconds(30))
-        {
-            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
-            UnknownMessageBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(30));
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Collect;
 
         try
         {
@@ -748,11 +768,9 @@ public class BiDiDriverTests
         Server server = new();
         server.OnClientConnected.AddObserver(ConnectionHandler);
         await server.StartAsync();
-        await using BiDiDriver driver = new()
-        {
-            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
-            UnknownMessageBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new();
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Collect;
 
         try
         {
@@ -884,8 +902,8 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.EventHandlerExceptionBehavior);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.EventHandlerExceptionBehavior);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.EventHandlerExceptionBehavior);
     }
 
@@ -895,8 +913,8 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.UnexpectedErrorBehavior);
-        driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.UnexpectedErrorBehavior);
+        driver.TransportConfiguration.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.UnexpectedErrorBehavior);
     }
 
@@ -906,8 +924,8 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.ProtocolErrorBehavior);
-        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.ProtocolErrorBehavior);
+        driver.TransportConfiguration.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.ProtocolErrorBehavior);
     }
 
@@ -917,9 +935,60 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.Equal(TransportErrorBehavior.Ignore, driver.UnknownMessageBehavior);
-        driver.UnknownMessageBehavior = TransportErrorBehavior.Collect;
+        Assert.Equal(TransportErrorBehavior.Ignore, driver.TransportConfiguration.UnknownMessageBehavior);
+        driver.TransportConfiguration.UnknownMessageBehavior = TransportErrorBehavior.Collect;
         Assert.Equal(TransportErrorBehavior.Collect, transport.UnknownMessageBehavior);
+    }
+
+    [Fact]
+    public async Task TestTransportConfigurationIsTheTransportItself()
+    {
+        // The driver keeps no copy of these settings: the property hands back the transport, so a value
+        // set through either reference is seen through the other.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.Same(transport, driver.TransportConfiguration);
+
+        driver.TransportConfiguration.ShutdownTimeout = TimeSpan.FromSeconds(3);
+        Assert.Equal(TimeSpan.FromSeconds(3), transport.ShutdownTimeout);
+
+        transport.ConnectionLockTimeout = TimeSpan.FromSeconds(7);
+        Assert.Equal(TimeSpan.FromSeconds(7), driver.TransportConfiguration.ConnectionLockTimeout);
+    }
+
+    [Fact]
+    public async Task TestTransportConfigurationValidatesTimeouts()
+    {
+        // The validation belongs to the transport, and reaching it through the driver does not bypass it.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.Throws<ArgumentOutOfRangeException>(() => driver.TransportConfiguration.ShutdownTimeout = TimeSpan.FromSeconds(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => driver.TransportConfiguration.ConnectionLockTimeout = TimeSpan.FromSeconds(-1));
+    }
+
+    [Fact]
+    public async Task TestTransportDiagnosticsAreReadableThroughoutTheLifecycle()
+    {
+        // None of these throws at any point of the lifecycle, which is what makes them safe to poll.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.Same(transport, driver.TransportDiagnostics);
+
+        Assert.Equal(TransportState.Disconnected, driver.TransportDiagnostics.State);
+        Assert.Equal(0, driver.TransportDiagnostics.IncomingQueueDepth);
+        Assert.Equal(0, driver.TransportDiagnostics.PendingCommandCount);
+
+        await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, driver.TransportDiagnostics.State);
+        Assert.True(driver.IsStarted);
+
+        await driver.StopAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Disconnected, driver.TransportDiagnostics.State);
+        Assert.False(driver.IsStarted);
+        Assert.Equal(0, driver.TransportDiagnostics.PendingCommandCount);
     }
 
     [Fact]
@@ -933,12 +1002,19 @@ public class BiDiDriverTests
         TaskCompletionSource delayCommandInFlightTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource delayResponseGateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        // Each responder is kept so the test can await it at the end: an exception thrown while
+        // building or raising a response would otherwise surface only as the consumer's timeout.
+        ConcurrentBag<Task> responderTasks = [];
+
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(e =>
         {
-            Task.Run(async () =>
+            responderTasks.Add(Task.Run(async () =>
             {
-                DateTime start = DateTime.Now;
+                // Stopwatch, not DateTime.Now: the elapsed value is asserted below, and the wall
+                // clock is not monotonic, so a clock adjustment between the two reads could make
+                // the delayed command appear to have taken less time than the fast one.
+                long start = Stopwatch.GetTimestamp();
                 if (e.SentCommandName is not null && e.SentCommandName.Contains("delay"))
                 {
                     delayCommandInFlightTaskCompletionSource.TrySetResult();
@@ -949,7 +1025,7 @@ public class BiDiDriverTests
                     await delayCommandInFlightTaskCompletionSource.Task;
                 }
 
-                TimeSpan elapsed = DateTime.Now - start;
+                TimeSpan elapsed = Stopwatch.GetElapsedTime(start);
                 string eventJson = $$"""
                                    {
                                      "type": "success",
@@ -961,7 +1037,7 @@ public class BiDiDriverTests
                                    }
                                    """;
                 await connection.RaiseDataReceivedEventAsync(eventJson);
-            });
+            }));
             return Task.CompletedTask;
         });
 
@@ -990,6 +1066,8 @@ public class BiDiDriverTests
         Assert.Equal($"command result value for {delayCommandName}", results[0].Value);
         Assert.Equal($"command result value for {commandName}", results[1].Value);
         Assert.True(results[0].ElapsedMilliseconds >= results[1].ElapsedMilliseconds);
+
+        await Task.WhenAll(responderTasks);
     }
 
     [Fact]
@@ -1835,10 +1913,10 @@ public class BiDiDriverTests
     [Fact]
     public async Task TestRegisteringModuleWhileStartIsInProgressThrows()
     {
-        // StartAsync publishes the start transition under the registration lock before its
-        // first await. The connection's StartBarrier holds ConnectAsync open so that the
-        // registration attempt happens while the driver is still starting (IsStarted is
-        // false, because the transport has not yet finished connecting).
+        // ConnectAsync publishes the transport's Connecting state before it opens the connection.
+        // The connection's StartBarrier holds that open so that the registration attempt happens
+        // while the driver is still starting (IsStarted is false, because the transport has not
+        // yet finished connecting).
         TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new()
         {
@@ -1875,6 +1953,60 @@ public class BiDiDriverTests
 
         startBarrier.SetResult();
         await startTask;
+        Assert.True(driver.IsStarted);
+    }
+
+    [Fact]
+    public async Task TestRegistrationCannotInterleaveWithConnectStateTransition()
+    {
+        // A registration and the publication of the transport's Connecting state are performed under
+        // one and the same lock, so a registration that is under way cannot be overtaken by a connect
+        // beginning on another thread. The module's name is read while that lock is held, so the hook
+        // below runs at exactly the point a test needs to observe: the connect has been let all the
+        // way up to the instant before it would publish, and the state sampled from inside the
+        // registration must still be Disconnected. If the two could interleave, the sample could
+        // observe Connecting instead, and the registration would land against a transport that was
+        // no longer idle.
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource registrationHoldsLock = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource connectReadyToPublish = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseRegistration = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            // Fires once the connect owns the connection semaphore, which is the step immediately
+            // before it publishes the Connecting state. Waiting for it removes any dependence on
+            // how quickly the connect thread is scheduled.
+            AfterAcquireLockCallback = () => connectReadyToPublish.TrySetResult(),
+        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        // Seeded with a value the assertion would reject, so a hook that never runs fails the test
+        // rather than passing by default.
+        TransportState stateObservedDuringRegistration = TransportState.Connected;
+        RegistrationHookModule module = new(driver, "hookedModule", () =>
+        {
+            registrationHoldsLock.TrySetResult();
+            releaseRegistration.Task.GetAwaiter().GetResult();
+            stateObservedDuringRegistration = transport.State;
+        });
+
+        Task registrationTask = Task.Run(() => driver.RegisterModule(module), cancellationToken);
+        await registrationHoldsLock.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        Task startTask = Task.Run(() => driver.StartAsync("ws://localhost:5555", cancellationToken), cancellationToken);
+        await connectReadyToPublish.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        releaseRegistration.SetResult();
+        await registrationTask.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        await startTask.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+
+        Assert.Equal(TransportState.Disconnected, stateObservedDuringRegistration);
+
+        // The registration completed in full despite the concurrent connect, and the connect went on
+        // to succeed once the registration released the lock.
+        Assert.IsType<RegistrationHookModule>(driver.GetModule<RegistrationHookModule>("hookedModule"));
         Assert.True(driver.IsStarted);
     }
 
@@ -1931,7 +2063,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
         driver.OnEventReceived.AddObserver(e =>
         {
@@ -1983,7 +2115,7 @@ public class BiDiDriverTests
             },
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => Task.CompletedTask);
         driver.OnEventReceived.AddObserver(
             async e =>
@@ -2013,13 +2145,12 @@ public class BiDiDriverTests
                       """;
         await connection.RaiseDataReceivedEventAsync(json);
         await secondCaptureTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Negative check: a feedback loop would keep re-invoking the error observer and
-        // capturing further errors, so after this delay neither count may have grown.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
         Assert.Equal(1, Volatile.Read(ref errorObserverInvocationCount));
         Assert.Equal(2, Volatile.Read(ref capturedErrorCount));
 
+        // A feedback loop would keep re-invoking the error observer and capturing further errors,
+        // every one of which would surface as an extra inner exception on stop; the exact count
+        // below is the deterministic negative check.
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(() => driver.StopAsync(TestContext.Current.CancellationToken));
         Assert.Equal(2, exception.InnerExceptions.Count);
         Assert.Contains(exception.InnerExceptions, e => e.Message.Contains("original handler failure"));
@@ -2037,7 +2168,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => throw new WebDriverBiDiException("module dispatch failure"));
         driver.OnEventReceived.AddObserver(e => eventReceivedTaskCompletionSource.TrySetResult());
 
@@ -2071,7 +2202,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.RegisterEvent<TestEventArgs>("module.event", (e) => throw new WebDriverBiDiException("module dispatch failure"));
         driver.OnEventReceived.AddObserver(e =>
         {

@@ -12,7 +12,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestCanDeserialize()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -38,7 +38,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestCopySemantics()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -58,7 +58,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingContextThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "url": "http://example.com",
@@ -74,7 +74,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidContextTypeThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": {},
@@ -91,7 +91,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithNullContextThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": null,
@@ -108,7 +108,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingUrlThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -124,7 +124,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidUrlTypeThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -141,7 +141,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithNullUrlThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -158,7 +158,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingTimestampThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -174,7 +174,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidTimestampValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -191,7 +191,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithNullTimestampThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -208,7 +208,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingNavigationThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -224,7 +224,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidNavigationTypeThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -241,7 +241,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingSuggestedFileNameValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -257,7 +257,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidSuggestedFileNameValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -274,7 +274,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithNullSuggestedFileNameValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -291,7 +291,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithMissingDownloadIdValueThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -307,7 +307,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithInvalidDownloadIdThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",
@@ -324,7 +324,7 @@ public class DownloadWillBeginEventArgsTests
     [Fact]
     public void TestDeserializeWithNullDownloadIdThrows()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
                       {
                         "context": "myContextId",

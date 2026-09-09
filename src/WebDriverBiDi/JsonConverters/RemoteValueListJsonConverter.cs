@@ -7,7 +7,6 @@ namespace WebDriverBiDi.JsonConverters;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -17,6 +16,8 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class RemoteValueListJsonConverter : JsonConverter<RemoteValueList>
 {
+    private static readonly NonNullElementListJsonConverter<RemoteValue> ElementListConverter = new();
+
     /// <summary>
     /// Deserializes the JSON string to a RemoteValueList value.
     /// </summary>
@@ -26,14 +27,15 @@ public class RemoteValueListJsonConverter : JsonConverter<RemoteValueList>
     /// <returns>The deserialized RemoteValueList value.</returns>
     public override RemoteValueList Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // We can use the null-forgiving operator here, because if the JSON is valid, the
-        // only way for the deserialization to return null is if the JSON value is null,
-        // and the JSON deserializer will short-circuit and return null before calling this
-        // converter.
-        // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
-        // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
-        JsonTypeInfo<List<RemoteValue>> typeInfo = (JsonTypeInfo<List<RemoteValue>>)options.GetTypeInfo(typeof(List<RemoteValue>));
-        List<RemoteValue> values = JsonSerializer.Deserialize(ref reader, typeInfo)!;
+        // The protocol's ListRemoteValue production is [*script.RemoteValue], which admits no null
+        // element, so the elements are read through the converter that rejects one rather than through
+        // the default List<RemoteValue> handling, which would admit a null into the list and defer the
+        // failure to whichever consumer first dereferenced it.
+        //
+        // We can use the null-forgiving operator here, because that converter either returns a list or
+        // throws; it never returns null. (Were the JSON value itself null, the deserializer would
+        // short-circuit and return null before calling this converter at all.)
+        List<RemoteValue> values = ElementListConverter.Read(ref reader, typeof(List<RemoteValue>), options)!;
         return new RemoteValueList(values);
     }
 

@@ -125,7 +125,7 @@ In typical usage, message processing is fast enough that the queue remains nearl
 
 Monitor for these indicators:
 
-1. **Rising Incoming Queue Depth**: `Transport.IncomingQueueDepth` climbs and does not recover (see [Monitoring and Diagnostics](#monitoring-and-diagnostics))
+1. **Rising Incoming Queue Depth**: `BiDiDriver.TransportDiagnostics.IncomingQueueDepth` climbs and does not recover (see [Monitoring and Diagnostics](#monitoring-and-diagnostics))
 2. **Rising In-Flight Handler Count**: The `AsyncHandlerTaskCount` EventSource event reports a persistently high value
 3. **Increasing Memory Usage**: Process memory grows during high-event periods
 4. **Event Lag**: Events processed long after they occurred
@@ -163,13 +163,13 @@ Monitor for these indicators:
 
 WebDriverBiDi.NET exposes two built-in signals for detecting message-processing backlog, plus process-level memory as a supplementary guardrail.
 
-#### Incoming Queue Depth (Transport.IncomingQueueDepth)
+#### Incoming Queue Depth (TransportDiagnostics.IncomingQueueDepth)
 
-`Transport.IncomingQueueDepth` returns the number of messages that have been received from the connection but not yet picked up by the reader task. Poll it on a timer to catch backlog directly:
+`BiDiDriver.TransportDiagnostics.IncomingQueueDepth` returns the number of messages that have been received from the connection but not yet picked up by the reader task. Poll it on a timer to catch backlog directly:
 
 [!code-csharp[Queue Depth Monitoring](../../code/advanced/PerformanceSamples.cs#QueueDepthMonitoring)]
 
-The property is safe to read concurrently with message production and consumption. It is reset to zero on each call to `ConnectAsync`; reading it before the first connect returns `0`, and reading it after a disconnect returns the depth of the remaining (normally fully drained) queue rather than throwing.
+The property is safe to read concurrently with message production and consumption. Each call to `ConnectAsync` installs a fresh queue whose depth begins at zero, so the value always reports the current connection's backlog alone; reading it before the first connect returns `0`, and reading it after a disconnect returns the depth of the remaining (normally fully drained) queue rather than throwing.
 
 #### In-Flight Async Handler Tasks (AsyncHandlerTaskCount EventSource event)
 

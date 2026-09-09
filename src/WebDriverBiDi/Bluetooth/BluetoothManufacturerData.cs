@@ -27,15 +27,11 @@ public class BluetoothManufacturerData
     /// Gets or sets the Company Identifier Code for the manufacturer.
     /// </summary>
     [JsonPropertyName("key")]
-    [JsonRequired]
-    [JsonInclude]
     public uint Key { get; set; }
 
     /// <summary>
     /// Gets or sets the manufacturer data byte sequence as a base64-encoded string.
     /// </summary>
     [JsonPropertyName("data")]
-    [JsonRequired]
-    [JsonInclude]
     public string Data { get; set; }
 }

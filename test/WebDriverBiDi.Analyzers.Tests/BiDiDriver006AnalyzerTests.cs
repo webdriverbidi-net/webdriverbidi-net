@@ -41,7 +41,7 @@ public class BiDiDriver006AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("observer");
+            .WithArguments("EventObserver", "observer");
 
         RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
         {
@@ -293,7 +293,44 @@ public class BiDiDriver006AnalyzerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NonAddObserverInvocation_NoDiagnostic()
+    public async Task UndisposedDataCollector_ReportsDiagnostic()
+    {
+        // A collector that is never disposed keeps receiving and queueing events, which is the leak
+        // this rule exists to catch.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var collector = driver.Log.OnEntryAdded.AddDataCollector();
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithSpan(11, 17, 11, 26)
+            .WithArguments("EventDataCollector", "collector");
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task DisposedDataCollector_NoDiagnostic()
     {
         string test = """
             using System;
@@ -306,8 +343,102 @@ public class BiDiDriver006AnalyzerTests
                 {
                     public void TestMethod(BiDiDriver driver)
                     {
-                        // AddDataCollector is not AddObserver, so the analyzer ignores it.
-                        var collector = driver.Log.OnEntryAdded.AddDataCollector();
+                        using var collector = driver.Log.OnEntryAdded.AddDataCollector();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task UndisposedObservableSubscription_ReportsDiagnostic()
+    {
+        // Subscribe is declared to return IDisposable, so the receiver identifies the call: an
+        // IObservable of this library's event arguments can only have come from ToObservable().
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, IObserver<EntryAddedEventArgs> handler)
+                    {
+                        var subscription = driver.Log.OnEntryAdded.ToObservable().Subscribe(handler);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithSpan(12, 17, 12, 29)
+            .WithArguments("ObservableEventSubscription", "subscription");
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task SubscribeOnAnUnrelatedObservable_NoDiagnostic()
+    {
+        // The receiver's element type is not one of this library's event-argument types, so the
+        // subscription is none of this rule's business.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(IObservable<int> numbers, IObserver<int> handler)
+                    {
+                        var subscription = numbers.Subscribe(handler);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task NonSubscriptionInvocation_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var name = driver.Log.OnEntryAdded.ToString();
                     }
                 }
             }
@@ -536,11 +667,11 @@ public class BiDiDriver006AnalyzerTests
 
         DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("observer1");
+            .WithArguments("EventObserver", "observer1");
 
         DiagnosticResult expected2 = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(1)
-            .WithArguments("observer2");
+            .WithArguments("EventObserver", "observer2");
 
         RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
         {
@@ -606,7 +737,7 @@ public class BiDiDriver006AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("observer");
+            .WithArguments("EventObserver", "observer");
 
         RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
         {
@@ -785,7 +916,7 @@ public class BiDiDriver006AnalyzerTests
             BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
             Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("observer");
+            .WithArguments("EventObserver", "observer");
 
         RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
         {
@@ -1023,7 +1154,7 @@ public class BiDiDriver006AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("observer");
+            .WithArguments("EventObserver", "observer");
 
         RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
         {
@@ -1082,6 +1213,91 @@ public class BiDiDriver006AnalyzerTests
                     {
                         var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
                         return observer;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task EventObserver_ReturnedThroughWrappers_NoDiagnostic()
+    {
+        // Parentheses, a cast, the null-forgiving operator and a conditional expression all sit
+        // between the mention of the observer and the return that hands it to the caller. Each still
+        // transfers ownership, so none of them may be read as a mere use of the variable.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public EventObserver<EntryAddedEventArgs> Parenthesized(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return (observer);
+                    }
+
+                    public IDisposable Cast(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return (IDisposable)observer;
+                    }
+
+                    public EventObserver<EntryAddedEventArgs> NullForgiving(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return observer!;
+                    }
+
+                    public EventObserver<EntryAddedEventArgs>? Conditional(BiDiDriver driver, bool keep)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        return keep ? observer : null;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task EventObserver_AssignedToFieldThroughWrapper_NoDiagnostic()
+    {
+        // The assignment case reads the wrappers too: the right-hand side is compared against the
+        // outermost wrapper, not the bare mention buried inside it.
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private IDisposable? held;
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        this.held = (observer);
                     }
                 }
             }
@@ -1160,6 +1376,365 @@ public class BiDiDriver006AnalyzerTests
         {
             TestCode = test,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer stored in a collection expression is not reported as a leak. Its disposal is no longer this
+    /// method's business, so warning about it here accuses correct code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_StoredInCollectionExpression_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        List<IDisposable> owned = [observer];
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer stored in a collection initializer is not reported as a leak. Its disposal is no longer this
+    /// method's business, so warning about it here accuses correct code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_StoredInCollectionInitializer_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        List<IDisposable> owned = new List<IDisposable> { observer };
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer placed in a tuple is not reported as a leak. Its disposal is no longer this
+    /// method's business, so warning about it here accuses correct code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_StoredInTuple_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        (IDisposable First, int Count) pair = (observer, 1);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer used to initialize another local, which may itself be disposed is not reported as a leak. Its disposal is no longer this
+    /// method's business, so warning about it here accuses correct code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_AliasedToAnotherLocal_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        IDisposable owned = observer;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer yielded to the caller is not reported as a leak. Its disposal is no longer this
+    /// method's business, so warning about it here accuses correct code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_YieldReturned_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                                    public IEnumerable<IDisposable> TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        yield return observer;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer disposed by a classic <c>using (observer) { ... }</c> statement, whose expression is the observer rather than a declaration, is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_DisposedByClassicUsingStatementExpression_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        using (observer)
+                        {
+                            Console.WriteLine(observer.Id);
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that <c>observer?.Dispose()</c> — a disposal through a null-conditional member binding rather than a member access — is recognized as disposing the observer.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_ConditionallyDisposed_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer?.Dispose();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a null-conditional call to a method other than a disposal, including one that continues into a chain, does not count as disposing the observer.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_ConditionalCallToNonDisposalMethod_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var {|#0:observer|} = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer?.StartCapturingTasks();
+                        Console.WriteLine(observer?.GetHashCode().ToString());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode, expected0);
+    }
+
+    [Fact]
+    public async Task SubscribeOnATypeThatIsNotAnObservable_NoDiagnostic()
+    {
+        // A method merely named Subscribe on some other type is not a subscription this rule owns.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class Feed
+                {
+                    public IDisposable Subscribe(Action handler) => null;
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod(Feed feed)
+                    {
+                        var subscription = feed.Subscribe(() => { });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task SubscribeCalledWithoutAReceiver_NoDiagnostic()
+    {
+        // With no receiver there is nothing to identify the sequence by.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public IDisposable Subscribe(Action handler) => null;
+
+                    public void TestMethod()
+                    {
+                        var subscription = Subscribe(() => { });
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task SubscribeOnAnObservableOfAnArrayType_NoDiagnostic()
+    {
+        // An array element type is not a named type, so it cannot be one of this library's event
+        // argument types.
+        string test = """
+            using System;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(IObservable<int[]> batches, IObserver<int[]> handler)
+                    {
+                        var subscription = batches.Subscribe(handler);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
         };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

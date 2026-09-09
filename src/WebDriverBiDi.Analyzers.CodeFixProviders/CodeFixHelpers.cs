@@ -14,7 +14,9 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
+using Microsoft.CodeAnalysis.Text;
 
 /// <summary>
 /// Shared helpers for code fix providers.
@@ -23,6 +25,25 @@ internal static class CodeFixHelpers
 {
     private const string OptionsTypeName = "ObservableEventHandlerOptions";
     private const string RunHandlerAsynchronouslyName = "RunHandlerAsynchronously";
+
+    /// <summary>
+    /// Gets the C# language version the document is compiled with.
+    /// </summary>
+    /// <param name="document">The document a fix is being offered for.</param>
+    /// <returns>The effective language version of the document's project.</returns>
+    /// <remarks>
+    /// A fix must not emit syntax the project cannot compile. The library supports consumers on
+    /// <c>netstandard2.0</c> and <c>net472</c>, whose default is C# 7.3, and on <c>net6.0</c> and
+    /// <c>net7.0</c>, whose defaults are C# 10 and C# 11; a fix written only for the newest syntax
+    /// hands all of them code that does not build. The version read here is already the effective
+    /// one, because parse options resolve <c>latest</c>, <c>default</c> and <c>preview</c> to a
+    /// concrete version when they are constructed. A C# fix is only ever offered for a C# document,
+    /// whose project always carries <see cref="CSharpParseOptions"/>, so the cast cannot fail.
+    /// </remarks>
+    internal static LanguageVersion GetLanguageVersion(Document document)
+    {
+        return ((CSharpParseOptions)document.Project.ParseOptions!).LanguageVersion;
+    }
 
     /// <summary>
     /// Registers the appropriate fix for a diagnostic reported inside the lambda handler of an
@@ -109,9 +130,18 @@ internal static class CodeFixHelpers
 
         if (convertToAsync)
         {
+            // Every compilable file has at least one line break (the usings, if nothing else); reuse
+            // the file's own line ending so the fix never mixes styles. It is taken from the document
+            // root rather than from the rewritten argument list, which is a detached tree that holds
+            // no line break at all when the handler is a single-line expression-bodied lambda.
+            SyntaxTrivia endOfLine = root.DescendantTrivia().First(trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia));
+
+            // The indentation of the line the lambda starts on is likewise read from the original,
+            // attached lambda: in the detached tree the first line has none.
+            string lambdaLineIndentation = GetLineIndentation(invocation.ArgumentList.Arguments[0].Expression);
             ArgumentSyntax handlerArgument = newArgumentList.Arguments[0];
             AnonymousFunctionExpressionSyntax lambda = (AnonymousFunctionExpressionSyntax)handlerArgument.Expression;
-            newArgumentList = newArgumentList.ReplaceNode(lambda, ConvertToAsyncLambda(lambda));
+            newArgumentList = newArgumentList.ReplaceNode(lambda, ConvertToAsyncLambda(lambda, endOfLine, lambdaLineIndentation));
         }
 
         InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);
@@ -119,11 +149,8 @@ internal static class CodeFixHelpers
         return document.WithSyntaxRoot(newRoot);
     }
 
-    private static AnonymousFunctionExpressionSyntax ConvertToAsyncLambda(AnonymousFunctionExpressionSyntax lambda)
+    private static AnonymousFunctionExpressionSyntax ConvertToAsyncLambda(AnonymousFunctionExpressionSyntax lambda, SyntaxTrivia endOfLine, string lambdaLineIndentation)
     {
-        // Every compilable file has at least one line break (the usings, if nothing else); reuse
-        // the file's own line ending so the fix never mixes styles.
-        SyntaxTrivia endOfLine = lambda.SyntaxTree.GetRoot().DescendantTrivia().First(trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia));
         SyntaxTriviaList lambdaLeadingTrivia = lambda.GetLeadingTrivia();
         SyntaxToken asyncKeyword = SyntaxFactory.Token(SyntaxKind.AsyncKeyword)
             .WithLeadingTrivia(lambdaLeadingTrivia)
@@ -133,7 +160,7 @@ internal static class CodeFixHelpers
         {
             // 'args => expr' becomes a block whose braces sit at the indentation of the line the
             // lambda starts on, with the statements one level deeper.
-            string braceIndentation = GetLineIndentation(lambda);
+            string braceIndentation = lambdaLineIndentation;
             string statementIndentation = braceIndentation + "    ";
             BlockSyntax expressionBlock = CreateBlock(
                 [CreateYieldStatement(), CreateAwaitStatement(expressionBody)],
@@ -207,9 +234,250 @@ internal static class CodeFixHelpers
         return node.GetLeadingTrivia().LastOrDefault(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
     }
 
+    /// <summary>
+    /// Determines whether <c>await</c> is legal at a node: the nearest enclosing function is
+    /// <c>async</c>, or the node is in a top-level statement (for which the compiler generates an
+    /// asynchronous entry point).
+    /// </summary>
+    /// <param name="node">The node at which an <c>await</c> would be inserted.</param>
+    /// <returns><see langword="true"/> if <c>await</c> is legal there; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A fix that inserts an <c>await</c> into a synchronous member would replace the reported
+    /// problem with a compile error (CS4033), so callers offer no fix instead and leave the caller to
+    /// decide whether the member should become <c>async</c>.
+    /// </remarks>
+    internal static bool IsInAsyncContext(SyntaxNode node)
+    {
+        // Every member kind that can carry executable code is a stopping point, not only the ones that
+        // can be async. A constructor, an accessor, an operator or a finalizer cannot be made async, so
+        // stopping only at methods and lambdas would walk straight past them to some outer node and
+        // answer for that instead. BIDI010 is reported per operation and BIDI012 registers constructor
+        // declarations, so both do reach these members.
+        SyntaxNode? enclosingMember = node.Ancestors().FirstOrDefault(ancestor =>
+            ancestor is AnonymousFunctionExpressionSyntax
+                or MethodDeclarationSyntax
+                or LocalFunctionStatementSyntax
+                or ConstructorDeclarationSyntax
+                or DestructorDeclarationSyntax
+                or OperatorDeclarationSyntax
+                or ConversionOperatorDeclarationSyntax
+                or AccessorDeclarationSyntax
+                or PropertyDeclarationSyntax
+                or IndexerDeclarationSyntax
+                or GlobalStatementSyntax);
+
+        return enclosingMember switch
+        {
+            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
+            MethodDeclarationSyntax method => method.Modifiers.Any(SyntaxKind.AsyncKeyword),
+            LocalFunctionStatementSyntax localFunction => localFunction.Modifiers.Any(SyntaxKind.AsyncKeyword),
+
+            // A top-level statement, whose generated entry point is asynchronous.
+            GlobalStatementSyntax => true,
+
+            // A member that cannot be async: an expression-bodied property or indexer, an accessor, a
+            // constructor, a finalizer, or an operator. Inserting await here would replace the reported
+            // problem with CS4033, so no fix is offered.
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Produces a root in which <paramref name="statementToInsert"/> runs immediately before
+    /// <paramref name="targetStatement"/>.
+    /// </summary>
+    /// <param name="root">The syntax root being rewritten.</param>
+    /// <param name="targetStatement">The statement the new statement must precede.</param>
+    /// <param name="statementToInsert">The statement to insert.</param>
+    /// <returns>The rewritten root.</returns>
+    /// <remarks>
+    /// A statement is only insertable before when it belongs to a statement list, which is to say a
+    /// block or a switch section. The embedded statement of an <c>if</c>, an <c>else</c> or a loop
+    /// (<c>if (x) await driver.DisposeAsync();</c>) belongs to no list, and asking the list editor to
+    /// insert before it throws. Such a statement is replaced by a block holding both statements, which
+    /// keeps the inserted one inside the branch it belongs to rather than hoisting it out.
+    /// </remarks>
+    internal static SyntaxNode InsertStatementBefore(SyntaxNode root, StatementSyntax targetStatement, StatementSyntax statementToInsert)
+    {
+        if (targetStatement.Parent is BlockSyntax or SwitchSectionSyntax)
+        {
+            return root.InsertNodesBefore(targetStatement, new[] { statementToInsert });
+        }
+
+        return root.ReplaceNode(
+            targetStatement,
+            SyntaxFactory.Block(statementToInsert.WithoutLeadingTrivia(), targetStatement.WithoutLeadingTrivia())
+                .WithAdditionalAnnotations(Formatter.Annotation));
+    }
+
+    /// <summary>
+    /// Gets the identifier at the root of a member access chain: <c>driver</c> for
+    /// <c>driver.Session.StartAsync</c>, matching the receiver walk the lifecycle analyzers use.
+    /// </summary>
+    /// <param name="expression">The receiver expression of a member access.</param>
+    /// <returns>The root identifier's name, or <see langword="null"/> when the chain does not root in a simple identifier (a field reached through <c>this</c>, or a call).</returns>
+    internal static string? GetRootIdentifierName(ExpressionSyntax expression)
+    {
+        ExpressionSyntax current = expression;
+        while (current is MemberAccessExpressionSyntax memberAccess)
+        {
+            current = memberAccess.Expression;
+        }
+
+        return (current as IdentifierNameSyntax)?.Identifier.ValueText;
+    }
+
+    /// <summary>
+    /// Registers the fix shared by BIDI001, BIDI002 and BIDI003: move the statement holding a
+    /// registration call above the statement that starts the same driver.
+    /// </summary>
+    /// <param name="context">The code fix context.</param>
+    /// <param name="diagnostic">The diagnostic being fixed.</param>
+    /// <param name="registrationInvocation">The flagged registration call.</param>
+    /// <param name="title">The title of the code action.</param>
+    /// <param name="equivalenceKey">The equivalence key of the code action.</param>
+    /// <remarks>
+    /// <para>
+    /// The fix rearranges the top-level statements of a block-bodied method. The analyzers also fire in
+    /// constructors and top-level programs, where that shape is absent; no fix is offered there.
+    /// </para>
+    /// <para>
+    /// The registration may use locals declared after the start — <c>CustomModule module = new(driver);</c>
+    /// between <c>StartAsync</c> and <c>RegisterModule(module)</c> is the documented idiom — so every
+    /// local declaration it depends on, transitively, moves with it; moving the registration alone
+    /// would put the use before the declaration (CS0841). A dependency that awaits something cannot
+    /// be moved before the start (it may need the started driver), and a registration that is the
+    /// embedded statement of an if or a loop cannot be hoisted without making it unconditional, so
+    /// no fix is offered in those cases.
+    /// </para>
+    /// </remarks>
+    internal static void RegisterMoveBeforeStartAsyncFix(
+        CodeFixContext context,
+        Diagnostic diagnostic,
+        InvocationExpressionSyntax registrationInvocation,
+        string title,
+        string equivalenceKey)
+    {
+        MethodDeclarationSyntax? method = registrationInvocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        if (method?.Body is null)
+        {
+            return;
+        }
+
+        // The analyzers report only calls whose receiver roots in a tracked local, so the flagged
+        // call always yields a name; the StartAsync search is filtered to the same driver, otherwise
+        // the fix could move the registration before an unrelated receiver's StartAsync — possibly
+        // ahead of the flagged driver's own declaration.
+        // The analyzer walks the body's top-level statements and reported a StartAsync on this
+        // driver before the registration, so one of those statements holds it.
+        string driverVariableName = GetRootIdentifierName(registrationInvocation.Expression)!;
+        StatementSyntax startAsyncStatement = method.Body.Statements.First(statement => statement.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(invocation => invocation.Expression is MemberAccessExpressionSyntax memberAccess
+                && memberAccess.Name.Identifier.ValueText == "StartAsync"
+                && GetRootIdentifierName(memberAccess.Expression) == driverVariableName));
+
+        StatementSyntax registrationStatement = registrationInvocation.FirstAncestorOrSelf<StatementSyntax>()!;
+        List<StatementSyntax>? statementsToMove = CollectStatementsToMove(registrationStatement, startAsyncStatement);
+        if (statementsToMove is null)
+        {
+            return;
+        }
+
+        context.RegisterCodeFix(
+            CodeAction.Create(
+                title,
+                createChangedDocument: cancellationToken => MoveBeforeStartAsync(context.Document, method, statementsToMove, startAsyncStatement, cancellationToken),
+                equivalenceKey),
+            diagnostic);
+    }
+
+    private static List<StatementSyntax>? CollectStatementsToMove(StatementSyntax registrationStatement, StatementSyntax startAsyncStatement)
+    {
+        // The fix rearranges the statements of a single block, so it is offered only when the
+        // registration is a statement of the very block that holds the start. Anything nested inside an
+        // if, a loop or a try is conditional on that statement — hoisting it above the start would make
+        // it unconditional — and a braced nested block is no different in that respect from an
+        // unbraced embedded statement. Nesting also puts the dependency walk below out of reach of the
+        // outer block, where a local the registration uses may be declared.
+        if (registrationStatement.Parent is not BlockSyntax block || !ReferenceEquals(block, startAsyncStatement.Parent))
+        {
+            return null;
+        }
+
+        List<StatementSyntax> statementsToMove = [registrationStatement];
+
+        // Walk the statements between the start and the registration backwards, pulling in every
+        // local declaration that a statement already being moved refers to by name, so that a
+        // declaration's own dependencies are found in turn.
+        HashSet<string> referencedNames = new(GetReferencedNames(registrationStatement));
+        int registrationIndex = block.Statements.IndexOf(registrationStatement);
+        for (int index = registrationIndex - 1; index >= 0; index--)
+        {
+            StatementSyntax candidate = block.Statements[index];
+            if (candidate.SpanStart <= startAsyncStatement.SpanStart)
+            {
+                break;
+            }
+
+            if (candidate is not LocalDeclarationStatementSyntax declaration
+                || !declaration.Declaration.Variables.Any(variable => referencedNames.Contains(variable.Identifier.ValueText)))
+            {
+                continue;
+            }
+
+            if (declaration.DescendantNodes().OfType<AwaitExpressionSyntax>().Any())
+            {
+                return null;
+            }
+
+            statementsToMove.Insert(0, declaration);
+            referencedNames.UnionWith(GetReferencedNames(declaration));
+        }
+
+        return statementsToMove;
+    }
+
+    private static IEnumerable<string> GetReferencedNames(StatementSyntax statement)
+    {
+        return statement.DescendantNodes().OfType<IdentifierNameSyntax>().Select(identifier => identifier.Identifier.ValueText);
+    }
+
+    private static async Task<Document> MoveBeforeStartAsync(
+        Document document,
+        MethodDeclarationSyntax method,
+        List<StatementSyntax> statementsToMove,
+        StatementSyntax startAsyncStatement,
+        CancellationToken cancellationToken)
+    {
+        SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
+
+        // Track every statement involved through the removal so the insertion point survives it.
+        MethodDeclarationSyntax trackedMethod = method.TrackNodes(statementsToMove.Append(startAsyncStatement));
+        List<StatementSyntax> trackedStatementsToMove = statementsToMove.Select(statement => trackedMethod.GetCurrentNode(statement)!).ToList();
+        MethodDeclarationSyntax methodWithoutMoved = trackedMethod.RemoveNodes(trackedStatementsToMove, SyntaxRemoveOptions.KeepNoTrivia)!;
+        StatementSyntax currentStartAsyncStatement = methodWithoutMoved.GetCurrentNode(startAsyncStatement)!;
+
+        IEnumerable<StatementSyntax> movedCopies = trackedStatementsToMove.Select(statement => statement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed));
+        MethodDeclarationSyntax newMethod = methodWithoutMoved.InsertNodesBefore(currentStartAsyncStatement, movedCopies);
+
+        return document.WithSyntaxRoot(root.ReplaceNode(method, newMethod));
+    }
+
     private static bool IsCompletedTask(ExpressionSyntax expression)
     {
-        return expression.ToString().EndsWith("Task.CompletedTask", System.StringComparison.Ordinal);
+        // `Task.CompletedTask` however the Task type is spelled (Task, Tasks.Task,
+        // System.Threading.Tasks.Task), and nothing else. A textual "ends with Task.CompletedTask"
+        // test would also match a conditional whose *second* arm is Task.CompletedTask — an
+        // expression that still yields a task to await — and drop it from the rewritten handler.
+        ExpressionSyntax current = expression;
+        while (current is ParenthesizedExpressionSyntax parenthesized)
+        {
+            current = parenthesized.Expression;
+        }
+
+        return current is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "CompletedTask" } completedTask
+            && completedTask.Expression is SimpleNameSyntax { Identifier.ValueText: "Task" } or MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Task" };
     }
 
     private static ExpressionStatementSyntax CreateYieldStatement()
@@ -224,10 +492,25 @@ internal static class CodeFixHelpers
 
     private static ExpressionStatementSyntax CreateAwaitStatement(ExpressionSyntax expression)
     {
+        // `await` binds tighter than a binary (`??`, `as`), conditional, assignment, cast or switch
+        // expression, so such an operand has to be parenthesized: `await cond ? a : b` re-parses as
+        // `(await cond) ? a : b`. Those are the operand shapes a Task-typed expression can take;
+        // primary expressions — calls, member accesses, names, object creations, and anything
+        // already parenthesized — need no parentheses.
+        ExpressionSyntax operand = expression.WithoutTrivia();
+        if (operand is BinaryExpressionSyntax
+            or ConditionalExpressionSyntax
+            or AssignmentExpressionSyntax
+            or CastExpressionSyntax
+            or SwitchExpressionSyntax)
+        {
+            operand = SyntaxFactory.ParenthesizedExpression(operand);
+        }
+
         return SyntaxFactory.ExpressionStatement(
             SyntaxFactory.AwaitExpression(
                 SyntaxFactory.Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(SyntaxFactory.Space),
-                expression.WithoutTrivia()));
+                operand));
     }
 
     /// <summary>

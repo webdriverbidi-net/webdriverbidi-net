@@ -9,18 +9,19 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// The enumerated value of origins for screenshot.
+/// The enumerated values for the area a screenshot captures.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<ScreenshotOrigin>))]
 public enum ScreenshotOrigin
 {
     /// <summary>
-    /// The origin of the clip rectangle is relative to the viewport of the browser.
+    /// The screenshot captures the visual viewport, and any clip rectangle is relative to it.
     /// </summary>
     Viewport,
 
     /// <summary>
-    /// The origin of the clip rectangle is relative to the document origin.
+    /// The screenshot captures the whole document, producing a full-page image, and any clip
+    /// rectangle is relative to the document origin.
     /// </summary>
     Document,
 }

@@ -49,4 +49,14 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The fixture builds this sibling application at test time and needs its project directory.
+         Stamping the path here keeps it correct however this assembly's output is laid out; deriving
+         it at run time by walking up from AppContext.BaseDirectory hard-coded the
+         bin/configuration/framework shape, which an explicit output path, UseArtifactsOutput, or a
+         runtime-identifier subdirectory all change. See TestProjectDirectory. -->
+    <AssemblyMetadata Include="NetStandardTestApplicationProjectDirectory"
+                      Value="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../WebDriverBiDi.NetStandardTestApplication'))" />
+  </ItemGroup>
+
 </Project>

@@ -38,7 +38,6 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     /// </summary>
     [JsonPropertyName("body")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
     public BytesValue? Body { get; set; }
 
     /// <summary>
@@ -47,10 +46,11 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     /// <remarks>
     /// <para>
     /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
-    /// settable, because the protocol gives a present-but-empty array its own meaning. The remote end steps
-    /// for <c>network.continueRequest</c> state: "If command parameters contains "headers": Let headers be an empty
-    /// header list" and then append each entry, so sending <c>[]</c> replaces the header list with none, while
-    /// omitting the field keeps the original header list.
+    /// settable, because the protocol gives a present-but-empty array its own meaning. When
+    /// <c>network.continueRequest</c> is given a <c>headers</c> field, the remote end starts from an empty
+    /// header list and appends an entry for each element, replacing whatever the intercepted request
+    /// carried. Sending <c>[]</c> therefore removes the request's headers, while omitting the field leaves
+    /// them untouched.
     /// </para>
     /// <para>
     /// When <see langword="null"/>, the property is not included in the command; when an empty list, an
@@ -67,10 +67,11 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     /// <remarks>
     /// <para>
     /// This is one of the few list properties on a <see cref="CommandParameters"/> type that is nullable and
-    /// settable, because the protocol gives a present-but-empty array its own meaning. The remote end steps
-    /// for <c>network.continueRequest</c> state: "If command parameters contains "cookies": Let cookies be an empty
-    /// cookie list" and then append each entry, so sending <c>[]</c> replaces the cookie list with none, while
-    /// omitting the field keeps the original cookie list.
+    /// settable, because the protocol gives a present-but-empty array its own meaning. When
+    /// <c>network.continueRequest</c> is given a <c>cookies</c> field, the remote end starts from an empty
+    /// cookie header and appends an entry for each element, replacing whatever the intercepted request
+    /// carried. Sending <c>[]</c> therefore removes the request's cookies, while omitting the field leaves
+    /// them untouched.
     /// </para>
     /// <para>
     /// When <see langword="null"/>, the property is not included in the command; when an empty list, an

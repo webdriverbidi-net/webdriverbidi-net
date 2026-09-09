@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
@@ -17,19 +16,47 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(CommandJsonConverter))]
 public class Command
 {
-    private readonly Stopwatch commandStopwatch = new();
     private readonly TaskCompletionSource<CommandResult> taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TimeProvider timeProvider;
+
+    private long startTimestamp = ElapsedTimeUtilities.TimestampNotSet;
+    private long stopTimestamp = ElapsedTimeUtilities.TimestampNotSet;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Command" /> class whose completion timeout is
+    /// measured by <see cref="TimeProvider.System"/>.
+    /// </summary>
+    /// <param name="commandId">The ID of the command.</param>
+    /// <param name="commandData">The settings for the command, including parameters.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
+    public Command(long commandId, CommandParameters commandData)
+        : this(commandId, commandData, TimeProvider.System)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Command" /> class.
     /// </summary>
     /// <param name="commandId">The ID of the command.</param>
     /// <param name="commandData">The settings for the command, including parameters.</param>
-    public Command(long commandId, CommandParameters commandData)
+    /// <param name="timeProvider">
+    /// The <see cref="TimeProvider"/> whose clock measures the timeout passed to
+    /// <see cref="WaitForCompletionAsync"/>. A <see cref="Transport"/> passes its own provider, so a
+    /// transport whose waits run on virtual time (in a test, say) times its commands out on that same
+    /// clock. <see cref="ElapsedMilliseconds"/> is a diagnostic measured against real time regardless.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when the command parameters or the time provider are null.</exception>
+    public Command(long commandId, CommandParameters commandData, TimeProvider timeProvider)
     {
+        if (commandData is null)
+        {
+            throw new ArgumentNullException(nameof(commandData), "Command parameters must not be null");
+        }
+
         this.CommandId = commandId;
         this.CommandParameters = commandData;
         this.CommandName = commandData.MethodName;
+        this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider), "Time provider must not be null");
     }
 
     /// <summary>
@@ -57,6 +84,12 @@ public class Command
     /// command parameters should use the <see cref="CommandParameters.AdditionalData"/>
     /// property.
     /// </summary>
+    /// <remarks>
+    /// An entry may not use <c>id</c>, <c>method</c> or <c>params</c> as its name: the envelope writes those
+    /// itself, so the message would carry the name twice, and a JSON object with a duplicate name has no
+    /// defined meaning. Sending such a command throws <see cref="WebDriverBiDiSerializationException"/> rather
+    /// than emitting the ambiguous payload.
+    /// </remarks>
     [JsonExtensionData]
     public Dictionary<string, object?> AdditionalCommandProperties { get; } = [];
 
@@ -93,8 +126,26 @@ public class Command
     /// <summary>
     /// Gets the elapsed time in milliseconds since the command was sent by a <see cref="Transport"/>.
     /// </summary>
+    /// <remarks>
+    /// This is zero until the command is sent, runs while the command is in flight, and freezes at the
+    /// point a response, an error or a send failure stopped it.
+    /// </remarks>
     [JsonIgnore]
-    public long ElapsedMilliseconds => this.commandStopwatch.ElapsedMilliseconds;
+    public long ElapsedMilliseconds
+    {
+        get
+        {
+            long start = Interlocked.Read(ref this.startTimestamp);
+            if (start == ElapsedTimeUtilities.TimestampNotSet)
+            {
+                return 0;
+            }
+
+            long stop = Interlocked.Read(ref this.stopTimestamp);
+            long end = stop == ElapsedTimeUtilities.TimestampNotSet ? ElapsedTimeUtilities.GetTimestamp() : stop;
+            return ElapsedTimeUtilities.GetElapsedMilliseconds(start, end);
+        }
+    }
 
     /// <summary>
     /// Waits for the command to complete or until the specified timeout elapses.
@@ -121,7 +172,7 @@ public class Command
         // additional CancellationTokenSource is necessary to be able to cancel
         // the timeout task.
         using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        Task timeoutTask = Task.Delay(timeout, linkedTokenSource.Token);
+        Task timeoutTask = TimeoutUtilities.DelayAsync(this.timeProvider, timeout, linkedTokenSource.Token);
         Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, timeoutTask).ConfigureAwait(false);
         bool commandTaskCompleted = completedTask == this.taskCompletionSource.Task;
         if (commandTaskCompleted)
@@ -190,21 +241,22 @@ public class Command
     }
 
     /// <summary>
-    /// Starts the stopwatch used to time the execution of this command. This should be
+    /// Records the point from which the execution of this command is timed. This should be
     /// called when the command is sent by a <see cref="Transport"/>.
     /// </summary>
     internal void StartTiming()
     {
-        this.commandStopwatch.Start();
+        Interlocked.Exchange(ref this.startTimestamp, ElapsedTimeUtilities.GetTimestamp());
     }
 
     /// <summary>
-    /// Stops the stopwatch used to time the execution of this command. This should be
-    /// called by a <see cref="Transport"/> when a response or error is received for the
-    /// command.
+    /// Records the point at which the timing of this command stops. This should be called by a
+    /// <see cref="Transport"/> when a response or error is received for the command, or when sending
+    /// it failed. Every caller reaches it having just taken the command out of the pending-command
+    /// collection, so it runs at most once for a given command.
     /// </summary>
     internal void StopTiming()
     {
-        this.commandStopwatch.Stop();
+        Interlocked.Exchange(ref this.stopTimestamp, ElapsedTimeUtilities.GetTimestamp());
     }
 }

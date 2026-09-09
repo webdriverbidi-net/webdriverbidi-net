@@ -83,7 +83,7 @@ public class BiDiDriver027_RegisterEventWithBuiltInNameAnalyzer : DiagnosticAnal
             return;
         }
 
-        if (memberAccess.Name.Identifier.Text != "RegisterEvent")
+        if (memberAccess.Name.Identifier.ValueText != "RegisterEvent")
         {
             return;
         }

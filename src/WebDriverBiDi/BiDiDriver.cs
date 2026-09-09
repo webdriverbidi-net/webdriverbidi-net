@@ -364,53 +364,32 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual TimeSpan DefaultCommandTimeout { get; private set; }
 
     /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
-    /// invoked by this driver. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that
-    /// exceptions from event handlers will be caught and logged but will not cause the driver to stop
-    /// processing messages from the transport.
-    /// Exceptions from handlers registered with
-    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> participate in this behavior
-    /// when they are not already owned by task capture. If the caller captures handler tasks
-    /// using <see cref="EventObserver{T}.WaitForCapturedTasksAsync"/>,
-    /// <see cref="EventObserver{T}.WaitForCapturedTasksCompleteAsync"/>,
-    /// or <see cref="EventObserver{T}.GetCapturedTasks"/>,
-    /// those task exceptions remain owned by the caller rather than being surfaced again through the
-    /// transport error pipeline. This applies to handler tasks that fault <em>asynchronously</em>
-    /// (they were still running when the handler returned). A handler task that is <em>already</em>
-    /// faulted when the handler returns — a synchronous failure, such as a task from
-    /// <see cref="System.Threading.Tasks.Task.FromException(System.Exception)"/> or an <c>async</c>
-    /// handler that throws before its first <c>await</c> — is both captured and re-surfaced through
-    /// the transport error pipeline.
+    /// Gets the tunable settings of the transport this driver communicates through.
     /// </summary>
-    public virtual TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
+    /// <remarks>
+    /// <para>
+    /// The settings live on the transport, and this property is how a driver created with
+    /// <see cref="BiDiDriver()"/> or <see cref="BiDiDriver(TimeSpan)"/> reaches them: those constructors
+    /// create the transport themselves, so there is no other reference to it. A driver constructed with
+    /// <see cref="BiDiDriver(TimeSpan, Transport)"/> may equally use the transport it was handed.
+    /// </para>
+    /// <para>
+    /// Setting a value here is the same as setting it on the transport; there is no driver-level copy.
+    /// </para>
+    /// </remarks>
+    public virtual ITransportConfiguration TransportConfiguration => this.transport;
 
     /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when a protocol error is
-    /// received from the remote end. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning
-    /// that exceptions from protocol errors will be caught and logged but will not cause the driver to
-    /// stop processing messages from the transport.
+    /// Gets the observable state of the transport this driver communicates through.
     /// </summary>
-    public virtual TransportErrorBehavior ProtocolErrorBehavior { get => this.transport.ProtocolErrorBehavior; set => this.transport.ProtocolErrorBehavior = value; }
-
-    /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when an unknown message is
-    /// encountered, such as valid JSON that does not match any protocol data structure. Defaults to
-    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unknown messages will
-    /// be caught and logged, but will not cause the driver to stop processing messages from the transport.
-    /// A response that arrives for a command after that command has timed out or been canceled is not
-    /// an unknown message; it is logged and discarded without affecting this behavior.
-    /// </summary>
-    public virtual TransportErrorBehavior UnknownMessageBehavior { get => this.transport.UnknownMessageBehavior; set => this.transport.UnknownMessageBehavior = value; }
-
-    /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when an unexpected error is
-    /// encountered, such as an error response received with no corresponding command. Defaults to
-    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unexpected errors will
-    /// be caught and logged but will not cause the driver to stop processing messages from the transport.
-    /// An error response that arrives for a command after that command has timed out or been canceled is
-    /// not an unexpected error; it is logged and discarded without affecting this behavior.
-    /// </summary>
-    public virtual TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
+    /// <remarks>
+    /// Every value is a snapshot that may be stale by the time the caller observes it, and none of them
+    /// throws at any point of the driver's lifecycle, so they are safe to poll. <see cref="IsStarted"/>
+    /// answers the common question more directly; use
+    /// <see cref="ITransportDiagnostics.State"/> when the states it collapses into
+    /// <see langword="false"/> need to be told apart.
+    /// </remarks>
+    public virtual ITransportDiagnostics TransportDiagnostics => this.transport;
 
     /// <summary>
     /// Gets the callback used to report late observer execution errors to the underlying transport.
@@ -429,9 +408,29 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="connectionString">The connection string used to connect to the remote end. Usually the URL to the WebSocket used to communicate with the remote end.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the driver has already been started.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the driver has already been started, or when the underlying <see cref="Connection"/> refuses to open.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">
+    /// Thrown when the underlying <see cref="Connection"/> is not established within its
+    /// <see cref="Connection.StartupTimeout"/>. The default WebSocket connection retries until that
+    /// budget is exhausted before reporting the failure this way.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown by the default WebSocket connection when <paramref name="connectionString"/> is not valid
+    /// for the connection type. For the default <see cref="WebSocketConnection"/>, this exception would
+    /// be thrown when the connection string is not an absolute URI, or when its scheme is neither <c>ws</c>
+    /// nor <c>wss</c>. A different <see cref="Connection"/> type, such as <see cref="PipeConnection"/>,
+    /// validates its own connection string and may not throw this.
+    /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
+    /// <remarks>
+    /// Starting begins a new session and clears the errors the previous session accumulated under
+    /// <see cref="TransportErrorBehavior.Collect"/>. Those errors are thrown only by
+    /// <see cref="StopAsync(CancellationToken)"/>. After a remote disconnect the driver is already stopped
+    /// (<see cref="IsStarted"/> is <see langword="false"/>), so this method proceeds; to observe the errors
+    /// collected up to the disconnect, call <see cref="StopAsync(CancellationToken)"/> (which returns promptly and
+    /// throws them) before starting again. Starting directly discards them.
+    /// </remarks>
     public virtual async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
@@ -609,33 +608,39 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
         this.ThrowIfDisposed();
-        lock (this.registrationLock)
+        if (string.IsNullOrEmpty(eventName))
         {
-            // The transport owns the lifecycle state: registration is rejected once the transport has
-            // left the Disconnected state (a connect is in flight or completed) and is legal again once
-            // a teardown returns it to Disconnected. The registration lock still serializes concurrent
-            // registrations and makes this check-then-add atomic among them.
-            if (this.transport.State != TransportState.Disconnected)
-            {
-                throw new InvalidOperationException("Cannot register an event after the driver has started");
-            }
+            throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
+        }
 
-            if (string.IsNullOrEmpty(eventName))
-            {
-                throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
-            }
+        if (eventInvoker is null)
+        {
+            throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
+        }
 
-            if (eventInvoker is null)
-            {
-                throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
-            }
-
+        // Action for registring an event, executed under Transport's connection state lock
+        // so that it can only be executed while the Trandport is disconnected, and cannot
+        // interleave with a call to Transport.ConnectAsync().
+        void RegistrationAction()
+        {
             if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
             {
                 throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
             }
 
             this.transport.RegisterEventMessage<T>(eventName);
+        }
+
+        lock (this.registrationLock)
+        {
+            // The transport owns the lifecycle state: registration is rejected once the transport has
+            // left the Disconnected state (a connect is in flight or completed) and is legal again once
+            // a teardown returns it to Disconnected.
+            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
+            {
+                throw new InvalidOperationException("Cannot register an event after the driver has started");
+            }
+
             if (this.isInitializationComplete)
             {
                 WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered(eventName, typeof(T).ToString());
@@ -659,9 +664,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </para>
     /// <para>
     /// <strong>Thread safety:</strong> This method is thread-safe and can be safely called from multiple
-    /// threads concurrently. An internal lock ensures that the check against <see cref="IsStarted"/> and
-    /// the module addition to the registry are performed atomically, preventing race conditions during
-    /// concurrent registration attempts or when registering near the time of calling <see cref="StartAsync(string, CancellationToken)"/>.
+    /// threads concurrently. Two locks cooperate to make that so. A registration lock serializes concurrent
+    /// registrations with one another, and the transport tests its own lifecycle state and performs the
+    /// registration under the same lock it uses to publish the start of a connect. A registration therefore
+    /// either completes in full while the transport is still idle, or is rejected because it is not; it
+    /// cannot land part-way through a <see cref="StartAsync(string, CancellationToken)"/> running on another
+    /// thread. The check is against the transport's state, not <see cref="IsStarted"/>: registration is
+    /// rejected once the transport has left <c>Disconnected</c>, which is as soon as a connect is in flight,
+    /// and <see cref="IsStarted"/> is still false at that point.
     /// </para>
     /// <para>
     /// This method is used for registering custom modules that extend the WebDriver BiDi protocol.
@@ -680,25 +690,30 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public virtual void RegisterModule(Module module)
     {
         this.ThrowIfDisposed();
+        if (module is null)
+        {
+            throw new ArgumentNullException(nameof(module), "Module object may not be null");
+        }
+
+        // Action for registring a module, executed under Transport's connection state lock
+        // so that it can only be executed while the Trandport is disconnected, and cannot
+        // interleave with a call to Transport.ConnectAsync().
+        void RegistrationAction()
+        {
+            if (!this.modules.TryAdd(module.ModuleName, module))
+            {
+                throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
+            }
+        }
+
         lock (this.registrationLock)
         {
             // The transport owns the lifecycle state: registration is rejected once the transport has
             // left the Disconnected state (a connect is in flight or completed) and is legal again once
-            // a teardown returns it to Disconnected. The registration lock still serializes concurrent
-            // registrations and makes this check-then-add atomic among them.
-            if (this.transport.State != TransportState.Disconnected)
+            // a teardown returns it to Disconnected.
+            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
             {
                 throw new InvalidOperationException("Cannot register a module after the driver has started");
-            }
-
-            if (module is null)
-            {
-                throw new ArgumentNullException(nameof(module), "Module object may not be null");
-            }
-
-            if (!this.modules.TryAdd(module.ModuleName, module))
-            {
-                throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
             }
 
             if (this.isInitializationComplete)
@@ -783,6 +798,26 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     }
 
     /// <summary>
+    /// Gets a value indicating whether a message at the given level would be raised on
+    /// <see cref="OnLogMessage"/>, so that a caller can avoid building a message that would be discarded.
+    /// </summary>
+    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
+    /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A message is raised only when its level is at or above <see cref="LogLevel"/> and
+    /// <see cref="OnLogMessage"/> has at least one observer.
+    /// <see cref="Protocol.Connection.IsLogLevelEnabled"/> and
+    /// <see cref="Protocol.Transport.IsLogLevelEnabled"/> answer the same question for their own layer.
+    /// <see cref="WebDriverBiDiLogLevel.Off"/> is never enabled. It selects "no messages at all" when
+    /// assigned to <see cref="ITransportConfiguration.LogLevel"/>, and is not a level a message can carry; without the explicit
+    /// test it would compare as enabled against every setting, because it is the highest value.
+    /// </remarks>
+    public bool IsLogLevelEnabled(WebDriverBiDiLogLevel level)
+    {
+        return level != WebDriverBiDiLogLevel.Off && level >= this.transport.LogLevel && this.OnLogMessage.CurrentObserverCount > 0;
+    }
+
+    /// <summary>
     /// Asynchronously releases the resources used by this driver instance.
     /// Override this method in derived classes to add custom cleanup logic.
     /// </summary>
@@ -826,12 +861,22 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="logLevel">The <see cref="WebDriverBiDiLogLevel"/> at which to raise the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <remarks>
+    /// <para>
+    /// A message below <see cref="LogLevel"/> is discarded rather than raised.
+    /// </para>
+    /// <para>
     /// This method never throws for a failure in an observer of <see cref="OnLogMessage"/>;
     /// such a failure is routed through the observer-error pipeline, where it is governed
-    /// by <see cref="EventHandlerExceptionBehavior"/>.
+    /// by <see cref="ITransportConfiguration.EventHandlerExceptionBehavior"/>.
+    /// </para>
     /// </remarks>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel)
     {
+        if (!this.IsLogLevelEnabled(logLevel))
+        {
+            return;
+        }
+
         // A synchronously throwing log observer would propagate its exception into
         // whatever operation happened to emit the log message. We especially want
         // to fix this so that disposal is not interrupted.

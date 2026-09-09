@@ -6,7 +6,8 @@
 namespace WebDriverBiDi.WebExtension;
 
 /// <summary>
-/// The WebExtension module contains commands and events relating to web extensions in the browser.
+/// The WebExtension module contains commands relating to web extensions in the browser. The
+/// specification defines no events for this module.
 /// </summary>
 public sealed class WebExtensionModule : Module
 {

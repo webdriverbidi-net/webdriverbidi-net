@@ -8,10 +8,12 @@
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
+using System.Buffers;
 using System.Text.Json.Serialization;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.JsonConverters;
+using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -19,6 +21,15 @@ using WebDriverBiDi.Script;
 /// </summary>
 public static class CustomModulesSamples
 {
+    /// <summary>
+    /// Retrieve a registered module by name.
+    /// </summary>
+    public static void GetModuleByName(BiDiDriver driver)
+    {
+        #region GetModuleByName
+        MyCustomModule myModule = driver.GetModule<MyCustomModule>("myCustom");
+        #endregion
+    }
 }
 
 /// <summary>
@@ -655,5 +666,40 @@ public class ExperimentalModule : Module
     }
 }
 #endregion
+
+#region LoggingTransport
+/// <summary>
+/// Example transport that sees the raw bytes of every inbound message.
+/// </summary>
+public class LoggingTransport : Transport
+{
+    public LoggingTransport(Connection connection)
+        : base(connection)
+    {
+    }
+
+    protected override IncomingMessage CreateIncomingMessage(IMemoryOwner<byte> owner, int length)
+    {
+        // Inspect or log the raw message bytes here before handing them to the base implementation.
+        return base.CreateIncomingMessage(owner, length);
+    }
+}
+#endregion
+
+/// <summary>
+/// Snippets showing how a custom transport is installed.
+/// </summary>
+public static class CustomTransportSamples
+{
+    public static async Task UseCustomTransport()
+    {
+        #region UseCustomTransport
+        WebSocketConnection connection = new();
+        LoggingTransport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(60), transport);
+        await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
+        #endregion
+    }
+}
 
 #pragma warning restore CS1591, CS8600, CS8602, CS8618

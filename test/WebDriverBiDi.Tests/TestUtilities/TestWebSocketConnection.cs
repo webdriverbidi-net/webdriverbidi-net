@@ -13,6 +13,14 @@ public class TestWebSocketConnection : WebSocketConnection
     private int receiveCallCount;
     private int stopCallCount;
 
+    public TestWebSocketConnection(TimeProvider? timeProvider = null)
+    {
+        if (timeProvider is not null)
+        {
+            this.TimeProvider = timeProvider;
+        }
+    }
+
     public bool BypassStart { get; set; } = true;
 
     public bool BypassStop { get; set; } = true;
@@ -27,9 +35,18 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public string? DataSent { get; set; }
 
-    public TaskCompletionSource? SendBarrier { get; set; }
+    /// <summary>
+    /// Gets the cancellation token the connection passed down to the send, so a test can assert which
+    /// token was actually used rather than only that the send completed.
+    /// </summary>
+    public CancellationToken LastSendCancellationToken { get; private set; }
 
-    public TimeSpan? StopDelay { get; set; }
+    /// <summary>
+    /// Gets the connection's own cancellation token, which is protected on the base class.
+    /// </summary>
+    public CancellationToken ObservedConnectionCancellationToken => this.ConnectionCancellationToken;
+
+    public TaskCompletionSource? SendBarrier { get; set; }
 
     public TaskCompletionSource? StartBarrier { get; set; }
 
@@ -46,6 +63,13 @@ public class TestWebSocketConnection : WebSocketConnection
     /// to simulate a remote end that never completes the handshake.
     /// </summary>
     public Func<Uri, CancellationToken, Task>? ConnectWebSocketOverride { get; set; }
+
+    /// <summary>
+    /// Gets or sets the pause taken before a connection retry. When <see langword="null"/>, the pause is
+    /// recorded in <see cref="AttemptedRetryDelays"/> and returns immediately; otherwise it is recorded and
+    /// the override's task is awaited, so a test can hold the connection inside a retry pause deterministically.
+    /// </summary>
+    public Func<TimeSpan, CancellationToken, Task>? DelayBeforeRetryOverride { get; set; }
 
     public bool Disposed => this.IsDisposed;
 
@@ -89,6 +113,20 @@ public class TestWebSocketConnection : WebSocketConnection
         await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, "TestWebSocketConnection"));
     }
 
+    /// <summary>
+    /// Raises a log message through the connection's own <c>LogAsync</c>, so that the message is subject
+    /// to <see cref="Connection.LogLevel"/> exactly as a message the connection itself emits.
+    /// <see cref="RaiseLogMessageEventAsync"/> notifies the observable directly and deliberately bypasses
+    /// that filtering.
+    /// </summary>
+    /// <param name="message">The log message to raise.</param>
+    /// <param name="level">The level at which to raise it.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public async Task RaiseFilteredLogMessageAsync(string message, WebDriverBiDiLogLevel level)
+    {
+        await this.LogAsync(message, level);
+    }
+
     public async Task RaiseConnectionErrorEventAsync(Exception exception)
     {
         await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(exception));
@@ -99,9 +137,18 @@ public class TestWebSocketConnection : WebSocketConnection
         await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs());
     }
 
+    /// <summary>
+    /// Gets or sets a signal completed on entry to <see cref="StartAsync"/>, immediately before
+    /// <see cref="StartBarrier"/> is awaited. A test that needs to act while the transport is in the
+    /// Connecting state waits on this, does its work, and then releases the barrier, rather than
+    /// guessing when the connect attempt has reached the connection.
+    /// </summary>
+    public TaskCompletionSource? StartBarrierReached { get; set; }
+
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
         this.ConnectionString = url;
+        this.StartBarrierReached?.TrySetResult();
         if (this.StartBarrier is not null)
         {
             await this.StartBarrier.Task.ConfigureAwait(false);
@@ -127,11 +174,6 @@ public class TestWebSocketConnection : WebSocketConnection
         }
         else
         {
-            if (this.StopDelay.HasValue && this.StopDelay.Value > TimeSpan.Zero)
-            {
-                await Task.Delay(this.StopDelay.Value, cancellationToken).ConfigureAwait(false);
-            }
-
             await base.StopAsync(cancellationToken).ConfigureAwait(false);
         }
     }
@@ -149,6 +191,22 @@ public class TestWebSocketConnection : WebSocketConnection
         return base.SendDataAsync(data, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets the retry pauses the connection attempted, in order. A pause is recorded and returns
+    /// immediately, so a test can assert on the decision without waiting for it.
+    /// </summary>
+    public List<TimeSpan> AttemptedRetryDelays { get; } = [];
+
+    protected override Task DelayBeforeRetryAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        lock (this.AttemptedRetryDelays)
+        {
+            this.AttemptedRetryDelays.Add(delay);
+        }
+
+        return this.DelayBeforeRetryOverride?.Invoke(delay, cancellationToken) ?? Task.CompletedTask;
+    }
+
     protected override async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
     {
         if (this.ConnectWebSocketOverride is not null)
@@ -162,6 +220,7 @@ public class TestWebSocketConnection : WebSocketConnection
 
     protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
+        this.LastSendCancellationToken = cancellationToken;
         if (this.SendWebSocketDataOverride is not null)
         {
             await this.SendWebSocketDataOverride(data).ConfigureAwait(false);

@@ -94,9 +94,23 @@ public class ModuleTests
 
         handler.Unobserve();
         syncEvent.Reset();
+
+        // A second observer gives the negative assertion a causal signal rather than an elapsed-time
+        // one. Observers are notified in the order they were added, and a synchronously-run handler is
+        // awaited before the next observer is notified, so once this one has been called the removed
+        // handler has demonstrably had its turn and did not run. Waiting a fixed 50 ms instead would
+        // pass just as readily when message processing is merely slow, which is the failure the
+        // assertion is meant to catch.
+        ManualResetEventSlim replacementSyncEvent = new(false);
+        using EventObserver<TestEventArgs> replacementHandler = module.OnEventInvoked.AddObserver(e =>
+        {
+            replacementSyncEvent.Set();
+        });
+
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        eventSet = syncEvent.Wait(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
-        Assert.False(eventSet);
+        bool replacementEventSet = replacementSyncEvent.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(replacementEventSet);
+        Assert.False(syncEvent.IsSet);
     }
 
     [Fact]
@@ -159,10 +173,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -190,8 +202,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect);
         Assert.True(errorPropagated);
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
         Assert.IsType<WebDriverBiDiException>(exception.InnerException);
@@ -204,10 +216,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         TestProtocolModule module = new(driver);
 
         EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async e =>
@@ -230,7 +240,7 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         _ = Assert.Single(tasks);
         Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
         await driver.StopAsync(TestContext.Current.CancellationToken);
@@ -241,19 +251,22 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<Task> faultingTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         module.OnEventInvoked.AddObserver(e =>
         {
             TaskCompletionSource firstTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TaskCompletionSource secondTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Run(
+            // Published through a TaskCompletionSource rather than assigned to a captured local, so
+            // that the test reads the task only after the handler has stored it. The test awaits it
+            // at the end, which is what turns a failure inside this producer into its own error
+            // rather than an unobserved exception.
+            Task faultingTask = Task.Run(
                 async () =>
                 {
                     try
@@ -267,6 +280,7 @@ public class ModuleTests
                         handlerCompleted.TrySetResult(true);
                     }
                 });
+            faultingTaskSource.TrySetResult(faultingTask);
 
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -282,8 +296,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect);
         Assert.True(errorPropagated);
 
         AggregateException exception = await Assert.ThrowsAsync<AggregateException>(async () => await driver.StopAsync(TestContext.Current.CancellationToken));
@@ -294,6 +308,10 @@ public class ModuleTests
         Assert.Equal(2, innerAggregateException.InnerExceptions.Count);
         Assert.Single(innerAggregateException.InnerExceptions.OfType<InvalidOperationException>(), e => e.Message == "First aggregate failure");
         Assert.Single(innerAggregateException.InnerExceptions.OfType<WebDriverBiDiException>(), e => e.Message == "Second aggregate failure");
+
+        // Awaited so that a failure inside the handler's producer is reported as itself.
+        Task producerTask = await faultingTaskSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await producerTask;
     }
 
     [Fact]
@@ -301,10 +319,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -332,8 +348,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
         Assert.True(errorPropagated);
         WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.Session.StatusAsync(cancellationToken: TestContext.Current.CancellationToken));
         Assert.Contains("Unhandled exception in user event handler", exception.Message);
@@ -346,10 +362,8 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         TestProtocolModule module = new(driver);
 
         EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async e =>
@@ -372,7 +386,7 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         _ = Assert.Single(tasks);
         Assert.Contains("Async module handler exception", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await Task.WhenAll(tasks))).Message);
         await driver.StopAsync(TestContext.Current.CancellationToken);
@@ -383,19 +397,22 @@ public class ModuleTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport)
-        {
-            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-        };
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         TestProtocolModule module = new(driver);
         TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<Task> faultingTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         module.OnEventInvoked.AddObserver(e =>
         {
             TaskCompletionSource firstTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
             TaskCompletionSource secondTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            _ = Task.Run(
+            // Published through a TaskCompletionSource rather than assigned to a captured local, so
+            // that the test reads the task only after the handler has stored it. The test awaits it
+            // at the end, which is what turns a failure inside this producer into its own error
+            // rather than an unobserved exception.
+            Task faultingTask = Task.Run(
                 async () =>
                 {
                     try
@@ -409,6 +426,7 @@ public class ModuleTests
                         handlerCompleted.TrySetResult(true);
                     }
                 });
+            faultingTaskSource.TrySetResult(faultingTask);
 
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -424,8 +442,8 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
-        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
         Assert.True(errorPropagated);
 
         WebDriverBiDiException exception = await Assert.ThrowsAsync<WebDriverBiDiException>(async () => await driver.Session.StatusAsync(cancellationToken: TestContext.Current.CancellationToken));
@@ -436,6 +454,10 @@ public class ModuleTests
         Assert.Equal(2, innerAggregateException.InnerExceptions.Count);
         Assert.Single(innerAggregateException.InnerExceptions.OfType<InvalidOperationException>(), e => e.Message == "First aggregate failure");
         Assert.Single(innerAggregateException.InnerExceptions.OfType<WebDriverBiDiException>(), e => e.Message == "Second aggregate failure");
+
+        // Awaited so that a failure inside the handler's producer is reported as itself.
+        Task producerTask = await faultingTaskSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await producerTask;
     }
 
     [Fact]

@@ -89,7 +89,7 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!TryGetSpecRange(property, specRangeAttributeSymbol, out double minimum, out double maximum, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue))
+        if (!TryGetSpecRange(property, specRangeAttributeSymbol, out double minimum, out double maximum, out bool minimumExclusive, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue))
         {
             return;
         }
@@ -102,7 +102,10 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        double value = ConvertToDouble(constant.Value);
+        if (!TryConvertToDouble(constant.Value, out double value))
+        {
+            return;
+        }
 
         // The reset sentinel deliberately falls outside the range and is valid.
         if (hasSentinel && value == sentinelValue)
@@ -110,22 +113,23 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (value < minimum || value > maximum || (maximumExclusive && value == maximum))
+        if (value < minimum || value > maximum || (minimumExclusive && value == minimum) || (maximumExclusive && value == maximum))
         {
             Diagnostic diagnostic = Diagnostic.Create(
                 Rule,
                 assignment.Right.GetLocation(),
                 assignment.Right.ToString(),
                 property.Name,
-                FormatRange(minimum, maximum, maximumExclusive));
+                FormatRange(minimum, maximum, minimumExclusive, maximumExclusive));
             context.ReportDiagnostic(diagnostic);
         }
     }
 
-    private static bool TryGetSpecRange(IPropertySymbol property, INamedTypeSymbol specRangeAttributeSymbol, out double minimum, out double maximum, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue)
+    private static bool TryGetSpecRange(IPropertySymbol property, INamedTypeSymbol specRangeAttributeSymbol, out double minimum, out double maximum, out bool minimumExclusive, out bool maximumExclusive, out bool hasSentinel, out double sentinelValue)
     {
         minimum = double.NegativeInfinity;
         maximum = double.PositiveInfinity;
+        minimumExclusive = false;
         maximumExclusive = false;
         hasSentinel = false;
         sentinelValue = 0.0;
@@ -142,11 +146,16 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
             minimum = (double)attribute.ConstructorArguments[0].Value!;
             maximum = (double)attribute.ConstructorArguments[1].Value!;
 
-            // MaximumExclusive, HasSentinel, and SentinelValue are independent optional named
-            // arguments; a property may set any combination of them, so each is read with its own
-            // separate check.
+            // MinimumExclusive, MaximumExclusive, HasSentinel, and SentinelValue are independent
+            // optional named arguments; a property may set any combination of them, so each is read
+            // with its own separate check.
             foreach (KeyValuePair<string, TypedConstant> namedArgument in attribute.NamedArguments)
             {
+                if (namedArgument.Key == "MinimumExclusive")
+                {
+                    minimumExclusive = (bool)namedArgument.Value.Value!;
+                }
+
                 if (namedArgument.Key == "MaximumExclusive")
                 {
                     maximumExclusive = (bool)namedArgument.Value.Value!;
@@ -169,26 +178,51 @@ public class BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static double ConvertToDouble(object value)
+    /// <summary>
+    /// Converts a compile-time constant to a double, reporting whether it is numeric at all.
+    /// </summary>
+    /// <param name="value">The constant value assigned to the property.</param>
+    /// <param name="numericValue">When this method returns <see langword="true"/>, the value as a double.</param>
+    /// <returns><see langword="true"/> if the constant is numeric; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// In code that compiles, the left side is always a numeric-typed property, so the constant is a
+    /// numeric type or a char, which converts implicitly to it. An analyzer also runs over code that
+    /// does not compile, which is most of what it sees while a developer is typing, and a constant of
+    /// any other type has to be declined rather than converted: the only remaining possibilities for a
+    /// C# constant are a bool and a string, and <see cref="IConvertible.ToDouble"/> throws for both.
+    /// An exception raised here is reported as AD0001 and suppresses this rule for the whole file.
+    /// </remarks>
+    private static bool TryConvertToDouble(object value, out double numericValue)
     {
-        // The left side is always a numeric-typed property, so the assigned constant is either a
-        // numeric type or a char (which is implicitly convertible to the numeric property type).
         // Every numeric boxed value implements IConvertible.ToDouble, but IConvertible.ToDouble throws
         // for char, so char is converted directly.
         if (value is char charValue)
         {
-            return charValue;
+            numericValue = charValue;
+            return true;
         }
 
-        return ((IConvertible)value).ToDouble(CultureInfo.InvariantCulture);
+        // The numeric type codes are contiguous, running from SByte to Decimal, with Boolean and Char
+        // below them and DateTime and String above. Testing the range rather than listing the eleven
+        // numeric types keeps this to a single decision.
+        TypeCode typeCode = Convert.GetTypeCode(value);
+        if (typeCode is < TypeCode.SByte or > TypeCode.Decimal)
+        {
+            numericValue = 0.0;
+            return false;
+        }
+
+        numericValue = ((IConvertible)value).ToDouble(CultureInfo.InvariantCulture);
+        return true;
     }
 
-    private static string FormatRange(double minimum, double maximum, bool maximumExclusive)
+    private static string FormatRange(double minimum, double maximum, bool minimumExclusive, bool maximumExclusive)
     {
-        // An exclusive upper bound renders in interval notation with a closing parenthesis,
-        // for example [0, 360) for the specification's CDDL range 0.0...360.0.
+        // Exclusive bounds render in interval notation with a parenthesis on that side: [0, 360) for
+        // the specification's CDDL range 0.0...360.0, and (1, ∞] for a member declared js-uint .gt 1.
+        string openingDelimiter = minimumExclusive ? "(" : "[";
         string closingDelimiter = maximumExclusive ? ")" : "]";
-        return $"[{FormatBound(minimum)}, {FormatBound(maximum)}{closingDelimiter}";
+        return $"{openingDelimiter}{FormatBound(minimum)}, {FormatBound(maximum)}{closingDelimiter}";
     }
 
     private static string FormatBound(double bound)
