@@ -21,7 +21,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     }
 
     /// <summary>
-    /// Gets the ID of the browsing context generating the descriptor event.
+    /// Gets the ID of the browsing context in which the descriptor event was generated.
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
@@ -29,7 +29,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the address of the device generating the descriptor event.
+    /// Gets the address of the device on which the descriptor event was generated.
     /// </summary>
     [JsonPropertyName("address")]
     [JsonRequired]
@@ -37,7 +37,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string Address { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the UUID of the service generating the descriptor event.
+    /// Gets the UUID of the service on which the descriptor event was generated.
     /// </summary>
     [JsonPropertyName("serviceUuid")]
     [JsonRequired]
@@ -45,7 +45,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string ServiceUuid { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the UUID of the characteristic generating the descriptor event.
+    /// Gets the UUID of the characteristic on which the descriptor event was generated.
     /// </summary>
     [JsonPropertyName("characteristicUuid")]
     [JsonRequired]
@@ -53,7 +53,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string CharacteristicUuid { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the UUID of the descriptor generating the descriptor event.
+    /// Gets the UUID of the descriptor on which the descriptor event was generated.
     /// </summary>
     [JsonPropertyName("descriptorUuid")]
     [JsonRequired]
