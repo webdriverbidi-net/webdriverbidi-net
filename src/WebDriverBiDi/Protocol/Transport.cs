@@ -352,6 +352,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// operations that would otherwise have succeeded. <see cref="TimeSpan.Zero"/> never waits, and
     /// <see cref="Timeout.InfiniteTimeSpan"/> restores an unbounded wait.
     /// </para>
+    /// <para>
+    /// Handling a lost connection waits for the access too, on the connection's receive loop. A wait
+    /// abandoned there leaves the session standing rather than tearing it down without the access:
+    /// the transport stays <see cref="TransportState.Connected"/>, its pending commands end at their
+    /// own timeouts, and a <see cref="WebDriverBiDiLogLevel.Warn"/> message naming the cause is
+    /// raised on <see cref="OnLogMessage"/>.
+    /// </para>
     /// </remarks>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when the value is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds
@@ -1687,15 +1694,27 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         Task firstCompletedTask = await Task.WhenAny(lockAcquisitionTask, disconnectOwnershipTask).ConfigureAwait(false);
         if (firstCompletedTask != lockAcquisitionTask)
         {
-            // DisconnectAsync owns the teardown. The pending lock wait completes when
-            // DisconnectAsync releases the lock, which happens only after this loop finishes;
-            // hand the lock straight back at that point so nothing is left acquired.
-            _ = lockAcquisitionTask.ContinueWith(
-                static (_, state) => ((Transport)state!).ReleaseConnectionLock(),
-                this,
-                CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+            // DisconnectAsync owns the teardown. The wait left outstanding here is settled by the
+            // helper, which hands the lock back if the wait is granted and leaves it alone if the
+            // wait is abandoned instead.
+            _ = this.ReleaseConnectionLockWhenAcquiredAsync(lockAcquisitionTask);
+            return;
+        }
+
+        // Task.WhenAny reports the first task to complete, and an abandoned wait has completed, so
+        // awaiting the acquisition is what tells a granted access from an abandoned one. Neither the
+        // teardown nor the release below may run without the access.
+        try
+        {
+            await lockAcquisitionTask.ConfigureAwait(false);
+        }
+        catch (WebDriverBiDiTimeoutException)
+        {
+            // Tearing down without the access could interleave with a reconnect and close the
+            // pending commands of a session this loss has nothing to do with. The loss still
+            // surfaces, just not immediately: the connection is closed, so pending commands end at
+            // their own timeouts and the next send fails.
+            await this.LogAsync($"Timed out after {this.ConnectionLockTimeout} waiting for exclusive access to the connection to handle a connection loss; the transport was left connected and its pending commands left to time out. Stop the transport to tear the session down.", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             return;
         }
 
@@ -1738,6 +1757,32 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         {
             this.ReleaseConnectionLock();
         }
+    }
+
+    /// <summary>
+    /// Hands the connection lock back once a wait that was left outstanding is granted, and does
+    /// nothing if that wait is abandoned instead.
+    /// </summary>
+    /// <param name="lockAcquisitionTask">The outstanding wait for the connection lock.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// The wait is the one <see cref="HandleConnectionDisconnectionAsync"/> leaves outstanding when
+    /// <see cref="DisconnectAsync(bool, CancellationToken)"/> wins the ownership race. Releasing an
+    /// abandoned wait would raise the semaphore's count and let two operations hold the connection at
+    /// once; awaiting it also observes the failure a discarded task would leave unobserved.
+    /// </remarks>
+    private async Task ReleaseConnectionLockWhenAcquiredAsync(Task lockAcquisitionTask)
+    {
+        try
+        {
+            await lockAcquisitionTask.ConfigureAwait(false);
+        }
+        catch (WebDriverBiDiTimeoutException)
+        {
+            return;
+        }
+
+        this.ReleaseConnectionLock();
     }
 
     private void LogMessageProcessingFault(Task faultedTask, object? state)

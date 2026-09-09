@@ -126,6 +126,8 @@ Where the failure surfaces depends on which event the observer was added to. Thr
 
 The default is deliberately longer than the longest legitimate hold, so that lowering it is a deliberate choice. A disconnect that exhausts every wait it is allowed holds the access for the connection's close handshake and its receive-loop wait (each bounded by `Connection.ShutdownTimeout`) and then for the message-queue drain (bounded by `Transport.ShutdownTimeout`), roughly 30 seconds at the default settings. Reduce it when you would rather find a re-entrant observer quickly than wait a minute for it; set it to `Timeout.InfiniteTimeSpan` to restore an unbounded wait, and `TimeSpan.Zero` to never wait at all.
 
+Handling a lost connection waits for the access as well, and it is the one waiter with no caller to report a failure to, because it runs on the connection's receive loop. If that wait is abandoned — a lowered bound elapsing while a command send still holds the access — the loss is not applied to the session: the transport stays connected, its in-flight commands end at their own command timeouts rather than failing at once, and a `Warn` message naming the cause is raised on `OnLogMessage`. Call `StopAsync()` to tear the session down. Applying the loss without the access is the alternative, and a worse one: each step of that teardown is thread-safe on its own, but performing them outside the access could interleave with a reconnect and close the pending-command collection of a session the loss has nothing to do with.
+
 ### Buffer Size
 
 Connection buffer size is fixed at 1 MB (2²⁰ bytes):

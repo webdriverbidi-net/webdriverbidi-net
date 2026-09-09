@@ -3786,6 +3786,155 @@ public class TransportTests
     }
 
     /// <summary>
+    /// A connection loss whose wait for the connection lock is abandoned must leave the session
+    /// standing rather than tear it down without the lock, and must not release a lock it never
+    /// acquired.
+    /// </summary>
+    /// <remarks>
+    /// The lock is held here by a command send rather than by a disconnect, so no ownership signal is
+    /// raised and the abandoned wait is the only task that can win the race. An implementation that
+    /// reads winning the race as holding the lock releases a lock the send still holds.
+    /// </remarks>
+    [Fact]
+    public async Task TestConnectionLossWithAbandonedLockWaitLeavesSessionStanding()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        TestReceiveLoopWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+
+        // Never wait for the lock, so the handler's wait is abandoned the instant it finds it held.
+        transport.ConnectionLockTimeout = TimeSpan.Zero;
+
+        // Raised when the handler gives up, or by the teardown a broken implementation performs
+        // instead, which logs at the same level: either way the send below is released, so a failure
+        // here is a failed assertion rather than a hang.
+        TaskCompletionSource connectionLossHandled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        string? warningMessage = null;
+        using EventObserver<LogMessageEventArgs> logObserver = transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Level == WebDriverBiDiLogLevel.Warn)
+            {
+                warningMessage ??= e.Message;
+                connectionLossHandled.TrySetResult();
+            }
+        });
+
+        // Fires once, while SendCommandAsync holds the lock: dispatch the connection loss there, and
+        // hold the send until the handler has dealt with it.
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            connection.SignalRemoteClose();
+            await connectionLossHandled.Task;
+        };
+
+        // An over-release surfaces here as a SemaphoreFullException from the send's own release.
+        await transport.SendCommandAsync(new TestCommandParameters("module.command"), testCancellationToken);
+
+        Assert.NotNull(warningMessage);
+        Assert.Contains("waiting for exclusive access to the connection to handle a connection loss", warningMessage);
+
+        // The session was left standing, with the pending command collection still open.
+        Assert.Equal(TransportState.Connected, transport.State);
+        Assert.Equal(1, transport.TestPendingCommandCount);
+
+        await transport.DisposeAsync();
+    }
+
+    /// <summary>
+    /// A wait for the connection lock that is left outstanding when DisconnectAsync wins the ownership
+    /// race, and is then abandoned rather than granted, must not release the lock the disconnect
+    /// holds.
+    /// </summary>
+    /// <remarks>
+    /// The companion of the scenario above, on the other side of the race. An implementation that
+    /// hands the lock back regardless of how the wait settled either faults the disconnect's own
+    /// release or silently leaves the semaphore admitting a second holder; the probe at the end of
+    /// this test rules out both.
+    /// </remarks>
+    [Fact]
+    public async Task TestOutstandingLockWaitAbandonedWhileDisconnectOwnsTeardownDoesNotReleaseLock()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        TestReceiveLoopWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        transport.ConnectionLockTimeout = TimeSpan.Zero;
+
+        TaskCompletionSource handlerWaitStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource openHandlerWait = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource handlerWaitAbandoned = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Acquisition 1 is DisconnectAsync's; acquisition 2 is the connection-loss handler's. Holding
+        // the handler's wait keeps it outstanding, so the ownership signal wins the race.
+        int lockAcquisitionAttempts = 0;
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            if (Interlocked.Increment(ref lockAcquisitionAttempts) == 2)
+            {
+                handlerWaitStarted.TrySetResult();
+                await openHandlerWait.Task;
+            }
+        };
+
+        transport.AcquireLockFailedCallback = () => handlerWaitAbandoned.TrySetResult();
+
+        // Fires once, while DisconnectAsync holds the lock: end the receive loop, then hold the
+        // disconnect until the handler's wait is outstanding, forcing the interleaving.
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            connection.SignalRemoteClose();
+            await handlerWaitStarted.Task;
+        };
+
+        // "Transport disconnected" is logged inside DisconnectAsync's critical section, so the lock is
+        // still held here: open the handler's wait so that it finds the lock held and is abandoned,
+        // and hold the disconnect until that has happened.
+        using EventObserver<LogMessageEventArgs> logObserver = transport.OnLogMessage.AddObserver(async e =>
+        {
+            if (e.Message == "Transport disconnected")
+            {
+                openHandlerWait.TrySetResult();
+                await handlerWaitAbandoned.Task;
+            }
+        });
+
+        // An over-release before the disconnect's own release faults it with a SemaphoreFullException,
+        // which surfaces here.
+        Task disconnectTask = transport.DisconnectAsync(testCancellationToken);
+        Task settledTask = await Task.WhenAny(disconnectTask, Task.Delay(DeadlockDetectionTimeout, testCancellationToken));
+        if (settledTask != disconnectTask)
+        {
+            Assert.Fail($"DisconnectAsync did not complete within {DeadlockDetectionTimeout.TotalSeconds} seconds.");
+        }
+
+        await disconnectTask;
+        Assert.True(handlerWaitAbandoned.Task.IsCompleted, "The connection-loss handler's wait for the lock should have been abandoned.");
+
+        // An over-release after it leaves no exception behind, so probe the invariant directly: with a
+        // holder parked in its critical section, a second wait must still be abandoned.
+        transport.BeforeAcquireLockCallback = null;
+        TaskCompletionSource lockHeld = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseLockHolder = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.AfterAcquireLockAsyncCallback = async () =>
+        {
+            lockHeld.TrySetResult();
+            await releaseLockHolder.Task;
+        };
+
+        Task reconnectTask = transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await lockHeld.Task;
+        await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(
+            async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), testCancellationToken));
+
+        releaseLockHolder.TrySetResult();
+        await reconnectTask;
+        await transport.DisposeAsync();
+    }
+
+    /// <summary>
     /// Guards the per-session reset of the disconnect-ownership state the CT-1 fix introduces: after a
     /// session is stopped and a new one started, a plain remote disconnect on the new session must
     /// still perform its teardown and fail in-flight commands.

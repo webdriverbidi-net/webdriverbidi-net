@@ -67,6 +67,11 @@ public class TestTransport : Transport
     public Action? AfterAcquireLockCallback { get; set; }
 
     /// <summary>
+    /// Optional callback invoked when a wait for the connection lock is abandoned rather than granted.
+    /// </summary>
+    public Action? AcquireLockFailedCallback { get; set; }
+
+    /// <summary>
     /// Optional asynchronous callback invoked once, immediately after the next acquisition of
     /// the connection lock, and then cleared. Because the lock is held while it runs, the
     /// callback can deterministically stage work that must overlap the lock holder's critical
@@ -287,7 +292,17 @@ public class TestTransport : Transport
             await this.BeforeAcquireLockCallback().ConfigureAwait(false);
         }
 
-        await base.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await base.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (WebDriverBiDiTimeoutException)
+        {
+            // Signalled before the rethrow, so a test observes the abandonment before the code under
+            // test does.
+            this.AcquireLockFailedCallback?.Invoke();
+            throw;
+        }
 
         this.AfterAcquireLockCallback?.Invoke();
 
