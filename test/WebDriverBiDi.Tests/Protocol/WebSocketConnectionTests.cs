@@ -1521,10 +1521,23 @@ public class WebSocketConnectionTests : IAsyncDisposable
                 return await Task.FromResult(new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true));
             }
 
-            taskCompletionSource.TrySetResult();
             await Task.Delay(Timeout.Infinite, token);
             throw new OperationCanceledException(token);
         };
+
+        // The Close frame ends the receive loop, so the loop's own last log line is the point at which
+        // the count below is final. Waiting for a third receive call would wait for one the loop has no
+        // reason to make.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("Ending processing loop", StringComparison.Ordinal))
+            {
+                taskCompletionSource.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
         connection.OnDataReceived.AddObserver(e =>
         {
             Interlocked.Increment(ref deliveredMessageCount);
@@ -1666,6 +1679,52 @@ public class WebSocketConnectionTests : IAsyncDisposable
         this.clientDisconnectedObserver = server.OnClientDisconnected.AddObserver(_ => { });
 
         await server.DisconnectAsync(registeredConnectionId);
+
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.NotNull(receivedEventArgs);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestConnectionRaisesOnRemoteDisconnectedWhenCloseAcknowledgementLeavesSocketOpen()
+    {
+        // The remote end sends a Close frame while the socket itself has not seen one, so acknowledging it
+        // leaves the socket in CloseSent rather than Closed. The remote end has gracefully closed all the
+        // same, and a loop that waited for Closed would go on receiving on a connection the remote end has
+        // already finished with, never reporting the disconnection at all.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        ConnectionDisconnectedEventArgs? receivedEventArgs = null;
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            BypassCloseClientWebSocket = false,
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+            ReceiveHandler = async (buffer, cancellationToken, callCount) =>
+            {
+                if (callCount == 1)
+                {
+                    return new WebSocketReceiveResult(0, WebSocketMessageType.Close, true);
+                }
+
+                // Reached only if the Close frame failed to end the loop, in which case the wait below
+                // fails rather than hanging on a handler that never returns.
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                throw new OperationCanceledException(cancellationToken);
+            },
+        };
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            receivedEventArgs = e with { };
+            taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
 
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.NotNull(receivedEventArgs);
