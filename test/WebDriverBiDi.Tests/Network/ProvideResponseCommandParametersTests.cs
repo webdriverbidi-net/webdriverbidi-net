@@ -214,4 +214,62 @@ public class ProvideResponseCommandParametersTests
         Assert.Equal(JTokenType.Integer, statusCode.Type);
         Assert.Equal(404UL, statusCode.Value<ulong>());
     }
+
+    [Fact]
+    public void TestEmptyHeadersListSerializesAsEmptyArray()
+    {
+        // A present-but-empty array is not the same as an omitted field, and this is the property's
+        // defining behaviour. The remote end steps for network.provideResponse start from an empty
+        // header list and append each element, so sending [] clears the intercepted response's
+        // headers while omitting the field leaves them as they were. A regression to "omit when
+        // empty" would silently turn the first into the second, and every other test here passes
+        // either a populated list or none at all.
+        ProvideResponseCommandParameters properties = new("myRequestId")
+        {
+            Headers = [],
+        };
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(properties));
+
+        Assert.True(serialized.ContainsKey("headers"));
+        JToken? token = serialized["headers"];
+        Assert.NotNull(token);
+        Assert.Equal(JTokenType.Array, token.Type);
+        JArray? array = token as JArray;
+        Assert.NotNull(array);
+        Assert.Empty(array);
+
+        // The contrast that gives the empty array its meaning: null omits the field entirely.
+        properties.Headers = null;
+        JObject withoutList = JObject.Parse(JsonSerializer.Serialize(properties));
+        Assert.False(withoutList.ContainsKey("headers"));
+    }
+
+    [Fact]
+    public void TestEmptyCookiesListSerializesAsEmptyArray()
+    {
+        // A present-but-empty array is not the same as an omitted field, and this is the property's
+        // defining behaviour. The remote end steps for network.provideResponse start from an empty
+        // cookie list and append each element, so sending [] clears the intercepted response's
+        // cookies while omitting the field leaves them as they were. A regression to "omit when
+        // empty" would silently turn the first into the second, and every other test here passes
+        // either a populated list or none at all.
+        ProvideResponseCommandParameters properties = new("myRequestId")
+        {
+            Cookies = [],
+        };
+        JObject serialized = JObject.Parse(JsonSerializer.Serialize(properties));
+
+        Assert.True(serialized.ContainsKey("cookies"));
+        JToken? token = serialized["cookies"];
+        Assert.NotNull(token);
+        Assert.Equal(JTokenType.Array, token.Type);
+        JArray? array = token as JArray;
+        Assert.NotNull(array);
+        Assert.Empty(array);
+
+        // The contrast that gives the empty array its meaning: null omits the field entirely.
+        properties.Cookies = null;
+        JObject withoutList = JObject.Parse(JsonSerializer.Serialize(properties));
+        Assert.False(withoutList.ContainsKey("cookies"));
+    }
 }
