@@ -73,6 +73,11 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
         // the session is read, so it satisfies every StartCapturingTasks in the member.
         Dictionary<string, bool> hasDeferredRead = [];
 
+        // An observer this member hands to other code may be read by that code, which this rule
+        // cannot see, so it is never tracked and never reported on. A nested function needs no such
+        // treatment here: a read inside one is recorded as deferred below.
+        HashSet<string> escapedNames = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
+
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             // Observer declarations are registered wherever they appear: a local declaration
@@ -85,6 +90,11 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                 {
                     foreach (VariableDeclaratorSyntax variable in declaration.Variables)
                     {
+                        if (escapedNames.Contains(variable.Identifier.ValueText))
+                        {
+                            continue;
+                        }
+
                         ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
                         if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
                         {
@@ -112,7 +122,7 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                     continue;
                 }
 
-                string receiverName = receiverIdentifier.Identifier.Text;
+                string receiverName = receiverIdentifier.Identifier.ValueText;
                 if (!pendingStartCapturingTasks.ContainsKey(receiverName))
                 {
                     continue;

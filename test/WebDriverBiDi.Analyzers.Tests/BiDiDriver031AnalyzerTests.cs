@@ -39,7 +39,8 @@ public class BiDiDriver031AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(
             BiDiDriver031_DiscardedObserverResultAnalyzer.DiagnosticId,
             DiagnosticSeverity.Info)
-            .WithLocation(0);
+            .WithLocation(0)
+            .WithArguments("EventObserver", "AddObserver");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode, expected);
     }
@@ -69,7 +70,8 @@ public class BiDiDriver031AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(
             BiDiDriver031_DiscardedObserverResultAnalyzer.DiagnosticId,
             DiagnosticSeverity.Info)
-            .WithLocation(0);
+            .WithLocation(0)
+            .WithArguments("EventObserver", "AddObserver");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode, expected);
     }
@@ -224,10 +226,9 @@ public class BiDiDriver031AnalyzerTests
     }
 
     [Fact]
-    public async Task AddDataCollectorDiscarded_ReportsNothing()
+    public async Task AddDataCollectorDiscarded_ReportsInfo()
     {
-        // Data collectors are outside this rule; only AddObserver returns the EventObserver handle it
-        // describes.
+        // A discarded collector keeps receiving and queueing events with no handle to stop it.
         string testCode = """
             using System;
             using WebDriverBiDi;
@@ -240,7 +241,89 @@ public class BiDiDriver031AnalyzerTests
                     public void TestMethod()
                     {
                         BiDiDriver driver = new();
-                        driver.BrowsingContext.OnLoad.AddDataCollector();
+                        {|#0:driver.BrowsingContext.OnLoad.AddDataCollector()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver031_DiscardedObserverResultAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("EventDataCollector", "AddDataCollector");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task SubscribeResultDiscarded_ReportsInfo()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(IObserver<NavigationEventArgs> handler)
+                    {
+                        BiDiDriver driver = new();
+                        {|#0:driver.BrowsingContext.OnLoad.ToObservable().Subscribe(handler)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver031_DiscardedObserverResultAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("ObservableEventSubscription", "Subscribe");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task SubscribeOnAnUnrelatedObservableDiscarded_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(IObservable<int> numbers, IObserver<int> handler)
+                    {
+                        numbers.Subscribe(handler);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver031_DiscardedObserverResultAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task AddDataCollectorResultKept_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        using EventDataCollector<NavigationEventArgs> collector = driver.BrowsingContext.OnLoad.AddDataCollector();
                     }
                 }
             }

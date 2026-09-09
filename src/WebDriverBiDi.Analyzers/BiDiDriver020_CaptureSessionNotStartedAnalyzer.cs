@@ -45,6 +45,8 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         description: Description,
         helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi020");
 
+    private static readonly string[] CaptureSessionMethodNames = ["StartCapturingTasks", "StopCapturingTasks"];
+
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -62,25 +64,40 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         // Only locally-declared variables are tracked; parameter-passed observers are not.
         Dictionary<string, bool> capturingState = [];
 
+        // An observer this member hands to other code, or one a nested function opens or closes a
+        // session on, may have a session this walk cannot see. Its capturing state is therefore
+        // unknown from the outset, so it is never tracked and never reported on. Collecting the names
+        // up front, rather than at the point of escape, is what the Error severity of this rule
+        // demands: the other code may run before or after the wait textually, and a wrong Error on
+        // correct code is worse than a missed report.
+        HashSet<string> untrackableNames = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
+        untrackableNames.UnionWith(AnalyzerSymbolHelpers.FindVariablesChangedInsideNestedFunctions(context.Node, CaptureSessionMethodNames));
+
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
             // ProcessNode registers observer declarations and checks observer method calls,
             // wherever in the statement's subtree they appear.
-            ProcessNode(statement, context, capturingState);
+            ProcessNode(statement, context, capturingState, untrackableNames);
         }
     }
 
     private static void TrackObserverDeclarations(
         VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
+            if (untrackableNames.Contains(variable.Identifier.ValueText))
+            {
+                continue;
+            }
+
             ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
             if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
             {
-                capturingState[variable.Identifier.Text] = false;
+                capturingState[variable.Identifier.ValueText] = false;
             }
         }
     }
@@ -88,7 +105,8 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     private static void ProcessNode(
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the
         // tracked capturing state. The walk does not descend into the bodies of nested
@@ -105,11 +123,11 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
-                ProcessIfStatement(ifStatement, context, capturingState);
+                ProcessIfStatement(ifStatement, context, capturingState, untrackableNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
-                ProcessSwitchStatement(switchStatement, context, capturingState);
+                ProcessSwitchStatement(switchStatement, context, capturingState, untrackableNames);
             }
             else if (descendant is VariableDeclarationSyntax declaration)
             {
@@ -118,7 +136,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
                 // using (T x = ...) statement, including inside nested blocks such as try
                 // statements. The pre-order walk visits the declaration before any later use
                 // of the variable.
-                TrackObserverDeclarations(declaration, context.SemanticModel, capturingState);
+                TrackObserverDeclarations(declaration, context.SemanticModel, capturingState, untrackableNames);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
@@ -130,22 +148,23 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     private static void ProcessIfStatement(
         IfStatementSyntax ifStatement,
         SyntaxNodeAnalysisContext context,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
-        ProcessNode(ifStatement.Condition, context, capturingState);
+        ProcessNode(ifStatement.Condition, context, capturingState, untrackableNames);
 
         // The branches are mutually exclusive, so each arm is walked against its own copy of
         // the state at the branch point: a StopCapturingTasks in one arm must not poison a
         // wait in the other. An else-if chain arrives here as an else clause whose statement
         // is itself an if statement, which ProcessNode routes back into this method.
         Dictionary<string, bool> thenBranchState = new(capturingState);
-        ProcessNode(ifStatement.Statement, context, thenBranchState);
+        ProcessNode(ifStatement.Statement, context, thenBranchState, untrackableNames);
 
         Dictionary<string, bool> elseBranchState = new(capturingState);
         if (ifStatement.Else is not null)
         {
-            ProcessNode(ifStatement.Else.Statement, context, elseBranchState);
+            ProcessNode(ifStatement.Else.Statement, context, elseBranchState, untrackableNames);
         }
 
         // After the branch, an observer counts as not capturing only when every path through
@@ -162,10 +181,11 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     private static void ProcessSwitchStatement(
         SwitchStatementSyntax switchStatement,
         SyntaxNodeAnalysisContext context,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         // The governing expression executes unconditionally, before any section.
-        ProcessNode(switchStatement.Expression, context, capturingState);
+        ProcessNode(switchStatement.Expression, context, capturingState, untrackableNames);
 
         // Sections are mutually exclusive in the same way if/else branches are.
         List<Dictionary<string, bool>> sectionStates = [];
@@ -174,7 +194,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             Dictionary<string, bool> sectionState = new(capturingState);
             foreach (StatementSyntax sectionStatement in section.Statements)
             {
-                ProcessNode(sectionStatement, context, sectionState);
+                ProcessNode(sectionStatement, context, sectionState, untrackableNames);
             }
 
             sectionStates.Add(sectionState);
@@ -206,7 +226,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        string receiverName = receiverIdentifier.Identifier.Text;
+        string receiverName = receiverIdentifier.Identifier.ValueText;
         if (!capturingState.ContainsKey(receiverName))
         {
             return;

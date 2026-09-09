@@ -48,6 +48,8 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         description: Description,
         helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi030");
 
+    private static readonly string[] CaptureSessionMethodNames = ["StartCapturingTasks", "StopCapturingTasks"];
+
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -65,19 +67,32 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         // active at the current point of the walk. Only locally-declared variables are tracked.
         Dictionary<string, bool> capturingState = [];
 
+        // An observer this member hands to other code, or one a nested function opens or closes a
+        // session on, may have a session this walk cannot see, so it is never tracked and never
+        // reported on. The names are collected up front because the other code may run before or
+        // after the StartCapturingTasks textually.
+        HashSet<string> untrackableNames = AnalyzerSymbolHelpers.FindVariablesHandedToOtherCode(context.Node);
+        untrackableNames.UnionWith(AnalyzerSymbolHelpers.FindVariablesChangedInsideNestedFunctions(context.Node, CaptureSessionMethodNames));
+
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            ProcessNode(statement, context, capturingState);
+            ProcessNode(statement, context, capturingState, untrackableNames);
         }
     }
 
     private static void TrackObserverDeclarations(
         VariableDeclarationSyntax declaration,
         SemanticModel semanticModel,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
+            if (untrackableNames.Contains(variable.Identifier.ValueText))
+            {
+                continue;
+            }
+
             ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
             if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
             {
@@ -89,7 +104,8 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
     private static void ProcessNode(
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         // Walk the node's descendants in document order, checking each invocation against the tracked
         // capturing state. The walk does not descend into the bodies of nested functions: their code
@@ -104,15 +120,15 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
-                ProcessIfStatement(ifStatement, context, capturingState);
+                ProcessIfStatement(ifStatement, context, capturingState, untrackableNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
-                ProcessSwitchStatement(switchStatement, context, capturingState);
+                ProcessSwitchStatement(switchStatement, context, capturingState, untrackableNames);
             }
             else if (descendant is VariableDeclarationSyntax declaration)
             {
-                TrackObserverDeclarations(declaration, context.SemanticModel, capturingState);
+                TrackObserverDeclarations(declaration, context.SemanticModel, capturingState, untrackableNames);
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
@@ -124,18 +140,19 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
     private static void ProcessIfStatement(
         IfStatementSyntax ifStatement,
         SyntaxNodeAnalysisContext context,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
-        ProcessNode(ifStatement.Condition, context, capturingState);
+        ProcessNode(ifStatement.Condition, context, capturingState, untrackableNames);
 
         Dictionary<string, bool> thenBranchState = new(capturingState);
-        ProcessNode(ifStatement.Statement, context, thenBranchState);
+        ProcessNode(ifStatement.Statement, context, thenBranchState, untrackableNames);
 
         Dictionary<string, bool> elseBranchState = new(capturingState);
         if (ifStatement.Else is not null)
         {
-            ProcessNode(ifStatement.Else.Statement, context, elseBranchState);
+            ProcessNode(ifStatement.Else.Statement, context, elseBranchState, untrackableNames);
         }
 
         // After the branch an observer counts as capturing only when every path through the branch
@@ -151,10 +168,11 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
     private static void ProcessSwitchStatement(
         SwitchStatementSyntax switchStatement,
         SyntaxNodeAnalysisContext context,
-        Dictionary<string, bool> capturingState)
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
     {
         // The governing expression executes unconditionally, before any section.
-        ProcessNode(switchStatement.Expression, context, capturingState);
+        ProcessNode(switchStatement.Expression, context, capturingState, untrackableNames);
 
         List<Dictionary<string, bool>> sectionStates = [];
         foreach (SwitchSectionSyntax section in switchStatement.Sections)
@@ -162,7 +180,7 @@ public class BiDiDriver030_DuplicateCaptureSessionAnalyzer : DiagnosticAnalyzer
             Dictionary<string, bool> sectionState = new(capturingState);
             foreach (StatementSyntax sectionStatement in section.Statements)
             {
-                ProcessNode(sectionStatement, context, sectionState);
+                ProcessNode(sectionStatement, context, sectionState, untrackableNames);
             }
 
             sectionStates.Add(sectionState);

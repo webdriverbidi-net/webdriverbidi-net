@@ -60,7 +60,7 @@ public class BiDiDriver006CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("observer");
+            .WithArguments("EventObserver", "observer");
 
         RealAssemblyCodeFixTest<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider> testState = new()
         {
@@ -141,5 +141,206 @@ public class BiDiDriver006CodeFixProviderTests
             languageVersion: LanguageVersion.CSharp8);
 
         Assert.Single(cSharp8Actions);
+    }
+
+    [Fact]
+    public async Task ObserverDeclaredDirectlyInASwitchSection_OffersNoCodeAction()
+    {
+        // A using declaration cannot sit directly in a switch section (CS8647), so adding the keyword
+        // would produce code that does not compile.
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, int mode)
+                    {
+                        switch (mode)
+                        {
+                            case 1:
+                                EventObserver<NavigationEventArgs> {|#0:observer|} = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        RealAssemblyCodeFixTest<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ObserverReassignedLater_OffersNoCodeAction()
+    {
+        // A using variable is read-only, so the later assignment would not compile (CS1656).
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<NavigationEventArgs> {|#0:observer|} = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        RealAssemblyCodeFixTest<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ObserverInASwitchSectionBlock_StillOffersTheFix()
+    {
+        // Braces delimit the scope, so the using declaration is legal there.
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, int mode)
+                    {
+                        switch (mode)
+                        {
+                            case 1:
+                                {
+                                    EventObserver<NavigationEventArgs> {|#0:observer|} = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                                    break;
+                                }
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, int mode)
+                    {
+                        switch (mode)
+                        {
+                            case 1:
+                                {
+                                    using EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                                    break;
+                                }
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        RealAssemblyCodeFixTest<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ObserverWithAnUnrelatedAssignmentNearby_StillOffersTheFix()
+    {
+        // Only an assignment to the observer itself blocks the rewrite.
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        int count = 0;
+                        EventObserver<NavigationEventArgs> {|#0:observer|} = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        count = 1;
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        int count = 0;
+                        using EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        count = 1;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        RealAssemblyCodeFixTest<BiDiDriver006_ObserverDisposalAnalyzer, BiDiDriver006_ObserverDisposalCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

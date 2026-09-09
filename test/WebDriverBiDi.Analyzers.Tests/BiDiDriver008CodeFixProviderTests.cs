@@ -1274,4 +1274,385 @@ public class BiDiDriver008CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task CastFollowedByAReturnThatUsesIt_OffersNoCodeAction()
+    {
+        // Moving the return into the if block would leave the method with no return on the path where
+        // the pattern does not match, which does not compile (CS0161).
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public RemoteValue TestMethod(EvaluateResult result)
+                    {
+                        var success = {|#0:(EvaluateResultSuccess)result|};
+                        return success.Result;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task CastFollowedByAThrowThatUsesIt_OffersNoCodeAction()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public RemoteValue TestMethod(EvaluateResult result)
+                    {
+                        var success = {|#0:(EvaluateResultSuccess)result|};
+                        throw new InvalidOperationException(success.RealmId);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task CastFollowedByAConditionalReturn_StillAppliesPatternMatching()
+    {
+        // The moved statement can return, but the method still returns on every path afterwards, so
+        // the rewrite compiles and the fix is offered.
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public string TestMethod(EvaluateResult result, bool wanted)
+                    {
+                        var success = {|#0:(EvaluateResultSuccess)result|};
+                        if (wanted)
+                        {
+                            return success.RealmId;
+                        }
+
+                        return null;
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public string TestMethod(EvaluateResult result, bool wanted)
+                    {
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            if (wanted)
+                            {
+                                return success.RealmId;
+                            }
+                        }
+
+                        return null;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AsCastWithAnExitingNullGuard_OffersNoCodeAction()
+    {
+        // The pattern variable is never null, so the guard would become dead code and the failing case
+        // would stop returning early and fall out of the if instead.
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (success == null)
+                        {
+                            return;
+                        }
+
+                        System.Console.WriteLine(success.RealmId);
+                        System.Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AsCastWithAnIsNullGuardThatThrows_OffersNoCodeAction()
+    {
+        // The `is null` spelling of the same guard.
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (success is null)
+                        {
+                            throw new InvalidOperationException();
+                        }
+
+                        Console.WriteLine(success.RealmId);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AsCastWithANullGuardThatFallsThrough_StillAppliesPatternMatching()
+    {
+        // A guard that merely wraps the work leaves the failing case doing nothing either way, which
+        // is what the rewrite produces, so the fix is still offered.
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (success != null)
+                        {
+                            Console.WriteLine(success.RealmId);
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            if (success != null)
+                            {
+                                Console.WriteLine(success.RealmId);
+                            }
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AsCastWithAReversedNullGuard_OffersNoCodeAction()
+    {
+        // The same guard with the operands the other way round.
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (null == success)
+                        {
+                            return;
+                        }
+
+                        Console.WriteLine(success.RealmId);
+                        Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AsCastWithAnExitingGuardThatIsNotANullTest_StillAppliesPatternMatching()
+    {
+        // An equality test against something other than null says nothing about the conversion, so it
+        // does not withhold the fix.
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result, EvaluateResultSuccess other)
+                    {
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (success == other)
+                        {
+                            return;
+                        }
+
+                        Console.WriteLine(success.RealmId);
+                        Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result, EvaluateResultSuccess other)
+                    {
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            if (success == other)
+                            {
+                                return;
+                            }
+                            Console.WriteLine(success.RealmId);
+                        }
+                        Console.WriteLine("done");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        RealAssemblyCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

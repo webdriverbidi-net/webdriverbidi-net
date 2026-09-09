@@ -355,6 +355,148 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
+    /// Collects the names of variables that the given body hands to other code, so that a rule which
+    /// tracks a variable's state across a single member can stop tracking them.
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <returns>The set of names whose state cannot be known from this member alone.</returns>
+    /// <remarks>
+    /// A variable passed to a method, returned, stored elsewhere, or used to initialize another
+    /// variable can be operated on by code the analyzer cannot see, so its state after that point is
+    /// unknown. Rules that walk a member textually collect these names up front rather than at the
+    /// point of escape, because the other code may run before or after the tracked call textually.
+    /// Being on the left of an assignment is not an escape: that rebinds the name rather than handing
+    /// the object out, and a rule that tracks assignments handles it directly.
+    /// </remarks>
+    internal static HashSet<string> FindVariablesHandedToOtherCode(SyntaxNode body)
+    {
+        HashSet<string> escapedNames = [];
+        foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
+        {
+            bool escapes = identifier.Parent switch
+            {
+                // Returned to the caller: return observer; or yield return observer;
+                ReturnStatementSyntax or YieldStatementSyntax => true,
+
+                // Stored somewhere this member does not own: this.observer = observer;
+                AssignmentExpressionSyntax assignment => assignment.Right == identifier,
+
+                // Passed to a method or constructor that may operate on it: BeginCapture(observer);
+                ArgumentSyntax => true,
+
+                // Placed in a collection expression or an initializer, or used to initialize another
+                // variable that may be operated on under its own name.
+                ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
+
+                _ => false,
+            };
+
+            if (escapes)
+            {
+                escapedNames.Add(identifier.Identifier.ValueText);
+            }
+        }
+
+        return escapedNames;
+    }
+
+    /// <summary>
+    /// Collects the names of variables on which one of the given methods is called from inside a
+    /// nested function (a lambda, an anonymous method, or a local function).
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <param name="methodNames">The names of the methods that change the state being tracked.</param>
+    /// <returns>The set of names whose state a nested function can change.</returns>
+    /// <remarks>
+    /// A nested function runs when its delegate is invoked, not where it is written, so a call inside
+    /// one changes the variable's state at a point a textual walk cannot place. Only calls that change
+    /// the tracked state count: treating every capture as unknown would stop a rule reporting a genuine
+    /// problem elsewhere in the same member.
+    /// </remarks>
+    internal static HashSet<string> FindVariablesChangedInsideNestedFunctions(SyntaxNode body, string[] methodNames)
+    {
+        HashSet<string> changedNames = [];
+        foreach (InvocationExpressionSyntax invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
+                memberAccess.Expression is not IdentifierNameSyntax receiver ||
+                !methodNames.Contains(memberAccess.Name.Identifier.ValueText))
+            {
+                continue;
+            }
+
+            // The invocation came from the body's descendants, so the body is always an ancestor and
+            // always stops the walk.
+            bool insideNestedFunction = invocation.Ancestors()
+                .TakeWhile(ancestor => ancestor != body)
+                .Any(ancestor => !DoesNotBeginNestedFunction(ancestor));
+
+            if (insideNestedFunction)
+            {
+                changedNames.Add(receiver.Identifier.ValueText);
+            }
+        }
+
+        return changedNames;
+    }
+
+    /// <summary>
+    /// The names of the methods that hand back a disposable handle for an event subscription.
+    /// </summary>
+    internal static readonly string[] EventSubscriptionHandleMethodNames = ["AddObserver", "AddDataCollector", "Subscribe"];
+
+    /// <summary>
+    /// Gets the name of the disposable handle type an invocation returns, for the three calls that
+    /// hand one back.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="invocation">The invocation to inspect.</param>
+    /// <returns>The handle type's name and the name of the method that returned it, or <see langword="null"/> when the call returns no handle.</returns>
+    /// <remarks>
+    /// <c>AddObserver</c> and <c>AddDataCollector</c> are recognised by their return types.
+    /// <c>Subscribe</c> is not: <see cref="IObservable{T}"/> declares it as returning
+    /// <see cref="IDisposable"/>, so the receiver is what identifies the call — an
+    /// <see cref="IObservable{T}"/> of a library event-args type can only have come from this
+    /// library's <c>ToObservable</c>.
+    /// </remarks>
+    internal static (string HandleTypeName, string MethodName)? GetEventSubscriptionHandle(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
+    {
+        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        {
+            return null;
+        }
+
+        if (method.Name == "AddObserver" && IsLibraryTypeNamed(method.ReturnType, "EventObserver"))
+        {
+            return ("EventObserver", method.Name);
+        }
+
+        if (method.Name == "AddDataCollector" && IsLibraryTypeNamed(method.ReturnType, "EventDataCollector"))
+        {
+            return ("EventDataCollector", method.Name);
+        }
+
+        return method.Name == "Subscribe" && IsLibraryEventObservable(semanticModel, invocation)
+            ? ("ObservableEventSubscription", method.Name)
+            : null;
+    }
+
+    /// <summary>
+    /// Determines whether an invocation's receiver is an observable over this library's event
+    /// arguments.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="invocation">The invocation to inspect.</param>
+    /// <returns><see langword="true"/> if the receiver is such an observable; otherwise <see langword="false"/>.</returns>
+    private static bool IsLibraryEventObservable(SemanticModel semanticModel, InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression is MemberAccessExpressionSyntax memberAccess
+            && semanticModel.GetTypeInfo(memberAccess.Expression).Type is INamedTypeSymbol { Name: "IObservable", TypeArguments.Length: 1 } observable
+            && observable.TypeArguments[0] is INamedTypeSymbol eventArgsType
+            && IsInWebDriverBiDiNamespace(eventArgsType);
+    }
+
+    /// <summary>
     /// Determines whether a Module type has <c>Module</c> anywhere in its base-type chain.
     /// </summary>
     /// <param name="type">The type to inspect.</param>

@@ -47,6 +47,11 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
             ExpressionSyntax receiver = reportedNode is VariableDeclaratorSyntax declarator
                 ? SyntaxFactory.IdentifierName(declarator.Identifier.ValueText)
                 : (ExpressionSyntax)reportedNode;
+            if (!CanInsertStopAsyncIntoScope(reportedNode, receiver))
+            {
+                return;
+            }
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: "Insert StopAsync before the end of the await using scope",
@@ -123,9 +128,25 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
 
         if (usingStatement is not null)
         {
-            StatementSyntax newBody = usingStatement.Statement is BlockSyntax body
-                ? body.WithStatements(body.Statements.Add(stopAsyncStatement))
-                : SyntaxFactory.Block(usingStatement.Statement, stopAsyncStatement);
+            // The disposal happens when the embedded statement finishes, so StopAsync goes at its end
+            // (wrapping it in a block if needed) — but before a closing return or throw, which would
+            // otherwise leave the inserted statement unreachable and never run it.
+            StatementSyntax newBody;
+            if (usingStatement.Statement is BlockSyntax body)
+            {
+                int exitIndex = body.Statements.Count - 1;
+                SyntaxList<StatementSyntax> newStatements = exitIndex >= 0 && ExitsScope(body.Statements[exitIndex])
+                    ? body.Statements.Insert(exitIndex, stopAsyncStatement)
+                    : body.Statements.Add(stopAsyncStatement);
+                newBody = body.WithStatements(newStatements);
+            }
+            else
+            {
+                newBody = ExitsScope(usingStatement.Statement)
+                    ? SyntaxFactory.Block(stopAsyncStatement, usingStatement.Statement)
+                    : SyntaxFactory.Block(usingStatement.Statement, stopAsyncStatement);
+            }
+
             return document.WithSyntaxRoot(root.ReplaceNode(usingStatement.Statement, newBody));
         }
 
@@ -178,6 +199,71 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
     private static bool ExitsScope(StatementSyntax statement)
     {
         return statement is ReturnStatementSyntax or ThrowStatementSyntax;
+    }
+
+    /// <summary>
+    /// Determines whether StopAsync can be inserted into an <c>await using</c> scope without changing
+    /// what the code does.
+    /// </summary>
+    /// <param name="reportedNode">The declarator or receiver expression the diagnostic is on.</param>
+    /// <param name="receiver">The expression naming the driver.</param>
+    /// <returns><see langword="true"/> if a fix can be offered; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// StopAsync has to go before the return or throw that ends the scope, because after one it would
+    /// never run. The expression of that statement is evaluated while the driver is still running, so
+    /// moving the stop in front of it changes what the expression sees: <c>return driver.IsStarted;</c>
+    /// would answer <see langword="false"/> instead of <see langword="true"/>, and
+    /// <c>return await driver.Session.StatusAsync();</c> would fail outright. There is no position that
+    /// both runs and preserves the result, so no fix is offered and the diagnostic is left for the
+    /// author to resolve.
+    /// </remarks>
+    private static bool CanInsertStopAsyncIntoScope(SyntaxNode reportedNode, ExpressionSyntax receiver)
+    {
+        StatementSyntax? exitingStatement = FindClosingScopeExit(reportedNode);
+        ExpressionSyntax? exitExpression = exitingStatement switch
+        {
+            ReturnStatementSyntax returnStatement => returnStatement.Expression,
+            ThrowStatementSyntax throwStatement => throwStatement.Expression,
+            _ => null,
+        };
+
+        return exitExpression is null
+            || !exitExpression.DescendantNodesAndSelf().Any(node => SyntaxFactory.AreEquivalent(node, receiver));
+    }
+
+    /// <summary>
+    /// Finds the return or throw that ends the scope the fix would insert into, if the scope ends with
+    /// one.
+    /// </summary>
+    /// <param name="reportedNode">The declarator or receiver expression the diagnostic is on.</param>
+    /// <returns>The closing statement, or <see langword="null"/> if the scope does not end with one.</returns>
+    private static StatementSyntax? FindClosingScopeExit(SyntaxNode reportedNode)
+    {
+        UsingStatementSyntax? usingStatement = reportedNode switch
+        {
+            VariableDeclaratorSyntax { Parent.Parent: UsingStatementSyntax statement } => statement,
+            ExpressionSyntax { Parent: UsingStatementSyntax statement } => statement,
+            _ => null,
+        };
+
+        StatementSyntax? lastStatement;
+        if (usingStatement is not null)
+        {
+            lastStatement = usingStatement.Statement is BlockSyntax body
+                ? body.Statements.LastOrDefault()
+                : usingStatement.Statement;
+        }
+        else
+        {
+            // An `await using var driver = ...;` declaration: the scope is the enclosing block, or the
+            // top-level program's global statements.
+            LocalDeclarationStatementSyntax declaration = (LocalDeclarationStatementSyntax)reportedNode.Parent!.Parent!;
+            lastStatement = declaration.Parent is BlockSyntax enclosingBlock
+                ? enclosingBlock.Statements.Last()
+                : ((CompilationUnitSyntax)declaration.Parent!.Parent!).Members.OfType<GlobalStatementSyntax>().Last().Statement;
+        }
+
+        return lastStatement is not null && ExitsScope(lastStatement) ? lastStatement : null;
     }
 
     private static StatementSyntax CreateStopAsyncStatement(ExpressionSyntax receiver)

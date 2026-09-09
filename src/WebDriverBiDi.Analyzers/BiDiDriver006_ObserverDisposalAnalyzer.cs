@@ -26,11 +26,11 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private const string Category = "Usage";
 
-    private static readonly LocalizableString Title = "EventObserver should be disposed";
+    private static readonly LocalizableString Title = "Event subscription handle should be disposed";
 
-    private static readonly LocalizableString MessageFormat = "EventObserver '{0}' is not disposed. Consider using a 'using' statement or calling Unobserve()/Dispose() when done.";
+    private static readonly LocalizableString MessageFormat = "{0} '{1}' is not disposed. Consider using a 'using' statement or calling Dispose() when done.";
 
-    private static readonly LocalizableString Description = "EventObserver instances should be disposed to unregister event handlers and prevent memory leaks. Use a 'using' statement or explicitly call Unobserve() or Dispose() when the observer is no longer needed.";
+    private static readonly LocalizableString Description = "The handle returned by AddObserver, AddDataCollector, or Subscribe on a ToObservable() sequence keeps the subscription alive, and a handle that is never disposed keeps receiving and queueing events, which is a memory leak. Use a 'using' statement or explicitly dispose the handle when it is no longer needed; an observer also accepts Unobserve().";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -56,8 +56,8 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
     {
-        // Find all local variable declarations that store AddObserver() results
-        Dictionary<string, LocalDeclarationStatementSyntax> observerVariables = [];
+        // Find all local variable declarations that store an event subscription handle.
+        Dictionary<string, (LocalDeclarationStatementSyntax Declaration, string HandleTypeName)> observerVariables = [];
 
         IEnumerable<LocalDeclarationStatementSyntax> localDeclarations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node)
             .OfType<LocalDeclarationStatementSyntax>();
@@ -66,12 +66,10 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         {
             foreach (VariableDeclaratorSyntax variable in localDeclaration.Declaration.Variables)
             {
-                if (variable.Initializer?.Value is InvocationExpressionSyntax invocation)
+                if (variable.Initializer?.Value is InvocationExpressionSyntax invocation
+                    && AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, invocation) is { } handle)
                 {
-                    if (IsAddObserverCall(context, invocation))
-                    {
-                        observerVariables[variable.Identifier.Text] = localDeclaration;
-                    }
+                    observerVariables[variable.Identifier.ValueText] = (localDeclaration, handle.HandleTypeName);
                 }
             }
         }
@@ -81,11 +79,11 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Check if observers are disposed
-        foreach (KeyValuePair<string, LocalDeclarationStatementSyntax> kvp in observerVariables)
+        // Check if the handles are disposed
+        foreach (KeyValuePair<string, (LocalDeclarationStatementSyntax Declaration, string HandleTypeName)> kvp in observerVariables)
         {
             string variableName = kvp.Key;
-            LocalDeclarationStatementSyntax declaration = kvp.Value;
+            LocalDeclarationStatementSyntax declaration = kvp.Value.Declaration;
 
             // Check if it's in a using statement
             if (IsInUsingStatement(declaration))
@@ -100,32 +98,11 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             }
 
             // Report diagnostic on just the variable identifier
-            VariableDeclaratorSyntax variable = declaration.Declaration.Variables.First(v => v.Identifier.Text == variableName);
+            VariableDeclaratorSyntax variable = declaration.Declaration.Variables.First(v => v.Identifier.ValueText == variableName);
             Location location = variable.Identifier.GetLocation();
-            Diagnostic diagnostic = Diagnostic.Create(Rule, location, variableName);
+            Diagnostic diagnostic = Diagnostic.Create(Rule, location, kvp.Value.HandleTypeName, variableName);
             context.ReportDiagnostic(diagnostic);
         }
-    }
-
-    private static bool IsAddObserverCall(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
-    {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return false;
-        }
-
-        if (memberAccess.Name.Identifier.ValueText != "AddObserver")
-        {
-            return false;
-        }
-
-        IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-        if (methodSymbol == null)
-        {
-            return false;
-        }
-
-        return AnalyzerSymbolHelpers.IsLibraryTypeNamed(methodSymbol.ReturnType, "EventObserver");
     }
 
     private static bool IsInUsingStatement(LocalDeclarationStatementSyntax declaration)
