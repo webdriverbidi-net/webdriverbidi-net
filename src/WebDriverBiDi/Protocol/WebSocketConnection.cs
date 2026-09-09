@@ -277,7 +277,15 @@ public class WebSocketConnection : Connection
             // MemoryPool<byte>.Shared is backed by ArrayPool, so TryGetArray always succeeds here.
             // We need the underlying array to pass to ReceiveAsync, which requires ArraySegment<byte>.
             MemoryMarshal.TryGetArray(receivedDataBufferOwner.Memory.Slice(0, this.BufferSize), out ArraySegment<byte> socketFrameBuffer);
-            while (this.client.State != WebSocketState.Closed && !connectionCancellationToken.IsCancellationRequested)
+
+            // A Close frame from the remote end is the remote end closing, and it is what ends this loop.
+            // The socket reaching WebSocketState.Closed is the same thing seen through the local state
+            // machine, and it is kept as a condition because a close this end started ends the loop that
+            // way. It is not enough on its own: acknowledging the frame leaves the socket Closed only when
+            // the socket itself saw the frame, and where it lands in CloseSent instead, a loop waiting for
+            // Closed would receive forever on a connection the remote end has already finished with.
+            bool remoteCloseFrameReceived = false;
+            while (!remoteCloseFrameReceived && this.client.State != WebSocketState.Closed && !connectionCancellationToken.IsCancellationRequested)
             {
                 // Only one receive operation at a time can be active on a ClientWebSocket instance,
                 // so we should synchronize receive access to the socket. However, this receive
@@ -292,7 +300,8 @@ public class WebSocketConnection : Connection
                 {
                     // The server is notifying us that the connection will close, and we did
                     // not initiate the close; send acknowledgement
-                    if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
+                    remoteCloseFrameReceived = receiveResult.MessageType == WebSocketMessageType.Close;
+                    if (remoteCloseFrameReceived && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
                         await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", connectionCancellationToken).ConfigureAwait(false);
