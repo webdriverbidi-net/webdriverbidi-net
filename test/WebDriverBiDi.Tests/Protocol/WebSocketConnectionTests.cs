@@ -1666,6 +1666,29 @@ public class WebSocketConnectionTests : IAsyncDisposable
         {
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
+
+        // This test has failed intermittently in CI with nothing but a timeout to go on, which cannot
+        // distinguish a close frame that never arrived from one whose receive faulted. Both leave the
+        // event unraised, and only the second reports an error, so the connection's own account of what
+        // happened is collected here and read back in the failure message.
+        List<string> connectionLog = [];
+        Exception? connectionError = null;
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (connectionLog)
+            {
+                connectionLog.Add(e.Message);
+            }
+
+            return Task.CompletedTask;
+        });
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            connectionError = e.Exception;
+            return Task.CompletedTask;
+        });
+
         ConnectionDisconnectedEventArgs? receivedEventArgs = null;
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
@@ -1680,7 +1703,22 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         await server.DisconnectAsync(registeredConnectionId);
 
-        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        try
+        {
+            await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            string log;
+            lock (connectionLog)
+            {
+                log = connectionLog.Count == 0 ? "(none)" : string.Join(" | ", connectionLog);
+            }
+
+            Assert.Fail(
+                $"The server closed the connection but OnRemoteDisconnected was never raised. Connection error: {connectionError?.GetType().Name ?? "(none)"}: {connectionError?.Message ?? string.Empty}. Connection log: {log}");
+        }
+
         Assert.NotNull(receivedEventArgs);
         await connection.StopAsync(TestContext.Current.CancellationToken);
     }
