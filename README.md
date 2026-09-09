@@ -295,13 +295,13 @@ Every version number the shipped assemblies and packages carry (`AssemblyVersion
 tag at build time, so no file in the repository records them.
 
 A few files do need updating when the version is bumped, and `scripts/prep-release.sh` makes
-those changes:
+those changes, where `<version>` is the release tag to apply (`vX.Y.Z`):
 
-    ./scripts/prep-release.sh 0.0.58
+    ./scripts/prep-release.sh <version>
 
 A PowerShell version is available for Windows, and makes the same changes:
 
-    ./scripts/prep-release.ps1 0.0.58
+    ./scripts/prep-release.ps1 <version>
 
 It moves the pending entries in `AnalyzerReleases.Unshipped.md` into a `## Release <version>`
 section of `AnalyzerReleases.Shipped.md`, updates the pinned package version shown in
