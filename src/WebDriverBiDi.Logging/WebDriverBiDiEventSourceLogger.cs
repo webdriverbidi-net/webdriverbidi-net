@@ -42,12 +42,20 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
     /// </summary>
     /// <param name="logger">The ILogger instance to forward events to.</param>
     /// <param name="minimumLevel">The minimum EventLevel to capture. Defaults to Informational.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="logger"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// The argument is checked in the constructor initializer rather than in a body, because the base
+    /// <see cref="EventListener"/> constructor subscribes this instance to the EventSource before any
+    /// body runs. Throwing after that point would leave the subscription in place on an object the
+    /// caller never receives and so can never dispose, and <see cref="EventListener"/> keeps every
+    /// listener in a static list, so the orphan would go on holding the source enabled at
+    /// <see cref="EventLevel.LogAlways"/> for the life of the process. Arguments to a constructor
+    /// initializer are evaluated before the base constructor runs, so the exception is thrown before
+    /// there is a listener to orphan.
+    /// </remarks>
     public WebDriverBiDiEventSourceLogger(ILogger logger, EventLevel minimumLevel = EventLevel.Informational)
+        : this(CreateResolvedLoggerFactory(logger), minimumLevel)
     {
-        ILogger resolvedLogger = logger ?? throw new ArgumentNullException(nameof(logger));
-        this.logger = new Lazy<ILogger>(() => resolvedLogger);
-        this.minimumLevel = minimumLevel;
-        this.EnableConfiguredEvents();
     }
 
     /// <summary>
@@ -161,6 +169,18 @@ public sealed class WebDriverBiDiEventSourceLogger : EventListener
 
         // Log with structured state
         target.Log(logLevel, eventId, state, null, FormatMessage);
+    }
+
+    /// <summary>
+    /// Wraps an already-resolved logger in the factory the listener holds, after checking it is not null.
+    /// </summary>
+    /// <param name="logger">The ILogger instance to forward events to.</param>
+    /// <returns>A factory returning that logger.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="logger"/> is <see langword="null"/>.</exception>
+    private static Lazy<ILogger> CreateResolvedLoggerFactory(ILogger logger)
+    {
+        ILogger resolvedLogger = logger ?? throw new ArgumentNullException(nameof(logger));
+        return new Lazy<ILogger>(() => resolvedLogger);
     }
 
     private static LogLevel MapEventLevel(EventLevel level)
