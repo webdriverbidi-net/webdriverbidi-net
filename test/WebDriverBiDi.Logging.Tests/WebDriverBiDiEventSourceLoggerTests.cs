@@ -174,13 +174,26 @@ public class WebDriverBiDiEventSourceLoggerTests
         // EventListener constructor, before the configured level has been assigned.
         WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "warm-up", 1);
 
+        // IsEnabled answers for the source across every EventListener in the process, not for this one
+        // alone, so it measures what this listener subscribed at only while nothing else has the source
+        // enabled above Warning. Establishing that first means a process where something else is
+        // listening fails here, saying so, rather than at the assertion below, where the same reading
+        // would look like the constructor having failed to lower the level.
+        Assert.False(
+            WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+            "Another EventListener already has the WebDriverBiDi EventSource enabled at Verbose, so this test cannot measure the level its own listener subscribes at.");
+
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Warning))
         {
             // The listener discards sub-Warning events either way; what matters here is that the source
             // itself no longer reports them as enabled, so they are never formatted or dispatched at all.
-            Assert.False(WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None));
-            Assert.True(WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Warning, EventKeywords.None));
+            Assert.False(
+                WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None),
+                "The constructor left the EventSource enabled at Verbose for a listener configured at Warning, so the re-subscription that lowers the level did not take effect.");
+            Assert.True(
+                WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Warning, EventKeywords.None),
+                "The constructor left the EventSource disabled at the level the listener was configured for.");
         }
     }
 
