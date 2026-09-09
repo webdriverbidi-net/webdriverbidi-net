@@ -1549,7 +1549,7 @@ public class RemoteValueTests
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.NotNull(remoteValue);
 
-        Assert.Equal($"RemoteValue of type '{remoteValue.Type}' cannot be converted to type 'StringRemoteValue'", Assert.ThrowsAny<WebDriverBiDiException>(() => remoteValue.ConvertTo<StringRemoteValue>().Value).Message);
+        Assert.Equal($"RemoteValue of type '{remoteValue.Type}' cannot be converted to type 'StringRemoteValue'", Assert.ThrowsAny<WebDriverBiDiException>(() => remoteValue.As<StringRemoteValue>().Value).Message);
     }
 
     [Fact]
@@ -1707,6 +1707,6 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.NotNull(remoteValue);
-        Assert.False(remoteValue.TryConvertTo(out NodeRemoteValue? _));
+        Assert.False(remoteValue.TryAs(out NodeRemoteValue? _));
     }
 }

@@ -839,7 +839,7 @@ public class ElementLocator
                 """;
 
             EvaluateResultSuccess result = await this.ExecuteScriptOnElementAsync(element, script).ConfigureAwait(false);
-            return result.Result.ConvertTo<BooleanRemoteValue>().Value;
+            return result.Result.As<BooleanRemoteValue>().Value;
         }
         finally
         {
@@ -862,7 +862,7 @@ public class ElementLocator
             Task timeoutTask = Task.Delay(Timeout.InfiniteTimeSpan, cts.Token);
             SharedReference element = await this.ResolveSingleElementAsync(timeoutTask).ConfigureAwait(false);
             EvaluateResultSuccess result = await this.ExecuteScriptOnElementAsync(element, "(e) => e.innerText").ConfigureAwait(false);
-            return result.Result.ConvertTo<StringRemoteValue>().Value;
+            return result.Result.As<StringRemoteValue>().Value;
         }
         finally
         {
@@ -891,7 +891,7 @@ public class ElementLocator
                 return null;
             }
 
-            return result.Result.ConvertTo<StringRemoteValue>().Value;
+            return result.Result.As<StringRemoteValue>().Value;
         }
         finally
         {
@@ -1010,7 +1010,7 @@ public class ElementLocator
             """;
 
         EvaluateResultSuccess result = await this.ExecuteScriptOnElementAsync(element, script).ConfigureAwait(false);
-        KeyValuePairCollectionRemoteValue obj = result.Result.ConvertTo<KeyValuePairCollectionRemoteValue>();
+        KeyValuePairCollectionRemoteValue obj = result.Result.As<KeyValuePairCollectionRemoteValue>();
 
         bool isCheckable = false;
         bool isRadio = false;

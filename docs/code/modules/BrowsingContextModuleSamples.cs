@@ -281,7 +281,7 @@ public static class BrowsingContextModuleSamples
         LocateNodesCommandResult parentResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#container")));
 
-        parentResult.Nodes[0].TryConvertTo(out NodeRemoteValue? parent);
+        parentResult.Nodes[0].TryAs(out NodeRemoteValue? parent);
 
         LocateNodesCommandParameters parameters = new LocateNodesCommandParameters(
             contextId,
@@ -387,7 +387,7 @@ public static class BrowsingContextModuleSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#chart")));
 
-        locateResult.Nodes[0].TryConvertTo(out NodeRemoteValue? element);
+        locateResult.Nodes[0].TryAs(out NodeRemoteValue? element);
 
         // Capture element screenshot
         CaptureScreenshotCommandParameters parameters =

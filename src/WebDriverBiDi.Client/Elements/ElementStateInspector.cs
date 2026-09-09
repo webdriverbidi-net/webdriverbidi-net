@@ -115,7 +115,7 @@ public class ElementStateInspector
 
         // We know this is not an exception, so we can safely cast to ElementResultSuccess.
         EvaluateResultSuccess visibilityScriptResultSuccess = (EvaluateResultSuccess)visibilityScriptResult;
-        return visibilityScriptResultSuccess.Result.ConvertTo<BooleanRemoteValue>().Value;
+        return visibilityScriptResultSuccess.Result.As<BooleanRemoteValue>().Value;
     }
 
     /// <summary>
@@ -144,7 +144,7 @@ public class ElementStateInspector
 
         // We know this is not an exception, so we can safely cast to ElementResultSuccess.
         EvaluateResultSuccess visibilityScriptResultSuccess = (EvaluateResultSuccess)visibilityScriptResult;
-        return !visibilityScriptResultSuccess.Result.ConvertTo<BooleanRemoteValue>().Value;
+        return !visibilityScriptResultSuccess.Result.As<BooleanRemoteValue>().Value;
     }
 
     /// <summary>

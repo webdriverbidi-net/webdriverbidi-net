@@ -221,7 +221,7 @@ public class RemoteValueDictionaryJsonConverterTests
         foreach (KeyValuePair<object, RemoteValue> entry in result)
         {
             Assert.IsType<ObjectReferenceRemoteValue>(entry.Key);
-            values.Add((long)entry.Value.ConvertTo<NumberRemoteValue>().Value!);
+            values.Add((long)entry.Value.As<NumberRemoteValue>().Value!);
         }
 
         Assert.Equal([1L, 2L], values.Order());
@@ -245,7 +245,7 @@ public class RemoteValueDictionaryJsonConverterTests
         // The key instance obtained from the dictionary itself is found.
         object key = Assert.Single(result.Keys);
         Assert.True(result.ContainsKey(key));
-        Assert.Equal("stringValue", result[key].ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("stringValue", result[key].As<StringRemoteValue>().Value);
 
         // A separately deserialized, structurally equal key is a different remote object and is not found.
         RemoteValueDictionary? other = JsonSerializer.Deserialize<RemoteValueDictionary>(json, options);
@@ -270,6 +270,6 @@ public class RemoteValueDictionaryJsonConverterTests
         Assert.NotNull(result);
         Assert.True(result.ContainsKey(string.Concat("na", "me")));
         Assert.False(result.ContainsKey(new object()));
-        Assert.Equal("stringValue", result["name"].ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("stringValue", result["name"].As<StringRemoteValue>().Value);
     }
 }

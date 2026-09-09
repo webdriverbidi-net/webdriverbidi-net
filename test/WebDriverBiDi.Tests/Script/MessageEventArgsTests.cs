@@ -24,7 +24,7 @@ public class MessageEventArgsTests
 
         Assert.Equal("myChannel", eventArgs.ChannelId);
         Assert.Equal(RemoteValueType.String, eventArgs.Data.Type);
-        Assert.Equal("myChannelValue", eventArgs.Data.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("myChannelValue", eventArgs.Data.As<StringRemoteValue>().Value);
         Assert.Equal("myRealm", eventArgs.Source.RealmId);
     }
 

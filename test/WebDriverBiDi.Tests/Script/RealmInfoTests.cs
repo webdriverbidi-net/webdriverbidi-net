@@ -113,7 +113,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.NotNull(info);
         Assert.IsType<ServiceWorkerRealmInfo>(info);
-        Assert.NotNull(info.ConvertTo<ServiceWorkerRealmInfo>());
+        Assert.NotNull(info.As<ServiceWorkerRealmInfo>());
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.NotNull(info);
         Assert.IsType<ServiceWorkerRealmInfo>(info);
-        Assert.Contains("cannot be cast", Assert.ThrowsAny<WebDriverBiDiException>(() => info.ConvertTo<SharedWorkerRealmInfo>()).Message);
+        Assert.Contains("cannot be cast", Assert.ThrowsAny<WebDriverBiDiException>(() => info.As<SharedWorkerRealmInfo>()).Message);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.NotNull(info);
         Assert.IsType<ServiceWorkerRealmInfo>(info);
-        bool result = info.TryConvertTo(out ServiceWorkerRealmInfo? outRealmInfo);
+        bool result = info.TryAs(out ServiceWorkerRealmInfo? outRealmInfo);
         Assert.True(result);
         Assert.NotNull(outRealmInfo);
     }
@@ -166,7 +166,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.NotNull(info);
         Assert.IsType<ServiceWorkerRealmInfo>(info);
-        bool result = info.TryConvertTo(out SharedWorkerRealmInfo? outRealmInfo);
+        bool result = info.TryAs(out SharedWorkerRealmInfo? outRealmInfo);
         Assert.False(result);
         Assert.Null(outRealmInfo);
     }

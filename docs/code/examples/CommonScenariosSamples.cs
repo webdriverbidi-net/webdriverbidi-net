@@ -541,12 +541,12 @@ public static class CommonScenariosSamples
 
             if (complexResult is EvaluateResultSuccess complexSuccess)
             {
-                RemoteValueDictionary data = complexSuccess.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+                RemoteValueDictionary data = complexSuccess.Result.As<KeyValuePairCollectionRemoteValue>().Value;
                 Console.WriteLine($"\nPage analysis:");
-                Console.WriteLine($"  URL: {data["url"].ConvertTo<StringRemoteValue>().Value}");
-                Console.WriteLine($"  Links: {data["linkCount"].ConvertTo<NumberRemoteValue>().Value}");
-                Console.WriteLine($"  Images: {data["imageCount"].ConvertTo<NumberRemoteValue>().Value}");
-                Console.WriteLine($"  Has title: {data["hasTitle"].ConvertTo<BooleanRemoteValue>().Value}");
+                Console.WriteLine($"  URL: {data["url"].As<StringRemoteValue>().Value}");
+                Console.WriteLine($"  Links: {data["linkCount"].As<NumberRemoteValue>().Value}");
+                Console.WriteLine($"  Images: {data["imageCount"].As<NumberRemoteValue>().Value}");
+                Console.WriteLine($"  Has title: {data["hasTitle"].As<BooleanRemoteValue>().Value}");
             }
         }
         finally

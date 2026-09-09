@@ -225,7 +225,7 @@ See [Working with Remote Values](remote-values.md) for the full type mapping.
 
 ### Accessing Values
 
-Pattern match or use `ConvertTo<T>()` to cast to the concrete type and access the `Value` property:
+Pattern match or use `As<T>()` to cast to the concrete type and access the `Value` property:
 
 [!code-csharp[Accessing Values](../code/core-concepts/CoreConceptsSamples.cs#AccessingValues)]
 

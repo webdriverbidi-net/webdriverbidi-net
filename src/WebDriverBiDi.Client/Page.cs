@@ -191,7 +191,7 @@ public class Page
             CollectionRemoteValue collectionRemoteValue => this.ConvertFromRemoteValueList(collectionRemoteValue.Value),
             NullRemoteValue _ => null,
             UndefinedRemoteValue _ => null,
-            _ => new RemoteJavaScriptObjectProxy(remoteValue.ConvertTo<ObjectReferenceRemoteValue>().ToRemoteObjectReference()),
+            _ => new RemoteJavaScriptObjectProxy(remoteValue.As<ObjectReferenceRemoteValue>().ToRemoteObjectReference()),
         };
 
         return valueObject;

@@ -35,7 +35,7 @@ public class EvaluateResultExceptionTests
         Assert.Equal(1UL, exceptionResult.ExceptionDetails.LineNumber);
         Assert.Equal(5UL, exceptionResult.ExceptionDetails.ColumnNumber);
         Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
-        Assert.Equal("exception value", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("exception value", exceptionResult.ExceptionDetails.Exception.As<StringRemoteValue>().Value);
     }
 
     [Fact]

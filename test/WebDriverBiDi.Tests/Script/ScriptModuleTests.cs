@@ -43,7 +43,7 @@ public class ScriptModuleTests
         Assert.Equal(EvaluateResultType.Success, successResult.ResultType);
         Assert.NotNull(successResult.Result);
         Assert.Equal(RemoteValueType.String, successResult.Result.Type);
-        Assert.Equal("myStringValue", successResult.Result.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("myStringValue", successResult.Result.As<StringRemoteValue>().Value);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class ScriptModuleTests
         Assert.Equal(5UL, exceptionResult.ExceptionDetails.ColumnNumber);
         Assert.NotNull(exceptionResult.ExceptionDetails.StackTrace);
         Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
-        Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.As<StringRemoteValue>().Value);
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public class ScriptModuleTests
         Assert.Equal(EvaluateResultType.Success, successResult.ResultType);
         Assert.NotNull(successResult.Result);
         Assert.Equal(RemoteValueType.String, successResult.Result.Type);
-        Assert.Equal("myStringValue", successResult.Result.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("myStringValue", successResult.Result.As<StringRemoteValue>().Value);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public class ScriptModuleTests
         Assert.Equal(5UL, exceptionResult.ExceptionDetails.ColumnNumber);
         Assert.NotNull(exceptionResult.ExceptionDetails.StackTrace);
         Assert.Empty(exceptionResult.ExceptionDetails.StackTrace.CallFrames);
-        Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("myStringValue", exceptionResult.ExceptionDetails.Exception.As<StringRemoteValue>().Value);
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class ScriptModuleTests
         Assert.Equal(RealmType.Window, result.Realms[0].Type);
         Assert.IsType<WindowRealmInfo>(result.Realms[0]);
 
-        WindowRealmInfo info = result.Realms[0].ConvertTo<WindowRealmInfo>();
+        WindowRealmInfo info = result.Realms[0].As<WindowRealmInfo>();
         Assert.NotNull(info);
 
         Assert.Equal("myRealmId", info.RealmId);
@@ -304,7 +304,7 @@ public class ScriptModuleTests
             Assert.Equal("myRealm", e.RealmId);
             Assert.Equal("myOrigin", e.Origin);
             Assert.Equal(RealmType.Window, e.Type);
-            Assert.Equal("myContext", e.ConvertTo<WindowRealmInfo>().BrowsingContextId);
+            Assert.Equal("myContext", e.As<WindowRealmInfo>().BrowsingContextId);
 
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
@@ -403,7 +403,7 @@ public class ScriptModuleTests
             Assert.Equal("myChannel", e.ChannelId);
             Assert.NotNull(e.Data);
             Assert.Equal(RemoteValueType.String, e.Data.Type);
-            Assert.Equal("myChannelValue", e.Data.ConvertTo<StringRemoteValue>().Value);
+            Assert.Equal("myChannelValue", e.Data.As<StringRemoteValue>().Value);
             Assert.NotNull(e.Source);
             Assert.Equal("myRealm", e.Source.RealmId);
 

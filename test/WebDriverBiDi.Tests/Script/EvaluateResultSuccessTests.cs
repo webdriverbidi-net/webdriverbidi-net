@@ -24,7 +24,7 @@ public class EvaluateResultSuccessTests
 
         Assert.Equal("myRealm", successResult.RealmId);
         Assert.Equal(RemoteValueType.String, successResult.Result.Type);
-        Assert.Equal("myResult", successResult.Result.ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("myResult", successResult.Result.As<StringRemoteValue>().Value);
     }
 
     [Fact]

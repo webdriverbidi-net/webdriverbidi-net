@@ -685,7 +685,7 @@ public static class EventObserverSamples
 
         // Wait for element to appear
         RemoteValue elementRemoteValue = await elementFound.Task;
-        elementRemoteValue.TryConvertTo(out NodeRemoteValue element);
+        elementRemoteValue.TryAs(out NodeRemoteValue element);
         Console.WriteLine($"Element found: {element.SharedId}");
         #endregion
     }

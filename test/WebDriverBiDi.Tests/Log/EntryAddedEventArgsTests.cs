@@ -115,7 +115,7 @@ public class EntryAddedEventArgsTests
         Assert.NotNull(eventArgs.Arguments);
         Assert.Single(eventArgs.Arguments);
         Assert.Equal(RemoteValueType.String, eventArgs.Arguments[0].Type);
-        Assert.Equal("argValue", eventArgs.Arguments[0].ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("argValue", eventArgs.Arguments[0].As<StringRemoteValue>().Value);
         Assert.NotNull(eventArgs.StackTrace);
     }
 

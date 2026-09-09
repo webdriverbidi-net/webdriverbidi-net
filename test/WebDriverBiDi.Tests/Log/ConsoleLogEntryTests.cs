@@ -85,7 +85,7 @@ public class ConsoleLogEntryTests
         Assert.Equal("myMethod", consoleEntry.Method);
         Assert.Single(consoleEntry.Args);
         Assert.Equal(RemoteValueType.String, consoleEntry.Args[0].Type);
-        Assert.Equal("argValue", consoleEntry.Args[0].ConvertTo<StringRemoteValue>().Value);
+        Assert.Equal("argValue", consoleEntry.Args[0].As<StringRemoteValue>().Value);
     }
 
     [Fact]

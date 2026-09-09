@@ -147,7 +147,7 @@ public static class DemoScenarios
         {
             Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type}");
             RemoteValue scriptResultValue = scriptSuccessResult.Result;
-            Console.WriteLine($"Element background color is {scriptResultValue.ConvertTo<StringRemoteValue>().Value}");
+            Console.WriteLine($"Element background color is {scriptResultValue.As<StringRemoteValue>().Value}");
         }
     }
 
@@ -293,7 +293,7 @@ public static class DemoScenarios
         {
             Console.WriteLine($"Script result type: {scriptSuccessResultNumber.Result.Type}");
             RemoteValue scriptResultValue = scriptSuccessResultNumber.Result;
-            Console.WriteLine($"Return value of function is {scriptResultValue.ConvertTo<NumberRemoteValue>().Value}");
+            Console.WriteLine($"Return value of function is {scriptResultValue.As<NumberRemoteValue>().Value}");
         }
 
         arguments =
@@ -308,7 +308,7 @@ public static class DemoScenarios
         if (scriptResult is EvaluateResultSuccess scriptSuccessResultString)
         {
             Console.WriteLine($"Script result type: {scriptSuccessResultString.Result.Type}");
-            StringRemoteValue scriptResultValue = scriptSuccessResultString.Result.ConvertTo<StringRemoteValue>();
+            StringRemoteValue scriptResultValue = scriptSuccessResultString.Result.As<StringRemoteValue>();
             Console.WriteLine($"Return value of function is {scriptResultValue.Value}");
         }
     }
@@ -348,7 +348,7 @@ public static class DemoScenarios
 
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator(".text")));
         NodeRemoteValue? node;
-        if (!locateResult.Nodes[0].TryConvertTo(out node))
+        if (!locateResult.Nodes[0].TryAs(out node))
         {
             Console.WriteLine("Failed to convert located node to NodeRemoteValue");
             return;
@@ -377,7 +377,7 @@ public static class DemoScenarios
         if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
         {
             Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type}");
-            StringRemoteValue scriptResultValue = scriptSuccessResult.Result.ConvertTo<StringRemoteValue>();
+            StringRemoteValue scriptResultValue = scriptSuccessResult.Result.As<StringRemoteValue>();
             Console.WriteLine($"Return value of function is {scriptResultValue.Value}");
         }
 
@@ -391,7 +391,7 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("h1")));
-        if (!locateResult.Nodes[0].TryConvertTo(out node))
+        if (!locateResult.Nodes[0].TryAs(out node))
         {
             Console.WriteLine("Failed to convert located node to NodeRemoteValue");
             return;
@@ -431,11 +431,11 @@ public static class DemoScenarios
         CallFunctionCommandParameters callFunctionParams = new(firstFunctionDefinition, new ContextTarget(contextId), true);
         EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         NodeRemoteValue? elementResultValue = null;
-        if (scriptResult is EvaluateResultSuccess firstScriptSuccessResult && firstScriptSuccessResult.Result.TryConvertTo(out elementResultValue))
+        if (scriptResult is EvaluateResultSuccess firstScriptSuccessResult && firstScriptSuccessResult.Result.TryAs(out elementResultValue))
         {
             RemoteValue scriptResultValue = firstScriptSuccessResult.Result;
             Console.WriteLine($"Script result type: {scriptResultValue.Type}");
-            if (scriptResultValue.TryConvertTo(out NodeRemoteValue? element))
+            if (scriptResultValue.TryAs(out NodeRemoteValue? element))
             {
                 Console.WriteLine($"Script returned element with ID {element.SharedId}");
             }
@@ -454,7 +454,7 @@ public static class DemoScenarios
             if (scriptResult is EvaluateResultSuccess secondScriptSuccessResult)
             {
                 Console.WriteLine($"Script result type: {secondScriptSuccessResult.Result.Type}");
-                Console.WriteLine($"Script result: {secondScriptSuccessResult.Result.ConvertTo<StringRemoteValue>().Value}");
+                Console.WriteLine($"Script result: {secondScriptSuccessResult.Result.As<StringRemoteValue>().Value}");
             }
             else if (scriptResult is EvaluateResultException scriptExceptionResult)
             {
@@ -1023,7 +1023,7 @@ public static class DemoScenarios
         Console.WriteLine($"Found {locateValues.Count} custom-button elements");
         foreach (RemoteValue locateValue in locateValues)
         {
-            NodeProperties properties = locateValue.ConvertTo<NodeRemoteValue>().GetNodeProperties();
+            NodeProperties properties = locateValue.As<NodeRemoteValue>().GetNodeProperties();
             Console.WriteLine($"Custom button element (local name {properties.LocalName}, id {properties.Attributes?["id"]})");
             if (properties.ShadowRoot is not null)
             {
@@ -1038,7 +1038,7 @@ public static class DemoScenarios
                 Console.WriteLine($"Found {locateShadowValues.Count} button elements in web component");
                 foreach (RemoteValue locateShadowValue in locateShadowValues)
                 {
-                    NodeProperties shadowProperties = locateShadowValue.ConvertTo<NodeRemoteValue>().GetNodeProperties();
+                    NodeProperties shadowProperties = locateShadowValue.As<NodeRemoteValue>().GetNodeProperties();
                     if (shadowProperties.LocalName?.ToLower() != "script" && shadowProperties.LocalName?.ToLower() != "style")
                     {
                         Console.WriteLine($"Found button (local name {shadowProperties.LocalName}, id {shadowProperties.Attributes?["id"]} in web component)");
@@ -1082,7 +1082,7 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(addedBrowsingContextId, new CssLocator(".text")));
-        if (!locateResult.Nodes[0].TryConvertTo(out NodeRemoteValue? node))
+        if (!locateResult.Nodes[0].TryAs(out NodeRemoteValue? node))
         {
             Console.WriteLine("Failed to convert located node to NodeRemoteValue");
             return;
@@ -1105,7 +1105,7 @@ public static class DemoScenarios
         if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
         {
             Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type}");
-            StringRemoteValue scriptResultValue = scriptSuccessResult.Result.ConvertTo<StringRemoteValue>();
+            StringRemoteValue scriptResultValue = scriptSuccessResult.Result.As<StringRemoteValue>();
             Console.WriteLine($"Return value of function is {scriptResultValue.Value}");
         }
     }
