@@ -85,3 +85,13 @@ BIDI025 | Reliability | Warning  | BiDiDriver025_AsyncVoidEventHandlerAnalyzer
 BIDI026 | Usage       | Error    | BiDiDriver026_ExecuteCommandResultTypeMismatchAnalyzer
 BIDI027 | Usage       | Error    | BiDiDriver027_RegisterEventWithBuiltInNameAnalyzer
 BIDI028 | Usage       | Warning  | BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer
+
+## Release 0.0.58
+
+### New Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI029 | Usage       | Error    | BiDiDriver029_DriverUseAfterDisposalAnalyzer
+BIDI030 | Usage       | Warning  | BiDiDriver030_DuplicateCaptureSessionAnalyzer
+BIDI031 | Design      | Info     | BiDiDriver031_DiscardedObserverResultAnalyzer
