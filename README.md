@@ -283,11 +283,16 @@ This will serve a local copy of the documentation at http://localhost:8080.
 
 ## Releasing
 A release is cut by tagging a commit on `main` with a `vX.Y.Z` tag (optionally with a
-prerelease qualifier, as in `v0.0.58-beta.1`) and pushing that tag. The `Release` workflow does
-the rest: it runs the full test suite, publishes the documentation site, and packs and pushes the
-NuGet packages. Every version number the shipped assemblies and packages carry
-(`AssemblyVersion`, `FileVersion`, `InformationalVersion`, and `PackageVersion`) is derived from
-the tag at build time, so no file in the repository records them.
+prerelease qualifier, as in `v0.0.58-beta.1`) and pushing that tag. The immediately
+prior tag can be found by executing the following command at the terminal:
+```shell
+git describe --tags --abbrev=0
+```
+Once the tag is pushed, the `Release` workflow does the rest: it runs the full test
+suite, publishes the documentation site, and packs and pushes the NuGet packages.
+Every version number the shipped assemblies and packages carry (`AssemblyVersion`,
+`FileVersion`, `InformationalVersion`, and `PackageVersion`) is derived from the
+tag at build time, so no file in the repository records them.
 
 A few files do need updating when the version is bumped, and `scripts/prep-release.sh` makes
 those changes:
