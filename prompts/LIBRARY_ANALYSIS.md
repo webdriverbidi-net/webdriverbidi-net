@@ -164,6 +164,19 @@ shapes), not at the enum-*value* level. Note also that the `UnmatchedValueType` 
 `RemoteValue` exists for spec-defined `RemoteValueType` members that have no dedicated derived
 class (e.g. `function`, `promise`, `weakmap`); it is not a mechanism for tolerating undefined
 type strings, and must not be described as "unreachable" or "never engaging."
+* Each concrete `RemoteValue` type defines an **implicit** conversion operator to the .NET type of
+its payload (`StringRemoteValue` to `string`, `BooleanRemoteValue` to `bool`, `DateRemoteValue` to
+`DateTime`, `RegExpRemoteValue` to `RegularExpressionValue`, `NumberRemoteValue` to `double`), and
+`NumberRemoteValue` additionally converts implicitly to `long` and to `int` by way of its
+`ToLong()` and `ToInt()` methods. Those last two are narrowing, and they are deliberately implicit
+anyway: the conversion is the idiom the documentation teaches (`long number =
+remoteValue.ConvertTo<NumberRemoteValue>();` is a published sample in
+`docs/articles/remote-values.md`), the narrowing is spelled out in the XML remarks on each operator
+and on `ToInt()`/`ToLong()`, and the saturating behavior those methods implement by hand is better
+defined than the primitive cast, which is undefined for `NaN` and out-of-range values on .NET
+Framework. Making them `explicit`, or removing them in favour of the methods, has been considered
+and rejected. Do **not** recommend either, and do not cite the .NET design guideline against lossy
+implicit conversions as if it settled the question.
 * This project is not a replacement for higher-level automation libraries like
 Selenium, Puppeteer, or Playwright. Therefore, there is no need for a migration
 guide In the project documentation. Please do not suggest one.
@@ -318,6 +331,32 @@ must not be flagged as a defect or scored against. You may note in the Non-
 Issues section that a BCL parallel exists, but only if you also note that the
 BCL itself does not consistently mandate the pattern (e.g. `HttpRequestException`
 does not extend `TimeoutException`).
+
+**Before recommending a change to the shape of a public API member on the strength of a general
+design guideline** — making an implicit conversion explicit, changing an accessibility or a
+signature, splitting or merging an overload set, renaming a member — establish that the current
+shape is not a deliberate decision. Citing a guideline (the .NET Framework Design Guidelines, "an
+implicit conversion must not be lossy," "prefer X over Y") is not by itself a finding, because a
+guideline describes the default choice and this library has made many considered departures from
+defaults. Three checks, each of which must be reported in the finding:
+* **The documentation.** Search `docs/` *and* `docs/code/` for the member. `docs/code` holds the
+compiled samples the articles embed, so it is the authoritative record of what consuming code is
+meant to look like. A shape that the published samples rely on is the idiom the library teaches,
+not an oversight.
+* **The family.** Grep the library for the same shape on sibling types. A shape shared across a set
+of types is a convention; changing one member of the set makes the set inconsistent, which is a
+cost the finding must weigh and state.
+* **The member's own documentation.** Behavior that the member's XML remarks spell out is
+disclosed, not hidden, and a finding that amounts to "a caller might not read the documentation"
+is not actionable.
+
+Then state the consuming-syntax delta concretely: quote a real call site as it is written today
+and as it would have to be written, and count the sites in `src`, `docs/code` and `test` that would
+change. If the delta amounts to making callers restate what the library already documents, withdraw
+the finding. Keep it only when the current shape causes a concrete failure you can demonstrate —
+in particular, when the change would alter behavior at call sites that continue to compile
+(overload resolution binding to a different candidate, for example). In that case the changed
+behavior, not the guideline, is the finding, and it must name the call sites and say what changes.
 
 **When a claim concerns something a method or property does not do (lacks validation, lacks a check, lacks a feature), follow every delegation in the call chain to its concrete implementation before concluding the behavior is absent.**
 If A.Foo delegates to B.Bar which calls C.Baz, the claim "Foo does not validate
