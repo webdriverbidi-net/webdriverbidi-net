@@ -281,6 +281,37 @@ following command:
 
 This will serve a local copy of the documentation at http://localhost:8080.
 
+## Releasing
+A release is cut by tagging a commit on `main` with a `vX.Y.Z` tag (optionally with a
+prerelease qualifier, as in `v0.0.58-beta.1`) and pushing that tag. The `Release` workflow does
+the rest: it runs the full test suite, publishes the documentation site, and packs and pushes the
+NuGet packages. Every version number the shipped assemblies and packages carry
+(`AssemblyVersion`, `FileVersion`, `InformationalVersion`, and `PackageVersion`) is derived from
+the tag at build time, so no file in the repository records them.
+
+A few files do need updating when the version is bumped, and `scripts/prep-release.sh` makes
+those changes:
+
+    ./scripts/prep-release.sh 0.0.58
+
+A PowerShell version is available for Windows, and makes the same changes:
+
+    ./scripts/prep-release.ps1 0.0.58
+
+It moves the pending entries in `AnalyzerReleases.Unshipped.md` into a `## Release <version>`
+section of `AnalyzerReleases.Shipped.md`, updates the pinned package version shown in
+`docs/articles/getting-started.md` (skipped for prerelease versions, which that page should not
+recommend), and then runs the local subset of the release gates: a Release build with
+`-warnaserror`, the unit test projects, and the documentation region validation. Pass `--dry-run`
+to see the changes without writing them, or `--skip-verification` to stop after making them
+(`-DryRun` and `-SkipVerification` in the PowerShell version). The documentation region
+validation is a bash script, so the PowerShell version skips that one step when bash is not on
+`PATH`; Git for Windows provides it, and CI runs it again on the tag push regardless.
+
+The script deliberately stops at the working tree — it never commits, tags, or pushes. Review the
+changes, commit them, get the commit onto `main`, and only then tag and push the tag. The release
+workflow refuses to publish a tag that is not an ancestor of `origin/main`.
+
 ## Prompts
 The `prompts` directory contains prompts that one can use to prompt a large language
 model (LLM), colloquially known as "AI," to aid in development of this library.
