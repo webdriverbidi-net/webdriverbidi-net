@@ -403,3 +403,11 @@ dotnet_naming_style.async_method_name.required_prefix =
 dotnet_naming_style.async_method_name.required_suffix = Async
 dotnet_naming_style.async_method_name.word_separator = 
 dotnet_naming_style.async_method_name.capitalization = pascal_case
+
+#### Documented projects only ####
+
+# IDE0005 (unnecessary using directive) is only reported by the compiler when
+# GenerateDocumentationFile is true, so it is scoped to the projects that set it.
+# Enabling it elsewhere emits warning EnableGenerateDocumentationFile instead.
+[{src/WebDriverBiDi,src/WebDriverBiDi.Client,src/WebDriverBiDi.Logging}/**.cs]
+dotnet_diagnostic.IDE0005.severity = warning
