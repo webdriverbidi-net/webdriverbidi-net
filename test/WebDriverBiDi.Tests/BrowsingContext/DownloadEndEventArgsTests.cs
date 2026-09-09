@@ -337,7 +337,7 @@ public class DownloadEndEventArgsTests
                         "status": "complete"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -354,7 +354,7 @@ public class DownloadEndEventArgsTests
                         "status": "complete"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public class DownloadEndEventArgsTests
                         "status": "invalid"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -405,7 +405,7 @@ public class DownloadEndEventArgsTests
                         "status": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -422,7 +422,7 @@ public class DownloadEndEventArgsTests
                         "download": "myDownloadId"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -440,6 +440,6 @@ public class DownloadEndEventArgsTests
                         "filepath": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
     }
 }
