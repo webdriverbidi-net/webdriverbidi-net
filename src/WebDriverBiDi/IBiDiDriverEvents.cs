@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi;
 
-using WebDriverBiDi.Log;
 using WebDriverBiDi.Protocol;
 
 /// <summary>

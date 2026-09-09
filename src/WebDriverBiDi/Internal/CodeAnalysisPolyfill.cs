@@ -10,12 +10,12 @@
 
 namespace System.Diagnostics.CodeAnalysis;
 
-using System.ComponentModel;
-
 // This file provides polyfill attributes for code analysis features that are not
 // available in all target frameworks. This enables use of the `required` modifier
 // and related features while maintaining compatibility with older frameworks.
 #if !NET7_0_OR_GREATER
+using System.ComponentModel;
+
 [Flags]
 internal enum DynamicallyAccessedMemberTypes
 {

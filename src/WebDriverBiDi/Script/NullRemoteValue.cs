@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a null value from the remote end, providing
