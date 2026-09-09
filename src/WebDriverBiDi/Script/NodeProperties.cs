@@ -97,7 +97,7 @@ public record NodeProperties
     }
 
     /// <summary>
-    /// Gets the mode of the shadow root, if one is present.
+    /// Gets the mode of this node when it is a shadow root; otherwise null.
     /// </summary>
     [JsonPropertyName("mode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

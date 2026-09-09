@@ -21,7 +21,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     }
 
     /// <summary>
-    /// Gets the ID of the browsing context generating the characteristic event.
+    /// Gets the ID of the browsing context in which the characteristic event was generated.
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
@@ -29,7 +29,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the address of the device generating the characteristic event.
+    /// Gets the address of the device on which the characteristic event was generated.
     /// </summary>
     [JsonPropertyName("address")]
     [JsonRequired]
@@ -37,7 +37,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string Address { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the UUID of the service generating the characteristic event.
+    /// Gets the UUID of the service on which the characteristic event was generated.
     /// </summary>
     [JsonPropertyName("serviceUuid")]
     [JsonRequired]
@@ -45,7 +45,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string ServiceUuid { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the UUID of the characteristic generating the characteristic event.
+    /// Gets the UUID of the characteristic on which the characteristic event was generated.
     /// </summary>
     [JsonPropertyName("characteristicUuid")]
     [JsonRequired]

@@ -55,8 +55,14 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     public ImageSize? ImageSize { get; set; }
 
     /// <summary>
-    /// Gets or sets the origin of the clip rectangle for the screenshot, if any.
+    /// Gets or sets the area the screenshot captures. Defaults to
+    /// <see cref="ScreenshotOrigin.Viewport"/> when omitted.
     /// </summary>
+    /// <remarks>
+    /// The area is the visual viewport, or the whole document, which yields a full-page screenshot.
+    /// Any <see cref="Clip"/> is interpreted relative to the chosen area, so this value applies whether
+    /// or not a clip is supplied.
+    /// </remarks>
     [JsonPropertyName("origin")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ScreenshotOrigin? Origin { get; set; }
