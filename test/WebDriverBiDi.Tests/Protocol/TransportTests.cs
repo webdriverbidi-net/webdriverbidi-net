@@ -1213,6 +1213,58 @@ public class TransportTests
         Assert.StartsWith($"The transport is already connected to ws://localhost:1234", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await transport.ConnectAsync($"ws://localhost:5678", TestContext.Current.CancellationToken))).Message);
     }
 
+    /// <summary>
+    /// A connection the caller opened before handing it to the transport is adopted rather than opened
+    /// again, so a session can be started over it. The connection string must name the remote end the
+    /// connection is already open to, because adopting it opens nothing and so cannot honour any other
+    /// value.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task TestConnectAdoptsAnAlreadyOpenConnection()
+    {
+        TestWebSocketConnection connection = new();
+
+        // Open the connection first, as a caller supplying an already-open connection would. The
+        // bypassed start records the connection string without opening a socket; the override is what
+        // makes the connection report itself open to the transport afterwards.
+        await connection.StartAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
+        connection.IsActiveOverride = () => true;
+
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
+
+        Assert.Equal(TransportState.Connected, transport.State);
+
+        // The connection was adopted, not reopened: it is still open to the value it was opened with.
+        Assert.Equal("ws://localhost:1234", connection.ConnectionString);
+    }
+
+    /// <summary>
+    /// The counterpart of the adoption case: a connection string naming a different remote end than the
+    /// open connection is rejected rather than silently discarded, and the transport is left
+    /// disconnected so a corrected attempt may be made.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task TestConnectToAnAlreadyOpenConnectionWithADifferentConnectionStringThrows()
+    {
+        TestWebSocketConnection connection = new();
+        await connection.StartAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
+        connection.IsActiveOverride = () => true;
+
+        await using Transport transport = new(connection);
+
+        ArgumentException exception = await Assert.ThrowsAnyAsync<ArgumentException>(
+            async () => await transport.ConnectAsync("ws://localhost:5678", TestContext.Current.CancellationToken));
+        Assert.Equal("connectionString", exception.ParamName);
+        Assert.Contains("already open to 'ws://localhost:1234'", exception.Message);
+
+        // The failed attempt rolls back, so the transport is idle and the open connection is untouched.
+        Assert.Equal(TransportState.Disconnected, transport.State);
+        Assert.Equal("ws://localhost:1234", connection.ConnectionString);
+    }
+
     [Fact]
     public async Task TestConcurrentConnectAsyncCallsAreSerialized()
     {
