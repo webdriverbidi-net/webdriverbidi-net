@@ -32,7 +32,7 @@ public class BiDiDriver017CodeFixProviderTests
         // and a fix on a current language version, which the tests above cover.
         string testCode = """
             using System.Collections.Generic;
-            using WebDriverBiDi.Session;
+            using WebDriverBiDi.UserAgentClientHints;
 
             namespace TestApp
             {
@@ -40,8 +40,8 @@ public class BiDiDriver017CodeFixProviderTests
                 {
                     public void TestMethod()
                     {
-                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
-                        parameters.NoProxyAddresses.Add("proxy1");
+                        ClientHintsMetadata parameters = new ClientHintsMetadata();
+                        parameters.FormFactors.Add("proxy1");
                     }
                 }
             }
@@ -61,7 +61,7 @@ public class BiDiDriver017CodeFixProviderTests
         string testCode = """
             #nullable enable
             using System.Collections.Generic;
-            using WebDriverBiDi.Session;
+            using WebDriverBiDi.UserAgentClientHints;
 
             namespace TestApp
             {
@@ -69,8 +69,8 @@ public class BiDiDriver017CodeFixProviderTests
                 {
                     public void TestMethod()
                     {
-                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
-                        {|#0:parameters.NoProxyAddresses|}.Add("proxy1");
+                        ClientHintsMetadata parameters = new ClientHintsMetadata();
+                        {|#0:parameters.FormFactors|}.Add("proxy1");
                     }
                 }
             }
@@ -79,7 +79,7 @@ public class BiDiDriver017CodeFixProviderTests
         string fixedCode = """
             #nullable enable
             using System.Collections.Generic;
-            using WebDriverBiDi.Session;
+            using WebDriverBiDi.UserAgentClientHints;
 
             namespace TestApp
             {
@@ -87,8 +87,8 @@ public class BiDiDriver017CodeFixProviderTests
                 {
                     public void TestMethod()
                     {
-                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
-                        (parameters.NoProxyAddresses ??= new List<string>()).Add("proxy1");
+                        ClientHintsMetadata parameters = new ClientHintsMetadata();
+                        (parameters.FormFactors ??= new List<string>()).Add("proxy1");
                     }
                 }
             }
@@ -96,7 +96,7 @@ public class BiDiDriver017CodeFixProviderTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver017_NullableListAddAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("string", "NoProxyAddresses");
+            .WithArguments("string", "FormFactors");
 
         RealAssemblyCodeFixTest<BiDiDriver017_NullableListAddAnalyzer, BiDiDriver017_NullableListAddCodeFixProvider> testState = new()
         {

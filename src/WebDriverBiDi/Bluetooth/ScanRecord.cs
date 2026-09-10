@@ -27,11 +27,17 @@ public class ScanRecord
     public string? Name { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of Service UUIDs that this scan record says the Bluetooth device's GATT server supports.
+    /// Gets the list of Service UUIDs that this scan record says the Bluetooth device's GATT server supports.
     /// </summary>
-    [JsonPropertyName("uuids")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UUIDs { get; set; }
+    /// <remarks>
+    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
+    /// empty array: the advertising event the remote end fires starts from an empty list of UUIDs and
+    /// is populated only from the entries this record carries. An empty list therefore means "not
+    /// specified": the property is omitted from the JSON payload entirely. Add entries to the list to
+    /// populate it.
+    /// </remarks>
+    [JsonIgnore]
+    public List<string> UUIDs { get; } = [];
 
     /// <summary>
     /// Gets or sets the appearance value of the Bluetooth device.
@@ -41,9 +47,53 @@ public class ScanRecord
     public uint? Appearance { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of manufacturer data for this scan record.
+    /// Gets the list of manufacturer data for this scan record.
+    /// </summary>
+    /// <remarks>
+    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
+    /// empty array: the advertising event the remote end fires starts from an empty manufacturer data
+    /// map and is populated only from the entries this record carries. An empty list therefore means
+    /// "not specified": the property is omitted from the JSON payload entirely. Add entries to the
+    /// list to populate it.
+    /// </remarks>
+    [JsonIgnore]
+    public List<BluetoothManufacturerData> ManufacturerData { get; } = [];
+
+    /// <summary>
+    /// Gets the list of Service UUIDs for this scan record, for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("uuids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<string>? SerializableUUIDs
+    {
+        get
+        {
+            if (this.UUIDs.Count == 0)
+            {
+                return null;
+            }
+
+            return this.UUIDs;
+        }
+    }
+
+    /// <summary>
+    /// Gets the list of manufacturer data for this scan record, for serialization purposes.
     /// </summary>
     [JsonPropertyName("manufacturerData")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<BluetoothManufacturerData>? ManufacturerData { get; set; }
+    [JsonInclude]
+    internal List<BluetoothManufacturerData>? SerializableManufacturerData
+    {
+        get
+        {
+            if (this.ManufacturerData.Count == 0)
+            {
+                return null;
+            }
+
+            return this.ManufacturerData;
+        }
+    }
 }

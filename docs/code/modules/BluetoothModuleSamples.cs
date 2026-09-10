@@ -206,7 +206,7 @@ public static class BluetoothModuleSamples
         await driver.Bluetooth.SimulatePreconnectedPeripheralAsync(deviceParams);
 
         // Advertise device
-        ScanRecord scanRecord = new ScanRecord { UUIDs = new List<string> { "environmental_sensing" } };
+        ScanRecord scanRecord = new ScanRecord { UUIDs = { "environmental_sensing" } };
         SimulateAdvertisementScanEntry adScanEntry = new SimulateAdvertisementScanEntry(
             "11:22:33:44:55:66",
             -45,

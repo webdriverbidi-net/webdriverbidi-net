@@ -35,7 +35,8 @@ using System.Text.Json.Serialization.Metadata;
 /// <para>
 /// Unlike the library's other inbound-only converters, this one implements serialization rather than
 /// throwing, and must continue to. Of the members it is applied to, exactly one is also serialized:
-/// <c>ManualProxyConfiguration.NoProxyAddresses</c> is received as part of a
+/// <c>ManualProxyConfiguration.SerializableNoProxyAddresses</c>, the shim behind
+/// <see cref="Session.ManualProxyConfiguration.NoProxyAddresses"/>, is received as part of a
 /// <see cref="Session.CapabilitiesResult"/> and sent as part of
 /// <see cref="Session.CapabilityRequest.Proxy"/>, so a converter that refused to write would fail every
 /// <c>session.new</c> that configures a manual proxy. Writing is a transparent pass-through, producing

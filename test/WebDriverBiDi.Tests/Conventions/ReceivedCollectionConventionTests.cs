@@ -70,7 +70,7 @@ public class ReceivedCollectionConventionTests
             "WebDriverBiDi.Script.GetRealmsCommandResult.SerializableRealms",
             "WebDriverBiDi.Script.StackTrace.SerializableCallFrames",
             "WebDriverBiDi.Network.BaseNetworkEventArgs.SerializableIntercepts",
-            "WebDriverBiDi.Session.ManualProxyConfiguration.NoProxyAddresses",
+            "WebDriverBiDi.Session.ManualProxyConfiguration.SerializableNoProxyAddresses",
             "WebDriverBiDi.Script.NodeProperties.SerializableAttributes",
         ];
         foreach (string member in expected)

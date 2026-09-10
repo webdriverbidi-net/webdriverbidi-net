@@ -24,7 +24,7 @@ public class BiDiDriver017AnalyzerTests
         string test = """
             #nullable enable
             using System.Collections.Generic;
-            using WebDriverBiDi.Session;
+            using WebDriverBiDi.UserAgentClientHints;
 
             namespace TestApp
             {
@@ -32,8 +32,8 @@ public class BiDiDriver017AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
-                        {|#0:parameters.NoProxyAddresses|}.Add("proxy1");
+                        ClientHintsMetadata parameters = new ClientHintsMetadata();
+                        {|#0:parameters.FormFactors|}.Add("proxy1");
                     }
                 }
             }
@@ -41,7 +41,7 @@ public class BiDiDriver017AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver017_NullableListAddAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("string", "NoProxyAddresses");
+            .WithArguments("string", "FormFactors");
 
         RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
         {
@@ -62,7 +62,7 @@ public class BiDiDriver017AnalyzerTests
         string test = """
             #nullable enable
             using System.Collections.Generic;
-            using WebDriverBiDi.Session;
+            using WebDriverBiDi.UserAgentClientHints;
 
             namespace TestApp
             {
@@ -70,8 +70,8 @@ public class BiDiDriver017AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        ManualProxyConfiguration parameters = new ManualProxyConfiguration();
-                        (parameters.NoProxyAddresses ??= new List<string>()).Add("proxy1");
+                        ClientHintsMetadata parameters = new ClientHintsMetadata();
+                        (parameters.FormFactors ??= new List<string>()).Add("proxy1");
                     }
                 }
             }
@@ -1045,7 +1045,7 @@ public class BiDiDriver017AnalyzerTests
     {
         string test = """
             #nullable enable
-            using WebDriverBiDi.Session;
+            using WebDriverBiDi.UserAgentClientHints;
 
             namespace TestApp
             {
@@ -1053,9 +1053,9 @@ public class BiDiDriver017AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        ManualProxyConfiguration p = new ManualProxyConfiguration();
+                        ClientHintsMetadata p = new ClientHintsMetadata();
                         // null-conditional ?.Add — should be suppressed (line 84)
-                        p.NoProxyAddresses?.Add("item");
+                        p.FormFactors?.Add("item");
                     }
                 }
             }
@@ -1081,7 +1081,7 @@ public class BiDiDriver017AnalyzerTests
         string test = """
             #nullable enable
             using System.Collections.Generic;
-            using WebDriverBiDi.Session;
+            using WebDriverBiDi.UserAgentClientHints;
 
             namespace TestApp
             {
@@ -1089,9 +1089,9 @@ public class BiDiDriver017AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        ManualProxyConfiguration p = new ManualProxyConfiguration();
-                        // (p.NoProxyAddresses ??= new List<string>()).Add(...) — suppressed (line 90)
-                        (p.NoProxyAddresses ??= new List<string>()).Add("item");
+                        ClientHintsMetadata p = new ClientHintsMetadata();
+                        // (p.FormFactors ??= new List<string>()).Add(...) — suppressed (line 90)
+                        (p.FormFactors ??= new List<string>()).Add("item");
                     }
                 }
             }

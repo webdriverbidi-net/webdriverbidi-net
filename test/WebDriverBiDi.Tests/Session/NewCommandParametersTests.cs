@@ -59,13 +59,8 @@ public class NewCommandParametersTests
     [Fact]
     public void TestCanSerializeWithFirstMatch()
     {
-        NewCommandParameters properties = new()
-        {
-            Capabilities =
-            {
-                FirstMatch = [new CapabilityRequest() { BrowserName = "greatBrowser" }]
-            }
-        };
+        NewCommandParameters properties = new();
+        properties.Capabilities.FirstMatch.Add(new CapabilityRequest() { BrowserName = "greatBrowser" });
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Single(serialized);

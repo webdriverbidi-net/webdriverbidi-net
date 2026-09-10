@@ -87,11 +87,12 @@ public class NonNullElementListJsonConverterTests
     [Fact]
     public void TestSerializingTheProxyCapabilityStillEmitsItsAddressList()
     {
-        // ManualProxyConfiguration.NoProxyAddresses is the single member carrying this converter that is
-        // also sent, as part of the capabilities of session.new, and it is the reason this converter
-        // implements Write rather than throwing as the library's inbound-only converters do. If Write is
-        // ever changed to throw, this test fails rather than the failure reaching a user's session.new.
-        ManualProxyConfiguration proxy = new() { NoProxyAddresses = ["localhost", "127.0.0.1"] };
+        // ManualProxyConfiguration.SerializableNoProxyAddresses, the shim behind NoProxyAddresses, is
+        // the single member carrying this converter that is also sent, as part of the capabilities of
+        // session.new, and it is the reason this converter implements Write rather than throwing as the
+        // library's inbound-only converters do. If Write is ever changed to throw, this test fails
+        // rather than the failure reaching a user's session.new.
+        ManualProxyConfiguration proxy = new() { NoProxyAddresses = { "localhost", "127.0.0.1" } };
         Assert.Contains(@"""noProxy"":[""localhost"",""127.0.0.1""]", JsonSerializer.Serialize(proxy));
     }
 
