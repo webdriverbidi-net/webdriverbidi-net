@@ -307,37 +307,20 @@ public class WebSocketConnection : Connection
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", connectionCancellationToken).ConfigureAwait(false);
                     }
 
-                    // Display text or binary data
+                    // The message received from the WebSocket contains text or binary data
                     if (this.client.State == WebSocketState.Open && receiveResult.MessageType != WebSocketMessageType.Close)
                     {
-                        if (!receiveResult.EndOfMessage)
+                        // Every data frame accumulates the same way; an intermediate frame simply falls
+                        // through to the next iteration, with the accumulator carrying the message across
+                        // frames until a final frame arrives.
+                        messageBuffer.Append(socketFrameBuffer.AsSpan(0, receiveResult.Count));
+                        if (receiveResult.EndOfMessage)
                         {
-                            // Intermediate frame of a multi-frame message; accumulate it in pooled memory.
-                            messageBuffer.Append(socketFrameBuffer.AsSpan(0, receiveResult.Count));
-                        }
-                        else
-                        {
-                            if (messageBuffer.HasData)
-                            {
-                                // Final frame of a multi-frame message. The accumulator's pooled buffer
-                                // becomes the message buffer directly; the IncomingMessage built from it
-                                // returns the buffer to the pool on disposal, so no second copy is needed.
-                                messageBuffer.Append(socketFrameBuffer.AsSpan(0, receiveResult.Count));
-                                IMemoryOwner<byte> messageBufferOwner = messageBuffer.TakeOwnership(out int messageLength);
-                                await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageBufferOwner.Memory, messageLength).ConfigureAwait(false);
-                                await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
-                            }
-                            else
-                            {
-                                // Single-frame message; rent a pooled owner and copy from the receive buffer.
-                                int messageLength = receiveResult.Count;
-                                if (messageLength > 0)
-                                {
-                                    IMemoryOwner<byte> messageBufferOwner = TakeOwnershipOfReceivedData(socketFrameBuffer.Array!, messageLength);
-                                    await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageBufferOwner.Memory, messageLength).ConfigureAwait(false);
-                                    await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageBufferOwner, messageLength)).ConfigureAwait(false);
-                                }
-                            }
+                            // We've received the final frame of the message, whether single-frame
+                            // or multi-frame. Notifying with an empty accumulator delivers nothing
+                            // (an empty frame never starts an accumulation) so no guard against
+                            // empty data is required here.
+                            await this.NotifyDataReceivedObserverAsync(messageBuffer).ConfigureAwait(false);
                         }
                     }
                     else

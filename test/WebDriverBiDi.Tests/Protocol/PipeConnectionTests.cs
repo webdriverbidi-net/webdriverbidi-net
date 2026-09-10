@@ -162,6 +162,59 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestConnectionDeliversNothingForZeroLengthMessage()
+    {
+        // A null terminator with no bytes before it frames a message with no content. Nothing may be
+        // delivered for it, whether it leads the read or is one of a pair of adjacent terminators, and
+        // the messages surrounding it must still arrive intact and in order.
+        TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer);
+
+        byte[] pipeData = Encoding.UTF8.GetBytes("\0Acknowledged!\0\0Done\0");
+
+        List<string> receivedData = [];
+        connection.ReadHandler = (buffer, offset, count, callNumber) =>
+        {
+            if (callNumber == 1)
+            {
+                pipeData.CopyTo(buffer, offset);
+                return Task.FromResult(pipeData.Length);
+            }
+
+            // Pipe closed by the remote end.
+            return Task.FromResult(0);
+        };
+
+        connection.OnDataReceived.AddObserver(e =>
+        {
+            receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray()));
+            return Task.CompletedTask;
+        });
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            remoteDisconnectedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+        // The read reporting the pipe closed ends the receive loop, and every message framed by the
+        // read before it has been dispatched by that point, so the list is final here without a
+        // wall-clock wait.
+        await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The leading terminator and the adjacent pair each frame a zero-length message; only the two
+        // messages carrying content are delivered.
+        Assert.Equal(2, receivedData.Count);
+        Assert.Equal("Acknowledged!", receivedData[0]);
+        Assert.Equal("Done", receivedData[1]);
+    }
+
+    [Fact]
     public async Task TestStartingWithoutSettingExternalProcessThrows()
     {
         PipeConnection connection = new(new TestPipeServer());
@@ -290,6 +343,7 @@ public class PipeConnectionTests
         PipeConnection connection = new(testPipeServer);
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         connection.LogLevel = WebDriverBiDiLogLevel.Trace;
+        connection.OnDataReceived.AddObserver(e => Task.CompletedTask);
         connection.OnLogMessage.AddObserver(e => receivedData.Add(e.Message));
         connection.OnRemoteDisconnected.AddObserver(e =>
         {

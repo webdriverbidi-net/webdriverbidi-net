@@ -1592,6 +1592,210 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestConnectionDeliversNothingForZeroLengthMessage()
+    {
+        // A frame carrying no bytes and marked as the end of a message frames a complete message with
+        // no content. Nothing may be delivered for it, and it must leave the message that follows
+        // untouched: an empty frame never starts an accumulation, so the next frame begins afresh.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        List<byte[]> deliveredMessages = [];
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+        };
+
+        byte[] message = Encoding.UTF8.GetBytes("Hello, World!");
+        connection.ReceiveHandler = async (buffer, token, callNum) =>
+        {
+            if (callNum == 1)
+            {
+                return await Task.FromResult(new WebSocketReceiveResult(0, WebSocketMessageType.Text, endOfMessage: true));
+            }
+
+            if (callNum == 2)
+            {
+                message.CopyTo(buffer.Array!, buffer.Offset);
+                return await Task.FromResult(new WebSocketReceiveResult(message.Length, WebSocketMessageType.Text, endOfMessage: true));
+            }
+
+            await Task.Delay(Timeout.Infinite, token);
+            throw new OperationCanceledException(token);
+        };
+
+        // The second frame is the deterministic completion point rather than a wall-clock wait: the
+        // receive loop handles frames in order, so a delivery from the second frame proves the
+        // zero-length frame ahead of it has already been processed.
+        connection.OnDataReceived.AddObserver(e =>
+        {
+            deliveredMessages.Add(e.Data.ToArray());
+            taskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // Only the frame with content produces a notification; the zero-length message produces none.
+        byte[] delivered = Assert.Single(deliveredMessages);
+        Assert.Equal("Hello, World!", Encoding.UTF8.GetString(delivered));
+    }
+
+    [Fact]
+    public async Task TestConnectionDiscardsReceivedMessageWhenNoDataReceivedObserverIsAttached()
+    {
+        // With no observer on OnDataReceived there is nobody to take ownership of the message's pooled
+        // memory, and notifying would drop the block rather than return it to the pool. The connection
+        // must return it itself, and the receive loop must carry on normally afterwards, framing the
+        // message that follows exactly as it would otherwise.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        object logLock = new();
+        List<LogMessageEventArgs> logs = [];
+        List<ConnectionErrorEventArgs> connectionErrors = [];
+        TaskCompletionSource bothMessagesProcessed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+        };
+
+        byte[] firstMessage = Encoding.UTF8.GetBytes("Hello, World!");
+        byte[] secondMessage = Encoding.UTF8.GetBytes("Goodbye, World!");
+        connection.ReceiveHandler = async (buffer, token, callNum) =>
+        {
+            if (callNum == 1)
+            {
+                firstMessage.CopyTo(buffer.Array!, buffer.Offset);
+                return await Task.FromResult(new WebSocketReceiveResult(firstMessage.Length, WebSocketMessageType.Text, endOfMessage: true));
+            }
+
+            if (callNum == 2)
+            {
+                secondMessage.CopyTo(buffer.Array!, buffer.Offset);
+                return await Task.FromResult(new WebSocketReceiveResult(secondMessage.Length, WebSocketMessageType.Text, endOfMessage: true));
+            }
+
+            // A third receive call proves the loop is done with both messages and is asking for more,
+            // which is the deterministic point at which the assertions below are final.
+            bothMessagesProcessed.TrySetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            throw new OperationCanceledException(token);
+        };
+
+        // No observer is added to OnDataReceived; that absence is the whole point of this test.
+        // This test asserts on Trace messages, which the default minimum level excludes.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                logs.Add(e);
+            }
+
+            return Task.CompletedTask;
+        });
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            connectionErrors.Add(e);
+            return Task.CompletedTask;
+        });
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await bothMessagesProcessed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The send is the control for the receive assertion below: it proves Trace-level traffic logging
+        // is genuinely on, so a missing RECV entry is the discard at work and not a dead log level.
+        await connection.SendDataAsync("Anyone there?"u8.ToArray(), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        LogMessageEventArgs[] logSnapshot;
+        lock (logLock)
+        {
+            logSnapshot = [.. logs];
+        }
+
+        Assert.Contains(logSnapshot, log => log.Level == WebDriverBiDiLogLevel.Trace && log.Message.StartsWith("SEND >>> ", StringComparison.Ordinal));
+        Assert.DoesNotContain(logSnapshot, log => log.Message.StartsWith("RECV <<< ", StringComparison.Ordinal));
+
+        // Disposing a block that was still in use, or disposing one twice, would surface here.
+        Assert.Empty(connectionErrors);
+    }
+
+    [Fact]
+    public async Task TestConnectionDoesNotDeliverMessageWhenTrafficLogObserverThrows()
+    {
+        // The received message is logged before it is handed on, so a log observer that throws takes
+        // the delivery down with it: the notification never runs, and the failure travels out to the
+        // receive loop, which reports a connection error and ends. The connection returns the
+        // message's pooled memory before letting that failure propagate, though nothing observable
+        // from here distinguishes that from leaving the block unreturned.
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        TaskCompletionSource connectionErrorRaised = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int deliveredMessageCount = 0;
+        List<ConnectionErrorEventArgs> connectionErrors = [];
+        TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+        };
+
+        byte[] message = Encoding.UTF8.GetBytes("Hello, World!");
+        connection.ReceiveHandler = async (buffer, token, callNum) =>
+        {
+            if (callNum == 1)
+            {
+                message.CopyTo(buffer.Array!, buffer.Offset);
+                return await Task.FromResult(new WebSocketReceiveResult(message.Length, WebSocketMessageType.Text, endOfMessage: true));
+            }
+
+            await Task.Delay(Timeout.Infinite, token);
+            throw new OperationCanceledException(token);
+        };
+
+        // This test asserts on Trace messages, which the default minimum level excludes. Only the
+        // traffic message throws: the loop logs its own error after the failure, and a log observer
+        // that threw for every message would fail that logging too and obscure what is under test.
+        connection.LogLevel = WebDriverBiDiLogLevel.Trace;
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("RECV <<< ", StringComparison.Ordinal))
+            {
+                throw new WebDriverBiDiException("Simulated log observer failure");
+            }
+
+            return Task.CompletedTask;
+        });
+        connection.OnDataReceived.AddObserver(e =>
+        {
+            Interlocked.Increment(ref deliveredMessageCount);
+            return Task.CompletedTask;
+        });
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            connectionErrors.Add(e);
+            connectionErrorRaised.TrySetResult();
+            return Task.CompletedTask;
+        });
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await connectionErrorRaised.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The message is logged before it is delivered, so a failure to log it costs the delivery.
+        Assert.Equal(0, deliveredMessageCount);
+        ConnectionErrorEventArgs connectionError = Assert.Single(connectionErrors);
+        Assert.Equal("Simulated log observer failure", connectionError.Exception.Message);
+    }
+
+    [Fact]
     public async Task TestSendDataThrowsWhenConnectionBecomesInactiveAfterSemaphoreAcquired()
     {
         int isActiveCallCount = 0;

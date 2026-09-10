@@ -184,6 +184,13 @@ is disabled, so an observer alone will not show any traffic:
 > observer throws, and constructing a `Transport` over a connection that already has one throws
 > `ArgumentException`.
 
+> [!NOTE]
+> A received message is logged only when something is observing `OnDataReceived` to consume it.
+> A `Connection` driven on its own, with no `Transport` wrapped around it, has no such observer:
+> it discards each received message and returns the message's buffer to the pool without logging
+> it, so only `SEND >>>` entries appear. Wrapping the connection in a `Transport` — the normal
+> arrangement, and what `BiDiDriver` does for you — restores the `RECV <<<` entries.
+
 ### OnConnectionError Event
 
 Monitors connection errors:
