@@ -389,10 +389,11 @@ public class BiDiDriver028AnalyzerTests
     }
 
     [Fact]
-    public async Task ExclusiveMinimum_ValueEqualToMinimum_ReportsWarning()
+    public async Task InclusiveMinimum_ValueBelowMinimum_ReportsWarning()
     {
-        // ImageSize.MaxWidth is (js-uint .gt 1): the bound is exclusive, so 1 is out of range even
-        // though it equals the declared minimum.
+        // ImageSize.MaxWidth is (js-uint .ge 1): the bound is inclusive, so 1 itself is in range and
+        // only a value below it is reported. The exclusive-bound case is covered by the
+        // DevicePixelRatio tests above, whose CDDL is (float .gt 0.0).
         string testCode = """
             using WebDriverBiDi.BrowsingContext;
 
@@ -402,7 +403,7 @@ public class BiDiDriver028AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        ImageSize size = new ImageSize { MaxWidth = {|#0:1|} };
+                        ImageSize size = new ImageSize { MaxWidth = {|#0:0|} };
                     }
                 }
             }
@@ -412,15 +413,15 @@ public class BiDiDriver028AnalyzerTests
             BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("1", "MaxWidth", "(1, \u221E]");
+            .WithArguments("0", "MaxWidth", "[1, \u221E]");
 
         await VerifyDiagnosticsAsync(testCode, expected);
     }
 
     [Fact]
-    public async Task ExclusiveMinimum_ValueAboveMinimum_NoDiagnostic()
+    public async Task InclusiveMinimum_ValueAtOrAboveMinimum_NoDiagnostic()
     {
-        // 2 is the smallest value the exclusive bound admits; a larger value is equally fine.
+        // 1 is the smallest value the inclusive bound admits; larger values are equally fine.
         string testCode = """
             using WebDriverBiDi.BrowsingContext;
 
@@ -430,6 +431,7 @@ public class BiDiDriver028AnalyzerTests
                 {
                     public void TestMethod()
                     {
+                        ImageSize atMinimum = new ImageSize { MaxWidth = 1 };
                         ImageSize size = new ImageSize { MaxWidth = 2 };
                         ImageSize other = new ImageSize();
                         other.MaxHeight = 1024;
