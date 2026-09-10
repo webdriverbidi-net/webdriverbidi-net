@@ -88,6 +88,23 @@ You can also expose observable events from your custom module:
 > Passing a `BiDiDriver` instance satisfies both interfaces, so your module constructor always
 > receives a `BiDiDriver` in practice.
 
+> **Reporting observer failures from a custom executor.**
+> A handler registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously` has its task
+> detached, so a failure in it cannot be thrown at the code that raised the event. `Module` routes such
+> a failure to the executor it was constructed with, if that executor implements
+> `IEventObserverErrorReporter`. `BiDiDriver` does, which is how the failure reaches
+> `EventHandlerExceptionBehavior` and `OnEventHandlerErrorOccurred`. If you write your own
+> `IBiDiCommandExecutor`, implement that interface too, or the failures of your modules' asynchronous
+> observers are observed and then discarded — never thrown, never reported:
+>
+> <!-- inline-csharp: a member sketch, not a callable method -->
+> ```csharp
+> public Func<EventObserverErrorInfo, Task> EventObserverErrorReporter => this.ReportFaultAsync;
+> ```
+>
+> `EventObserverErrorInfo` names the event, the observer, and the exception, and says whether the
+> handler was asynchronous and whether the failure arrived after the handler returned.
+
 ### What the invoker receives
 
 `RegisterEvent<T>` takes a `Func<EventInfo<T>, Task>`. `EventInfo<T>` carries three things:

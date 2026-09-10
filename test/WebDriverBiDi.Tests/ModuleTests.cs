@@ -507,6 +507,76 @@ public class ModuleTests
         Assert.Equal(0, module.OnEventInvoked.CurrentObserverCount);
     }
 
+    /// <summary>
+    /// The counterpart of the non-reporter case: an executor that implements
+    /// <see cref="IEventObserverErrorReporter"/> receives the failure of an asynchronously-run observer
+    /// of an event its module raises. The interface is public precisely so a custom executor can do
+    /// this; without it such a failure is observed and discarded, and nothing in the consumer's code
+    /// ever learns of it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task TestModuleWithReporterDriverRoutesAsynchronousObserverFaultToIt()
+    {
+        ReporterDriver driver = new();
+        TestProtocolModule module = new(driver);
+
+        module.OnEventInvoked.AddObserver(
+            _ => Task.FromException(new InvalidOperationException("handler blew up")),
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await driver.RaiseRegisteredEventAsync("protocol.event", new TestEventArgs());
+
+        EventObserverErrorInfo errorInfo = await driver.ReportedFault.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal("protocol.event", errorInfo.ObservableEventName);
+        Assert.True(errorInfo.IsAsynchronousHandler);
+        Assert.True(errorInfo.FaultOccurredAfterHandlerReturned);
+        Assert.Equal("handler blew up", errorInfo.Exception.Message);
+    }
+
+    /// <summary>
+    /// A consumer-defined command executor that reports late observer failures, standing in for the
+    /// custom driver an advanced consumer writes. It keeps the invoker each module registers so that a
+    /// test can deliver an event without a transport.
+    /// </summary>
+    private sealed class ReporterDriver : IBiDiCommandExecutor, IEventObserverErrorReporter
+    {
+        private readonly Dictionary<string, Func<object?, Task>> eventInvokers = [];
+
+        public TaskCompletionSource<EventObserverErrorInfo> ReportedFault { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TimeSpan DefaultCommandTimeout => TimeSpan.FromSeconds(30);
+
+        public bool IsStarted => true;
+
+        public Func<EventObserverErrorInfo, Task> EventObserverErrorReporter => this.RecordFaultAsync;
+
+        public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+            where T : CommandResult => throw new NotImplementedException();
+
+        public Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+            where T : CommandResult => throw new NotImplementedException();
+
+        public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+        {
+            this.eventInvokers[eventName] = eventData => eventInvoker(new EventInfo<T>((T)eventData!, ReceivedDataDictionary.EmptyDictionary));
+        }
+
+        public Task RaiseRegisteredEventAsync(string eventName, object eventData) => this.eventInvokers[eventName](eventData);
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+        private Task RecordFaultAsync(EventObserverErrorInfo errorInfo)
+        {
+            this.ReportedFault.TrySetResult(errorInfo);
+            return Task.CompletedTask;
+        }
+    }
+
     private sealed class NonReporterDriver : IBiDiCommandExecutor
     {
         private readonly List<string> registeredEvents = [];
