@@ -42,7 +42,11 @@ public record ManualProxyConfigurationResult : ProxyConfigurationResult
     /// <summary>
     /// Gets a list of addresses to be bypassed by the proxy.
     /// </summary>
-    public IList<string>? NoProxyAddresses => this.ProxyConfiguration.NoProxyAddresses?.AsReadOnly();
+    /// <remarks>
+    /// The protocol makes this member optional, and a payload that omits it carries the same meaning as
+    /// one that sends an empty array, so both are reported here as an empty list.
+    /// </remarks>
+    public IList<string> NoProxyAddresses => this.ProxyConfiguration.NoProxyAddresses.AsReadOnly();
 
     private ManualProxyConfiguration ProxyConfiguration => this.ProxyConfigurationAs<ManualProxyConfiguration>();
 }

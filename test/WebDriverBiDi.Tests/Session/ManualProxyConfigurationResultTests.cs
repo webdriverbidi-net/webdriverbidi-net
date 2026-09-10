@@ -45,7 +45,7 @@ public class ManualProxyConfigurationResultTests
     }
 
     [Fact]
-    public void TestCanDeserializeWithNullNoProxyList()
+    public void TestCanDeserializeWithMissingNoProxyList()
     {
         // ProxyConfigurationResult constructor is internal; go through CapabilitiesResult deserialization.
         string json = """
@@ -78,8 +78,42 @@ public class ManualProxyConfigurationResultTests
         Assert.Equal("ssl.proxy", proxyConfig.SslProxy);
         Assert.Equal("socks.proxy", proxyConfig.SocksProxy);
         Assert.Equal(5, proxyConfig.SocksVersion);
-        Assert.Null(proxyConfig.NoProxyAddresses);
+        // Omitting noProxy and sending an empty array mean the same thing to the remote end, so a
+        // payload without the member reports an empty list rather than null.
+        Assert.Empty(proxyConfig.NoProxyAddresses);
         Assert.Empty(proxyConfig.AdditionalData);
+    }
+
+    [Fact]
+    public void TestCanDeserializeWithNullNoProxyList()
+    {
+        // The protocol defines no array member whose value may be null, so this payload is malformed;
+        // it is accepted as "no addresses" rather than faulting the session, and the projection stays
+        // non-null either way. ProxyConfigurationResult constructor is internal; go through
+        // CapabilitiesResult deserialization.
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "manual",
+                          "httpProxy": "http.proxy",
+                          "noProxy": null
+                        },
+                        "setWindowRect": true
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.NotNull(result);
+        ProxyConfigurationResult? proxyResult = result.Proxy;
+        Assert.NotNull(proxyResult);
+        ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+
+        Assert.Equal("http.proxy", proxyConfig.HttpProxy);
+        Assert.Empty(proxyConfig.NoProxyAddresses);
     }
 
     [Fact]

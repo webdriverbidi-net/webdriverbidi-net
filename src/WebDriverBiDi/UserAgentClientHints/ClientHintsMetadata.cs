@@ -15,6 +15,13 @@ public class ClientHintsMetadata
     /// <summary>
     /// Gets or sets the list of brands for overriding client hints.
     /// </summary>
+    /// <remarks>
+    /// This list is deliberately nullable and settable, because the emulation branches on whether
+    /// the member is present rather than on what it contains: an absent member leaves the brands
+    /// the browser reports for itself in place, while a member present as an empty list overrides
+    /// them with no brands at all. Leave this property <see langword="null"/> to keep the browser's
+    /// own value; set it to an empty list to override it with none.
+    /// </remarks>
     [JsonPropertyName("brands")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<BrandVersion>? Brands { get; set; }
@@ -22,6 +29,13 @@ public class ClientHintsMetadata
     /// <summary>
     /// Gets or sets the list of full versions for overriding client hints.
     /// </summary>
+    /// <remarks>
+    /// This list is deliberately nullable and settable, because the emulation branches on whether
+    /// the member is present rather than on what it contains: an absent member leaves the full
+    /// version list the browser reports for itself in place, while a member present as an empty
+    /// list overrides it with no entries at all. Leave this property <see langword="null"/> to keep
+    /// the browser's own value; set it to an empty list to override it with none.
+    /// </remarks>
     [JsonPropertyName("fullVersionList")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<BrandVersion>? FullVersionList { get; set; }
@@ -78,6 +92,13 @@ public class ClientHintsMetadata
     /// <summary>
     /// Gets or sets the list of form factors for overriding client hints.
     /// </summary>
+    /// <remarks>
+    /// This list is deliberately nullable and settable, because the emulation branches on whether
+    /// the member is present rather than on what it contains: an absent member leaves the form
+    /// factors the browser reports for itself in place, while a member present as an empty list
+    /// overrides them with no form factors at all. Leave this property <see langword="null"/> to
+    /// keep the browser's own value; set it to an empty list to override it with none.
+    /// </remarks>
     [JsonPropertyName("formFactors")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? FormFactors { get; set; }

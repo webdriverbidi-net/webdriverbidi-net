@@ -13,7 +13,8 @@ using Module = WebDriverBiDi.Module;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The shape rules for list-typed properties on every <see cref="CommandParameters"/> type: lists
+/// The shape rules for list-typed properties on every type that can be serialized into a command
+/// payload — the <see cref="CommandParameters"/> roots and the types their properties reach: lists
 /// are never settable, optional lists are omitted while empty through an internal
 /// <c>Serializable*</c> property, and the only nullable-settable lists are the ones for which the
 /// protocol gives a present-but-empty array a meaning distinct from omission.
@@ -29,11 +30,12 @@ public class WebDriverBiDiConventionTests
 {
     /// <summary>
     /// The optional lists that are deliberately nullable and settable. An entry belongs here only when the
-    /// command's remote end steps in the WebDriver BiDi specification branch on the field's presence and
-    /// build the resulting state from that field alone, so that sending <c>[]</c> means "none" and differs
-    /// from omitting the field, which leaves the intercepted request or response as it was. Describe the
-    /// behaviour in the property's XML remarks when adding an entry; describe it rather than quoting the
-    /// specification, because the steps differ per command and a verbatim quotation drifts out of date.
+    /// remote end steps in the WebDriver BiDi specification, or in the extension specification that owns the
+    /// member, branch on the field's presence and build the resulting state from that field alone, so that
+    /// sending <c>[]</c> means "none" and differs from omitting the field, which leaves the intercepted
+    /// request or response, or the emulated value, as it was. Describe the behaviour in the property's XML
+    /// remarks when adding an entry; describe it rather than quoting the specification, because the steps
+    /// differ per command and a verbatim quotation drifts out of date.
     /// </summary>
     private static readonly HashSet<string> NullableSettableListAllowList =
     [
@@ -43,6 +45,9 @@ public class WebDriverBiDiConventionTests
         "WebDriverBiDi.Network.ContinueResponseCommandParameters.Cookies",
         "WebDriverBiDi.Network.ProvideResponseCommandParameters.Headers",
         "WebDriverBiDi.Network.ProvideResponseCommandParameters.Cookies",
+        "WebDriverBiDi.UserAgentClientHints.ClientHintsMetadata.Brands",
+        "WebDriverBiDi.UserAgentClientHints.ClientHintsMetadata.FullVersionList",
+        "WebDriverBiDi.UserAgentClientHints.ClientHintsMetadata.FormFactors",
     ];
 
     /// <summary>
@@ -181,6 +186,29 @@ public class WebDriverBiDiConventionTests
         }
 
         Assert.True(offenders.Count == 0, $"Allow-listed lists must be nullable, settable, and omitted only when null. Offenders: {string.Join(", ", offenders)}");
+    }
+
+    [Fact]
+    public void TestSweepFindsTheListsItIsMeantToGuard()
+    {
+        // The sweep walks a type graph, so a mistake in the walk would silently guard nothing and every
+        // test above would pass vacuously. Assert that it still reaches a representative member of each
+        // shape it is responsible for: a list on a parameters root, a list on an object nested inside
+        // one, a list on a type reached only as a subclass of a discriminated-union base, a list on a
+        // type an extension module nests two levels down, and a nullable-settable list.
+        HashSet<string> found = [.. GetListProperties().Select(Key)];
+        string[] expected =
+        [
+            "WebDriverBiDi.Network.AddInterceptCommandParameters.UrlPatterns",
+            "WebDriverBiDi.Session.CapabilitiesRequest.FirstMatch",
+            "WebDriverBiDi.Session.ManualProxyConfiguration.NoProxyAddresses",
+            "WebDriverBiDi.Bluetooth.ScanRecord.UUIDs",
+            "WebDriverBiDi.UserAgentClientHints.ClientHintsMetadata.Brands",
+        ];
+        foreach (string member in expected)
+        {
+            Assert.Contains(member, found);
+        }
     }
 
     [Fact]
@@ -704,13 +732,8 @@ public class WebDriverBiDiConventionTests
 
     private static IEnumerable<PropertyInfo> GetListProperties()
     {
-        foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
+        foreach (Type type in GetSentTypes())
         {
-            if (!typeof(CommandParameters).IsAssignableFrom(type))
-            {
-                continue;
-            }
-
             foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 Type propertyType = property.PropertyType;
@@ -719,8 +742,91 @@ public class WebDriverBiDiConventionTests
                     continue;
                 }
 
+                if (propertyType == typeof(byte[]))
+                {
+                    // The CDDL has no byte-array production: a byte sequence travels as base64 text, so a
+                    // byte[] member is always a decoded projection of a string (BytesValue.ValueAsByteArray)
+                    // rather than a JSON array these shape rules govern.
+                    continue;
+                }
+
                 yield return property;
             }
+        }
+    }
+
+    /// <summary>
+    /// Every type that can be serialized into a command payload: the <see cref="CommandParameters"/> roots
+    /// and, transitively, the library types their properties reach.
+    /// </summary>
+    /// <remarks>
+    /// The list-shape rules are keyed to the CDDL of the member being serialized, not to the type that
+    /// happens to declare it, so a rule enforced only on the roots leaves nested types such as
+    /// <c>CapabilitiesRequest</c>, <c>ScanRecord</c> and <c>ClientHintsMetadata</c> unchecked in both
+    /// directions: neither a list that should be read-only nor one that should stay nullable-settable is
+    /// caught by anything. Reachability follows the declared property type, the element type of a
+    /// collection property, and the assembly's subclasses of any type reached, since a member typed as a
+    /// discriminated-union base (<c>CapabilityRequest.Proxy</c>, for instance) is what carries the derived
+    /// payload on the wire.
+    /// </remarks>
+    /// <returns>The types serialized as part of a command payload.</returns>
+    private static IEnumerable<Type> GetSentTypes()
+    {
+        Assembly assembly = typeof(CommandParameters).Assembly;
+        Type[] assemblyTypes = assembly.GetTypes();
+        Queue<Type> pending = new(assemblyTypes.Where(typeof(CommandParameters).IsAssignableFrom));
+        HashSet<Type> visited = [];
+        while (pending.Count > 0)
+        {
+            Type type = pending.Dequeue();
+            if (!visited.Add(type))
+            {
+                continue;
+            }
+
+            yield return type;
+
+            foreach (Type derived in assemblyTypes.Where(candidate => candidate != type && type.IsAssignableFrom(candidate)))
+            {
+                pending.Enqueue(derived);
+            }
+
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                foreach (Type reached in GetReachableTypes(property.PropertyType, assembly))
+                {
+                    pending.Enqueue(reached);
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<Type> GetReachableTypes(Type type, Assembly assembly)
+    {
+        // Unwrap Nullable<T> and the element type of any generic collection, so that List<ArgumentValue>
+        // reaches ArgumentValue. Only the library's own composite types are followed: primitives, enums,
+        // strings and framework types declare nothing this suite has an opinion about.
+        Type candidate = Nullable.GetUnderlyingType(type) ?? type;
+        if (candidate.IsArray)
+        {
+            candidate = candidate.GetElementType()!;
+        }
+        else if (candidate.IsGenericType && typeof(IEnumerable).IsAssignableFrom(candidate))
+        {
+            foreach (Type argument in candidate.GetGenericArguments())
+            {
+                foreach (Type reached in GetReachableTypes(argument, assembly))
+                {
+                    yield return reached;
+                }
+            }
+
+            yield break;
+        }
+
+        if (candidate.Assembly == assembly && !candidate.IsEnum && !candidate.IsPrimitive)
+        {
+            yield return candidate;
         }
     }
 }

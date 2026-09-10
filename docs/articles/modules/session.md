@@ -33,7 +33,7 @@ The result provides `SessionId` and `Capabilities` (browser name, version, platf
 
 ### Create Session with Capability Requests
 
-Use `NewCommandParameters.Capabilities` to request specific session capabilities. Set `AlwaysMatch` for required capabilities or `FirstMatch` for a list of capability sets (the first matching set is used):
+Use `NewCommandParameters.Capabilities` to request specific session capabilities. Set `AlwaysMatch` for required capabilities or add capabilities to `FirstMatch` for a list of capability sets (the first matching set is used):
 
 [!code-csharp[New Session With Capabilities](../../code/modules/SessionModuleSamples.cs#NewSessionWithCapabilities)]
 

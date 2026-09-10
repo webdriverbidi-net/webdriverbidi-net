@@ -21,8 +21,8 @@ public class ScanRecordTests
         {
             Name = "myName",
             Appearance = 123,
-            ManufacturerData = [new BluetoothManufacturerData(456, "myManufacturerData")],
-            UUIDs = ["my-service-uuid"]
+            ManufacturerData = { new BluetoothManufacturerData(456, "myManufacturerData") },
+            UUIDs = { "my-service-uuid" }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

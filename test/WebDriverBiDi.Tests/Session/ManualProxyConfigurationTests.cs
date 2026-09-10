@@ -121,7 +121,7 @@ public class ManualProxyConfigurationTests
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
         {
-            NoProxyAddresses = ["no.proxy.address"]
+            NoProxyAddresses = { "no.proxy.address" }
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
@@ -149,13 +149,12 @@ public class ManualProxyConfigurationTests
     [Fact]
     public void TestCanSerializeWithEmptyNoProxyAddresses()
     {
-        ProxyConfiguration proxy = new ManualProxyConfiguration()
-        {
-            NoProxyAddresses = []
-        };
+        // Omitting noProxy and sending an empty array mean the same thing to the remote end, so an
+        // empty list omits the member rather than emitting [].
+        ProxyConfiguration proxy = new ManualProxyConfiguration();
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
-        Assert.Equal(2, serialized.Count);
+        Assert.Single(serialized);
 
         Assert.True(serialized.ContainsKey("proxyType"));
         JToken? proxyType = serialized["proxyType"];
@@ -163,14 +162,21 @@ public class ManualProxyConfigurationTests
         Assert.Equal(JTokenType.String, proxyType.Type);
         Assert.Equal("manual", proxyType.Value<string>());
 
-        Assert.True(serialized.ContainsKey("noProxy"));
-        JToken? noProxyToken = serialized["noProxy"];
-        Assert.NotNull(noProxyToken);
-        Assert.Equal(JTokenType.Array, noProxyToken.Type);
+        Assert.False(serialized.ContainsKey("noProxy"));
+    }
 
-        JArray? noProxyArray = noProxyToken as JArray;
-        Assert.NotNull(noProxyArray);
-        Assert.Empty(noProxyArray);
+    [Fact]
+    public void TestCanSerializeWithNoProxyAddressesPopulatedThenCleared()
+    {
+        ProxyConfiguration proxy = new ManualProxyConfiguration()
+        {
+            NoProxyAddresses = { "no.proxy.address" }
+        };
+        ((ManualProxyConfiguration)proxy).NoProxyAddresses.Clear();
+        string json = JsonSerializer.Serialize(proxy);
+        JObject serialized = JObject.Parse(json);
+        Assert.Single(serialized);
+        Assert.False(serialized.ContainsKey("noProxy"));
     }
 
     [Fact]

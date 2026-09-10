@@ -64,10 +64,48 @@ public class ManualProxyConfiguration : ProxyConfiguration
     public int? SocksVersion { get; set; }
 
     /// <summary>
-    /// Gets or sets a list of addresses to be bypassed by the proxy.
+    /// Gets a list of addresses to be bypassed by the proxy.
+    /// </summary>
+    /// <remarks>
+    /// This property is optional in the protocol, and omitting it has the same meaning as sending an
+    /// empty array: the bypass list is the addresses this member names, and naming none is the same as
+    /// naming nothing. An empty list therefore means "not specified": the property is omitted from the
+    /// JSON payload entirely. Add entries to the list to populate it. When this configuration is read
+    /// back from a session's capabilities, a payload that omits the member and one that sends an empty
+    /// array both produce an empty list.
+    /// </remarks>
+    [JsonIgnore]
+    public List<string> NoProxyAddresses { get; } = [];
+
+    /// <summary>
+    /// Gets or sets the list of addresses to be bypassed by the proxy, for serialization purposes.
     /// </summary>
     [JsonPropertyName("noProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     [JsonConverter(typeof(NonNullElementListJsonConverter<string>))]
-    public List<string>? NoProxyAddresses { get; set; }
+    internal List<string>? SerializableNoProxyAddresses
+    {
+        get
+        {
+            if (this.NoProxyAddresses.Count == 0)
+            {
+                return null;
+            }
+
+            return this.NoProxyAddresses;
+        }
+
+        set
+        {
+            // This type is sent as a capability request and received back in a session's capabilities,
+            // so the shim is assignable as well as readable; the public list is the single storage in
+            // both directions.
+            this.NoProxyAddresses.Clear();
+            if (value is not null)
+            {
+                this.NoProxyAddresses.AddRange(value);
+            }
+        }
+    }
 }
