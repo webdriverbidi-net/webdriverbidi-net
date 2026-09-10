@@ -69,6 +69,7 @@ public record BrowsingContextInfo
     /// with a maximum depth of zero. An empty list, by contrast, means the context was enumerated
     /// and has no children.
     /// </summary>
+    [JsonIgnore]
     public IList<BrowsingContextInfo>? Children => this.SerializableChildren?.AsReadOnly();
 
     /// <summary>

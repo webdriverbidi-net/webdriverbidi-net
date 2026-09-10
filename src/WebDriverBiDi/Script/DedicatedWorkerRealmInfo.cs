@@ -25,6 +25,7 @@ public record DedicatedWorkerRealmInfo : RealmInfo
     /// <summary>
     /// Gets the read-only list of IDs of realms that are owners of this realm.
     /// </summary>
+    [JsonIgnore]
     public IList<string> Owners => this.SerializableOwners.AsReadOnly();
 
     /// <summary>
