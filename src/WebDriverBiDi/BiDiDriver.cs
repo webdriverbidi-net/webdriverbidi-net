@@ -618,8 +618,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
         }
 
-        // Action for registring an event, executed under Transport's connection state lock
-        // so that it can only be executed while the Trandport is disconnected, and cannot
+        // Action for registering an event, executed under Transport's connection state lock
+        // so that it can only be executed while the Transport is disconnected, and cannot
         // interleave with a call to Transport.ConnectAsync().
         void RegistrationAction()
         {
@@ -695,8 +695,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             throw new ArgumentNullException(nameof(module), "Module object may not be null");
         }
 
-        // Action for registring a module, executed under Transport's connection state lock
-        // so that it can only be executed while the Trandport is disconnected, and cannot
+        // Action for registering a module, executed under Transport's connection state lock
+        // so that it can only be executed while the Transport is disconnected, and cannot
         // interleave with a call to Transport.ConnectAsync().
         void RegistrationAction()
         {
