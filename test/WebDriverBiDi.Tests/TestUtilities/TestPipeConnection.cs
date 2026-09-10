@@ -108,14 +108,14 @@ public class TestPipeConnection : PipeConnection
 
     public ObservableEvent<WebDriverBiDiEventArgs> OnDataSendStarting => this.dataSendStartingInvocable;
 
-    public override Task StopAsync(CancellationToken cancellationToken = default)
+    protected override Task StopConnectionAsync(CancellationToken cancellationToken)
     {
         if (this.ThrowOnStop)
         {
             throw new WebDriverBiDiException("Simulated stop failure");
         }
 
-        return base.StopAsync(cancellationToken);
+        return base.StopConnectionAsync(cancellationToken);
     }
 
     protected override Task ReceiveDataAsync()

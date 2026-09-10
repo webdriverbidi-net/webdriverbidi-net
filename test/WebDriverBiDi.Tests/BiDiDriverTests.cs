@@ -39,7 +39,7 @@ public class BiDiDriverTests
 
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
         Assert.False(driver.IsStarted);
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.True(driver.IsStarted);
         await driver.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(driver.IsStarted);
@@ -494,7 +494,7 @@ public class BiDiDriverTests
             ReturnCustomValue = true
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         WebDriverBiDiException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken));
         Assert.Contains("is unexpectedly null", exception.Message);
     }
@@ -507,7 +507,7 @@ public class BiDiDriverTests
             ShouldCancelCommand = true
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.Contains("was canceled before a result was received", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken))).Message);
     }
 
@@ -519,7 +519,7 @@ public class BiDiDriverTests
             ReturnUncompletedCommand = true
         };
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.Contains("is unexpectedly null", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("test.command"), cancellationToken: TestContext.Current.CancellationToken))).Message);
     }
 
@@ -641,7 +641,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
         driver.OnLogMessage.AddObserver(logs.Add);

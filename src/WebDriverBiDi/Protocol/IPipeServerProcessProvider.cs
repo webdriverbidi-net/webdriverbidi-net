@@ -21,7 +21,7 @@ using System.Diagnostics;
 /// <para>
 /// The provided process must:
 /// <list type="bullet">
-/// <item><description>Be started before <see cref="PipeConnection.StartAsync"/> is called</description></item>
+/// <item><description>Be started before <see cref="Connection.StartAsync"/> is called</description></item>
 /// <item><description>Accept pipe handles via command-line arguments or environment variables</description></item>
 /// <item><description>Support the null-terminated JSON message protocol</description></item>
 /// <item><description>Read from file descriptor/handle for incoming messages</description></item>

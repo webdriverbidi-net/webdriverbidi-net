@@ -100,7 +100,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         AddInterceptCommandParameters commandParameters = new(InterceptPhase.BeforeRequestSent)
@@ -132,7 +132,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         AddDataCollectorCommandParameters commandParameters = new(1024 * 1024, DataType.Response);
@@ -159,7 +159,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         ContinueRequestCommandResult result = await module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -184,7 +184,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         ContinueResponseCommandResult result = await module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -209,7 +209,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         ContinueWithAuthCommandResult result = await module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
@@ -238,7 +238,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId", DataType.Response);
@@ -264,7 +264,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         FailRequestCommandResult result = await module.FailRequestAsync(new FailRequestCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -294,7 +294,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         GetDataCommandParameters commandParameters = new("myRequestId", DataType.Response);
@@ -322,7 +322,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         ProvideResponseCommandResult result = await module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -347,7 +347,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         RemoveDataCollectorCommandParameters commandParameters = new("myCollectorId");
@@ -373,7 +373,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         RemoveInterceptCommandResult result = await module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -398,7 +398,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         SetCacheBehaviorCommandResult result = await module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters(CacheBehavior.Default), cancellationToken: TestContext.Current.CancellationToken);
@@ -423,7 +423,7 @@ public class NetworkModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         SetExtraHeadersCommandParameters commandParameters = new();
@@ -442,7 +442,7 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -520,7 +520,7 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -588,7 +588,7 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -653,7 +653,7 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -731,7 +731,7 @@ public class NetworkModuleTests
 
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         NetworkModule module = driver.Network;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);

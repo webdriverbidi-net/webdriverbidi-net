@@ -328,6 +328,52 @@ public class PipeConnectionTests
     }
 
     [Fact]
+    public async Task TestAFailedTransportShutdownStillCancelsTheConnection()
+    {
+        // The failure is reported to the caller, but the connection must not be left with a receive
+        // loop running against a session its owner believes is finished with, so Connection.StopAsync
+        // cancels and waits for the loop whether or not the transport-specific shutdown succeeded.
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+        CancellationToken sessionToken = connection.ObservedConnectionCancellationToken;
+        connection.ThrowOnStop = true;
+
+        await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StopAsync(TestContext.Current.CancellationToken));
+        Assert.True(sessionToken.IsCancellationRequested);
+        Assert.Equal(string.Empty, connection.ConnectionString);
+
+        testPipeServer.Stop();
+    }
+
+    [Fact]
+    public async Task TestStoppingWithoutStartingCancelsTheConnectionAndStillPermitsAStart()
+    {
+        // Connection.StopAsync cancels the connection whatever state it was in, including one that
+        // was never started, so that stopping always means the same thing. That is only safe because
+        // StartAsync replaces the cancellation source: a session that inherited the canceled one
+        // could never connect.
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+
+        CancellationToken tokenBeforeStop = connection.ObservedConnectionCancellationToken;
+        Assert.False(tokenBeforeStop.IsCancellationRequested);
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        Assert.True(tokenBeforeStop.IsCancellationRequested);
+
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        Assert.True(connection.IsActive);
+        Assert.False(connection.ObservedConnectionCancellationToken.IsCancellationRequested);
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        testPipeServer.Stop();
+    }
+
+    [Fact]
     public async Task TestSendDataWithoutStartingThrows()
     {
         PipeConnection connection = new(new TestPipeServer());
@@ -364,20 +410,24 @@ public class PipeConnectionTests
         await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(8, receivedData.Count);
+        Assert.Equal(9, receivedData.Count);
         Assert.Equivalent(new string[]
         {
-            "Starting pipe connection: pipe://local",
-            "Pipe connection started",
+            // The messages that bracket the session are logged by Connection.StartAsync and
+            // Connection.StopAsync, which every connection shares; the rest come from the pipe
+            // connection itself.
+            "Opening Pipes connection to pipe://local",
+            "Pipes connection opened",
             "SEND >>> Hello",
             "RECV <<< Acknowledged!",
             "Pipe closed by remote end",
             "Ending pipe receive loop",
-            "Closing pipe connection",
+            "Closing Pipes connection",
 
-            // The end-of-file already marked the connection inactive, so StopAsync
-            // takes its already-closed early return.
-            "Pipe connection already closed",
+            // The end-of-file already marked the connection inactive, so the pipe connection's own
+            // shutdown has nothing left to record.
+            "Pipe connection is not active",
+            "Pipes connection closed",
         }, receivedData);
     }
 
@@ -697,17 +747,18 @@ public class PipeConnectionTests
     {
         int isActiveCallCount = 0;
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer)
-        {
-            IsActiveOverride = () =>
-            {
-                int count = Interlocked.Increment(ref isActiveCallCount);
-                return count <= 1;
-            },
-        };
+        TestPipeConnection connection = new(testPipeServer);
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+        // Installed after the connection is started, because Connection.StartAsync refuses to start a
+        // connection that already reports itself as active.
+        connection.IsActiveOverride = () =>
+        {
+            int count = Interlocked.Increment(ref isActiveCallCount);
+            return count <= 1;
+        };
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Equal("The Pipes connection was closed before the send could be completed", exception.Message);
@@ -732,13 +783,11 @@ public class PipeConnectionTests
     public async Task TestSendDataWithDefaultCancellationTokenUsesConnectionToken()
     {
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer)
-        {
-            IsActiveOverride = () => true,
-        };
+        TestPipeConnection connection = new(testPipeServer);
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        connection.IsActiveOverride = () => true;
 
 #pragma warning disable xUnit1051 // intentionally omits token to exercise the CancellationToken.None branch
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello world"));
@@ -761,7 +810,7 @@ public class PipeConnectionTests
         await connection.DisposeAsync();
         testPipeServer.Stop();
 
-        Assert.Contains("pipes have been disposed", (await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
+        Assert.Contains("Pipes connection has been disposed", (await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -786,6 +835,10 @@ public class PipeConnectionTests
         PipeConnection connection = new(provider);
 
         Assert.Contains("External process has already exited or been disposed", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken))).Message);
+
+        // StartAsync publishes the connection string before the connect and takes it back when the
+        // connect fails, so a connection that never connected reports itself as connected to nothing.
+        Assert.Equal(string.Empty, connection.ConnectionString);
     }
 
     [Fact]
@@ -821,13 +874,13 @@ public class PipeConnectionTests
         using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
-            IsActiveOverride = () => true,
             ThrowIOExceptionOnSend = true,
             BypassDataSend = false,
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        connection.IsActiveOverride = () => true;
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Contains("An error occurred while sending data", exception.Message);
@@ -842,13 +895,13 @@ public class PipeConnectionTests
         using TestPipeServer testPipeServer = new();
         TestPipeConnection connection = new(testPipeServer)
         {
-            IsActiveOverride = () => true,
             ThrowObjectDisposedExceptionOnSend = true,
             BypassDataSend = false,
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+        connection.IsActiveOverride = () => true;
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Contains("An error occurred while sending data", exception.Message);

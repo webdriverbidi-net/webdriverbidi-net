@@ -39,7 +39,7 @@ public class ModuleTests
             unknownMessageEventRaised = true;
         });
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -78,7 +78,7 @@ public class ModuleTests
             syncEvent.Set();
         });
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -144,7 +144,7 @@ public class ModuleTests
             }
         });
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -191,7 +191,7 @@ public class ModuleTests
             }
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -228,7 +228,7 @@ public class ModuleTests
 
         observer.StartCapturingTasks();
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -285,7 +285,7 @@ public class ModuleTests
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -337,7 +337,7 @@ public class ModuleTests
             }
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -374,7 +374,7 @@ public class ModuleTests
 
         observer.StartCapturingTasks();
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -431,7 +431,7 @@ public class ModuleTests
             return Task.WhenAll(firstTaskCompletionSource.Task, secondTaskCompletionSource.Task);
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         string eventJson = """
                            {
                              "type": "event",
@@ -544,7 +544,7 @@ public class ModuleTests
         TaskCompletionSource<TestEventArgs> received = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnEventInvoked.AddObserver(e => received.TrySetResult(e));
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","goog:channel":"channel value","params":{"paramName":"paramValue","goog:extra":"payload value"}}""");
         TestEventArgs eventArgs = await received.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 

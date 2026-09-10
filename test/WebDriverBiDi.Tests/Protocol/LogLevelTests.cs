@@ -198,7 +198,7 @@ public class LogLevelTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.LogLevel = WebDriverBiDiLogLevel.Debug;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
@@ -237,7 +237,7 @@ public class LogLevelTests
         Transport transport = new(connection);
         transport.LogLevel = WebDriverBiDiLogLevel.Debug;
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
@@ -282,7 +282,7 @@ public class LogLevelTests
             return Task.CompletedTask;
         });
 
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         await driver.DisposeAsync();
         Assert.Empty(received);
     }

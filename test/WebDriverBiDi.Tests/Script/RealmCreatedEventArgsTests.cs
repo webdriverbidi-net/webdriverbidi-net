@@ -148,7 +148,7 @@ public class RealmCreatedEventArgsTests
     {
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         RealmCreatedEventArgs? eventArgs = null;
         using EventObserver<RealmCreatedEventArgs> observer = driver.Script.OnRealmCreated.AddObserver(e => eventArgs = e);

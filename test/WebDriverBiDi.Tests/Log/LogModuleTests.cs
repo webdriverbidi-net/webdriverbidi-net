@@ -9,7 +9,7 @@ public class LogModuleTests
     {
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -54,7 +54,7 @@ public class LogModuleTests
     {
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         LogModule module = driver.Log;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);

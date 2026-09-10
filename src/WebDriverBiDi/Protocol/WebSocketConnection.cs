@@ -51,9 +51,15 @@ public class WebSocketConnection : Connection
 
     private ClientWebSocket client = new();
 
+    // The URI resolved from the connection string of the attempt now in progress. Connection.StartAsync
+    // calls ResolveConnectionString, which assigns this, on every path that reaches
+    // StartConnectionAsync, which reads it, and StartAsync is not overridable, so the two cannot come
+    // apart.
+    private Uri? websocketUri;
+
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
-    // Set by StopAsync before the close handshake begins, and read by the receive loop, which runs on
-    // its own task.
+    // Set by StopConnectionAsync before the close handshake begins, and read by the receive loop, which
+    // runs on its own task.
     private int isLocalCloseInitiatedFlag = 0;
 
     /// <summary>
@@ -79,7 +85,7 @@ public class WebSocketConnection : Connection
     /// <remarks>
     /// A local close is completed by the remote end answering the close handshake, which ends the receive
     /// loop the same way a remote-initiated close does. The receive loop cannot tell the two apart from the
-    /// socket state alone, so <see cref="StopAsync(CancellationToken)"/> records which case it is.
+    /// socket state alone, so <see cref="StopConnectionAsync(CancellationToken)"/> records which case it is.
     /// </remarks>
     private bool IsLocalCloseInitiated
     {
@@ -96,31 +102,48 @@ public class WebSocketConnection : Connection
     }
 
     /// <summary>
-    /// Asynchronously starts communication with the remote end of this connection.
+    /// Resolves the connection string into the URI of the WebSocket server to connect to.
     /// </summary>
-    /// <param name="url">The connection string used to connect to the remote end. It must be a valid URL.</param>
+    /// <param name="connectionString">The connection string to interpret. It must be a valid WebSocket URL.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="connectionString"/> is not a valid absolute URI, or does not have a
+    /// WebSocket scheme.
+    /// </exception>
+    /// <remarks>
+    /// Parsing the URL is what proves it is one, so this method keeps what it parsed for
+    /// <see cref="StartConnectionAsync"/> rather than validating for a later parse to repeat. It is
+    /// called from <see cref="Connection.StartAsync"/> before that method does anything that can take
+    /// time, so a malformed URL is reported at once.
+    /// </remarks>
+    protected override void ResolveConnectionString(string connectionString)
+    {
+        if (!Uri.TryCreate(connectionString, UriKind.Absolute, out Uri? resolvedUri))
+        {
+            throw new ArgumentException($"The value '{connectionString}' is not a valid absolute URI", nameof(connectionString));
+        }
+
+        if (resolvedUri.Scheme != "ws" && resolvedUri.Scheme != "wss")
+        {
+            throw new ArgumentException($"The URI scheme must be 'ws' or 'wss'; received '{resolvedUri.Scheme}'", nameof(connectionString));
+        }
+
+        this.websocketUri = resolvedUri;
+    }
+
+    /// <summary>
+    /// Asynchronously opens the WebSocket to the remote end, retrying until the remote end accepts the
+    /// connection or the startup budget is spent.
+    /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is already connected.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="url"/> is not a valid absolute URI, or does not have a WebSocket scheme.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    /// <exception cref="ObjectDisposedException">Thrown when attempting to start a disposed connection.</exception>
-    public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
+    protected override async Task StartConnectionAsync(CancellationToken cancellationToken)
     {
-        if (this.IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(WebSocketConnection), "This connection has been disposed; the connection cannot be restarted after disposal.");
-        }
-
-        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? websocketUri))
-        {
-            throw new ArgumentException($"The value '{url}' is not a valid absolute URI", nameof(url));
-        }
-        else if (websocketUri.Scheme != "ws" && websocketUri.Scheme != "wss")
-        {
-            throw new ArgumentException($"The URI scheme must be 'ws' or 'wss'; received '{websocketUri.Scheme}'", nameof(url));
-        }
+        // ResolveConnectionString assigned this for the attempt now in progress. Connection.StartAsync
+        // calls it on every path that reaches this method and is not overridable, so the URI is present
+        // here and the null-forgiving operator is appropriate.
+        Uri websocketUri = this.websocketUri!;
 
         if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
         {
@@ -132,19 +155,9 @@ public class WebSocketConnection : Connection
             this.client = new ClientWebSocket();
         }
 
-        if (this.client.State != WebSocketState.None)
-        {
-            // Since we've already ruled out closed or aborted sockets in the above
-            // code, ClientWebSocket in any state other than none is already connected.
-            throw new WebDriverBiDiConnectionException($"The WebSocket is already connected to {this.ConnectionString}; call the Stop method to disconnect before calling Start");
-        }
-
-        this.ResetConnectionCancellation();
-
         // A previous session may have ended with a local close; this session has not.
         this.IsLocalCloseInitiated = false;
 
-        await this.LogAsync($"Opening connection to URL {url}").ConfigureAwait(false);
         bool connected = false;
         bool startupTimedOut = false;
         long startupTimestamp = this.TimeProvider.GetTimestamp();
@@ -171,7 +184,6 @@ public class WebSocketConnection : Connection
             {
                 await this.ConnectWebSocketAsync(websocketUri, linkedTokenSource.Token).ConfigureAwait(false);
                 connected = true;
-                this.ConnectionString = url;
             }
             catch (OperationCanceledException)
             {
@@ -217,28 +229,20 @@ public class WebSocketConnection : Connection
         {
             throw new WebDriverBiDiTimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
         }
-
-        this.StartDataReceiveTask();
-        await this.LogAsync($"Connection opened").ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Asynchronously stops communication with the remote end of this connection.
+    /// Asynchronously performs the WebSocket close handshake with the remote end.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <remarks>
-    /// Waiting for the receive loop to finish is bounded by <see cref="Connection.ShutdownTimeout"/>.
-    /// If the receive loop does not finish within the timeout, a warning is logged and this method
-    /// returns anyway; the receive task continues running in the background until the receive loop
-    /// unblocks on its own. Because cancelling the connection's token reliably aborts a pending
-    /// WebSocket receive, this bound is reached only when the receive loop is delayed by its own
-    /// message dispatch (for example, a synchronous event observer that blocks) rather than by
-    /// the socket read itself.
+    /// The handshake is performed here, before <see cref="Connection.StopAsync"/> cancels the
+    /// connection, because cancelling the connection aborts a pending WebSocket receive rather than
+    /// letting it observe the remote end's answer to the handshake.
     /// </remarks>
-    public override async Task StopAsync(CancellationToken cancellationToken = default)
+    protected override async Task StopConnectionAsync(CancellationToken cancellationToken)
     {
-        await this.LogAsync($"Closing connection").ConfigureAwait(false);
         if (this.client.State != WebSocketState.Open)
         {
             // The socket is no longer open, so this call starts no close handshake. The receive loop may still
@@ -254,13 +258,6 @@ public class WebSocketConnection : Connection
             this.IsLocalCloseInitiated = true;
             await this.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
         }
-
-        // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync
-        // to abort the socket, then wait for the receive task to complete.
-        this.CancelConnection();
-        await this.WaitForReceiveTaskCompletionAsync().ConfigureAwait(false);
-
-        this.ConnectionString = string.Empty;
     }
 
     /// <summary>
@@ -370,27 +367,12 @@ public class WebSocketConnection : Connection
 
     /// <summary>
     /// Asynchronously releases the resources used by this <see cref="Connection"/>.
-    /// Override this method in derived classes to add custom async cleanup logic.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
-    protected override async ValueTask DisposeAsyncCore()
+    protected override ValueTask DisposeAsyncCore()
     {
-        if (this.SetDisposed())
-        {
-            try
-            {
-                if (this.IsActive)
-                {
-                    await this.StopAsync().ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-            }
-
-            this.client.Dispose();
-        }
+        this.client.Dispose();
+        return default;
     }
 
     /// <summary>

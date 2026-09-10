@@ -22,7 +22,7 @@ public class InputModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         PerformActionsCommandResult result = await module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -47,7 +47,7 @@ public class InputModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         ReleaseActionsCommandResult result = await module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"), cancellationToken: TestContext.Current.CancellationToken);
@@ -72,7 +72,7 @@ public class InputModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         SharedReference element = new("mySharedId");
@@ -86,7 +86,7 @@ public class InputModuleTests
     {
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -118,7 +118,7 @@ public class InputModuleTests
     {
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
         InputModule module = driver.Input;
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);

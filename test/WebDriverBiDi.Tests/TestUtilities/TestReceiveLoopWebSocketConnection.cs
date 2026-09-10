@@ -9,13 +9,13 @@ using WebDriverBiDi.Protocol;
 /// <remarks>
 /// <para>
 /// Unlike <see cref="TestWebSocketConnection"/>, which raises connection events from the
-/// test thread and bypasses <see cref="StopAsync"/>, this double runs a receive loop on the
-/// connection's own receive task (via <see cref="Connection.StartDataReceiveTask"/>) and
-/// raises <see cref="Connection.OnRemoteDisconnected"/> or <see cref="Connection.OnConnectionError"/>
-/// <em>from inside that loop</em>, exactly as the production receive loop does. Its
-/// <see cref="StopAsync"/> mirrors the production contract of
-/// <see cref="WebSocketConnection.StopAsync"/> after a remote close: cancel the connection,
-/// then await the receive loop.
+/// test thread and bypasses the transport-specific parts of starting and stopping, this double
+/// runs a receive loop on the connection's own receive task, started by
+/// <see cref="Connection.StartAsync"/>, and raises <see cref="Connection.OnRemoteDisconnected"/> or
+/// <see cref="Connection.OnConnectionError"/> <em>from inside that loop</em>, exactly as the
+/// production receive loop does. Its shutdown reaches the same place a real
+/// <see cref="WebSocketConnection"/> does after a remote close: there is no handshake left to
+/// perform, so <see cref="Connection.StopAsync"/> cancels the connection and waits for the loop.
 /// </para>
 /// <para>
 /// This models the scenario where the remote end closes the connection (or a read fails)
@@ -70,31 +70,25 @@ public class TestReceiveLoopWebSocketConnection : WebSocketConnection
         this.loopExitSignal.TrySetResult(ReceiveLoopExit.ConnectionError);
     }
 
-    public override Task StartAsync(string url, CancellationToken cancellationToken = default)
+    protected override Task StartConnectionAsync(CancellationToken cancellationToken)
     {
         this.loopExitSignal = new TaskCompletionSource<ReceiveLoopExit>(TaskCreationOptions.RunContinuationsAsynchronously);
-        this.ResetConnectionCancellation();
-        this.ConnectionString = url;
         Interlocked.Exchange(ref this.isActiveFlag, 1);
-        this.StartDataReceiveTask();
         return Task.CompletedTask;
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Mirrors <see cref="WebSocketConnection"/> after the socket has already been closed by the remote
+    /// end: there is no close handshake to perform, so the connection is simply marked inactive, and
+    /// <see cref="Connection.StopAsync"/> then cancels the connection and waits for the receive loop.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    protected override Task StopConnectionAsync(CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref this.stopCallCount);
-
-        // Mirrors WebSocketConnection.StopAsync after the socket has already been closed by
-        // the remote end: there is no close handshake to perform, so it cancels the connection
-        // and then awaits the receive loop, with no bound.
-        this.CancelConnection();
-        if (this.DataReceiveTask is not null)
-        {
-            await this.DataReceiveTask.ConfigureAwait(false);
-        }
-
         Interlocked.Exchange(ref this.isActiveFlag, 0);
-        this.ConnectionString = string.Empty;
+        return Task.CompletedTask;
     }
 
     public override Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
