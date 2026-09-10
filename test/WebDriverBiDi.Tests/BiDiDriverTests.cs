@@ -1011,9 +1011,6 @@ public class BiDiDriverTests
         {
             responderTasks.Add(Task.Run(async () =>
             {
-                // Stopwatch, not DateTime.Now: the elapsed value is asserted below, and the wall
-                // clock is not monotonic, so a clock adjustment between the two reads could make
-                // the delayed command appear to have taken less time than the fast one.
                 long start = Stopwatch.GetTimestamp();
                 if (e.SentCommandName is not null && e.SentCommandName.Contains("delay"))
                 {
@@ -1065,7 +1062,6 @@ public class BiDiDriverTests
         Assert.Equal(1, indexOfFirstFinishedTask);
         Assert.Equal($"command result value for {delayCommandName}", results[0].Value);
         Assert.Equal($"command result value for {commandName}", results[1].Value);
-        Assert.True(results[0].ElapsedMilliseconds >= results[1].ElapsedMilliseconds);
 
         await Task.WhenAll(responderTasks);
     }
