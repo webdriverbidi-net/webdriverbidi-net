@@ -126,6 +126,10 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// Thrown when <paramref name="defaultCommandWaitTimeout"/> is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>)
     /// or exceeds the maximum supported timer duration.
     /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the <see cref="Transport.State"/> property of the supplied <paramref name="transport"/> is other than
+    /// <see cref="TransportState.Disconnected"/>.
+    /// </exception>
     /// <remarks>
     /// <para>
     /// This constructor is used when you need to provide a custom <see cref="Transport"/> instance,
@@ -141,7 +145,9 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <see cref="DisposeAsync"/> disposes the transport, which in turn disposes its
     /// <see cref="Connection"/>. A transport shared between drivers is therefore torn down for
     /// every one of them as soon as the first is disposed, so a shared transport must outlive all
-    /// of its drivers, or the drivers must not be disposed.
+    /// of its drivers, or the drivers must not be disposed. Additionally, a transport must be
+    /// disconnected when passed to the driver, as the driver must register modules and events
+    /// with the transport, and cannot do so once a connection has been started.
     /// </para>
     /// <para>
     /// Most users should use the simpler <see cref="BiDiDriver(TimeSpan)"/> constructor instead,
@@ -150,14 +156,20 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </remarks>
     public BiDiDriver(TimeSpan defaultCommandWaitTimeout, Transport transport)
     {
+        if (!TimeoutUtilities.IsValidTimeout(defaultCommandWaitTimeout))
+        {
+            throw new ArgumentOutOfRangeException(nameof(defaultCommandWaitTimeout), TimeoutUtilities.GetInvalidTimeoutMessage("Default command wait timeout"));
+        }
+
         if (transport is null)
         {
             throw new ArgumentNullException(nameof(transport), "The transport parameter must not be null");
         }
 
-        if (!TimeoutUtilities.IsValidTimeout(defaultCommandWaitTimeout))
+        TransportState transportState = transport.State;
+        if (transportState != TransportState.Disconnected)
         {
-            throw new ArgumentOutOfRangeException(nameof(defaultCommandWaitTimeout), TimeoutUtilities.GetInvalidTimeoutMessage("Default command wait timeout"));
+            throw new ArgumentException($"The transport must be disconnected; its current state is {transportState}", nameof(transport));
         }
 
         this.DefaultCommandTimeout = defaultCommandWaitTimeout;

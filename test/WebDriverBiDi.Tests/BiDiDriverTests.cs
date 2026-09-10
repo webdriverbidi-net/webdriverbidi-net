@@ -1679,6 +1679,16 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestCreatingWithConnectedTransportThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        ArgumentException exception = Assert.ThrowsAny<ArgumentException>(() => _ = new BiDiDriver(TimeSpan.FromSeconds(1), transport));
+        Assert.Contains("must be disconnected", exception.Message);
+    }
+
+    [Fact]
     public async Task TestConcurrentExecuteCommandAsyncRoutesResponsesByCommandId()
     {
         // This stress test exercises the ID-correlation path in BiDiDriver.ExecuteCommandAsync
