@@ -24,14 +24,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
     }
 
     [Fact]
@@ -55,14 +55,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(2L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(2.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(3L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(3.0, y.Value<double>());
     }
 
     [Fact]
@@ -116,14 +116,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("duration"));
         JToken? duration = serialized["duration"];
@@ -152,14 +152,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("origin"));
         JToken? origin = serialized["origin"];
@@ -188,14 +188,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("origin"));
         JToken? origin = serialized["origin"];
@@ -238,14 +238,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("origin"));
         JToken? originToken = serialized["origin"];
@@ -297,14 +297,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("width"));
         JToken? width = serialized["width"];
@@ -340,14 +340,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("pressure"));
         JToken? pressure = serialized["pressure"];
@@ -382,14 +382,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("twist"));
         JToken? twist = serialized["twist"];
@@ -429,14 +429,14 @@ public class PointerMoveActionTests
         Assert.True(serialized.ContainsKey("x"));
         JToken? x = serialized["x"];
         Assert.NotNull(x);
-        Assert.Equal(JTokenType.Integer, x.Type);
-        Assert.Equal(0L, x.Value<long>());
+        Assert.Equal(JTokenType.Float, x.Type);
+        Assert.Equal(0.0, x.Value<double>());
 
         Assert.True(serialized.ContainsKey("y"));
         JToken? y = serialized["y"];
         Assert.NotNull(y);
-        Assert.Equal(JTokenType.Integer, y.Type);
-        Assert.Equal(0L, y.Value<long>());
+        Assert.Equal(JTokenType.Float, y.Type);
+        Assert.Equal(0.0, y.Value<double>());
 
         Assert.True(serialized.ContainsKey("altitudeAngle"));
         JToken? altitudeAngle = serialized["altitudeAngle"];

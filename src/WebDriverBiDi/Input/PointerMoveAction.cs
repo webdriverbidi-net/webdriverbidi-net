@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Input;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// An action to send a pointer move on a pointer device.
@@ -30,12 +31,14 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     /// Gets or sets the horizontal distance of the move, measured in pixels from the origin point.
     /// </summary>
     [JsonPropertyName("x")]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double X { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the vertical distance of the move, measured in pixels from the origin point.
     /// </summary>
     [JsonPropertyName("y")]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double Y { get; set; } = 0;
 
     /// <summary>
