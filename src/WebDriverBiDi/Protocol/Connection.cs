@@ -490,12 +490,13 @@ public abstract class Connection : IAsyncDisposable
         // the message is only worth doing when a Trace message would actually be raised.
         await this.LogMessageContentAsync(LogSendMessagePrefix, data, data.Length).ConfigureAwait(false);
 
-        // Only one send operation at a time can be active on a ClientWebSocket instance,
-        // so we must synchronize send access to the socket in case multiple threads are
-        // attempting to send commands or other data simultaneously.
+        // Only one send operation at a time can be active for many connection types (e.g.,
+        // a ClientWebSocket instance), so we must synchronize send access to the connection
+        // for sending in case multiple threads are attempting to send commands or other data
+        // simultaneously.
         if (!await this.WaitForSendAccessAsync(cancellationToken).ConfigureAwait(false))
         {
-            throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
+            throw new WebDriverBiDiTimeoutException("Timed out waiting to access connection for sending; only one send operation is permitted at a time.");
         }
 
         try
