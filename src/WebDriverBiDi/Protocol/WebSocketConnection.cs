@@ -346,7 +346,7 @@ public class WebSocketConnection : Connection
         }
         catch (WebSocketException e)
         {
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
+            await this.LogAsync($"Unexpected error during receive of data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         catch (Exception e)

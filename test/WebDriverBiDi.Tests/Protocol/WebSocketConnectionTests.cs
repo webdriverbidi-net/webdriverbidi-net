@@ -685,7 +685,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         ];
 
         object logLock = new();
-        List<string> connectionLog = [];
+        List<LogMessageEventArgs> connectionLog = [];
         TaskCompletionSource receiveLoopEnded = new(TaskCreationOptions.RunContinuationsAsynchronously);
         WebSocketConnection connection = new()
         {
@@ -697,7 +697,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         {
             lock (logLock)
             {
-                connectionLog.Add(e.Message);
+                connectionLog.Add(e);
             }
 
             if (e.Message.StartsWith("Ending processing loop in state Aborted", StringComparison.Ordinal))
@@ -722,13 +722,19 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
-        string[] logSnapshot;
+        LogMessageEventArgs[] logSnapshot;
         lock (logLock)
         {
             logSnapshot = [.. connectionLog];
         }
 
-        Assert.Equivalent(expectedLogEntries, logSnapshot);
+        Assert.Equivalent(expectedLogEntries, logSnapshot.Select(log => log.Message));
+
+        // The sequence assertion above compares message text only. A failure that ends the receive
+        // loop is an error, not information, so that one entry's level is pinned separately: a
+        // consumer filtering at Warn or above must still see the message carrying the socket-level
+        // detail.
+        Assert.Contains(logSnapshot, log => log.Message.StartsWith("Unexpected error during receive of data", StringComparison.Ordinal) && log.Level == WebDriverBiDiLogLevel.Error);
     }
 
     [Fact]
