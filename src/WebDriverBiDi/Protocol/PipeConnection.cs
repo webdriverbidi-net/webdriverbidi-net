@@ -396,13 +396,13 @@ public class PipeConnection : Connection
             // Clear the flag before notifying observers, for the same reason as the end-of-file
             // path above.
             this.IsConnectionActive = false;
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
+            await this.LogAsync($"Unexpected error during receive of data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         catch (ObjectDisposedException e)
         {
             this.IsConnectionActive = false;
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
+            await this.LogAsync($"Unexpected error during receive of data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         catch (Exception e)

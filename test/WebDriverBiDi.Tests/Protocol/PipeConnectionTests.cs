@@ -935,6 +935,8 @@ public class PipeConnectionTests
     public async Task TestReceiveDataRaisesErrorEventOnIOException()
     {
         ConnectionErrorEventArgs? receivedErrorArgs = null;
+        object logLock = new();
+        List<LogMessageEventArgs> logs = [];
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
 
@@ -942,6 +944,18 @@ public class PipeConnectionTests
         {
             ThrowIOExceptionOnReceive = true,
         };
+
+        // The receive loop logs the failure before raising OnConnectionError, so the wait on the
+        // error event below also orders the log message deterministically.
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                logs.Add(e);
+            }
+
+            return Task.CompletedTask;
+        });
         connection.OnConnectionError.AddObserver(e =>
         {
             receivedErrorArgs = e;
@@ -962,12 +976,21 @@ public class PipeConnectionTests
 
         Assert.NotNull(receivedErrorArgs);
         Assert.IsType<IOException>(receivedErrorArgs.Exception);
+
+        // A failure that ends the receive loop is an error, not information: a consumer filtering at
+        // Warn or above must still see it, and it is the message carrying the pipe-level detail.
+        lock (logLock)
+        {
+            Assert.Contains(logs, log => log.Message.StartsWith("Unexpected error during receive of data", StringComparison.Ordinal) && log.Level == WebDriverBiDiLogLevel.Error);
+        }
     }
 
     [Fact]
     public async Task TestReceiveDataRaisesErrorEventOnObjectDisposedException()
     {
         ConnectionErrorEventArgs? receivedErrorArgs = null;
+        object logLock = new();
+        List<LogMessageEventArgs> logs = [];
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
 
@@ -975,6 +998,18 @@ public class PipeConnectionTests
         {
             ThrowObjectDisposedExceptionOnReceive = true,
         };
+
+        // As in the IOException test above, the log message precedes the error event, so waiting on
+        // the event is enough to order it.
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                logs.Add(e);
+            }
+
+            return Task.CompletedTask;
+        });
         connection.OnConnectionError.AddObserver(e =>
         {
             receivedErrorArgs = e;
@@ -995,6 +1030,11 @@ public class PipeConnectionTests
 
         Assert.NotNull(receivedErrorArgs);
         Assert.IsType<ObjectDisposedException>(receivedErrorArgs.Exception);
+
+        lock (logLock)
+        {
+            Assert.Contains(logs, log => log.Message.StartsWith("Unexpected error during receive of data", StringComparison.Ordinal) && log.Level == WebDriverBiDiLogLevel.Error);
+        }
     }
 
     [Fact]
