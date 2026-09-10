@@ -585,7 +585,11 @@ public class PipeConnectionTests
         // The data timeout is elapsed on the virtual clock as soon as the second send arms it.
         Task secondSendTask = connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken);
         await timeProvider.AdvanceUntilCompletedAsync(secondSendTask, connection.DataTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await secondSendTask);
+
+        // The message is asserted, not merely the exception type. This throw comes from
+        // Connection.SendDataAsync, which serves every transport, so a message naming one of them
+        // would be wrong here and nothing else in this test would notice.
+        Assert.Equal("Timed out waiting to access connection for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await secondSendTask)).Message);
         sendBarrier.SetResult();
         testPipeServer.Stop();
 
@@ -1215,7 +1219,10 @@ public class PipeConnectionTests
         Task firstSendTask = Task.Run(() => connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"), TestContext.Current.CancellationToken), TestContext.Current.CancellationToken);
         await firstSendStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken));
+        // The non-blocking refusal reports the same failure, in the same words, as the one that
+        // waited out DataTimeout: what the caller could not get is access to send, and how long the
+        // connection was willing to wait for it is not part of that.
+        Assert.Equal("Timed out waiting to access connection for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("World"), TestContext.Current.CancellationToken))).Message);
         Assert.Equal(0, timeProvider.TimerCount);
 
         sendBarrier.SetResult();

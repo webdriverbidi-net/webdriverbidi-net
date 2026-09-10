@@ -1387,7 +1387,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // The data timeout is elapsed on the virtual clock as soon as the second send arms it.
         Task secondSendTask = connection.SendDataAsync("second data"u8.ToArray(), TestContext.Current.CancellationToken);
         await timeProvider.AdvanceUntilCompletedAsync(secondSendTask, connection.DataTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
-        Assert.Equal("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await secondSendTask)).Message);
+        Assert.Equal("Timed out waiting to access connection for sending; only one send operation is permitted at a time.", (await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await secondSendTask)).Message);
         sendBarrier.SetResult();
 
         // The stop's own shutdown wait is also on the virtual clock, so elapse it the same way should
