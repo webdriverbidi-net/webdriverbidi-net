@@ -529,18 +529,33 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// </exception>
     /// <exception cref="ArgumentException">
     /// Propagated from <see cref="Connection.StartAsync"/> when <paramref name="connectionString"/> is not
-    /// acceptable to the connection. <see cref="WebSocketConnection"/> throws this when the value is not a
-    /// valid absolute URI, or when its scheme is neither <c>ws</c> nor <c>wss</c>.
+    /// acceptable to the connection, or when the <see cref="WebDriverBiDi.Protocol.Connection"/> is already
+    /// connected with a <see cref="Connection.ConnectionString"/> different than <paramref name="connectionString"/>.
+    /// <see cref="WebSocketConnection"/> throws this when the value is not a valid absolute URI, or when
+    /// its scheme is neither <c>ws</c> nor <c>wss</c>.
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the transport is disposed.</exception>
     /// <remarks>
+    /// <para>
     /// Connecting starts a new session and clears the errors the previous session accumulated under
     /// <see cref="TransportErrorBehavior.Collect"/>. Those errors are thrown only by
     /// <see cref="DisconnectAsync(CancellationToken)"/>. After a remote disconnect the transport is already in the
     /// <see cref="TransportState.Disconnected"/> state, so this method proceeds; to observe the errors
     /// collected up to the disconnect, call <see cref="DisconnectAsync(CancellationToken)"/> (which returns promptly and
     /// throws them) before reconnecting. Reconnecting directly discards them.
+    /// </para>
+    /// <para>
+    /// A <see cref="Connection"/> that is already open is adopted rather than opened again, so a caller
+    /// who opened the connection themselves before handing it to this transport may start a session over
+    /// it. Because nothing is opened in that case, <paramref name="connectionString"/> cannot select a
+    /// different remote end, and one that names a different remote end is rejected rather than silently
+    /// ignored: pass the value the connection was opened with, or stop the connection first and let this
+    /// method open it. The two values are compared exactly, so a string that names the same remote end
+    /// in a different form (a different case, or a trailing slash) is treated as a different one. A
+    /// connection that is not open is unaffected by any of this, including one being reopened to a
+    /// different remote end after <see cref="DisconnectAsync(CancellationToken)"/>.
+    /// </para>
     /// </remarks>
     public virtual async Task ConnectAsync(string connectionString, CancellationToken cancellationToken = default)
     {
@@ -613,6 +628,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             {
                 // Allow for the possibility of the connection to already being opened.
                 await this.Connection.StartAsync(connectionString, cancellationToken).ConfigureAwait(false);
+            }
+            else if (this.Connection.ConnectionString != connectionString)
+            {
+                // The connection string for a connection is immutable while the connection is
+                // connected. Rejecting the mismatch keeps a caller from believing a session was
+                // established with the remote end they named while it runs against a different one.
+                throw new ArgumentException($"The connection is already open to '{this.Connection.ConnectionString}'; connecting the transport cannot change the connection string of an open connection. Pass that same value to use the open connection, or stop it before connecting the transport.", nameof(connectionString));
             }
 
             // The connection's receive loop is already running by the time StartAsync returns, so the
