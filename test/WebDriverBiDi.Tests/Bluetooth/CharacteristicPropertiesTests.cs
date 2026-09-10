@@ -45,7 +45,7 @@ public class CharacteristicPropertiesTests
         Assert.True(read.Value<bool>());
 
         Assert.True(serialized.ContainsKey("writeWithoutResponse"));
-        JToken? writeWithoutResponse = serialized["read"];
+        JToken? writeWithoutResponse = serialized["writeWithoutResponse"];
         Assert.NotNull(writeWithoutResponse);
         Assert.Equal(JTokenType.Boolean, writeWithoutResponse.Type);
         Assert.True(writeWithoutResponse.Value<bool>());
@@ -112,7 +112,7 @@ public class CharacteristicPropertiesTests
         Assert.False(read.Value<bool>());
 
         Assert.True(serialized.ContainsKey("writeWithoutResponse"));
-        JToken? writeWithoutResponse = serialized["read"];
+        JToken? writeWithoutResponse = serialized["writeWithoutResponse"];
         Assert.NotNull(writeWithoutResponse);
         Assert.Equal(JTokenType.Boolean, writeWithoutResponse.Type);
         Assert.False(writeWithoutResponse.Value<bool>());

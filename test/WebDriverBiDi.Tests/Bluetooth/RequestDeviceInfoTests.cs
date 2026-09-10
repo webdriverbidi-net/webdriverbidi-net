@@ -79,7 +79,7 @@ public class RequestDeviceInfoTests
     {
         string json = """
                       {
-                        "id": "myDeviceId",
+                        "id": "myDeviceId"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json));
