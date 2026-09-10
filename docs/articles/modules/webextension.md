@@ -57,15 +57,15 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 ## Extension Formats
 
-### Chrome/Edge
+The protocol defines three forms, and both archive forms are plain **zip archives** rather than
+browser-specific packaging. The remote end extracts the archive before installing.
 
-- **CRX files**: Packaged extension files (.crx)
-- **Unpacked**: Directory containing manifest.json and extension files
+- **`ExtensionArchivePath`**: the path, on the remote end's file system, to a zip archive containing the extension.
+- **`ExtensionBase64Encoded`**: the same zip archive, base64-encoded, for when the file is not on the remote end's file system.
+- **`ExtensionPath`**: a directory containing `manifest.json` and the extension files — an unpacked extension.
 
-### Firefox
-
-- **XPI files**: Firefox extension packages (.xpi)
-- **Unpacked**: Directory with manifest.json
+A browser-specific package such as a Chrome `.crx` or a Firefox `.xpi` is not one of these forms. Repackage
+the extension as a zip archive, or install it unpacked from a directory.
 
 ### Safari
 
@@ -76,8 +76,8 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 | Browser | Support Level | Format |
 |---------|---------------|--------|
-| Chrome/Edge | ✅ Full support | CRX, unpacked |
-| Firefox | ⚠️ Different API | XPI, unpacked |
+| Chrome/Edge | ✅ Full support | zip archive, unpacked |
+| Firefox | ⚠️ Different API | zip archive, unpacked |
 | Safari | ⚠️ Limited | App extensions |
 
 ## Best Practices
@@ -96,7 +96,7 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 **Solution**:
 - Verify extension path is correct and absolute
-- Check extension file format (CRX for Chrome/Edge)
+- Check extension file format (a zip archive, or a directory for an unpacked extension)
 - Ensure manifest.json is valid
 - Try loading as unpacked extension for development
 - Check browser console for extension errors

@@ -1,10 +1,10 @@
 # Additional Modules
 
-This guide provides an overview of additional specialized modules in WebDriverBiDi.NET that extend functionality beyond the core WebDriver BiDi specification.
+This guide provides an overview of the specialized modules in WebDriverBiDi.NET. Most of them implement W3C specifications that extend the core WebDriver BiDi protocol; the WebExtension module is defined by the core specification itself.
 
 ## Overview
 
-WebDriverBiDi.NET includes support for several W3C specifications that use the WebDriver BiDi protocol. All module commands accept optional `timeoutOverride` and `CancellationToken` parameters—see the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details.
+WebDriverBiDi.NET includes support for the core specification's WebExtension module and for several W3C specifications that extend the WebDriver BiDi protocol. All module commands accept optional `timeoutOverride` and `CancellationToken` parameters—see the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details.
 
 - **[Permissions Module](permissions.md)** - Browser permission management
 - **[Bluetooth Module](bluetooth.md)** - Web Bluetooth API control
@@ -43,7 +43,7 @@ The [WebExtension module](webextension.md) allows you to manage browser extensio
 
 [!code-csharp[Install Extension](../../code/modules/AdditionalModulesSamples.cs#InstallExtension)]
 
-**Note**: Extension installation support varies by browser. Chrome and Edge support CRX files, while Firefox uses different formats.
+**Note**: Extension installation support varies by browser. The protocol takes a zip archive or an unpacked directory, not a browser-specific package such as a `.crx` or `.xpi`.
 
 **[View full WebExtension module documentation →](webextension.md)**
 

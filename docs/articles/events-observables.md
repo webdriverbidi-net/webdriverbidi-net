@@ -139,9 +139,11 @@ observed on any object that implements the interface.
 
 #### OnEventReceived
 
-Fires once for every protocol event message that the transport delivers to the driver, **before** the
-event is dispatched to the relevant module observer. This is useful for protocol-level logging, auditing,
-or routing custom module events.
+Fires once for every protocol event message that the transport delivers to the driver, **after** the
+event has been dispatched to the relevant module observers. The two stages are independent: a fault in a
+module observer does not suppress this event, and faults from both stages are surfaced together, each
+governed by `EventHandlerExceptionBehavior` exactly as it would be in isolation. This is useful for
+protocol-level logging, auditing, or routing custom module events.
 
 [!code-csharp[OnEventReceived](../code/events-observables/EventObserverSamples.cs#OnEventReceived)]
 
@@ -435,7 +437,8 @@ any thread.
 > blocking the calling thread.
 
 Only one capture session may be active at a time. Calling `StartCapturingTasks` when a session is already
-active throws `WebDriverBiDiException`.
+active throws `WebDriverBiDiException`. `EventObserver<T>.IsCapturing` reports whether a session is open, so
+helper code that may be called with or without one can check rather than catch.
 
 Disposing the observer ends any active capture session. A `WaitForCapturedTasksAsync` or
 `WaitForCapturedTasksCompleteAsync` call that is still waiting when the observer is disposed completes with

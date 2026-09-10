@@ -452,7 +452,7 @@ See the [Error Handling Guide](advanced/error-handling.md) for comprehensive err
 
 ### Granular Error Control
 
-Beyond the transport-level error behavior, `BiDiDriver` exposes four properties for fine-grained control over different error scenarios. All use `TransportErrorBehavior` (Ignore/Collect/Terminate) and default to `Ignore`.
+Beyond the transport-level error behavior, `ITransportConfiguration` exposes four properties for fine-grained control over different error scenarios, reached through `BiDiDriver.TransportConfiguration`. All use `TransportErrorBehavior` (Ignore/Collect/Terminate) and default to `Ignore`.
 
 **Important:** With `Terminate` mode, exceptions don't propagate immediately when they occur. Due to the asynchronous nature of the library, termination errors are thrown when the next command is sent by the driver, not when the error is first encountered on the message processing thread.
 

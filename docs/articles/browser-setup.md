@@ -118,7 +118,7 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 
 **Example:**
 
-> **Note:** The `WebDriverBiDi` NuGet package does not include a browser launcher. The repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) provides a `BrowserLauncher` whose Chromium launcher implements `IPipeServerProcessProvider` and returns a `ChromiumTransport`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates, and pass a mapper-installing `Transport` built over that `PipeConnection` to `BiDiDriver`:
+> **Note:** The `WebDriverBiDi` NuGet package does not include a browser launcher. The repository's `WebDriverBiDi.Client` demonstration library (not published to NuGet) provides a `BrowserLauncher` whose Chromium launcher implements `IPipeServerProcessProvider` and returns a `ChromiumTransport`, and the example below uses it. To do this yourself, implement `IPipeServerProcessProvider`: launch the browser with `--remote-debugging-pipe` so that it inherits the two anonymous pipe handles `PipeConnection` creates — `PipeConnection.ReadPipeHandle` and `PipeConnection.WritePipeHandle` give you those handles as strings to pass to the child process, and both return an empty string once the connection's pipes have been disposed — and pass a mapper-installing `Transport` built over that `PipeConnection` to `BiDiDriver`:
 
 [!code-csharp[Pipe Launcher Pattern](../code/examples/BrowserSetupSamples.cs#PipeLauncherPattern)]
 
