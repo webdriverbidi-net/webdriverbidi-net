@@ -1661,7 +1661,8 @@ public class BiDiDriverTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        new BiDiDriver(TimeSpan.Zero, transport);
+        await using BiDiDriver driver = new(TimeSpan.Zero, transport);
+        Assert.Equal(TimeSpan.Zero, driver.DefaultCommandTimeout);
     }
 
     [Fact]
@@ -1669,7 +1670,8 @@ public class BiDiDriverTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        new BiDiDriver(Timeout.InfiniteTimeSpan, transport);
+        await using BiDiDriver driver = new(Timeout.InfiniteTimeSpan, transport);
+        Assert.Equal(Timeout.InfiniteTimeSpan, driver.DefaultCommandTimeout);
     }
 
     [Fact]
