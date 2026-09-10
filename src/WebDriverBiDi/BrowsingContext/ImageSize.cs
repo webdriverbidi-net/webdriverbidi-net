@@ -23,18 +23,18 @@ public class ImageSize
     /// Gets or sets the maximum width of the screenshot image.
     /// </summary>
     /// <remarks>
-    /// The protocol requires this value to be greater than 1; a value of 1 or 0 is rejected by the remote end.
+    /// The protocol requires this value to be greater than or equal to 1; a value of 0 is rejected by the remote end.
     /// </remarks>
     [JsonPropertyName("maxWidth")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [SpecRange(1.0, double.PositiveInfinity, MinimumExclusive = true)]
+    [SpecRange(1.0, double.PositiveInfinity)]
     public ulong? MaxWidth { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum height of the screenshot image.
     /// </summary>
     /// <remarks>
-    /// The protocol requires this value to be greater than 1; a value of 1 or 0 is rejected by the remote end.
+    /// The protocol requires this value to be greater than or equal to 1; a value of 0 is rejected by the remote end.
     /// </remarks>
     [JsonPropertyName("maxHeight")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
