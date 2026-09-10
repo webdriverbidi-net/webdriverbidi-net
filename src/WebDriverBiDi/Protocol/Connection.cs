@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Buffers;
-using System.Runtime.InteropServices;
 using System.Text;
 using WebDriverBiDi.Internal;
 
@@ -437,30 +436,6 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Takes ownership of byte array containing data for a completed message, copying it into a local pool-based memory block.
-    /// </summary>
-    /// <param name="messageDataBuffer">A reference to the byte array containing the message data.</param>
-    /// <param name="messageLength">The length of the message in the byte array, as the byte array may be bigger than the message content.</param>
-    /// <returns>
-    /// An <see cref="IMemoryOwner&lt;T&gt;"/> object that has ownership of the pool-based memory block.
-    /// When disposed, the returned object returns the memory block to the pool.
-    /// </returns>
-    protected static IMemoryOwner<byte> TakeOwnershipOfReceivedData(byte[] messageDataBuffer, int messageLength)
-    {
-        // Creates a pool-based memory buffer, with specific, well-defined ownership semantics.
-        // This allows the calling process to specifically take ownership of the memory buffer
-        // rented from the pool, and then be responsible for returning it to the pool by calling
-        // Dispose on it. Once the buffer is created, get a pointer to it as an array, and copy
-        // the contents of the passed-in byte array buffer to the buffer rented from the pool.
-        // TryGetArray will always succeed here, so the Array property of ArraySegment is never
-        // null, and the null-forgiving operator (!) is appropriate here.
-        IMemoryOwner<byte> messageBufferOwner = MemoryPool<byte>.Shared.Rent(messageLength);
-        MemoryMarshal.TryGetArray(messageBufferOwner.Memory.Slice(0, messageLength), out ArraySegment<byte> messageBuffer);
-        Buffer.BlockCopy(messageDataBuffer, 0, messageBuffer.Array!, messageBuffer.Offset, messageLength);
-        return messageBufferOwner;
-    }
-
-    /// <summary>
     /// Asynchronously sends data to the underlying mechanism of this connection.
     /// </summary>
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection.</param>
@@ -546,6 +521,72 @@ public abstract class Connection : IAsyncDisposable
     protected void CancelConnection()
     {
         this.connectionCancellationTokenSource.Cancel();
+    }
+
+    /// <summary>
+    /// Notifies the single allowed observer of the <see cref="OnDataReceived"/> event that a message
+    /// has been received, transferring ownership of the message's pooled memory from
+    /// <paramref name="messageBuffer"/> to that observer.
+    /// </summary>
+    /// <param name="messageBuffer">The <see cref="MessageBuffer"/> holding the accumulated message.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <para>
+    /// This method does nothing when <paramref name="messageBuffer"/> holds no data, so a receive loop may
+    /// call it at every point where a message may have completed without first testing
+    /// <see cref="MessageBuffer.HasData"/>.
+    /// </para>
+    /// <para>
+    /// When the buffer does hold data, this method takes ownership of its pooled memory block, which leaves
+    /// <paramref name="messageBuffer"/> empty and ready to accumulate the next message. Ownership then passes
+    /// to the consumer of the <see cref="OnDataReceived"/> event by way of
+    /// <see cref="ConnectionDataReceivedEventArgs.BufferOwner"/>, and that consumer is responsible for
+    /// returning the block to the pool. A caller must therefore neither dispose the memory nor read from it
+    /// after this method returns.
+    /// </para>
+    /// <para>
+    /// The content of a delivered message is logged at the <see cref="WebDriverBiDiLogLevel.Trace"/> level
+    /// before the observer is notified.
+    /// </para>
+    /// <para>
+    /// When no observer is attached to <see cref="OnDataReceived"/> there is no consumer to take that
+    /// ownership, so the message is discarded and its memory returned to the pool by this method rather
+    /// than by an observer. Such a message is not logged, because the logging above describes traffic that
+    /// was delivered. A <see cref="Transport"/> attaches its observer before the receive loop starts, so
+    /// this applies only to a <see cref="Connection"/> driven without one.
+    /// </para>
+    /// </remarks>
+    protected async Task NotifyDataReceivedObserverAsync(MessageBuffer messageBuffer)
+    {
+        if (!messageBuffer.HasData)
+        {
+            return;
+        }
+
+        IMemoryOwner<byte> messageOwner = messageBuffer.TakeOwnership(out int messageLength);
+        if (this.InvocableConnectionDataReceivedObservableEvent.CurrentObserverCount == 0)
+        {
+            messageOwner.Dispose();
+            return;
+        }
+
+        try
+        {
+            await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageOwner.Memory, messageLength).ConfigureAwait(false);
+        }
+        catch
+        {
+            // A log observer that throws propagates its failure to here, and the notification below
+            // will not run, so nothing downstream can return this block to the pool, and ownership has
+            // already left the accumulator. Return the block to the pool here, then let the failure
+            // travel on unchanged, to the receive loop's own handling, which ends the loop with a
+            // connection error. The notification is deliberately outside this block; once it has
+            // been entered, ownership belongs to the observer.
+            messageOwner.Dispose();
+            throw;
+        }
+
+        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
     }
 
     /// <summary>

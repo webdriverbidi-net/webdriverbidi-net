@@ -694,11 +694,17 @@ public class CustomConnection : Connection
 
     protected override async Task ReceiveDataAsync()
     {
-        // Your receive logic
-        // Call OnDataReceived.NotifyObserversAsync() with received data. The event args take
-        // an IMemoryOwner<byte> whose ownership passes to the single observer of that event,
-        // which disposes it once the message has been processed. Do not read or release the
-        // buffer after raising the event.
+        // Your receive logic: read from your transport until a complete message has arrived,
+        // accumulating each piece into a MessageBuffer as it comes.
+        using MessageBuffer messageBuffer = new();
+
+        // Then hand the completed message on. This takes ownership of the buffer's pooled memory,
+        // logs the message as "RECV <<<", and notifies the single observer of OnDataReceived,
+        // which disposes that memory once it has processed the message: do not read or release it
+        // afterwards. The call does nothing when the buffer holds no data, so it is safe to make
+        // wherever a message may have completed, and when no observer is attached it discards the
+        // message and returns the memory to the pool itself.
+        await NotifyDataReceivedObserverAsync(messageBuffer);
     }
 
     protected override async ValueTask DisposeAsyncCore()

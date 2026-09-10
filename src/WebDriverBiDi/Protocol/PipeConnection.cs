@@ -401,18 +401,14 @@ public class PipeConnection : Connection
                 {
                     if (readArray[i] == 0)
                     {
-                        // Found a null terminator - complete the message. The accumulator's pooled
-                        // buffer becomes the message buffer directly (a message contained entirely in
-                        // this read is copied exactly once, from the read buffer into pooled memory),
-                        // and the IncomingMessage built from it returns the buffer to the pool on disposal.
+                        // Found a null terminator; the bytes accumulated since the previous one
+                        // complete a message, and the terminator itself is not part of it. A message
+                        // contained entirely in this read is copied exactly once, from the read
+                        // buffer into the accumulator's pooled memory. A zero-length message (two
+                        // adjacent terminators) leaves the accumulator empty, and notifying with an
+                        // empty accumulator delivers nothing, so no guard is needed here.
                         messageBuffer.Append(readArray.AsSpan(startIndex, i - startIndex));
-                        if (messageBuffer.HasData)
-                        {
-                            IMemoryOwner<byte> messageOwner = messageBuffer.TakeOwnership(out int messageLength);
-                            await this.LogMessageContentAsync(LogReceiveMessagePrefix, messageOwner.Memory, messageLength).ConfigureAwait(false);
-                            await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
-                        }
-
+                        await this.NotifyDataReceivedObserverAsync(messageBuffer).ConfigureAwait(false);
                         startIndex = i + 1;
                     }
                 }
