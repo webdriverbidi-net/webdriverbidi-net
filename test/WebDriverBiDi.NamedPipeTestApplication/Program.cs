@@ -54,8 +54,10 @@ _ = Task.Run(async () =>
                 }
             }
         }
-        catch (OperationCanceledException)
+        catch (Exception)
         {
+            // Deliberately catching all exceptions here, as
+            // this app is a simple app for testing.
         }
     }
 });
