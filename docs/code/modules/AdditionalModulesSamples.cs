@@ -63,7 +63,7 @@ public static class AdditionalModulesSamples
         #region InstallExtension
         // Install an extension
         InstallCommandParameters parameters = new InstallCommandParameters(
-            new ExtensionArchivePath("/path/to/extension.crx")
+            new ExtensionArchivePath("/path/to/extension.zip")
         );
 
         InstallCommandResult result = await driver.WebExtension.InstallAsync(parameters);

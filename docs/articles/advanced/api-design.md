@@ -156,7 +156,7 @@ For timeout patterns (e.g., returning `null` instead of throwing) and connection
 
 ## Error Handling Configuration
 
-The library uses `TransportErrorBehavior` (Ignore, Collect, Terminate) to control how transport-level errors are handled. Four properties on `BiDiDriver` provide fine-grained control in normal application code. These same members are also exposed through the advanced `IBiDiDriverEvents` interface for framework and testing scenarios.
+The library uses `TransportErrorBehavior` (Ignore, Collect, Terminate) to control how transport-level errors are handled. Four properties on `ITransportConfiguration`, reached through `BiDiDriver.TransportConfiguration`, provide fine-grained control:
 
 | Property | Default | Controls |
 |----------|---------|----------|
@@ -171,7 +171,7 @@ See [Error Handling](error-handling.md) for detailed guidance on when to use eac
 
 ### Package Versioning
 
-WebDriverBiDi.NET uses [Semantic Versioning](https://semver.org/) (SemVer) version numbers, and is currently in the **0.x** series. SemVer makes no compatibility promise for major version zero, and this project does not make one either: **while the major version is 0, any release — including a patch increment — may change or remove public API.** Removals have already shipped in patch releases (for example, analyzer rule BIDI018 was removed in 0.0.48 and BIDI011/BIDI019 in 0.0.51). Pin an exact package version, and read the release notes before updating.
+WebDriverBiDi.NET uses [Semantic Versioning](https://semver.org/) (SemVer) version numbers, and is currently in the **0.x** series. SemVer makes no compatibility promise for major version zero, and this project does not make one either: **while the major version is 0, any release — including a patch increment — may change or remove public API.** Removals have already shipped in patch releases (for example, analyzer rule BIDI018 was removed in 0.0.48 and BIDI011/BIDI019 in 0.0.51). Pin an exact package version, and review what changed before updating. The project publishes no GitHub releases and keeps no changelog file, so the commit history and the pull request descriptions are the record.
 
 Once the package reaches 1.0, the usual SemVer contract applies:
 
@@ -200,11 +200,12 @@ When strict conformance is required (e.g., production with known protocol versio
 
 ### Breaking Changes
 
-Breaking changes are documented in release notes. When upgrading major versions, review the changelog for:
+While the major version is 0, a breaking change may appear in any release, and there is no separate document announcing it: compare the commit history between the version you are on and the one you are moving to, and read the pull request descriptions. Look in particular for:
 
 - Removed or renamed types and members
 - Changed method signatures
 - Changed default behavior
+- Removed analyzer rules, which stop reporting rather than failing the build
 
 ## IObservable&lt;T&gt; Integration
 

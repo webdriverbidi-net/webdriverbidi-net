@@ -70,6 +70,10 @@ been retired.
 | `ConnectionClosed` | 4 | Info | Connection fully closed | `connectionId` |
 | `ConnectionError` | 5 | Error | Connection error occurred | `connectionId`, `errorMessage` |
 
+The `connectionId` in these payloads is `Connection.Id`, a GUID string assigned when the `Connection` is
+constructed and stable for its lifetime. Read it from the connection object to correlate your own logging
+with these events, or to tell two connections apart in a process that runs more than one driver.
+
 ### Command Execution
 
 | Event | ID | Level | Description | Payload |

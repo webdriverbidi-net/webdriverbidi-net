@@ -1221,7 +1221,7 @@ public static class EventObserverSamples
     {
         #region DriverLevelEventsListing
         // These events do not require session.SubscribeAsync — they are library-internal signals
-        _ = driver.OnEventReceived;             // Every protocol event before module dispatch
+        _ = driver.OnEventReceived;             // Every protocol event, after module dispatch
         _ = driver.OnUnexpectedErrorReceived;   // Error with no matching pending command
         _ = driver.OnUnknownMessageReceived;    // Message that did not match any protocol structure
         _ = driver.OnEventHandlerErrorOccurred; // An observer threw an exception

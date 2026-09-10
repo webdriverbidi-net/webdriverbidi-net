@@ -378,6 +378,8 @@ Func<Task> run = async () =>
 
 The remaining intra-procedural rules do not track order, so they search the whole body and do descend into nested functions. BIDI005, BIDI006, BIDI014, BIDI015 and BIDI012's `await using` detection all work this way, which is why an observer declared inside a lambda and never disposed is still reported by BIDI006.
 
+BIDI021 sits between the two groups. It tracks order like the state-tracking rules — the read has to follow the `StartCapturingTasks()` call — but it also looks inside nested functions, because handing the read to `Task.Run` is an ordinary way to write one. A read written inside a lambda, an anonymous method or a local function cannot be placed in the textual order, so it is treated as deferred and satisfies every `StartCapturingTasks()` call on that observer in the member, wherever the nested function is written. A `StartCapturingTasks()` call inside a nested function is not tracked at all, for the same reason.
+
 BIDI009 goes further in the other direction. Because it reports an **Error**, it reports only when it is certain, so it stops tracking a driver that this method hands to something else — passed as an argument, returned, assigned to a field, aliased to another variable, or placed in a collection — since the code it was handed to may start it. The one argument position that does not count is a module's constructor: `driver.RegisterModule(new CustomModule(driver))` hands the driver to a module, which holds it to issue commands and cannot start it.
 
 <!-- inline-csharp: calls an undefined helper to show where tracking stops -->

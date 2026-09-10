@@ -118,6 +118,12 @@ You can also expose observable events from your custom module:
 Both dictionaries are `ReceivedDataDictionary` and are empty rather than null when the remote end sent
 nothing extra, so a vendor-prefixed field can be read without a null check.
 
+`EventInfo<T>.ToEventArgs` packages all three into the event args you hand to your `ObservableEvent<T>`,
+copying both dictionaries onto the result so the extension data survives the hop. The overload taking a
+`Func<T, TEventArgs>` factory is the one to use in AOT or trimmed applications; the parameterless overload
+uses `T` itself as the event args type and throws `WebDriverBiDiException` when `TEventArgs` is anything
+else.
+
 Mark each `ObservableEvent<T>` property on your module with `[ObservableEventName("your.event")]`, naming the
 same string you passed to the `ObservableEvent<T>` constructor. The library's analyzers read that attribute
 from compiled metadata, which is what lets BIDI005 and BIDI015 recognise your module's events in a consuming
@@ -209,6 +215,7 @@ Pass your custom transport to `BiDiDriver` via the constructor overload that acc
 | `CreateCommand` | `protected virtual`. Build the `Command` envelope — its id, method and parameters — for an outgoing command; override to stamp every command with an extra property |
 | `SendCommandAsync` | `public virtual`. Send a command and get back the `Command` that was queued, without waiting for its response. `BiDiDriver.ExecuteCommandAsync` is the layer above it that waits and deserializes |
 | `CancelCommand` | `public virtual`. Stop waiting for a command sent through `SendCommandAsync`, giving a `CommandCancellationReason`. Returns `false` when the command had already completed, in which case that outcome stands. The command is remembered so that a late response is recognized and discarded rather than reported as an unknown message (see [Error Handling — Transport Error Behavior Configuration](error-handling.md#transport-error-behavior-configuration)) |
+| `RegisterEventMessage<T>` | `public virtual`. Teach the transport to deserialize an event name into `T`. `BiDiDriver.RegisterEvent<T>` calls it for you, so a module needs it only when the transport is driven directly; the envelope type it builds is AOT-safe, needing only `T` to be resolvable |
 
 Overriding `CreateCommand` is the supported way to add a vendor extension property to every command; adding
 it per call through `CommandParameters.AdditionalData` works too, but goes through reflection-based

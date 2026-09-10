@@ -128,7 +128,7 @@ public static class RemoteValuesSamples
         {
             KeyValuePairCollectionRemoteValue obj = success.Result.As<KeyValuePairCollectionRemoteValue>();
 
-            // Convert to RemoteValueDictionary; extract values with ValueAs<T>()
+            // Convert to RemoteValueDictionary; extract values with As<T>()
             RemoteValueDictionary dict = obj.Value;
 
             Console.WriteLine(dict["name"].As<StringRemoteValue>().Value);   // "John"

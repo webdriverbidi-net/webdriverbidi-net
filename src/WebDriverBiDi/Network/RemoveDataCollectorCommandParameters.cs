@@ -15,7 +15,7 @@ public class RemoveDataCollectorCommandParameters : CommandParameters<RemoveData
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoveDataCollectorCommandParameters" /> class.
     /// </summary>
-    /// <param name="collectorId">The ID of the collector collecting network data to be released.</param>
+    /// <param name="collectorId">The ID of the data collector to remove.</param>
     public RemoveDataCollectorCommandParameters(string collectorId)
     {
         this.CollectorId = collectorId;
