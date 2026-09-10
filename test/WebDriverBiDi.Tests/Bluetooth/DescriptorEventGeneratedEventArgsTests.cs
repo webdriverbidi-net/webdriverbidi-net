@@ -29,6 +29,7 @@ public class DescriptorEventGeneratedEventArgsTests
         Assert.Equal("myAddress", eventArgs.Address);
         Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
         Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal("myDescriptorUuid", eventArgs.DescriptorUuid);
         Assert.Equal(DescriptorEventGeneratedType.Read, eventArgs.Type);
         Assert.Null(eventArgs.Data);
     }
@@ -53,6 +54,7 @@ public class DescriptorEventGeneratedEventArgsTests
         Assert.Equal("myAddress", eventArgs.Address);
         Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
         Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal("myDescriptorUuid", eventArgs.DescriptorUuid);
         Assert.Equal(DescriptorEventGeneratedType.Write, eventArgs.Type);
         Assert.Null(eventArgs.Data);
     }
@@ -78,6 +80,7 @@ public class DescriptorEventGeneratedEventArgsTests
         Assert.Equal("myAddress", eventArgs.Address);
         Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
         Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal("myDescriptorUuid", eventArgs.DescriptorUuid);
         Assert.Equal(DescriptorEventGeneratedType.Read, eventArgs.Type);
         Assert.NotNull(eventArgs.Data);
         Assert.Empty(eventArgs.Data);
@@ -104,6 +107,7 @@ public class DescriptorEventGeneratedEventArgsTests
         Assert.Equal("myAddress", eventArgs.Address);
         Assert.Equal("myServiceUuid", eventArgs.ServiceUuid);
         Assert.Equal("myCharacteristicUuid", eventArgs.CharacteristicUuid);
+        Assert.Equal("myDescriptorUuid", eventArgs.DescriptorUuid);
         Assert.Equal(DescriptorEventGeneratedType.Read, eventArgs.Type);
         Assert.NotNull(eventArgs.Data);
         Assert.Equal(2, eventArgs.Data.Count);
@@ -374,7 +378,7 @@ public class DescriptorEventGeneratedEventArgsTests
                         "address": "myAddress",
                         "serviceUuid": "myServiceUuid",
                         "characteristicUuid": "myCharacteristicUuid",
-                        "descriptorUuid": "myDescriptorUuid",
+                        "descriptorUuid": "myDescriptorUuid"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, this.options));
@@ -442,7 +446,7 @@ public class DescriptorEventGeneratedEventArgsTests
                         "data": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, this.options));
     }
 
     [Fact]
@@ -459,6 +463,6 @@ public class DescriptorEventGeneratedEventArgsTests
                         "data": ["123", false]
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, this.options));
     }
 }
