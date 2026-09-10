@@ -2040,6 +2040,102 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestDisposeDuringStuckConnectProceedsWhenConnectionLockTimeoutIsZero()
+    {
+        // Disposal waits for an in-flight connect attempt through the connection lock, whose wait
+        // is bounded by ConnectionLockTimeout as well as by ShutdownTimeout, and reports the former
+        // bound as a WebDriverBiDiTimeoutException rather than a cancellation. With a zero lock
+        // timeout the wait ends at once on that path, and disposal must still proceed: log the same
+        // warning, tear the transport down, and dispose the connection and the semaphore.
+        List<LogMessageEventArgs> logs = [];
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+        };
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+            ConnectionLockTimeout = TimeSpan.Zero,
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e);
+            }
+        });
+
+        Task connectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        // A zero lock timeout is armed as an already-elapsed timer, so the disposal completes without
+        // the shutdown timeout ever being reached on the virtual clock.
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(disposeTask, TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disposeTask;
+
+        Assert.True(transport.IsDisposed);
+        Assert.True(connection.Disposed);
+        lock (logs)
+        {
+            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-flight connect attempt to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
+        }
+
+        // The stuck attempt completes against a disposed transport and faults, as in the
+        // shutdown-timeout case above.
+        startBarrier.SetResult();
+        await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connectTask);
+    }
+
+    [Fact]
+    public async Task TestDisposeDuringStuckConnectProceedsWhenConnectionLockTimeoutIsShorterThanShutdownTimeout()
+    {
+        // The same path as the zero-timeout case, but with a lock timeout that is finite and shorter
+        // than the shutdown timeout: the lock timeout elapses first on the virtual clock, ends the
+        // wait as a WebDriverBiDiTimeoutException, and disposal proceeds on that path.
+        List<LogMessageEventArgs> logs = [];
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new()
+        {
+            StartBarrier = startBarrier,
+        };
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+            ConnectionLockTimeout = TimeSpan.FromSeconds(5),
+        };
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            lock (logs)
+            {
+                logs.Add(e);
+            }
+        });
+
+        Task connectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        // Advance by the lock timeout only, which is well short of the shutdown timeout, so the wait
+        // can only have ended on the lock-timeout path.
+        Task disposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(disposeTask, transport.ConnectionLockTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await disposeTask;
+
+        Assert.True(transport.IsDisposed);
+        Assert.True(connection.Disposed);
+        lock (logs)
+        {
+            Assert.Contains(logs, log => log.Message.Contains("Timed out waiting for an in-flight connect attempt to complete during disposal") && log.Level == WebDriverBiDiLogLevel.Warn);
+        }
+
+        startBarrier.SetResult();
+        await Assert.ThrowsAnyAsync<ObjectDisposedException>(async () => await connectTask);
+    }
+
+    [Fact]
     public async Task TestExceptionInTransportEventReceivedCanTerminate()
     {
         // string receivedName = string.Empty;
