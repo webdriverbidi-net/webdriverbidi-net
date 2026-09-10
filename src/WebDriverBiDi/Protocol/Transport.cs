@@ -353,6 +353,12 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <see cref="Timeout.InfiniteTimeSpan"/> restores an unbounded wait.
     /// </para>
     /// <para>
+    /// Disposal takes the access too, when a connect attempt is still in flight, so that the attempt
+    /// is not torn down from under itself. That wait is bounded by <see cref="ShutdownTimeout"/> and
+    /// by this timeout alike; whichever elapses first ends it, a warning is raised on
+    /// <see cref="OnLogMessage"/>, and disposal proceeds.
+    /// </para>
+    /// <para>
     /// Handling a lost connection waits for the access too, on the connection's receive loop. A wait
     /// abandoned there leaves the session standing rather than tearing it down without the access:
     /// the transport stays <see cref="TransportState.Connected"/>, its pending commands end at their
@@ -1206,7 +1212,14 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         // ShutdownTimeout so a pathological disposal from code the connect attempt itself
         // invoked (such as a synchronous log observer) degrades to a logged, time-bounded
         // wait rather than a deadlock; on timeout, disposal proceeds exactly as it would
-        // have without this serialization.
+        // have without this serialization. The wait goes through AcquireConnectionLockAsync,
+        // which is also bounded by ConnectionLockTimeout and reports that bound as a
+        // WebDriverBiDiTimeoutException rather than a cancellation; when that timeout is the
+        // shorter of the two (including TimeSpan.Zero, which never waits), it is the one that
+        // ends the wait, and disposal must proceed on that path exactly as on the other.
+        // Letting it escape would abandon the teardown below and leave the connection and
+        // the semaphore undisposed, with no second attempt possible because disposal has
+        // already been recorded.
         if (this.State == TransportState.Connecting)
         {
             using CancellationTokenSource lockWaitCancellationTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
@@ -1215,7 +1228,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 await this.AcquireConnectionLockAsync(lockWaitCancellationTokenSource.Token).ConfigureAwait(false);
                 this.ReleaseConnectionLock();
             }
-            catch (OperationCanceledException)
+            catch (Exception ex) when (ex is OperationCanceledException or WebDriverBiDiTimeoutException)
             {
                 await this.LogAsync("Timed out waiting for an in-flight connect attempt to complete during disposal", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
