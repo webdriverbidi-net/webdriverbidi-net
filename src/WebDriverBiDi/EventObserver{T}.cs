@@ -593,7 +593,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// </summary>
     public void Dispose()
     {
-        this.Dispose(true);
+        if (this.SetDisposed())
+        {
+            this.DisposeObserver();
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -601,11 +605,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// Asynchronously removes this observer from its observable event and releases all resources.
     /// </summary>
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        await this.DisposeAsyncCore().ConfigureAwait(false);
-        this.Dispose(false);
-        GC.SuppressFinalize(this);
+        this.Dispose();
+        return default;
     }
 
     /// <summary>
@@ -684,33 +687,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         }
     }
 
-    /// <summary>
-    /// Releases the resources used by this observer.
-    /// </summary>
-    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
-    protected virtual void Dispose(bool disposing)
-    {
-        if (this.MarkDisposed())
-        {
-            this.DisposeObserver();
-        }
-    }
-
-    /// <summary>
-    /// Asynchronously releases the managed resources used by this observer.
-    /// Override this method in derived classes to add custom async cleanup logic.
-    /// </summary>
-    /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
-    protected virtual ValueTask DisposeAsyncCore()
-    {
-        if (this.MarkDisposed())
-        {
-            this.DisposeObserver();
-        }
-
-        return default;
-    }
-
     private static string GetObserverErrorEventName(T notifyData, string observableEventName)
     {
         if (notifyData is EventReceivedEventArgs eventReceivedEventArgs)
@@ -721,7 +697,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         return observableEventName;
     }
 
-    private bool MarkDisposed()
+    private bool SetDisposed()
     {
         return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
     }
