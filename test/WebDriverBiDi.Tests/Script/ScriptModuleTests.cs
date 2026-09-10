@@ -30,7 +30,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         EvaluateResult result = await module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -79,7 +79,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         EvaluateResult result = await module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -123,7 +123,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         EvaluateResult result = await module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -172,7 +172,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         EvaluateResult result = await module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -218,7 +218,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         GetRealmsCommandResult result = await module.GetRealmsAsync(new GetRealmsCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -256,7 +256,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         GetRealmsCommandResult result = await module.GetRealmsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
@@ -282,7 +282,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         DisownCommandResult result = await module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -296,7 +296,7 @@ public class ScriptModuleTests
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnRealmCreated.AddObserver(e =>
@@ -332,7 +332,7 @@ public class ScriptModuleTests
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnRealmCreated.AddObserver(e =>
@@ -366,7 +366,7 @@ public class ScriptModuleTests
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnRealmDestroyed.AddObserver(e =>
@@ -395,7 +395,7 @@ public class ScriptModuleTests
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         module.OnMessage.AddObserver(e =>
@@ -451,7 +451,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         AddPreloadScriptCommandResult result = await module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"), cancellationToken: TestContext.Current.CancellationToken);
 
@@ -478,7 +478,7 @@ public class ScriptModuleTests
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new Transport(connection));
         ScriptModule module = driver.Script;
-        await driver.StartAsync("ws:localhost", cancellationToken: TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", cancellationToken: TestContext.Current.CancellationToken);
 
         RemovePreloadScriptCommandResult result = await module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"), cancellationToken: TestContext.Current.CancellationToken);
 

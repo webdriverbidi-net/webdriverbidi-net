@@ -35,15 +35,14 @@ public sealed class BenchmarkEchoConnection : Connection
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
     /// <inheritdoc/>
-    public override Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
+    protected override Task StartConnectionAsync(CancellationToken cancellationToken)
     {
-        this.ConnectionString = connectionString;
         this.isActive = true;
         return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
-    public override Task StopAsync(CancellationToken cancellationToken = default)
+    protected override Task StopConnectionAsync(CancellationToken cancellationToken)
     {
         this.isActive = false;
         return Task.CompletedTask;
@@ -83,11 +82,7 @@ public sealed class BenchmarkEchoConnection : Connection
     protected override Task ReceiveDataAsync() => Task.CompletedTask;
 
     /// <inheritdoc/>
-    protected override ValueTask DisposeAsyncCore()
-    {
-        this.SetDisposed();
-        return default;
-    }
+    protected override ValueTask DisposeAsyncCore() => default;
 
     private static long ExtractCommandId(ReadOnlyMemory<byte> commandJson)
     {

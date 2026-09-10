@@ -35,7 +35,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command, TestContext.Current.CancellationToken);
@@ -62,7 +62,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestComplexCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command, TestContext.Current.CancellationToken);
@@ -77,7 +77,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -120,7 +120,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -170,7 +170,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -216,7 +216,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -246,7 +246,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -306,7 +306,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -324,7 +324,7 @@ public class TransportTests
         // A running command reports the interval live rather than the frozen value a completed one has.
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new("module.command");
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -346,7 +346,7 @@ public class TransportTests
             SendWebSocketDataOverride = _ => throw new InvalidOperationException("Simulated send failure"),
         };
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new("module.command");
         Assert.Contains("Simulated send failure", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken))).Message);
@@ -368,7 +368,7 @@ public class TransportTests
             },
         };
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new("module.command");
         Task<Command> sendTask = transport.SendCommandAsync(commandParameters, cancellationTokenSource.Token);
@@ -406,7 +406,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -440,7 +440,7 @@ public class TransportTests
                         "message": "This is a test error message"
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -479,7 +479,7 @@ public class TransportTests
                         "method": null
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -499,7 +499,7 @@ public class TransportTests
         Transport transport = new(connection);
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
@@ -523,7 +523,7 @@ public class TransportTests
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             logs.Add(e);
@@ -586,7 +586,7 @@ public class TransportTests
         Transport transport = new(connection);
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         int reentrantSendCount = 0;
         Command? reentrantCommand = null;
@@ -615,7 +615,7 @@ public class TransportTests
         Transport transport = new(connection);
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             if (e.ComponentName == Transport.LoggerComponentName)
@@ -655,7 +655,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -684,7 +684,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -712,7 +712,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -741,7 +741,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -770,7 +770,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -798,7 +798,7 @@ public class TransportTests
         };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessageEventRaised = true;
@@ -850,7 +850,7 @@ public class TransportTests
         };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessageEventRaised = true;
@@ -902,7 +902,7 @@ public class TransportTests
         };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessageEventRaised = true;
@@ -954,7 +954,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -980,7 +980,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -1009,7 +1009,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -1040,7 +1040,7 @@ public class TransportTests
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessageEventRaised = true;
@@ -1098,7 +1098,7 @@ public class TransportTests
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessageEventRaised = true;
@@ -1153,7 +1153,7 @@ public class TransportTests
         transport.RegisterInvalidEventMessageType("protocol.event", typeof(object));
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnUnknownMessageReceived.AddObserver(e =>
         {
             unknownMessageEventRaised = true;
@@ -1627,7 +1627,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
 
         // The event is held inside the processing loop when the disconnect begins, so the disconnect
@@ -1707,7 +1707,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
@@ -1757,7 +1757,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await firstEventTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
@@ -1816,7 +1816,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
 
         // The original handler failure is captured after the error event is raised; the
@@ -1875,7 +1875,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
 
         // Both the original handler failure and the error observer's own failure are
@@ -1940,7 +1940,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await connection.RaiseDataReceivedEventAsync(json);
         await bothCapturedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -1978,7 +1978,7 @@ public class TransportTests
         // ConnectAsync runs synchronously (holding the connection lock) until it awaits the
         // connection's start barrier, so when the call returns a pending task the transport
         // is deterministically mid-connect.
-        Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Task connectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.Equal(TransportState.Connecting, transport.State);
 
         // Disposal must be blocked waiting for the in-flight attempt, not proceeding.
@@ -2018,7 +2018,7 @@ public class TransportTests
             }
         });
 
-        Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Task connectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.Equal(TransportState.Connecting, transport.State);
 
         // The shutdown timeout is elapsed on the virtual clock as soon as disposal arms it.
@@ -2062,7 +2062,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -2106,7 +2106,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect);
@@ -2150,7 +2150,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
@@ -2187,11 +2187,11 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         string commandName = "module.command";
         Dictionary<string, object?> expectedCommandParameters = new()
         {
@@ -2215,7 +2215,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.Equal(0, transport.LastTestCommandId);
 
         string commandName = "module.command";
@@ -2300,7 +2300,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         // Raise the first message and wait until the reader has pulled it and begun
         // running the handler. At this point the reader is blocked inside the handler
@@ -2342,7 +2342,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Assert.Equal(0, transport.PendingCommandCount);
 
@@ -2374,7 +2374,7 @@ public class TransportTests
         // be counted in the queue depth, and its pooled buffer must be returned via disposal.
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         Assert.Equal(0, transport.IncomingQueueDepth);
 
@@ -2390,7 +2390,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         // Send a command and do not deliver a response, so it sits in the pending collection.
         _ = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
@@ -2426,7 +2426,7 @@ public class TransportTests
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
             TimeSpan.FromSeconds(5),
             TransportErrorBehavior.Collect);
@@ -2462,7 +2462,7 @@ public class TransportTests
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
             TimeSpan.FromSeconds(5),
             TransportErrorBehavior.Collect);
@@ -2521,7 +2521,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -2575,7 +2575,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -2613,7 +2613,7 @@ public class TransportTests
             return Task.CompletedTask;
         });
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain(logs,
@@ -2633,7 +2633,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
         await transport.DisposeAsync();
     }
@@ -2643,7 +2643,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisposeAsync();
     }
 
@@ -2652,7 +2652,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisposeAsync();
         await transport.DisposeAsync();
     }
@@ -2669,7 +2669,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         Command oldCommand = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         Assert.Equal(1, transport.PendingCommandCount);
 
@@ -2679,7 +2679,7 @@ public class TransportTests
         Assert.Equal(0, transport.PendingCommandCount);
 
         // A reconnected transport starts with an empty collection and accepts new commands.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         Command newCommand = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         Assert.False(newCommand.IsCanceled);
         Assert.Equal(1, transport.PendingCommandCount);
@@ -2697,7 +2697,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.ThrowOnDisconnect = true;
         await transport.DisposeAsync();
     }
@@ -2713,7 +2713,7 @@ public class TransportTests
             logs.Add(e);
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.ThrowOnDisconnect = true;
         await transport.DisposeAsync();
         Assert.Contains(logs,
@@ -2757,7 +2757,7 @@ public class TransportTests
             logs.Add(e);
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         transport.DeserializeThrowCount = 1;
 
@@ -2814,7 +2814,7 @@ public class TransportTests
 
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         transport.DeserializeThrowCount = 1;
         await connection.RaiseDataReceivedEventAsync("this message will cause the exception");
@@ -2831,7 +2831,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         Assert.False(command.IsCanceled);
@@ -2849,7 +2849,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         transport.CancelCommand(command);
@@ -2861,7 +2861,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken: TestContext.Current.CancellationToken);
         transport.CancelCommand(command);
@@ -2898,7 +2898,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.Contains("Cannot register a type info resolver after the transport is connected", (await Assert.ThrowsAnyAsync<InvalidOperationException>(async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), TestContext.Current.CancellationToken))).Message);
     }
 
@@ -2913,7 +2913,7 @@ public class TransportTests
         // starting RegisterTypeInfoResolverAsync. This guarantees ConnectAsync acquires
         // the semaphore first and sets IsConnected before RegisterTypeInfoResolverAsync
         // reads it, making the test deterministic regardless of thread scheduling.
-        Task connectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Task connectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await firstCallerReadyTask;
         Task registerTask = transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), TestContext.Current.CancellationToken);
         await connectTask;
@@ -2964,7 +2964,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -2984,7 +2984,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Exception simulatedError = new("WebSocket connection dropped");
         await connection.RaiseConnectionErrorEventAsync(simulatedError);
@@ -3004,7 +3004,7 @@ public class TransportTests
             logs.Add(e);
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Exception simulatedError = new("WebSocket connection dropped");
         await connection.RaiseConnectionErrorEventAsync(simulatedError);
@@ -3034,7 +3034,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
         // IsConnected is now false; raise error (e.g., receive loop dying during shutdown)
@@ -3055,7 +3055,7 @@ public class TransportTests
         // return" branch is covered separately by TestConcurrentConnectionLossEventsHitInnerReturnBranch.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         _ = transport.EnableConnectLockConcurrencyTesting();
 
         Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
@@ -3071,7 +3071,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command1 = await transport.SendCommandAsync(new TestCommandParameters("module.command1"), TestContext.Current.CancellationToken);
         Command command2 = await transport.SendCommandAsync(new TestCommandParameters("module.command2"), TestContext.Current.CancellationToken);
@@ -3092,7 +3092,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken);
@@ -3110,7 +3110,7 @@ public class TransportTests
         string commandName = "module.command";
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseRemoteDisconnectedEventAsync();
 
@@ -3129,7 +3129,7 @@ public class TransportTests
             logs.Add(e);
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseRemoteDisconnectedEventAsync();
 
@@ -3155,7 +3155,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
         await connection.RaiseRemoteDisconnectedEventAsync();
@@ -3169,7 +3169,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command1 = await transport.SendCommandAsync(new TestCommandParameters("module.command1"), TestContext.Current.CancellationToken);
         Command command2 = await transport.SendCommandAsync(new TestCommandParameters("module.command2"), TestContext.Current.CancellationToken);
@@ -3194,7 +3194,7 @@ public class TransportTests
         // TestConcurrentConnectionLossEventsHitInnerReturnBranch.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         _ = transport.EnableConnectLockConcurrencyTesting();
 
         Task disconnectTask = transport.DisconnectAsync(TestContext.Current.CancellationToken);
@@ -3222,7 +3222,7 @@ public class TransportTests
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
             TimeSpan.FromSeconds(5),
             TransportErrorBehavior.Collect);
@@ -3263,7 +3263,7 @@ public class TransportTests
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
             TimeSpan.FromSeconds(5),
             TransportErrorBehavior.Collect);
@@ -3278,7 +3278,7 @@ public class TransportTests
         // The new session's read loop must not fault, or the disconnect below would throw the new
         // session's own collected error rather than prove the old one was discarded.
         transport.ReadLoopOuterFault = null;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         Assert.Equal(TransportState.Connected, transport.State);
 
         // Had the old session's fault survived the reconnect, this would throw the AggregateException.
@@ -3301,7 +3301,7 @@ public class TransportTests
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
             TimeSpan.FromSeconds(5),
             TransportErrorBehavior.Collect);
@@ -3341,7 +3341,7 @@ public class TransportTests
                         "message": "This is a test error message"
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -3376,7 +3376,7 @@ public class TransportTests
                         "message": "This is a test error message"
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
@@ -3403,7 +3403,7 @@ public class TransportTests
                         "message": "This is a test error message"
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);
 
@@ -3436,7 +3436,7 @@ public class TransportTests
                         "type": "unknown"
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -3468,7 +3468,7 @@ public class TransportTests
                         "type": "unknown"
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(async () => await transport.DisconnectAsync(TestContext.Current.CancellationToken));
@@ -3497,7 +3497,7 @@ public class TransportTests
                         "type": "unknown"
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -3519,7 +3519,7 @@ public class TransportTests
             // stalling for the default ten-second shutdown timeout.
             ShutdownTimeout = TimeSpan.FromMilliseconds(500),
         };
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         Assert.False(command.IsCanceled);
@@ -3544,7 +3544,7 @@ public class TransportTests
 
         connection.ThrowOnStop = false;
         connection.BypassStop = true;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         // Had the writer been left uncompleted, the message processing task of the previous
         // connection could never finish, and this reconnect would have waited out the whole
@@ -3569,7 +3569,7 @@ public class TransportTests
         Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             throw new WebDriverBiDiException("Log message handler exception");
@@ -3600,7 +3600,7 @@ public class TransportTests
         };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             throw new WebDriverBiDiException("Log message handler exception");
@@ -3626,7 +3626,7 @@ public class TransportTests
         };
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             throw new WebDriverBiDiException("Log message handler exception");
@@ -3648,7 +3648,7 @@ public class TransportTests
         TestTransport transport = new(connection);
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnEventHandlerErrorOccurred.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult(e);
@@ -3687,7 +3687,7 @@ public class TransportTests
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
 
         // Add the log observer after the connect to prevent capturing connection diagnostic messages.
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         transport.OnLogMessage.AddObserver(e =>
         {
             throw new WebDriverBiDiException("Log message handler exception");
@@ -3734,7 +3734,7 @@ public class TransportTests
             return Task.CompletedTask;
         });
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         // This message should be silently discarded by the transformer.
         await connection.RaiseDataReceivedEventAsync("""{"method":"CDP.someEvent","params":{}}""");
@@ -3802,7 +3802,7 @@ public class TransportTests
 
         TestReceiveLoopWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await transport.ConnectAsync("ws://localhost", testCancellationToken);
 
         // Never wait for the lock, so the handler's wait is abandoned the instant it finds it held.
         transport.ConnectionLockTimeout = TimeSpan.Zero;
@@ -3860,7 +3860,7 @@ public class TransportTests
 
         TestReceiveLoopWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await transport.ConnectAsync("ws://localhost", testCancellationToken);
         transport.ConnectionLockTimeout = TimeSpan.Zero;
 
         TaskCompletionSource handlerWaitStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -3924,7 +3924,7 @@ public class TransportTests
             await releaseLockHolder.Task;
         };
 
-        Task reconnectTask = transport.ConnectAsync("ws:localhost", testCancellationToken);
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", testCancellationToken);
         await lockHeld.Task;
         await Assert.ThrowsAsync<WebDriverBiDiTimeoutException>(
             async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), testCancellationToken));
@@ -3957,12 +3957,12 @@ public class TransportTests
 
         // First session: connect and stop cleanly. The fix raises its disconnect-ownership signal
         // during this stop, so the second session must start from a fresh signal.
-        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await transport.ConnectAsync("ws://localhost", testCancellationToken);
         await transport.DisconnectAsync(testCancellationToken);
 
         // Second session: reconnect and send a command that stays pending (the connection double
         // never produces a response).
-        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await transport.ConnectAsync("ws://localhost", testCancellationToken);
         TestCommandParameters commandParameters = new("module.command");
         Command pendingCommand = await transport.SendCommandAsync(commandParameters, testCancellationToken);
 
@@ -4004,7 +4004,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await transport.ConnectAsync("ws://localhost", testCancellationToken);
 
         // Choreograph the two connection-lock acquisitions: the first loss handler enters the lock,
         // and the second is held at its fast-path-passed / pre-lock point until the first has
@@ -4036,7 +4036,7 @@ public class TransportTests
 
         TestReceiveLoopWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", testCancellationToken);
+        await transport.ConnectAsync("ws://localhost", testCancellationToken);
 
         // Signalled by the connection-loss handler when it enters its connection-lock acquisition,
         // i.e., once it has passed its fast-path check (IsConnected is still true at that point,
@@ -4144,7 +4144,7 @@ public class TransportTests
                 discardedTaskCompletionSource.TrySetResult();
             }
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         Assert.True(transport.CancelCommand(command, CommandCancellationReason.TimedOut));
@@ -4189,7 +4189,7 @@ public class TransportTests
                 discardedTaskCompletionSource.TrySetResult();
             }
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         transport.CancelCommand(command);
@@ -4233,7 +4233,7 @@ public class TransportTests
             UnknownMessageBehavior = TransportErrorBehavior.Collect,
             AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
         };
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         // Valid JSON that matches no protocol message shape.
         await connection.RaiseDataReceivedEventAsync("""{"someProperty":"someValue"}""");
@@ -4266,7 +4266,7 @@ public class TransportTests
                 }
             },
         };
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseDataReceivedEventAsync("""{"first":"unknown"}""");
         await connection.RaiseDataReceivedEventAsync("""{"second":"unknown"}""");
@@ -4289,7 +4289,7 @@ public class TransportTests
             UnknownMessageBehavior = TransportErrorBehavior.Terminate,
             AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
         };
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseDataReceivedEventAsync("""{"someProperty":"someValue"}""");
         await captured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -4314,7 +4314,7 @@ public class TransportTests
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver(e => eventReceived = true);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         // Structurally an event, but its params cannot be deserialized as TestEventArgs.
         await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","params":"not an object"}""");
@@ -4342,7 +4342,7 @@ public class TransportTests
             AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseDataReceivedEventAsync("""{"type":"event","method":"protocol.event","params":"not an object"}""");
         await captured.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -4363,7 +4363,7 @@ public class TransportTests
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
         };
         transport.OnErrorEventReceived.AddObserver(e => errorTaskCompletionSource.TrySetResult());
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseDataReceivedEventAsync("""{"type":"error","id":999,"error":"unknown error","message":"no such command"}""");
         await errorTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -4396,7 +4396,7 @@ public class TransportTests
             unknownMessage = e.Message;
             unknownTaskCompletionSource.TrySetResult();
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command first = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
         Command second = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
@@ -4467,7 +4467,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -4479,7 +4479,7 @@ public class TransportTests
         // entering the wait for it, and log observers run before the wait begins, so receiving
         // it proves the reconnect is blocked on the reader rather than pending for some other
         // reason.
-        Task reconnectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await reconnectWaitingTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.False(reconnectTask.IsCompleted);
 
@@ -4540,14 +4540,14 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await connection.RaiseRemoteDisconnectedEventAsync();
 
         // The shutdown timeout is elapsed on the virtual clock as soon as the reconnect arms it.
-        Task reconnectTask = transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
         await reconnectTask;
 
@@ -4610,7 +4610,7 @@ public class TransportTests
                       }
                       """;
 
-        await transport.ConnectAsync("ws:localhost", cancellationToken);
+        await transport.ConnectAsync("ws://localhost", cancellationToken);
 
         // Two messages reach the first connection's queue. The reader takes the first, decrementing
         // that queue's depth, and then blocks in the handler, so the second is left unread on it.
@@ -4622,7 +4622,7 @@ public class TransportTests
 
         // The reader is still stuck in the handler, so this reconnect times out waiting for it and
         // installs a new queue while the old one still holds an unread message.
-        Task reconnectTask = transport.ConnectAsync("ws:localhost", cancellationToken);
+        Task reconnectTask = transport.ConnectAsync("ws://localhost", cancellationToken);
         await timeProvider.AdvanceUntilCompletedAsync(reconnectTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), cancellationToken);
         await reconnectTask;
         Assert.Equal(0, transport.IncomingQueueDepth);
@@ -4653,7 +4653,7 @@ public class TransportTests
             eventReceived = true;
             return Task.CompletedTask;
         });
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseRemoteDisconnectedEventAsync();
         Assert.Equal(0, transport.IncomingQueueDepth);
@@ -4694,7 +4694,7 @@ public class TransportTests
             return Task.CompletedTask;
         });
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
         await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
 
@@ -4740,7 +4740,7 @@ public class TransportTests
             return Task.CompletedTask;
         });
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
         await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
 
@@ -4783,7 +4783,7 @@ public class TransportTests
             return Task.CompletedTask;
         });
 
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         TrackingMemoryOwner owner = new(Encoding.UTF8.GetBytes("""{"type":"event","method":"protocol.event","params":{}}"""));
         await connection.RaiseDataReceivedEventAsync(owner, owner.Length);
 
@@ -4806,7 +4806,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         FailingSerializationTransport transport = new(connection, new NotSupportedException("no metadata"));
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
             async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
@@ -4822,7 +4822,7 @@ public class TransportTests
         // else coming out of an overridden SerializeCommand is the override's own problem.
         TestWebSocketConnection connection = new();
         FailingSerializationTransport transport = new(connection, new InvalidOperationException("custom failure"));
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
@@ -4894,7 +4894,7 @@ public class TransportTests
                         }
                       }
                       """;
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -4916,10 +4916,10 @@ public class TransportTests
             this.stopCalledTaskCompletionSource = stopCalledTaskCompletionSource;
         }
 
-        public override Task StopAsync(CancellationToken cancellationToken = default)
+        protected override Task StopConnectionAsync(CancellationToken cancellationToken)
         {
             this.stopCalledTaskCompletionSource.TrySetResult();
-            return base.StopAsync(cancellationToken);
+            return base.StopConnectionAsync(cancellationToken);
         }
     }
 
@@ -4931,7 +4931,7 @@ public class TransportTests
         // but before the lock is acquired, and verify the command is still rejected.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         bool disconnectTriggered = false;
         transport.BeforeAcquireLockCallback = async () =>
@@ -4963,7 +4963,7 @@ public class TransportTests
         // against the new session's collection.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         string initialCollectionId = transport.TestPendingCommandCollectionId;
 
         bool reconnectTriggered = false;
@@ -4976,7 +4976,7 @@ public class TransportTests
             {
                 reconnectTriggered = true;
                 await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-                await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+                await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
             }
         };
 
@@ -5002,7 +5002,7 @@ public class TransportTests
         // command keeps the new session's first ID free.
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         bool reconnectTriggered = false;
         transport.BeforeAcquireLockCallback = async () =>
@@ -5011,7 +5011,7 @@ public class TransportTests
             {
                 reconnectTriggered = true;
                 await transport.DisconnectAsync(TestContext.Current.CancellationToken);
-                await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+                await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
             }
         };
 
@@ -5120,7 +5120,7 @@ public class TransportTests
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Action<LogMessageEventArgs> throwingHandler = e => throw new WebDriverBiDiException("collected connection observer failure");
         connection.OnLogMessage.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -5141,7 +5141,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
-        await transport.ConnectAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         TaskCompletionSource errorReported = new(TaskCreationOptions.RunContinuationsAsynchronously);
         transport.OnEventHandlerErrorOccurred.AddObserver(e => errorReported.TrySetResult());

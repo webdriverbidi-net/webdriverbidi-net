@@ -21,7 +21,7 @@ public class DigitalCredentialsModuleTests
         });
 
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         DigitalCredentialsModule module = driver.DigitalCredentials;
 
         SetVirtualWalletBehaviorCommandResult result = await module.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Clear), cancellationToken: TestContext.Current.CancellationToken);

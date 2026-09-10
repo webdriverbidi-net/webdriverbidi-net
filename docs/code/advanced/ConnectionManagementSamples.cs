@@ -673,16 +673,42 @@ public class CustomConnection : Connection
 
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
-    public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
+    protected override void ResolveConnectionString(string connectionString)
     {
-        await LogAsync("Custom connection starting");
-        // Your startup logic
+        // The only place the connection string is interpreted. Reject a value this transport could
+        // never connect to with an ArgumentException, which is how a caller tells "fix the connection
+        // string" from "the attempt did not succeed". Connection.StartAsync calls this before it does
+        // anything that can take time, so the rejection costs nothing.
+        //
+        // Because parsing a value is usually what proves it is valid, keep whatever the connect will
+        // need instead of parsing again in StartConnectionAsync: that method is never reached without
+        // this one having run first for the same attempt. The reverse does not hold -- a start can be
+        // refused between the two, for instance because a previous session's receive loop is still
+        // running -- so what is kept here is good for the next connect, not a promise of one.
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new ArgumentException("A connection string is required", nameof(connectionString));
+        }
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken = default)
+    protected override async Task StartConnectionAsync(CancellationToken cancellationToken)
     {
+        // Your startup logic. Connection.StartAsync provides the surrounding startup sequence, which is
+        // the same for every connection: it rejects a disposed, already-active, or still-unwinding
+        // connection, readies the connection's cancellation token for the new session, records the
+        // connection string (readable here as ConnectionString), and starts the receive loop once this
+        // method returns. Return only once the connection is established, and throw if it cannot be.
+        await LogAsync($"Custom connection starting: {ConnectionString}");
+    }
+
+    protected override async Task StopConnectionAsync(CancellationToken cancellationToken)
+    {
+        // Your shutdown logic, which is only whatever this transport must exchange with the remote end
+        // to close by agreement; it runs before the connection is canceled, because cancellation would
+        // abort such an exchange. Connection.StopAsync then cancels the connection, waits for the
+        // receive loop to finish, and clears the connection string. This method is called on every
+        // stop, including when the connection is not active, so test for that if it matters.
         await LogAsync("Custom connection stopping");
-        // Your shutdown logic
     }
 
     protected override async Task SendConnectionDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
@@ -709,7 +735,9 @@ public class CustomConnection : Connection
 
     protected override async ValueTask DisposeAsyncCore()
     {
-        // Your cleanup logic
+        // Your cleanup logic, for the resources this class owns. Connection.DisposeAsync records the
+        // disposal, stops the connection first if it is still active, and releases the resources the
+        // base class owns.
     }
 }
 #endregion

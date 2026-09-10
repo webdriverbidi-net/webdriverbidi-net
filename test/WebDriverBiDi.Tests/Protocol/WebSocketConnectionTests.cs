@@ -104,6 +104,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         Assert.Contains($"{0.2} seconds", exception.Message);
         Assert.False(connection.IsActive);
+
+        // A connect that failed leaves nothing behind. StartAsync publishes the connection string
+        // before the connect, so that the connect can name the remote end it is reaching for, and
+        // takes it back when the attempt does not succeed; a connection that never connected must not
+        // report itself as connected to anything.
+        Assert.Equal(string.Empty, connection.ConnectionString);
     }
 
     [Fact]
@@ -413,7 +419,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             messages.Add(logValue.Message);
         }
 
-        Assert.Equal(5, logValues.Count);
+        Assert.Equal(6, logValues.Count);
         foreach (LogMessageEventArgs args in logValues)
         {
 
@@ -465,6 +471,125 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestStartAsyncReportsAnUnusableConnectionStringAsAnArgumentExceptionNamingTheCallersParameter()
+    {
+        // A connection string this connection could never open is a different kind of failure from a
+        // connect that did not succeed, and the exception type is what carries that distinction to the
+        // caller: an ArgumentException means the value must be corrected before starting is worth
+        // attempting again. The name it carries is the parameter of Connection.StartAsync, which is the
+        // argument the caller actually passed, and not the name the transport's own hook gives it.
+        WebSocketConnection connection = new();
+
+        ArgumentException notAbsolute = await Assert.ThrowsAnyAsync<ArgumentException>(async () => await connection.StartAsync("not-a-valid-url", TestContext.Current.CancellationToken));
+        Assert.Contains("not a valid absolute URI", notAbsolute.Message);
+        Assert.Equal("connectionString", notAbsolute.ParamName);
+
+        ArgumentException wrongScheme = await Assert.ThrowsAnyAsync<ArgumentException>(async () => await connection.StartAsync("http://localhost:9222", TestContext.Current.CancellationToken));
+        Assert.Contains("must be 'ws' or 'wss'", wrongScheme.Message);
+        Assert.Equal("connectionString", wrongScheme.ParamName);
+
+        // The rejection is complete: nothing about the connection was changed by the attempt, so it is
+        // still startable.
+        Assert.False(connection.IsActive);
+        Assert.Equal(string.Empty, connection.ConnectionString);
+    }
+
+    [Fact]
+    public async Task TestStartAsyncRejectsAnUnusableConnectionStringWithoutWaitingForAnAbandonedReceiveLoop()
+    {
+        // Interpreting the connection string happens before StartAsync does anything that can take
+        // time. The wait it would otherwise sit behind is the bounded wait for a previous session's
+        // receive loop, which on a reconnect costs up to ShutdownTimeout, so a caller who passed a
+        // malformed URL would pay that price to be told about a fault that costs nothing to detect.
+        TaskCompletionSource<WebSocketReceiveResult> receiveBlockSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveBlockEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
+        {
+            BypassStart = false,
+            BypassStop = false,
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+            ConnectWebSocketOverride = (uri, cancellationToken) => Task.CompletedTask,
+            ReceiveHandler = (buffer, cancellationToken, callCount) =>
+            {
+                receiveBlockEnteredSignal.TrySetResult();
+                return receiveBlockSignal.Task;
+            },
+        };
+
+        // Leave a receive loop abandoned in a read that ignores cancellation, which is the state that
+        // makes the wait in StartAsync actually wait.
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        await receiveBlockEnteredSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(stopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await stopTask;
+
+        // The restart is refused for the connection string alone. No virtual time is advanced here: if
+        // the rejection were made after the wait for that abandoned loop, this task would still be
+        // running, because only advancing the clock can end that wait.
+        Task rejectedStartTask = connection.StartAsync("not-a-valid-url", TestContext.Current.CancellationToken);
+        Assert.True(rejectedStartTask.IsCompleted, "StartAsync did not reject the malformed connection string immediately");
+        ArgumentException exception = await Assert.ThrowsAnyAsync<ArgumentException>(() => rejectedStartTask);
+        Assert.Contains("not a valid absolute URI", exception.Message);
+
+        receiveBlockSignal.SetResult(new WebSocketReceiveResult(0, WebSocketMessageType.Close, true));
+    }
+
+    [Fact]
+    public async Task TestStartAsyncRefusesSecondReceiveLoopWhileAbandonedLoopStillRuns()
+    {
+        // The guard against a previous session's receive loop still running belongs to
+        // Connection.StartAsync, so it protects every connection rather than only the pipe
+        // connection it was first written for. A second loop over the same socket would interleave
+        // its reads with the abandoned one's arbitrarily, so the restart is refused while it runs.
+        TaskCompletionSource<WebSocketReceiveResult> receiveBlockSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveBlockEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
+        {
+            BypassStart = false,
+            BypassStop = false,
+            ShutdownTimeout = TimeSpan.FromSeconds(10),
+
+            // Stand in for a remote end that accepts the connection, so that no real socket is needed.
+            ConnectWebSocketOverride = (uri, cancellationToken) => Task.CompletedTask,
+
+            // A read that ignores its cancellation token, which is what leaves a loop to be abandoned.
+            ReceiveHandler = (buffer, cancellationToken, callCount) =>
+            {
+                receiveBlockEnteredSignal.TrySetResult();
+                return receiveBlockSignal.Task;
+            },
+        };
+
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        await receiveBlockEnteredSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // StopAsync gives up on the blocked read at its shutdown timeout and abandons the loop; the
+        // timeout is elapsed on the virtual clock as soon as the stop arms it.
+        Task stopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(stopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await stopTask;
+
+        // The restart gives the abandoned loop the same bounded chance to finish before refusing.
+        Task refusedStartTask = connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(refusedStartTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(() => refusedStartTask);
+        Assert.Contains("receive loop from a previous session", exception.Message);
+
+        // Releasing the read lets the abandoned loop observe its canceled token and exit, after which
+        // a new session is permitted.
+        receiveBlockSignal.SetResult(new WebSocketReceiveResult(0, WebSocketMessageType.Close, true));
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Assert.Equal("ws://localhost", connection.ConnectionString);
+
+        Task finalStopTask = connection.StopAsync(TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(finalStopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await finalStopTask;
+    }
+
+    [Fact]
     public async Task TestStopWithoutStartLogsClientStateNone()
     {
         List<string> connectionLog = [];
@@ -480,8 +605,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> expectedLogEntries =
         [
-            "Closing connection",
-            "Client state is None"
+            "Closing WebSocket connection",
+            "Client state is None",
+            "WebSocket connection closed"
         ];
         Assert.Equivalent(expectedLogEntries, connectionLog);
     }
@@ -536,7 +662,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // First call: socket Open -> CloseClientWebSocketAsync -> "Client state is Closed"
         // Second call: socket Closed -> early-exit -> "Client state is Closed"
         // Also: "Ending processing loop in state Closed" from receive loop
-        Assert.Equal(2, connectionLog.Count(item => item == "Closing connection"));
+        Assert.Equal(2, connectionLog.Count(item => item == "Closing WebSocket connection"));
         Assert.Equal(2, connectionLog.Count(item => item == "Client state is Closed"));
         Assert.Contains("Ending processing loop in state Closed", connectionLog);
     }
@@ -549,12 +675,13 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> expectedLogEntries =
         [
-            $"Opening connection to URL ws://127.0.0.1:{server.Port}",
-            "Connection opened",
-            "Closing connection",
+            $"Opening WebSocket connection to ws://127.0.0.1:{server.Port}",
+            "WebSocket connection opened",
+            "Closing WebSocket connection",
             "Unexpected error during receive of data: The remote party closed the WebSocket connection without completing the close handshake.",
             "Ending processing loop in state Aborted",
-            "Client state is Aborted"
+            "Client state is Aborted",
+            "WebSocket connection closed"
         ];
 
         object logLock = new();
@@ -649,11 +776,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // The ReceiveHandler blocks until cancellation, keeping client.State == Open.
         List<string> expectedLogEntries =
         [
-            $"Opening connection to URL ws://127.0.0.1:{server.Port}",
-            "Connection opened",
-            "Closing connection",
+            $"Opening WebSocket connection to ws://127.0.0.1:{server.Port}",
+            "WebSocket connection opened",
+            "Closing WebSocket connection",
             "Client state is CloseSent",  // We send close frame; server may not respond before timeout
-            "Ending processing loop in state CloseSent"
+            "Ending processing loop in state CloseSent",
+            "WebSocket connection closed"
         ];
 
         TestWebSocketConnection connection = new()
@@ -772,11 +900,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> expectedLogEntries =
         [
-            $"Opening connection to URL ws://127.0.0.1:{server.Port}",
-            "Connection opened",
-            "Closing connection",
+            $"Opening WebSocket connection to ws://127.0.0.1:{server.Port}",
+            "WebSocket connection opened",
+            "Closing WebSocket connection",
             "Ending processing loop in state Closed",
-            "Client state is Closed"
+            "Client state is Closed",
+            "WebSocket connection closed"
         ];
 
         List<string> connectionLog = [];
@@ -801,12 +930,13 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> expectedLogEntries =
         [
-            $"Opening connection to URL ws://127.0.0.1:{server.Port}",
-            "Connection opened",
+            $"Opening WebSocket connection to ws://127.0.0.1:{server.Port}",
+            "WebSocket connection opened",
             "Acknowledging Close frame received from server (client state: CloseReceived)",
             "Ending processing loop in state Closed",
-            "Closing connection",
-            "Client state is Closed"
+            "Closing WebSocket connection",
+            "Client state is Closed",
+            "WebSocket connection closed"
         ];
 
         List<string> connectionLog = [];
@@ -849,12 +979,13 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         List<string> expectedLogEntries =
         [
-            $"Opening connection to URL ws://127.0.0.1:{server.Port}",
-            "Connection opened",
-            "Closing connection",
+            $"Opening WebSocket connection to ws://127.0.0.1:{server.Port}",
+            "WebSocket connection opened",
+            "Closing WebSocket connection",
             "Unexpected error during receive of data: The remote party closed the WebSocket connection without completing the close handshake.",
             "Ending processing loop in state Aborted",
-            "Client state is Aborted"
+            "Client state is Aborted",
+            "WebSocket connection closed"
         ];
 
         List<string> connectionLog = [];
@@ -1090,7 +1221,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        Assert.StartsWith($"The WebSocket is already connected to ws://127.0.0.1:{server.Port}", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken))).Message);
+        Assert.StartsWith($"The WebSocket connection is already connected to ws://127.0.0.1:{server.Port}", (await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken))).Message);
     }
 
     [Fact]
@@ -1221,8 +1352,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
         }
 
         // With ShutdownTimeout=Zero, CloseClientWebSocketAsync may throw OperationCanceledException
-        // before logging "Client state is X". At minimum we get "Closing connection".
-        Assert.Contains("Closing connection", logSnapshot);
+        // before logging "Client state is X". At minimum we get "Closing WebSocket connection".
+        Assert.Contains("Closing WebSocket connection", logSnapshot);
         Assert.True(logSnapshot.Length >= 1);
     }
 
@@ -1799,16 +1930,17 @@ public class WebSocketConnectionTests : IAsyncDisposable
     public async Task TestSendDataThrowsWhenConnectionBecomesInactiveAfterSemaphoreAcquired()
     {
         int isActiveCallCount = 0;
-        TestWebSocketConnection connection = new()
-        {
-            IsActiveOverride = () =>
-            {
-                int count = Interlocked.Increment(ref isActiveCallCount);
-                return count <= 1;
-            },
-        };
-        await connection.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TestWebSocketConnection connection = new();
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;
+
+        // Installed after the connection is started, because Connection.StartAsync refuses to start a
+        // connection that already reports itself as active.
+        connection.IsActiveOverride = () =>
+        {
+            int count = Interlocked.Increment(ref isActiveCallCount);
+            return count <= 1;
+        };
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("data"u8.ToArray(), TestContext.Current.CancellationToken));
         Assert.Equal("The WebSocket connection was closed before the send could be completed", exception.Message);
@@ -1819,12 +1951,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
     {
         TestWebSocketConnection connection = new()
         {
-            IsActiveOverride = () => true,
             ThrowWebSocketExceptionOnSend = true,
             BypassDataSend = false,
         };
-        await connection.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;
+        connection.IsActiveOverride = () => true;
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("data"u8.ToArray(), TestContext.Current.CancellationToken));
         Assert.Contains("Simulated WebSocket failure", exception.Message);
@@ -2055,9 +2187,9 @@ public class WebSocketConnectionTests : IAsyncDisposable
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.Contains(connectionLog, s => s.StartsWith("Opening connection to URL "));
-        Assert.Contains("Connection opened", connectionLog);
-        Assert.Contains("Closing connection", connectionLog);
+        Assert.Contains(connectionLog, s => s.StartsWith("Opening WebSocket connection to "));
+        Assert.Contains("WebSocket connection opened", connectionLog);
+        Assert.Contains("Closing WebSocket connection", connectionLog);
         Assert.Contains(connectionLog, s => s.StartsWith("Client state is "));
         Assert.Contains(connectionLog, s => s.StartsWith("Ending processing loop in state "));
     }
@@ -2079,12 +2211,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
     [Fact]
     public async Task TestSendDataWithDefaultCancellationTokenUsesConnectionToken()
     {
-        TestWebSocketConnection connection = new()
-        {
-            IsActiveOverride = () => true,
-        };
-        await connection.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        TestWebSocketConnection connection = new();
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;
+        connection.IsActiveOverride = () => true;
 
         byte[] payload = """{"id":1,"method":"session.new","params":{}}"""u8.ToArray();
 #pragma warning disable xUnit1051 // intentionally omits token to exercise the CancellationToken.None branch

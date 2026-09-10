@@ -142,30 +142,24 @@ public class PipeConnection : Connection
     }
 
     /// <summary>
-    /// Asynchronously starts communication with the remote end of this connection.
+    /// Asynchronously makes the pipes to the external process ready to carry a session.
     /// </summary>
-    /// <param name="connectionString">The connection string used to connect to the remote end.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiConnectionException">
-    /// Thrown when the external application is not yet running, the pipe connection is already
-    /// connected, or the receive loop from a previous session is still running after a bounded
-    /// wait (see the remarks on <see cref="StopAsync(CancellationToken)"/>).
+    /// Thrown when the external process has not been set, or is not running.
     /// </exception>
-    /// <exception cref="OperationCanceledException">
-    /// Thrown when <paramref name="cancellationToken"/> is already canceled when this method is called.
-    /// The token is not observed after that point: unlike opening a WebSocket, starting a pipe connection
-    /// performs no cancellable I/O, and the one wait it does perform, for a previous session's receive
-    /// loop to finish, is bounded by <see cref="Connection.ShutdownTimeout"/> rather than by the token.
-    /// </exception>
-    /// <exception cref="ObjectDisposedException">Thrown when attempting to start a disposed connection.</exception>
-    public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// A pipe connection accepts any connection string -- the pipes it uses are its own, and the string
+    /// only names the session -- so it does not override
+    /// <see cref="Connection.ResolveConnectionString"/>, and there is nothing for this method to
+    /// interpret. The pipes themselves are created with this connection and inherited by the external
+    /// process, so there is no connect operation to perform and nothing here is cancellable;
+    /// <paramref name="cancellationToken"/> has already been observed by
+    /// <see cref="Connection.StartAsync"/> before this method is called.
+    /// </remarks>
+    protected override Task StartConnectionAsync(CancellationToken cancellationToken)
     {
-        if (this.IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(PipeConnection), "The pipes have been disposed; the connection cannot be restarted after disposal.");
-        }
-
         Process? pipeServerProcess = this.processProvider.PipeServerProcess;
         if (pipeServerProcess is null)
         {
@@ -177,31 +171,6 @@ public class PipeConnection : Connection
             throw new WebDriverBiDiConnectionException("External process has already exited or been disposed; cannot start pipe connection.");
         }
 
-        if (this.IsConnectionActive)
-        {
-            throw new WebDriverBiDiConnectionException($"The pipe connection is already active for {this.ConnectionString}; call the Stop method to disconnect before calling Start");
-        }
-
-        // Honor a caller who has already given up, as WebSocketConnection.StartAsync does before its
-        // first connect attempt. Nothing beyond this point is cancellable, so this is the one place the
-        // token can be observed; it is tested after the argument and state checks so that a genuine
-        // misuse is still reported as such.
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // StopAsync may have abandoned the previous session's receive loop still blocked in
-        // a pipe read that did not honor cancellation (see the remarks on StopAsync).
-        // Starting a second loop over the same pipe would interleave the two loops' reads
-        // arbitrarily, corrupting message framing and routing stale data into the new
-        // session. Give a loop that is still unwinding a bounded chance to finish, and
-        // refuse to start while it runs.
-        await this.WaitForReceiveTaskCompletionAsync().ConfigureAwait(false);
-        if (this.DataReceiveTask is not null && !this.DataReceiveTask.IsCompleted)
-        {
-            throw new WebDriverBiDiConnectionException("Cannot start the pipe connection: the receive loop from a previous session has not yet completed, most likely because it is blocked in a pipe read that did not honor cancellation; the connection cannot be restarted until that read completes");
-        }
-
-        await this.LogAsync($"Starting pipe connection: {connectionString}").ConfigureAwait(false);
-
         // Dispose client handles in parent process only on first start - the external process has inherited them
         if (!this.AreConnectionPipesDisposed)
         {
@@ -210,52 +179,41 @@ public class PipeConnection : Connection
             this.AreConnectionPipesDisposed = true;
         }
 
-        // Create a new cancellation token source for this connection session
-        this.ResetConnectionCancellation();
-
-        this.ConnectionString = connectionString;
         this.IsConnectionActive = true;
-
-        this.StartDataReceiveTask();
-
-        await this.LogAsync("Pipe connection started").ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Asynchronously stops communication with the remote end of this connection.
+    /// Marks the pipe connection as no longer carrying a session.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <remarks>
-    /// Waiting for the receive loop to finish is bounded by <see cref="Connection.ShutdownTimeout"/>.
-    /// Unlike <see cref="WebSocketConnection"/>, where cancelling the connection's token reliably aborts
-    /// a pending receive, cancelling the pipe connection's token does not guarantee that an in-progress
-    /// pipe read unblocks promptly on every supported target framework. If the receive loop does not
-    /// finish within the timeout, a warning is logged and this method returns anyway; the receive task
-    /// continues running in the background until the pipe unblocks on its own. While that abandoned
-    /// loop is still running, <see cref="StartAsync(string, CancellationToken)"/> refuses to begin a
-    /// new session, and any data the abandoned read eventually returns is discarded rather than
-    /// dispatched.
+    /// <para>
+    /// A pipe connection has no shutdown exchange with the remote end: the pipes are torn down by
+    /// cancelling the connection, which <see cref="Connection.StopAsync"/> does after this method
+    /// returns. All this method does is record that the session is over, before the receive loop is
+    /// canceled, so that nothing sees the connection as active while it unwinds.
+    /// </para>
+    /// <para>
+    /// Cancelling the connection's token does not guarantee that an in-progress pipe read unblocks
+    /// promptly on every supported target framework, so the wait for the receive loop that
+    /// <see cref="Connection.StopAsync"/> performs is more often reached here than it is for a
+    /// <see cref="WebSocketConnection"/>. Any data an abandoned read eventually returns is discarded
+    /// rather than dispatched.
+    /// </para>
     /// </remarks>
-    public override async Task StopAsync(CancellationToken cancellationToken = default)
+    protected override async Task StopConnectionAsync(CancellationToken cancellationToken)
     {
-        await this.LogAsync("Closing pipe connection").ConfigureAwait(false);
-
         if (!this.IsConnectionActive)
         {
-            await this.LogAsync("Pipe connection already closed").ConfigureAwait(false);
+            // The connection was never started, or the receive loop has already recorded the pipe as
+            // closed by the remote end, so there is nothing left for this method to record.
+            await this.LogAsync("Pipe connection is not active", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             return;
         }
 
-        // Signal cancellation to stop the receive loop, then wait for the receive task
-        // to complete.
-        this.CancelConnection();
-        await this.WaitForReceiveTaskCompletionAsync().ConfigureAwait(false);
-
         this.IsConnectionActive = false;
-        this.ConnectionString = string.Empty;
-
-        await this.LogAsync("Pipe connection closed").ConfigureAwait(false);
     }
 
     /// <summary>
@@ -462,32 +420,19 @@ public class PipeConnection : Connection
 
     /// <summary>
     /// Asynchronously releases the resources used by this <see cref="Connection"/>.
-    /// Override this method in derived classes to add custom async cleanup logic.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
-    protected override async ValueTask DisposeAsyncCore()
+    /// <remarks>
+    /// Special note: We don't dispose the external process here, as it's owned by the caller and may be
+    /// used across multiple connection sessions. Disposing it here could cause
+    /// <see cref="ObjectDisposedException"/> in the caller if they attempt to use the process after the
+    /// connection is disposed.
+    /// </remarks>
+    protected override ValueTask DisposeAsyncCore()
     {
-        if (this.SetDisposed())
-        {
-            try
-            {
-                if (this.IsActive)
-                {
-                    await this.StopAsync().ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-            }
-
-            // Special note: We don't dispose the external process here, as it's owned
-            // by the caller and may be used across multiple connection sessions.
-            // Disposing it here could cause ObjectDisposedExceptions in the caller
-            // if they attempt to use the process after the connection is disposed.
-            this.pipeToProcess.Dispose();
-            this.pipeFromProcess.Dispose();
-        }
+        this.pipeToProcess.Dispose();
+        this.pipeFromProcess.Dispose();
+        return default;
     }
 
     private static bool IsProcessRunning(Process? process)

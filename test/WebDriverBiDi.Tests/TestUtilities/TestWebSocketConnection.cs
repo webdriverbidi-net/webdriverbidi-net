@@ -13,6 +13,12 @@ public class TestWebSocketConnection : WebSocketConnection
     private int receiveCallCount;
     private int stopCallCount;
 
+    // The value of BypassStart at the moment the session started. The receive loop runs on its own
+    // task, so reading the mutable property from inside the loop would make its behavior depend on
+    // whether a test flipped the property before that task was first scheduled; several tests do flip
+    // it immediately after starting, in order to route sends through the real send path.
+    private bool startBypassed;
+
     public TestWebSocketConnection(TimeProvider? timeProvider = null)
     {
         if (timeProvider is not null)
@@ -145,9 +151,21 @@ public class TestWebSocketConnection : WebSocketConnection
     /// </summary>
     public TaskCompletionSource? StartBarrierReached { get; set; }
 
-    public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
+    protected override void ResolveConnectionString(string connectionString)
     {
-        this.ConnectionString = url;
+        // A bypassed start never opens a socket, so the URL it is given need not be one the real
+        // connection could open; several tests pass a placeholder deliberately.
+        if (this.BypassStart)
+        {
+            return;
+        }
+
+        base.ResolveConnectionString(connectionString);
+    }
+
+    protected override async Task StartConnectionAsync(CancellationToken cancellationToken)
+    {
+        this.startBypassed = this.BypassStart;
         this.StartBarrierReached?.TrySetResult();
         if (this.StartBarrier is not null)
         {
@@ -156,11 +174,11 @@ public class TestWebSocketConnection : WebSocketConnection
 
         if (!this.BypassStart)
         {
-            await base.StartAsync(url, cancellationToken).ConfigureAwait(false);
+            await base.StartConnectionAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken = default)
+    protected override async Task StopConnectionAsync(CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref this.stopCallCount);
 
@@ -174,8 +192,25 @@ public class TestWebSocketConnection : WebSocketConnection
         }
         else
         {
-            await base.StopAsync(cancellationToken).ConfigureAwait(false);
+            await base.StopConnectionAsync(cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Runs the real receive loop only for a connection that really connected. With
+    /// <see cref="BypassStart"/> set there is no open socket for the loop to read from, and
+    /// <see cref="Connection.StartAsync"/> starts the receive task on every successful start, so the
+    /// loop would immediately fail against an unconnected socket and report a connection error.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    protected override Task ReceiveDataAsync()
+    {
+        if (this.startBypassed)
+        {
+            return Task.CompletedTask;
+        }
+
+        return base.ReceiveDataAsync();
     }
 
     public override Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)

@@ -93,7 +93,7 @@ Connections have three timeout properties (default: 10 seconds each):
 
 **StartupTimeout**: Connection establishment timeout. WebSocket connections retry every 500ms until the timeout elapses, and each individual connect attempt is bounded by the time remaining in the budget, so a host that never completes the handshake cannot hold `StartAsync` open past the timeout. When the budget is exhausted, `StartAsync` throws `WebDriverBiDiTimeoutException`.
 
-**ShutdownTimeout**: Graceful shutdown timeout for the underlying connection (e.g., the WebSocket close handshake). Ensures resources are released properly. Note that this is distinct from `Transport.ShutdownTimeout`, described below.
+**ShutdownTimeout**: Bounds shutting the connection down. It bounds the transport's own close (e.g., the WebSocket close handshake), and it separately bounds the wait for the connection's receive loop to finish. That wait happens at both ends of a session: `StopAsync` waits for the loop it is ending, and `StartAsync` waits for a loop a previous `StopAsync` had to abandon, since a second loop must not run alongside it. A receive-loop wait that is not satisfied does not throw — it raises a `Warn` message on `OnLogMessage` and proceeds, leaving the loop running in the background; `StartAsync` then refuses to begin a new session while it is, throwing `WebDriverBiDiConnectionException`. Note that this is distinct from `Transport.ShutdownTimeout`, described below.
 
 **DataTimeout**: How long a send waits for exclusive access to the connection while another send is in progress. It does not bound the send or the receive itself, so it is not a guard against a hung connection; a send that waits longer than this fails to acquire access and throws a `WebDriverBiDiTimeoutException` instead of queueing behind the send ahead of it. A zero value keeps its non-blocking meaning: access is taken only if it is free right now.
 
@@ -344,7 +344,44 @@ Monitor connection health with diagnostics:
 
 **Warning**: This section is for extremely specialized scenarios. 99.9% of users will never need this.
 
-You can create custom connection implementations for experimental transports:
+You can create custom connection implementations for experimental transports.
+
+`StartAsync`, `StopAsync` and `DisposeAsync` are implemented by `Connection` itself and cannot be
+overridden: the sequence each performs is the same for every transport, and several of its steps are
+required in a particular order, so the base class owns all of it. A custom connection supplies only
+the transport-specific parts, as `protected` overrides:
+
+| Member | What it supplies |
+| --- | --- |
+| `ResolveConnectionString` | Interprets the connection string, rejecting a value this transport could never connect to. Optional; the default accepts every value. |
+| `StartConnectionAsync` | Establishes the connection. Returns only once it is established, throws if it cannot be. |
+| `StopConnectionAsync` | Whatever this transport must exchange with the remote end to close by agreement. Called on every stop, including when the connection is not active. |
+| `SendConnectionDataAsync` | Writes one message to the transport. |
+| `ReceiveDataAsync` | The receive loop, started for you once the connection is established. |
+| `DisposeAsyncCore` | Releases the resources the custom connection owns. |
+
+`ResolveConnectionString` is the only place the connection string is interpreted — the base class
+carries the value but never reads it, because what counts as a usable connection string is exactly
+what a transport knows and nothing above it does. It rejects a value it could never connect to by
+throwing `ArgumentException`, and that exception type is the distinction a caller acts on: an
+`ArgumentException` out of `StartAsync` means the connection string must be corrected, where any other
+failure means the attempt did not succeed.
+
+Validating a connection string and deriving what a connect needs from it are usually the same act —
+parsing a URL both proves it is one and produces the value to connect with — so `ResolveConnectionString`
+does both, and a transport that must parse keeps the result for `StartConnectionAsync` instead of
+parsing again there. That is safe to rely on because `StartAsync` is not overridable: it calls
+`ResolveConnectionString` on every path that reaches `StartConnectionAsync`, and nothing in between can
+invalidate what was resolved. The reverse does not hold — a start can still be refused between the two,
+for instance because a previous session's receive loop is still running — so what is kept is good for
+the next connect rather than a promise that one follows. It is also why `StartConnectionAsync` takes no
+connection string: by the time it runs, the string has already been interpreted, and a transport that
+wants the raw value reads `ConnectionString`.
+
+The split exists for a second reason: `ResolveConnectionString` runs before `StartAsync` does anything
+that can take time. Folded into `StartConnectionAsync`, a malformed connection string would be reported
+only after the bounded wait for a previous session's receive loop, which on a reconnect can be as long
+as `ShutdownTimeout` — a wait to be told about a fault that costs nothing to detect.
 
 [!code-csharp[Custom Connection Implementation](../../code/advanced/ConnectionManagementSamples.cs#CustomConnectionImplementation)]
 

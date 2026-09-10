@@ -148,7 +148,7 @@ public class EntryAddedEventArgsTests
     {
         TestWebSocketConnection connection = new();
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
-        await driver.StartAsync("ws:localhost", TestContext.Current.CancellationToken);
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         EntryAddedEventArgs? eventArgs = null;
         using EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => eventArgs = e);
