@@ -163,13 +163,13 @@ observed that a Release run reported and a Debug run did not, so measuring only 
 a real regression in the other.
 
 **The two jobs are deliberately separate, and should not be collapsed into a `configuration` matrix
-on `unit-tests`.** They already run concurrently on the same `needs: build` fan-out, so the second
-job costs runner minutes rather than elapsed time, and it finishes well inside the shadow of the
-integration tests, which set the wall-clock critical path. A matrix would save about forty lines of
-setup, but `unit-tests` also packs the analyzer package, verifies its shipped layout, and uploads
-coverage to coveralls; none of those may run twice, so each would need an `if:` guard on the matrix
-value. Those are precisely the steps that exist to catch a packaging mistake before a release, and a
-guard that is wrong fails by silently not checking. The duplication is the cheaper error to make.
+on `unit-tests`.** They already run concurrently, so the second job costs runner minutes rather than
+elapsed time, and it finishes well inside the required wall-clock time of the integration tests. While
+the setup of the two jobs is nearly identical, and a matrix would save that duplication, the `unit-tests`
+job also packs the analyzer package, verifies its shipped layout, and uploads coverage to coveralls.
+None of those steps may run twice, so each would need an `if:` guard on the matrix value, and if the
+guard is wrong, the CI jobs would fail silently without checking the additional things the `unit-tests`
+job checks.
 
 ## Benchmarks
 The library tracks performance across five suites covering command object
@@ -295,13 +295,13 @@ Every version number the shipped assemblies and packages carry (`AssemblyVersion
 tag at build time, so no file in the repository records them.
 
 A few files do need updating when the version is bumped, and `scripts/prep-release.sh` makes
-those changes:
+those changes, where `<version>` is the release tag to apply (`vX.Y.Z`):
 
-    ./scripts/prep-release.sh 0.0.58
+    ./scripts/prep-release.sh <version>
 
 A PowerShell version is available for Windows, and makes the same changes:
 
-    ./scripts/prep-release.ps1 0.0.58
+    ./scripts/prep-release.ps1 <version>
 
 It moves the pending entries in `AnalyzerReleases.Unshipped.md` into a `## Release <version>`
 section of `AnalyzerReleases.Shipped.md`, updates the pinned package version shown in
