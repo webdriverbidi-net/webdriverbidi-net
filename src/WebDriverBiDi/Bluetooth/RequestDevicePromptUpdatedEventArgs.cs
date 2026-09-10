@@ -41,6 +41,7 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets the read-only list of devices being requested in the prompt.
     /// </summary>
+    [JsonIgnore]
     public IList<RequestDeviceInfo> Devices => this.SerializableDevices.AsReadOnly();
 
     /// <summary>

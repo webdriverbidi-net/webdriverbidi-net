@@ -24,6 +24,7 @@ public record StackTrace
     /// <summary>
     /// Gets the read-only list of stack frames for this stack trace.
     /// </summary>
+    [JsonIgnore]
     public IList<StackFrame> CallFrames => this.SerializableCallFrames.AsReadOnly();
 
     /// <summary>

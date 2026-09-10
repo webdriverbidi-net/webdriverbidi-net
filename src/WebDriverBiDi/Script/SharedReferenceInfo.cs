@@ -35,6 +35,7 @@ public record SharedReferenceInfo
     /// </summary>
     [JsonPropertyName("handle")]
     [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
