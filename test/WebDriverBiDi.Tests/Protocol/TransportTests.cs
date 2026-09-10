@@ -2648,6 +2648,49 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestDoubleDisposeDoesNotThrowWhenTheFirstDisposalLeftAConnectAttemptInFlight()
+    {
+        // A connect attempt that does not complete within ShutdownTimeout leaves the transport in the
+        // Connecting state after disposal, because disposal gives up waiting for it and proceeds. The
+        // teardown that ran disposed the semaphore that guards the connection, so a second disposal
+        // that repeated the teardown would wait on a disposed semaphore and throw
+        // ObjectDisposedException out of a method that IAsyncDisposable requires to ignore repeated
+        // calls. Disposal is therefore performed once and once only.
+        TaskCompletionSource startBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource startReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
+        {
+            StartBarrier = startBarrier,
+            StartBarrierReached = startReached,
+        };
+        TestTransport transport = new(connection, timeProvider)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
+
+        // Hold the connect inside the connection, so that the transport is provably Connecting rather
+        // than merely likely to be.
+        Task connectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        await startReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        // The first disposal waits for the attempt, bounded by ShutdownTimeout on the virtual clock,
+        // then proceeds without it.
+        Task firstDisposeTask = transport.DisposeAsync().AsTask();
+        await timeProvider.AdvanceUntilCompletedAsync(firstDisposeTask, transport.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await firstDisposeTask;
+        Assert.Equal(TransportState.Connecting, transport.State);
+
+        // The second disposal must do nothing at all, rather than repeat a teardown whose resources
+        // are already gone.
+        await transport.DisposeAsync();
+
+        startBarrier.TrySetResult();
+        await Assert.ThrowsAnyAsync<Exception>(async () => await connectTask);
+    }
+
+    [Fact]
     public async Task TestDoubleDisposeDoesNotThrow()
     {
         TestWebSocketConnection connection = new();
