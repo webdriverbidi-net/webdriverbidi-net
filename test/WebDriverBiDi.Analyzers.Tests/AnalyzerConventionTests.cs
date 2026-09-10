@@ -202,11 +202,19 @@ public class AnalyzerConventionTests
     ];
 
     /// <summary>
-    /// A comparison of a syntax token's text against a member name, in either operand order, and the
-    /// same comparison expressed as a membership test over a set of names.
+    /// A correlation of a syntax token's text with a name: a comparison in either operand order
+    /// (against a literal or against another value), the same comparison expressed as a membership
+    /// test over a set of names, and the use of the text as a collection key.
     /// </summary>
+    /// <remarks>
+    /// The comparison alternatives deliberately do not require a string literal on the other side.
+    /// The mismatches this rule exists to catch have been between a token's text and a name held in a
+    /// variable — one analyzer stored a dictionary key with <c>Text</c> and looked it up with
+    /// <c>ValueText</c>, another recorded a variable name with <c>Text</c> and compared it with
+    /// <c>ValueText</c> — and a literal-only pattern sees neither.
+    /// </remarks>
     private static readonly Regex NameComparisonUsingText = new(
-        """Identifier\.Text\s*(==|!=)\s*"|"\s*(==|!=)\s*[A-Za-z_.]*Identifier\.Text|\.Contains\([^)]*Identifier\.Text\)""",
+        """Identifier\.Text\s*(==|!=)|(==|!=)\s*[A-Za-z_.]*Identifier\.Text|\.Contains\([^)]*Identifier\.Text\)|\[[^\]]*Identifier\.Text\]""",
         RegexOptions.Compiled);
 
     /// <summary>

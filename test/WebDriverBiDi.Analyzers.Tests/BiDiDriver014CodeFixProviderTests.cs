@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -16,9 +17,11 @@ public class BiDiDriver014CodeFixProviderTests
     /// <summary>
     /// Runs a code-fix verification against the real geolocation command-parameters types, where the
     /// Reset property (<c>ResetGeolocationOverride</c>) is declared on the base
-    /// <c>SetGeolocationOverrideCommandParameters</c> and returns the base type, and the public
-    /// parameterless constructor lives on the derived
-    /// <c>SetGeolocationOverrideCoordinatesCommandParameters</c>.
+    /// <c>SetGeolocationOverrideCommandParameters</c> but <em>returns</em> the derived
+    /// <c>SetGeolocationOverrideCoordinatesCommandParameters</c>, whose public parameterless
+    /// constructor is the one being replaced. Because the property's type is the derived type, a local
+    /// declared with that type still holds the replacement and must be left as written; the fix
+    /// retypes only when the property's return type cannot be assigned to the declared type.
     /// </summary>
     /// <param name="testCode">The source containing the marked diagnostic.</param>
     /// <param name="fixedCode">The source after the fix.</param>
@@ -42,12 +45,12 @@ public class BiDiDriver014CodeFixProviderTests
     }
 
     /// <summary>
-    /// Tests that a local declared with the derived type is retyped to the declaring (base) type
-    /// so that the base-typed Reset property can be assigned to it.
+    /// Tests that a local declared with the derived type keeps that type: the inherited Reset
+    /// property returns the derived type, so the declaration still compiles unchanged.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_InheritedReset_RetypesExplicitlyTypedLocal()
+    public async Task CodeFix_InheritedReset_LeavesExplicitlyTypedLocalUnchanged()
     {
         await VerifyInheritedResetFixAsync(
             """
@@ -73,7 +76,7 @@ public class BiDiDriver014CodeFixProviderTests
                 {
                     public void TestMethod()
                     {
-                        SetGeolocationOverrideCommandParameters parameters = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
+                        SetGeolocationOverrideCoordinatesCommandParameters parameters = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
                     }
                 }
             }
@@ -161,11 +164,11 @@ public class BiDiDriver014CodeFixProviderTests
     }
 
     /// <summary>
-    /// Tests that a namespace-qualified declared type has only its rightmost identifier retyped.
+    /// Tests that a namespace-qualified declared type is likewise left as written.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_InheritedReset_RetypesQualifiedLocalDeclaration()
+    public async Task CodeFix_InheritedReset_LeavesQualifiedLocalDeclarationUnchanged()
     {
         await VerifyInheritedResetFixAsync(
             """
@@ -191,7 +194,7 @@ public class BiDiDriver014CodeFixProviderTests
                 {
                     public void TestMethod()
                     {
-                        WebDriverBiDi.Emulation.SetGeolocationOverrideCommandParameters parameters = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
+                        WebDriverBiDi.Emulation.SetGeolocationOverrideCoordinatesCommandParameters parameters = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
                     }
                 }
             }
@@ -199,11 +202,11 @@ public class BiDiDriver014CodeFixProviderTests
     }
 
     /// <summary>
-    /// Tests that a nullable declared type is retyped inside the nullable annotation.
+    /// Tests that a nullable declared type is likewise left as written.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CodeFix_InheritedReset_RetypesNullableLocalDeclaration()
+    public async Task CodeFix_InheritedReset_LeavesNullableLocalDeclarationUnchanged()
     {
         await VerifyInheritedResetFixAsync(
             """
@@ -231,7 +234,7 @@ public class BiDiDriver014CodeFixProviderTests
                 {
                     public void TestMethod()
                     {
-                        SetGeolocationOverrideCommandParameters? parameters = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
+                        SetGeolocationOverrideCoordinatesCommandParameters? parameters = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
                     }
                 }
             }
@@ -498,4 +501,105 @@ public class BiDiDriver014CodeFixProviderTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Runs a code-fix verification over a consumer-defined command-parameters hierarchy whose base
+    /// declares a reset property returning the base type. This is the one shape in which the fix must
+    /// retype the local, because the replacement cannot be assigned to a local declared with the
+    /// constructed type. No type in the library has it — the library's one inherited reset property
+    /// returns the derived type — but BIDI014 applies to any type deriving from the library's
+    /// <c>CommandParameters</c>, so a consumer's own hierarchy can.
+    /// </summary>
+    /// <param name="declaration">The declared type and variable name, as written before the fix.</param>
+    /// <param name="fixedDeclaration">The declared type and variable name expected after the fix.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous verification.</returns>
+    private static async Task VerifyResetReturningBaseTypeFixAsync(string declaration, string fixedDeclaration)
+    {
+        const string Template = """
+            #nullable enable
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class BaseParameters : CommandParameters<EmptyResult>
+                {
+                    public override string MethodName => "custom.command";
+
+                    public static BaseParameters ResetCustom => new BaseParameters();
+                }
+
+                public class DerivedParameters : BaseParameters
+                {
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        DECLARATION = INITIALIZER;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("DerivedParameters", "ResetCustom");
+
+        RealAssemblyCodeFixTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvider> testState = new()
+        {
+            TestCode = Template
+                .Replace("DECLARATION", declaration, StringComparison.Ordinal)
+                .Replace("INITIALIZER", "{|#0:new DerivedParameters()|}", StringComparison.Ordinal),
+            FixedCode = Template
+                .Replace("DECLARATION", fixedDeclaration, StringComparison.Ordinal)
+                .Replace("INITIALIZER", "BaseParameters.ResetCustom", StringComparison.Ordinal),
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a local declared with the constructed type is retyped to the reset property's own
+    /// return type.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_ResetReturningBaseType_RetypesExplicitlyTypedLocal()
+    {
+        await VerifyResetReturningBaseTypeFixAsync("DerivedParameters parameters", "BaseParameters parameters");
+    }
+
+    /// <summary>
+    /// Tests that a namespace-qualified declared type has only its rightmost identifier retyped.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_ResetReturningBaseType_RetypesQualifiedLocalDeclaration()
+    {
+        await VerifyResetReturningBaseTypeFixAsync("TestApp.DerivedParameters parameters", "TestApp.BaseParameters parameters");
+    }
+
+    /// <summary>
+    /// Tests that a nullable declared type is retyped inside the nullable annotation.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_ResetReturningBaseType_RetypesNullableLocalDeclaration()
+    {
+        await VerifyResetReturningBaseTypeFixAsync("DerivedParameters? parameters", "BaseParameters? parameters");
+    }
+
+    /// <summary>
+    /// Tests that a declared type that names no identifier to swap — a predefined type such as
+    /// <c>object</c>, which already holds the replacement — has only its initializer replaced.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CodeFix_ResetReturningBaseType_LeavesPredefinedDeclaredTypeUnchanged()
+    {
+        await VerifyResetReturningBaseTypeFixAsync("object parameters", "object parameters");
+    }
 }

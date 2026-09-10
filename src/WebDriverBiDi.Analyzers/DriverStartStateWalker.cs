@@ -59,7 +59,14 @@ internal sealed class DriverStartStateWalker
     /// reaches the invocation; otherwise <see langword="false"/>. For a <c>StartAsync</c> invocation
     /// this is the state before the call takes effect.
     /// </param>
-    internal delegate void DriverInvocationHandler(InvocationExpressionSyntax invocation, IMethodSymbol method, string driverVariableName, bool isStarted);
+    /// <param name="isDirectDriverCall">
+    /// <see langword="true"/> when the method is invoked on the driver variable itself
+    /// (<c>driver.StartAsync()</c>); <see langword="false"/> when it is invoked on something reached
+    /// through the driver (<c>driver.Session.SubscribeAsync()</c>). A rule whose subject is the
+    /// driver's own lifecycle must require this; one that treats anything reached through the driver
+    /// as part of its registration surface need not.
+    /// </param>
+    internal delegate void DriverInvocationHandler(InvocationExpressionSyntax invocation, IMethodSymbol method, string driverVariableName, bool isStarted, bool isDirectDriverCall);
 
     /// <summary>
     /// Walks the executable body of the analysis context's node.
@@ -367,10 +374,29 @@ internal sealed class DriverStartStateWalker
             return;
         }
 
-        this.handler(invocation, method, driverVariableName, started);
+        // Whether the call is on the driver itself rather than on something reached through it. The
+        // receiver chain only has to *root* in a tracked driver for the call to arrive here, so
+        // driver.Session.SubscribeAsync() and driver.Tracing.StartAsync() both do.
+        bool isDirectDriverCall = memberAccess.Expression is IdentifierNameSyntax receiverIdentifier
+            && receiverIdentifier.Identifier.ValueText == driverVariableName;
+
+        this.handler(invocation, method, driverVariableName, started, isDirectDriverCall);
 
         // StartAsync puts the driver in the started state; StopAsync returns it to the not-started
         // state, in which the runtime permits registration and a new start again.
+        //
+        // Only a call on the driver itself moves this state. A method of the same name on something
+        // the driver exposes is a different lifecycle: a custom module with a command named StartAsync
+        // (driver.Tracing.StartAsync()) would otherwise mark the driver started, making its real
+        // StartAsync a reported duplicate, and a module's StopAsync would re-open registration while
+        // the driver is running. The test is on the receiver rather than on the method's containing
+        // type, because a custom driver type implementing the library's interfaces declares StartAsync
+        // itself, and that call must still count.
+        if (!isDirectDriverCall)
+        {
+            return;
+        }
+
         if (method.Name == "StartAsync")
         {
             driverStartedStatus[driverVariableName] = true;

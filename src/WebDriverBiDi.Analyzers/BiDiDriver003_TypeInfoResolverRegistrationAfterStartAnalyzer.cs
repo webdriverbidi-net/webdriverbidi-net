@@ -54,7 +54,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsDriverConfigurationType, (invocation, method, driverVariableName, isStarted) =>
+        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsDriverConfigurationType, (invocation, method, driverVariableName, isStarted, _) =>
         {
             if (method.Name == "RegisterTypeInfoResolverAsync" && isStarted)
             {

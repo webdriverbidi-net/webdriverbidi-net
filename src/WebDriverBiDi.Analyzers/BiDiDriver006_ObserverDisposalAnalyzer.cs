@@ -181,7 +181,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
                 if (argument.Expression is MemberAccessExpressionSyntax argumentAccess &&
                     argumentAccess.Name.Identifier.ValueText == "Id" &&
                     argumentAccess.Expression is IdentifierNameSyntax argumentIdentifier &&
-                    argumentIdentifier.Identifier.Text == variableName)
+                    argumentIdentifier.Identifier.ValueText == variableName)
                 {
                     return true;
                 }
@@ -201,7 +201,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         // escape.
         foreach (IdentifierNameSyntax identifier in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<IdentifierNameSyntax>())
         {
-            if (identifier.Identifier.Text != variableName)
+            if (identifier.Identifier.ValueText != variableName)
             {
                 continue;
             }

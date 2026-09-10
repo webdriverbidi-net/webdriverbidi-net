@@ -181,7 +181,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
 
             foreach (VariableDeclaratorSyntax declarator in declaration.Declaration.Variables)
             {
-                yield return (declarator.Identifier.GetLocation(), declarator.Identifier.Text, scope);
+                yield return (declarator.Identifier.GetLocation(), declarator.Identifier.ValueText, scope);
             }
         }
 
@@ -198,7 +198,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                 {
                     foreach (VariableDeclaratorSyntax declarator in usingStatement.Declaration.Variables)
                     {
-                        yield return (declarator.Identifier.GetLocation(), declarator.Identifier.Text, [usingStatement.Statement]);
+                        yield return (declarator.Identifier.GetLocation(), declarator.Identifier.ValueText, [usingStatement.Statement]);
                     }
                 }
             }
