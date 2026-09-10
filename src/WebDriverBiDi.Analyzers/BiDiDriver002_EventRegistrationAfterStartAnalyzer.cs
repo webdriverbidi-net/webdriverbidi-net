@@ -60,7 +60,7 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         // observers may be added or removed at any time, including while the driver is running. Only
         // the registration of custom protocol events (RegisterEvent) is locked once the driver has
         // started, and that is the only call the runtime rejects.
-        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsCommandExecutorType, (invocation, method, driverVariableName, isStarted) =>
+        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsCommandExecutorType, (invocation, method, driverVariableName, isStarted, _) =>
         {
             if (method.Name == "RegisterEvent" && isStarted)
             {

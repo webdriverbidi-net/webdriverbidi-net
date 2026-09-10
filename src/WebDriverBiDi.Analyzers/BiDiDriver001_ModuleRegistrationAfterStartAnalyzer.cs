@@ -55,7 +55,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsDriverConfigurationType, (invocation, method, driverVariableName, isStarted) =>
+        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsDriverConfigurationType, (invocation, method, driverVariableName, isStarted, _) =>
         {
             if (method.Name != "RegisterModule" || !isStarted)
             {

@@ -48,12 +48,13 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         string typeName = diagnostic.Properties["TypeName"]!;
         string resetPropertyName = diagnostic.Properties["ResetPropertyName"]!;
         string declaringTypeName = diagnostic.Properties["DeclaringTypeName"]!;
+        string resetPropertyTypeName = diagnostic.Properties["ResetPropertyTypeName"]!;
 
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: $"Use '{declaringTypeName}.{resetPropertyName}' instead",
                 createChangedDocument: c => ReplaceWithResetPropertyAsync(
-                    context.Document, objectCreation, typeName, declaringTypeName, resetPropertyName, c),
+                    context.Document, objectCreation, typeName, declaringTypeName, resetPropertyName, resetPropertyTypeName, c),
                 equivalenceKey: "UseResetProperty"),
             diagnostic);
     }
@@ -64,6 +65,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         string typeName,
         string declaringTypeName,
         string resetPropertyName,
+        string resetPropertyTypeName,
         CancellationToken cancellationToken)
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
@@ -89,16 +91,20 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
             .WithLeadingTrivia(objectCreation.GetLeadingTrivia())
             .WithTrailingTrivia(objectCreation.GetTrailingTrivia());
 
-        // When the reset property is declared on a base class, it returns that base type. A local
-        // declared with the derived type (`Derived x = new Derived();`) would no longer compile, so
-        // retype the declaration to the declaring type as well. `var` locals, qualified type names,
-        // and inline arguments need no change.
-        if (typeName != declaringTypeName
+        // A local initialized from the reset property must be able to hold what the property returns.
+        // The declaring type does not answer that: the library's one base-declared helper,
+        // SetGeolocationOverrideCommandParameters.ResetGeolocationOverride, returns the *derived*
+        // SetGeolocationOverrideCoordinatesCommandParameters, so a local declared with the derived
+        // type still compiles and retyping it to the base would needlessly widen it. Retype only when
+        // the property's own return type differs from the declared type, and retype to that return
+        // type rather than to the declaring type. `var` locals, qualified type names, and inline
+        // arguments need no change.
+        if (resetPropertyTypeName != typeName
             && objectCreation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }
             && GetDeclaredTypeIdentifier(declaration.Type) is IdentifierNameSyntax declaredType
-            && declaredType.Identifier.Text == typeName)
+            && declaredType.Identifier.ValueText == typeName)
         {
-            IdentifierNameSyntax newDeclaredType = SyntaxFactory.IdentifierName(declaringTypeName).WithTriviaFrom(declaredType);
+            IdentifierNameSyntax newDeclaredType = SyntaxFactory.IdentifierName(resetPropertyTypeName).WithTriviaFrom(declaredType);
             SyntaxNode retypedRoot = root.ReplaceNodes(
                 new SyntaxNode[] { objectCreation, declaredType },
                 (original, _) => original == objectCreation ? resetPropertyAccess : newDeclaredType);

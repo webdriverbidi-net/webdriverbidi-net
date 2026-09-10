@@ -57,9 +57,11 @@ public class BiDiDriver024_DuplicateStartAsyncAnalyzer : DiagnosticAnalyzer
     {
         // The walker reports each StartAsync with the state before the call takes effect, so a
         // StartAsync that finds the driver already started on every path is the duplicate.
-        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsCommandExecutorType, (invocation, method, driverVariableName, isStarted) =>
+        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsCommandExecutorType, (invocation, method, driverVariableName, isStarted, isDirectDriverCall) =>
         {
-            if (method.Name == "StartAsync" && isStarted)
+            // The call must be on the driver itself: a module reached through the driver may declare
+            // a command of the same name, and calling that is not a second start of the driver.
+            if (method.Name == "StartAsync" && isStarted && isDirectDriverCall)
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
             }

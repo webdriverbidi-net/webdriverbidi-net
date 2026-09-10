@@ -997,4 +997,50 @@ public class BiDiDriver024AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// A call reaches the shared walker whenever its receiver chain <em>roots</em> in a tracked
+    /// driver, so a method named StartAsync on something the driver exposes arrives alongside the
+    /// driver's own. Only the call on the driver itself is a start: treating the other as one would
+    /// mark the driver started and report its first real StartAsync as a duplicate, at Error severity.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartAsyncOnObjectReachedThroughDriver_DoesNotMarkDriverStarted()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TracingModule
+                {
+                    public Task StartAsync() => Task.CompletedTask;
+                }
+
+                public class CustomDriver : BiDiDriver
+                {
+                    public TracingModule Tracing { get; } = new TracingModule();
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        CustomDriver driver = new CustomDriver();
+                        await driver.Tracing.StartAsync();
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

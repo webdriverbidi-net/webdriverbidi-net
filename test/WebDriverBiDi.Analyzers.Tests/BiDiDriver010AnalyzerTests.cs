@@ -244,8 +244,69 @@ public class BiDiDriver010AnalyzerTests
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
     }
 
+    /// <summary>
+    /// The driver's own lifecycle operations return a bare <c>Task</c>, or a <c>ValueTask</c> for
+    /// <c>DisposeAsync</c>, so the generic-<c>Task</c> test that identifies a module command does not
+    /// admit them. Discarding one is at least as damaging: an un-awaited <c>StartAsync</c> leaves the
+    /// connect racing the next command, and an un-awaited <c>StopAsync</c> discards the
+    /// <c>AggregateException</c> carrying every error collected under
+    /// <c>TransportErrorBehavior.Collect</c>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task NonGenericTaskReturningMethod_NoDiagnostic()
+    public async Task DriverLifecycleCalls_FireAndForget_ReportsError()
+    {
+        // The real assembly is referenced against .NET 10 here because RegisterTypeInfoResolverAsync's
+        // parameter type comes from System.Text.Json, whose version in the .NET 8 reference set is
+        // older than the one the library binds to.
+        string testCode = """
+            using System.Text.Json.Serialization.Metadata;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new();
+                        {|#0:driver.RegisterTypeInfoResolverAsync(resolver)|};
+                        {|#1:driver.StartAsync("ws://localhost:9222")|};
+                        {|#2:driver.StopAsync()|};
+                        {|#3:driver.DisposeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.AddRange(
+        [
+            Expect(0, "RegisterTypeInfoResolverAsync"),
+            Expect(1, "StartAsync"),
+            Expect(2, "StopAsync"),
+            Expect(3, "DisposeAsync"),
+        ]);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+
+        static DiagnosticResult Expect(int location, string methodName) => new DiagnosticResult(
+            BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(location)
+            .WithArguments(methodName);
+    }
+
+    /// <summary>
+    /// A lifecycle call whose task is consumed — awaited, or captured for later — is not
+    /// fire-and-forget, exactly as for a module command.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DriverLifecycleCalls_Consumed_NoDiagnostic()
     {
         string testCode = """
             using System.Threading.Tasks;
@@ -259,7 +320,150 @@ public class BiDiDriver010AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         await driver.StartAsync("ws://localhost:9222");
-                        driver.StopAsync();
+                        Task stopping = driver.StopAsync();
+                        await stopping;
+                        await driver.DisposeAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// A lifecycle call whose ValueTask is wrapped and then discarded is still fire-and-forget: the
+    /// chain is followed through the wrapper — to a Task from <c>AsTask</c>, to another ValueTask from
+    /// <c>Preserve</c> — exactly as it is for a Task-returning command. A wrapper that is awaited is
+    /// not discarded and is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DriverDisposeAsync_ChainedThenDiscarded_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        {|#0:driver.DisposeAsync()|}.AsTask();
+                        {|#1:driver.DisposeAsync()|}.Preserve();
+                        await driver.DisposeAsync().ConfigureAwait(false);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult[] expected =
+        [
+            Expect(0),
+            Expect(1),
+        ];
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer>(testCode, expected);
+
+        static DiagnosticResult Expect(int location) => new DiagnosticResult(
+            BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(location)
+            .WithArguments("DisposeAsync");
+    }
+
+    /// <summary>
+    /// A method carrying a lifecycle name on the driver but returning neither a Task nor a ValueTask
+    /// has no completion to observe, so discarding its result is not this rule's subject.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DriverLifecycleNameOnNonAwaitableOverload_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class CustomExecutor : IBiDiCommandExecutor
+                {
+                    public TimeSpanHolder Holder { get; } = new TimeSpanHolder();
+
+                    public System.TimeSpan DefaultCommandTimeout => System.TimeSpan.Zero;
+
+                    public bool IsStarted => false;
+
+                    public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+                    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+                    // An overload that answers immediately, so there is nothing to await.
+                    public void StopAsync(int code) { }
+
+                    public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, System.TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+                        where T : CommandResult => Task.FromResult<T>(default!);
+
+                    public Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, System.TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+                        where T : CommandResult => Task.FromResult<T>(default!);
+
+                    public void RegisterEvent<T>(string eventName, System.Func<EventInfo<T>, Task> eventInvoker) { }
+
+                    public ValueTask DisposeAsync() => default;
+                }
+
+                public class TimeSpanHolder { }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        CustomExecutor executor = new();
+                        executor.StopAsync(0);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// The lifecycle names are only the driver's own. A method of the same name on an unrelated type
+    /// is not this rule's subject, which is what the containing-type test in the analyzer enforces.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task NonDriverMethodNamedLikeLifecycleOperation_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class CustomService
+                {
+                    public Task StartAsync() => Task.CompletedTask;
+
+                    public Task StopAsync() => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        CustomService service = new();
+                        service.StartAsync();
+                        service.StopAsync();
                     }
                 }
             }

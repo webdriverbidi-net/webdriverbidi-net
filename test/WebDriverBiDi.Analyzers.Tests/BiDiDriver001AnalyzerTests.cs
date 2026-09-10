@@ -1940,4 +1940,64 @@ public class BiDiDriver001AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(testCode, expected0);
     }
+
+    /// <summary>
+    /// The counterpart of the BIDI024 case: a method named StopAsync on something the driver exposes
+    /// must not return the driver to the not-started state, which would silently stop this rule
+    /// reporting a registration that the runtime does reject.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StopAsyncOnObjectReachedThroughDriver_DoesNotReopenRegistration()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TracingModule
+                {
+                    public Task StopAsync() => Task.CompletedTask;
+                }
+
+                public class CustomDriver : BiDiDriver
+                {
+                    public TracingModule Tracing { get; } = new TracingModule();
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+
+                    public override string ModuleName => "custom";
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        CustomDriver driver = new CustomDriver();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await driver.Tracing.StopAsync();
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("new CustomModule(driver)");
+
+        RealAssemblyAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

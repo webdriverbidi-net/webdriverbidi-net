@@ -93,7 +93,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 Diagnostic diagnostic = Diagnostic.Create(
                     Rule,
                     kvp.Value.ConstructorLocation,
-                    CreateDiagnosticProperties(kvp.Value.TypeName, kvp.Value.ResetPropertyName, kvp.Value.DeclaringTypeName),
+                    CreateDiagnosticProperties(kvp.Value.TypeName, kvp.Value.ResetPropertyName, kvp.Value.DeclaringTypeName, kvp.Value.ResetPropertyTypeName),
                     kvp.Value.TypeName,
                     kvp.Value.ResetPropertyName);
 
@@ -160,7 +160,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
             context.ReportDiagnostic(Diagnostic.Create(
                 Rule,
                 objectCreation.GetLocation(),
-                CreateDiagnosticProperties(type.Name, resetProperty.PropertyName, resetProperty.DeclaringTypeName),
+                CreateDiagnosticProperties(type.Name, resetProperty.PropertyName, resetProperty.DeclaringTypeName, resetProperty.PropertyTypeName),
                 type.Name,
                 resetProperty.PropertyName));
         }
@@ -191,12 +191,16 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         }
     }
 
-    private static ImmutableDictionary<string, string?> CreateDiagnosticProperties(string typeName, string resetPropertyName, string declaringTypeName)
+    private static ImmutableDictionary<string, string?> CreateDiagnosticProperties(string typeName, string resetPropertyName, string declaringTypeName, string resetPropertyTypeName)
     {
         ImmutableDictionary<string, string?>.Builder properties = ImmutableDictionary.CreateBuilder<string, string?>();
         properties.Add("TypeName", typeName);
         properties.Add("ResetPropertyName", resetPropertyName);
         properties.Add("DeclaringTypeName", declaringTypeName);
+
+        // The code fix retypes a local only when the property cannot be assigned to the declared
+        // type, which the declaring type alone does not say; see ResetPropertyInfo.PropertyTypeName.
+        properties.Add("ResetPropertyTypeName", resetPropertyTypeName);
         return properties.ToImmutable();
     }
 
@@ -239,11 +243,12 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
             bool hasObjectInitializer = objectCreation.Initializer != null && objectCreation.Initializer.Expressions.Count > 0;
 
             // Track this variable
-            trackedVariables[variable.Identifier.Text] = new VariableState
+            trackedVariables[variable.Identifier.ValueText] = new VariableState
             {
                 TypeName = type.Name,
                 ResetPropertyName = resetProperty.PropertyName,
                 DeclaringTypeName = resetProperty.DeclaringTypeName,
+                ResetPropertyTypeName = resetProperty.PropertyTypeName,
                 ConstructorLocation = objectCreation.GetLocation(),
                 HasPropertyAssignment = hasObjectInitializer,
             };
@@ -300,7 +305,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
     {
         return expression switch
         {
-            IdentifierNameSyntax id => id.Identifier.Text,
+            IdentifierNameSyntax id => id.Identifier.ValueText,
             MemberAccessExpressionSyntax member => GetVariableName(member.Expression),
             _ => null,
         };
@@ -343,7 +348,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
             {
                 if (property.Name.StartsWith("Reset", System.StringComparison.Ordinal) && IsSameTypeOrBaseTypeOf(property.Type, type))
                 {
-                    return new ResetPropertyInfo(property.Name, current.Name);
+                    return new ResetPropertyInfo(property.Name, current.Name, property.Type.Name);
                 }
             }
         }
@@ -372,6 +377,8 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
 
         public string DeclaringTypeName { get; set; } = string.Empty;
 
+        public string ResetPropertyTypeName { get; set; } = string.Empty;
+
         public Location ConstructorLocation { get; set; } = Location.None;
 
         public bool HasPropertyAssignment { get; set; }
@@ -379,14 +386,25 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
 
     private class ResetPropertyInfo
     {
-        public ResetPropertyInfo(string propertyName, string declaringTypeName)
+        public ResetPropertyInfo(string propertyName, string declaringTypeName, string propertyTypeName)
         {
             this.PropertyName = propertyName;
             this.DeclaringTypeName = declaringTypeName;
+            this.PropertyTypeName = propertyTypeName;
         }
 
         public string PropertyName { get; }
 
         public string DeclaringTypeName { get; }
+
+        /// <summary>
+        /// Gets the name of the type the reset property returns. This is what a local initialized
+        /// from the property must be able to hold, and it is not implied by the declaring type: a
+        /// helper declared on a base class commonly returns the derived type (as
+        /// SetGeolocationOverrideCommandParameters.ResetGeolocationOverride returns
+        /// SetGeolocationOverrideCoordinatesCommandParameters), in which case a local declared with
+        /// the derived type needs no change.
+        /// </summary>
+        public string PropertyTypeName { get; }
     }
 }
