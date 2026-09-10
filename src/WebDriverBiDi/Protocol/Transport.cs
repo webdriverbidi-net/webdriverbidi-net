@@ -899,9 +899,20 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Asynchronously releases the resources used by this <see cref="Transport"/>.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    /// <remarks>
+    /// Disposing a transport that is already disposed does nothing, as <see cref="IAsyncDisposable"/>
+    /// requires. The teardown cannot simply be repeated: it disposes the semaphore that guards the
+    /// connection, and a second run would wait on that semaphore again if the first run left the
+    /// transport in the <see cref="TransportState.Connecting"/> state, which happens when a connect
+    /// attempt is still in flight and does not complete within <see cref="ShutdownTimeout"/>.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        await this.DisposeAsyncCore().ConfigureAwait(false);
+        if (this.SetDisposed())
+        {
+            await this.DisposeAsyncCore().ConfigureAwait(false);
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -1172,6 +1183,14 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Override this method in derived classes to add custom cleanup logic.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    /// <remarks>
+    /// <see cref="DisposeAsync"/> calls this method once, on the first disposal only, and records the
+    /// disposal before calling it, so an override neither repeats that guard nor needs one of its own.
+    /// Because the transport is marked disposed before the teardown rather than after it, an operation
+    /// that rejects a disposed transport -- <see cref="ConnectAsync"/>,
+    /// <see cref="SendCommandAsync"/> and <see cref="RegisterTypeInfoResolverAsync"/> -- fails from the
+    /// moment disposal begins rather than only once it has finished.
+    /// </remarks>
     protected virtual async ValueTask DisposeAsyncCore()
     {
         // Account for the two potential waits, one for a concurrent attempt to connect,
@@ -1228,7 +1247,6 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         this.connectionLogMessageObserver.Dispose();
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
-        this.SetDisposed();
     }
 
     /// <summary>
@@ -1516,9 +1534,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         }
     }
 
-    private void SetDisposed()
+    /// <summary>
+    /// Marks this <see cref="Transport"/> as disposed.
+    /// </summary>
+    /// <returns><see langword="true"/> if the object was not already disposed before calling this method; otherwise, <see langword="false"/>.</returns>
+    private bool SetDisposed()
     {
-        Interlocked.Exchange(ref this.isDisposedFlag, 1);
+        return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
     }
 
     private void ThrowIfDisposed()
