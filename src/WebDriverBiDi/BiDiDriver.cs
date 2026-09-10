@@ -793,7 +793,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        await this.DisposeAsyncCore().ConfigureAwait(false);
+        if (this.SetDisposed())
+        {
+            await this.DisposeAsyncCore().ConfigureAwait(false);
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -824,34 +828,21 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
-        if (this.SetDisposed())
+        try
         {
-            try
-            {
-                await this.StopAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
-            }
-
-            await this.transportEventReceivedObserver.DisposeAsync().ConfigureAwait(false);
-            await this.transportErrorReceivedObserver.DisposeAsync().ConfigureAwait(false);
-            await this.transportUnknownMessageReceivedObserver.DisposeAsync().ConfigureAwait(false);
-            await this.transportLogMessageObserver.DisposeAsync().ConfigureAwait(false);
-            await this.transportEventHandlerErrorOccurredObserver.DisposeAsync().ConfigureAwait(false);
-            await this.transport.DisposeAsync().ConfigureAwait(false);
+            await this.StopAsync().ConfigureAwait(false);
         }
-    }
+        catch (Exception ex)
+        {
+            await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+        }
 
-    /// <summary>
-    /// Marks this <see cref="BiDiDriver"/> as disposed. Use this method to ensure
-    /// thread-safe operations for setting object being disposed.
-    /// </summary>
-    /// <returns><see langword="true"/> if the object was not already disposed before calling this method; otherwise, <see langword="false"/>.</returns>
-    protected bool SetDisposed()
-    {
-        return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
+        await this.transportEventReceivedObserver.DisposeAsync().ConfigureAwait(false);
+        await this.transportErrorReceivedObserver.DisposeAsync().ConfigureAwait(false);
+        await this.transportUnknownMessageReceivedObserver.DisposeAsync().ConfigureAwait(false);
+        await this.transportLogMessageObserver.DisposeAsync().ConfigureAwait(false);
+        await this.transportEventHandlerErrorOccurredObserver.DisposeAsync().ConfigureAwait(false);
+        await this.transport.DisposeAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -896,6 +887,16 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
                 FaultOccurredAfterHandlerReturned = false,
             }).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Marks this <see cref="BiDiDriver"/> as disposed. Use this method to ensure
+    /// thread-safe operations for setting object being disposed.
+    /// </summary>
+    /// <returns><see langword="true"/> if the object was not already disposed before calling this method; otherwise, <see langword="false"/>.</returns>
+    private bool SetDisposed()
+    {
+        return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
     }
 
     private void ThrowIfDisposed()
