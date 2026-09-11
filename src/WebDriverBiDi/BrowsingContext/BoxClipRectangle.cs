@@ -28,14 +28,18 @@ public class BoxClipRectangle : ClipRectangle
     public override string Type => "box";
 
     /// <summary>
-    /// Gets or sets the X coordinate of the clip rectangle relative to the left edge of the viewport.
+    /// Gets or sets the X coordinate of the clip rectangle relative to the left edge of the area the
+    /// screenshot captures: the visual viewport, or the whole document when
+    /// <see cref="CaptureScreenshotCommandParameters.Origin"/> is <see cref="ScreenshotOrigin.Document"/>.
     /// </summary>
     [JsonPropertyName("x")]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double X { get; set; } = 0.0;
 
     /// <summary>
-    /// Gets or sets the Y coordinate of the clip rectangle relative to the top edge of the viewport.
+    /// Gets or sets the Y coordinate of the clip rectangle relative to the top edge of the area the
+    /// screenshot captures: the visual viewport, or the whole document when
+    /// <see cref="CaptureScreenshotCommandParameters.Origin"/> is <see cref="ScreenshotOrigin.Document"/>.
     /// </summary>
     [JsonPropertyName("y")]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]

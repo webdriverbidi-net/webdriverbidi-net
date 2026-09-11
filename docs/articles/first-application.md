@@ -4,7 +4,7 @@ This tutorial walks you through creating a complete WebDriverBiDi.NET applicatio
 
 ## Prerequisites
 
-- .NET SDK 7.0 or higher installed, to build the samples in this tutorial as written; they use C# 11 raw string literals. The library itself needs only a runtime compatible with .NET Standard 2.0
+- .NET SDK 6.0 or higher installed, to build and run the console application this tutorial walks through. The library itself needs only a runtime compatible with .NET Standard 2.0
 - A browser with WebDriver BiDi support (Chrome, Edge, or Firefox)
 - Basic knowledge of C# and async/await
 

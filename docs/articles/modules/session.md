@@ -67,7 +67,10 @@ Prefer the `EventName` property from observable events to avoid typos:
 
 ## Ending a Session
 
-`EndAsync` ends the current session, closing the associated browsing contexts on the remote end. The
+`EndAsync` ends the current session. The remote end removes the session, replies, and then cleans up
+session-scoped state: it closes the WebSocket connections, discards per-user-context overrides and
+blocked-request state, removes network data collectors, and stops screencasts. Whether the browser or
+its windows close as well is implementation-specific; use `Browser.CloseAsync` to terminate the browser. The
 `EndCommandParameters` argument is optional; call `EndAsync()` with no arguments to end the session with
 default parameters. Ending the session is distinct from calling `BiDiDriver.StopAsync`, which closes the
 local transport connection without issuing a `session.end` command.

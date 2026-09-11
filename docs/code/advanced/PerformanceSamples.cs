@@ -436,15 +436,15 @@ public class PerformanceSamples
     {
         #region ScopeSubscriptions
         // ❌ Bad: Subscribe to high-frequency events you don't need
-        subscribe.Events.Add("network.beforeRequestSent");   // Very high frequency
-        subscribe.Events.Add("network.responseStarted");     // Very high frequency
-        subscribe.Events.Add("network.responseCompleted");   // High frequency
+        subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);   // Very high frequency
+        subscribe.Events.Add(driver.Network.OnResponseStarted.EventName);     // Very high frequency
+        subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);   // High frequency
 
         // ✅ Good: Only subscribe to events you actually use
-        subscribe.Events.Add("network.responseCompleted");   // Only this one
+        subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);   // Only this one
 
         // ✅ Even better: Scope to specific contexts
-        subscribe.Events.Add("network.responseCompleted");
+        subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
         subscribe.Contexts.Add(contextId);  // Only for this tab
         #endregion
     }

@@ -21,7 +21,8 @@ public record InstallCommandResult : CommandResult
     }
 
     /// <summary>
-    /// Gets the ID of the installed extension as specified in the extension manifest.
+    /// Gets the ID the remote end assigned to the installed extension. Pass this value to
+    /// <see cref="UninstallCommandParameters"/> to remove the extension.
     /// </summary>
     [JsonPropertyName("extension")]
     [JsonRequired]

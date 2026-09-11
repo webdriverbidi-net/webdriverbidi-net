@@ -288,8 +288,16 @@ public class ErrorHandlingSamples
         }
         catch (WebDriverBiDiException ex)
         {
+            // One accumulated error arrives here, wrapped.
             Console.WriteLine($"Transport error: {ex.Message}");
-            // This catch block will receive the event handler exception
+        }
+        catch (AggregateException ex)
+        {
+            // Several accumulated errors arrive here, one per inner exception.
+            foreach (Exception inner in ex.InnerExceptions)
+            {
+                Console.WriteLine($"Transport error: {inner.Message}");
+            }
         }
         finally
         {
