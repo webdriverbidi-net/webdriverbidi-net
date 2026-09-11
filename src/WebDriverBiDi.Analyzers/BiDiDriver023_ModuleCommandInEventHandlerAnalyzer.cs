@@ -116,17 +116,24 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
+        // A method-group handler may be declared in another file. Its body is then queried through the
+        // model for that file's tree, and the diagnostic is reported at the AddObserver argument in this
+        // file rather than inside the other one, so that it appears where the handler was registered.
+        SemanticModel semanticModel = AnalyzerSymbolHelpers.GetSemanticModelFor(context, handlerBody);
+        bool reportAtHandlerArgument = !ReferenceEquals(semanticModel, context.SemanticModel);
+
         DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
-        IEnumerable<(InvocationExpressionSyntax Node, string MethodName)> moduleCommands = FindModuleCommandInvocations(context, handlerBody);
+        IEnumerable<(InvocationExpressionSyntax Node, string MethodName)> moduleCommands = FindModuleCommandInvocations(semanticModel, handlerBody);
         foreach ((InvocationExpressionSyntax node, string methodName) in moduleCommands)
         {
-            Diagnostic diagnostic = Diagnostic.Create(rule, node.GetLocation(), methodName);
+            Location location = reportAtHandlerArgument ? handlerArgument.GetLocation() : node.GetLocation();
+            Diagnostic diagnostic = Diagnostic.Create(rule, location, methodName);
             context.ReportDiagnostic(diagnostic);
         }
     }
 
     private static IEnumerable<(InvocationExpressionSyntax, string)> FindModuleCommandInvocations(
-        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel,
         SyntaxNode handlerBody)
     {
         List<(InvocationExpressionSyntax, string)> results = [];
@@ -136,7 +143,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         // Task.Run(() => ...) is a remedy these rules recommend, so reporting inside it would flag the fix.
         foreach (InvocationExpressionSyntax innerInvocation in handlerBody.DescendantNodesAndSelf(AnalyzerSymbolHelpers.DoesNotBeginNestedFunction).OfType<InvocationExpressionSyntax>())
         {
-            IMethodSymbol? innerMethod = context.SemanticModel.GetSymbolInfo(innerInvocation).Symbol as IMethodSymbol;
+            IMethodSymbol? innerMethod = semanticModel.GetSymbolInfo(innerInvocation).Symbol as IMethodSymbol;
             if (innerMethod == null)
             {
                 continue;

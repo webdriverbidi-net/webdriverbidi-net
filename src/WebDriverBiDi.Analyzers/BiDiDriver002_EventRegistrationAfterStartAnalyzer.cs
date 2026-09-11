@@ -60,9 +60,11 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         // observers may be added or removed at any time, including while the driver is running. Only
         // the registration of custom protocol events (RegisterEvent) is locked once the driver has
         // started, and that is the only call the runtime rejects.
-        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsCommandExecutorType, (invocation, method, driverVariableName, isStarted, _) =>
+        // The call must be on the driver itself: a custom module reached through the driver may
+        // declare a method of the same name, and calling that is not a registration on the driver.
+        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsCommandExecutorType, (invocation, method, driverVariableName, isStarted, isDirectDriverCall) =>
         {
-            if (method.Name == "RegisterEvent" && isStarted)
+            if (method.Name == "RegisterEvent" && isStarted && isDirectDriverCall)
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), GetEventName(context, invocation)));
             }
@@ -72,8 +74,13 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
     private static string GetEventName(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {
         // RegisterEvent's first argument is the event name; report it in the message rather than the
-        // literal method name. The call has already resolved to RegisterEvent(string, Func<...>), so
-        // the argument is present.
+        // literal method name. The call resolved to the driver's RegisterEvent(string, Func<...>), so
+        // the argument is present, but the call is reported from source that may still be being typed.
+        if (invocation.ArgumentList.Arguments.Count == 0)
+        {
+            return "event";
+        }
+
         ExpressionSyntax firstArgument = invocation.ArgumentList.Arguments[0].Expression;
         if (context.SemanticModel.GetConstantValue(firstArgument) is { HasValue: true, Value: string eventName })
         {

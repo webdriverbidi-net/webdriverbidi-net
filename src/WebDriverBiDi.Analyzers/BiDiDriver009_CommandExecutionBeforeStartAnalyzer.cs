@@ -119,13 +119,16 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     /// </remarks>
     private static bool IsEscapingPosition(IdentifierNameSyntax identifier, SemanticModel semanticModel)
     {
-        return identifier.Parent switch
+        // As in BIDI006, the mention may be wrapped (parenthesized, cast to an interface, null-forgiven,
+        // or one arm of a conditional) before it reaches the construct that hands the driver out.
+        SyntaxNode mention = AnalyzerSymbolHelpers.PeelExpressionWrappers(identifier);
+        return mention.Parent switch
         {
             // Returned to the caller: return driver; or yield return driver;
             ReturnStatementSyntax or YieldStatementSyntax => true,
 
             // Assigned to another target, for example a field: this.driver = driver;
-            AssignmentExpressionSyntax assignment => assignment.Right == identifier,
+            AssignmentExpressionSyntax assignment => assignment.Right == mention,
 
             // Passed to a method or constructor that may start it: await StartHelperAsync(driver);
             ArgumentSyntax argument => !IsModuleConstructionArgument(argument, semanticModel),

@@ -2750,4 +2750,58 @@ public class BiDiDriver007AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a method-group handler declared in another file is still walked, and that the blocking
+    /// operation found there is reported at the AddObserver argument in the file being analyzed rather
+    /// than inside the other file. The body belongs to another syntax tree, so it must be queried
+    /// through that tree's semantic model; asking the analyzed file's model about it throws.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task MethodGroupHandlerDeclaredInAnotherFile_ReportsAtAddObserverArgument()
+    {
+        string registrationSource = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver({|#0:Handlers.OnEntry|});
+                    }
+                }
+            }
+            """;
+
+        string handlerSource = """
+            using System.Threading;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public static class Handlers
+                {
+                    public static void OnEntry(EntryAddedEventArgs args)
+                    {
+                        Thread.Sleep(500);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new();
+        testState.TestState.Sources.Add(("/0/Registration.cs", registrationSource));
+        testState.TestState.Sources.Add(("/0/Handlers.cs", handlerSource));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

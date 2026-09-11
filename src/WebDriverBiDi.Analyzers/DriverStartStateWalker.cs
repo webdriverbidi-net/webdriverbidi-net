@@ -32,7 +32,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 /// sibling scope (two <c>foreach</c> bodies, say) simply restarts the tracking. The walk does not
 /// descend into nested functions (lambdas, anonymous methods, local functions): their code runs when
 /// the delegate is invoked, not where it is written. <c>if</c>, <c>switch</c> and <c>try</c>
-/// statements are walked with a forked copy of the state per mutually exclusive branch.
+/// statements are walked with a forked copy of the state per mutually exclusive branch, and the body
+/// of a <c>for</c>, <c>foreach</c> or <c>while</c> loop is walked as a path that may not run at all.
 /// </para>
 /// </remarks>
 internal sealed class DriverStartStateWalker
@@ -104,22 +105,37 @@ internal sealed class DriverStartStateWalker
     private void ProcessNode(SyntaxNode node, Dictionary<string, bool> driverStartedStatus)
     {
         // Walk the node's descendants in document order. The walk stops at every branching construct
-        // — the if, switch and try statements, and the conditional and switch expressions, including
-        // one that is itself the root, which the barrier yields without descending into — and
-        // processes each recursively below with a forked copy of the state for each mutually
-        // exclusive branch.
+        // — the if, switch and try statements, the conditional and switch expressions, and the loops
+        // whose body may not run, including one that is itself the root, which the barrier yields
+        // without descending into — and processes each recursively below with a forked copy of the
+        // state for each mutually exclusive branch.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
             child is not IfStatementSyntax &&
             child is not SwitchStatementSyntax &&
             child is not TryStatementSyntax &&
             child is not ConditionalExpressionSyntax &&
-            child is not SwitchExpressionSyntax))
+            child is not SwitchExpressionSyntax &&
+            child is not ForStatementSyntax &&
+            child is not CommonForEachStatementSyntax &&
+            child is not WhileStatementSyntax))
         {
             switch (descendant)
             {
                 case IfStatementSyntax ifStatement:
                     this.ProcessIfStatement(ifStatement, driverStartedStatus);
+                    break;
+
+                case ForStatementSyntax forStatement:
+                    this.ProcessLoop(GetForLoopPreamble(forStatement), forStatement.Incrementors, forStatement.Statement, driverStartedStatus);
+                    break;
+
+                case CommonForEachStatementSyntax forEachStatement:
+                    this.ProcessLoop([forEachStatement.Expression], [], forEachStatement.Statement, driverStartedStatus);
+                    break;
+
+                case WhileStatementSyntax whileStatement:
+                    this.ProcessLoop([whileStatement.Condition], [], whileStatement.Statement, driverStartedStatus);
                     break;
 
                 case SwitchStatementSyntax switchStatement:
@@ -216,6 +232,47 @@ internal sealed class DriverStartStateWalker
         }
 
         MergeAllPaths(driverStartedStatus, [thenBranchStatus, elseBranchStatus]);
+    }
+
+    private void ProcessLoop(
+        IEnumerable<SyntaxNode> preamble,
+        IEnumerable<SyntaxNode> incrementors,
+        StatementSyntax body,
+        Dictionary<string, bool> driverStartedStatus)
+    {
+        // What runs before the first test of the loop condition runs unconditionally: a for loop's
+        // declaration or initializers, a foreach loop's collection expression, and the condition
+        // itself, which is evaluated at least once. The body is another matter: a for or while loop
+        // whose condition is false at once, or a foreach over an empty collection, never enters it.
+        // The body (and a for loop's incrementors, which run only after it) is therefore walked as one
+        // path and the state at loop entry kept as the other, exactly as an if statement without an
+        // else is, so that a StartAsync inside the loop does not count as having certainly run for the
+        // code after it. A do…while loop is not routed here: its body runs at least once, so it is
+        // walked straight through.
+        foreach (SyntaxNode node in preamble)
+        {
+            this.ProcessNode(node, driverStartedStatus);
+        }
+
+        Dictionary<string, bool> bodyStatus = new(driverStartedStatus);
+        this.ProcessNode(body, bodyStatus);
+        foreach (SyntaxNode incrementor in incrementors)
+        {
+            this.ProcessNode(incrementor, bodyStatus);
+        }
+
+        MergeAllPaths(driverStartedStatus, [bodyStatus, new Dictionary<string, bool>(driverStartedStatus)]);
+    }
+
+    /// <summary>
+    /// Gets the parts of a for statement that run before its body is first entered: its declaration or
+    /// initializers and its condition, which is to say every child except the body and the incrementors.
+    /// </summary>
+    /// <param name="forStatement">The for statement.</param>
+    /// <returns>The nodes that run unconditionally.</returns>
+    private static IEnumerable<SyntaxNode> GetForLoopPreamble(ForStatementSyntax forStatement)
+    {
+        return forStatement.ChildNodes().Where(child => child != forStatement.Statement && !forStatement.Incrementors.Contains(child));
     }
 
     private void ProcessConditionalExpression(ConditionalExpressionSyntax conditional, Dictionary<string, bool> driverStartedStatus)

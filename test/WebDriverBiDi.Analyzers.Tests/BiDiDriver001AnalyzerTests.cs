@@ -2000,4 +2000,107 @@ public class BiDiDriver001AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a start inside a foreach loop does not count as having certainly run for the code after
+    /// the loop, which may never have entered the body, so a registration there is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterStartInsideForeachLoop_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        foreach (string url in urls)
+                        {
+                            await driver.StartAsync(url);
+                            break;
+                        }
+
+                        driver.RegisterModule(new CustomModule(driver));
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a RegisterModule method on something reached through the driver is not a registration
+    /// on the driver. The real driver exposes no such property, so a stub with a <c>Self</c> property
+    /// is required to express the shape.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_OnObjectReachedThroughDriver_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class Module { }
+
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                {
+                    void RegisterModule(Module module);
+                    IBiDiDriverConfiguration Self { get; }
+                }
+
+                public class BiDiDriver : IBiDiDriverConfiguration
+                {
+                    public BiDiDriver(TimeSpan timeout) { }
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public void RegisterModule(Module module) { }
+                    public IBiDiDriverConfiguration Self => this;
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public async Task TestMethod(Module module)
+                    {
+                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        driver.Self.RegisterModule(module);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

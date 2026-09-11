@@ -619,4 +619,186 @@ public class BiDiDriver001CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that no fix is offered when a local the registration depends on is assigned, rather than
+    /// declared, after the start: only declarations can move, so the assignment would be left behind the
+    /// registration and the moved code would read an unassigned variable.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_DependingOnLocalAssignedAfterStart_NoFixOffered()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        CustomModule module;
+                        await driver.StartAsync("ws://localhost:9222");
+                        module = new CustomModule(driver);
+                        {|#0:driver.RegisterModule(module)|};
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("module");
+
+        RealAssemblyCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that no fix is offered when a local the registration depends on is written through an
+    /// <c>out</c> argument after the start, for the same reason as an assignment.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_DependingOnOutArgumentAfterStart_NoFixOffered()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        CustomModule module;
+                        await driver.StartAsync("ws://localhost:9222");
+                        Create(driver, out module);
+                        {|#0:driver.RegisterModule(module)|};
+                    }
+
+                    private static void Create(BiDiDriver driver, out CustomModule module)
+                    {
+                        module = new CustomModule(driver);
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("module");
+
+        RealAssemblyCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an assignment between the start and the registration that writes a name the
+    /// registration does not read leaves the fix available: only the registration moves.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_WithUnrelatedAssignmentAfterStart_CodeFixMovesRegistrationOnly()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        int attempts = 0;
+                        await driver.StartAsync("ws://localhost:9222");
+                        attempts = 1;
+                        Console.WriteLine(attempts);
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        int attempts = 0;
+                        driver.RegisterModule(new CustomModule(driver));
+                        await driver.StartAsync("ws://localhost:9222");
+                        attempts = 1;
+                        Console.WriteLine(attempts);
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("new CustomModule(driver)");
+
+        RealAssemblyCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected0);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

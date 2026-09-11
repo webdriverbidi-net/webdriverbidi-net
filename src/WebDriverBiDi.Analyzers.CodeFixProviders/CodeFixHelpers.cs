@@ -420,22 +420,53 @@ internal static class CodeFixHelpers
                 break;
             }
 
-            if (candidate is not LocalDeclarationStatementSyntax declaration
-                || !declaration.Declaration.Variables.Any(variable => referencedNames.Contains(variable.Identifier.ValueText)))
+            if (candidate is LocalDeclarationStatementSyntax declaration)
             {
-                continue;
-            }
+                if (!declaration.Declaration.Variables.Any(variable => referencedNames.Contains(variable.Identifier.ValueText)))
+                {
+                    continue;
+                }
 
-            if (declaration.DescendantNodes().OfType<AwaitExpressionSyntax>().Any())
+                if (declaration.DescendantNodes().OfType<AwaitExpressionSyntax>().Any())
+                {
+                    return null;
+                }
+
+                statementsToMove.Insert(0, declaration);
+                referencedNames.UnionWith(GetReferencedNames(declaration));
+            }
+            else if (WritesAnyOf(candidate, referencedNames))
             {
+                // A statement that is not a declaration cannot be moved, but one that writes a name the
+                // moved statements read — an assignment, or an out or ref argument — would be left behind
+                // them, so the moved code would read the variable before it is assigned (CS0165) or read
+                // a stale value. Decline rather than produce that.
                 return null;
             }
-
-            statementsToMove.Insert(0, declaration);
-            referencedNames.UnionWith(GetReferencedNames(declaration));
         }
 
         return statementsToMove;
+    }
+
+    private static bool WritesAnyOf(StatementSyntax statement, HashSet<string> names)
+    {
+        foreach (SyntaxNode node in statement.DescendantNodes())
+        {
+            string? writtenName = node switch
+            {
+                AssignmentExpressionSyntax { Left: IdentifierNameSyntax target } => target.Identifier.ValueText,
+                ArgumentSyntax { Expression: IdentifierNameSyntax target } argument
+                    when argument.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) || argument.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) => target.Identifier.ValueText,
+                _ => null,
+            };
+
+            if (writtenName is not null && names.Contains(writtenName))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static IEnumerable<string> GetReferencedNames(StatementSyntax statement)
