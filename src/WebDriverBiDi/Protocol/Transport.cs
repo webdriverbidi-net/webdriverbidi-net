@@ -466,6 +466,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Gets or sets the collection of pending commands that have been sent and
     /// have not yet received a response. This collection is thread-safe.
     /// </summary>
+    /// <remarks>
+    /// Every disconnect closes the collection, and <see cref="ConnectAsync"/> replaces a closed
+    /// collection with a new one, so a collection a derived transport assigns here does not itself
+    /// survive a reconnect. Its <see cref="PendingCommandCollection.MaxTrackedCanceledCommands"/> does:
+    /// the replacement is created with the same capacity, so a capacity configured before the first
+    /// connect stays in effect for every later session.
+    /// </remarks>
     protected PendingCommandCollection PendingCommands { get; set; } = new();
 
     /// <summary>
@@ -591,8 +598,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // commands, so we must replace it here.
             if (!this.PendingCommands.IsAcceptingCommands)
             {
+                uint maxTrackedCanceledCommands = this.PendingCommands.MaxTrackedCanceledCommands;
                 this.PendingCommands.Dispose();
-                this.PendingCommands = new PendingCommandCollection();
+                this.PendingCommands = new PendingCommandCollection(maxTrackedCanceledCommands);
             }
 
             // When reconnecting after disconnect, the message processing of the previous

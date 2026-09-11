@@ -32,6 +32,13 @@ public class TestTransport : Transport
     /// </summary>
     public string TestPendingCommandCollectionId => this.PendingCommands.Id;
 
+    /// <summary>
+    /// Gets the number of canceled commands the current pending command collection remembers, so that a
+    /// test can assert that a capacity configured through <see cref="UseCanceledCommandTrackerCapacity"/>
+    /// survives the replacement of the collection on reconnect.
+    /// </summary>
+    public uint TestMaxTrackedCanceledCommands => this.PendingCommands.MaxTrackedCanceledCommands;
+
     public bool IsDisposed { get; private set; }
 
     public bool ThrowOnDisconnect { get; set; }
