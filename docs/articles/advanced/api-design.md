@@ -124,7 +124,8 @@ of the `result`/`params` object that the type does not define is extension data.
 Chromium, for example, echoes a subscription's `goog:channel` on the envelope. Nested objects that the
 protocol marks `Extensible` capture their own: `RequestData` and `ResponseData` (Chromium's `goog:postData`,
 `goog:hasPostData`, `goog:resourceType`, `goog:resourceInitiator` and `goog:securityDetails`), `Cookie`,
-`CapabilitiesResult` (as `AdditionalCapabilities`), and the storage partition types.
+`CapabilitiesResult` (as `AdditionalCapabilities`), the storage partition types, and `SharedReferenceInfo` (the
+`element` of `input.fileDialogOpened`, whose `ToSharedReference()` carries the properties back to the remote end).
 
 Values are exposed as `ReceivedDataDictionary` entries: strings, `bool`, `long` or `double` numbers, nested
 `ReceivedDataDictionary` objects and `ReceivedDataList` arrays, or `null`.
