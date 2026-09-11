@@ -151,7 +151,9 @@ Use `SetExtraHeadersAsync` to add headers to *every* request without interceptin
 
 ### Clear Extra Headers
 
-To remove all extra headers, use `SetExtraHeadersCommandParameters.ResetExtraHeaders`:
+To remove the session-wide (unscoped) extra headers, use `SetExtraHeadersCommandParameters.ResetExtraHeaders`.
+Headers set for specific browsing contexts or user contexts are stored separately and are not affected;
+clear them by sending an empty `Headers` list with the same `Contexts` or `UserContexts` populated:
 
 [!code-csharp[Clear Extra Headers](../../code/modules/NetworkModuleSamples.cs#ClearExtraHeaders)]
 

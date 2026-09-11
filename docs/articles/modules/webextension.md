@@ -133,7 +133,7 @@ the extension as a zip archive, or install it unpacked from a directory.
 ## Next Steps
 
 - [Bluetooth Module](bluetooth.md): Web Bluetooth API control
-- [Permissions Module](permissions.md): Managing extension permissions
+- [Permissions Module](permissions.md): Granting or denying web-platform permissions (geolocation, notifications, and so on) to the pages an extension runs against
 - [Browser Module](browser.md): Browser-level operations
 - [API Reference](../../api/index.md): Complete API documentation
 

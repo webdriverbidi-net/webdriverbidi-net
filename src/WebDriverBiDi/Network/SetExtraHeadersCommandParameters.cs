@@ -14,11 +14,14 @@ public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeader
 {
     /// <summary>
     /// Gets a pre-initialized instance of <see cref="SetExtraHeadersCommandParameters"/>
-    /// with the <see cref="Headers"/> property set to an empty list to clear any
-    /// existing extra headers. Returns a new instance on each access to allow for
-    /// modification of the properties without affecting other uses. Functionally equivalent
-    /// to using the parameterless constructor, but provided as a named property to make the
-    /// intent of clearing the extra headers more explicit in code that uses this property.
+    /// with the <see cref="Headers"/> property set to an empty list to clear the extra headers
+    /// at whichever scope the instance targets: the session-wide headers when neither
+    /// <see cref="Contexts"/> nor <see cref="UserContexts"/> is populated, or the headers of the
+    /// named contexts or user contexts otherwise; the remote end keeps each scope separately.
+    /// Returns a new instance on each access to allow for modification of the properties without
+    /// affecting other uses. Functionally equivalent to using the parameterless constructor, but
+    /// provided as a named property to make the intent of clearing the extra headers more explicit
+    /// in code that uses this property.
     /// </summary>
     public static SetExtraHeadersCommandParameters ResetExtraHeaders => new();
 

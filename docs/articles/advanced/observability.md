@@ -241,7 +241,7 @@ The library emits `EventSource` events only; it does not define a `System.Diagno
 
 [!code-csharp[OpenTelemetry Integration](../../code/advanced/ObservabilitySamples.cs#OpenTelemetryIntegration)]
 
-Requires: `OpenTelemetry`, `OpenTelemetry.Trace`, `OpenTelemetry.Exporter.Console`.
+Requires: `OpenTelemetry`, `OpenTelemetry.Exporter.Console`.
 
 ## Best Practices
 

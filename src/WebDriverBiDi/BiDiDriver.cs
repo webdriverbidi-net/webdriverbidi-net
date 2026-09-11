@@ -820,7 +820,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message the caller would raise.</param>
     /// <returns><see langword="true"/> if such a message would be raised; otherwise, <see langword="false"/>.</returns>
     /// <remarks>
-    /// A message is raised only when its level is at or above <see cref="LogLevel"/> and
+    /// A message is raised only when its level is at or above <see cref="ITransportConfiguration.LogLevel"/> and
     /// <see cref="OnLogMessage"/> has at least one observer.
     /// <see cref="Protocol.Connection.IsLogLevelEnabled"/> and
     /// <see cref="Protocol.Transport.IsLogLevelEnabled"/> answer the same question for their own layer.
@@ -865,7 +865,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <remarks>
     /// <para>
-    /// A message below <see cref="LogLevel"/> is discarded rather than raised.
+    /// A message below <see cref="ITransportConfiguration.LogLevel"/> is discarded rather than raised.
     /// </para>
     /// <para>
     /// This method never throws for a failure in an observer of <see cref="OnLogMessage"/>;

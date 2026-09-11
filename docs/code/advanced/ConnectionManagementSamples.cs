@@ -203,7 +203,7 @@ public static class ConnectionManagementSamples
         driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
 
         await driver.StartAsync(webSocketUrl);
-        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName));
         // ... use the session ...
         await driver.StopAsync();
 
@@ -213,7 +213,7 @@ public static class ConnectionManagementSamples
 
         // Subscriptions belong to the browser session, not to the driver:
         // subscribe again after every reconnect.
-        await driver.Session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName));
         #endregion
     }
 
@@ -481,8 +481,9 @@ public static class ConnectionManagementSamples
         finally
         {
             // If the message-processing task has not completed within ShutdownTimeout,
-            // DisconnectAsync logs a warning and proceeds; messages still in the queue
-            // will not be processed, and pending commands are canceled.
+            // DisconnectAsync logs a warning and proceeds, canceling any pending commands.
+            // Messages already delivered to the queue go on being processed in the
+            // background; only the wait for them is bounded.
             await driver.StopAsync();
         }
         #endregion
