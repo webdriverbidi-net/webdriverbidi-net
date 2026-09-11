@@ -4607,6 +4607,46 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestReconnectPreservesCanceledCommandTrackerCapacity()
+    {
+        // ConnectAsync replaces the pending command collection on every reconnect, because the
+        // previous one was closed by the disconnect. The replacement must carry over the tracker
+        // capacity a derived transport configured, rather than reverting to the default; a
+        // capacity of one is observable because canceling a second command then forgets the
+        // first, whose late response is reported as an unknown message rather than discarded.
+        TaskCompletionSource unknownTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        string? unknownMessage = null;
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.UseCanceledCommandTrackerCapacity(1);
+        transport.OnUnknownMessageReceived.AddObserver(e =>
+        {
+            unknownMessage = e.Message;
+            unknownTaskCompletionSource.TrySetResult();
+        });
+
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        string initialCollectionId = transport.TestPendingCommandCollectionId;
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        Assert.NotEqual(initialCollectionId, transport.TestPendingCommandCollectionId);
+        Assert.Equal(1u, transport.TestMaxTrackedCanceledCommands);
+
+        Command first = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        Command second = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+        transport.CancelCommand(first, CommandCancellationReason.TimedOut);
+        transport.CancelCommand(second, CommandCancellationReason.TimedOut);
+
+        await connection.RaiseDataReceivedEventAsync($$$"""{"type":"success","id":{{{first.CommandId}}},"result":{"parameterName":"parameterValue"}}""");
+        await unknownTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.NotNull(unknownMessage);
+        Assert.Contains($"\"id\":{first.CommandId}", unknownMessage);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestReconnectAfterRemoteDisconnectWaitsForPreviousMessageProcessing()
     {
         // A remote disconnect completes the incoming message queue but does not wait for the
