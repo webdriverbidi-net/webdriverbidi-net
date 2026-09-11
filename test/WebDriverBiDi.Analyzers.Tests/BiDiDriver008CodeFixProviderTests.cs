@@ -1655,4 +1655,150 @@ public class BiDiDriver008CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that no code action is offered for a cast whose operand is a lambda parameter. The pattern
+    /// is hoisted to the enclosing statement, where the parameter is not in scope, so the rewrite
+    /// <c>if (r is EvaluateResultSuccess success) { ... Select(r => success.Result) ... }</c> would not
+    /// compile.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastOfLambdaParameterInExpressionLambda_RegistersNoAction()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(List<EvaluateResult> results)
+                    {
+                        var values = results.Select(r => ((EvaluateResultSuccess)r).Result).ToList();
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that a cast inside a statement lambda is still converted, within the lambda's own block:
+    /// the operand is the lambda parameter, but the statement holding the cast is inside the lambda,
+    /// so the parameter is in scope where the pattern is placed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastOfLambdaParameterInStatementLambda_ConvertsWithinLambdaBlock()
+    {
+        string testCode = """
+            using System.Collections.Generic;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(List<EvaluateResult> results)
+                    {
+                        results.ForEach(r =>
+                        {
+                            var success = (EvaluateResultSuccess)r;
+                            Consume(success.RealmId);
+                        });
+                    }
+
+                    private static void Consume(string value) { }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        CodeAction action = Assert.Single(actions);
+
+        string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
+        Assert.Contains("if (r is EvaluateResultSuccess success)", fixedText);
+        Assert.Contains("Consume(success.RealmId);", fixedText);
+        Assert.DoesNotContain("(EvaluateResultSuccess)r", fixedText);
+    }
+
+    /// <summary>
+    /// Tests that an identifier in the operand that binds to no symbol (a member of a dynamic receiver,
+    /// converted to the base type so that the cast is one the rule reports) is skipped by the scope check
+    /// rather than tripping it, so the fix is still offered.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CastOfDynamicMemberAccess_StillConverts()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(dynamic holder)
+                    {
+                        Consume(((EvaluateResultSuccess)(EvaluateResult)holder.Result).RealmId);
+                    }
+
+                    private static void Consume(string value) { }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        CodeAction action = Assert.Single(actions);
+
+        string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
+        Assert.Contains("if ((EvaluateResult)holder.Result is EvaluateResultSuccess success)", fixedText);
+    }
+
+    /// <summary>
+    /// Tests that the pattern variable the fix introduces does not collide with a name already in use:
+    /// a parameter, a local, a foreach variable, or a pattern variable declared elsewhere in the member.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task IntroducedPatternVariable_AvoidsNamesAlreadyInUse()
+    {
+        string testCode = """
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result, string success)
+                    {
+                        int success1 = 0;
+                        foreach (int success2 in new int[0])
+                        {
+                        }
+
+                        if (result is EvaluateResultSuccess success3)
+                        {
+                        }
+
+                        Consume(((EvaluateResultSuccess)result).RealmId);
+                    }
+
+                    private static void Consume(string value) { }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document document) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider>(testCode, referenceWebDriverBiDi: true);
+        CodeAction action = Assert.Single(actions);
+
+        string fixedText = await AnalyzerTestHelpers.ApplyCodeActionAsync(action, document);
+        Assert.Contains("if (result is EvaluateResultSuccess success4)", fixedText);
+        Assert.Contains("Consume((success4).RealmId);", fixedText);
+    }
 }

@@ -54,9 +54,11 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
 
     private static void AnalyzeMethodBody(SyntaxNodeAnalysisContext context)
     {
-        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsDriverConfigurationType, (invocation, method, driverVariableName, isStarted, _) =>
+        // The call must be on the driver itself: a custom module reached through the driver may
+        // declare a method of the same name, and calling that is not a registration on the driver.
+        DriverStartStateWalker.Walk(context, AnalyzerSymbolHelpers.IsDriverConfigurationType, (invocation, method, driverVariableName, isStarted, isDirectDriverCall) =>
         {
-            if (method.Name == "RegisterTypeInfoResolverAsync" && isStarted)
+            if (method.Name == "RegisterTypeInfoResolverAsync" && isStarted && isDirectDriverCall)
             {
                 context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation()));
             }

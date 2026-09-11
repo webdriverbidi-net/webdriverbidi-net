@@ -173,6 +173,16 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         CancellationToken cancellationToken)
     {
         StatementSyntax statement = conversion.FirstAncestorOrSelf<StatementSyntax>()!;
+
+        // The pattern is hoisted to the statement, so its operand must be in scope there. An operand
+        // that names something declared inside the statement — a lambda parameter, a query range
+        // variable, a local of a local function — is not: `results.Select(r => ((T)r).Result)` would
+        // become `if (r is T t)` with no `r` to test.
+        if (OperandDependsOnScopeInside(conversion, statement, semanticModel, cancellationToken))
+        {
+            return false;
+        }
+
         if (statement is not LocalDeclarationStatementSyntax declaration || statement.Parent is not BlockSyntax containingBlock)
         {
             // An expression statement is wrapped on its own.
@@ -195,6 +205,49 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // A declarator in a document that compiles always has a symbol.
         ISymbol declaredVariable = semanticModel.GetDeclaredSymbol(declaration.Declaration.Variables[0], cancellationToken)!;
         return !HasExitingNullGuard(containingBlock, declarationIndex, lastReplacedIndex, declaredVariable, semanticModel, cancellationToken);
+    }
+
+    /// <summary>
+    /// Determines whether the operand of the conversion refers to a symbol declared inside the
+    /// statement that holds the conversion, which the hoisted pattern could not see.
+    /// </summary>
+    /// <param name="conversion">The cast or <c>as</c> expression.</param>
+    /// <param name="statement">The statement holding the conversion.</param>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns><see langword="true"/> if the operand depends on a scope inside the statement; otherwise, <see langword="false"/>.</returns>
+    private static bool OperandDependsOnScopeInside(
+        ExpressionSyntax conversion,
+        StatementSyntax statement,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        ExpressionSyntax operand = conversion switch
+        {
+            CastExpressionSyntax cast => cast.Expression,
+            _ => ((BinaryExpressionSyntax)conversion).Left,
+        };
+
+        foreach (IdentifierNameSyntax identifier in operand.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+        {
+            ISymbol? symbol = semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol;
+            if (symbol is null)
+            {
+                continue;
+            }
+
+            // A symbol from metadata has no declaring syntax; one declared in another tree is never
+            // contained by this statement, which Contains answers without a tree check of its own.
+            foreach (SyntaxReference declaration in symbol.DeclaringSyntaxReferences)
+            {
+                if (statement.Contains(declaration.GetSyntax(cancellationToken)))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -300,7 +353,7 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
         // directly; otherwise a name derived from the type is introduced.
         string variableName = directDeclaration is not null
             ? directDeclaration.Declaration.Variables[0].Identifier.Text
-            : GenerateVariableName(semanticModel.GetTypeInfo(targetType, cancellationToken).Type!.Name);
+            : GenerateVariableName(semanticModel.GetTypeInfo(targetType, cancellationToken).Type!.Name, statement, semanticModel, cancellationToken);
 
         IsPatternExpressionSyntax isPattern = SyntaxFactory.IsPatternExpression(
             operand,
@@ -403,12 +456,48 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
             .Any(variableSymbols.Contains);
     }
 
-    private static string GenerateVariableName(string typeName)
+    private static string GenerateVariableName(string typeName, StatementSyntax statement, SemanticModel semanticModel, CancellationToken cancellationToken)
     {
         // Convert PascalCase type name to camelCase variable name
         // EvaluateResultSuccess -> success
         // EvaluateResultException -> exception
         string suffix = typeName.Substring("EvaluateResult".Length);
-        return char.ToLowerInvariant(suffix[0]) + suffix.Substring(1);
+        string baseName = char.ToLowerInvariant(suffix[0]) + suffix.Substring(1);
+
+        // The pattern variable is a new local of the enclosing block, so its name must not collide
+        // with anything already in scope at the statement (a parameter, a field, an earlier local) or
+        // declared anywhere else in the member (a later local of the same block, CS0128; one of a
+        // nested block, CS0136). Take the first numbered variant that is free.
+        // Every statement has a member declaration as an ancestor: a method, constructor or accessor
+        // body, a field initializer's lambda, or, for a top-level statement, the global statement that
+        // wraps it, which is itself a member declaration.
+        HashSet<string> takenNames = new(semanticModel.LookupSymbols(statement.SpanStart).Select(symbol => symbol.Name));
+        SyntaxNode member = statement.FirstAncestorOrSelf<MemberDeclarationSyntax>()!;
+        foreach (SyntaxNode declared in member.DescendantNodes())
+        {
+            switch (declared)
+            {
+                case VariableDeclaratorSyntax declarator:
+                    takenNames.Add(declarator.Identifier.ValueText);
+                    break;
+                case SingleVariableDesignationSyntax designation:
+                    takenNames.Add(designation.Identifier.ValueText);
+                    break;
+                case ParameterSyntax parameter:
+                    takenNames.Add(parameter.Identifier.ValueText);
+                    break;
+                case ForEachStatementSyntax forEach:
+                    takenNames.Add(forEach.Identifier.ValueText);
+                    break;
+            }
+        }
+
+        string candidate = baseName;
+        for (int suffixNumber = 1; takenNames.Contains(candidate); suffixNumber++)
+        {
+            candidate = baseName + suffixNumber;
+        }
+
+        return candidate;
     }
 }

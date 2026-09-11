@@ -513,10 +513,12 @@ public class BiDiDriver003AnalyzerTests
     /// <c>BiDiDriver</c> exposes <c>RegisterTypeInfoResolverAsync</c> directly and has no property
     /// whose type in turn exposes that method. A chained <c>driver.Self.RegisterTypeInfoResolverAsync(...)</c>
     /// call whose base identifier is still the tracked driver variable cannot be expressed against the
-    /// real API, so a stub <c>Self</c> property is required to exercise the analyzer's member-access walk.
+    /// real API, so a stub <c>Self</c> property is required to express the shape. A registration on
+    /// something reached through the driver is not a registration on the driver — a custom module may
+    /// declare a method of the same name — so it is not reported.
     /// </remarks>
     [Fact]
-    public async Task ChainedMemberAccess_AfterStartAsync_ReportsError()
+    public async Task ChainedMemberAccess_AfterStartAsync_NoDiagnostic()
     {
         string test = """
             using System;
@@ -556,21 +558,17 @@ public class BiDiDriver003AnalyzerTests
                     {
                         IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
-                        {|#0:driver.Self.RegisterTypeInfoResolverAsync(resolver)|};
+                        driver.Self.RegisterTypeInfoResolverAsync(resolver);
                     }
                 }
             }
             """;
-
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
-            .WithLocation(0);
 
         CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }

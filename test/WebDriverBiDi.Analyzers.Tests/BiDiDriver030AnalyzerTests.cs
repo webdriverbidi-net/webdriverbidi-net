@@ -589,4 +589,180 @@ public class BiDiDriver030AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
     }
+
+    [Fact]
+    public async Task StartAfterObserverEscapesThroughCast_ReportsNothing()
+    {
+        // The observer is handed to other code through a cast, which may open or close a session
+        // this rule cannot see, so the observer is not tracked and neither start is reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        Keep((IDisposable)observer);
+                        observer.StartCapturingTasks();
+                        observer.StartCapturingTasks();
+                    }
+
+                    private static void Keep(IDisposable disposable) { }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAfterStartInsideForLoop_ReportsNothing()
+    {
+        // A for loop's body may run zero times, so a session opened inside it is not certainly active
+        // for the start that follows the loop. The declaration, condition and incrementor are walked
+        // too, so a start placed in any of them is judged in its own position.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(int count)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        for (int i = 0; i < count; i++)
+                        {
+                            observer.StartCapturingTasks();
+                            break;
+                        }
+
+                        observer.StartCapturingTasks();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAfterStartInsideWhileLoop_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(bool flag)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        while (flag)
+                        {
+                            observer.StartCapturingTasks();
+                            break;
+                        }
+
+                        observer.StartCapturingTasks();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task SecondStartInsideLoopBody_ReportsWarning()
+    {
+        // Inside the body the session opened earlier in the same body is certainly active, so a second
+        // start there is still reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        foreach (string url in urls)
+                        {
+                            observer.StartCapturingTasks();
+                            {|#0:observer.StartCapturingTasks()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task StartAfterLoopWithSessionOpenedBeforeIt_ReportsWarning()
+    {
+        // A session opened before the loop is certainly active afterwards whether or not the body runs.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        foreach (string url in urls)
+                        {
+                            Console.WriteLine(url);
+                        }
+
+                        {|#0:observer.StartCapturingTasks()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+    }
 }

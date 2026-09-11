@@ -1542,4 +1542,62 @@ public class BiDiDriver023AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer>(testCode, expected0);
     }
+
+    /// <summary>
+    /// Tests that a method-group handler declared in another file is still walked, and that the module
+    /// command found there is reported at the AddObserver argument in the file being analyzed rather
+    /// than inside the other file.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task MethodGroupHandlerDeclaredInAnotherFile_ReportsAtAddObserverArgument()
+    {
+        string registrationSource = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Handlers.Driver = driver;
+                        var observer = driver.Log.OnEntryAdded.AddObserver({|#0:Handlers.OnEntry|});
+                    }
+                }
+            }
+            """;
+
+        string handlerSource = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public static class Handlers
+                {
+                    public static BiDiDriver Driver { get; set; } = null!;
+
+                    public static async Task OnEntry(EntryAddedEventArgs args)
+                    {
+                        await Driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("NavigateAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new();
+        testState.TestState.Sources.Add(("/0/Registration.cs", registrationSource));
+        testState.TestState.Sources.Add(("/0/Handlers.cs", handlerSource));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

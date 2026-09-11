@@ -2125,4 +2125,63 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a driver handed to other code through a wrapped mention — a cast, parentheses, the
+    /// null-forgiving operator, or a conditional expression — escapes exactly as a bare mention does,
+    /// so the commands that follow are not reported: the helper may have started it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Command_AfterDriverEscapesThroughWrappedArgument_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task CastAsync()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await StartHelperAsync((IBiDiCommandExecutor)driver);
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    public async Task ParenthesizedAsync()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await StartHelperAsync((driver));
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    public async Task NullForgivenAsync()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await StartHelperAsync(driver!);
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    public async Task ConditionalAsync(bool flag)
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        BiDiDriver other = new BiDiDriver();
+                        await StartHelperAsync(flag ? driver : other);
+                        await driver.ExecuteCommandAsync(new StatusCommandParameters());
+                        await other.ExecuteCommandAsync(new StatusCommandParameters());
+                    }
+
+                    private static async Task StartHelperAsync(IBiDiCommandExecutor driver)
+                    {
+                        await driver.StartAsync("ws://localhost:1234");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

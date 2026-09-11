@@ -123,11 +123,18 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         bool includeSynchronizationPrimitives = handlerArgument.Expression is not AnonymousFunctionExpressionSyntax anonymousFunction
             || !anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword);
 
+        // A method-group handler may be declared in another file. Its body is then queried through the
+        // model for that file's tree, and the diagnostic is reported at the AddObserver argument in this
+        // file rather than inside the other one, so that it appears where the handler was registered.
+        SemanticModel semanticModel = AnalyzerSymbolHelpers.GetSemanticModelFor(context, handlerBody);
+        bool reportAtHandlerArgument = !ReferenceEquals(semanticModel, context.SemanticModel);
+
         DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
-        IEnumerable<(SyntaxNode Node, string Name)> blockingOperations = FindBlockingOperations(context, handlerBody, includeSynchronizationPrimitives);
+        IEnumerable<(SyntaxNode Node, string Name)> blockingOperations = FindBlockingOperations(semanticModel, handlerBody, includeSynchronizationPrimitives);
         foreach ((SyntaxNode node, string operationName) in blockingOperations)
         {
-            Diagnostic diagnostic = Diagnostic.Create(rule, node.GetLocation(), operationName);
+            Location location = reportAtHandlerArgument ? handlerArgument.GetLocation() : node.GetLocation();
+            Diagnostic diagnostic = Diagnostic.Create(rule, location, operationName);
             context.ReportDiagnostic(diagnostic);
         }
     }
@@ -135,7 +142,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
     /// <summary>
     /// Finds the blocking operations in a handler body, each paired with the name to report it under.
     /// </summary>
-    /// <param name="context">The analysis context.</param>
+    /// <param name="semanticModel">The semantic model for the tree the handler body is in.</param>
     /// <param name="handlerBody">The body of the handler to search.</param>
     /// <param name="includeSynchronizationPrimitives">Whether synchronization primitives count as blocking here.</param>
     /// <returns>Each blocking operation and the name the diagnostic reports for it.</returns>
@@ -148,7 +155,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
     /// that suppresses the whole rule for the file.
     /// </remarks>
     private static IEnumerable<(SyntaxNode Node, string Name)> FindBlockingOperations(
-        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel,
         SyntaxNode handlerBody,
         bool includeSynchronizationPrimitives)
     {
@@ -169,7 +176,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
         foreach (InvocationExpressionSyntax invocation in invocations)
         {
-            IMethodSymbol? methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            IMethodSymbol? methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
             if (methodSymbol == null)
             {
                 continue;
@@ -185,7 +192,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
                 memberAccess.Expression is InvocationExpressionSyntax getAwaiterCall)
             {
-                IMethodSymbol? getAwaiterSymbol = context.SemanticModel.GetSymbolInfo(getAwaiterCall).Symbol as IMethodSymbol;
+                IMethodSymbol? getAwaiterSymbol = semanticModel.GetSymbolInfo(getAwaiterCall).Symbol as IMethodSymbol;
                 if (getAwaiterSymbol is { Name: "GetAwaiter" })
                 {
                     blockingOps.Add((invocation, methodSymbol.Name + "()"));
@@ -202,7 +209,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             if (memberAccess.Name.Identifier.ValueText == "Result")
             {
                 // Task<T>.Result and ValueTask<T>.Result both block until the operation completes.
-                ITypeSymbol? expressionType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                ITypeSymbol? expressionType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
                 if (expressionType is { Name: "Task" or "ValueTask" })
                 {
                     blockingOps.Add((memberAccess, memberAccess.Name.Identifier.Text));

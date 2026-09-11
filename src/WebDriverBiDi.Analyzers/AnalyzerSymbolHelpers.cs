@@ -127,6 +127,54 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
+    /// Gets the semantic model that can answer questions about a node, which is the context's own model
+    /// when the node is in the tree being analyzed and the compilation's model for the node's tree
+    /// otherwise.
+    /// </summary>
+    /// <param name="context">The analysis context.</param>
+    /// <param name="node">The node to be queried.</param>
+    /// <returns>The semantic model for the node's syntax tree.</returns>
+    /// <remarks>
+    /// <see cref="GetHandlerBody"/> resolves a method-group handler to its declaration, which may live in
+    /// another file: a partial-class part, a base class, or a static helper. A semantic model answers only
+    /// for nodes of its own tree — asking it about a node from another tree throws — so a rule that walks
+    /// a body obtained that way must query the model for the body's tree rather than its own.
+    /// </remarks>
+    internal static SemanticModel GetSemanticModelFor(SyntaxNodeAnalysisContext context, SyntaxNode node)
+    {
+        return ReferenceEquals(node.SyntaxTree, context.Node.SyntaxTree)
+            ? context.SemanticModel
+            : context.Compilation.GetSemanticModel(node.SyntaxTree);
+    }
+
+    /// <summary>
+    /// Peels the wrappers a mention of a variable may carry before it reaches the construct that decides
+    /// what happens to it: parentheses, a cast, a conditional expression, and the null-forgiving operator.
+    /// </summary>
+    /// <param name="expression">The mention of the variable.</param>
+    /// <returns>The outermost wrapper, or <paramref name="expression"/> itself when it is not wrapped.</returns>
+    /// <remarks>
+    /// <c>Helper((driver))</c>, <c>Helper(driver!)</c>, <c>Helper((IBiDiCommandExecutor)driver)</c> and
+    /// <c>Helper(flag ? driver : other)</c> all hand the driver to the helper exactly as <c>Helper(driver)</c>
+    /// does. A classification that looked only at the identifier's immediate parent would read each of them
+    /// as a mere use. Any postfix operator qualifies: the null-forgiving operator is the only one a driver
+    /// or an observer can carry, since neither has an increment or decrement.
+    /// </remarks>
+    internal static SyntaxNode PeelExpressionWrappers(SyntaxNode expression)
+    {
+        SyntaxNode current = expression;
+        while (current.Parent is ParenthesizedExpressionSyntax
+            or CastExpressionSyntax
+            or ConditionalExpressionSyntax
+            or PostfixUnaryExpressionSyntax)
+        {
+            current = current.Parent;
+        }
+
+        return current;
+    }
+
+    /// <summary>
     /// Determines whether a type is a library module: it derives from the abstract <c>Module</c> base
     /// class, whatever it is named — a custom <c>class GoogleCdp : Module</c> is registered and used
     /// exactly as one named <c>GoogleCdpModule</c> would be — or it is a <c>"*Module"</c> type
@@ -373,13 +421,16 @@ internal static class AnalyzerSymbolHelpers
         HashSet<string> escapedNames = [];
         foreach (IdentifierNameSyntax identifier in body.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            bool escapes = identifier.Parent switch
+            // The mention may be wrapped (parenthesized, cast, null-forgiven, or one arm of a
+            // conditional) before it reaches the construct that hands it out.
+            SyntaxNode mention = PeelExpressionWrappers(identifier);
+            bool escapes = mention.Parent switch
             {
                 // Returned to the caller: return observer; or yield return observer;
                 ReturnStatementSyntax or YieldStatementSyntax => true,
 
                 // Stored somewhere this member does not own: this.observer = observer;
-                AssignmentExpressionSyntax assignment => assignment.Right == identifier,
+                AssignmentExpressionSyntax assignment => assignment.Right == mention,
 
                 // Passed to a method or constructor that may operate on it: BeginCapture(observer);
                 ArgumentSyntax => true,

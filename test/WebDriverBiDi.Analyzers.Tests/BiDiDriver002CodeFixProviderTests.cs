@@ -184,10 +184,12 @@ public class BiDiDriver002CodeFixProviderTests
     /// <c>BiDiDriver</c> exposes <c>RegisterEvent</c> directly; it has no property whose type in turn
     /// exposes a <c>RegisterEvent</c> method. A nested <c>driver.Events.RegisterEvent(...)</c> chain
     /// whose base identifier is still the tracked driver variable cannot be expressed against the real
-    /// API, so a stub intermediate type is required to exercise the code fix's member-access walk.
+    /// API, so a stub intermediate type is required to express the shape. Such a call is not a registration
+    /// on the driver — a custom module may declare a method of the same name — so nothing is reported and
+    /// no fix is offered.
     /// </remarks>
     [Fact]
-    public async Task RegisterEvent_ThroughNestedMemberAccess_CodeFixMovesBeforeStartAsync()
+    public async Task RegisterEvent_ThroughNestedMemberAccess_NoDiagnosticAndNoFix()
     {
         string testCode = """
             using System;
@@ -222,62 +224,19 @@ public class BiDiDriver002CodeFixProviderTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
-                        {|#0:driver.Events.RegisterEvent<string>("test.event", async (e) => { })|};
-                    }
-                }
-            }
-            """;
-
-        string fixedCode = """
-            using System;
-            using System.Threading.Tasks;
-
-            namespace WebDriverBiDi
-            {
-                public interface IBiDiDriver { }
-
-                public class BiDiDriver : IBiDiDriver
-                {
-                    public BiDiDriver(TimeSpan timeout) { }
-                    public Task StartAsync(string url) => Task.CompletedTask;
-                    public EventRegistrar Events { get; } = new EventRegistrar();
-                }
-
-                public class EventRegistrar
-                {
-                    public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker) { }
-                }
-
-                public class EventInfo<T> { }
-            }
-
-            namespace TestApp
-            {
-                using WebDriverBiDi;
-
-                public class TestClass
-                {
-                    public async Task TestMethod()
-                    {
-                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Events.RegisterEvent<string>("test.event", async (e) => { });
-                        await driver.StartAsync("ws://localhost:9222");
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver002_EventRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
-            .WithLocation(0)
-            .WithArguments("test.event");
 
         LfCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider> testState = new()
         {
             TestCode = testCode,
-            FixedCode = fixedCode,
+            FixedCode = testCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
-        testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }

@@ -229,14 +229,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         // without that, each of them reads as a mere use and the observer is reported as undisposed.
         // Any postfix operator qualifies: the null-forgiving operator is the only one an observer
         // can carry, since IDisposable has no increment or decrement.
-        SyntaxNode current = identifier;
-        while (current.Parent is ParenthesizedExpressionSyntax
-            or CastExpressionSyntax
-            or ConditionalExpressionSyntax
-            or PostfixUnaryExpressionSyntax)
-        {
-            current = current.Parent;
-        }
+        SyntaxNode current = AnalyzerSymbolHelpers.PeelExpressionWrappers(identifier);
 
         return current.Parent switch
         {

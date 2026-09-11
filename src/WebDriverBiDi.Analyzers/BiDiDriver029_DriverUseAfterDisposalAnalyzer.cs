@@ -210,11 +210,26 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             child is not IfStatementSyntax &&
             child is not SwitchStatementSyntax &&
             child is not TryStatementSyntax &&
-            child is not UsingStatementSyntax))
+            child is not UsingStatementSyntax &&
+            child is not ForStatementSyntax &&
+            child is not CommonForEachStatementSyntax &&
+            child is not WhileStatementSyntax))
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
                 ProcessIfStatement(ifStatement, context, semanticModel, driverDisposedStatus, untrackableNames);
+            }
+            else if (descendant is ForStatementSyntax forStatement)
+            {
+                ProcessLoop(GetForLoopPreamble(forStatement), forStatement.Incrementors, forStatement.Statement, context, semanticModel, driverDisposedStatus, untrackableNames);
+            }
+            else if (descendant is CommonForEachStatementSyntax forEachStatement)
+            {
+                ProcessLoop([forEachStatement.Expression], [], forEachStatement.Statement, context, semanticModel, driverDisposedStatus, untrackableNames);
+            }
+            else if (descendant is WhileStatementSyntax whileStatement)
+            {
+                ProcessLoop([whileStatement.Condition], [], whileStatement.Statement, context, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
@@ -270,6 +285,52 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         {
             driverDisposedStatus[driverName] = thenBranchStatus[driverName] && elseBranchStatus[driverName];
         }
+    }
+
+    private static void ProcessLoop(
+        IEnumerable<SyntaxNode> preamble,
+        IEnumerable<SyntaxNode> incrementors,
+        StatementSyntax body,
+        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverDisposedStatus,
+        HashSet<string> untrackableNames)
+    {
+        // A for loop's declaration or initializers, a foreach loop's collection expression, and the
+        // loop condition all run before the first test of the condition, so they are walked against the
+        // state as it stands. The body may never run — a false condition at once, an empty collection —
+        // so it (and a for loop's incrementors, which run only after it) is walked as one path and the
+        // state at loop entry kept as the other, exactly as an if statement without an else is:
+        // a DisposeAsync inside the loop does not make the driver
+        // certainly disposed after it. A do…while loop runs its body at least once and is walked
+        // straight through.
+        foreach (SyntaxNode node in preamble)
+        {
+            ProcessNode(node, context, semanticModel, driverDisposedStatus, untrackableNames);
+        }
+
+        Dictionary<string, bool> bodyStatus = new(driverDisposedStatus);
+        ProcessNode(body, context, semanticModel, bodyStatus, untrackableNames);
+        foreach (SyntaxNode incrementor in incrementors)
+        {
+            ProcessNode(incrementor, context, semanticModel, bodyStatus, untrackableNames);
+        }
+
+        foreach (string driverName in driverDisposedStatus.Keys.ToList())
+        {
+            driverDisposedStatus[driverName] = driverDisposedStatus[driverName] && bodyStatus[driverName];
+        }
+    }
+
+    /// <summary>
+    /// Gets the parts of a for statement that run before its body is first entered: its declaration or
+    /// initializers and its condition, which is to say every child except the body and the incrementors.
+    /// </summary>
+    /// <param name="forStatement">The for statement.</param>
+    /// <returns>The nodes that run unconditionally.</returns>
+    private static IEnumerable<SyntaxNode> GetForLoopPreamble(ForStatementSyntax forStatement)
+    {
+        return forStatement.ChildNodes().Where(child => child != forStatement.Statement && !forStatement.Incrementors.Contains(child));
     }
 
     private static void ProcessSwitchStatement(

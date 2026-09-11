@@ -1043,4 +1043,81 @@ public class BiDiDriver024AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task StartAsync_AfterStartInsideForLoop_NoDiagnostic()
+    {
+        // A for loop's body may run zero times, so a start inside it is not certainly in effect for the
+        // start that follows the loop. The declaration, condition and incrementor of the loop are walked
+        // as well, in their own positions.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        for (int i = 0; i < urls.Length; i++)
+                        {
+                            await driver.StartAsync(urls[i]);
+                            break;
+                        }
+
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task StartAsync_TwiceInsideLoopBody_ReportsError()
+    {
+        // Within one execution of the body the first start is certainly in effect, so the second is a
+        // duplicate exactly as it would be in straight-line code.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        foreach (string url in urls)
+                        {
+                            await driver.StartAsync(url);
+                            await {|#0:driver.StartAsync(url)|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

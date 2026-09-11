@@ -1042,4 +1042,139 @@ public class BiDiDriver029AnalyzerTests
             .WithLocation(location)
             .WithArguments(methodName, "driver");
     }
+
+    [Fact]
+    public async Task ModuleCommandAfterDisposeInsideForLoop_ReportsNothing()
+    {
+        // A for loop's body may run zero times, so a disposal inside it does not make the driver
+        // certainly disposed for the code after the loop.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int count)
+                    {
+                        BiDiDriver driver = new();
+                        for (int i = 0; i < count; i++)
+                        {
+                            await driver.DisposeAsync();
+                            break;
+                        }
+
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task ModuleCommandAfterDisposeInsideForeachLoop_ReportsNothing()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        foreach (string url in urls)
+                        {
+                            await driver.DisposeAsync();
+                            break;
+                        }
+
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task ModuleCommandAfterDisposeInsideLoopBody_ReportsError()
+    {
+        // Within one execution of the body the disposal is certain, so a use later in the same body is
+        // reported exactly as it would be in straight-line code.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool flag)
+                    {
+                        BiDiDriver driver = new();
+                        while (flag)
+                        {
+                            await driver.DisposeAsync();
+                            await {|#0:driver.Session.StatusAsync()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver029_DriverUseAfterDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync", "driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task ModuleCommandAfterDisposeBeforeLoop_ReportsError()
+    {
+        // A driver already disposed before the loop stays disposed whether or not the body runs.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.DisposeAsync();
+                        foreach (string url in urls)
+                        {
+                            Console.WriteLine(url);
+                        }
+
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver029_DriverUseAfterDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync", "driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, expected);
+    }
 }
