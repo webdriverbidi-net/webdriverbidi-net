@@ -8,6 +8,7 @@
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
+using System.Net.WebSockets;
 using WebDriverBiDi;
 using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Protocol;
@@ -766,6 +767,89 @@ public static class CustomConnectionUsage
     {
         #region SetLogLevel
         driver.TransportConfiguration.LogLevel = WebDriverBiDiLogLevel.Debug;
+        #endregion
+    }
+}
+
+/// <summary>
+/// Example WebSocket connection that configures its ClientWebSocket before connecting.
+/// </summary>
+#region ConfiguringClientWebSocket
+public class ConfiguredWebSocketConnection : WebSocketConnection
+{
+    private readonly string accessToken;
+
+    public ConfiguredWebSocketConnection(string accessToken)
+    {
+        // State assigned here is available to CreateClientWebSocket: the connection never calls it
+        // while the connection is being constructed.
+        this.accessToken = accessToken;
+    }
+
+    // Read each time a socket is created, so set these before StartAsync.
+    public System.Net.IWebProxy? Proxy { get; set; }
+
+    public string? TrustedCertificateThumbprint { get; set; }
+
+    protected override ClientWebSocket CreateClientWebSocket()
+    {
+        // Always begin from a new socket: the connection owns every socket this method returns, and
+        // disposes it when it is replaced or when the connection is disposed.
+        ClientWebSocket socket = base.CreateClientWebSocket();
+
+        // A remote grid that authenticates the WebSocket upgrade request.
+        socket.Options.SetRequestHeader("Authorization", $"Bearer {this.accessToken}");
+
+        // Keep an idle session open through intermediaries that drop silent connections.
+        socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+
+        if (this.Proxy is not null)
+        {
+            socket.Options.Proxy = this.Proxy;
+        }
+
+        if (this.TrustedCertificateThumbprint is string thumbprint)
+        {
+            // Accept the certificates the operating system trusts, plus one pinned certificate, such as
+            // a self-signed certificate on a private grid. Never accept every certificate.
+            socket.Options.RemoteCertificateValidationCallback = (sender, certificate, chain, errors) =>
+                errors == System.Net.Security.SslPolicyErrors.None
+                || (certificate is not null
+                    && string.Equals(certificate.GetCertHashString(System.Security.Cryptography.HashAlgorithmName.SHA256), thumbprint, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return socket;
+    }
+}
+#endregion
+
+/// <summary>
+/// Configured WebSocket connection usage.
+/// </summary>
+public static class ConfiguredWebSocketConnectionUsage
+{
+    public static async Task UseConfiguredWebSocketConnection(string webSocketUrl, string accessToken)
+    {
+        #region UsingConfiguredWebSocketConnection
+        // Properties set in the initializer are read by CreateClientWebSocket when StartAsync connects.
+        ConfiguredWebSocketConnection connection = new ConfiguredWebSocketConnection(accessToken)
+        {
+            Proxy = new System.Net.WebProxy("http://proxy.internal:3128"),
+            StartupTimeout = TimeSpan.FromSeconds(30),
+        };
+
+        Transport transport = new Transport(connection);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync(webSocketUrl);
+
+        try
+        {
+            // Use driver...
+        }
+        finally
+        {
+            await driver.StopAsync();
+        }
         #endregion
     }
 }

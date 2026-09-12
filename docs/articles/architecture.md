@@ -182,6 +182,7 @@ The `Connection` abstract class defines the contract for all transport implement
 - Uses `System.Net.WebSockets.ClientWebSocket`
 - Validates URL scheme (must be `ws://` or `wss://`)
 - Supports secure WebSocket connections
+- Socket options (request headers, proxy, keep-alive interval, certificate validation) are configurable by overriding `CreateClientWebSocket`; see [Connection Management](advanced/connection-management.md#configuring-the-underlying-websocket)
 - Text-based JSON message protocol
 - Handles multi-frame WebSocket messages
 

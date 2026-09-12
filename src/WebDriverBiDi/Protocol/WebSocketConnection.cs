@@ -36,6 +36,7 @@ using WebDriverBiDi.Internal;
 /// <item><description>Low latency (1-3ms per message for local connections)</description></item>
 /// <item><description>Automatic retry on startup (retries every 500ms within StartupTimeout; both each attempt and the pause between attempts are bounded by the remaining StartupTimeout, so neither a host that never answers nor one that refuses immediately can hold startup open past the timeout)</description></item>
 /// <item><description>Supports reconnection after calling StopAsync</description></item>
+/// <item><description>Configurable socket options (request headers, proxy, keep-alive interval, certificate validation) through an override of <see cref="CreateClientWebSocket"/></description></item>
 /// </list>
 /// </para>
 /// <para>
@@ -49,6 +50,8 @@ public class WebSocketConnection : Connection
     // was not yet listening. The pause is charged against StartupTimeout, never added to it.
     private static readonly TimeSpan ConnectionRetryInterval = TimeSpan.FromMilliseconds(500);
 
+    // This is initialized with a placeholder that has never connected, so that IsActive, StopAsync
+    // and disposal have a socket to consult before the first start.
     private ClientWebSocket client = new();
 
     // The URI resolved from the connection string of the attempt now in progress. Connection.StartAsync
@@ -145,15 +148,16 @@ public class WebSocketConnection : Connection
         // here and the null-forgiving operator is appropriate.
         Uri websocketUri = this.websocketUri!;
 
-        if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
-        {
-            // A ClientWebSocket in a closed or aborted state means that we had
-            // a connection at one time that was in use, and is no longer valid.
-            // Replace that ClientWebSocket with a new one to allow for reuse of
-            // the connection, disposing the old one first.
-            this.client.Dispose();
-            this.client = new ClientWebSocket();
-        }
+        // Every session connects on a socket obtained from CreateClientWebSocket immediately before it.
+        // Connection.StartAsync has already established that this connection is not active, so the socket
+        // held here is the unconfigured placeholder created with this connection, a socket a previous
+        // session left closed or aborted, or a socket left by an earlier failed start. The first two
+        // cannot carry this session: a ClientWebSocket connects at most once, and takes its options only
+        // before it does. Replacing the socket unconditionally, rather than only once it has been used, is
+        // what applies an override's configuration to the first session, and it keeps the rule simple for
+        // the third case too: the configuration used is always the one the override produces at the start.
+        this.client.Dispose();
+        this.client = this.CreateClientWebSocket();
 
         // A previous session may have ended with a local close; this session has not.
         this.IsLocalCloseInitiated = false;
@@ -197,7 +201,7 @@ public class WebSocketConnection : Connection
                 // A canceled connect leaves the socket in an unusable (aborted) state, so
                 // discard it. The startup budget is exhausted, so no further attempts are made.
                 this.client.Dispose();
-                this.client = new ClientWebSocket();
+                this.client = this.CreateClientWebSocket();
                 startupTimedOut = true;
             }
             catch (WebSocketException)
@@ -208,7 +212,7 @@ public class WebSocketConnection : Connection
                 // Replacing the socket before the retry delay rather than after it means every exit from
                 // this loop, including a canceled delay, leaves a usable client behind.
                 this.client.Dispose();
-                this.client = new ClientWebSocket();
+                this.client = this.CreateClientWebSocket();
 
                 // The pause before retrying comes out of the startup budget rather than being added
                 // to it, so it is clamped to whatever remains. Left unclamped, a remote end that
@@ -427,6 +431,60 @@ public class WebSocketConnection : Connection
         {
             throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
         }
+    }
+
+    /// <summary>
+    /// Creates the <see cref="ClientWebSocket"/> on which a connection attempt is made.
+    /// </summary>
+    /// <returns>A new <see cref="ClientWebSocket"/> that has not been connected.</returns>
+    /// <remarks>
+    /// <para>
+    /// Override this method to configure the socket through <see cref="ClientWebSocket.Options"/> before it
+    /// connects: for example, to add a request header that the remote end requires to authenticate the
+    /// connection, to route the connection through a proxy, to change the keep-alive interval, or to
+    /// validate the certificate of a <c>wss</c> endpoint that the operating system does not trust. Those
+    /// options can be set only before a socket connects, which is why they are applied here rather than
+    /// exposed as properties of the connection. Call the base implementation to obtain the socket, then
+    /// configure and return it.
+    /// </para>
+    /// <para>
+    /// <see cref="Connection.StartAsync"/> calls this method immediately before every session connects,
+    /// including the first, and again after each connection attempt that the remote end refuses or that
+    /// runs out of the <see cref="Connection.StartupTimeout"/> budget, because a socket whose connect did not
+    /// succeed cannot be used again. A single start can therefore call it more than once. It is never
+    /// called while the connection is being constructed, so an override may rely on state that its own
+    /// constructor, or an object initializer, has assigned.
+    /// </para>
+    /// <para>
+    /// Return a new instance from every call. The connection owns each socket this method returns: it
+    /// disposes a socket when it replaces it, and disposes the socket it holds when the connection itself
+    /// is disposed. A socket shared between calls, or with other code, would be disposed out from under its
+    /// other users.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// public class AuthenticatedWebSocketConnection : WebSocketConnection
+    /// {
+    ///     private readonly string accessToken;
+    ///
+    ///     public AuthenticatedWebSocketConnection(string accessToken)
+    ///     {
+    ///         this.accessToken = accessToken;
+    ///     }
+    ///
+    ///     protected override ClientWebSocket CreateClientWebSocket()
+    ///     {
+    ///         ClientWebSocket socket = base.CreateClientWebSocket();
+    ///         socket.Options.SetRequestHeader("Authorization", $"Bearer {this.accessToken}");
+    ///         return socket;
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    protected virtual ClientWebSocket CreateClientWebSocket()
+    {
+        return new ClientWebSocket();
     }
 
     /// <summary>
