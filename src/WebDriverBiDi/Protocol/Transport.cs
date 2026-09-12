@@ -94,11 +94,13 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private readonly ConcurrentDictionary<Type, JsonTypeInfo> responseTypeInfoCache = [];
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
 
-    // Guards the publication of the Connecting state against work that is only legal while this
-    // transport is disconnected (see TryExecuteWhileDisconnected). It is deliberately an instance
-    // lock: the state it protects is per-transport, and the action passed to
+    // Guards each state publication against the decision that depends on it: Connecting against work
+    // legal only while disconnected (TryExecuteWhileDisconnected), and Connected against a loss
+    // reported mid-attempt (ConnectAsync, HandleConnectionDisconnectionAsync). It is deliberately an
+    // instance lock: the state it protects is per-transport, and the action passed to
     // TryExecuteWhileDisconnected runs while the lock is held, so a process-wide lock would let
-    // one transport's registration block every other transport in the process.
+    // one transport's registration block every other transport in the process. Nothing awaits or
+    // blocks while holding it.
     private readonly object connectionStateLock = new();
 
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
@@ -132,7 +134,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     // HandleConnectionDisconnectionAsync cannot act on because there is not yet a session to tear
     // down. ConnectAsync reads and clears it, and fails the attempt rather than publishing the
     // Connected state over a connection that is already gone. The exception the connection reported
-    // is kept rather than a flag, so the failure names the cause.
+    // is kept rather than a flag, so the failure names the cause. Both the write and the read happen
+    // under connectionStateLock with the state test each depends on, so a loss can never be recorded
+    // against an attempt that has already published Connected and then go unread.
     private WebDriverBiDiConnectionException? connectionLostWhileConnecting;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required.
@@ -645,10 +649,22 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
                 throw new ArgumentException($"The connection is already open to '{this.Connection.ConnectionString}'; connecting the transport cannot change the connection string of an open connection. Pass that same value to use the open connection, or stop it before connecting the transport.", nameof(connectionString));
             }
 
-            // The connection's receive loop is already running by the time StartAsync returns, so the
-            // remote end can close, or the loop can fail, before the Connected state is published just
-            // below. Record that loss of connection, if it exists.
-            WebDriverBiDiConnectionException? connectionLost = Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
+            // The connection's receive loop is live once StartAsync returns, so a loss can be reported
+            // at any moment from then on. Reading the record and publishing Connected under the lock
+            // the handler records with makes them one decision: either the loss lands first and fails
+            // the attempt, or Connected lands first and the handler tears the session down instead.
+            // Done separately, a loss arriving between them would be recorded and never read, leaving
+            // the transport connected over a connection whose receive loop has already exited.
+            WebDriverBiDiConnectionException? connectionLost;
+            lock (this.connectionStateLock)
+            {
+                connectionLost = Interlocked.Exchange(ref this.connectionLostWhileConnecting, null);
+                if (connectionLost is null)
+                {
+                    this.State = TransportState.Connected;
+                }
+            }
+
             if (connectionLost is not null)
             {
                 // The reader is never started for this attempt, so anything the remote end managed to
@@ -661,7 +677,6 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // shouldn't be an issue, as we are using a Channel for processing the data, which
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
-            this.State = TransportState.Connected;
             this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync(), CancellationToken.None);
 
             // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
@@ -1737,16 +1752,25 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     {
         // Fast-path: if already disconnected, no work to do.
         // Prevents deadlock when connection error occurs during DisconnectAsync.
-        TransportState stateAtNotification = this.State;
-        if (stateAtNotification != TransportState.Connected)
+        //
+        // Reading the state and recording a mid-attempt loss under the lock ConnectAsync publishes
+        // Connected with orders this against that: the loss either lands in time to fail the attempt,
+        // or finds the session published and is torn down below. The lock is released before the
+        // teardown waits for the connection, so one is never held while waiting on the other.
+        TransportState stateAtNotification;
+        lock (this.connectionStateLock)
         {
+            stateAtNotification = this.State;
             if (stateAtNotification == TransportState.Connecting)
             {
                 // The loss arrived while a connect attempt is still in flight, so there is no session to
                 // tear down yet. Record the cause for ConnectAsync to fail the attempt with.
                 Interlocked.CompareExchange(ref this.connectionLostWhileConnecting, connectionException, null);
             }
+        }
 
+        if (stateAtNotification != TransportState.Connected)
+        {
             return;
         }
 
