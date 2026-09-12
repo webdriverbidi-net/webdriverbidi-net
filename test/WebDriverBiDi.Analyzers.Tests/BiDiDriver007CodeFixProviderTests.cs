@@ -808,4 +808,54 @@ public class BiDiDriver007CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that no fix is offered for a handler passed as a method group declared in another file.
+    /// The analyzer reports such a diagnostic at the AddObserver argument so that it appears where the
+    /// handler was registered, which puts the argument -- not a lambda -- in front of the provider.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_CrossFileMethodGroup_OffersNoCodeFix()
+    {
+        string registrationSource = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public partial class Page
+                {
+                    public void Wire(BiDiDriver driver)
+                    {
+                        driver.Log.OnEntryAdded.AddObserver(this.OnEntry);
+                    }
+                }
+            }
+            """;
+
+        string handlerSource = """
+            using System.Threading;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public partial class Page
+                {
+                    private void OnEntry(EntryAddedEventArgs args)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                }
+            }
+            """;
+
+        (IReadOnlyList<CodeAction> actions, Document _) = await AnalyzerTestHelpers.GetCodeActionsAsync<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider>(
+            registrationSource,
+            referenceWebDriverBiDi: true,
+            additionalSource: handlerSource);
+
+        Assert.Empty(actions);
+    }
 }

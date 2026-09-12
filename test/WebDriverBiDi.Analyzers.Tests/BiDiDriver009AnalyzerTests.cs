@@ -2184,4 +2184,198 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    /// <summary>
+    /// Tests that a driver handed to an extension method is no longer tracked, because that method
+    /// may start it and the walk cannot see into it -- the same reasoning as for a driver passed as
+    /// an ordinary argument, which is what an extension method receiver is.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandAfterExtensionMethodStart_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public static class DriverExtensions
+                {
+                    public static Task StartWithRetryAsync(this BiDiDriver driver, string url)
+                    {
+                        return driver.StartAsync(url);
+                    }
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartWithRetryAsync("ws://localhost:9222");
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a command called through a local holding one of the driver's modules is judged
+    /// against that driver, both before and after StartAsync.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandThroughModuleAlias_BeforeStart_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private int counter;
+
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        BrowsingContextModule context = driver.BrowsingContext;
+
+                        // An assignment whose target is not a plain name: the scan for a rebinding of
+                        // the alias has to look past it rather than mistake it for one.
+                        this.counter = 1;
+
+                        // An assignment to a different plain name, which the same scan must also
+                        // distinguish from a rebinding of the alias.
+                        int unrelated = 0;
+                        unrelated = 2;
+                        await {|#0:context.GetTreeAsync()|};
+                        await driver.StartAsync("ws://localhost:9222");
+                        await context.GetTreeAsync();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        testState.ExpectedDiagnostics.Add(new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("GetTreeAsync"));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests the cases an alias must not be resolved from: one rebound after its declaration, one
+    /// declared without an initializer, one initialized from something other than a member of a
+    /// driver, and a module held in a field rather than a local. Each must leave the call unreported,
+    /// because the walk cannot say which driver it belongs to.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandThroughUnresolvableModuleReference_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class Holder
+                {
+                    public BrowsingContextModule Module { get; set; }
+                }
+
+                public class TestClass
+                {
+                    private BrowsingContextModule field;
+
+                    private Holder holder = new();
+
+                    public async Task Rebound()
+                    {
+                        BiDiDriver driver = new();
+                        BiDiDriver other = new();
+                        BrowsingContextModule context = driver.BrowsingContext;
+                        context = other.BrowsingContext;
+                        await context.GetTreeAsync();
+                    }
+
+                    public async Task NoInitializer()
+                    {
+                        BiDiDriver driver = new();
+                        BrowsingContextModule context;
+                        context = driver.BrowsingContext;
+                        await context.GetTreeAsync();
+                    }
+
+                    public async Task NotAModuleOfADriver(Holder holder)
+                    {
+                        BiDiDriver driver = new();
+                        BrowsingContextModule context = holder.Module;
+                        await context.GetTreeAsync();
+                    }
+
+                    public async Task FromANestedMemberAccess()
+                    {
+                        BiDiDriver driver = new();
+                        BrowsingContextModule context = this.holder.Module;
+                        await context.GetTreeAsync();
+                    }
+
+                    public async Task FromAField()
+                    {
+                        BiDiDriver driver = new();
+                        await field.GetTreeAsync();
+                    }
+
+                    public async Task FromAForeachVariable(BrowsingContextModule[] modules)
+                    {
+                        BiDiDriver driver = new();
+                        foreach (BrowsingContextModule module in modules)
+                        {
+                            await module.GetTreeAsync();
+                        }
+                    }
+
+                    public async Task ThroughALongerChain()
+                    {
+                        BiDiDriver driver = new();
+                        await this.holder.Module.GetTreeAsync();
+                    }
+
+                    public async Task ThroughAnElementAccess(BrowsingContextModule[] modules)
+                    {
+                        BiDiDriver driver = new();
+                        await modules[0].GetTreeAsync();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

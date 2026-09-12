@@ -403,6 +403,48 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
+    /// Resolves a local that holds one of a driver's modules back to that driver's variable name, so
+    /// that a command called through the alias is judged against the driver it belongs to.
+    /// </summary>
+    /// <param name="receiver">The identifier the command was invoked on.</param>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <param name="semanticModel">The semantic model for the body.</param>
+    /// <returns>The driver variable's name, or <see langword="null"/> when the identifier is not an alias of a module of a local driver.</returns>
+    /// <remarks>
+    /// Only an alias whose value is fixed is resolved: a local declared as
+    /// <c>BrowsingContextModule context = driver.BrowsingContext;</c> and never assigned again. An
+    /// alias that is rebound may hold a different driver's module by the time it is used, and the
+    /// rules that call this report at Error severity, so an alias that is ever assigned is left
+    /// unresolved rather than guessed at. The driver name this returns is looked up in the caller's
+    /// own per-position state, so the alias decides <em>which</em> driver a call belongs to while that
+    /// driver's lifecycle state is still judged where the call appears.
+    /// </remarks>
+    internal static string? GetDriverOfModuleAlias(IdentifierNameSyntax receiver, SyntaxNode body, SemanticModel semanticModel)
+    {
+        // Only a local declared with an initializer can be an alias. A field, a parameter, or a
+        // foreach variable is declared by syntax this cannot read a module expression out of.
+        if (semanticModel.GetSymbolInfo(receiver).Symbol is not ILocalSymbol local
+            || local.DeclaringSyntaxReferences[0].GetSyntax() is not VariableDeclaratorSyntax { Initializer: not null } declarator)
+        {
+            return null;
+        }
+
+        // The initializer has to read a member of a driver-typed identifier: `driver.BrowsingContext`.
+        if (declarator.Initializer.Value is not MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax driverIdentifier }
+            || !IsCommandExecutorType(semanticModel.GetTypeInfo(driverIdentifier).Type))
+        {
+            return null;
+        }
+
+        string aliasName = receiver.Identifier.ValueText;
+        bool isRebound = GetBodyDescendantNodes(body)
+            .OfType<AssignmentExpressionSyntax>()
+            .Any(assignment => assignment.Left is IdentifierNameSyntax target && target.Identifier.ValueText == aliasName);
+
+        return isRebound ? null : driverIdentifier.Identifier.ValueText;
+    }
+
+    /// <summary>
     /// Collects the names of variables that the given body hands to other code, so that a rule which
     /// tracks a variable's state across a single member can stop tracking them.
     /// </summary>

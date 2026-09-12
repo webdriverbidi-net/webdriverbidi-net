@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -1855,5 +1856,77 @@ public class BiDiDriver008AnalyzerTests
             .WithArguments("EvaluateResultSuccess");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected0);
+    }
+
+    /// <summary>
+    /// Tests that the pattern spelling of the discriminator test suppresses the report, both as a
+    /// positive guard and as an early-exit guard.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_AfterDiscriminatorConstantPatternGuard_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void PositiveGuard(EvaluateResult result)
+                    {
+                        if (result.ResultType is EvaluateResultType.Success)
+                        {
+                            var first = (EvaluateResultSuccess)result;
+                        }
+                    }
+
+                    public void EarlyExitGuard(EvaluateResult result)
+                    {
+                        if (result.ResultType is not EvaluateResultType.Success) return;
+                        var second = (EvaluateResultSuccess)result;
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that an `is` test naming the other derived type does not suppress the report, since that
+    /// guard establishes the operand is not the type being cast to.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedByIsTestForOtherType_ReportsDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void OtherTypeGuard(EvaluateResult result)
+                    {
+                        if (result is EvaluateResultException)
+                        {
+                            var value = {|#0:(EvaluateResultSuccess)result|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected);
     }
 }

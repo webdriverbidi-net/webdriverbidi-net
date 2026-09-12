@@ -1300,4 +1300,121 @@ public class BiDiDriver012CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that no fix is offered when the scope's last statement leaves no reachable end point.
+    /// Appending StopAsync after an if/else that returns from both arms would be unreachable code that
+    /// never runs, while the analyzer's textual check would see it and stop reporting.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AwaitUsingDeclaration_WhenEveryPathAlreadyReturned_OffersNoFix()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task<bool> TestMethod(bool flag)
+                    {
+                        await using BiDiDriver {|#0:driver|} = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        if (flag)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Info)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an await using statement with an empty block is handled: the scope has no last
+    /// statement, so its end point is reachable and the fix appends StopAsync to the empty block.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AwaitUsingStatement_WithEmptyBlock_CodeFixAppendsStopAsync()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.TransportConfiguration.ProtocolErrorBehavior = WebDriverBiDi.Protocol.TransportErrorBehavior.Collect;
+                        await driver.StartAsync("ws://localhost:9222");
+                        await using ({|#0:driver|})
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        driver.TransportConfiguration.ProtocolErrorBehavior = WebDriverBiDi.Protocol.TransportErrorBehavior.Collect;
+                        await driver.StartAsync("ws://localhost:9222");
+                        await using (driver)
+                        {
+                            await driver.StopAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver");
+
+        RealAssemblyCodeFixTest<BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer, BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

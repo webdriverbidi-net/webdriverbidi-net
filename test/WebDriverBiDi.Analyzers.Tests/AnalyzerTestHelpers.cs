@@ -158,7 +158,7 @@ public static class AnalyzerTestHelpers
     /// a method passed as a method group); the testing framework rejects such "non-local"
     /// diagnostics before the provider is ever invoked.
     /// </remarks>
-    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source, bool referenceWebDriverBiDi = false, LanguageVersion languageVersion = LanguageVersion.Default)
+    internal static async Task<(IReadOnlyList<CodeAction> Actions, Document Document)> GetCodeActionsAsync<TAnalyzer, TCodeFix>(string source, bool referenceWebDriverBiDi = false, LanguageVersion languageVersion = LanguageVersion.Default, string? additionalSource = null)
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TCodeFix : CodeFixProvider, new()
     {
@@ -176,6 +176,12 @@ public static class AnalyzerTestHelpers
             .WithParseOptions(new CSharpParseOptions(languageVersion))
             .AddMetadataReferences(references);
         Document document = project.AddDocument("Test0.cs", source);
+        if (additionalSource is not null)
+        {
+            // A second document in the same compilation, for the case where the analyzer reports at
+            // the registration site because the handler's body lives in another syntax tree.
+            document = document.Project.AddDocument("Test1.cs", additionalSource).Project.GetDocument(document.Id)!;
+        }
 
         Compilation compilation = (await document.Project.GetCompilationAsync(CancellationToken.None))!;
         CompilationWithAnalyzers withAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new TAnalyzer()));

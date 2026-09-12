@@ -1177,4 +1177,48 @@ public class BiDiDriver029AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a command called through a local holding one of the driver's modules is reported
+    /// after the driver has been disposed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandThroughModuleAlias_AfterDisposal_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        BrowsingContextModule context = driver.BrowsingContext;
+                        await driver.StartAsync("ws://localhost:9222");
+                        await context.GetTreeAsync();
+                        await driver.DisposeAsync();
+                        await {|#0:context.GetTreeAsync()|};
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver029_DriverUseAfterDisposalAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        testState.ExpectedDiagnostics.Add(new DiagnosticResult(
+            BiDiDriver029_DriverUseAfterDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("GetTreeAsync", "driver"));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

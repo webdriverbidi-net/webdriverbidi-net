@@ -74,6 +74,34 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        // A handle assigned after its declaration leaks exactly as one assigned in it, so the
+        // declaration is tracked from the assignment too. The declaration statement is still what the
+        // fix and the report anchor to, so the assignment is matched back to the local that declared
+        // the name.
+        IEnumerable<AssignmentExpressionSyntax> assignments = AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node)
+            .OfType<AssignmentExpressionSyntax>()
+            .Where(assignment => assignment.IsKind(SyntaxKind.SimpleAssignmentExpression));
+
+        foreach (AssignmentExpressionSyntax assignment in assignments)
+        {
+            // An assignment that is itself the resource of a using statement -- `using (observer =
+            // event.AddObserver(...))` -- is disposed by that statement, and the bare declaration it
+            // writes to carries no using keyword for IsInUsingStatement to find.
+            if (assignment.Left is not IdentifierNameSyntax assignedName
+                || assignment.Parent is UsingStatementSyntax
+                || observerVariables.ContainsKey(assignedName.Identifier.ValueText)
+                || assignment.Right is not InvocationExpressionSyntax assignedInvocation
+                || AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, assignedInvocation) is not { } assignedHandle)
+            {
+                continue;
+            }
+
+            if (FindDeclarationOfLocal(localDeclarations, assignedName.Identifier.ValueText) is { } declarationOfAssigned)
+            {
+                observerVariables[assignedName.Identifier.ValueText] = (declarationOfAssigned, assignedHandle.HandleTypeName);
+            }
+        }
+
         if (observerVariables.Count == 0)
         {
             return;
@@ -103,6 +131,29 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             Diagnostic diagnostic = Diagnostic.Create(Rule, location, kvp.Value.HandleTypeName, variableName);
             context.ReportDiagnostic(diagnostic);
         }
+    }
+
+    /// <summary>
+    /// Finds the declaration that introduces a local name, so that a handle assigned after its
+    /// declaration is reported and fixed at the declaration.
+    /// </summary>
+    /// <param name="localDeclarations">The local declarations in the body.</param>
+    /// <param name="name">The name of the local.</param>
+    /// <returns>The declaration, or <see langword="null"/> when the name is not declared in this body.</returns>
+    private static LocalDeclarationStatementSyntax? FindDeclarationOfLocal(IEnumerable<LocalDeclarationStatementSyntax> localDeclarations, string name)
+    {
+        foreach (LocalDeclarationStatementSyntax localDeclaration in localDeclarations)
+        {
+            foreach (VariableDeclaratorSyntax variable in localDeclaration.Declaration.Variables)
+            {
+                if (variable.Identifier.ValueText == name)
+                {
+                    return localDeclaration;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static bool IsInUsingStatement(LocalDeclarationStatementSyntax declaration)

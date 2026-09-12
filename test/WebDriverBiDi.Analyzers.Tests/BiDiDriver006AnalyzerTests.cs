@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -1727,6 +1728,129 @@ public class BiDiDriver006AnalyzerTests
                     public void TestMethod(IObservable<int[]> batches, IObserver<int[]> handler)
                     {
                         var subscription = batches.Subscribe(handler);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handle assigned after its declaration is reported, at the declaration, exactly as
+    /// one assigned in the declaration is.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_AssignedAfterDeclaration_ReportsDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> {|#0:observer|};
+                        observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        testState.ExpectedDiagnostics.Add(new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer"));
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handle assigned after its declaration and then disposed is not reported, and that
+    /// an assignment of something that is not a subscription handle is ignored.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_AssignedAfterDeclarationAndDisposed_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer;
+                        observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer.Dispose();
+
+                        int count;
+                        count = driver.Log.OnEntryAdded.CurrentObserverCount;
+
+                        EventObserver<EntryAddedEventArgs> declared = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        declared = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        declared.Dispose();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an assignment to something other than a local declared in this body is ignored.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventObserver_AssignedToFieldAndToProperty_NoDiagnostic()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private EventObserver<EntryAddedEventArgs> field;
+
+                    private EventObserver<EntryAddedEventArgs> Held { get; set; }
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        // A local of its own, so the search for the assigned name has something to
+                        // walk past before concluding the name is not a local of this body.
+                        EventObserver<EntryAddedEventArgs> local = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        local.Dispose();
+                        field = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        this.Held = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
                     }
                 }
             }
