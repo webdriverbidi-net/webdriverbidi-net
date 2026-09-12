@@ -17,12 +17,11 @@ namespace WebDriverBiDi.Benchmarks;
 [MemoryDiagnoser]
 public class SerializationBenchmarks
 {
-    private string captureScreenshotCommandJson = string.Empty;
+    private CaptureScreenshotCommandParameters captureScreenshotCommand = null!;
     private string captureScreenshotResultJson = string.Empty;
     private string beforeRequestSentEventJson = string.Empty;
     private string numberRemoteValueJson = string.Empty;
     private string complexRemoteValueJson = string.Empty;
-    private JsonSerializerOptions jsonOptions = new();
 
     /// <summary>
     /// Sets up test data for benchmarks.
@@ -31,7 +30,7 @@ public class SerializationBenchmarks
     public void Setup()
     {
         // Command parameters example
-        CaptureScreenshotCommandParameters captureCommand = new("test-context-id")
+        this.captureScreenshotCommand = new("test-context-id")
         {
             Format = new ImageFormat()
             {
@@ -40,7 +39,6 @@ public class SerializationBenchmarks
             },
             Origin = ScreenshotOrigin.Document
         };
-        this.captureScreenshotCommandJson = JsonSerializer.Serialize(captureCommand);
 
         // Command result with large base64-encoded data (simulating a screenshot)
         this.captureScreenshotResultJson = """
@@ -111,11 +109,6 @@ public class SerializationBenchmarks
           ]
         }
         """;
-
-        this.jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
     }
 
     /// <summary>
@@ -124,16 +117,7 @@ public class SerializationBenchmarks
     [Benchmark]
     public string SerializeCommandParameters()
     {
-        CaptureScreenshotCommandParameters command = new("test-context-id")
-        {
-            Format = new ImageFormat()
-            {
-                Type = "image/png",
-                Quality = 1.0
-            },
-            Origin = ScreenshotOrigin.Document
-        };
-        return JsonSerializer.Serialize(command);
+        return JsonSerializer.Serialize(this.captureScreenshotCommand);
     }
 
     /// <summary>

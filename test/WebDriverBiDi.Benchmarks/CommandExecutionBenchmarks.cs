@@ -14,8 +14,11 @@ namespace WebDriverBiDi.Benchmarks;
 /// with an in-memory echo connection. This measures the full happy-path
 /// cost of sending a command and receiving its response: JSON serialization,
 /// pending-command bookkeeping, channel write/read, response deserialization,
-/// and TaskCompletionSource completion. The echo connection has zero
-/// network latency, so the number reflects library overhead only.
+/// and TaskCompletionSource completion. The echo connection has no network
+/// latency, but its send path parses each outgoing command to find its ID and
+/// builds the matching response, so that constant cost is included in the
+/// number. Compare the result against a baseline rather than reading it as
+/// library overhead alone.
 /// </summary>
 [MemoryDiagnoser]
 public class CommandExecutionBenchmarks

@@ -68,8 +68,9 @@ in-memory echo connection with zero simulated latency:
 - **ExecuteCommandRoundTrip**: Full command round trip — JSON serialization,
   pending-command bookkeeping, send, response synthesis, incoming-message
   queue write/read, response deserialization, and TaskCompletionSource
-  completion. The echo connection isolates library overhead from any real
-  I/O cost.
+  completion. The echo connection has no real I/O, but its send path parses
+  each command and builds the response, so that constant cost is included;
+  compare against a baseline rather than reading it as library overhead alone.
 - **ExecuteCommandRoundTripWithCancellationToken**: The same round trip made
   with a real `CancellationToken`, which is the shape BIDI004 and BIDI013 ask
   callers to write. Passing a token is what makes `Connection.SendDataAsync`
