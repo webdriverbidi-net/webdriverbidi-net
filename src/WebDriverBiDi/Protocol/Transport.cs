@@ -235,24 +235,30 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
-    /// unhandled exception in a handler for a defined protocol is encountered. Defaults to
-    /// ignoring exceptions, in which case, those exceptions will never be surfaced to the user.
+    /// unhandled exception in a handler for a defined protocol is encountered.
+    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
+    /// collected nor thrown from a later call; it is still reported through the corresponding
+    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
     /// </summary>
     public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.UnhandledErrors.EventHandlerExceptionBehavior; set => this.UnhandledErrors.EventHandlerExceptionBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when a
     /// protocol error is encountered, such as invalid JSON or JSON missing required properties.
-    /// Defaults to ignoring exceptions, in which case, those exceptions will never be surfaced
-    /// to the user.
+    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
+    /// collected nor thrown from a later call; it is still reported through the corresponding
+    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
     /// </summary>
     public TransportErrorBehavior ProtocolErrorBehavior { get => this.UnhandledErrors.ProtocolErrorBehavior; set => this.UnhandledErrors.ProtocolErrorBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
     /// unknown message is encountered, such as valid JSON that does not match any protocol data
-    /// structure. Defaults to ignoring exceptions, in which case, those exceptions will never
-    /// be surfaced to the user. A response for a command that has timed out or been canceled is
+    /// structure.
+    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
+    /// collected nor thrown from a later call; it is still reported through the corresponding
+    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
+    /// A response for a command that has timed out or been canceled is
     /// not an unknown message; it is recognized, logged, and discarded (see
     /// <see cref="CancelCommand(Command, CommandCancellationReason)"/>).
     /// </summary>
@@ -261,8 +267,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
     /// unexpected error is encountered, meaning an error response received with no corresponding
-    /// command. Defaults to ignoring exceptions, in which case, those exceptions will never be
-    /// surfaced to the user. An error response for a command that has timed out or been canceled is
+    /// command.
+    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
+    /// collected nor thrown from a later call; it is still reported through the corresponding
+    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
+    /// An error response for a command that has timed out or been canceled is
     /// not an unexpected error; it is recognized, logged, and discarded (see
     /// <see cref="CancelCommand(Command, CommandCancellationReason)"/>).
     /// </summary>
@@ -1086,7 +1095,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Serializes a command for transmission across the WebSocket connection.
     /// </summary>
     /// <param name="command">The command to serialize.</param>
-    /// <returns>The serialized JSON string representing the command.</returns>
+    /// <returns>The UTF-8 encoded JSON bytes representing the command.</returns>
     protected virtual byte[] SerializeCommand(Command command)
     {
         // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo

@@ -216,6 +216,26 @@ Pass your custom transport to `BiDiDriver` via the constructor overload that acc
 | `SendCommandAsync` | `public virtual`. Send a command and get back the `Command` that was queued, without waiting for its response. `BiDiDriver.ExecuteCommandAsync` is the layer above it that waits and deserializes |
 | `CancelCommand` | `public virtual`. Stop waiting for a command sent through `SendCommandAsync`, giving a `CommandCancellationReason`. Returns `false` when the command had already completed, in which case that outcome stands. The command is remembered so that a late response is recognized and discarded rather than reported as an unknown message (see [Error Handling — Transport Error Behavior Configuration](error-handling.md#transport-error-behavior-configuration)) |
 | `RegisterEventMessage<T>` | `public virtual`. Teach the transport to deserialize an event name into `T`. `BiDiDriver.RegisterEvent<T>` calls it for you, so a module needs it only when the transport is driven directly; the envelope type it builds is AOT-safe, needing only `T` to be resolvable |
+| `AddEventMessageType` | `protected virtual`. The lower half of `RegisterEventMessage<T>`: records the message type for an event name. Override to intercept or rewrite that registration |
+| `SerializeCommand` | `protected virtual`. Turn a `Command` into the UTF-8 bytes put on the wire. Override to log or post-process the exact payload |
+| `ProcessMessageAsync` | `protected virtual`. Handle one inbound message after it is read from the queue. Override to observe or delay individual messages |
+| `ReadIncomingMessagesAsync` | `protected virtual`. The loop that drains the incoming message queue. Override only to replace the dispatch strategy wholesale |
+| `CaptureUnhandledError` | `protected virtual`. The single point every non-command failure passes through before `TransportErrorBehavior` is applied. Override to observe failures without changing the behavior |
+| `AcquireConnectionLockAsync` / `ReleaseConnectionLock` | `protected virtual`. Take and release the exclusive access that connecting, disconnecting, sending and registering a resolver each hold. Override to instrument contention |
+| `PendingCommands` | `protected` settable. The pending-command collection. Assign one built with a different `MaxTrackedCanceledCommands` before the first connect to change how many canceled commands are remembered; a reconnect preserves that capacity |
+| `TimeProvider` | `protected` settable. The clock the transport's `ShutdownTimeout` waits and its commands' timeouts are measured on. Substitute one to drive those waits with virtual time in a test |
+
+### Filtering or rewriting inbound messages
+
+`CreateIncomingMessage` hands you the raw bytes, but the useful hook is the third constructor parameter
+of `IncomingMessage`: a transformer that receives the parsed `JsonDocument` and returns the document to
+use instead, or `null` to discard the message entirely. A discarded message is marked
+`IncomingMessageKind.Filtered` and is dropped silently — it is *not* reported as an unknown message.
+
+[!code-csharp[Filtering Transport](../../code/advanced/CustomModulesSamples.cs#FilteringTransport)]
+
+Returning a different document transfers ownership: the original is disposed for you, and the one you
+return is disposed with the message.
 
 Overriding `CreateCommand` is the supported way to add a vendor extension property to every command; adding
 it per call through `CommandParameters.AdditionalData` works too, but goes through reflection-based

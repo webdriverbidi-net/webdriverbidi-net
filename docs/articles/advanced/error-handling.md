@@ -72,7 +72,8 @@ WebDriverBiDi.NET allows you to configure how transport-layer errors are handled
 **Late responses are not errors.** When a command times out, is canceled by its `CancellationToken`, or is
 canceled directly through `Transport.CancelCommand`, the browser does not know that you stopped waiting and
 may still answer. The transport remembers recently canceled commands (up to
-1,024 of them per connection) and, when such a response or error response arrives, discards it after
+1,024 of them per connection by default, and a derived transport may size the collection it assigns to
+`Transport.PendingCommands` differently) and, when such a response or error response arrives, discards it after
 logging a `Debug`-level message through `OnLogMessage` and emitting the `CanceledCommandResponseDiscarded`
 EventSource event. It is **not** counted under `UnknownMessageBehavior` or `UnexpectedErrorBehavior`, so
 a slow navigation that times out and then completes does not terminate the session in `Terminate` mode.

@@ -360,6 +360,27 @@ the transport-specific parts, as `protected` overrides:
 | `ReceiveDataAsync` | The receive loop, started for you once the connection is established. |
 | `DisposeAsyncCore` | Releases the resources the custom connection owns. |
 
+A custom connection also inherits members it does not have to supply, but will generally use:
+
+| Member | Purpose |
+| --- | --- |
+| `NotifyDataReceivedObserverAsync` | `protected`. Call from the receive loop to deliver a completed message, transferring ownership of its pooled memory. Does nothing when the accumulator is empty, so it is safe to call at every point a message may have completed. |
+| `ConnectionCancellationToken` | `protected`, read-only. The token cancelled when the connection stops. Use it rather than the cancellation source, which is disposed while the receive loop may still be running. |
+| `DataReceiveTask` | `protected`, read-only. The task the receive loop runs on, for a shutdown that needs to observe it. |
+| `IsLogLevelEnabled` | `public`. Test before composing any log message that is not free to build; the `SEND` and `RECV` traffic messages decode the whole payload, so they are guarded by it. |
+| `TimeProvider` | `protected`, settable. The clock `StartupTimeout`, `ShutdownTimeout` and `DataTimeout` are measured on. Substitute one to drive them with virtual time in a test. |
+
+The public `MessageBuffer` class is the pooled accumulator for a message that arrives in more than one
+read. `Append` adds a piece, `TakeOwnership` hands the completed block to the consumer and leaves the
+buffer ready for the next message, and `Discard` returns a partial message to the pool. Both shipped
+connections own one for the life of their receive loop.
+
+`WebSocketConnection` and `PipeConnection` each expose a further seam of their own for the operation
+they perform on the wire — `ConnectWebSocketAsync`, `WriteWebSocketDataAsync`, `ReceiveWebSocketDataAsync`,
+`CloseClientWebSocketAsync` and `DelayBeforeRetryAsync` on the first; `WritePipeDataAsync`,
+`WriteToPipeAsync` and `ReadPipeDataAsync` on the second — so a derived connection can substitute the
+single call rather than reimplement the loop around it.
+
 `ResolveConnectionString` is the only place the connection string is interpreted — the base class
 carries the value but never reads it, because what counts as a usable connection string is exactly
 what a transport knows and nothing above it does. It rejects a value it could never connect to by
