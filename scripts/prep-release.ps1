@@ -391,8 +391,19 @@ function Update-DocumentationVersionPin {
     }
 
     $updated = $lines | ForEach-Object { $_ -replace $pattern, "`${1}$version`${3}" }
-    Write-Host "  v documentation version pin: $current -> $version"
-    Set-PreparedContent $gettingStarted (ConvertTo-FileText $updated) | Out-Null
+
+    # Report the pin only once it is written. The version is known to differ from $current by here, so
+    # Set-PreparedContent reporting no change means the replace matched nothing -- the page's
+    # PackageReference has changed shape -- which must fail rather than print a checkmark for an edit
+    # that never happened.
+    if (Set-PreparedContent $gettingStarted (ConvertTo-FileText $updated)) {
+        Write-Host "  v documentation version pin: $current -> $version"
+    }
+    else {
+        Write-Host "ERROR: the version pin in $gettingStartedName did not change." -ForegroundColor Red
+        Write-Host "       Its PackageReference no longer matches this script's pattern; update the script." -ForegroundColor Red
+        exit 1
+    }
 }
 
 Update-AnalyzerReleaseTracking

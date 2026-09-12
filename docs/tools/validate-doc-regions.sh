@@ -105,9 +105,12 @@ REFERENCES_FILE=$(mktemp)
 MARKDOWN_FILES=$(mktemp)
 {
   find "$ARTICLES_DIR" -name "*.md" -type f
-  find "$DOCS_DIR/api" -name "*.md" -type f 2>/dev/null
-  [ -f "$DOCS_DIR/index.md" ] && printf '%s\n' "$DOCS_DIR/index.md"
-  [ -f "$DOCS_DIR/README.md" ] && printf '%s\n' "$DOCS_DIR/README.md"
+  find "$DOCS_DIR/api" -name "*.md" -type f 2>/dev/null || true
+  # Written as `if` rather than `[ -f x ] && printf`: the group's status is its last command's, so a
+  # short-circuited test there would fail the group, and pipefail would abort the script with no
+  # diagnostic. An `if` whose condition is false yields 0, so a missing optional page is not fatal.
+  if [ -f "$DOCS_DIR/index.md" ]; then printf '%s\n' "$DOCS_DIR/index.md"; fi
+  if [ -f "$DOCS_DIR/README.md" ]; then printf '%s\n' "$DOCS_DIR/README.md"; fi
 } | sort -u > "$MARKDOWN_FILES"
 
 while IFS= read -r mdfile; do

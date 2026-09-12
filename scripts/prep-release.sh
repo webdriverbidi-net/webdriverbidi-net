@@ -290,8 +290,17 @@ prep_documentation_version_pin() {
 
   pinned_new=$(mktemp)
   sed 's|\(<PackageReference Include="WebDriverBiDi" Version="\)[^"]*\(" */>\)|\1'"$VERSION"'\2|g' "$GETTING_STARTED" > "$pinned_new"
-  echo "  ✔ documentation version pin: $current → $VERSION"
-  apply_change "$GETTING_STARTED" "$pinned_new" || true
+
+  # Report the pin only once it is written. The version is known to differ from $current by here, so
+  # apply_change reporting no change means the sed matched nothing -- the page's PackageReference has
+  # changed shape -- which must fail rather than print a checkmark for an edit that never happened.
+  if apply_change "$GETTING_STARTED" "$pinned_new"; then
+    echo "  ✔ documentation version pin: $current → $VERSION"
+  else
+    echo "❌ ERROR: the version pin in $GETTING_STARTED did not change." >&2
+    echo "         Its PackageReference no longer matches this script's pattern; update the script." >&2
+    exit 1
+  fi
 }
 
 prep_analyzer_release_tracking
