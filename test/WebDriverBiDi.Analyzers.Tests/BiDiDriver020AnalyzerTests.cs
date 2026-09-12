@@ -963,4 +963,122 @@ public class BiDiDriver020AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that an observer obtained from something the walk cannot see into is not tracked, so a
+    /// capture session the helper already opened is not reported as missing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WaitForCapturedTasks_OnObserverFromHelper_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer = CreateCapturingObserver(driver);
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                    }
+
+                    private EventObserver<EntryAddedEventArgs> CreateCapturingObserver(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer.StartCapturingTasks();
+                        return observer;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer declared without an initializer at all is likewise not tracked.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WaitForCapturedTasks_OnObserverDeclaredWithoutInitializer_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver, bool flag)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer;
+                        observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer.StartCapturingTasks();
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that declarations this rule has no business tracking are left alone: one whose
+    /// initializer is not a call at all, and one initialized from a subscription call that is not
+    /// AddObserver and so yields no observer.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WaitForCapturedTasks_WithAliasDeclaration_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver)
+                    {
+                        EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        observer.StartCapturingTasks();
+                        EventObserver<EntryAddedEventArgs> alias = observer;
+                        EventDataCollector<EntryAddedEventArgs> collector = driver.Log.OnEntryAdded.AddDataCollector();
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                        collector.Dispose();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

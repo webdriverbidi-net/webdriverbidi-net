@@ -94,8 +94,15 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            ILocalSymbol localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variable)!;
-            if (AnalyzerSymbolHelpers.IsLibraryTypeNamed(localSymbol.Type, "EventObserver"))
+            // Track only an observer this walk can reason about from its first statement: one the
+            // declaration itself obtains from AddObserver. An observer handed over by something the
+            // walk cannot see into -- a factory or helper that may already have opened a capture
+            // session -- would otherwise start out recorded as not capturing, and its first
+            // WaitForCapturedTasksAsync would be reported although the session is open. The handle
+            // this returns is already known to be an EventObserver, so the local's own type needs no
+            // separate test.
+            if (variable.Initializer?.Value is InvocationExpressionSyntax initializer
+                && AnalyzerSymbolHelpers.GetEventSubscriptionHandle(semanticModel, initializer) is { MethodName: "AddObserver" })
             {
                 capturingState[variable.Identifier.ValueText] = false;
             }

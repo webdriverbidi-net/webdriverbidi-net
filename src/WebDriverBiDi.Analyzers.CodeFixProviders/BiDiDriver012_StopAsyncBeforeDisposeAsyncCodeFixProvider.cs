@@ -47,7 +47,8 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
             ExpressionSyntax receiver = reportedNode is VariableDeclaratorSyntax declarator
                 ? SyntaxFactory.IdentifierName(declarator.Identifier.ValueText)
                 : (ExpressionSyntax)reportedNode;
-            if (!CanInsertStopAsyncIntoScope(reportedNode, receiver))
+            SemanticModel scopeSemanticModel = (await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false))!;
+            if (!CanInsertStopAsyncIntoScope(scopeSemanticModel, reportedNode, receiver))
             {
                 return;
             }
@@ -217,9 +218,20 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
     /// both runs and preserves the result, so no fix is offered and the diagnostic is left for the
     /// author to resolve.
     /// </remarks>
-    private static bool CanInsertStopAsyncIntoScope(SyntaxNode reportedNode, ExpressionSyntax receiver)
+    private static bool CanInsertStopAsyncIntoScope(SemanticModel semanticModel, SyntaxNode reportedNode, ExpressionSyntax receiver)
     {
         StatementSyntax? exitingStatement = FindClosingScopeExit(reportedNode);
+
+        // With no closing return or throw the fix appends StopAsync as the scope's last statement,
+        // which only runs if control can reach the end of the scope. Where every path has already
+        // returned or thrown -- an if/else that returns from both arms, say -- the appended statement
+        // is unreachable (CS0162) and never runs, while the analyzer's textual ContainsStopAsync check
+        // would see it and stop reporting. That trades a diagnostic for nothing, so offer no fix.
+        if (exitingStatement is null && !ScopeEndPointIsReachable(semanticModel, reportedNode))
+        {
+            return false;
+        }
+
         ExpressionSyntax? exitExpression = exitingStatement switch
         {
             ReturnStatementSyntax returnStatement => returnStatement.Expression,
@@ -232,12 +244,49 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
     }
 
     /// <summary>
+    /// Determines whether control can reach the end of the scope the fix would append to.
+    /// </summary>
+    /// <param name="semanticModel">The semantic model for the document.</param>
+    /// <param name="reportedNode">The declarator or receiver expression the diagnostic is on.</param>
+    /// <returns><see langword="true"/> if the end of the scope is reachable; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The scope's last statement is analyzed rather than the scope itself, because the top-level
+    /// program's statements are members of the compilation unit rather than of a block, and a single
+    /// statement answers the same question: if control cannot flow past it, nothing appended after it
+    /// runs.
+    /// </remarks>
+    private static bool ScopeEndPointIsReachable(SemanticModel semanticModel, SyntaxNode reportedNode)
+    {
+        StatementSyntax? lastStatement = FindLastScopeStatement(reportedNode);
+        if (lastStatement is null)
+        {
+            return true;
+        }
+
+        // AnalyzeControlFlow returns null only for a node outside the model's own tree; this statement
+        // came from the document the model was taken from, so the null-forgiving operator is appropriate.
+        ControlFlowAnalysis analysis = semanticModel.AnalyzeControlFlow(lastStatement)!;
+        return analysis.EndPointIsReachable;
+    }
+
+    /// <summary>
     /// Finds the return or throw that ends the scope the fix would insert into, if the scope ends with
     /// one.
     /// </summary>
     /// <param name="reportedNode">The declarator or receiver expression the diagnostic is on.</param>
     /// <returns>The closing statement, or <see langword="null"/> if the scope does not end with one.</returns>
     private static StatementSyntax? FindClosingScopeExit(SyntaxNode reportedNode)
+    {
+        StatementSyntax? lastStatement = FindLastScopeStatement(reportedNode);
+        return lastStatement is not null && ExitsScope(lastStatement) ? lastStatement : null;
+    }
+
+    /// <summary>
+    /// Finds the last statement of the scope the fix would insert into.
+    /// </summary>
+    /// <param name="reportedNode">The declarator or receiver expression the diagnostic is on.</param>
+    /// <returns>The last statement, or <see langword="null"/> if the scope has none.</returns>
+    private static StatementSyntax? FindLastScopeStatement(SyntaxNode reportedNode)
     {
         UsingStatementSyntax? usingStatement = reportedNode switch
         {
@@ -263,7 +312,7 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncCodeFixProvider : CodeFixP
                 : ((CompilationUnitSyntax)declaration.Parent!.Parent!).Members.OfType<GlobalStatementSyntax>().Last().Statement;
         }
 
-        return lastStatement is not null && ExitsScope(lastStatement) ? lastStatement : null;
+        return lastStatement;
     }
 
     private static StatementSyntax CreateStopAsyncStatement(ExpressionSyntax receiver)

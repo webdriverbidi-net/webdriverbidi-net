@@ -137,6 +137,15 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             // variable that may itself be started.
             ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
 
+            // The receiver of an extension method: `await driver.StartWithRetryAsync(url);`. The
+            // driver is the method's first argument, the walk cannot see whether the method starts
+            // it, and the argument case above already treats that as an escape; the only difference
+            // here is the spelling. A call on the driver's own members is not affected, because it
+            // binds to an instance method rather than an extension method.
+            MemberAccessExpressionSyntax memberAccess when memberAccess.Expression == mention
+                && memberAccess.Parent is InvocationExpressionSyntax extensionInvocation
+                && semanticModel.GetSymbolInfo(extensionInvocation).Symbol is IMethodSymbol { IsExtensionMethod: true } => true,
+
             _ => false,
         };
     }
@@ -516,7 +525,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         string methodName = methodSymbol.Name;
 
         // Get the driver variable name if this is a method call on a driver or module
-        string? driverVariableName = GetDriverVariableNameFromInvocation(invocation, semanticModel);
+        string? driverVariableName = GetDriverVariableNameFromInvocation(invocation, context.Node, semanticModel);
         if (driverVariableName == null || !driverStartedStatus.ContainsKey(driverVariableName))
         {
             return;
@@ -545,7 +554,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         }
     }
 
-    private static string? GetDriverVariableNameFromInvocation(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+    private static string? GetDriverVariableNameFromInvocation(InvocationExpressionSyntax invocation, SyntaxNode body, SemanticModel semanticModel)
     {
         if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
         {
@@ -557,6 +566,11 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 {
                     return identifier.Identifier.ValueText;
                 }
+
+                // Call on a module held in a local: context.GetTreeAsync(), where the local was bound
+                // to driver.BrowsingContext. The nested-member-access form below cannot match an
+                // identifier receiver, so this is the whole of that case.
+                return AnalyzerSymbolHelpers.GetDriverOfModuleAlias(identifier, body, semanticModel);
             }
 
             // Call on module: driver.BrowsingContext.NavigateAsync(...)

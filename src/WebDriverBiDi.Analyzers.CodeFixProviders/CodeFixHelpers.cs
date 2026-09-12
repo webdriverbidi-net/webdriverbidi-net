@@ -64,9 +64,12 @@ internal static class CodeFixHelpers
     /// <c>async</c> lambda that first awaits <c>Task.Yield()</c>, so everything after it runs on
     /// the thread pool, and the option is added if it is missing.</description></item>
     /// </list>
-    /// Diagnostics reported inside a method passed as a method group are not enclosed by the
-    /// <c>AddObserver</c> invocation, so callers never reach this method for them and no fix is
-    /// offered: the method declaration itself would have to change.
+    /// No fix is offered for a handler passed as a method group, because the method declaration
+    /// itself would have to change. A method group declared in the same file is excluded already,
+    /// because the diagnostic sits inside the method body and no <c>AddObserver</c> invocation
+    /// encloses it; one declared in another file is not, because the analyzer reports such a
+    /// diagnostic at the <c>AddObserver</c> argument so that it appears where the handler was
+    /// registered. Both are rejected here by testing the argument.
     /// </remarks>
     internal static void RegisterAddObserverHandlerFix(
         CodeFixContext context,
@@ -74,7 +77,11 @@ internal static class CodeFixHelpers
         SemanticModel semanticModel,
         InvocationExpressionSyntax invocation)
     {
-        AnonymousFunctionExpressionSyntax lambda = (AnonymousFunctionExpressionSyntax)invocation.ArgumentList.Arguments[0].Expression;
+        if (invocation.ArgumentList.Arguments[0].Expression is not AnonymousFunctionExpressionSyntax lambda)
+        {
+            return;
+        }
+
         IMethodSymbol addObserverMethod = (IMethodSymbol)semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol!;
         bool boundToAction = addObserverMethod.Parameters[0].Type.Name == "Action";
         bool convertToAsync = !boundToAction && !lambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword);

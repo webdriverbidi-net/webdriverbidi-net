@@ -292,8 +292,14 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
                     => this.IsEstablishedBy(binary.Left) || this.IsEstablishedBy(binary.Right),
                 BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.EqualsExpression)
                     => this.IsDiscriminatorComparison(binary.Left, binary.Right) || this.IsDiscriminatorComparison(binary.Right, binary.Left),
+                // Two readings of one syntax: the parser gives `x is Name` and `x is Qualified.Name`
+                // this shape whichever the name turns out to be, so the type test
+                // (`result is EvaluateResultSuccess`) and the discriminator test
+                // (`result.ResultType is EvaluateResultType.Success`, the pattern spelling of the
+                // equality test above) both arrive here.
                 BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.IsExpression)
-                    => this.IsOperand(binary.Left) && this.IsTargetType(binary.Right),
+                    => (this.IsOperand(binary.Left) && this.IsTargetType(binary.Right))
+                        || this.IsDiscriminatorComparison(binary.Left, binary.Right),
                 IsPatternExpressionSyntax isPattern
                     => this.IsOperand(isPattern.Expression) && this.IsTargetTypePattern(isPattern.Pattern),
                 _ => false,
@@ -318,8 +324,14 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
                     => this.IsDiscriminatorComparison(binary.Left, binary.Right) || this.IsDiscriminatorComparison(binary.Right, binary.Left),
                 PrefixUnaryExpressionSyntax logicalNot when logicalNot.IsKind(SyntaxKind.LogicalNotExpression)
                     => this.IsEstablishedBy(logicalNot.Operand),
+
+                // As in IsEstablishedBy, the negated pattern reads either as a type test
+                // (`result is not EvaluateResultSuccess`) or as a discriminator test
+                // (`result.ResultType is not EvaluateResultType.Success`); both are early-exit guards.
                 IsPatternExpressionSyntax { Pattern: UnaryPatternSyntax notPattern } isPattern when notPattern.IsKind(SyntaxKind.NotPattern)
-                    => this.IsOperand(isPattern.Expression) && this.IsTargetTypePattern(notPattern.Pattern),
+                    => (this.IsOperand(isPattern.Expression) && this.IsTargetTypePattern(notPattern.Pattern))
+                        || (notPattern.Pattern is ConstantPatternSyntax constantPattern
+                            && this.IsDiscriminatorComparison(isPattern.Expression, constantPattern.Expression)),
                 _ => false,
             };
         }

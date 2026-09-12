@@ -474,7 +474,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        string? driverVariableName = GetDriverVariableName(invocation, semanticModel);
+        string? driverVariableName = GetDriverVariableName(invocation, context.Node, semanticModel);
         if (driverVariableName is null || !driverDisposedStatus.ContainsKey(driverVariableName))
         {
             return;
@@ -492,7 +492,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static string? GetDriverVariableName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+    private static string? GetDriverVariableName(InvocationExpressionSyntax invocation, SyntaxNode body, SemanticModel semanticModel)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
@@ -514,9 +514,11 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
+        // A receiver that is not the driver itself may be a local holding one of its modules:
+        // context.GetTreeAsync(), where the local was bound to driver.BrowsingContext.
         return AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(receiver).Type)
             ? receiver.Identifier.ValueText
-            : null;
+            : AnalyzerSymbolHelpers.GetDriverOfModuleAlias(receiver, body, semanticModel);
     }
 
     /// <summary>

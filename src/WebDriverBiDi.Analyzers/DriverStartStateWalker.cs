@@ -38,6 +38,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 /// </remarks>
 internal sealed class DriverStartStateWalker
 {
+    private const string StartedPropertyName = "IsStarted";
+
     private readonly SyntaxNodeAnalysisContext context;
     private readonly Func<ITypeSymbol?, bool> isDriverType;
     private readonly DriverInvocationHandler handler;
@@ -214,6 +216,50 @@ internal sealed class DriverStartStateWalker
         }
     }
 
+    /// <summary>
+    /// Determines whether a condition tests the started state of a tracked driver, so that each arm of
+    /// the branch can be walked with the state the condition establishes for it.
+    /// </summary>
+    /// <param name="condition">The condition of the branch.</param>
+    /// <param name="driverStartedStatus">The drivers being tracked at the branch point.</param>
+    /// <param name="driverVariableName">When this method returns <see langword="true"/>, the driver the condition tests.</param>
+    /// <param name="startedWhenConditionHolds">When this method returns <see langword="true"/>, the driver's state where the condition holds.</param>
+    /// <returns><see langword="true"/> if the condition tests a tracked driver's started state; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Only <c>driver.IsStarted</c> and <c>!driver.IsStarted</c> are recognized. A compound condition
+    /// establishes nothing on its own -- the other operand may decide the branch -- and leaving it
+    /// unrecognized keeps the walk conservative, which for these Error-severity rules means carrying
+    /// the pre-branch state in rather than inventing one.
+    /// </remarks>
+    private static bool TryGetStartedStateTest(ExpressionSyntax condition, Dictionary<string, bool> driverStartedStatus, out string driverVariableName, out bool startedWhenConditionHolds)
+    {
+        driverVariableName = string.Empty;
+        startedWhenConditionHolds = true;
+
+        ExpressionSyntax expression = condition;
+        // The operator is not tested: the operand below must be the bool-typed IsStarted, and logical
+        // negation is the only prefix unary operator defined over a bool, so any prefix unary that
+        // reaches the test below is one. A prefix unary over anything else fails that test anyway.
+        if (expression is PrefixUnaryExpressionSyntax logicalNot)
+        {
+            startedWhenConditionHolds = false;
+            expression = logicalNot.Operand;
+        }
+
+        // The receiver has to be a bare identifier the walk is tracking. A driver reached any other
+        // way (a field, a property, an element of a collection) is not tracked in the first place, so
+        // there is no state to seed for it.
+        if (expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: StartedPropertyName } memberAccess
+            && memberAccess.Expression is IdentifierNameSyntax driverIdentifier
+            && driverStartedStatus.ContainsKey(driverIdentifier.Identifier.ValueText))
+        {
+            driverVariableName = driverIdentifier.Identifier.ValueText;
+            return true;
+        }
+
+        return false;
+    }
+
     private void ProcessIfStatement(IfStatementSyntax ifStatement, Dictionary<string, bool> driverStartedStatus)
     {
         // Invocations in the condition execute unconditionally, before either branch.
@@ -223,9 +269,21 @@ internal sealed class DriverStartStateWalker
         // state at the branch point. An else-if chain arrives here as an else clause whose statement
         // is itself an if statement, which ProcessNode routes back into this method.
         Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
+        Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
+
+        // A condition that tests IsStarted settles the driver's state inside each arm, so seed the
+        // forks from it. Carrying the state from before the test into both arms instead would report
+        // the recovery the driver documents -- after a remote disconnect IsStarted is false and
+        // StartAsync proceeds -- as a duplicate start, and would likewise reject a registration made
+        // in the arm where the driver is known to be stopped.
+        if (TryGetStartedStateTest(ifStatement.Condition, driverStartedStatus, out string guardedDriverName, out bool startedWhenConditionHolds))
+        {
+            thenBranchStatus[guardedDriverName] = startedWhenConditionHolds;
+            elseBranchStatus[guardedDriverName] = !startedWhenConditionHolds;
+        }
+
         this.ProcessNode(ifStatement.Statement, thenBranchStatus);
 
-        Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
         if (ifStatement.Else is not null)
         {
             this.ProcessNode(ifStatement.Else.Statement, elseBranchStatus);

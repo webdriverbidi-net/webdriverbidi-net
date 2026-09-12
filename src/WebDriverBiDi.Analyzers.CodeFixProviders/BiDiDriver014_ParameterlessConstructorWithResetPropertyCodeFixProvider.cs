@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Simplification;
 
 /// <summary>
 /// Code fix provider for BIDI014 that replaces parameterless constructor with Reset property.
@@ -49,12 +50,13 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         string resetPropertyName = diagnostic.Properties["ResetPropertyName"]!;
         string declaringTypeName = diagnostic.Properties["DeclaringTypeName"]!;
         string resetPropertyTypeName = diagnostic.Properties["ResetPropertyTypeName"]!;
+        string declaringTypeFullName = diagnostic.Properties[BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DeclaringTypeFullNamePropertyName]!;
 
         context.RegisterCodeFix(
             CodeAction.Create(
                 title: $"Use '{declaringTypeName}.{resetPropertyName}' instead",
                 createChangedDocument: c => ReplaceWithResetPropertyAsync(
-                    context.Document, objectCreation, typeName, declaringTypeName, resetPropertyName, resetPropertyTypeName, c),
+                    context.Document, objectCreation, typeName, declaringTypeName, declaringTypeFullName, resetPropertyName, resetPropertyTypeName, c),
                 equivalenceKey: "UseResetProperty"),
             diagnostic);
     }
@@ -64,22 +66,24 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyCodeFixProvi
         BaseObjectCreationExpressionSyntax objectCreation,
         string typeName,
         string declaringTypeName,
+        string declaringTypeFullName,
         string resetPropertyName,
         string resetPropertyTypeName,
         CancellationToken cancellationToken)
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
-        // Create the replacement: DeclaringTypeName.ResetPropertyName. When the reset property is
-        // declared on the constructed type itself, reuse that type's original syntax (for example a
-        // fully-qualified or aliased name) as written at the construction site, so the replacement
-        // resolves in the same way the `new` expression did. When the reset property is inherited from
-        // a base type, fall back to the base type's simple name (which is in scope whenever the derived
-        // type is, as they share a namespace). The target-typed form `new()` writes no type at all,
-        // so there the analyzer-supplied simple name is the only name available.
-        ExpressionSyntax resetPropertyReceiver = typeName == declaringTypeName
-            ? SyntaxFactory.ParseExpression(objectCreation is ObjectCreationExpressionSyntax explicitCreation ? explicitCreation.Type.ToString() : typeName)
-            : SyntaxFactory.IdentifierName(declaringTypeName);
+        // Create the replacement: DeclaringTypeName.ResetPropertyName. An explicit `new T()` whose
+        // type also declares the reset property already names something that binds here, so reuse that
+        // syntax as written (a qualified or aliased name stays as it was). Otherwise the receiver has
+        // to be produced rather than copied -- a target-typed `new()` writes no type at all, and an
+        // inherited reset property is declared on a base type this file may never name -- so it is
+        // written fully qualified and annotated for the simplifier, which shortens it to whatever
+        // binds at this position. A bare simple name would not compile where the namespace is not
+        // imported.
+        ExpressionSyntax resetPropertyReceiver = typeName == declaringTypeName && objectCreation is ObjectCreationExpressionSyntax explicitCreation
+            ? SyntaxFactory.ParseExpression(explicitCreation.Type.ToString())
+            : SyntaxFactory.ParseExpression(declaringTypeFullName).WithAdditionalAnnotations(Simplifier.Annotation);
 
         MemberAccessExpressionSyntax resetPropertyAccess = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,

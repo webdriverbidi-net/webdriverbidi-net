@@ -1120,4 +1120,137 @@ public class BiDiDriver024AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task SecondStartAsync_GuardedByNegatedIsStarted_NoDiagnostic()
+    {
+        // The documented recovery: after a remote disconnect IsStarted is false and StartAsync
+        // proceeds. The condition settles the state inside the arm, so this is not a second start.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        if (!driver.IsStarted)
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task SecondStartAsync_InElseOfIsStartedGuard_NoDiagnostic()
+    {
+        // The unnegated spelling: the driver is started where the condition holds, so the else arm
+        // is where it is not, and the start there is the first one on that path.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        if (driver.IsStarted)
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                        else
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task SecondStartAsync_GuardedByUnrelatedConditions_StillReportsError()
+    {
+        // None of these conditions settles the driver's started state: a condition that is not a
+        // member access, one whose member is not IsStarted, one whose receiver is not a bare
+        // identifier, and one naming a driver this walk is not tracking. Each must leave the state
+        // from before the branch in place, so the start inside is still a duplicate.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    private BiDiDriver field = new();
+
+                    public async Task TestMethod(bool flag, BiDiDriver untracked)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        if (flag)
+                        {
+                            await {|#0:driver.StartAsync("ws://localhost:9222")|};
+                        }
+
+                        if (driver.DefaultCommandTimeout.TotalSeconds > 1)
+                        {
+                            await {|#1:driver.StartAsync("ws://localhost:9222")|};
+                        }
+
+                        if (this.field.IsStarted)
+                        {
+                            await {|#2:driver.StartAsync("ws://localhost:9222")|};
+                        }
+
+                        if (untracked.IsStarted)
+                        {
+                            await {|#3:driver.StartAsync("ws://localhost:9222")|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        for (int index = 0; index < 4; index++)
+        {
+            testState.ExpectedDiagnostics.Add(new DiagnosticResult(
+                BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId,
+                DiagnosticSeverity.Error)
+                .WithLocation(index));
+        }
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }
