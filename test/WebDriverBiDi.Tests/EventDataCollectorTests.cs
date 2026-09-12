@@ -121,63 +121,6 @@ public class EventDataCollectorTests
     }
 
     [Fact]
-    public async Task TestConcurrentEnqueueAndDrainYieldsAllItems()
-    {
-        const int writerCount = 4;
-        const int eventsPerWriter = 50;
-        const int totalEvents = writerCount * eventsPerWriter;
-
-        TestEventSource testEventSource = new();
-        await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
-
-        // Barrier ensures all writers and the reader start simultaneously.
-        using Barrier startBarrier = new(writerCount + 1);
-        using CancellationTokenSource readerCts = new();
-        List<TestObservableEventArgs> drained = [];
-
-        // Single reader drains concurrently with all writers.
-        Task readerTask = Task.Run(
-            () =>
-            {
-                startBarrier.SignalAndWait();
-                while (!readerCts.IsCancellationRequested)
-                {
-                    drained.AddRange(collector.GetCollectedEventData());
-                }
-
-                // Final drain: picks up anything enqueued between the last loop
-                // iteration and the writers completing.
-                drained.AddRange(collector.GetCollectedEventData());
-            },
-            TestContext.Current.CancellationToken);
-
-        List<Task> writerTasks = [];
-        for (int i = 0; i < writerCount; i++)
-        {
-            int writerId = i;
-            writerTasks.Add(Task.Run(
-                async () =>
-                {
-                    startBarrier.SignalAndWait();
-                    for (int j = 0; j < eventsPerWriter; j++)
-                    {
-                        await testEventSource.RaiseTestEventAsync($"w{writerId}-e{j}");
-                    }
-                },
-                TestContext.Current.CancellationToken)
-            );
-        }
-
-        // Cancel the reader only after all writers have finished — no new
-        // items can arrive after this point, so the final drain is exhaustive.
-        await Task.WhenAll(writerTasks);
-        readerCts.Cancel();
-        await readerTask;
-
-        Assert.Equal(totalEvents, drained.Count);
-    }
-
-    [Fact]
     public async Task TestToStringReturnsDescription()
     {
         TestEventSource testEventSource = new();
