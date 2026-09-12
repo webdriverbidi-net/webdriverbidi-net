@@ -3106,8 +3106,19 @@ public class TransportTests
     [Fact]
     public async Task TestCancelCommandPreventsLateResponseFromSettingResult()
     {
+        TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
+
+        // This test asserts on Debug or Trace messages, which the default minimum level excludes.
+        transport.LogLevel = WebDriverBiDiLogLevel.Trace;
+        transport.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.Contains("Discarding late response"))
+            {
+                discardedTaskCompletionSource.TrySetResult();
+            }
+        });
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), cancellationToken: TestContext.Current.CancellationToken);
@@ -3115,6 +3126,7 @@ public class TransportTests
 
         string responseJson = $$$"""{"type":"success","id":{{{command.CommandId}}},"result":{"parameterName":"parameterValue"}}""";
         await connection.RaiseDataReceivedEventAsync(responseJson);
+        await discardedTaskCompletionSource.Task.WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
 
         bool hasResult = command.TryGetResult(out CommandResult? commandResult);
 
