@@ -1735,20 +1735,30 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
     private async Task OnConnectionRemotelyDisconnectedAsync(ConnectionDisconnectedEventArgs e)
     {
-        WebDriverBiDiConnectionException connectionException = new("Remote end closed the connection");
         string logMessage = "Remote end closed connection; pending commands failed";
-        await this.HandleConnectionDisconnectionAsync(connectionException, logMessage, WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+        await this.HandleConnectionDisconnectionAsync(static () => new WebDriverBiDiConnectionException("Remote end closed the connection"), logMessage, WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
     }
 
     private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
     {
-        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.Id, e.Exception.Message);
-        WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
-        string logMessage = $"Connection error; pending commands failed: {e.Exception.Message}";
-        await this.HandleConnectionDisconnectionAsync(connectionException, logMessage, WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+        Exception connectionError = e.Exception;
+        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.Id, connectionError.Message);
+        string logMessage = $"Connection error; pending commands failed: {connectionError.Message}";
+        await this.HandleConnectionDisconnectionAsync(() => new WebDriverBiDiConnectionException($"Unexpected connection error: {connectionError.Message}", connectionError), logMessage, WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
     }
 
-    private async Task HandleConnectionDisconnectionAsync(WebDriverBiDiConnectionException connectionException, string logMessage, WebDriverBiDiLogLevel logLevel)
+    /// <summary>
+    /// Tears down the session after the connection is lost, failing every pending command.
+    /// </summary>
+    /// <param name="connectionExceptionFactory">
+    /// Creates the exception describing the loss. It is invoked once per pending command, because an
+    /// exception completing more than one command is rethrown on each awaiting caller and every such
+    /// rethrow appends to the one object's stack trace.
+    /// </param>
+    /// <param name="logMessage">The message to log for the loss.</param>
+    /// <param name="logLevel">The level to log it at.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task HandleConnectionDisconnectionAsync(Func<WebDriverBiDiConnectionException> connectionExceptionFactory, string logMessage, WebDriverBiDiLogLevel logLevel)
     {
         // Fast-path: if already disconnected, no work to do.
         // Prevents deadlock when connection error occurs during DisconnectAsync.
@@ -1765,7 +1775,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             {
                 // The loss arrived while a connect attempt is still in flight, so there is no session to
                 // tear down yet. Record the cause for ConnectAsync to fail the attempt with.
-                Interlocked.CompareExchange(ref this.connectionLostWhileConnecting, connectionException, null);
+                Interlocked.CompareExchange(ref this.connectionLostWhileConnecting, connectionExceptionFactory(), null);
             }
         }
 
@@ -1826,7 +1836,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
             // Close the pending command collection and fail every in-flight command
             // with an appropriate exception.
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
-            this.PendingCommands.FailAllPendingCommands(connectionException);
+            this.PendingCommands.FailAllPendingCommands(connectionExceptionFactory);
 
             // Complete the incoming message queue so that the reader task drains any
             // messages already received and then exits, rather than waiting forever on

@@ -3337,6 +3337,28 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestEachFailedPendingCommandGetsItsOwnException()
+    {
+        // BiDiDriver.ExecuteCommandAsync rethrows a command's exception with ExceptionDispatchInfo,
+        // which appends to that object's stack trace. Sharing one instance across commands would let
+        // concurrent callers overwrite each other's diagnostics.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        Command command1 = await transport.SendCommandAsync(new TestCommandParameters("module.command1"), TestContext.Current.CancellationToken);
+        Command command2 = await transport.SendCommandAsync(new TestCommandParameters("module.command2"), TestContext.Current.CancellationToken);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        Assert.NotNull(command1.ThrownException);
+        Assert.NotNull(command2.ThrownException);
+        Assert.Contains("Remote end closed the connection", command1.ThrownException.Message);
+        Assert.Contains("Remote end closed the connection", command2.ThrownException.Message);
+        Assert.NotSame(command1.ThrownException, command2.ThrownException);
+    }
+
+    [Fact]
     public async Task TestRemoteDisconnectFailsPendingCommands()
     {
         string commandName = "module.command";

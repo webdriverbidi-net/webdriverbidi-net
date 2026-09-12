@@ -218,14 +218,18 @@ public class PendingCommandCollection : IDisposable
     }
 
     /// <summary>
-    /// Fails all pending commands in the collection with the specified exception.
+    /// Fails all pending commands in the collection, giving each one its own exception.
     /// The collection must have been closed before calling this method.
     /// </summary>
-    /// <param name="exception">The exception to set on each pending command.</param>
+    /// <param name="exceptionFactory">
+    /// Creates the exception for a pending command; invoked once per command. One instance shared
+    /// across commands is rethrown on every awaiting caller, and each rethrow appends to that one
+    /// object's stack trace, so concurrent callers would corrupt each other's diagnostics.
+    /// </param>
     /// <exception cref="InvalidOperationException">
     /// Thrown if the collection has not been closed to the addition of new commands.
     /// </exception>
-    public virtual void FailAllPendingCommands(Exception exception)
+    public virtual void FailAllPendingCommands(Func<Exception> exceptionFactory)
     {
         if (this.IsAcceptingCommands)
         {
@@ -234,7 +238,7 @@ public class PendingCommandCollection : IDisposable
 
         foreach (Command pendingCommand in this.pendingCommands.Values)
         {
-            pendingCommand.SetException(exception);
+            pendingCommand.SetException(exceptionFactory());
         }
 
         this.pendingCommands.Clear();
