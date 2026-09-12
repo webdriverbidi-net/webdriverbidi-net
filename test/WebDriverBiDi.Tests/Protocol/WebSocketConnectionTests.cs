@@ -1176,11 +1176,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
     [Fact]
     public async Task TestConnectionCanBeStartedAfterFailedConnectionAttempt()
     {
-        // A failed connection attempt leaves the ClientWebSocket in the None state, so the branch
-        // in StartAsync that replaces a Closed or Aborted socket does not run. The caller's
-        // cleanup StopAsync still cancels the connection's CancellationTokenSource, so unless
-        // StartAsync resets that source on every start, the retry below would fail immediately
-        // with a TaskCanceledException and the connection could never be used again.
+        // Starting replaces the connection's ClientWebSocket, but not its CancellationTokenSource,
+        // and the caller's cleanup StopAsync after the failed attempt cancels that source. Unless
+        // StartAsync resets the source on every start, the retry below would fail immediately with
+        // a TaskCanceledException and the connection could never be used again.
         //
         // Find an available port and release it before use, so that the first connection
         // attempt is made against a port on which nothing is listening. See the comment in
@@ -1228,6 +1227,165 @@ public class WebSocketConnectionTests : IAsyncDisposable
         byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.Equal("Acknowledged after failed attempt"u8.ToArray(), receivedData);
+    }
+
+    [Fact]
+    public async Task TestCreateClientWebSocketConfiguresTheSocketUsedForTheFirstSession()
+    {
+        // ClientWebSocket options can be set only before the socket connects, so a derived connection
+        // configures them in CreateClientWebSocket. An override may depend on state that its own
+        // constructor or an object initializer assigns -- here, the delegate set below -- so the
+        // connection must not call it while the connection is still being constructed, and must obtain
+        // the socket for the first session from it once construction is over. The configuration is
+        // observed in the upgrade request the server receives, which is where a remote end that
+        // requires it would look for it.
+        const string headerName = "X-WebDriverBiDi-Test";
+        TaskCompletionSource<string> upgradeRequestReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using Server server = this.CreateServer();
+        ServerEventObserver<ServerDataReceivedEventArgs> upgradeObserver = server.OnDataReceived.AddObserver(e =>
+        {
+            if (e.Data.StartsWith("GET ", StringComparison.Ordinal))
+            {
+                upgradeRequestReceived.TrySetResult(e.Data);
+            }
+        });
+        await server.StartAsync();
+
+        await using TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            BypassCloseClientWebSocket = false,
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+            ConfigureClientWebSocket = socket => socket.Options.SetRequestHeader(headerName, "first-session"),
+        };
+        int socketsCreatedDuringConstruction = connection.CreatedClientWebSockets.Count;
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        string upgradeRequest = await upgradeRequestReceived.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        upgradeObserver.Unobserve();
+
+        Assert.Contains($"{headerName}: first-session", upgradeRequest, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, socketsCreatedDuringConstruction);
+        Assert.Single(connection.CreatedClientWebSockets);
+    }
+
+    [Fact]
+    public async Task TestCreateClientWebSocketConfiguresTheSocketForEachLaterSession()
+    {
+        // A ClientWebSocket connects at most once, so a session started after a stop connects on a new
+        // socket. That socket must also come from CreateClientWebSocket, and be configured afresh rather
+        // than copied from the previous one: the header value below differs per call.
+        const string headerName = "X-WebDriverBiDi-Test";
+        TaskCompletionSource<string>[] upgradeRequestsReceived =
+        [
+            new(TaskCreationOptions.RunContinuationsAsynchronously),
+            new(TaskCreationOptions.RunContinuationsAsynchronously),
+        ];
+        int upgradeRequestCount = 0;
+        await using Server server = this.CreateServer();
+        ServerEventObserver<ServerDataReceivedEventArgs> upgradeObserver = server.OnDataReceived.AddObserver(e =>
+        {
+            if (e.Data.StartsWith("GET ", StringComparison.Ordinal))
+            {
+                int index = Interlocked.Increment(ref upgradeRequestCount) - 1;
+                if (index < upgradeRequestsReceived.Length)
+                {
+                    upgradeRequestsReceived[index].TrySetResult(e.Data);
+                }
+            }
+        });
+        await server.StartAsync();
+
+        int configuredSocketCount = 0;
+        await using TestWebSocketConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            BypassCloseClientWebSocket = false,
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+            ConfigureClientWebSocket = socket => socket.Options.SetRequestHeader(headerName, $"session-{Interlocked.Increment(ref configuredSocketCount)}"),
+        };
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        string firstUpgradeRequest = await upgradeRequestsReceived[0].Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
+        string secondUpgradeRequest = await upgradeRequestsReceived[1].Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        upgradeObserver.Unobserve();
+
+        Assert.Contains($"{headerName}: session-1", firstUpgradeRequest, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains($"{headerName}: session-2", secondUpgradeRequest, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, connection.CreatedClientWebSockets.Count);
+        Assert.NotSame(connection.CreatedClientWebSockets[0], connection.CreatedClientWebSockets[1]);
+    }
+
+    [Fact]
+    public async Task TestCreateClientWebSocketReplacesTheSocketAfterEachRefusedAttempt()
+    {
+        // A socket whose connect was refused cannot be used again, so each attempt within the startup
+        // budget connects on a socket from CreateClientWebSocket, and every refusal replaces the socket
+        // it used. The connection owns each socket it is given: a replaced socket is disposed at once,
+        // and the socket it holds last is disposed with the connection. (A ClientWebSocket disposed
+        // before it ever connected reports Closed; one that has not been disposed reports None.)
+        TimeSpan startupTimeout = TimeSpan.FromMilliseconds(100);
+        TimeSpan attemptDuration = TimeSpan.FromMilliseconds(40);
+        int attemptCount = 0;
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
+        {
+            BypassStart = false,
+            StartupTimeout = startupTimeout,
+            ConnectWebSocketOverride = (uri, token) =>
+            {
+                Interlocked.Increment(ref attemptCount);
+
+                // Each attempt spends 40 ms of the 100 ms budget on the virtual clock and is then refused,
+                // so attempts begin at 0, 40 and 80 ms, and the third leaves no budget for a fourth.
+                timeProvider.Advance(attemptDuration);
+                return Task.FromException(new WebSocketException("Simulated refused connection"));
+            },
+        };
+
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(
+            async () => await connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken));
+
+        Assert.Equal(3, attemptCount);
+        List<ClientWebSocket> sockets = connection.CreatedClientWebSockets;
+        Assert.Equal(4, sockets.Count);
+        Assert.All(sockets.Take(3), socket => Assert.Equal(WebSocketState.Closed, socket.State));
+        Assert.Equal(WebSocketState.None, sockets[3].State);
+
+        await connection.DisposeAsync();
+        Assert.Equal(WebSocketState.Closed, sockets[3].State);
+    }
+
+    [Fact]
+    public async Task TestCreateClientWebSocketReplacesTheSocketAbandonedByAStartupTimeout()
+    {
+        // A connect still in progress when the startup budget runs out is canceled, and a canceled
+        // connect leaves its socket unusable. The connection disposes that socket and replaces it through
+        // CreateClientWebSocket, so the connection is left holding a usable socket for a later start.
+        TimeSpan startupTimeout = TimeSpan.FromMilliseconds(200);
+        TestTimeProvider timeProvider = new();
+        await using TestWebSocketConnection connection = new(timeProvider)
+        {
+            BypassStart = false,
+            StartupTimeout = startupTimeout,
+            ConnectWebSocketOverride = (uri, token) => Task.Delay(Timeout.InfiniteTimeSpan, token),
+        };
+
+        Task startTask = connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken);
+        await timeProvider.AdvanceUntilCompletedAsync(startTask, startupTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await startTask);
+
+        List<ClientWebSocket> sockets = connection.CreatedClientWebSockets;
+        Assert.Equal(2, sockets.Count);
+        Assert.Equal(WebSocketState.Closed, sockets[0].State);
+        Assert.Equal(WebSocketState.None, sockets[1].State);
     }
 
     [Fact]

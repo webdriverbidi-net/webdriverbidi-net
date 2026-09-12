@@ -48,6 +48,7 @@ You only need to manage connections directly in these rare scenarios:
 2. **Connection Monitoring**: Deep diagnostics and monitoring of connection-level events
 3. **Custom Timeout Configuration**: Fine-tuning connection-specific timeouts beyond driver defaults
 4. **Connection Reuse**: Advanced connection pooling or sharing scenarios
+5. **WebSocket Configuration**: Request headers, a proxy, a keep-alive interval, or certificate validation that the remote end requires (see [Configuring the Underlying WebSocket](#configuring-the-underlying-websocket))
 
 **If none of these apply to you, use the simple patterns above and skip the rest of this document.**
 
@@ -253,6 +254,38 @@ WebSocket connections retry during startup if the browser isn't ready:
 
 This handles cases where the browser is still launching.
 
+### Configuring the Underlying WebSocket
+
+`WebSocketConnection` connects through a `System.Net.WebSockets.ClientWebSocket`, and some remote ends
+need that socket configured first: a remote grid that authenticates the upgrade request with a header, a
+network that routes traffic through a proxy, a `wss://` endpoint whose certificate the operating system
+does not trust, or an intermediary that drops an idle connection unless keep-alive frames are sent. A
+`ClientWebSocket` takes its options only before it connects, so the connection does not expose them as
+properties. Derive from `WebSocketConnection` and override `CreateClientWebSocket` instead, calling the
+base implementation to obtain the socket and configuring its `Options` before returning it:
+
+[!code-csharp[Configuring the ClientWebSocket](../../code/advanced/ConnectionManagementSamples.cs#ConfiguringClientWebSocket)]
+
+Hand the derived connection to a `Transport`, and the transport to the driver:
+
+[!code-csharp[Using a Configured WebSocket Connection](../../code/advanced/ConnectionManagementSamples.cs#UsingConfiguredWebSocketConnection)]
+
+The connection calls `CreateClientWebSocket` immediately before every session connects, including the
+first, and again after each attempt that the remote end refuses or that runs out of `StartupTimeout` (see
+[Automatic Retry](#automatic-retry)), because a socket whose connect did not succeed cannot be used again.
+Two rules follow from that:
+
+- **Return a new socket from every call.** The connection owns each socket it is given. It disposes a
+  socket when it replaces it, and disposes the one it holds when the connection is disposed, so a socket
+  kept and returned a second time would already be disposed.
+- **Rely on your own state.** The method is never called while the connection is being constructed, so
+  fields your constructor assigns and properties set in an object initializer are available to it. A value
+  changed between sessions is picked up by the next session.
+
+`Options.RemoteCertificateValidationCallback` replaces the operating system's certificate checks for the
+connection. Validate what you expect, as the sample does by pinning one certificate's thumbprint, rather
+than accepting every certificate, which would let any party on the network intercept the session.
+
 ### Connection State
 
 Check if a connection is active:
@@ -375,11 +408,13 @@ read. `Append` adds a piece, `TakeOwnership` hands the completed block to the co
 buffer ready for the next message, and `Discard` returns a partial message to the pool. Both shipped
 connections own one for the life of their receive loop.
 
-`WebSocketConnection` and `PipeConnection` each expose a further seam of their own for the operation
-they perform on the wire — `ConnectWebSocketAsync`, `WriteWebSocketDataAsync`, `ReceiveWebSocketDataAsync`,
-`CloseClientWebSocketAsync` and `DelayBeforeRetryAsync` on the first; `WritePipeDataAsync`,
-`WriteToPipeAsync` and `ReadPipeDataAsync` on the second — so a derived connection can substitute the
-single call rather than reimplement the loop around it.
+`WebSocketConnection` and `PipeConnection` each expose further seams of their own. On the first,
+`CreateClientWebSocket` supplies the socket each connection attempt uses, and is where its options are
+configured (see [Configuring the Underlying WebSocket](#configuring-the-underlying-websocket)), while
+`ConnectWebSocketAsync`, `WriteWebSocketDataAsync`, `ReceiveWebSocketDataAsync`, `CloseClientWebSocketAsync`
+and `DelayBeforeRetryAsync` each perform a single operation on the wire. On the second, `WritePipeDataAsync`,
+`WriteToPipeAsync` and `ReadPipeDataAsync` do the same. A derived connection can therefore configure or
+substitute a single step rather than reimplement the loop around it.
 
 `ResolveConnectionString` is the only place the connection string is interpreted — the base class
 carries the value but never reads it, because what counts as a usable connection string is exactly

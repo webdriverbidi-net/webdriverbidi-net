@@ -308,4 +308,30 @@ public class TestWebSocketConnection : WebSocketConnection
 
         await base.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Gets or sets a delegate applied to each <see cref="ClientWebSocket"/> the connection creates, so a
+    /// test can configure a socket exactly as a derived connection overriding
+    /// <see cref="WebSocketConnection.CreateClientWebSocket"/> would. Being assigned in an object
+    /// initializer, it is also state that exists only once construction has finished.
+    /// </summary>
+    public Action<ClientWebSocket>? ConfigureClientWebSocket { get; set; }
+
+    /// <summary>
+    /// Gets the sockets the connection obtained from <see cref="WebSocketConnection.CreateClientWebSocket"/>,
+    /// in the order it obtained them.
+    /// </summary>
+    public List<ClientWebSocket> CreatedClientWebSockets { get; } = [];
+
+    protected override ClientWebSocket CreateClientWebSocket()
+    {
+        ClientWebSocket socket = base.CreateClientWebSocket();
+        this.ConfigureClientWebSocket?.Invoke(socket);
+        lock (this.CreatedClientWebSockets)
+        {
+            this.CreatedClientWebSockets.Add(socket);
+        }
+
+        return socket;
+    }
 }
