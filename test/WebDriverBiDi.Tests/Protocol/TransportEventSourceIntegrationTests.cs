@@ -16,7 +16,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
 
@@ -43,7 +43,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
@@ -73,7 +73,7 @@ public class TransportEventSourceIntegrationTests
         TaskCompletionSource captured = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        TestTransport transport = new(connection)
+        await using TestTransport transport = new(connection)
         {
             UnknownMessageBehavior = TransportErrorBehavior.Terminate,
             AfterUnhandledErrorCaptured = () => captured.TrySetResult(),
@@ -108,7 +108,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
@@ -168,7 +168,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
@@ -224,7 +224,7 @@ public class TransportEventSourceIntegrationTests
         {
             SendWebSocketDataOverride = _ => throw new InvalidOperationException("Simulated send failure"),
         };
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents();
@@ -313,7 +313,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
 
         // The transport writes EventReceived before it dispatches the event to observers, so once
@@ -355,7 +355,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
@@ -382,7 +382,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
@@ -409,7 +409,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("test.event");
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
@@ -444,7 +444,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection)
+        await using Transport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
@@ -497,7 +497,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
@@ -520,7 +520,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
@@ -544,7 +544,7 @@ public class TransportEventSourceIntegrationTests
     {
         using TestEventListener listener = new();
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
 
         await transport.ConnectAsync("ws://localhost:9222", TestContext.Current.CancellationToken);
         listener.ClearEvents(); // Clear connection events
@@ -569,7 +569,7 @@ public class TransportEventSourceIntegrationTests
         using TestEventListener listener = new();
         TaskCompletionSource discardedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
-        Transport transport = new(connection);
+        await using Transport transport = new(connection);
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
         transport.OnLogMessage.AddObserver(e =>

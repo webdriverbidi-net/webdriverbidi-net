@@ -1679,7 +1679,7 @@ public class BiDiDriverTests
     public async Task TestCreatingWithConnectedTransportThrows()
     {
         TestWebSocketConnection connection = new();
-        TestTransport transport = new(connection);
+        await using TestTransport transport = new(connection);
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         ArgumentException exception = Assert.ThrowsAny<ArgumentException>(() => _ = new BiDiDriver(TimeSpan.FromSeconds(1), transport));
         Assert.Contains("must be disconnected", exception.Message);

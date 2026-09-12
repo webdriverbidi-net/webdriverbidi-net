@@ -22,7 +22,7 @@ public class PipeConnectionTests
     public async Task TestConnectionType()
     {
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         Assert.Equal(ConnectionKind.Pipes, connection.ConnectionKind);
     }
 
@@ -31,7 +31,7 @@ public class PipeConnectionTests
     {
         using TestPipeServer testPipeServer = new();
 
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
 
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -53,7 +53,7 @@ public class PipeConnectionTests
         testPipeServer.Responses.Add("Acknowledged!");
 
         List<string> receivedData = [];
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
@@ -81,7 +81,7 @@ public class PipeConnectionTests
         testPipeServer.Responses.Add("Acknowledged!\\0More data");
 
         List<string> receivedData = [];
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
@@ -217,7 +217,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestStartingWithoutSettingExternalProcessThrows()
     {
-        PipeConnection connection = new(new TestPipeServer());
+        await using PipeConnection connection = new(new TestPipeServer());
         await Assert.ThrowsAnyAsync<WebDriverBiDiException>(() => connection.StartAsync("pipe", TestContext.Current.CancellationToken));
     }
 
@@ -227,7 +227,7 @@ public class PipeConnectionTests
         // Starting a pipe connection performs no cancellable I/O, so entry is the one point at which
         // the caller's token can be observed; a caller who has already given up is honored there.
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         using CancellationTokenSource canceledTokenSource = new();
         canceledTokenSource.Cancel();
@@ -242,7 +242,7 @@ public class PipeConnectionTests
     public async Task TestStartingWithoutStoppingThrows()
     {
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.StartAsync("pipe", TestContext.Current.CancellationToken));
@@ -253,7 +253,7 @@ public class PipeConnectionTests
     public async Task TestRemoteEndClosingMarksConnectionAsInactive()
     {
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         Assert.True(connection.IsActive);
@@ -302,7 +302,7 @@ public class PipeConnectionTests
     public async Task TestCanStop()
     {
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
@@ -313,7 +313,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanStopWithoutStarting()
     {
-        PipeConnection connection = new(new TestPipeServer());
+        await using PipeConnection connection = new(new TestPipeServer());
         await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
     }
@@ -321,7 +321,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestCanStopRepeatedly()
     {
-        PipeConnection connection = new(new TestPipeServer());
+        await using PipeConnection connection = new(new TestPipeServer());
         await connection.StopAsync(TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
         Assert.False(connection.IsActive);
@@ -356,7 +356,7 @@ public class PipeConnectionTests
         // StartAsync replaces the cancellation source: a session that inherited the canceled one
         // could never connect.
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer);
+        await using TestPipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
 
         CancellationToken tokenBeforeStop = connection.ObservedConnectionCancellationToken;
@@ -376,7 +376,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestSendDataWithoutStartingThrows()
     {
-        PipeConnection connection = new(new TestPipeServer());
+        await using PipeConnection connection = new(new TestPipeServer());
         await Assert.ThrowsAnyAsync<WebDriverBiDiException>(async () => await connection.SendDataAsync(new byte[] { 1, 2, 3 }, TestContext.Current.CancellationToken));
     }
 
@@ -386,7 +386,7 @@ public class PipeConnectionTests
         List<string> receivedData = [];
         TaskCompletionSource remoteDisconnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnDataReceived.AddObserver(e => Task.CompletedTask);
@@ -768,7 +768,7 @@ public class PipeConnectionTests
     {
         int isActiveCallCount = 0;
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer);
+        await using TestPipeConnection connection = new(testPipeServer);
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -790,7 +790,7 @@ public class PipeConnectionTests
     [Fact]
     public async Task TestSendDataThrowsWhenCancellationTokenIsCanceled()
     {
-        TestPipeConnection connection = new(new TestPipeServer())
+        await using TestPipeConnection connection = new(new TestPipeServer())
         {
             IsActiveOverride = () => true,
         };
@@ -804,7 +804,7 @@ public class PipeConnectionTests
     public async Task TestSendDataWithDefaultCancellationTokenUsesConnectionToken()
     {
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer);
+        await using TestPipeConnection connection = new(testPipeServer);
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
@@ -838,7 +838,7 @@ public class PipeConnectionTests
     public async Task TestStartAfterServerProcessExitThrows()
     {
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
         testPipeServer.Stop();
@@ -893,7 +893,7 @@ public class PipeConnectionTests
     public async Task TestSendDataWrapsIOExceptionInConnectionException()
     {
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer)
+        await using TestPipeConnection connection = new(testPipeServer)
         {
             ThrowIOExceptionOnSend = true,
             BypassDataSend = false,
@@ -957,7 +957,7 @@ public class PipeConnectionTests
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using TestPipeServer testPipeServer = new();
 
-        TestPipeConnection connection = new(testPipeServer)
+        await using TestPipeConnection connection = new(testPipeServer)
         {
             ThrowIOExceptionOnReceive = true,
         };
@@ -1068,7 +1068,7 @@ public class PipeConnectionTests
         using TestPipeServer testPipeServer = new();
         testPipeServer.Responses.Add("Acknowledged!");
 
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         connection.OnDataReceived.AddObserver(ThrowOnDataReceived);
         connection.OnConnectionError.AddObserver(e =>
         {
@@ -1174,7 +1174,7 @@ public class PipeConnectionTests
         // would have to cancel in the window between the two writes, and after this fix there is no such
         // window to aim at.
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+        await using TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
 
         byte[] message = Encoding.UTF8.GetBytes("{\"id\":1}");
         await connection.WriteFramedMessageAsync(message, TestContext.Current.CancellationToken);
@@ -1189,7 +1189,7 @@ public class PipeConnectionTests
     public async Task TestAnEmptyMessageIsStillTerminated()
     {
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+        await using TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
 
         await connection.WriteFramedMessageAsync(ReadOnlyMemory<byte>.Empty, TestContext.Current.CancellationToken);
 
@@ -1203,7 +1203,7 @@ public class PipeConnectionTests
         // Cancellation is honored up to the first byte. What must never happen is a canceled send that
         // has nonetheless put part of a frame into the pipe.
         using TestPipeServer testPipeServer = new();
-        TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
+        await using TestPipeConnection connection = new(testPipeServer) { BypassRealPipeWrite = true };
         using CancellationTokenSource cancellationTokenSource = new();
         cancellationTokenSource.Cancel();
 
@@ -1223,7 +1223,7 @@ public class PipeConnectionTests
         // The same invariant observed from the other side of a real pipe, so that the framing test above
         // cannot pass against a connection that frames correctly but writes somewhere else.
         using TestPipeServer testPipeServer = new();
-        PipeConnection connection = new(testPipeServer);
+        await using PipeConnection connection = new(testPipeServer);
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
 
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
