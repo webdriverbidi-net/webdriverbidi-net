@@ -609,7 +609,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             "Client state is None",
             "WebSocket connection closed"
         ];
-        Assert.Equivalent(expectedLogEntries, connectionLog);
+        Assert.Equal(expectedLogEntries, connectionLog);
     }
 
     [Fact]
@@ -677,9 +677,12 @@ public class WebSocketConnectionTests : IAsyncDisposable
         [
             $"Opening WebSocket connection to ws://127.0.0.1:{server.Port}",
             "WebSocket connection opened",
-            "Closing WebSocket connection",
+
+            // The remote end stops without a close handshake, so the receive loop faults and ends
+            // before this test calls StopAsync; the closing entries follow, not precede, those two.
             "Unexpected error during receive of data: The remote party closed the WebSocket connection without completing the close handshake.",
             "Ending processing loop in state Aborted",
+            "Closing WebSocket connection",
             "Client state is Aborted",
             "WebSocket connection closed"
         ];
@@ -728,7 +731,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
             logSnapshot = [.. connectionLog];
         }
 
-        Assert.Equivalent(expectedLogEntries, logSnapshot.Select(log => log.Message));
+        Assert.Equal(expectedLogEntries, logSnapshot.Select(log => log.Message));
 
         // The sequence assertion above compares message text only. A failure that ends the receive
         // loop is an error, not information, so that one entry's level is pinned separately: a
@@ -820,7 +823,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // Receive loop is blocked in ReceiveHandler; client.State is still Open.
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equivalent(expectedLogEntries, connectionLog);
+        Assert.Equal(expectedLogEntries, connectionLog);
     }
 
     [Fact]
@@ -925,7 +928,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync(TestContext.Current.CancellationToken);
-        Assert.Equivalent(expectedLogEntries, connectionLog);
+        Assert.Equal(expectedLogEntries, connectionLog);
     }
 
     [Fact]
@@ -946,6 +949,8 @@ public class WebSocketConnectionTests : IAsyncDisposable
         ];
 
         List<string> connectionLog = [];
+        object logLock = new();
+        TaskCompletionSource receiveLoopEnded = new(TaskCreationOptions.RunContinuationsAsynchronously);
         WebSocketConnection connection = new()
         {
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -954,27 +959,37 @@ public class WebSocketConnectionTests : IAsyncDisposable
         connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnLogMessage.AddObserver(e =>
         {
-            connectionLog.Add(e.Message);
+            lock (logLock)
+            {
+                connectionLog.Add(e.Message);
+            }
+
+            if (e.Message.StartsWith("Ending processing loop", StringComparison.Ordinal))
+            {
+                receiveLoopEnded.TrySetResult();
+            }
+
             return Task.CompletedTask;
         });
 
         IReadOnlyList<string> serverLog = server.Log;
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        connection.OnRemoteDisconnected.AddObserver(e =>
-        {
-            taskCompletionSource.TrySetResult();
-            return Task.CompletedTask;
-        });
 
-        // Server initiated disconnection requires waiting for the client's receive
-        // loop to complete (OnRemoteDisconnected fires after "Ending processing loop"
-        // is logged), so that StopAsync does not race ahead of that log entry.
+        // Gate on the receive loop's own final log rather than on OnRemoteDisconnected. The loop
+        // raises that event from inside its try block and logs "Ending processing loop" afterwards in
+        // its finally, so waiting on the event would let StopAsync log ahead of that entry.
         await server.DisconnectAsync(registeredConnectionId);
-        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await receiveLoopEnded.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
-        Assert.Equivalent(expectedLogEntries, connectionLog);
+
+        string[] logSnapshot;
+        lock (logLock)
+        {
+            logSnapshot = [.. connectionLog];
+        }
+
+        Assert.Equal(expectedLogEntries, logSnapshot);
     }
 
     [Fact]
@@ -1007,7 +1022,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.StopAsync(TestContext.Current.CancellationToken);
-        Assert.Equivalent(expectedLogEntries, connectionLog);
+        Assert.Equal(expectedLogEntries, connectionLog);
     }
 
     [Fact]
@@ -1567,14 +1582,27 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // message for the multi-frame path as well as the reassembly itself.
         List<LogMessageEventArgs> logs = [];
         connection.LogLevel = WebDriverBiDiLogLevel.Trace;
-        connection.OnLogMessage.AddObserver((e) => logs.Add(e));
+        object logLock = new();
+        connection.OnLogMessage.AddObserver((e) =>
+        {
+            lock (logLock)
+            {
+                logs.Add(e);
+            }
+        });
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
+        LogMessageEventArgs[] logSnapshot;
+        lock (logLock)
+        {
+            logSnapshot = [.. logs];
+        }
+
         Assert.Equal("Hello, World!", Encoding.UTF8.GetString(dataReceivedByConnection));
-        Assert.Contains(logs, log => log.Level == WebDriverBiDiLogLevel.Trace && log.Message.Contains("RECV <<< Hello, World!"));
+        Assert.Contains(logSnapshot, log => log.Level == WebDriverBiDiLogLevel.Trace && log.Message.Contains("RECV <<< Hello, World!"));
     }
 
     [Fact]

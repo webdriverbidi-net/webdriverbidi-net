@@ -390,7 +390,14 @@ public class PipeConnectionTests
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         connection.LogLevel = WebDriverBiDiLogLevel.Trace;
         connection.OnDataReceived.AddObserver(e => Task.CompletedTask);
-        connection.OnLogMessage.AddObserver(e => receivedData.Add(e.Message));
+        object logLock = new();
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            lock (logLock)
+            {
+                receivedData.Add(e.Message);
+            }
+        });
         connection.OnRemoteDisconnected.AddObserver(e =>
         {
             remoteDisconnectedTaskCompletionSource.TrySetResult();
@@ -410,7 +417,17 @@ public class PipeConnectionTests
         await remoteDisconnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(9, receivedData.Count);
+        string[] logSnapshot;
+        lock (logLock)
+        {
+            logSnapshot = [.. receivedData];
+        }
+
+        // Strict equivalence rather than ordered equality: the peer writes its canned responses as
+        // soon as it starts, which is necessarily before StartAsync runs, so the receive loop can log
+        // "RECV <<<" before the test thread logs "Pipes connection opened". Strict mode still rejects
+        // a missing or an extra entry; only the relative order of those two is not guaranteed.
+        Assert.Equal(9, logSnapshot.Length);
         Assert.Equivalent(new string[]
         {
             // The messages that bracket the session are logged by Connection.StartAsync and
@@ -428,7 +445,7 @@ public class PipeConnectionTests
             // shutdown has nothing left to record.
             "Pipe connection is not active",
             "Pipes connection closed",
-        }, receivedData);
+        }, logSnapshot, strict: true);
     }
 
     [Fact]
