@@ -85,11 +85,14 @@ public class PendingCommandCollectionTests
         await collection.AddPendingCommandAsync(testCommand2, TestContext.Current.CancellationToken);
         await collection.CloseAsync();
 
-        Exception exception = new("connection lost");
-        collection.FailAllPendingCommands(exception);
+        collection.FailAllPendingCommands(() => new Exception("connection lost"));
         Assert.Equal(0, collection.PendingCommandCount);
-        Assert.Same(exception, testCommand1.ThrownException);
-        Assert.Same(exception, testCommand2.ThrownException);
+        Assert.Equal("connection lost", testCommand1.ThrownException?.Message);
+        Assert.Equal("connection lost", testCommand2.ThrownException?.Message);
+
+        // Each command gets its own exception. A shared instance is rethrown on every awaiting caller,
+        // and each rethrow appends to that one object's stack trace.
+        Assert.NotSame(testCommand1.ThrownException, testCommand2.ThrownException);
     }
 
     [Fact]
@@ -98,8 +101,7 @@ public class PendingCommandCollectionTests
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
         await collection.AddPendingCommandAsync(testCommand, TestContext.Current.CancellationToken);
-        Exception exception = new("connection lost");
-        Assert.Equal("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first", Assert.ThrowsAny<InvalidOperationException>(() => collection.FailAllPendingCommands(exception)).Message);
+        Assert.Equal("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first", Assert.ThrowsAny<InvalidOperationException>(() => collection.FailAllPendingCommands(() => new Exception("connection lost"))).Message);
     }
 
     [Fact]
