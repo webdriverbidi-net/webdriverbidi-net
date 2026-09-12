@@ -333,7 +333,7 @@ public class KeyValuePairCollectionRemoteValueTests
                       }
                       """;
 
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CollectionRemoteValue>(json));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<KeyValuePairCollectionRemoteValue>(json));
     }
 
     [Fact]

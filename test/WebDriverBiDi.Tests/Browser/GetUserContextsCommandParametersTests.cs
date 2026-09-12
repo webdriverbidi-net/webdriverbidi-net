@@ -15,7 +15,7 @@ public class GetUserContextsCommandParametersTests
     [Fact]
     public void TestCanSerializeParameters()
     {
-        CloseCommandParameters properties = new();
+        GetUserContextsCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Empty(serialized);
