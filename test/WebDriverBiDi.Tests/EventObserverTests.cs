@@ -692,19 +692,39 @@ public class EventObserverTests
         // With an infinite timeout the completion phase can only end through handler
         // completion or cancellation; verify cancellation still unblocks the wait.
         TaskCompletionSource bothStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TaskCompletionSource gateTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int startedCount = 0;
         CancellationTokenSource cancellationTokenSource = new();
+
+        // The handler bodies stay pending (on a cancellable delay) so the completion wait is genuinely
+        // waiting when it is cancelled. Their tasks are stored so the test can drain them at the end
+        // instead of leaving them running past the test — a leaked handler's completion decrements the
+        // process-global async-handler counter and leaks an AsyncHandlerTaskCount event into a later
+        // test in this serialized collection.
+        using CancellationTokenSource handlerCancellationTokenSource = new();
+        List<Task> handlerTasks = [];
+        object handlerTasksLock = new();
+
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async e =>
+            e =>
             {
-                if (Interlocked.Increment(ref startedCount) == 2)
+                Task body = HandlerBodyAsync();
+                lock (handlerTasksLock)
                 {
-                    bothStartedTaskCompletionSource.TrySetResult();
+                    handlerTasks.Add(body);
                 }
 
-                await gateTaskCompletionSource.Task.ConfigureAwait(false);
+                return body;
+
+                async Task HandlerBodyAsync()
+                {
+                    if (Interlocked.Increment(ref startedCount) == 2)
+                    {
+                        bothStartedTaskCompletionSource.TrySetResult();
+                    }
+
+                    await Task.Delay(Timeout.InfiniteTimeSpan, handlerCancellationTokenSource.Token);
+                }
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
@@ -719,8 +739,7 @@ public class EventObserverTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await waitTask.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
         Assert.False(observer.IsCapturing);
 
-        // Release the handlers so the test does not leave detached work running.
-        gateTaskCompletionSource.TrySetResult();
+        await DrainHandlerTasksAsync(handlerCancellationTokenSource, handlerTasks, handlerTasksLock);
     }
 
     [Fact]

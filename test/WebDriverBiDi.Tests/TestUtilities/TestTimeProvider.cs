@@ -61,6 +61,14 @@ public sealed class TestTimeProvider : FakeTimeProvider
             Task completed = await Task.WhenAny(operation, timerCreated);
             if (completed == operation)
             {
+                // The bounded wait is abandoned here, and its guard would fault it with a
+                // TimeoutException five seconds later. Observe that fault so it cannot surface as an
+                // UnobservedTaskException in whichever test happens to force a collection next.
+                _ = timerCreated.ContinueWith(
+                    static abandonedWait => _ = abandonedWait.Exception,
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
                 break;
             }
 
