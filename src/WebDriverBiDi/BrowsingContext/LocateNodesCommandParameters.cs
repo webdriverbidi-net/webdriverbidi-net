@@ -81,7 +81,7 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     [JsonPropertyName("startNodes")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    internal IList<SharedReference>? SerializableStartNodes
+    internal List<SharedReference>? SerializableStartNodes
     {
         get
         {
@@ -90,7 +90,7 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
                 return null;
             }
 
-            return this.StartNodes.AsReadOnly();
+            return this.StartNodes;
         }
     }
 }

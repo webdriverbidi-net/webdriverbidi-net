@@ -94,7 +94,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     [JsonPropertyName("arguments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal IList<LocalValue>? SerializableArguments
+    internal List<LocalValue>? SerializableArguments
     {
         get
         {
@@ -103,7 +103,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
                 return null;
             }
 
-            return this.Arguments.AsReadOnly();
+            return this.Arguments;
         }
     }
 }
