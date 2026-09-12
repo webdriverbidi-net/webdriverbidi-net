@@ -128,9 +128,10 @@ public abstract class Connection : IAsyncDisposable
     public string Id { get; } = Guid.NewGuid().ToString();
 
     /// <summary>
-    /// Gets or sets the string containing data about which the connection is connected.
-    /// For a WebSocket connection, this is its URL. For a named pipe connection, it is
-    /// the name of the pipe.
+    /// Gets or sets the string naming the remote end this connection is connected to. For a
+    /// <see cref="WebSocketConnection"/> this is the WebSocket URL. A <see cref="PipeConnection"/> does not
+    /// interpret the value at all -- the anonymous pipes it uses are its own -- so the string only labels
+    /// the session there.
     /// </summary>
     public string ConnectionString { get; protected set; } = string.Empty;
 

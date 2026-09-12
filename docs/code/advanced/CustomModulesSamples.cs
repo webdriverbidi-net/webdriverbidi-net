@@ -703,3 +703,25 @@ public static class CustomTransportSamples
 }
 
 #pragma warning restore CS1591, CS8600, CS8602, CS8618
+
+#region FilteringTransport
+
+/// <summary>
+/// A transport that discards inbound messages carrying a vendor channel property, showing the
+/// document transformer that <see cref="IncomingMessage"/> accepts.
+/// </summary>
+public class FilteringTransport : Transport
+{
+    /// <inheritdoc/>
+    protected override IncomingMessage CreateIncomingMessage(IMemoryOwner<byte> owner, int length)
+    {
+        return new IncomingMessage(owner, length, document =>
+        {
+            // Return the document unchanged to pass the message through, a different document to
+            // rewrite it, or null to discard it without reporting it as an unknown message.
+            return document.RootElement.TryGetProperty("goog:channel", out _) ? null : document;
+        });
+    }
+}
+#endregion
+
