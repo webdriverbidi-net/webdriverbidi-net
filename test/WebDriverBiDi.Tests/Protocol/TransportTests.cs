@@ -10,12 +10,8 @@ using Xunit.Sdk;
 
 public class TransportTests
 {
-    // --- CT-1 (shutdown deadlock) regression tests ---
-    // These verify that a remote close or receive-loop fault occurring while DisconnectAsync holds
-    // the connection lock does not deadlock: DisconnectAsync awaits the receive loop (through
-    // Connection.StopAsync), while the connection-loss handler runs on that loop, so an unfixed
-    // implementation forms a cycle. The 5-second bound below is a deadlock detector, not a timing
-    // assumption; a correct implementation completes effectively immediately.
+    // The 5-second bound below is a deadlock detector, not a timing assumption;
+    // a correct implementation completes effectively immediately.
     private static readonly TimeSpan DeadlockDetectionTimeout = TimeSpan.FromSeconds(5);
 
     [Fact]
@@ -3027,7 +3023,8 @@ public class TransportTests
                               """;
         Task responseTask = Task.Run(async () => await connection.RaiseDataReceivedEventAsync(responseJson), TestContext.Current.CancellationToken);
 
-        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        bool commandCompleted = await command.WaitForCompletionAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        Assert.True(commandCompleted);
 
         // Awaited here so that a fault inside the Task is reported as itself rather
         // than as whichever assertion below fails first.
@@ -3785,12 +3782,7 @@ public class TransportTests
     public async Task TestDisconnectCompletesTeardownWhenConnectionStopThrows()
     {
         TestWebSocketConnection connection = new();
-        TestTransport transport = new(connection)
-        {
-            // Keep the reconnect wait short so that a regression fails fast rather than
-            // stalling for the default ten-second shutdown timeout.
-            ShutdownTimeout = TimeSpan.FromMilliseconds(500),
-        };
+        TestTransport transport = new(connection);
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
