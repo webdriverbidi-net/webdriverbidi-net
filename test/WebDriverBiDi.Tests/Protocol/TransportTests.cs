@@ -1581,6 +1581,65 @@ public class TransportTests
     }
 
     [Fact]
+    public async Task TestConnectionLostAfterConnectionStartReturnsFailsTheAttempt()
+    {
+        // The loss is raised from the "connection opened" log message, which Connection.StartAsync
+        // emits after StartConnectionAsync has returned and the receive task has started — the latest
+        // point reachable while the transport is still Connecting. The sibling tests park inside
+        // StartConnectionAsync, so their loss is recorded much earlier.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+
+        bool lossRaised = false;
+        using EventObserver<LogMessageEventArgs> connectionLogObserver = connection.OnLogMessage.AddObserver(async e =>
+        {
+            if (!lossRaised && e.Message == "WebSocket connection opened")
+            {
+                lossRaised = true;
+                await connection.RaiseRemoteDisconnectedEventAsync();
+            }
+        });
+
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken));
+        Assert.Contains("lost while the session was being established", exception.Message);
+        WebDriverBiDiConnectionException reportedLoss = Assert.IsType<WebDriverBiDiConnectionException>(exception.InnerException);
+        Assert.Contains("Remote end closed the connection", reportedLoss.Message);
+
+        Assert.True(lossRaised, "The connection never emitted the log message the loss was raised from.");
+        Assert.Equal(TransportState.Disconnected, transport.State);
+
+        // The record is consumed by the failing attempt rather than left behind, so the next attempt
+        // is judged only by what happens to its own connection.
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestConnectionLossReportedAfterConnectedIsPublishedTearsDownTheSession()
+    {
+        // The counterpart: once Connected is published the handler must stop recording and tear the
+        // session down. The pending command is the proof it did — only FailAllPendingCommands faults it.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken);
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        Assert.Equal(TransportState.Disconnected, transport.State);
+        Assert.NotNull(command.ThrownException);
+        Assert.Contains("Remote end closed the connection", command.ThrownException.Message);
+
+        // Nothing was recorded against a connect attempt, so a later attempt is unaffected by it.
+        await transport.ConnectAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.Equal(TransportState.Connected, transport.State);
+        await transport.DisconnectAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestConnectionLockAcquisitionThrowsWhenTokenAlreadyCanceled()
     {
         // The lock is free here, so this covers the guard that keeps the uncontended fast path from
