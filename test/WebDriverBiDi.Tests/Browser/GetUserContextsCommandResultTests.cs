@@ -57,7 +57,7 @@ public class GetUserContextsCommandResultTests
     public void TestDeserializingWithMissingUserContextsThrows()
     {
         string json = "{}";
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetUserContextsCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class GetUserContextsCommandResultTests
                         "userContexts": {}
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetUserContextsCommandResult>(json, this.options));
     }
 
     [Fact]
@@ -79,6 +79,6 @@ public class GetUserContextsCommandResultTests
                         "userContexts": null
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, this.options));
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<GetUserContextsCommandResult>(json, this.options));
     }
 }
