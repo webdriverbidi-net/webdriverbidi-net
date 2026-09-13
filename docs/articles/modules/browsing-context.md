@@ -220,8 +220,12 @@ Three further events accompany a navigation but carry their own argument types: 
 
 `OnDownloadEnd` fires when the download finishes. The event args (`DownloadEndEventArgs`) carry
 the same `DownloadId` and `Url`, along with `Status` (`DownloadEndStatus.Complete` or
-`DownloadEndStatus.Canceled`) and `FilePath` (the path when the download completed and the remote end
-can supply one; otherwise null).
+`DownloadEndStatus.Canceled`). `DownloadEndEventArgs` is abstract, and the status decides its type. A
+completed download arrives as `DownloadCompleteEventArgs`, whose `FilePath` is the path of the
+downloaded file, or null when the remote end cannot supply one. A canceled download arrives as
+`DownloadCanceledEventArgs`, which has no file path. To reach `FilePath`, call
+`TryAs<DownloadCompleteEventArgs>()`, or `As<DownloadCompleteEventArgs>()` when the download is known to
+have completed; `As<T>()` throws a `WebDriverBiDiException` when the event args are the other type.
 
 [!code-csharp[Download Events](../../code/modules/BrowsingContextModuleSamples.cs#DownloadEvents)]
 

@@ -351,7 +351,7 @@ The library includes specialized converters for WebDriver BiDi types:
 
 - `CommandJsonConverter`: Serializes command parameters
 - `SentinelNullJsonConverter<T, TSentinelChecker>`: Serializes types where a specific, "sentinel" value yields a `null` value in the serialized JSON
-- `DiscriminatedUnionJsonConverter<T>`: Deserializes command result values with discriminated union types
+- `DiscriminatedUnionJsonConverter<T>`: Deserializes received types modelled as discriminated unions, such as `EvaluateResult`, `RealmInfo`, `LogEntry` and `DownloadEndEventArgs`
 - `BigIntegerJsonConverter`: Deserializes BigInteger values
 - `NumberJsonConverter`: Deserializes JavaScript numeric values
 - `RemoteValueDictionaryJsonConverter`: Deserializes RemoteValues for types containing dictionary types (maps, objects, etc.)
