@@ -178,6 +178,52 @@ public class IncomingMessageTests
     }
 
     [Fact]
+    public void TestParseWithDocumentTransformerReturningNullDisposesOriginal()
+    {
+        // A discarded message keeps no document, so the parsed document must be disposed to release
+        // its pooled buffer rather than being left for the garbage collector.
+        string json = """{ "method": "CDP.someEvent", "params": {} }""";
+        JsonDocument? originalDocument = null;
+        JsonDocument? Transformer(JsonDocument doc)
+        {
+            originalDocument = doc;
+            return null;
+        }
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length, Transformer);
+        message.Parse();
+        Assert.Equal(IncomingMessageKind.Filtered, message.MessageKind);
+        Assert.NotNull(originalDocument);
+        Assert.Throws<ObjectDisposedException>(() => originalDocument.RootElement.GetProperty("method"));
+    }
+
+    [Fact]
+    public void TestParseWithThrowingDocumentTransformerDisposesOriginalAndPropagatesException()
+    {
+        // The transformer's exception must reach the caller unchanged, and the parsed document, which
+        // nothing references once the exception propagates, must be disposed on the way out.
+        string json = """{ "method": "CDP.someEvent", "params": {} }""";
+        InvalidOperationException transformerException = new("transformer failed");
+        JsonDocument? originalDocument = null;
+        JsonDocument? Transformer(JsonDocument doc)
+        {
+            originalDocument = doc;
+            throw transformerException;
+        }
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+        IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
+        bytes.CopyTo(owner.Memory);
+        using IncomingMessage message = new(owner, bytes.Length, Transformer);
+        InvalidOperationException thrown = Assert.Throws<InvalidOperationException>(message.Parse);
+        Assert.Same(transformerException, thrown);
+        Assert.Equal(IncomingMessageKind.Uninitialized, message.MessageKind);
+        Assert.NotNull(originalDocument);
+        Assert.Throws<ObjectDisposedException>(() => originalDocument.RootElement.GetProperty("method"));
+    }
+
+    [Fact]
     public async Task TestParseIsNoOpWhenAlreadyFiltered()
     {
         string json = """{ "method": "CDP.someEvent", "params": {} }""";

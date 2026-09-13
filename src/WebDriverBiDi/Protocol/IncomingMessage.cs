@@ -35,9 +35,11 @@ public class IncomingMessage : IDisposable
     /// <param name="documentTransformer">
     /// An optional transforming function that converts the parsed <see cref="JsonDocument"/> to another,
     /// or returns <see langword="null"/> to indicate the message should be silently discarded. The function
-    /// may return the document it was given unchanged. If it returns a different document, the original
-    /// parsed document is disposed by this message; the returned document becomes owned by this message
-    /// and is disposed when the message is disposed.
+    /// may return the document it was given unchanged. The function does not take ownership of the document
+    /// it is given and must not keep a reference to it: this message disposes that document when the
+    /// function returns <see langword="null"/>, returns a different document, or throws. A document the
+    /// function returns becomes owned by this message and is disposed when the message is disposed. An
+    /// exception thrown by the function propagates from <see cref="Parse"/>.
     /// </param>
     public IncomingMessage(IMemoryOwner<byte> owner, int length, Func<JsonDocument, JsonDocument?>? documentTransformer = null)
     {
@@ -133,9 +135,24 @@ public class IncomingMessage : IDisposable
             }
             else
             {
-                JsonDocument? transformed = this.documentTransformer(doc);
+                JsonDocument? transformed;
+                try
+                {
+                    transformed = this.documentTransformer(doc);
+                }
+                catch
+                {
+                    // Nothing references the parsed document once the exception propagates, so it
+                    // is released here before the exception reaches the caller.
+                    doc.Dispose();
+                    throw;
+                }
+
                 if (transformed is null)
                 {
+                    // A discarded message keeps no document, so the parsed one is released now
+                    // rather than being left for the garbage collector.
+                    doc.Dispose();
                     this.messagePacketType = IncomingMessageKind.Filtered;
                     return;
                 }
