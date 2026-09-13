@@ -199,14 +199,18 @@ public static class ObservabilitySamples
 
         // Logs will show:
         // connectionId is Connection.Id, a GUID string assigned when the connection is created.
-        // [12:34:56 INF] ConnectionOpening, connectionId=3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05, url=ws://localhost:9515/session/YOUR-SESSION-ID
-        // [12:34:56 INF] ConnectionOpened, connectionId=3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05, url=ws://localhost:9515/session/YOUR-SESSION-ID
-        // [12:34:56 INF] TransportStarted
+        // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[1]
+        //       Opening connection 3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05 to ws://localhost:9515/session/YOUR-SESSION-ID
+        // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[2]
+        //       Connection 3f2a9c81-5d64-4b0e-9a77-1c8e6b2d4f05 opened to ws://localhost:9515/session/YOUR-SESSION-ID
+        // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[17]
+        //       Transport started
 
         await driver.Session.StatusAsync();
 
         // Logs will show:
-        // [12:34:56 INF] CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
+        // info: WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger[7]
+        //       Command 1 (session.status) completed in 42ms
         // (CommandSending is a Verbose-level event and is not emitted at EventLevel.Informational;
         //  TransportStarted is raised once, when the transport connects, and is already shown above)
         #endregion

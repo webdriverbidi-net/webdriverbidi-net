@@ -75,8 +75,11 @@ WebDriver BiDi EventSource levels are mapped to ILogger levels as follows:
 Events are logged with structured properties, enabling rich filtering and querying:
 
 ```csharp
-// Example log output with structured properties:
-// Information: CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
+// A CommandCompleted event is logged with:
+//   message:          Command 1 (session.status) completed in 42ms
+//   {OriginalFormat}: Command {commandId} ({method}) completed in {elapsedMilliseconds}ms
+//   properties:       EventId=7, EventName=CommandCompleted, EventSource=WebDriverBiDi,
+//                     commandId=1, method=session.status, elapsedMilliseconds=42
 ```
 
 Structured logging providers (Application Insights, Serilog, etc.) can capture these properties for powerful diagnostics.
