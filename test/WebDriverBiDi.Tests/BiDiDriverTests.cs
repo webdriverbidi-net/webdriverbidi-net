@@ -3,6 +3,7 @@ namespace WebDriverBiDi;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -1198,6 +1199,77 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestRegistrationOverridesAreNotCalledWhileBuiltInModulesAreRegistered()
+    {
+        // The overrides record into fields the derived constructor assigns. The driver's constructor
+        // registers the built-in modules and their events. Had it done so through the virtual
+        // RegisterModule and RegisterEvent, each override would run from the base constructor, before
+        // those fields were assigned, and construction would fail with a NullReferenceException.
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using RegistrationRecordingDriver driver = new(transport);
+
+        Assert.Empty(driver.RegisteredModuleNames);
+        Assert.Empty(driver.RegisteredEventNames);
+
+        // Bypassing the overrides must not bypass the registrations themselves.
+        Assert.Same(driver.Session, driver.GetModule<SessionModule>(SessionModule.SessionModuleName));
+        Assert.Same(driver.Log, driver.GetModule<LogModule>(LogModule.LogModuleName));
+    }
+
+    [Fact]
+    public async Task TestRegistrationOverridesAreCalledForRegistrationsAfterConstruction()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using RegistrationRecordingDriver driver = new(transport);
+
+        // The custom module registers its event from its own constructor, through the driver it was
+        // given, and is then registered with the driver. Both go through the public virtual members.
+        driver.RegisterModule(new TestProtocolModule(driver));
+
+        Assert.Equal("protocol", Assert.Single(driver.RegisteredModuleNames));
+        Assert.Equal("protocol.event", Assert.Single(driver.RegisteredEventNames));
+    }
+
+    [Fact]
+    public async Task TestBuiltInModuleExecutorForwardsToDriver()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        // Module.Driver is protected and the built-in modules are sealed, so reflection is the only way
+        // a test can reach the executor the driver constructed them with.
+        PropertyInfo? moduleDriverProperty = typeof(Module).GetProperty("Driver", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(moduleDriverProperty);
+        IBiDiCommandExecutor executor = (IBiDiCommandExecutor)moduleDriverProperty.GetValue(driver.Session)!;
+
+        Assert.NotSame(driver, executor);
+        Assert.Equal(TimeSpan.FromMilliseconds(500), executor.DefaultCommandTimeout);
+        Assert.False(executor.IsStarted);
+
+        // Observer faults in the built-in modules' events must reach the driver's pipeline. A delegate
+        // bound to the same method on the same target compares equal.
+        IEventObserverErrorReporter reporter = Assert.IsAssignableFrom<IEventObserverErrorReporter>(executor);
+        Assert.Equal(((IEventObserverErrorReporter)driver).EventObserverErrorReporter, reporter.EventObserverErrorReporter);
+
+        // Before start, the driver rejects a command, which is enough to show that each overload reached it.
+        await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await executor.ExecuteCommandAsync(new TestCommandParameters("module.command"), cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await executor.ExecuteCommandAsync<TestCommandResult>((CommandParameters)new TestCommandParameters("module.command"), cancellationToken: TestContext.Current.CancellationToken));
+
+        await executor.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
+        Assert.True(driver.IsStarted);
+        Assert.True(executor.IsStarted);
+
+        await executor.StopAsync(TestContext.Current.CancellationToken);
+        Assert.False(driver.IsStarted);
+
+        await executor.DisposeAsync();
+        Assert.ThrowsAny<ObjectDisposedException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));
+    }
+
+    [Fact]
     public async Task TestDisposeDisposesTransport()
     {
         TestWebSocketConnection connection = new();
@@ -2370,6 +2442,37 @@ public class BiDiDriverTests
         Assert.Equal(42L, result.AdditionalData["goog:extra"]);
         Assert.Single(result.AdditionalResponseProperties);
         Assert.Equal("channel value", result.AdditionalResponseProperties["goog:channel"]);
+    }
+
+    private sealed class RegistrationRecordingDriver : BiDiDriver
+    {
+        private readonly List<string> registeredModuleNames;
+        private readonly List<string> registeredEventNames;
+
+        public RegistrationRecordingDriver(Transport transport)
+            : base(TimeSpan.FromMilliseconds(500), transport)
+        {
+            // Assigned in the constructor body rather than by field initializers: initializers run before
+            // the base constructor, and would hide a call into an override from that constructor.
+            this.registeredModuleNames = [];
+            this.registeredEventNames = [];
+        }
+
+        public IReadOnlyList<string> RegisteredModuleNames => this.registeredModuleNames;
+
+        public IReadOnlyList<string> RegisteredEventNames => this.registeredEventNames;
+
+        public override void RegisterModule(Module module)
+        {
+            this.registeredModuleNames.Add(module.ModuleName);
+            base.RegisterModule(module);
+        }
+
+        public override void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+        {
+            this.registeredEventNames.Add(eventName);
+            base.RegisterEvent(eventName, eventInvoker);
+        }
     }
 
     private sealed class ResultShapeCommandParameters<T> : CommandParameters<T>

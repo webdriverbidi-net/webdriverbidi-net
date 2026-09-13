@@ -82,6 +82,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private readonly ObservableEventInvocable<EventHandlerErrorOccurredEventArgs> invocableEventHandlerErrorOccurredObservableEvent;
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent;
 
+    private readonly BuiltInModuleExecutor moduleExecutor;
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
     private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
@@ -187,50 +188,52 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         this.invocableEventHandlerErrorOccurredObservableEvent = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
         this.invocableLogMessageObservableEvent = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
 
-        this.Bluetooth = new BluetoothModule(this);
-        this.RegisterModule(this.Bluetooth);
+        this.moduleExecutor = new(this);
 
-        this.Browser = new BrowserModule(this);
-        this.RegisterModule(this.Browser);
+        this.Bluetooth = new BluetoothModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Bluetooth);
 
-        this.BrowsingContext = new BrowsingContextModule(this);
-        this.RegisterModule(this.BrowsingContext);
+        this.Browser = new BrowserModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Browser);
 
-        this.DigitalCredentials = new DigitalCredentialsModule(this);
-        this.RegisterModule(this.DigitalCredentials);
+        this.BrowsingContext = new BrowsingContextModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.BrowsingContext);
 
-        this.Emulation = new EmulationModule(this);
-        this.RegisterModule(this.Emulation);
+        this.DigitalCredentials = new DigitalCredentialsModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.DigitalCredentials);
 
-        this.Input = new InputModule(this);
-        this.RegisterModule(this.Input);
+        this.Emulation = new EmulationModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Emulation);
 
-        this.Log = new LogModule(this);
-        this.RegisterModule(this.Log);
+        this.Input = new InputModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Input);
 
-        this.Network = new NetworkModule(this);
-        this.RegisterModule(this.Network);
+        this.Log = new LogModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Log);
 
-        this.Permissions = new PermissionsModule(this);
-        this.RegisterModule(this.Permissions);
+        this.Network = new NetworkModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Network);
 
-        this.Script = new ScriptModule(this);
-        this.RegisterModule(this.Script);
+        this.Permissions = new PermissionsModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Permissions);
 
-        this.Session = new SessionModule(this);
-        this.RegisterModule(this.Session);
+        this.Script = new ScriptModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Script);
 
-        this.Speculation = new SpeculationModule(this);
-        this.RegisterModule(this.Speculation);
+        this.Session = new SessionModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Session);
 
-        this.Storage = new StorageModule(this);
-        this.RegisterModule(this.Storage);
+        this.Speculation = new SpeculationModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Speculation);
 
-        this.UserAgentClientHints = new UserAgentClientHintsModule(this);
-        this.RegisterModule(this.UserAgentClientHints);
+        this.Storage = new StorageModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.Storage);
 
-        this.WebExtension = new WebExtensionModule(this);
-        this.RegisterModule(this.WebExtension);
+        this.UserAgentClientHints = new UserAgentClientHintsModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.UserAgentClientHints);
+
+        this.WebExtension = new WebExtensionModule(this.moduleExecutor);
+        this.RegisterModuleCore(this.WebExtension);
 
         this.isInitializationComplete = true;
     }
@@ -617,47 +620,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <exception cref="ArgumentNullException">Thrown when the event invoker argument is <see langword="null"/>.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown when attempting to call this method after the driver has been started.</exception>
+    /// <remarks>
+    /// The driver's constructor registers the events of the built-in modules without calling this method,
+    /// so an override observes only registrations made after the driver has been constructed, such as
+    /// those of a custom module passed to <see cref="RegisterModule(Module)"/>.
+    /// </remarks>
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
-        this.ThrowIfDisposed();
-        if (string.IsNullOrEmpty(eventName))
-        {
-            throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
-        }
-
-        if (eventInvoker is null)
-        {
-            throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
-        }
-
-        // Action for registering an event, executed under Transport's connection state lock
-        // so that it can only be executed while the Transport is disconnected, and cannot
-        // interleave with a call to Transport.ConnectAsync().
-        void RegistrationAction()
-        {
-            if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
-            {
-                throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
-            }
-
-            this.transport.RegisterEventMessage<T>(eventName);
-        }
-
-        lock (this.registrationLock)
-        {
-            // The transport owns the lifecycle state: registration is rejected once the transport has
-            // left the Disconnected state (a connect is in flight or completed) and is legal again once
-            // a teardown returns it to Disconnected.
-            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
-            {
-                throw new InvalidOperationException("Cannot register an event after the driver has started");
-            }
-
-            if (this.isInitializationComplete)
-            {
-                WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered(eventName, typeof(T).ToString());
-            }
-        }
+        this.RegisterEventCore(eventName, eventInvoker);
     }
 
     /// <summary>
@@ -691,6 +661,10 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// during driver construction and do not need explicit registration.
     /// </para>
     /// <para>
+    /// The driver's constructor registers the built-in modules without calling this method,
+    /// so an override observes only registrations made after the driver has been constructed.
+    /// </para>
+    /// <para>
     /// Example usage:
     /// <code>
     /// BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
@@ -701,38 +675,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </remarks>
     public virtual void RegisterModule(Module module)
     {
-        this.ThrowIfDisposed();
-        if (module is null)
-        {
-            throw new ArgumentNullException(nameof(module), "Module object may not be null");
-        }
-
-        // Action for registering a module, executed under Transport's connection state lock
-        // so that it can only be executed while the Transport is disconnected, and cannot
-        // interleave with a call to Transport.ConnectAsync().
-        void RegistrationAction()
-        {
-            if (!this.modules.TryAdd(module.ModuleName, module))
-            {
-                throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
-            }
-        }
-
-        lock (this.registrationLock)
-        {
-            // The transport owns the lifecycle state: registration is rejected once the transport has
-            // left the Disconnected state (a connect is in flight or completed) and is legal again once
-            // a teardown returns it to Disconnected.
-            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
-            {
-                throw new InvalidOperationException("Cannot register a module after the driver has started");
-            }
-
-            if (this.isInitializationComplete)
-            {
-                WebDriverBiDiEventSource.RaiseEvent.CustomModuleRegistered(module.ModuleName);
-            }
-        }
+        this.RegisterModuleCore(module);
     }
 
     /// <summary>
@@ -938,6 +881,85 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         return observableEvent;
     }
 
+    private void RegisterModuleCore(Module module)
+    {
+        this.ThrowIfDisposed();
+        if (module is null)
+        {
+            throw new ArgumentNullException(nameof(module), "Module object may not be null");
+        }
+
+        // Action for registering a module, executed under Transport's connection state lock
+        // so that it can only be executed while the Transport is disconnected, and cannot
+        // interleave with a call to Transport.ConnectAsync().
+        void RegistrationAction()
+        {
+            if (!this.modules.TryAdd(module.ModuleName, module))
+            {
+                throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
+            }
+        }
+
+        lock (this.registrationLock)
+        {
+            // The transport owns the lifecycle state: registration is rejected once the transport has
+            // left the Disconnected state (a connect is in flight or completed) and is legal again once
+            // a teardown returns it to Disconnected.
+            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
+            {
+                throw new InvalidOperationException("Cannot register a module after the driver has started");
+            }
+
+            if (this.isInitializationComplete)
+            {
+                WebDriverBiDiEventSource.RaiseEvent.CustomModuleRegistered(module.ModuleName);
+            }
+        }
+    }
+
+    private void RegisterEventCore<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+    {
+        this.ThrowIfDisposed();
+        if (string.IsNullOrEmpty(eventName))
+        {
+            throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
+        }
+
+        if (eventInvoker is null)
+        {
+            throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
+        }
+
+        // Action for registering an event, executed under Transport's connection state lock
+        // so that it can only be executed while the Transport is disconnected, and cannot
+        // interleave with a call to Transport.ConnectAsync().
+        void RegistrationAction()
+        {
+            if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
+            {
+                throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
+            }
+
+            this.transport.RegisterEventMessage<T>(eventName);
+        }
+
+        lock (this.registrationLock)
+        {
+            // The transport owns the lifecycle state: registration is rejected once the transport has
+            // left the Disconnected state (a connect is in flight or completed) and is legal again once
+            // a teardown returns it to Disconnected.
+            if (!this.transport.TryExecuteWhileDisconnected(RegistrationAction))
+            {
+                throw new InvalidOperationException("Cannot register an event after the driver has started");
+            }
+
+            if (this.isInitializationComplete)
+            {
+                WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered(eventName, typeof(T).ToString());
+            }
+        }
+    }
+
     private async Task OnTransportEventReceivedAsync(EventReceivedEventArgs e)
     {
         // The module-level dispatch (to typed events such as Log.OnEntryAdded) and the
@@ -997,5 +1019,59 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private async Task OnTransportLogMessageAsync(LogMessageEventArgs e)
     {
         await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The command executor the driver constructs its built-in modules with. It registers their events
+    /// without calling the virtual <see cref="RegisterEvent"/>, so an override is never invoked from the
+    /// driver's constructor, before the derived class's constructor has run. Every other member forwards
+    /// to the driver, including its virtual members, so overrides still apply to the modules' commands.
+    /// </summary>
+    private sealed class BuiltInModuleExecutor : IBiDiCommandExecutor, IEventObserverErrorReporter
+    {
+        private readonly BiDiDriver driver;
+
+        public BuiltInModuleExecutor(BiDiDriver driver)
+        {
+            this.driver = driver;
+        }
+
+        public TimeSpan DefaultCommandTimeout => this.driver.DefaultCommandTimeout;
+
+        public bool IsStarted => this.driver.IsStarted;
+
+        public Func<EventObserverErrorInfo, Task> EventObserverErrorReporter => ((IEventObserverErrorReporter)this.driver).EventObserverErrorReporter;
+
+        public Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
+        {
+            return this.driver.StartAsync(connectionString, cancellationToken);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken = default)
+        {
+            return this.driver.StopAsync(cancellationToken);
+        }
+
+        public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+            where T : CommandResult
+        {
+            return this.driver.ExecuteCommandAsync(commandParameters, commandTimeout, cancellationToken);
+        }
+
+        public Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
+            where T : CommandResult
+        {
+            return this.driver.ExecuteCommandAsync<T>(commandParameters, commandTimeout, cancellationToken);
+        }
+
+        public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+        {
+            this.driver.RegisterEventCore(eventName, eventInvoker);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            return this.driver.DisposeAsync();
+        }
     }
 }
