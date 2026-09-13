@@ -29,7 +29,7 @@ public class BiDiDriver009AnalyzerTests
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver();
+                        IBiDiModuleHost driver = new BiDiDriver();
                         await driver.ExecuteCommandAsync(new StatusCommandParameters());
                     }
                 }
@@ -470,12 +470,12 @@ public class BiDiDriver009AnalyzerTests
 
                 public abstract class Module { }
 
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiDriverLifecycleManager
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
@@ -533,12 +533,12 @@ public class BiDiDriver009AnalyzerTests
                 public abstract class CommandResult { }
                 public abstract class Module { }
 
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiDriverLifecycleManager
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
@@ -598,12 +598,12 @@ public class BiDiDriver009AnalyzerTests
                 public abstract class CommandResult { }
                 public abstract class Module { }
 
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiDriverLifecycleManager
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
@@ -663,12 +663,12 @@ public class BiDiDriver009AnalyzerTests
                 public abstract class CommandResult { }
                 public abstract class Module { }
 
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiDriverLifecycleManager
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
@@ -1739,7 +1739,7 @@ public class BiDiDriver009AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -2147,7 +2147,7 @@ public class BiDiDriver009AnalyzerTests
                     public async Task CastAsync()
                     {
                         BiDiDriver driver = new BiDiDriver();
-                        await StartHelperAsync((IBiDiCommandExecutor)driver);
+                        await StartHelperAsync((IBiDiDriverLifecycleManager)driver);
                         await driver.ExecuteCommandAsync(new StatusCommandParameters());
                     }
 
@@ -2174,7 +2174,7 @@ public class BiDiDriver009AnalyzerTests
                         await other.ExecuteCommandAsync(new StatusCommandParameters());
                     }
 
-                    private static async Task StartHelperAsync(IBiDiCommandExecutor driver)
+                    private static async Task StartHelperAsync(IBiDiDriverLifecycleManager driver)
                     {
                         await driver.StartAsync("ws://localhost:1234");
                     }

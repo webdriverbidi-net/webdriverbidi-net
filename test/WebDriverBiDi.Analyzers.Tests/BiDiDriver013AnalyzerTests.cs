@@ -577,7 +577,7 @@ public class BiDiDriver013AnalyzerTests
             {
                 public class GoogleCdp : Module
                 {
-                    public GoogleCdp(IBiDiCommandExecutor driver) : base(driver) { }
+                    public GoogleCdp(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "goog:cdp";
                     public Task NavigateAsync(string url) => Task.CompletedTask;
                     public Task NavigateAsync(string url, CancellationToken cancellationToken) => Task.CompletedTask;

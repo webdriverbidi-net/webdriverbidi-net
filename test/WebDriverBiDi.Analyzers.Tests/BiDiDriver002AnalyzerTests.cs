@@ -1235,13 +1235,17 @@ public class BiDiDriver002AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
+                }
+
+                public interface IBiDiModuleHost
+                {
                     void RegisterEvent();
                 }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;

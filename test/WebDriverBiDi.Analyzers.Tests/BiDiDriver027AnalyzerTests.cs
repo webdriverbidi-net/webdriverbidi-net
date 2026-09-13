@@ -97,7 +97,7 @@ public class BiDiDriver027AnalyzerTests
     [Fact]
     public async Task RegisterEvent_OnNonExecutorType_NoDiagnostic()
     {
-        // A same-named RegisterEvent on a type that is not a command executor is not the library's
+        // A same-named RegisterEvent on a type that is not the driver is not the library's
         // method, so a built-in name is not reported.
         string testCode = """
             using System;

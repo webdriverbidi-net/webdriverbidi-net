@@ -19,8 +19,8 @@ public sealed class StorageModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="StorageModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
-    public StorageModule(IBiDiCommandExecutor driver)
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
+    public StorageModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }

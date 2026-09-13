@@ -22,8 +22,8 @@ public sealed class InputModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="InputModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
-    public InputModule(IBiDiCommandExecutor driver)
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
+    public InputModule(IBiDiModuleHost driver)
         : base(driver)
     {
         this.RegisterObservableEvent(this.invocableFileDialogOpenedObservableEvent);

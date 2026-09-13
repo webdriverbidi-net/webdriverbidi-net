@@ -791,8 +791,8 @@ public class BiDiDriver004AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that a user type recognised through the <c>IBiDiCommandExecutor</c> interface — rather
-    /// than by its own name — is treated as a command executor. A wrapper or test double implementing
+    /// Tests that a user type recognised through the <c>IBiDiModuleHost</c> interface — rather
+    /// than by its own name — is treated as the driver. A wrapper or test double implementing
     /// the interface is a driver for this rule's purposes just as <c>BiDiDriver</c> is.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
@@ -808,16 +808,8 @@ public class BiDiDriver004AnalyzerTests
 
             namespace TestApp
             {
-                public class RecordingExecutor : IBiDiCommandExecutor
+                public class RecordingExecutor : IBiDiModuleHost
                 {
-                    public TimeSpan DefaultCommandTimeout => TimeSpan.Zero;
-
-                    public bool IsStarted => true;
-
-                    public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-                    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-
                     public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
                         where T : CommandResult => throw new NotImplementedException();
 
@@ -827,8 +819,6 @@ public class BiDiDriver004AnalyzerTests
                     public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
                     {
                     }
-
-                    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
                 }
 
                 public class TestClass
@@ -857,7 +847,7 @@ public class BiDiDriver004AnalyzerTests
 
     /// <summary>
     /// Tests that a type implementing a user's own interface that merely shares the name
-    /// <c>IBiDiCommandExecutor</c> is not treated as a command executor. The interface match requires
+    /// <c>IBiDiModuleHost</c> is not treated as the driver. The interface match requires
     /// the library's namespace, exactly as the base-class match does.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
@@ -871,12 +861,12 @@ public class BiDiDriver004AnalyzerTests
 
             namespace UserApp
             {
-                public interface IBiDiCommandExecutor
+                public interface IBiDiModuleHost
                 {
                     Task<int> ExecuteCommandAsync(string name);
                 }
 
-                public class RecordingExecutor : IBiDiCommandExecutor
+                public class RecordingExecutor : IBiDiModuleHost
                 {
                     public Task<int> ExecuteCommandAsync(string name) => Task.FromResult(0);
 

@@ -1467,9 +1467,9 @@ public class BiDiDriver005AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public class IBiDiCommandExecutor { }
+                public class IBiDiModuleHost { }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                 }
@@ -1725,9 +1725,9 @@ public class BiDiDriver005AnalyzerTests
                     public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
                 }
 
-                public class IBiDiCommandExecutor { }
+                public class IBiDiModuleHost { }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public LogModule Log { get; } = new();
@@ -2379,17 +2379,17 @@ public class BiDiDriver005AnalyzerTests
     }
 
     /// <summary>
-    /// Tests an <c>ObservableEvent</c> type that also advertises the command-executor interface, so
+    /// Tests an <c>ObservableEvent</c> type that also advertises the module-host interface, so
     /// a bare variable of that type is simultaneously the observable event and its own chain root.
     /// The rule requires the event to be reached through a module property, so nothing is reported.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task AddObserver_OnObservableEventThatIsItselfACommandExecutor_DoesNotReportDiagnostic()
+    public async Task AddObserver_OnObservableEventThatIsItselfAModuleHost_DoesNotReportDiagnostic()
     {
         // SYNTHETIC: keeps a hand-written stub. It defines an ObservableEvent<T> that also implements
-        // IBiDiCommandExecutor so a bare variable of that type is both the event and its own chain root.
-        // The real ObservableEvent<T> does not implement the command-executor interface (and its
+        // IBiDiModuleHost so a bare variable of that type is both the event and its own chain root.
+        // The real ObservableEvent<T> does not implement the module-host interface (and its
         // constructor is protected), so this cannot be reproduced against the real assembly.
         string test = """
             using System;
@@ -2397,7 +2397,7 @@ public class BiDiDriver005AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public interface IBiDiCommandExecutor { }
+                public interface IBiDiModuleHost { }
 
                 public class WebDriverBiDiEventArgs { }
 
@@ -2408,7 +2408,7 @@ public class BiDiDriver005AnalyzerTests
                     public void Dispose() { }
                 }
 
-                public class ObservableEvent<T> : IBiDiCommandExecutor where T : WebDriverBiDiEventArgs
+                public class ObservableEvent<T> : IBiDiModuleHost where T : WebDriverBiDiEventArgs
                 {
                     public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
                 }

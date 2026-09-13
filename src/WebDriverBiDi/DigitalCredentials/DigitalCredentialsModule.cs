@@ -19,8 +19,8 @@ public sealed class DigitalCredentialsModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="DigitalCredentialsModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
-    public DigitalCredentialsModule(IBiDiCommandExecutor driver)
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
+    public DigitalCredentialsModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }

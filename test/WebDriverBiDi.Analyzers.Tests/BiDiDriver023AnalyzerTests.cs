@@ -605,12 +605,12 @@ public class BiDiDriver023AnalyzerTests
             {
                 public abstract class BaseModule : Module
                 {
-                    protected BaseModule(IBiDiCommandExecutor executor) : base(executor) { }
+                    protected BaseModule(IBiDiModuleHost executor) : base(executor) { }
                 }
 
                 public class ConcreteModule : BaseModule
                 {
-                    public ConcreteModule(IBiDiCommandExecutor executor) : base(executor) { }
+                    public ConcreteModule(IBiDiModuleHost executor) : base(executor) { }
                     public override string ModuleName => "concrete";
                     public Task<string> DoWorkAsync() => Task.FromResult("done");
                 }
@@ -619,7 +619,7 @@ public class BiDiDriver023AnalyzerTests
                 {
                     public void TestMethod(BiDiDriver driver)
                     {
-                        IBiDiCommandExecutor executor = driver;
+                        IBiDiModuleHost executor = driver;
                         var module = new ConcreteModule(executor);
                         var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
                         {
@@ -700,7 +700,7 @@ public class BiDiDriver023AnalyzerTests
             {
                 public class UtilModule : Module
                 {
-                    public UtilModule(IBiDiCommandExecutor executor) : base(executor) { }
+                    public UtilModule(IBiDiModuleHost executor) : base(executor) { }
                     public override string ModuleName => "util";
                     public Task RunAsync() => Task.CompletedTask;
                 }
@@ -933,7 +933,7 @@ public class BiDiDriver023AnalyzerTests
             {
                 public class BrowserModule : Module
                 {
-                    public BrowserModule(IBiDiCommandExecutor executor) : base(executor) { }
+                    public BrowserModule(IBiDiModuleHost executor) : base(executor) { }
                     public override string ModuleName => "browser";
 
                     // Returns plain non-generic Task — IsGenericType is false.
@@ -1080,7 +1080,7 @@ public class BiDiDriver023AnalyzerTests
 
                 public class MyModule : Module
                 {
-                    public MyModule(IBiDiCommandExecutor executor) : base(executor) { }
+                    public MyModule(IBiDiModuleHost executor) : base(executor) { }
                     public override string ModuleName => "my";
 
                     // Task<T> return — IsModuleCommandMethod should return true.
@@ -1213,7 +1213,7 @@ public class BiDiDriver023AnalyzerTests
             {
                 public class BrowserModule : Module
                 {
-                    public BrowserModule(IBiDiCommandExecutor executor) : base(executor) { }
+                    public BrowserModule(IBiDiModuleHost executor) : base(executor) { }
                     public override string ModuleName => "browser";
 
                     public string Describe() => "browser";
@@ -1518,7 +1518,7 @@ public class BiDiDriver023AnalyzerTests
             {
                 public class GoogleCdp : Module
                 {
-                    public GoogleCdp(IBiDiCommandExecutor driver) : base(driver) { }
+                    public GoogleCdp(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "goog:cdp";
                     public Task<int> SendAsync() => Task.FromResult(1);
                 }

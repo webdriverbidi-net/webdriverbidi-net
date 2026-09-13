@@ -1243,11 +1243,9 @@ public class BiDiDriverTests
         // a test can reach the executor the driver constructed them with.
         PropertyInfo? moduleDriverProperty = typeof(Module).GetProperty("Driver", BindingFlags.Instance | BindingFlags.NonPublic);
         Assert.NotNull(moduleDriverProperty);
-        IBiDiCommandExecutor executor = (IBiDiCommandExecutor)moduleDriverProperty.GetValue(driver.Session)!;
+        IBiDiModuleHost executor = (IBiDiModuleHost)moduleDriverProperty.GetValue(driver.Session)!;
 
         Assert.NotSame(driver, executor);
-        Assert.Equal(TimeSpan.FromMilliseconds(500), executor.DefaultCommandTimeout);
-        Assert.False(executor.IsStarted);
 
         // Observer faults in the built-in modules' events must reach the driver's pipeline. A delegate
         // bound to the same method on the same target compares equal.
@@ -1257,16 +1255,6 @@ public class BiDiDriverTests
         // Before start, the driver rejects a command, which is enough to show that each overload reached it.
         await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await executor.ExecuteCommandAsync(new TestCommandParameters("module.command"), cancellationToken: TestContext.Current.CancellationToken));
         await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await executor.ExecuteCommandAsync<TestCommandResult>((CommandParameters)new TestCommandParameters("module.command"), cancellationToken: TestContext.Current.CancellationToken));
-
-        await executor.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
-        Assert.True(driver.IsStarted);
-        Assert.True(executor.IsStarted);
-
-        await executor.StopAsync(TestContext.Current.CancellationToken);
-        Assert.False(driver.IsStarted);
-
-        await executor.DisposeAsync();
-        Assert.ThrowsAny<ObjectDisposedException>(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)));
     }
 
     [Fact]

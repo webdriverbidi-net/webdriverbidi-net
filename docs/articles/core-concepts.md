@@ -312,11 +312,12 @@ For normal application code, use the concrete `BiDiDriver` class directly.
 
 That is the intended experience for almost every consumer of this library. Most users should never need to reference any interface type directly.
 
-For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also implements three focused interfaces:
+For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also implements four focused interfaces:
 
 | Interface | Purpose | Typical advanced use |
 |----------|---------|----------------------|
-| `IBiDiCommandExecutor` | Core lifecycle and command execution | Custom modules, test doubles, framework internals that only need to start/stop the driver, execute commands, or register protocol events |
+| `IBiDiModuleHost` | Command execution and event registration | Custom modules and test doubles that execute commands or register protocol events: the surface a module needs from its host |
+| `IBiDiDriverLifecycleManager` | Driver lifecycle | Framework code that owns the driver's lifetime without executing commands itself: starting, stopping and disposing the driver, or checking `IsStarted` |
 | `IBiDiDriverConfiguration` | Pre-start extensibility hooks | Registering custom modules and additional JSON type resolvers before `StartAsync()` |
 | `IBiDiDriverEvents` | Driver observability | Subscribing to top-level driver events |
 | `ITransportConfiguration` | Tunable transport settings | Adjusting the log level, the transport error behaviors, and the shutdown and connection-lock timeouts, via `BiDiDriver.TransportConfiguration` |
@@ -325,7 +326,8 @@ For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also 
 The hierarchy is intentionally split by capability rather than by end-user workflow:
 
 - `BiDiDriver` is the primary type for applications.
-- `IBiDiCommandExecutor` is the narrow execution surface used by modules and low-level abstractions.
+- `IBiDiModuleHost` is the narrow surface a module needs from its host: executing commands and registering its protocol events.
+- `IBiDiDriverLifecycleManager` covers starting, stopping and disposing the driver.
 - `IBiDiDriverConfiguration` covers advanced pre-start customization.
 - `IBiDiDriverEvents` covers top-level driver events.
 - `ITransportConfiguration` and `ITransportDiagnostics` are the transport's settings and its observable state. They are reached from `BiDiDriver.TransportConfiguration` and `BiDiDriver.TransportDiagnostics`, so a driver built with `new BiDiDriver()` can be tuned and observed without constructing a `Transport` by hand. They deliberately exclude the transport's lifecycle and messaging operations, which belong to the driver that owns it.

@@ -90,7 +90,7 @@ internal partial class MyExtensionJsonSerializerContext : JsonSerializerContext 
 
 public class MyExtensionModule : Module
 {
-    public MyExtensionModule(IBiDiCommandExecutor driver) : base(driver)
+    public MyExtensionModule(IBiDiModuleHost driver) : base(driver)
     {
     }
 

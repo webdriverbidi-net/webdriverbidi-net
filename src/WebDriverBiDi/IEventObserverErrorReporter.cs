@@ -12,7 +12,7 @@ namespace WebDriverBiDi;
 /// <remarks>
 /// <para>
 /// Unlike the library's other interfaces, this one <em>is</em> meant to be implemented: a custom
-/// <see cref="IBiDiCommandExecutor"/> implements it to receive the failures of observers of the events
+/// <see cref="IBiDiModuleHost"/> implements it to receive the failures of observers of the events
 /// its modules raise. <see cref="BiDiDriver"/> implements it already, so an application using the
 /// driver needs nothing here.
 /// </para>

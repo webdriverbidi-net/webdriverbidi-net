@@ -527,12 +527,12 @@ public class BiDiDriver003AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                public interface IBiDiDriverConfiguration : IBiDiDriverLifecycleManager
                 {
                     Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
                     IBiDiDriverConfiguration Self { get; }

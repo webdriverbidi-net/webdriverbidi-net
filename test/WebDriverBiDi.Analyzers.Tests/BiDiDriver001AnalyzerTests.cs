@@ -46,7 +46,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -83,7 +83,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -131,7 +131,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -248,7 +248,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -328,7 +328,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -361,12 +361,12 @@ public class BiDiDriver001AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                public interface IBiDiDriverConfiguration : IBiDiDriverLifecycleManager
                 {
                     void RegisterModule();
                 }
@@ -435,7 +435,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -490,7 +490,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -614,7 +614,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -666,7 +666,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -732,7 +732,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -772,7 +772,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -815,7 +815,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -856,7 +856,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -903,7 +903,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -947,7 +947,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -991,7 +991,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1033,7 +1033,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1070,7 +1070,7 @@ public class BiDiDriver001AnalyzerTests
             {
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1123,7 +1123,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1172,7 +1172,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1221,7 +1221,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1255,12 +1255,12 @@ public class BiDiDriver001AnalyzerTests
 
             namespace NotBiDi
             {
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                public interface IBiDiDriverConfiguration : IBiDiDriverLifecycleManager
                 {
                     void RegisterModule(object module);
                 }
@@ -1328,7 +1328,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1375,7 +1375,7 @@ public class BiDiDriver001AnalyzerTests
                 }
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1420,7 +1420,7 @@ public class BiDiDriver001AnalyzerTests
                 }
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1465,7 +1465,7 @@ public class BiDiDriver001AnalyzerTests
                 }
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1513,7 +1513,7 @@ public class BiDiDriver001AnalyzerTests
                 }
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1558,7 +1558,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1611,7 +1611,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1655,7 +1655,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1700,7 +1700,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1746,7 +1746,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1790,7 +1790,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1842,7 +1842,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1879,7 +1879,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1928,7 +1928,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -1968,7 +1968,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
 
                     public override string ModuleName => "custom";
                 }
@@ -2033,7 +2033,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }
@@ -2059,12 +2059,12 @@ public class BiDiDriver001AnalyzerTests
             {
                 public abstract class Module { }
 
-                public interface IBiDiCommandExecutor
+                public interface IBiDiDriverLifecycleManager
                 {
                     Task StartAsync(string url);
                 }
 
-                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                public interface IBiDiDriverConfiguration : IBiDiDriverLifecycleManager
                 {
                     void RegisterModule(Module module);
                     IBiDiDriverConfiguration Self { get; }

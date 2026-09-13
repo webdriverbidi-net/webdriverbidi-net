@@ -48,8 +48,8 @@ public sealed class BrowsingContextModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowsingContextModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
-    public BrowsingContextModule(IBiDiCommandExecutor driver)
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
+    public BrowsingContextModule(IBiDiModuleHost driver)
         : base(driver)
     {
         this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.invocableContextCreatedObservableEvent, info => new BrowsingContextEventArgs(info));

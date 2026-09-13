@@ -48,7 +48,7 @@ public static class CoreConceptsSamples
 
     public class MyCustomModule : Module
     {
-        public MyCustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+        public MyCustomModule(IBiDiModuleHost driver) : base(driver) { }
         public override string ModuleName => throw new NotImplementedException();
     }
 

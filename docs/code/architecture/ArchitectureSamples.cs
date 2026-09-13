@@ -459,7 +459,7 @@ public static class ArchitectureSamples
     {
         public const string MyCustomModuleName = "myCustom";
 
-        public MyCustomModule(IBiDiCommandExecutor driver)
+        public MyCustomModule(IBiDiModuleHost driver)
             : base(driver) { }
 
         public override string ModuleName => MyCustomModuleName;

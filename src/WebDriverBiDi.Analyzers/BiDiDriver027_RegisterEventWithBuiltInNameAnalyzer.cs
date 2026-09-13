@@ -94,7 +94,7 @@ public class BiDiDriver027_RegisterEventWithBuiltInNameAnalyzer : DiagnosticAnal
             return;
         }
 
-        // Only the library's RegisterEvent (on BiDiDriver / IBiDiCommandExecutor) is of interest.
+        // Only the library's RegisterEvent (on BiDiDriver / IBiDiModuleHost) is of interest.
         if (!AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
         {
             return;

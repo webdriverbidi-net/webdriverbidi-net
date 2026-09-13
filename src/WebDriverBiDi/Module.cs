@@ -14,7 +14,7 @@ public abstract class Module
     /// Initializes a new instance of the <see cref="Module"/> class.
     /// </summary>
     /// <param name="driver">The driver used for communication by the module.</param>
-    protected Module(IBiDiCommandExecutor driver)
+    protected Module(IBiDiModuleHost driver)
     {
         this.Driver = driver;
     }
@@ -27,7 +27,7 @@ public abstract class Module
     /// <summary>
     /// Gets the driver used for communication by the module.
     /// </summary>
-    protected IBiDiCommandExecutor Driver { get; }
+    protected IBiDiModuleHost Driver { get; }
 
     /// <summary>
     /// Registers an event so that when it is received, the deserialized data is forwarded

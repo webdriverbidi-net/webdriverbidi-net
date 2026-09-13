@@ -22,8 +22,8 @@ public sealed class LogModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="LogModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
-    public LogModule(IBiDiCommandExecutor driver)
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
+    public LogModule(IBiDiModuleHost driver)
         : base(driver)
     {
         this.RegisterObservableEvent<LogEntry, EntryAddedEventArgs>(this.invocableEntryAddedObservableEvent, entry => new EntryAddedEventArgs(entry));

@@ -40,7 +40,7 @@ public class CustomModule : Module
 {
     public const string CustomModuleName = "custom";
 
-    public CustomModule(IBiDiCommandExecutor driver)
+    public CustomModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }
@@ -93,7 +93,7 @@ public class MyCustomModule : Module
 {
     public const string MyCustomModuleName = "myCustom";
 
-    public MyCustomModule(IBiDiCommandExecutor driver)
+    public MyCustomModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }
@@ -190,7 +190,7 @@ public class PageUtilitiesModule : Module
 {
     public const string PageUtilitiesModuleName = "pageUtilities";
 
-    public PageUtilitiesModule(IBiDiCommandExecutor driver)
+    public PageUtilitiesModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }
@@ -378,7 +378,7 @@ public class TestUtilitiesModule : Module
 {
     public const string TestUtilitiesModuleName = "testUtilities";
 
-    public TestUtilitiesModule(IBiDiCommandExecutor driver)
+    public TestUtilitiesModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }
@@ -496,7 +496,7 @@ public class CustomEventsModule : Module
     private readonly ObservableEventInvocable<CustomEventArgs> onCustomEvent =
         new ObservableEventInvocable<CustomEventArgs>(CustomEventName);
 
-    public CustomEventsModule(IBiDiCommandExecutor driver)
+    public CustomEventsModule(IBiDiModuleHost driver)
         : base(driver)
     {
         // Register event with driver
@@ -570,7 +570,7 @@ public enum WidgetMode
 
 public class Waiter
 {
-    private readonly IBiDiCommandExecutor Driver;
+    private readonly IBiDiModuleHost Driver;
 
     /// <summary>
     /// Optional timeout with default.
@@ -651,7 +651,7 @@ public class ExperimentalModule : Module
 {
     public const string ExperimentalModuleName = "experimental";
 
-    public ExperimentalModule(IBiDiCommandExecutor driver)
+    public ExperimentalModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }

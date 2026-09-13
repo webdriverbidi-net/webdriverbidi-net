@@ -1192,9 +1192,9 @@ public class BiDiDriver015AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public class IBiDiCommandExecutor { }
+                public class IBiDiModuleHost { }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     // A method member (not a property) on the driver — exercises line 222 false.
@@ -1295,7 +1295,7 @@ public class BiDiDriver015AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public class IBiDiCommandExecutor { }
+                public class IBiDiModuleHost { }
 
                 public class NotObservableEvent { }
 
@@ -1305,7 +1305,7 @@ public class BiDiDriver015AnalyzerTests
                     public NotObservableEvent OnEntryAdded { get; } = new();
                 }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public LogModule Log { get; } = new();
@@ -1385,9 +1385,9 @@ public class BiDiDriver015AnalyzerTests
                     public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
                 }
 
-                public class IBiDiCommandExecutor { }
+                public class IBiDiModuleHost { }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public LogModule Log { get; } = new();
@@ -1469,9 +1469,9 @@ public class BiDiDriver015AnalyzerTests
                     public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
                 }
 
-                public class IBiDiCommandExecutor { }
+                public class IBiDiModuleHost { }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public LogModule Log { get; } = new();
@@ -1587,9 +1587,9 @@ public class BiDiDriver015AnalyzerTests
                     public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new();
                 }
 
-                public class IBiDiCommandExecutor { }
+                public class IBiDiModuleHost { }
 
-                public class BiDiDriver : IBiDiCommandExecutor
+                public class BiDiDriver : IBiDiModuleHost
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public LogModule Log { get; } = new();
@@ -1969,7 +1969,7 @@ public class BiDiDriver015AnalyzerTests
     /// <summary>
     /// Tests that locals whose initializer has an array type, or no type at all, are skipped while
     /// looking for the driver variable. An array type is not an <c>INamedTypeSymbol</c>, so the
-    /// command-executor interface scan has nothing to walk, and the <c>null</c> literal has no type
+    /// driver-interface scan has nothing to walk, and the <c>null</c> literal has no type
     /// for the scan to start from.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
@@ -2155,7 +2155,7 @@ public class BiDiDriver015AnalyzerTests
 
     /// <summary>
     /// Tests that no diagnostic is reported when the driver is a generic type parameter constrained to
-    /// <c>BiDiDriver</c>. A type parameter is not a named type, so the command-executor test walks past
+    /// <c>BiDiDriver</c>. A type parameter is not a named type, so the driver-type test walks past
     /// it and answers false; the rule stays silent rather than naming a type it cannot resolve members
     /// on. This documents current behaviour — looking through a constraint would be a separate change.
     /// </summary>
