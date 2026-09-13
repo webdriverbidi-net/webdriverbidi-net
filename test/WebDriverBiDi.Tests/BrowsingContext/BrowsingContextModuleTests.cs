@@ -684,7 +684,9 @@ public class BrowsingContextModuleTests
             Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), e.Timestamp);
             Assert.Equal(DownloadEndStatus.Complete, e.Status);
             Assert.Equal("myDownloadId", e.DownloadId);
-            Assert.Equal("myFile.file", e.FilePath);
+            DownloadCompleteEventArgs completeEventArgs = Assert.IsType<DownloadCompleteEventArgs>(e);
+            Assert.Equal("myFile.file", completeEventArgs.FilePath);
+            Assert.Empty(e.AdditionalData);
 
             taskCompletionSource.TrySetResult();
         });
@@ -706,6 +708,86 @@ public class BrowsingContextModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task TestCanReceiveDownloadEndEventForCanceledDownload()
+    {
+        TestWebSocketConnection connection = new();
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        BrowsingContextModule module = driver.BrowsingContext;
+
+        TaskCompletionSource<DownloadEndEventArgs> eventReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnDownloadEnd.AddObserver(e =>
+        {
+            eventReceived.TrySetResult(e);
+        });
+
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "browsingContext.downloadEnd",
+                             "params": {
+                               "context": "myContext",
+                               "url": "https://example.com",
+                               "timestamp": {{epochTimestamp}},
+                               "navigation": "myNavigationId",
+                               "download": "myDownloadId",
+                               "status": "canceled"
+                             }
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        DownloadEndEventArgs eventArgs = await eventReceived.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.IsType<DownloadCanceledEventArgs>(eventArgs);
+        Assert.Equal(DownloadEndStatus.Canceled, eventArgs.Status);
+        Assert.Equal("myContext", eventArgs.BrowsingContextId);
+        Assert.Equal("myDownloadId", eventArgs.DownloadId);
+        Assert.Empty(eventArgs.AdditionalData);
+    }
+
+    [Fact]
+    public async Task TestDownloadEndEventForCanceledDownloadExposesFilePathAsExtensionData()
+    {
+        // A canceled download has no filepath in the protocol, so one sent anyway is not a member of
+        // DownloadCanceledEventArgs. Extension data is collected against the deserialized variant's own
+        // properties, so it is reported there rather than dropped or rejected.
+        TestWebSocketConnection connection = new();
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        BrowsingContextModule module = driver.BrowsingContext;
+
+        TaskCompletionSource<DownloadEndEventArgs> eventReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        module.OnDownloadEnd.AddObserver(e =>
+        {
+            eventReceived.TrySetResult(e);
+        });
+
+        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "browsingContext.downloadEnd",
+                             "params": {
+                               "context": "myContext",
+                               "url": "https://example.com",
+                               "timestamp": {{epochTimestamp}},
+                               "navigation": "myNavigationId",
+                               "download": "myDownloadId",
+                               "status": "canceled",
+                               "filepath": "myFile.file"
+                             }
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        DownloadEndEventArgs eventArgs = await eventReceived.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        Assert.IsType<DownloadCanceledEventArgs>(eventArgs);
+        Assert.Single(eventArgs.AdditionalData);
+        Assert.Equal("myFile.file", eventArgs.AdditionalData["filepath"]);
     }
 
     [Fact]

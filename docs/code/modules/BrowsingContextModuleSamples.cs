@@ -579,13 +579,13 @@ public static class BrowsingContextModuleSamples
             Console.WriteLine($"Download starting: {e.SuggestedFileName} from {e.Url}");
         });
 
-        // Download completed or failed
+        // Download completed or canceled; only a completed download has a file path
         driver.BrowsingContext.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
         {
             Console.WriteLine($"Download ended with status: {e.Status}");
-            if (e.FilePath != null)
+            if (e.TryAs(out DownloadCompleteEventArgs? complete) && complete.FilePath != null)
             {
-                Console.WriteLine($"Saved to: {e.FilePath}");
+                Console.WriteLine($"Saved to: {complete.FilePath}");
             }
         });
         #endregion
@@ -608,9 +608,9 @@ public static class BrowsingContextModuleSamples
         driver.BrowsingContext.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
         {
             Console.WriteLine($"Download {e.DownloadId} ended: {e.Status}");
-            if (e.Status == DownloadEndStatus.Complete && e.FilePath != null)
+            if (e.TryAs(out DownloadCompleteEventArgs? complete) && complete.FilePath != null)
             {
-                Console.WriteLine($"  Saved to: {e.FilePath}");
+                Console.WriteLine($"  Saved to: {complete.FilePath}");
             }
         });
         #endregion

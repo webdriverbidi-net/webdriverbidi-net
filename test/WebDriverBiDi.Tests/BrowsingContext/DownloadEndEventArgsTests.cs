@@ -10,110 +10,6 @@ public class DownloadEndEventArgsTests
     };
 
     [Fact]
-    public void TestCanDeserializeComplete()
-    {
-        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = $$"""
-                      {
-                        "context": "myContextId",
-                        "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}},
-                        "navigation": "myNavigationId",
-                        "status": "complete",
-                        "download": "myDownloadId",
-                        "filepath": "myFile.file"
-                      }
-                      """;
-        DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options);
-        Assert.NotNull(eventArgs);
-
-        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("http://example.com", eventArgs.Url);
-        Assert.Equal((ulong)epochTimestamp, eventArgs.EpochTimestamp);
-        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
-        Assert.Equal("myNavigationId", eventArgs.NavigationId);
-        Assert.Equal("myDownloadId", eventArgs.DownloadId);
-        Assert.Equal(DownloadEndStatus.Complete, eventArgs.Status);
-        Assert.Equal("myFile.file", eventArgs.FilePath);
-    }
-
-    [Fact]
-    public void TestCanDeserializeCompleteWithNullFilePath()
-    {
-        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = $$"""
-                      {
-                        "context": "myContextId",
-                        "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}},
-                        "navigation": "myNavigationId",
-                        "download": "myDownloadId",
-                        "status": "complete",
-                        "filepath": null
-                      }
-                      """;
-        DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options);
-        Assert.NotNull(eventArgs);
-
-        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("http://example.com", eventArgs.Url);
-        Assert.Equal((ulong)epochTimestamp, eventArgs.EpochTimestamp);
-        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
-        Assert.Equal("myNavigationId", eventArgs.NavigationId);
-        Assert.Equal("myDownloadId", eventArgs.DownloadId);
-        Assert.Equal(DownloadEndStatus.Complete, eventArgs.Status);
-        Assert.Null(eventArgs.FilePath);
-    }
-
-    [Fact]
-    public void TestCanDeserializeCanceled()
-    {
-        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = $$"""
-                      {
-                        "context": "myContextId",
-                        "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}},
-                        "navigation": "myNavigationId",
-                        "download": "myDownloadId",
-                        "status": "canceled"
-                      }
-                      """;
-        DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options);
-        Assert.NotNull(eventArgs);
-
-        Assert.Equal("myContextId", eventArgs.BrowsingContextId);
-        Assert.Equal("http://example.com", eventArgs.Url);
-        Assert.Equal((ulong)epochTimestamp, eventArgs.EpochTimestamp);
-        Assert.Equal(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp), eventArgs.Timestamp);
-        Assert.Equal("myNavigationId", eventArgs.NavigationId);
-        Assert.Equal("myDownloadId", eventArgs.DownloadId);
-        Assert.Equal(DownloadEndStatus.Canceled, eventArgs.Status);
-        Assert.Null(eventArgs.FilePath);
-    }
-
-    [Fact]
-    public void TestCopySemantics()
-    {
-        long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = $$"""
-                      {
-                        "context": "myContextId",
-                        "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}},
-                        "navigation": "myNavigationId",
-                        "download": "myDownloadId",
-                        "status": "complete",
-                        "filepath": "myFile.file"
-                      }
-                      """;
-        DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options);
-        Assert.NotNull(eventArgs);
-        DownloadEndEventArgs copy = eventArgs with { };
-        Assert.Equal(eventArgs, copy);
-    }
-
-    [Fact]
     public void TestDeserializingWithMissingContextThrows()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
@@ -334,7 +230,8 @@ public class DownloadEndEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": {},
-                        "status": "complete"
+                        "status": "complete",
+                        "filepath": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
@@ -351,7 +248,8 @@ public class DownloadEndEventArgsTests
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
                         "download": null,
-                        "status": "complete"
+                        "status": "complete",
+                        "filepath": "myFile.file"
                       }
                       """;
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
@@ -426,7 +324,45 @@ public class DownloadEndEventArgsTests
     }
 
     [Fact]
-    public void TestDeserializeWithInvalidFilePathValueThrows()
+    public void TestDeserializingWithNonObjectThrows()
+    {
+        string json = @"[ ""invalid download end"" ]";
+        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
+    }
+
+    [Fact]
+    public void TestCanCastToProperSubclassType()
+    {
+        DownloadEndEventArgs eventArgs = DeserializeCompleteEventArgs(this.options);
+        Assert.Same(eventArgs, eventArgs.As<DownloadCompleteEventArgs>());
+    }
+
+    [Fact]
+    public void TestCannotCastToImproperSubclassType()
+    {
+        DownloadEndEventArgs eventArgs = DeserializeCompleteEventArgs(this.options);
+        Assert.Contains("cannot be cast", Assert.ThrowsAny<WebDriverBiDiException>(() => eventArgs.As<DownloadCanceledEventArgs>()).Message);
+    }
+
+    [Fact]
+    public void TestTryCastToSubclassTypeReturnsTrue()
+    {
+        DownloadEndEventArgs eventArgs = DeserializeCompleteEventArgs(this.options);
+        bool result = eventArgs.TryAs(out DownloadCompleteEventArgs? completeEventArgs);
+        Assert.True(result);
+        Assert.Same(eventArgs, completeEventArgs);
+    }
+
+    [Fact]
+    public void TestTryCastToImproperSubclassTypeReturnsFalse()
+    {
+        DownloadEndEventArgs eventArgs = DeserializeCompleteEventArgs(this.options);
+        bool result = eventArgs.TryAs(out DownloadCanceledEventArgs? canceledEventArgs);
+        Assert.False(result);
+        Assert.Null(canceledEventArgs);
+    }
+
+    private static DownloadEndEventArgs DeserializeCompleteEventArgs(JsonSerializerOptions options)
     {
         long epochTimestamp = Convert.ToInt64((DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds);
         string json = $$"""
@@ -435,11 +371,13 @@ public class DownloadEndEventArgsTests
                         "url": "http://example.com",
                         "timestamp": {{epochTimestamp}},
                         "navigation": "myNavigationId",
-                        "status": "complete",
                         "download": "myDownloadId",
-                        "filepath": {}
+                        "status": "complete",
+                        "filepath": "myFile.file"
                       }
                       """;
-        Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<DownloadEndEventArgs>(json, this.options));
+        DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json, options);
+        Assert.NotNull(eventArgs);
+        return eventArgs;
     }
 }

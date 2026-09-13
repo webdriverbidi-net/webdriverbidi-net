@@ -421,6 +421,8 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(DedicatedWorkerRealmInfo))]
 [JsonSerializable(typeof(DateRemoteValue))]
 [JsonSerializable(typeof(DisownCommandParameters))]
+[JsonSerializable(typeof(DownloadCanceledEventArgs))]
+[JsonSerializable(typeof(DownloadCompleteEventArgs))]
 [JsonSerializable(typeof(EvaluateCommandParameters))]
 [JsonSerializable(typeof(EvaluateResult))]
 [JsonSerializable(typeof(EvaluateResultSuccess))]

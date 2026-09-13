@@ -1363,7 +1363,8 @@ public static class EventObserverSamples
         // Download end - fired when a download completes or is canceled
         driver.BrowsingContext.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
         {
-            Console.WriteLine($"Download ended: {e.Status}, path: {e.FilePath ?? "N/A"}");
+            string filePath = (e as DownloadCompleteEventArgs)?.FilePath ?? "N/A";
+            Console.WriteLine($"Download ended: {e.Status}, path: {filePath}");
         });
         #endregion
     }
