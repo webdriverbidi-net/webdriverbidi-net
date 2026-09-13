@@ -182,7 +182,9 @@ benchmarks themselves, posting a per-benchmark delta table as a PR comment
 relative to a committed baseline.
 
 The numbers below are a sample taken on 2026-09-08 on one Apple Silicon
-development machine. They are **not representative**: absolute figures move with
+development machine; the CommandExecutionBenchmarks rows were retaken on
+2026-09-12 on the same machine and toolchain, after a change to how a command
+waits for its response. They are **not representative**: absolute figures move with
 hardware, OS, runtime version and machine load, and the CI runner
 (`ubuntu-latest`, x64) is the reference hardware for the committed baseline. Use
 them to see the shape of the costs, not to predict your own. See
@@ -236,15 +238,15 @@ results and operate the baseline workflow.
 
 | Method                                       | Mean        | Allocated |
 |--------------------------------------------- |------------:|----------:|
-| ExecuteCommandRoundTrip                      | 4,077.99 ns |   2,984 B |
-| ExecuteCommandRoundTripWithCancellationToken | 4,314.89 ns |   3,064 B |
+| ExecuteCommandRoundTrip                      | 3,746.84 ns |   2,576 B |
+| ExecuteCommandRoundTripWithCancellationToken | 3,946.66 ns |   2,656 B |
 
 The second method makes the same call with a `CancellationToken`, which is the
 shape [BIDI004 and BIDI013](docs/articles/advanced/analyzers.md) ask callers to
 write. The difference between the two is what passing a token costs on a round
 trip: the connection builds a linked `CancellationTokenSource` per send only
-when a token is supplied, and the one the pending command builds registers a
-callback on the caller's source rather than none.
+when a token is supplied, and the wait for the command's response registers a
+callback on the caller's token rather than none.
 
 To run the suite yourself:
 
