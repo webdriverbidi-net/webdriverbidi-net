@@ -37,8 +37,10 @@ public static class SerilogObservabilitySamples
         await using var driver = new BiDiDriver();
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
-        // Serilog output includes structured properties:
-        // [12:34:56 INF] CommandCompleted {"EventId":7,"EventName":"CommandCompleted","commandId":"1","method":"session.status","elapsedMilliseconds":42}
+        // Serilog renders the message from the event's message template. The properties that template uses
+        // (commandId, method, elapsedMilliseconds) are captured on the log event, so {Properties} does not
+        // repeat them:
+        // [12:34:56 INF] Command 1 (session.status) completed in 42ms {"EventId": {"Id": 7, "Name": "CommandCompleted"}, "EventName": "CommandCompleted", "EventSource": "WebDriverBiDi", "SourceContext": "WebDriverBiDi.Logging.WebDriverBiDiEventSourceLogger"}
         #endregion
     }
 }

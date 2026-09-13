@@ -54,9 +54,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         Assert.Equal(LogLevel.Information, entry.LogLevel);
         Assert.Equal(1, entry.EventId.Id);
         Assert.Equal("ConnectionOpening", entry.EventId.Name);
-        Assert.Contains("ConnectionOpening", entry.Message);
-        Assert.Contains("conn-123", entry.Message);
-        Assert.Contains("ws://localhost:9222", entry.Message);
+        Assert.Equal("Opening connection conn-123 to ws://localhost:9222", entry.Message);
     }
 
     [Fact]
@@ -122,7 +120,7 @@ public class WebDriverBiDiEventSourceLoggerTests
     }
 
     [Fact]
-    public void OnEventWritten_FormatsMessageWithEventNameAndPayload()
+    public void OnEventWritten_FormatsMessageFromEventSourceMessageTemplate()
     {
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
@@ -130,9 +128,78 @@ public class WebDriverBiDiEventSourceLoggerTests
             WebDriverBiDiEventSource.RaiseEvent.TransportStopped("Normal shutdown");
         }
 
+        // The template is "Transport stopped: {0}".
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "TransportStopped");
-        Assert.StartsWith("TransportStopped", entry.Message);
-        Assert.Contains("Normal shutdown", entry.Message);
+        Assert.Equal("Transport stopped: Normal shutdown", entry.Message);
+    }
+
+    [Fact]
+    public void OnEventWritten_AddsNamedMessageTemplateToState()
+    {
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening("conn-456", "ws://example.com");
+        }
+
+        // The EventSource template "Opening connection {0} to {1}" is carried with its holes named after
+        // the payload properties, so a template-aware provider can bind each hole to a state property.
+        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionOpening");
+        Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
+        Assert.Equal("Opening connection {connectionId} to {url}", state["{OriginalFormat}"]);
+        Assert.Equal("{OriginalFormat}", state.Keys.Last());
+    }
+
+    [Fact]
+    public void OnEventWritten_FormatsNumericPayloadValuesInMessage()
+    {
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(7, "session.status", 42);
+        }
+
+        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandCompleted");
+        Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
+        Assert.Equal("Command {commandId} ({method}) completed in {elapsedMilliseconds}ms", state["{OriginalFormat}"]);
+        Assert.Equal("Command 7 (session.status) completed in 42ms", entry.Message);
+    }
+
+    [Fact]
+    public void OnEventWritten_DoesNotSubstitutePayloadValuesThatLookLikeTemplateHoles()
+    {
+        // A payload value can carry text from the remote end. It is copied into the message as it is,
+        // even when it contains the name of another hole in braces.
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionError("conn-1", "unexpected {connectionId}");
+        }
+
+        TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "ConnectionError");
+        Assert.Equal("Connection conn-1 error: unexpected {connectionId}", entry.Message);
+    }
+
+    [Fact]
+    public void OnEventWritten_ReusesNamedMessageTemplateForRepeatedEvent()
+    {
+        TestLogger fakeLogger = new();
+        using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
+        {
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-1");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed("conn-2");
+        }
+
+        TestLogger.LogEntry[] entries = fakeLogger.Entries.Where(e => e.EventId.Name == "ConnectionClosed").ToArray();
+        Assert.Equal(2, entries.Length);
+        Assert.Equal("Connection conn-1 closed", entries[0].Message);
+        Assert.Equal("Connection conn-2 closed", entries[1].Message);
+
+        // The second event is given the template rewritten for the first, rather than a new rewrite.
+        object? firstTemplate = ((Dictionary<string, object?>)entries[0].State!)["{OriginalFormat}"];
+        object? secondTemplate = ((Dictionary<string, object?>)entries[1].State!)["{OriginalFormat}"];
+        Assert.Equal("Connection {connectionId} closed", firstTemplate);
+        Assert.Same(firstTemplate, secondTemplate);
     }
 
     [Fact]
@@ -281,7 +348,11 @@ public class WebDriverBiDiEventSourceLoggerTests
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "PayloadlessEvent");
         Assert.Equal("PayloadlessEvent", entry.EventId.Name);
-        Assert.Contains("PayloadlessEvent", entry.Message);
+
+        // A self-describing event declares no message template, so the message is composed from its name.
+        Dictionary<string, object?> state = (Dictionary<string, object?>)entry.State!;
+        Assert.False(state.ContainsKey("{OriginalFormat}"));
+        Assert.Equal("PayloadlessEvent", entry.Message);
     }
 
     [Fact]
@@ -439,6 +510,62 @@ public class WebDriverBiDiEventSourceLoggerTests
         Assert.Contains("TestEvent", result);
         Assert.Contains("Key1=value1", result);
         Assert.DoesNotContain("Key2", result);
+    }
+
+    [Fact]
+    public void FormatMessage_CopiesTemplateHoleWithoutMatchingStateEntryLiterally()
+    {
+        Dictionary<string, object?> state = new()
+        {
+            ["EventName"] = "TestEvent",
+            ["present"] = "value",
+            ["{OriginalFormat}"] = "Missing {missing}, present {present}",
+        };
+
+        string result = InvokeFormatMessage(state, null);
+        Assert.Equal("Missing {missing}, present value", result);
+    }
+
+    [Fact]
+    public void FormatMessage_CopiesUnterminatedTemplateBraceLiterally()
+    {
+        Dictionary<string, object?> state = new()
+        {
+            ["EventName"] = "TestEvent",
+            ["present"] = "value",
+            ["{OriginalFormat}"] = "Present {present}, then {present",
+        };
+
+        string result = InvokeFormatMessage(state, null);
+        Assert.Equal("Present value, then {present", result);
+    }
+
+    [Fact]
+    public void FormatMessage_RendersNullTemplateValueAsNullMarker()
+    {
+        Dictionary<string, object?> state = new()
+        {
+            ["EventName"] = "TestEvent",
+            ["present"] = null,
+            ["{OriginalFormat}"] = "Value {present}",
+        };
+
+        string result = InvokeFormatMessage(state, null);
+        Assert.Equal("Value (null)", result);
+    }
+
+    [Fact]
+    public void FormatMessage_ComposesFromEventNameWhenOriginalFormatIsNotString()
+    {
+        Dictionary<string, object?> state = new()
+        {
+            ["EventName"] = "TestEvent",
+            ["Key1"] = "value1",
+            ["{OriginalFormat}"] = 123,
+        };
+
+        string result = InvokeFormatMessage(state, null);
+        Assert.StartsWith("TestEvent, Key1=value1", result);
     }
 
     private static LogLevel InvokeMapEventLevel(EventLevel level)

@@ -156,7 +156,7 @@ Add your services (e.g., `IBrowserAutomationService`) and endpoints as needed. W
 
 [!code-csharp[Serilog Structured Logging](../../code/advanced/SerilogObservabilitySamples.cs#SerilogStructuredLogging)]
 
-Serilog output includes structured properties (e.g., `commandId`, `method`, `elapsedMilliseconds`).
+Serilog receives each event's message template, so it renders the message from the template and captures the payload values (e.g., `commandId`, `method`, `elapsedMilliseconds`) as structured properties.
 
 #### With Application Insights
 
