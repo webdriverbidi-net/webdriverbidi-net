@@ -25,7 +25,7 @@ public class CustomModule : Module
     private readonly ObservableEventInvocable<CustomEventArgs> onCustomEvent =
         new ObservableEventInvocable<CustomEventArgs>("custom.eventOccurred");
 
-    public CustomModule(IBiDiCommandExecutor driver)
+    public CustomModule(IBiDiModuleHost driver)
         : base(driver)
     {
         // Register custom events using the base class helper
@@ -132,7 +132,7 @@ public class MyCustomModule : Module
     private readonly ObservableEventInvocable<MyEventArgs> onMyEvent =
         new ObservableEventInvocable<MyEventArgs>("myModule.myEvent");
 
-    public MyCustomModule(IBiDiCommandExecutor driver)
+    public MyCustomModule(IBiDiModuleHost driver)
         : base(driver)
     {
         this.RegisterObservableEvent(this.onMyEvent);

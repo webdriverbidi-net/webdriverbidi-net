@@ -390,11 +390,9 @@ public class BiDiDriver010AnalyzerTests
 
             namespace TestNamespace
             {
-                public class CustomExecutor : IBiDiCommandExecutor
+                public class CustomExecutor : IBiDiDriverLifecycleManager
                 {
                     public TimeSpanHolder Holder { get; } = new TimeSpanHolder();
-
-                    public System.TimeSpan DefaultCommandTimeout => System.TimeSpan.Zero;
 
                     public bool IsStarted => false;
 
@@ -404,14 +402,6 @@ public class BiDiDriver010AnalyzerTests
 
                     // An overload that answers immediately, so there is nothing to await.
                     public void StopAsync(int code) { }
-
-                    public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, System.TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
-                        where T : CommandResult => Task.FromResult<T>(default!);
-
-                    public Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, System.TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
-                        where T : CommandResult => Task.FromResult<T>(default!);
-
-                    public void RegisterEvent<T>(string eventName, System.Func<EventInfo<T>, Task> eventInvoker) { }
 
                     public ValueTask DisposeAsync() => default;
                 }
@@ -981,7 +971,7 @@ public class BiDiDriver010AnalyzerTests
             {
                 public class TestModule : Module
                 {
-                    public TestModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public TestModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "test";
                     public Task DoSomethingAsync() => Task.CompletedTask;
                 }
@@ -990,7 +980,7 @@ public class BiDiDriver010AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        IBiDiCommandExecutor executor = null!;
+                        IBiDiModuleHost executor = null!;
                         TestModule module = new(executor);
                         module.DoSomethingAsync();
                     }
@@ -1011,7 +1001,7 @@ public class BiDiDriver010AnalyzerTests
             {
                 public class TestModule : Module
                 {
-                    public TestModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public TestModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "test";
                     public void DoSomething() { }
                 }
@@ -1020,7 +1010,7 @@ public class BiDiDriver010AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        IBiDiCommandExecutor executor = null!;
+                        IBiDiModuleHost executor = null!;
                         TestModule module = new(executor);
                         module.DoSomething();
                     }
@@ -1042,7 +1032,7 @@ public class BiDiDriver010AnalyzerTests
             {
                 public class TestModule : Module
                 {
-                    public TestModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public TestModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "test";
                     public string GetData() => "data";
                 }
@@ -1051,7 +1041,7 @@ public class BiDiDriver010AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        IBiDiCommandExecutor executor = null!;
+                        IBiDiModuleHost executor = null!;
                         TestModule module = new(executor);
                         module.GetData();
                     }
@@ -1078,7 +1068,7 @@ public class BiDiDriver010AnalyzerTests
 
                 public class TestModule : Module, ITestInterface
                 {
-                    public TestModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public TestModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "test";
                     public Task<string> GetDataAsync() => Task.FromResult("data");
                 }
@@ -1087,7 +1077,7 @@ public class BiDiDriver010AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        IBiDiCommandExecutor executor = null!;
+                        IBiDiModuleHost executor = null!;
                         TestModule module = new(executor);
                         module.GetDataAsync();
                     }
@@ -1115,12 +1105,12 @@ public class BiDiDriver010AnalyzerTests
             {
                 public abstract class BaseModule : Module
                 {
-                    protected BaseModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    protected BaseModule(IBiDiModuleHost driver) : base(driver) { }
                 }
 
                 public class ConcreteModule : BaseModule
                 {
-                    public ConcreteModule(IBiDiCommandExecutor driver) : base(driver) { }
+                    public ConcreteModule(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "concrete";
                     public Task<string> ProcessAsync() => Task.FromResult("result");
                 }
@@ -1129,7 +1119,7 @@ public class BiDiDriver010AnalyzerTests
                 {
                     public void TestMethod()
                     {
-                        IBiDiCommandExecutor executor = null!;
+                        IBiDiModuleHost executor = null!;
                         ConcreteModule module = new(executor);
                         module.ProcessAsync();
                     }
@@ -1994,7 +1984,7 @@ public class BiDiDriver010AnalyzerTests
             {
                 public class GoogleCdp : Module
                 {
-                    public GoogleCdp(IBiDiCommandExecutor driver) : base(driver) { }
+                    public GoogleCdp(IBiDiModuleHost driver) : base(driver) { }
                     public override string ModuleName => "goog:cdp";
                     public Task<int> SendAsync() => Task.FromResult(1);
                 }

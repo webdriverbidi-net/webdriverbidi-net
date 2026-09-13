@@ -21,10 +21,10 @@ public sealed class RegistrationHookModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="RegistrationHookModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
     /// <param name="moduleName">The name of the module.</param>
     /// <param name="hook">The action to run the first time the module name is read.</param>
-    public RegistrationHookModule(IBiDiCommandExecutor driver, string moduleName, Action hook)
+    public RegistrationHookModule(IBiDiModuleHost driver, string moduleName, Action hook)
         : base(driver)
     {
         this.moduleName = moduleName;

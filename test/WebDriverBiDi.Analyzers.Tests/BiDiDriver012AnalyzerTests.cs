@@ -28,7 +28,7 @@ public class BiDiDriver012AnalyzerTests
                 {
                     public async Task TestMethod()
                     {
-                        IBiDiCommandExecutor driver = new BiDiDriver();
+                        IBiDiDriverLifecycleManager driver = new BiDiDriver();
                         await driver.StartAsync("ws://localhost:9222");
                         await driver.DisposeAsync();
                     }

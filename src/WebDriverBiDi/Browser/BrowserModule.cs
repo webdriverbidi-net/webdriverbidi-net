@@ -18,8 +18,8 @@ public sealed class BrowserModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
-    public BrowserModule(IBiDiCommandExecutor driver)
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
+    public BrowserModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }

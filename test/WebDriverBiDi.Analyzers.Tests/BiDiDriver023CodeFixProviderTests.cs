@@ -45,11 +45,11 @@ public class BiDiDriver023CodeFixProviderTests
 
             public abstract class Module
             {
-                protected Module(IBiDiCommandExecutor executor) { }
+                protected Module(IBiDiModuleHost executor) { }
                 public abstract string ModuleName { get; }
             }
 
-            public interface IBiDiCommandExecutor { }
+            public interface IBiDiModuleHost { }
 
             public class NavigateCommandResult { }
             public class NavigateCommandParameters
@@ -59,7 +59,7 @@ public class BiDiDriver023CodeFixProviderTests
 
             public class BrowsingContextModule : Module
             {
-                public BrowsingContextModule(IBiDiCommandExecutor executor) : base(executor) { }
+                public BrowsingContextModule(IBiDiModuleHost executor) : base(executor) { }
                 public override string ModuleName => "browsingContext";
                 public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters parameters) => Task.FromResult(new NavigateCommandResult());
             }
@@ -69,7 +69,7 @@ public class BiDiDriver023CodeFixProviderTests
                 public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
             }
 
-            public class BiDiDriver : IBiDiCommandExecutor
+            public class BiDiDriver : IBiDiModuleHost
             {
                 public BrowsingContextModule BrowsingContext { get; } = new BrowsingContextModule(null!);
                 public LogModule Log { get; } = new LogModule();

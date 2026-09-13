@@ -33,24 +33,26 @@ using WebDriverBiDi.WebExtension;
 /// <para>
 /// <strong>Thread Safety:</strong>
 /// This class is thread-safe for concurrent command execution.
-/// <see cref="IBiDiCommandExecutor.ExecuteCommandAsync{T}(CommandParameters{T}, TimeSpan?, CancellationToken)"/>
+/// <see cref="IBiDiModuleHost.ExecuteCommandAsync{T}(CommandParameters{T}, TimeSpan?, CancellationToken)"/>
 /// and module command methods may be called concurrently from multiple threads. Configuration operations
 /// (<see cref="RegisterModule"/>, <see cref="RegisterEvent"/>, <see cref="RegisterTypeInfoResolverAsync"/>)
 /// must complete before <see cref="StartAsync"/> is called and are serialized via an internal lock.
 /// </para>
 /// <para>
 /// <strong>Interface Design:</strong>
-/// This class implements three focused interfaces (<see cref="IBiDiCommandExecutor"/>,
-/// <see cref="IBiDiDriverConfiguration"/>, <see cref="IBiDiDriverEvents"/>) for advanced
-/// framework, testing, and extensibility scenarios. Most application code should use
-/// <see cref="BiDiDriver"/> directly and ignore these interfaces. See the Core Concepts
-/// documentation for guidance on when each interface applies.
+/// This class implements four focused interfaces (<see cref="IBiDiModuleHost"/>,
+/// <see cref="IBiDiDriverConfiguration"/>, <see cref="IBiDiDriverLifecycleManager"/>,
+/// <see cref="IBiDiDriverEvents"/>) for advanced framework, testing, and extensibility
+/// scenarios. Most application code should use <see cref="BiDiDriver"/> directly and
+/// ignore these interfaces. See the Core Concepts documentation for guidance on when
+/// each interface applies.
 /// </para>
 /// </remarks>
-/// <seealso cref="IBiDiCommandExecutor"/>
+/// <seealso cref="IBiDiModuleHost"/>
 /// <seealso cref="IBiDiDriverConfiguration"/>
 /// <seealso cref="IBiDiDriverEvents"/>
-public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiDriverEvents, IEventObserverErrorReporter
+/// <seealso cref="IBiDiDriverLifecycleManager"/>
+public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDriverConfiguration, IBiDiDriverEvents, IEventObserverErrorReporter
 {
     /// <summary>
     /// Gets the component name for this class to use in log messages.
@@ -1022,12 +1024,13 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     }
 
     /// <summary>
-    /// The command executor the driver constructs its built-in modules with. It registers their events
-    /// without calling the virtual <see cref="RegisterEvent"/>, so an override is never invoked from the
-    /// driver's constructor, before the derived class's constructor has run. Every other member forwards
-    /// to the driver, including its virtual members, so overrides still apply to the modules' commands.
+    /// The module host the driver constructs its built-in modules with. It registers their events
+    /// without calling the virtual <see cref="BiDiDriver.RegisterEvent{T}(string, Func{EventInfo{T}, Task})"/>,
+    /// so an override is never invoked from the driver's constructor, before the derived class's
+    /// constructor has run. Every other member forwards to the driver, including its virtual members, so
+    /// overrides still apply to the modules' commands.
     /// </summary>
-    private sealed class BuiltInModuleExecutor : IBiDiCommandExecutor, IEventObserverErrorReporter
+    private sealed class BuiltInModuleExecutor : IBiDiModuleHost, IEventObserverErrorReporter
     {
         private readonly BiDiDriver driver;
 
@@ -1036,21 +1039,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             this.driver = driver;
         }
 
-        public TimeSpan DefaultCommandTimeout => this.driver.DefaultCommandTimeout;
-
-        public bool IsStarted => this.driver.IsStarted;
-
         public Func<EventObserverErrorInfo, Task> EventObserverErrorReporter => ((IEventObserverErrorReporter)this.driver).EventObserverErrorReporter;
-
-        public Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
-        {
-            return this.driver.StartAsync(connectionString, cancellationToken);
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken = default)
-        {
-            return this.driver.StopAsync(cancellationToken);
-        }
 
         public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
             where T : CommandResult
@@ -1067,11 +1056,6 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         public void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
         {
             this.driver.RegisterEventCore(eventName, eventInvoker);
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            return this.driver.DisposeAsync();
         }
     }
 }

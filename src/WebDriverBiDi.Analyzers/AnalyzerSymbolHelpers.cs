@@ -18,13 +18,20 @@ using Microsoft.CodeAnalysis.Diagnostics;
 internal static class AnalyzerSymbolHelpers
 {
     /// <summary>
-    /// Determines whether the symbol represents a command executor capability.
+    /// Determines whether the symbol represents the driver: <c>BiDiDriver</c> itself, or a type implementing
+    /// <c>IBiDiModuleHost</c> or <c>IBiDiDriverLifecycleManager</c>.
     /// </summary>
     /// <param name="type">The symbol to inspect.</param>
-    /// <returns><see langword="true"/> if the symbol represents a command executor capability; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> if the symbol represents the driver; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The driver's capabilities are split across the two interfaces: commands and event registration are
+    /// declared on <c>IBiDiModuleHost</c>, and starting, stopping and disposal on
+    /// <c>IBiDiDriverLifecycleManager</c>. Their member names do not overlap, so one predicate serves callers
+    /// that look for either kind of member.
+    /// </remarks>
     internal static bool IsCommandExecutorType(ITypeSymbol? type)
     {
-        return HasTypeOrBaseOrInterface(type, "BiDiDriver", "IBiDiCommandExecutor");
+        return HasTypeOrBaseOrInterface(type, "BiDiDriver", "IBiDiModuleHost", "IBiDiDriverLifecycleManager");
     }
 
     /// <summary>
@@ -154,7 +161,7 @@ internal static class AnalyzerSymbolHelpers
     /// <param name="expression">The mention of the variable.</param>
     /// <returns>The outermost wrapper, or <paramref name="expression"/> itself when it is not wrapped.</returns>
     /// <remarks>
-    /// <c>Helper((driver))</c>, <c>Helper(driver!)</c>, <c>Helper((IBiDiCommandExecutor)driver)</c> and
+    /// <c>Helper((driver))</c>, <c>Helper(driver!)</c>, <c>Helper((IBiDiDriverLifecycleManager)driver)</c> and
     /// <c>Helper(flag ? driver : other)</c> all hand the driver to the helper exactly as <c>Helper(driver)</c>
     /// does. A classification that looked only at the identifier's immediate parent would read each of them
     /// as a mere use. Any postfix operator qualifies: the null-forgiving operator is the only one a driver
@@ -236,7 +243,7 @@ internal static class AnalyzerSymbolHelpers
     /// deriving from <c>Autofac.Module</c>, for example, would be treated as a WebDriver BiDi module and
     /// reported by BIDI010 at Error severity. Requiring the WebDriverBiDi namespace as well is the same
     /// guard <see cref="IsInWebDriverBiDiNamespace"/> already applies to <c>BiDiDriver</c> and
-    /// <c>IBiDiCommandExecutor</c>.
+    /// its driver interfaces.
     /// </remarks>
     internal static bool IsLibraryTypeNamed(ITypeSymbol? type, string name)
     {
@@ -645,7 +652,7 @@ internal static class AnalyzerSymbolHelpers
         {
             // Require the matched type to be declared in the WebDriverBiDi namespace so a user's own
             // type that merely shares a name (for example a class named BiDiDriver, or an interface
-            // named IBiDiCommandExecutor, in another namespace) is not treated as the library type.
+            // named IBiDiModuleHost, in another namespace) is not treated as the library type.
             if (current is not INamedTypeSymbol namedCurrent)
             {
                 continue;

@@ -188,7 +188,7 @@ public class BiDiDriver026AnalyzerTests
     [Fact]
     public async Task ExecuteCommandAsyncOnNonExecutorType_NoDiagnostic()
     {
-        // A same-named ExecuteCommandAsync on a type that is not a command executor is not the
+        // A same-named ExecuteCommandAsync on a type that is not the driver is not the
         // library's method, so a mismatched type argument is not reported.
         string testCode = """
             using System.Threading.Tasks;

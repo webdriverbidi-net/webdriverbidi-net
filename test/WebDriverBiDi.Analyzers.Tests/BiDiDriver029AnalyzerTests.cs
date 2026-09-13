@@ -30,7 +30,7 @@ public class BiDiDriver029AnalyzerTests
 
             public class CustomModule : Module
             {
-                public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
+                public CustomModule(IBiDiModuleHost driver) : base(driver) { }
 
                 public override string ModuleName => "custom";
 

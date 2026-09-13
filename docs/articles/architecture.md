@@ -142,7 +142,7 @@ Each module encapsulates a specific area of WebDriver BiDi functionality.
 
 **Module Structure:**
 
-See `BrowsingContextModule` in the WebDriverBiDi.BrowsingContext namespace. Each module has a constructor taking `IBiDiCommandExecutor`, command methods returning `Task<CommandResult>`, and observable events of type `ObservableEvent<TEventArgs>`.
+See `BrowsingContextModule` in the WebDriverBiDi.BrowsingContext namespace. Each module has a constructor taking `IBiDiModuleHost`, command methods returning `Task<CommandResult>`, and observable events of type `ObservableEvent<TEventArgs>`.
 
 **All Modules:**
 - `BrowserModule`: Browser windows and user contexts

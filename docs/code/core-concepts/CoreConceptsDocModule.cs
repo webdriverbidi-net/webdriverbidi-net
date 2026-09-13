@@ -17,7 +17,7 @@ internal sealed class CoreConceptsDocModule : Module
 {
     public const string ModuleNameValue = "coreConceptsDoc";
 
-    public CoreConceptsDocModule(IBiDiCommandExecutor driver)
+    public CoreConceptsDocModule(IBiDiModuleHost driver)
         : base(driver)
     {
     }

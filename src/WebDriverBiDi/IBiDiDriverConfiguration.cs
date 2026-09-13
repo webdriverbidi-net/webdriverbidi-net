@@ -11,8 +11,8 @@ using System.Text.Json.Serialization.Metadata;
 /// Interface for configuring a WebDriver BiDi driver. This interface is implemented by <see cref="BiDiDriver"/>
 /// and can be used for testing, or to allow users to implement their own driver classes. It provides methods for
 /// registering modules and JSON type info resolvers. Event registration is not part of this interface; it is
-/// declared on <see cref="IBiDiCommandExecutor"/>, because a custom module registers its events through the
-/// command executor it is constructed with.
+/// declared on <see cref="IBiDiModuleHost"/>, because a custom module registers its events through the
+/// module host it is constructed with.
 /// </summary>
 /// <remarks>
 /// This interface is not intended to be implemented by users of this library. It is exposed publicly

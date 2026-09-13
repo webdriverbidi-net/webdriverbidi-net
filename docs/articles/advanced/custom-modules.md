@@ -31,7 +31,7 @@ After registration, retrieve a module by name using `GetModule<T>`:
 This is useful for reaching a module by name when you hold a reference to the driver but not to the module instance you registered. `GetModule<T>` throws `InvalidCastException` if the registered module cannot be cast to `T`, and `ArgumentException` if no module with that name has been registered.
 
 > [!NOTE]
-> `GetModule<T>` is declared on `BiDiDriver`, not on `IBiDiCommandExecutor`. The `Module` base class stores the executor as `IBiDiCommandExecutor` (see the note under [Module Events](#module-events)), so calling `GetModule<T>` from inside a module requires a cast to `BiDiDriver`. Prefer passing any module a custom module depends on into its constructor instead.
+> `GetModule<T>` is declared on `BiDiDriver`, not on `IBiDiModuleHost`. The `Module` base class stores its host as `IBiDiModuleHost` (see the note under [Module Events](#module-events)), so calling `GetModule<T>` from inside a module requires a cast to `BiDiDriver`. Prefer passing any module a custom module depends on into its constructor instead.
 
 ## Creating Commands
 
@@ -79,11 +79,11 @@ You can also expose observable events from your custom module:
 
 [!code-csharp[Custom Events Module](../../code/advanced/CustomModulesSamples.cs#CustomEventsModule)]
 
-> **Why `IBiDiCommandExecutor`, not `IBiDiDriverConfiguration`?**
-> The `Module` base class constructor requires `IBiDiCommandExecutor` because event registration
+> **Why `IBiDiModuleHost`, not `IBiDiDriverConfiguration`?**
+> The `Module` base class constructor requires `IBiDiModuleHost` because event registration
 > goes through that interface. When your module calls `this.RegisterObservableEvent<T>(...)` in its
 > constructor, the base class calls `this.Driver.RegisterEvent<T>(...)` internally.
-> `RegisterEvent<T>` is defined on `IBiDiCommandExecutor`; it is not present on
+> `RegisterEvent<T>` is defined on `IBiDiModuleHost`; it is not present on
 > `IBiDiDriverConfiguration`, which only exposes `RegisterModule` and `RegisterTypeInfoResolverAsync`.
 > Passing a `BiDiDriver` instance satisfies both interfaces, so your module constructor always
 > receives a `BiDiDriver` in practice.
@@ -94,7 +94,7 @@ You can also expose observable events from your custom module:
 > a failure to the executor it was constructed with, if that executor implements
 > `IEventObserverErrorReporter`. `BiDiDriver` does, which is how the failure reaches
 > `EventHandlerExceptionBehavior` and `OnEventHandlerErrorOccurred`. If you write your own
-> `IBiDiCommandExecutor`, implement that interface too, or the failures of your modules' asynchronous
+> `IBiDiModuleHost`, implement that interface too, or the failures of your modules' asynchronous
 > observers are observed and then discarded — never thrown, never reported:
 >
 > <!-- inline-csharp: a member sketch, not a callable method -->

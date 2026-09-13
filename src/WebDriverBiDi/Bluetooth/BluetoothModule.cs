@@ -28,8 +28,8 @@ public sealed class BluetoothModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="BluetoothModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
-    public BluetoothModule(IBiDiCommandExecutor driver)
+    /// <param name="driver">The <see cref="IBiDiModuleHost"/> used in the module commands and events.</param>
+    public BluetoothModule(IBiDiModuleHost driver)
         : base(driver)
     {
         this.RegisterObservableEvent(this.invocableRequestDevicePromptUpdatedObservableEvent);

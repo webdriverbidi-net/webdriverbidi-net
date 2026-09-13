@@ -535,25 +535,17 @@ public class ModuleTests
     }
 
     /// <summary>
-    /// A consumer-defined command executor that reports late observer failures, standing in for the
+    /// A consumer-defined module host that reports late observer failures, standing in for the
     /// custom driver an advanced consumer writes. It keeps the invoker each module registers so that a
     /// test can deliver an event without a transport.
     /// </summary>
-    private sealed class ReporterDriver : IBiDiCommandExecutor, IEventObserverErrorReporter
+    private sealed class ReporterDriver : IBiDiModuleHost, IEventObserverErrorReporter
     {
         private readonly Dictionary<string, Func<object?, Task>> eventInvokers = [];
 
         public TaskCompletionSource<EventObserverErrorInfo> ReportedFault { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public TimeSpan DefaultCommandTimeout => TimeSpan.FromSeconds(30);
-
-        public bool IsStarted => true;
-
         public Func<EventObserverErrorInfo, Task> EventObserverErrorReporter => this.RecordFaultAsync;
-
-        public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-        public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
             where T : CommandResult => throw new NotImplementedException();
@@ -568,8 +560,6 @@ public class ModuleTests
 
         public Task RaiseRegisteredEventAsync(string eventName, object eventData) => this.eventInvokers[eventName](eventData);
 
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-
         private Task RecordFaultAsync(EventObserverErrorInfo errorInfo)
         {
             this.ReportedFault.TrySetResult(errorInfo);
@@ -577,17 +567,9 @@ public class ModuleTests
         }
     }
 
-    private sealed class NonReporterDriver : IBiDiCommandExecutor
+    private sealed class NonReporterDriver : IBiDiModuleHost
     {
         private readonly List<string> registeredEvents = [];
-
-        public TimeSpan DefaultCommandTimeout => TimeSpan.FromSeconds(30);
-
-        public bool IsStarted => false;
-
-        public Task StartAsync(string connectionString, CancellationToken cancellationToken = default) => Task.CompletedTask;
-
-        public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
             where T : CommandResult => throw new NotImplementedException();
@@ -599,8 +581,6 @@ public class ModuleTests
         {
             this.registeredEvents.Add(eventName);
         }
-
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     [Fact]

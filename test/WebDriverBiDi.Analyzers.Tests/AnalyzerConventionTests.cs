@@ -167,7 +167,7 @@ public class AnalyzerConventionTests
             using WebDriverBiDi.Session;
 
             class C<TDriver>
-                where TDriver : IBiDiCommandExecutor
+                where TDriver : IBiDiModuleHost
             {
                 async Task M(TDriver driver)
                 {

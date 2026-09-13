@@ -169,7 +169,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         }
 
         // The event must be reached through a module property of a driver: driver.Log.OnEntryAdded,
-        // where Log is a module-typed property and its receiver has the command executor type. The
+        // where Log is a module-typed property and its receiver has the driver type. The
         // driver may be spelled any way that has that type — a local, a parameter, a field reached
         // through `this`, a property of another object, or the result of a call.
         if (expression is not MemberAccessExpressionSyntax eventAccess
