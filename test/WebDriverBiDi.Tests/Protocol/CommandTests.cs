@@ -383,6 +383,76 @@ public class CommandTests
     }
 
     [Fact]
+    public async Task TestWaitForCompletionThrowsWhenCancellationTokenIsCanceledAfterWaitBegins()
+    {
+        // The token is canceled while the wait is provably suspended, rather than before the call, so the
+        // cancellation is observed by the wait itself and not only by a check made on entry.
+        Command command = new(1, new TestCommandParameters("module.command"), new FakeTimeProvider());
+        using CancellationTokenSource cts = new();
+
+        Task<bool> waitTask = command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), cts.Token);
+        Assert.False(waitTask.IsCompleted);
+        cts.Cancel();
+
+        OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await waitTask);
+        Assert.Equal(cts.Token, exception.CancellationToken);
+        Assert.False(command.IsCanceled);
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionReturnsTrueWhenCommandFaultsDuringWait()
+    {
+        // A fault is a completion. The wait reports that the command finished, and the fault itself is read
+        // from the command, exactly as for a command that faulted before the wait began; the wait must not
+        // rethrow it.
+        Command command = new(1, new TestCommandParameters("module.command"), new FakeTimeProvider());
+        using CancellationTokenSource cts = new();
+
+        Task<bool> waitTask = command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), cts.Token);
+        Assert.False(waitTask.IsCompleted);
+        command.SetException(new WebDriverBiDiException("fault during wait"));
+
+        Assert.True(await waitTask);
+        Assert.NotNull(command.ThrownException);
+        Assert.Equal("fault during wait", command.ThrownException.Message);
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionReturnsTrueWhenCommandIsCanceledDuringWait()
+    {
+        // The command's own cancellation (by the transport on disconnect, for example) is a completion, and
+        // must not be confused with cancellation of the caller's token, which is not canceled here.
+        Command command = new(1, new TestCommandParameters("module.command"), new FakeTimeProvider());
+        using CancellationTokenSource cts = new();
+
+        Task<bool> waitTask = command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), cts.Token);
+        Assert.False(waitTask.IsCompleted);
+        command.Cancel();
+
+        Assert.True(await waitTask);
+        Assert.True(command.IsCanceled);
+        Assert.False(cts.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionWithZeroTimeoutReturnsFalseForIncompleteCommand()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"), new FakeTimeProvider());
+
+        Assert.False(await command.WaitForCompletionAsync(TimeSpan.Zero, TestContext.Current.CancellationToken));
+        Assert.False(command.TryGetResult(out _));
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionWithZeroTimeoutReturnsTrueForCompletedCommand()
+    {
+        Command command = new(1, new TestCommandParameters("module.command"), new FakeTimeProvider());
+        command.SetResult(new TestCommandResult());
+
+        Assert.True(await command.WaitForCompletionAsync(TimeSpan.Zero, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public void TestCancelReportsWhetherCancellationTookEffect()
     {
         Command command = new(1, new TestCommandParameters("module.command"));

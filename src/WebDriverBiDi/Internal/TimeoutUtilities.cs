@@ -93,6 +93,32 @@ internal static class TimeoutUtilities
     }
 
     /// <summary>
+    /// Creates a task that completes when the given task completes, when the given timeout elapses as measured
+    /// by the given <see cref="TimeProvider"/>, or when the given token is canceled, whichever happens first.
+    /// </summary>
+    /// <param name="task">The task to wait for.</param>
+    /// <param name="timeProvider">The provider whose clock measures the timeout.</param>
+    /// <param name="timeout">The timeout, or <see cref="Timeout.InfiniteTimeSpan"/> to wait until the task completes or the token is canceled.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
+    /// <returns>
+    /// A task that completes as <paramref name="task"/> does if it finishes first, faults with a
+    /// <see cref="TimeoutException"/> if the timeout elapses first, or is canceled if the token is canceled first.
+    /// </returns>
+    /// <remarks>
+    /// Unlike racing <paramref name="task"/> against <see cref="DelayAsync"/> with <see cref="Task.WhenAny(Task[])"/>,
+    /// this needs no linked <see cref="CancellationTokenSource"/> to cancel the delay once the task wins, and returns
+    /// <paramref name="task"/> itself when it has already completed.
+    /// </remarks>
+    public static Task WaitAsync(Task task, TimeProvider timeProvider, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+#if NETSTANDARD2_0
+        return TimeProviderTaskExtensions.WaitAsync(task, timeout, timeProvider, cancellationToken);
+#else
+        return task.WaitAsync(timeout, timeProvider, cancellationToken);
+#endif
+    }
+
+    /// <summary>
     /// Creates a <see cref="CancellationTokenSource"/> that cancels after the given delay, measured by
     /// the given <see cref="TimeProvider"/>.
     /// </summary>

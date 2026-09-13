@@ -165,26 +165,38 @@ public class Command
             throw new ArgumentOutOfRangeException(nameof(timeout), TimeoutUtilities.GetInvalidTimeoutMessage("Timeout"));
         }
 
-        // Task.WhenAny returns when any of the tasks passed in completes, and
-        // returns the task that completes first. If that task is the task from
-        // our TaskCompletionSource, the command completed. Otherwise, it timed
-        // out or was externally canceled. Note that the allocation of the
-        // additional CancellationTokenSource is necessary to be able to cancel
-        // the timeout task.
-        using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        Task timeoutTask = TimeoutUtilities.DelayAsync(this.timeProvider, timeout, linkedTokenSource.Token);
-        Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, timeoutTask).ConfigureAwait(false);
-        bool commandTaskCompleted = completedTask == this.taskCompletionSource.Task;
-        if (commandTaskCompleted)
+        // A command that has already completed needs no wait at all, and no allocation to perform one. This
+        // is also what a zero timeout requires: a completed command is reported as completed.
+        Task<CommandResult> commandTask = this.taskCompletionSource.Task;
+        if (commandTask.IsCompleted)
         {
-            linkedTokenSource.Cancel();
-        }
-        else
-        {
-            cancellationToken.ThrowIfCancellationRequested();
+            return true;
         }
 
-        return commandTaskCompleted;
+        // The wait arms one timer against this command's TimeProvider and, only when the token can be
+        // canceled, one registration on it. Racing the command against a delay with Task.WhenAny would
+        // also need a linked CancellationTokenSource to cancel the delay once the command won, and a
+        // delay task and a WhenAny task beside it, on every command.
+        try
+        {
+            await TimeoutUtilities.WaitAsync(commandTask, this.timeProvider, timeout, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception) when (commandTask.IsCompleted)
+        {
+            // A command that faulted or was canceled has completed: the wait rethrows the command's own
+            // outcome, which the caller reads from ThrownException or IsCanceled rather than from this
+            // method. The filter is tested first so that the command's own cancellation is never mistaken
+            // for the caller's, and so that a command that completes as the timeout elapses, or as the
+            // caller's token is canceled, is reported as completed, which is the outcome the caller can act on.
+        }
+        catch (TimeoutException)
+        {
+            return false;
+        }
+
+        // Cancellation of the caller's token while the command is still pending falls through neither catch,
+        // and propagates to the caller as the OperationCanceledException this method documents.
+        return true;
     }
 
     /// <summary>
