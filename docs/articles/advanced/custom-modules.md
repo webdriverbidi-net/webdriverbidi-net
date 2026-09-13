@@ -234,8 +234,11 @@ use instead, or `null` to discard the message entirely. A discarded message is m
 
 [!code-csharp[Filtering Transport](../../code/advanced/CustomModulesSamples.cs#FilteringTransport)]
 
-Returning a different document transfers ownership: the original is disposed for you, and the one you
-return is disposed with the message.
+The message keeps ownership of the document it parsed, so don't hold on to the one your transformer
+receives. It is disposed for you when you return `null`, return a different document, or throw. A
+document you return is disposed with the message. An exception your transformer throws propagates out of
+`IncomingMessage.Parse`. The transport handles a `JsonException` the same way as a message that is not
+valid JSON, and captures any other exception as a `ProtocolError` unhandled error.
 
 Overriding `CreateCommand` is the supported way to add a vendor extension property to every command; adding
 it per call through `CommandParameters.AdditionalData` works too, but goes through reflection-based
