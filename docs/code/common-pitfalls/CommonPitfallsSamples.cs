@@ -479,16 +479,16 @@ public static class CommonPitfallsSamples
     public static async Task HandlerExceptionsIgnored(BiDiDriver driver, SubscribeCommandParameters subscribeParams, NavigateCommandParameters navParams, Action<EntryAddedEventArgs> processLogEntry)
     {
         #region HandlerExceptionsIgnored
-        // ❌ PROBLEM: Handler exceptions are silently ignored by default
+        // ❌ PROBLEM: By default a handler exception is never thrown to your code
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
-            // If this throws, the exception is IGNORED by default
+            // If this throws, nothing is thrown or collected by default
             ProcessLogEntry(e);  // Might throw
         });
 
         await driver.Session.SubscribeAsync(subscribeParams);
         await driver.BrowsingContext.NavigateAsync(navParams);
-        // If handler threw, you'll never know!
+        // Unless something observes driver.OnEventHandlerErrorOccurred, you'll never know it threw!
         #endregion
     }
 

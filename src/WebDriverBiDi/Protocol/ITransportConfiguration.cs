@@ -52,9 +52,10 @@ public interface ITransportConfiguration
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers.
-    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from event
-    /// handlers will be caught and logged but will not cause the driver to stop processing messages from
-    /// the transport.
+    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that such an exception is neither
+    /// collected nor thrown from a later call, and does not stop the driver processing messages from the
+    /// transport; it is still raised on <see cref="BiDiDriver.OnEventHandlerErrorOccurred"/> and as the
+    /// <c>EventHandlerError</c> event of <see cref="WebDriverBiDiEventSource"/>.
     /// </summary>
     /// <remarks>
     /// Exceptions from handlers registered with
@@ -75,18 +76,27 @@ public interface ITransportConfiguration
     TransportErrorBehavior EventHandlerExceptionBehavior { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when a protocol error is
-    /// received from the remote end. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning
-    /// that exceptions from protocol errors will be caught and logged but will not cause the driver to
-    /// stop processing messages from the transport.
+    /// Gets or sets a value indicating the behavior for handling a protocol error: a message recognized as
+    /// an error response or as a registered event whose payload cannot be deserialized, or an unexpected
+    /// failure while processing an incoming message. An error response whose ID matches a pending command
+    /// fails that command instead, and a message that cannot be parsed as JSON is an unknown message.
+    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that the error is neither collected
+    /// nor thrown from a later call, and does not stop the driver processing messages from the transport;
+    /// it is still written to <see cref="BiDiDriver.OnLogMessage"/> at <see cref="WebDriverBiDiLogLevel.Error"/>
+    /// and, for a payload that cannot be deserialized, raised as the <c>ProtocolError</c> event of
+    /// <see cref="WebDriverBiDiEventSource"/>. No observable event is raised for it.
     /// </summary>
     TransportErrorBehavior ProtocolErrorBehavior { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating the behavior for handling exceptions when an unknown message is
-    /// encountered, such as valid JSON that does not match any protocol data structure. Defaults to
-    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unknown messages will
-    /// be caught and logged, but will not cause the driver to stop processing messages from the transport.
+    /// Gets or sets a value indicating the behavior for handling an unknown message: a message that cannot be
+    /// parsed as JSON, or one that is not a command response, an error response, or a registered event, such
+    /// as a response for a command ID that was never issued or an event whose name is not registered.
+    /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that the error is neither collected
+    /// nor thrown from a later call, and does not stop the driver processing messages from the transport; it
+    /// is still raised on <see cref="BiDiDriver.OnUnknownMessageReceived"/> and as the
+    /// <c>UnknownMessageReceived</c> event of <see cref="WebDriverBiDiEventSource"/>, and a message that
+    /// cannot be parsed is also written to <see cref="BiDiDriver.OnLogMessage"/> at <see cref="WebDriverBiDiLogLevel.Error"/>.
     /// A response that arrives for a command after that command has timed out or been canceled is not
     /// an unknown message; it is logged and discarded without affecting this behavior.
     /// </summary>
@@ -95,8 +105,9 @@ public interface ITransportConfiguration
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions when an unexpected error is
     /// encountered, such as an error response received with no corresponding command. Defaults to
-    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unexpected errors will
-    /// be caught and logged but will not cause the driver to stop processing messages from the transport.
+    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that the error is neither collected nor thrown
+    /// from a later call, and does not stop the driver processing messages from the transport; it is still
+    /// raised on <see cref="BiDiDriver.OnUnexpectedErrorReceived"/>.
     /// An error response that arrives for a command after that command has timed out or been canceled is
     /// not an unexpected error; it is logged and discarded without affecting this behavior.
     /// </summary>

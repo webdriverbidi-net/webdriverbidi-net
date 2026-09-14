@@ -235,29 +235,35 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
-    /// unhandled exception in a handler for a defined protocol is encountered.
+    /// observer of an observable event throws, or the task it returns faults.
     /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
-    /// collected nor thrown from a later call; it is still reported through the corresponding
-    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
+    /// collected nor thrown from a later call; it is still raised on <see cref="OnEventHandlerErrorOccurred"/>
+    /// and as the <c>EventHandlerError</c> event of <see cref="WebDriverBiDiEventSource"/>.
     /// </summary>
     public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.UnhandledErrors.EventHandlerExceptionBehavior; set => this.UnhandledErrors.EventHandlerExceptionBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when a
-    /// protocol error is encountered, such as invalid JSON or JSON missing required properties.
+    /// protocol error is encountered: a message recognized as an error response or as a registered event
+    /// whose payload cannot be deserialized, or an unexpected failure while processing an incoming message.
+    /// An error response whose ID matches a pending command is not a protocol error; it fails that command.
+    /// A message that cannot be parsed as JSON at all is an unknown message (see <see cref="UnknownMessageBehavior"/>).
     /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
-    /// collected nor thrown from a later call; it is still reported through the corresponding
-    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
+    /// collected nor thrown from a later call; it is still written to <see cref="OnLogMessage"/> at
+    /// <see cref="WebDriverBiDiLogLevel.Error"/> and, for a payload that cannot be deserialized, raised as the
+    /// <c>ProtocolError</c> event of <see cref="WebDriverBiDiEventSource"/>. No observable event is raised for it.
     /// </summary>
     public TransportErrorBehavior ProtocolErrorBehavior { get => this.UnhandledErrors.ProtocolErrorBehavior; set => this.UnhandledErrors.ProtocolErrorBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
-    /// unknown message is encountered, such as valid JSON that does not match any protocol data
-    /// structure.
+    /// unknown message is encountered: a message that cannot be parsed as JSON, or one that is not a
+    /// command response, an error response, or an event registered with this transport, such as a
+    /// response for a command ID that was never issued or an event whose name is not registered.
     /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
-    /// collected nor thrown from a later call; it is still reported through the corresponding
-    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
+    /// collected nor thrown from a later call; it is still raised on <see cref="OnUnknownMessageReceived"/>
+    /// and as the <c>UnknownMessageReceived</c> event of <see cref="WebDriverBiDiEventSource"/>, and a message
+    /// that cannot be parsed is also written to <see cref="OnLogMessage"/> at <see cref="WebDriverBiDiLogLevel.Error"/>.
     /// A response for a command that has timed out or been canceled is
     /// not an unknown message; it is recognized, logged, and discarded (see
     /// <see cref="CancelCommand(Command, CommandCancellationReason)"/>).
@@ -269,8 +275,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// unexpected error is encountered, meaning an error response received with no corresponding
     /// command.
     /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
-    /// collected nor thrown from a later call; it is still reported through the corresponding
-    /// diagnostic observable, <see cref="OnLogMessage"/>, and <see cref="WebDriverBiDiEventSource"/>.
+    /// collected nor thrown from a later call; it is still raised on <see cref="OnErrorEventReceived"/>.
     /// An error response for a command that has timed out or been canceled is
     /// not an unexpected error; it is recognized, logged, and discarded (see
     /// <see cref="CancelCommand(Command, CommandCancellationReason)"/>).

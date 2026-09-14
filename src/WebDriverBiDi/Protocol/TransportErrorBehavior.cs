@@ -6,14 +6,17 @@
 namespace WebDriverBiDi.Protocol;
 
 /// <summary>
-/// The enumerated value specifying what the <see cref="Transport"/> should do upon encountering an error,
-/// such as a malformed JSON payload, an unexpected error response not caused by a command, or an unhandled
-/// exception in an event handler.
+/// The enumerated value specifying what the <see cref="Transport"/> should do upon encountering an error
+/// that no command call can report: a message it cannot process, an error response not caused by a command,
+/// or an unhandled exception in an event handler.
 /// </summary>
 public enum TransportErrorBehavior
 {
     /// <summary>
-    /// Ignore errors.
+    /// Neither collect nor throw errors. An ignored error is still reported through the transport's diagnostic
+    /// channels, as described for each error behavior property of <see cref="Transport"/>: the corresponding
+    /// observable event where there is one, <see cref="Transport.OnLogMessage"/>, or
+    /// <see cref="WebDriverBiDiEventSource"/>.
     /// </summary>
     Ignore,
 

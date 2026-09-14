@@ -168,9 +168,9 @@ The `ErrorData` property is an `ErrorResult` containing `ErrorCode`, `ErrorMessa
 
 #### OnUnknownMessageReceived
 
-Fires when the transport receives a message that is valid JSON but does not match any recognized protocol
-structure — neither a command response, an error response, nor a known event. The raw JSON string is
-available in `Message`.
+Fires when the transport receives a message it does not recognize: one that is not valid JSON, or one that
+is neither a response to a command the driver sent, an error response, nor a registered event. The raw
+message text is available in `Message`.
 
 [!code-csharp[OnUnknownMessageReceived](../code/events-observables/EventObserverSamples.cs#OnUnknownMessageReceived)]
 

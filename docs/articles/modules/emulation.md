@@ -84,6 +84,12 @@ The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate
 
 [!code-csharp[Clear Geolocation Override](../../code/modules/EmulationModuleSamples.cs#ClearGeolocationOverride)]
 
+### Simulate a Position Error
+
+To make the page's location requests fail as if the device could not determine its position, send the error form of the override, `SetGeolocationOverrideErrorCommandParameters`. Its `Error` is a `GeolocationPositionError`, whose `Type` is always `positionUnavailable`, the only error the specification defines. The page's `getCurrentPosition` and `watchPosition` calls then receive the `POSITION_UNAVAILABLE` error (code 2):
+
+[!code-csharp[Simulate Position Error](../../code/modules/EmulationModuleSamples.cs#SimulatePositionError)]
+
 ## Timezone Emulation
 
 ### Set Timezone

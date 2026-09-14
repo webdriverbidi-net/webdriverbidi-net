@@ -426,7 +426,7 @@ Stores transport errors in a list for later inspection:
 
 ### Ignore Mode
 
-Silently discards transport errors without notification:
+Neither collects nor throws transport errors. Each is still reported through the driver's diagnostic events (see [Error Handling — Ignore Mode](advanced/error-handling.md#ignore-mode-default)):
 
 [!code-csharp[Ignore Mode](../code/architecture/ArchitectureSamples.cs#IgnoreMode)]
 
@@ -464,7 +464,7 @@ Controls how exceptions thrown by your event handlers are handled:
 [!code-csharp[EventHandlerExceptionBehavior](../code/architecture/ArchitectureSamples.cs#EventHandlerExceptionBehavior)]
 
 **When to Use Each Mode:**
-- **Ignore** (default): Event handler exceptions are logged but don't interrupt message processing. The same applies to exceptions from asynchronously run handlers when those tasks are not captured via a capture session. Use for non-critical handlers.
+- **Ignore** (default): Event handler exceptions are raised on `OnEventHandlerErrorOccurred` but don't interrupt message processing. The same applies to exceptions from asynchronously run handlers when those tasks are not captured via a capture session. Use for non-critical handlers.
 - **Collect**: Exceptions are stored and thrown when `StopAsync()` is called (not by `DisposeAsync()`, which logs and discards them—call `StopAsync()` first). Exceptions from asynchronously run handlers are collected the same way when those tasks are not captured via a capture session. Use when debugging event handler issues.
 - **Terminate**: Driver terminates when next command is sent after exception. Exceptions from asynchronously run handlers also surface on the next command when those tasks are not captured via a capture session. Use when event handler failure indicates unrecoverable state.
 
@@ -472,7 +472,7 @@ If you explicitly capture async handler tasks with `WaitForCapturedTasksAsync()`
 
 #### ProtocolErrorBehavior
 
-Controls how protocol errors are handled (invalid JSON, missing required properties, deserialization failures):
+Controls how protocol errors are handled (an error response or registered event whose payload cannot be deserialized, or an unexpected failure while processing a message):
 
 [!code-csharp[ProtocolErrorBehavior](../code/architecture/ArchitectureSamples.cs#ProtocolErrorBehavior)]
 
@@ -483,12 +483,12 @@ Controls how protocol errors are handled (invalid JSON, missing required propert
 
 #### UnknownMessageBehavior
 
-Controls how unknown messages are handled (valid JSON that doesn't match any known protocol structure):
+Controls how unknown messages are handled (a message that is not valid JSON, or not a command response, error response or registered event):
 
 [!code-csharp[UnknownMessageBehavior](../code/architecture/ArchitectureSamples.cs#UnknownMessageBehavior)]
 
 **When to Use Each Mode:**
-- **Ignore** (default): Unknown messages are logged but don't interrupt processing. Use when working with browsers implementing experimental features.
+- **Ignore** (default): Unknown messages are raised on `OnUnknownMessageReceived` but don't interrupt processing. Use when working with browsers implementing experimental features.
 - **Collect**: Unknown messages are stored and thrown at shutdown. Use when discovering new protocol features or debugging compatibility.
 - **Terminate**: Driver terminates when next command is sent after unknown message. Use when strict protocol conformance is required.
 
@@ -499,7 +499,7 @@ Controls how unexpected errors are handled (error responses received with no cor
 [!code-csharp[UnexpectedErrorBehavior](../code/architecture/ArchitectureSamples.cs#UnexpectedErrorBehavior)]
 
 **When to Use Each Mode:**
-- **Ignore** (default): Unexpected errors are logged but don't interrupt processing. Use when browser may send asynchronous errors.
+- **Ignore** (default): Unexpected errors are raised on `OnUnexpectedErrorReceived` but don't interrupt processing. Use when browser may send asynchronous errors.
 - **Collect**: Errors are stored and thrown at shutdown. Use when debugging communication issues.
 - **Terminate**: Driver terminates when next command is sent after unexpected error. Use when unexpected errors indicate protocol implementation bugs.
 
@@ -513,7 +513,7 @@ All four error behaviors can be configured independently:
 - Start with **Terminate** during development to catch issues early
 - Use **Collect** when diagnosing intermittent problems
 - Switch to **Ignore** in production for non-critical errors
-- Monitor logs regardless of behavior setting
+- Monitor the diagnostic events and `OnLogMessage` regardless of behavior setting
 - Consider your application's error tolerance when choosing behaviors
 - Remember that **Collect** mode defers errors until `StopAsync()` is called, and that `DisposeAsync()` alone discards them
 - Remember that **Terminate** mode throws errors on the next command, not immediately when the error occurs

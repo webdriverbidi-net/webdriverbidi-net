@@ -11,20 +11,22 @@ namespace WebDriverBiDi.Protocol;
 public enum UnhandledErrorKind
 {
     /// <summary>
-    /// An error resulting from an unparsable protocol message, for example,
-    /// invalid JSON, or JSON that does not contain required values.
+    /// An error resulting from a message recognized as an error response or as a registered event whose
+    /// payload cannot be deserialized, for example because it lacks required values, or from an unexpected
+    /// failure while processing an incoming message. A message that cannot be parsed as JSON is an
+    /// <see cref="UnknownMessage"/> instead.
     /// </summary>
     ProtocolError,
 
     /// <summary>
-    /// An error resulting from a valid JSON protocol message, but which does
-    /// not match the schema of any known command result, error, or event.
+    /// An error resulting from a message that cannot be parsed as JSON, or that is not a command response
+    /// for a pending command, an error response, or a registered event.
     /// </summary>
     UnknownMessage,
 
     /// <summary>
-    /// An error resulting from a valid JSON error response, but one that does
-    /// not correspond to a command that the user has sent.
+    /// An error resulting from a well-formed error response that does not correspond to a command that the
+    /// user has sent.
     /// </summary>
     UnexpectedError,
 

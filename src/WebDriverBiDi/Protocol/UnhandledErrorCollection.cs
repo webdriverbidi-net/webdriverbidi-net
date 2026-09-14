@@ -26,7 +26,9 @@ public class UnhandledErrorCollection
     }
 
     /// <summary>
-    /// Gets or sets a value indicating the behavior for errors resulting from an improper protocol message.
+    /// Gets or sets a value indicating the behavior for protocol errors: messages recognized as an error response
+    /// or as a registered event whose payload cannot be deserialized, and unexpected failures while processing an
+    /// incoming message.
     /// </summary>
     public TransportErrorBehavior ProtocolErrorBehavior
     {
@@ -48,8 +50,8 @@ public class UnhandledErrorCollection
     }
 
     /// <summary>
-    /// Gets or sets a value indicating the behavior for errors resulting from a valid JSON message that
-    /// corresponds to no defined protocol command response, error response, or event definition.
+    /// Gets or sets a value indicating the behavior for unknown messages: messages that cannot be parsed as JSON,
+    /// or that are not a command response for a pending command, an error response, or a registered event.
     /// </summary>
     public TransportErrorBehavior UnknownMessageBehavior
     {

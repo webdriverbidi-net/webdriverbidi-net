@@ -245,7 +245,7 @@ public static class ArchitectureSamples
     }
 
     /// <summary>
-    /// Ignore mode - errors silently discarded.
+    /// Ignore mode - errors are neither collected nor thrown.
     /// </summary>
     public static async Task IgnoreMode(NavigateCommandParameters navParams)
     {
@@ -298,7 +298,7 @@ public static class ArchitectureSamples
         #region EventHandlerErrorBehavior
         // Exceptions thrown by handlers never reach the code that raised the event; the
         // transport captures them and applies EventHandlerExceptionBehavior (Ignore by
-        // default: logged and discarded; Collect: thrown from StopAsync; Terminate: thrown
+        // default: raised on OnEventHandlerErrorOccurred, neither collected nor thrown; Collect: thrown from StopAsync; Terminate: thrown
         // from the next command). This applies to synchronous handlers...
         driver.TransportConfiguration.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -386,7 +386,7 @@ public static class ArchitectureSamples
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
         // Browser sends new event type not yet supported by library
-        // With Ignore mode, these are logged but don't cause errors
+        // With Ignore mode, these are raised on OnUnknownMessageReceived but don't cause errors
 
         await driver.BrowsingContext.NavigateAsync(navParams);
         await driver.StopAsync();  // Completes without exception

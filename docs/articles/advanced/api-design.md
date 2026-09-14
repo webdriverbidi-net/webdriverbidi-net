@@ -115,17 +115,19 @@ properties are exposed where they were found and are never merged across positio
 |----------|----------|------------------|-------|
 | **Envelope** — beside `type`, `id`/`method`, `result`/`params` | `Command.AdditionalCommandProperties` | `CommandResult.AdditionalResponseProperties` | event args `AdditionalEventProperties` |
 | **Payload root** — beside the specified members of `result`/`params` | `CommandParameters.AdditionalData` | `CommandResult.AdditionalData` | event args `AdditionalData` |
-| **Nested `Extensible` object** | e.g. `CookieFilter.AdditionalData` | e.g. `Cookie.AdditionalData` | e.g. `RequestData.AdditionalData` |
+| **Nested object** | e.g. `CookieFilter.AdditionalData` | e.g. `Cookie.AdditionalData` | e.g. `RequestData.AdditionalData` |
 
 The envelope and payload-root positions are captured by the transport for *every* command result and
 event — built-in or custom, under reflection or native AOT — with no attribute on the type: any property
 of the `result`/`params` object that the type does not define is extension data. (A member marked
 `[JsonIgnore]` does not define a wire property, so a same-named property still counts as extension data.)
 Chromium, for example, echoes a subscription's `goog:channel` on the envelope. Nested objects that the
-protocol marks `Extensible` capture their own: `RequestData` and `ResponseData` (Chromium's `goog:postData`,
-`goog:hasPostData`, `goog:resourceType`, `goog:resourceInitiator` and `goog:securityDetails`), `Cookie`,
-`CapabilitiesResult` (as `AdditionalCapabilities`), the storage partition types, and `SharedReferenceInfo` (the
-`element` of `input.fileDialogOpened`, whose `ToSharedReference()` carries the properties back to the remote end).
+protocol marks `Extensible` capture their own: `Cookie`, `CapabilitiesResult` (as `AdditionalCapabilities`), the
+storage partition types, and `SharedReferenceInfo` (the `element` of `input.fileDialogOpened`, whose
+`ToSharedReference()` carries the properties back to the remote end). `RequestData` and `ResponseData` capture
+theirs too, although the specification does not mark them `Extensible`, because Chromium places members there in
+practice: `goog:postData`, `goog:hasPostData`, `goog:resourceType`, `goog:resourceInitiator` and
+`goog:securityDetails`.
 
 Values are exposed as `ReceivedDataDictionary` entries: strings, `bool`, `long` or `double` numbers, nested
 `ReceivedDataDictionary` objects and `ReceivedDataList` arrays, or `null`.
@@ -162,8 +164,8 @@ The library uses `TransportErrorBehavior` (Ignore, Collect, Terminate) to contro
 | Property | Default | Controls |
 |----------|---------|----------|
 | `EventHandlerExceptionBehavior` | Ignore | Exceptions thrown by event handlers |
-| `ProtocolErrorBehavior` | Ignore | Invalid JSON, deserialization failures |
-| `UnknownMessageBehavior` | Ignore | Valid JSON that doesn't match any known structure |
+| `ProtocolErrorBehavior` | Ignore | An error response or registered event whose payload cannot be deserialized; an unexpected failure while processing a message |
+| `UnknownMessageBehavior` | Ignore | A message that is not valid JSON, or not a command response, error response or registered event |
 | `UnexpectedErrorBehavior` | Ignore | Error response with no corresponding command |
 
 See [Error Handling](error-handling.md) for detailed guidance on when to use each mode.

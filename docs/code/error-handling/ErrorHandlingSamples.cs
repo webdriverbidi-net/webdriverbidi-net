@@ -142,17 +142,17 @@ public class ErrorHandlingSamples
         {
             await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
 
-            // Event handler errors will be silently discarded
+            // Event handler errors are neither collected nor thrown; they are raised on OnEventHandlerErrorOccurred
             driver.Log.OnEntryAdded.AddObserver((e) =>
             {
                 // This runs on a separate thread
-                // If it throws, the exception is discarded and logged
+                // If it throws, the exception is reported through OnEventHandlerErrorOccurred
                 ProcessLogEntry(e);  // May throw
             });
 
             await driver.Session.SubscribeAsync(subscribeParams);
 
-            // Commands proceed normally, event handler errors are invisible
+            // Commands proceed normally; event handler errors surface only through OnEventHandlerErrorOccurred
             await driver.BrowsingContext.NavigateAsync(navParams);
         }
         finally

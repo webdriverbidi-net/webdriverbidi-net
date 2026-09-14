@@ -27,11 +27,41 @@ services.AddLogging(builder =>
     builder.AddWebDriverBiDi(); // Add WebDriverBiDi event logging
 });
 
-var serviceProvider = services.BuildServiceProvider();
+await using var serviceProvider = services.BuildServiceProvider();
+
+// The bridge starts listening when the logging pipeline is built, which happens the first time
+// ILoggerFactory (or an ILogger) is resolved. A generic or web host does this at startup.
+_ = serviceProvider.GetRequiredService<ILoggerFactory>();
 
 // Use WebDriverBiDi normally - events will be logged
 await using var driver = new BiDiDriver();
 await driver.StartAsync("ws://localhost:9222");
+```
+
+A `ServiceProvider` that is built but never resolved from logs nothing. Disposing the provider stops
+the bridge.
+
+### What the Bridge Does Not Forward
+
+The bridge forwards `WebDriverBiDiEventSource` events only. The driver's `OnLogMessage` event is a
+separate channel: the library's own log messages, including every message exchanged with the remote end
+at `Trace`, filtered by `driver.TransportConfiguration.LogLevel` rather than by the `EventLevel` passed to
+`AddWebDriverBiDi`. To send them to an `ILogger` as well, observe the event:
+
+```csharp
+driver.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+{
+    LogLevel level = e.Level switch
+    {
+        WebDriverBiDiLogLevel.Trace => LogLevel.Trace,
+        WebDriverBiDiLogLevel.Debug => LogLevel.Debug,
+        WebDriverBiDiLogLevel.Info => LogLevel.Information,
+        WebDriverBiDiLogLevel.Warn => LogLevel.Warning,
+        WebDriverBiDiLogLevel.Error => LogLevel.Error,
+        _ => LogLevel.Critical,
+    };
+    logger.Log(level, "{Component}: {Message}", e.ComponentName, e.Message);
+});
 ```
 
 ## Configuration

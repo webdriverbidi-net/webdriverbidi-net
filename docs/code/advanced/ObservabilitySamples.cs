@@ -165,10 +165,36 @@ public static class ObservabilitySamples
             builder.AddWebDriverBiDi();
         });
 
-        var serviceProvider = services.BuildServiceProvider();
+        await using var serviceProvider = services.BuildServiceProvider();
+
+        // The bridge starts listening when the logging pipeline is built, which happens the first time
+        // ILoggerFactory (or an ILogger) is resolved. A generic or web host does this at startup.
+        _ = serviceProvider.GetRequiredService<ILoggerFactory>();
 
         await using var driver = new BiDiDriver();
         await driver.StartAsync("ws://localhost:9515/session/YOUR-SESSION-ID");
+        #endregion
+    }
+
+    /// <summary>
+    /// Forward the driver's OnLogMessage channel, which the logging bridge does not carry, to an ILogger.
+    /// </summary>
+    public static void ForwardLogMessagesToILogger(BiDiDriver driver, ILogger logger)
+    {
+        #region ForwardLogMessagesToILogger
+        driver.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        {
+            LogLevel level = e.Level switch
+            {
+                WebDriverBiDiLogLevel.Trace => LogLevel.Trace,
+                WebDriverBiDiLogLevel.Debug => LogLevel.Debug,
+                WebDriverBiDiLogLevel.Info => LogLevel.Information,
+                WebDriverBiDiLogLevel.Warn => LogLevel.Warning,
+                WebDriverBiDiLogLevel.Error => LogLevel.Error,
+                _ => LogLevel.Critical,
+            };
+            logger.Log(level, "{Component}: {Message}", e.ComponentName, e.Message);
+        });
         #endregion
     }
 
@@ -191,7 +217,11 @@ public static class ObservabilitySamples
             builder.AddWebDriverBiDi(EventLevel.Informational);
         });
 
-        var serviceProvider = services.BuildServiceProvider();
+        await using var serviceProvider = services.BuildServiceProvider();
+
+        // The bridge starts listening when the logging pipeline is built, which happens the first time
+        // ILoggerFactory (or an ILogger) is resolved. A generic or web host does this at startup.
+        _ = serviceProvider.GetRequiredService<ILoggerFactory>();
 
         // Use WebDriverBiDi - events will be automatically logged
         await using var driver = new BiDiDriver();
@@ -262,7 +292,11 @@ public static class ObservabilitySamples
             builder.AddWebDriverBiDi(EventLevel.Informational);
         });
 
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
+
+        // The bridge starts listening when the logging pipeline is built, which happens the first time
+        // ILoggerFactory (or an ILogger) is resolved. A generic or web host does this at startup.
+        _ = serviceProvider.GetRequiredService<ILoggerFactory>();
 
         // WebDriverBiDi events will be sent to Application Insights with structured properties
         // allowing you to query and analyze automation telemetry
