@@ -2378,4 +2378,417 @@ public class BiDiDriver009AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task CommandAfterForeachLoopThatStops_NoDiagnostic()
+    {
+        // The loop body may never run, so a stop inside it does not leave the driver certainly stopped. Walking the body straight through reported this command at Error severity.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        foreach (string url in urls)
+                        {
+                            await driver.StopAsync();
+                        }
+
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandAfterForLoopThatStarts_NoDiagnostic()
+    {
+        // A start inside a for loop may have run, so the command after the loop is not reported.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int count)
+                    {
+                        BiDiDriver driver = new();
+                        for (int attempt = 0; attempt < count; attempt++)
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandInsideWhileLoopBeforeStart_ReportsError()
+    {
+        // Inside the body, the state is the state at loop entry, so a command before the body's own start is reported.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        while (retry)
+                        {
+                            await {|#0:driver.Session.StatusAsync()|};
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task CommandAfterDoWhileLoopThatStops_ReportsError()
+    {
+        // A do...while body runs at least once, so a stop inside it certainly leaves the driver stopped.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        do
+                        {
+                            await driver.StopAsync();
+                        }
+                        while (retry);
+
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task CommandAfterTryWhoseFinallyStops_ReportsError()
+    {
+        // A finally runs however the try ends, so its StopAsync certainly leaves the driver stopped for the command that follows.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                        finally
+                        {
+                            await driver.StopAsync();
+                        }
+
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task CommandInFinallyAfterStopInTry_NoDiagnostic()
+    {
+        // The finally may run after an exception thrown before the StopAsync in the try, while the driver is still started, so the command in it is not reported.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.Session.StatusAsync();
+                            await driver.StopAsync();
+                        }
+                        finally
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandAfterConditionalExpressionsThatMayStop_NoDiagnostic()
+    {
+        // Only one arm of a conditional expression runs, so a stop in either arm may not have run. Walked straight through, the stop reported the command at Error severity.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await (retry ? Task.CompletedTask : driver.StopAsync());
+                        await (retry ? driver.StopAsync() : Task.CompletedTask);
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandAfterSwitchExpressionThatMayStop_NoDiagnostic()
+    {
+        // The arms of a switch expression are mutually exclusive, including one guarded by a when clause.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await (mode switch
+                        {
+                            1 when retry => driver.StopAsync(),
+                            _ => Task.CompletedTask,
+                        });
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandAfterEmptySwitchExpression_ReportsError()
+    {
+        // A switch expression with no arms always throws, so it adds no path and leaves the driver not started.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        #pragma warning disable CS8509
+                        Task pending = mode switch { };
+                        #pragma warning restore CS8509
+                        await pending;
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task CommandAfterCoalesceThatMayStop_NoDiagnostic()
+    {
+        // The right operand of ?? runs only when the left is null, so the stop in it may not have run.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        Task pending = null;
+                        await driver.StartAsync("ws://localhost:9222");
+                        await (pending ?? driver.StopAsync());
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandAfterCoalesceAssignmentThatMayStop_NoDiagnostic()
+    {
+        // The right operand of ??= runs only when the variable is null, so the stop in it may not have run.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        Task pending = null;
+                        await driver.StartAsync("ws://localhost:9222");
+                        pending ??= driver.StopAsync();
+                        await pending;
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandAfterConditionalAndThatMayStop_NoDiagnostic()
+    {
+        // The right operand of && runs only when the left is true, so the stop in it may not have run.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        bool stopped = retry && driver.StopAsync().Wait(1000);
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task CommandAfterConditionalOrThatMayStart_NoDiagnostic()
+    {
+        // The right operand of || runs only when the left is false, so the start in it may have run, and this rule reports only a driver that is not started on every path.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        bool started = retry || driver.StartAsync("ws://localhost:9222").Wait(1000);
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
+    }
 }

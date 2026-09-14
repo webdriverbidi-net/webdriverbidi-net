@@ -33,7 +33,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 /// descend into nested functions (lambdas, anonymous methods, local functions): their code runs when
 /// the delegate is invoked, not where it is written. <c>if</c>, <c>switch</c> and <c>try</c>
 /// statements are walked with a forked copy of the state per mutually exclusive branch, and the body
-/// of a <c>for</c>, <c>foreach</c> or <c>while</c> loop is walked as a path that may not run at all.
+/// of a <c>for</c>, <c>foreach</c> or <c>while</c> loop is walked as a path that may not run at all. A
+/// <c>finally</c> block runs on every way out of its <c>try</c>, so what it does holds for the code after
+/// the statement. The conditional and <c>switch</c> expressions are forked like the statements, and the
+/// right operand of <c>&amp;&amp;</c>, <c>||</c>, <c>??</c> and <c>??=</c> is walked as a path that may not run.
 /// </para>
 /// </remarks>
 internal sealed class DriverStartStateWalker
@@ -43,6 +46,11 @@ internal sealed class DriverStartStateWalker
     private readonly SyntaxNodeAnalysisContext context;
     private readonly Func<ITypeSymbol?, bool> isDriverType;
     private readonly DriverInvocationHandler handler;
+
+    // Whether invocations are handed to the handler. Cleared while a finally block is walked a second time
+    // to find the state it leaves for the code after its try statement, a walk whose invocations have already
+    // been handed over by the first.
+    private bool reportInvocations = true;
 
     private DriverStartStateWalker(SyntaxNodeAnalysisContext context, Func<ITypeSymbol?, bool> isDriverType, DriverInvocationHandler handler)
     {
@@ -107,12 +115,13 @@ internal sealed class DriverStartStateWalker
     private void ProcessNode(SyntaxNode node, Dictionary<string, bool> driverStartedStatus)
     {
         // Walk the node's descendants in document order. The walk stops at every branching construct
-        // — the if, switch and try statements, the conditional and switch expressions, and the loops
-        // whose body may not run, including one that is itself the root, which the barrier yields
-        // without descending into — and processes each recursively below with a forked copy of the
-        // state for each mutually exclusive branch.
+        // — the if, switch and try statements, the conditional and switch expressions, the operators
+        // whose right operand may not be evaluated, and the loops whose body may not run, including one
+        // that is itself the root, which the barrier yields without descending into — and processes each
+        // recursively below with a forked copy of the state for each path.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            !AnalyzerSymbolHelpers.IsShortCircuitOperation(child) &&
             child is not IfStatementSyntax &&
             child is not SwitchStatementSyntax &&
             child is not TryStatementSyntax &&
@@ -154,6 +163,14 @@ internal sealed class DriverStartStateWalker
 
                 case SwitchExpressionSyntax switchExpression:
                     this.ProcessSwitchExpression(switchExpression, driverStartedStatus);
+                    break;
+
+                case BinaryExpressionSyntax shortCircuit when AnalyzerSymbolHelpers.IsShortCircuitOperation(shortCircuit):
+                    this.ProcessShortCircuit(shortCircuit.Left, shortCircuit.Right, null, driverStartedStatus);
+                    break;
+
+                case AssignmentExpressionSyntax coalesceAssignment when AnalyzerSymbolHelpers.IsShortCircuitOperation(coalesceAssignment):
+                    this.ProcessShortCircuit(coalesceAssignment.Left, coalesceAssignment.Right, coalesceAssignment, driverStartedStatus);
                     break;
 
                 case AssignmentExpressionSyntax assignment:
@@ -377,6 +394,23 @@ internal sealed class DriverStartStateWalker
         }
     }
 
+    private void ProcessShortCircuit(ExpressionSyntax left, ExpressionSyntax right, AssignmentExpressionSyntax? coalesceAssignment, Dictionary<string, bool> driverStartedStatus)
+    {
+        // The left operand is always evaluated, and the right one only when the left does not settle the result
+        // (&&, ||) or is null (??, ??=). The right operand is therefore walked as a path that may not run, as the
+        // branch of an if statement without an else is, and a ??= assigns only on that path.
+        this.ProcessNode(left, driverStartedStatus);
+
+        Dictionary<string, bool> rightStatus = new(driverStartedStatus);
+        this.ProcessNode(right, rightStatus);
+        if (coalesceAssignment is not null)
+        {
+            TrackDriverAssignment(coalesceAssignment, rightStatus);
+        }
+
+        MergeAllPaths(driverStartedStatus, [rightStatus, new Dictionary<string, bool>(driverStartedStatus)]);
+    }
+
     private void ProcessSwitchStatement(SwitchStatementSyntax switchStatement, Dictionary<string, bool> driverStartedStatus)
     {
         // The governing expression executes unconditionally, before any section.
@@ -441,7 +475,9 @@ internal sealed class DriverStartStateWalker
             }
         }
 
-        List<Dictionary<string, bool>> exitStatuses = [tryStatus];
+        // The try block and each catch clause are the ways the statement can complete normally, and after it a
+        // driver counts as started only when every one of them leaves it started.
+        List<Dictionary<string, bool>> completionStatuses = [tryStatus];
         foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
         {
             Dictionary<string, bool> catchStatus = new(conservativeStatus);
@@ -451,19 +487,34 @@ internal sealed class DriverStartStateWalker
             }
 
             this.ProcessNode(catchClause.Block, catchStatus);
-            exitStatuses.Add(catchStatus);
+            completionStatuses.Add(catchStatus);
         }
 
+        MergeAllPaths(driverStartedStatus, completionStatuses);
+
+        // A finally block runs on every way out of the statement. The code in it is judged against a state that
+        // allows for all of them: the try block or a catch clause completing, or an exception from any point in
+        // the try. Only normal completion reaches the code after the statement, though, so the block is walked a
+        // second time, from the completion state and without reporting, to find what it leaves there: a StartAsync
+        // in a finally certainly leaves the driver started for the code that follows, and a StopAsync there
+        // certainly leaves it stopped.
         if (tryStatement.Finally is not null)
         {
-            Dictionary<string, bool> finallyStatus = new(conservativeStatus);
-            this.ProcessNode(tryStatement.Finally.Block, finallyStatus);
-            exitStatuses.Add(finallyStatus);
-        }
+            Dictionary<string, bool> finallyEntryStatus = new(driverStartedStatus);
+            MergeAllPaths(finallyEntryStatus, [new Dictionary<string, bool>(driverStartedStatus), conservativeStatus]);
+            this.ProcessNode(tryStatement.Finally.Block, finallyEntryStatus);
 
-        // Including the finally's conservative walk in the merge can only make the merged state
-        // more pessimistic (suppressing reports), never create a false positive.
-        MergeAllPaths(driverStartedStatus, exitStatuses);
+            bool reportInvocationsOnEntry = this.reportInvocations;
+            this.reportInvocations = false;
+            try
+            {
+                this.ProcessNode(tryStatement.Finally.Block, driverStartedStatus);
+            }
+            finally
+            {
+                this.reportInvocations = reportInvocationsOnEntry;
+            }
+        }
     }
 
     private void CheckInvocation(InvocationExpressionSyntax invocation, Dictionary<string, bool> driverStartedStatus)
@@ -495,7 +546,10 @@ internal sealed class DriverStartStateWalker
         bool isDirectDriverCall = memberAccess.Expression is IdentifierNameSyntax receiverIdentifier
             && receiverIdentifier.Identifier.ValueText == driverVariableName;
 
-        this.handler(invocation, method, driverVariableName, started, isDirectDriverCall);
+        if (this.reportInvocations)
+        {
+            this.handler(invocation, method, driverVariableName, started, isDirectDriverCall);
+        }
 
         // StartAsync puts the driver in the started state; StopAsync returns it to the not-started
         // state, in which the runtime permits registration and a new start again.

@@ -1221,4 +1221,241 @@ public class BiDiDriver029AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task UseAfterTryWhoseFinallyDisposes_ReportsError()
+    {
+        // A finally runs however the try ends, so its DisposeAsync certainly leaves the driver disposed for the use that follows.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url)
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync(url);
+                        }
+                        finally
+                        {
+                            await driver.DisposeAsync();
+                        }
+
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, CreateExpected(0, "StatusAsync"));
+    }
+
+    [Fact]
+    public async Task UseInFinallyAfterDisposeInTry_ReportsNothing()
+    {
+        // The finally may run after an exception thrown before the DisposeAsync in the try, so the use in it is not certain to follow disposal.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url)
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync(url);
+                            await driver.DisposeAsync();
+                        }
+                        finally
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task UseAfterConditionalExpressionsThatMayDispose_ReportsNothing()
+    {
+        // Only one arm of a conditional expression runs, so a dispose in either arm may not have run.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url, bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await (retry ? driver.DisposeAsync().AsTask() : Task.CompletedTask);
+                        await (retry ? Task.CompletedTask : driver.DisposeAsync().AsTask());
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task UseAfterSwitchExpressionThatDisposesInEveryArm_ReportsError()
+    {
+        // Every arm of the switch expression disposes the driver, including the one guarded by a when clause, so it is disposed on every path.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url, bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await (mode switch
+                        {
+                            1 when retry => driver.DisposeAsync().AsTask(),
+                            _ => driver.DisposeAsync().AsTask(),
+                        });
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, CreateExpected(0, "StatusAsync"));
+    }
+
+    [Fact]
+    public async Task UseAfterEmptySwitchExpression_ReportsError()
+    {
+        // A switch expression with no arms always throws, so it adds no path and leaves the driver disposed.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url, bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.DisposeAsync();
+                        #pragma warning disable CS8509
+                        Task pending = mode switch { };
+                        #pragma warning restore CS8509
+                        await pending;
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, CreateExpected(0, "StatusAsync"));
+    }
+
+    [Fact]
+    public async Task UseAfterCoalesceThatMayDispose_ReportsNothing()
+    {
+        // The right operand of ?? runs only when the left is null, so the dispose in it may not have run.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url, bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        Task pending = null;
+                        await (pending ?? driver.DisposeAsync().AsTask());
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task UseAfterCoalesceAssignmentThatMayDispose_ReportsNothing()
+    {
+        // The right operand of ??= runs only when the variable is null, so the dispose in it may not have run.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url, bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        Task pending = null;
+                        pending ??= driver.DisposeAsync().AsTask();
+                        await pending;
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task UseAfterCoalesceFollowingDisposal_ReportsError()
+    {
+        // A ?? that does not rebind the driver leaves a driver disposed before it disposed afterwards.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string url, bool retry, int mode)
+                    {
+                        BiDiDriver driver = new();
+                        await driver.DisposeAsync();
+                        Task pending = null;
+                        await (pending ?? Task.CompletedTask);
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, CreateExpected(0, "StatusAsync"));
+    }
 }

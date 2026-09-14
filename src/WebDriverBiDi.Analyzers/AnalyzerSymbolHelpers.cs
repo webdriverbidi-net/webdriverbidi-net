@@ -5,18 +5,35 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 /// <summary>
 /// Helper methods for identifying WebDriver BiDi driver-related symbols.
 /// </summary>
 internal static class AnalyzerSymbolHelpers
 {
+    /// <summary>
+    /// The name of the diagnostic property that BIDI007 and BIDI023 set on a diagnostic for an operation that
+    /// runs before an <c>async</c> handler's first <c>await</c>, telling their code fix that awaiting first is
+    /// what moves the operation off the dispatching thread.
+    /// </summary>
+    internal const string RunsBeforeFirstAwaitPropertyName = "RunsBeforeFirstAwait";
+
+    /// <summary>
+    /// The diagnostic properties that mark an operation running before an <c>async</c> handler's first
+    /// <c>await</c>.
+    /// </summary>
+    internal static readonly ImmutableDictionary<string, string?> RunsBeforeFirstAwaitProperties =
+        ImmutableDictionary<string, string?>.Empty.Add(RunsBeforeFirstAwaitPropertyName, "true");
+
     /// <summary>
     /// Determines whether the symbol represents the driver: <c>BiDiDriver</c> itself, or a type implementing
     /// <c>IBiDiModuleHost</c> or <c>IBiDiDriverLifecycleManager</c>.
@@ -75,37 +92,108 @@ internal static class AnalyzerSymbolHelpers
     }
 
     /// <summary>
-    /// Determines whether the handler passed to an <c>AddObserver</c> invocation will actually
-    /// execute off the dispatching thread when <c>RunHandlerAsynchronously</c> is specified.
+    /// Determines whether an <c>AddObserver</c> invocation is bound to the overload whose handler is an
+    /// <c>Action&lt;T&gt;</c>.
+    /// </summary>
+    /// <param name="addObserverMethod">The resolved AddObserver overload.</param>
+    /// <returns><see langword="true"/> if the handler parameter is an <c>Action&lt;T&gt;</c>; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// With <c>RunHandlerAsynchronously</c> the library queues the whole of such a handler to the thread pool,
+    /// so none of it runs on the thread dispatching the event. A <c>Task</c>-returning handler is different:
+    /// the option detaches only the task it returns, so the code that runs before the handler returns that
+    /// task still runs on the dispatching thread.
+    /// </remarks>
+    internal static bool IsBoundToActionOverload(IMethodSymbol addObserverMethod)
+    {
+        return addObserverMethod.Parameters[0].Type.Name == "Action";
+    }
+
+    /// <summary>
+    /// Determines whether a handler passed to <c>AddObserver</c> is <c>async</c>: an <c>async</c> lambda or
+    /// anonymous method, or a method group that resolves to an <c>async</c> method.
     /// </summary>
     /// <param name="context">The analysis context.</param>
-    /// <param name="invocation">The AddObserver invocation to inspect.</param>
-    /// <param name="addObserverMethod">The resolved AddObserver overload.</param>
-    /// <returns><see langword="true"/> if the handler is asynchronous; otherwise <see langword="false"/>.</returns>
-    /// <remarks>
-    /// The option only affects what happens with the <c>Task</c> a handler returns; the code that
-    /// runs before the handler returns still executes on the dispatching thread. A handler is
-    /// therefore considered asynchronous when it is bound to the <c>Action&lt;T&gt;</c> overload
-    /// (the library queues the whole action to the thread pool in that case), when it is an
-    /// <c>async</c> lambda or anonymous method, or when it is a method group that resolves to an
-    /// <c>async</c> method. A non-<c>async</c> <c>Task</c>-returning handler is not offloaded.
-    /// Callers only invoke this when an options argument is present, so the invocation always has
-    /// at least one argument and the resolved overload at least one parameter.
-    /// </remarks>
-    internal static bool IsHandlerAsynchronous(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation, IMethodSymbol addObserverMethod)
+    /// <param name="handler">The handler expression.</param>
+    /// <returns><see langword="true"/> if the handler is <c>async</c>; otherwise <see langword="false"/>.</returns>
+    internal static bool IsAsyncHandler(SyntaxNodeAnalysisContext context, ExpressionSyntax handler)
     {
-        if (addObserverMethod.Parameters[0].Type.Name == "Action")
-        {
-            return true;
-        }
-
-        ExpressionSyntax handler = invocation.ArgumentList.Arguments[0].Expression;
         return handler switch
         {
             AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword),
             IdentifierNameSyntax or MemberAccessExpressionSyntax => context.SemanticModel.GetSymbolInfo(handler).Symbol is IMethodSymbol { IsAsync: true },
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Gets a predicate telling whether a node of an <c>async</c> handler's body runs before the handler first
+    /// yields, which is to say on the thread that invoked the handler.
+    /// </summary>
+    /// <param name="handlerBody">The body of the <c>async</c> handler.</param>
+    /// <returns>A predicate that is <see langword="true"/> for a node that runs before the handler first yields.</returns>
+    /// <remarks>
+    /// <para>
+    /// An <c>async</c> handler runs synchronously until it awaits something that has not completed, and
+    /// <c>RunHandlerAsynchronously</c> detaches only what follows. Whether a particular <c>await</c> completes
+    /// synchronously is decided at run time, so the first one is taken as the point the handler yields. Its
+    /// operand is evaluated before it yields, so a node inside the operand runs before that point, while a node
+    /// that contains the <c>await</c> (a call taking the awaited value as an argument, say) runs only after it.
+    /// An <c>await foreach</c> yields once its collection expression has been evaluated.
+    /// </para>
+    /// <para>
+    /// The first yield is the one whose operand is finished earliest, which for an <c>await</c> nested inside
+    /// another is the inner one. An <c>await</c> inside a nested function does not make the handler yield, and
+    /// an <c>await using</c> declaration yields only when its scope ends, so neither counts. The first
+    /// <c>await</c> may sit in a branch that does not run, in which case code after it is treated as offloaded
+    /// although it may not be; that can only miss a report, never make a wrong one.
+    /// </para>
+    /// </remarks>
+    internal static Func<SyntaxNode, bool> GetRunsBeforeFirstYield(SyntaxNode handlerBody)
+    {
+        SyntaxNode? firstYield = null;
+        int firstYieldPosition = int.MaxValue;
+        foreach (SyntaxNode node in handlerBody.DescendantNodesAndSelf(DoesNotBeginNestedFunction))
+        {
+            int yieldPosition = node switch
+            {
+                AwaitExpressionSyntax awaitExpression => awaitExpression.Span.End,
+                CommonForEachStatementSyntax forEachStatement when forEachStatement.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword) => forEachStatement.Expression.Span.End,
+                _ => int.MaxValue,
+            };
+
+            if (yieldPosition < firstYieldPosition)
+            {
+                firstYield = node;
+                firstYieldPosition = yieldPosition;
+            }
+        }
+
+        if (firstYield is null)
+        {
+            return static _ => true;
+        }
+
+        TextSpan firstYieldSpan = firstYield.Span;
+        return node => node.SpanStart < firstYieldPosition && !node.Span.Contains(firstYieldSpan);
+    }
+
+    /// <summary>
+    /// Determines whether a node is an operation whose right operand is evaluated only on some paths: a conditional
+    /// logical operator (<c>&amp;&amp;</c> or <c>||</c>), the null-coalescing operator (<c>??</c>), or a
+    /// null-coalescing assignment (<c>??=</c>).
+    /// </summary>
+    /// <param name="node">The node to inspect.</param>
+    /// <returns><see langword="true"/> if the node is such an operation; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The rules that track a driver's state walk the right operand of these operations as a path that may not run,
+    /// exactly as they walk the branch of an <c>if</c> statement without an <c>else</c>.
+    /// </remarks>
+    internal static bool IsShortCircuitOperation(SyntaxNode node)
+    {
+        return node.IsKind(SyntaxKind.LogicalAndExpression)
+            || node.IsKind(SyntaxKind.LogicalOrExpression)
+            || node.IsKind(SyntaxKind.CoalesceExpression)
+            || node.IsKind(SyntaxKind.CoalesceAssignmentExpression);
     }
 
     /// <summary>

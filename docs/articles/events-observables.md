@@ -498,7 +498,7 @@ Use `RunHandlerAsynchronously` for I/O operations or long-running work:
 - A non-`async` `Task`-returning handler that does its work synchronously and then returns a completed task — `e => { DoSlowThing(); return Task.CompletedTask; }` — is **not** offloaded at all. The option cannot help it; make the handler `async` (and `await` first) or wrap the work in `Task.Run`.
 - Handlers added with the `Action<T>` overload are the exception: with the option set, the whole action is queued to the thread pool, so none of it runs on the dispatching thread.
 
-The BIDI007 and BIDI023 analyzers report handlers where the option is present but cannot help, and their code fix converts a non-`async` lambda into an `async` one that awaits `Task.Yield()` first.
+The BIDI007 and BIDI023 analyzers report handlers where the option is present but cannot help. That means every blocking operation or module command in a non-`async` `Task`-returning handler, and those placed before the first `await` of an `async` one. Their code fix converts a non-`async` lambda into an `async` one that awaits `Task.Yield()` first, and inserts `await Task.Yield();` at the top of an `async` lambda.
 
 ### Practical Examples
 

@@ -91,7 +91,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
 
         foreach (StatementSyntax statement in AnalyzerSymbolHelpers.GetTopLevelStatements(context.Node))
         {
-            ProcessNode(statement, context, semanticModel, driverDisposedStatus, untrackableNames);
+            ProcessNode(statement, context, reportDiagnostics: true, semanticModel, driverDisposedStatus, untrackableNames);
         }
     }
 
@@ -194,6 +194,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
     private static void ProcessNode(
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
         HashSet<string> untrackableNames)
@@ -207,6 +208,9 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         // its body rather than before it.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            !AnalyzerSymbolHelpers.IsShortCircuitOperation(child) &&
+            child is not ConditionalExpressionSyntax &&
+            child is not SwitchExpressionSyntax &&
             child is not IfStatementSyntax &&
             child is not SwitchStatementSyntax &&
             child is not TryStatementSyntax &&
@@ -217,31 +221,47 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
-                ProcessIfStatement(ifStatement, context, semanticModel, driverDisposedStatus, untrackableNames);
+                ProcessIfStatement(ifStatement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is ForStatementSyntax forStatement)
             {
-                ProcessLoop(GetForLoopPreamble(forStatement), forStatement.Incrementors, forStatement.Statement, context, semanticModel, driverDisposedStatus, untrackableNames);
+                ProcessLoop(GetForLoopPreamble(forStatement), forStatement.Incrementors, forStatement.Statement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is CommonForEachStatementSyntax forEachStatement)
             {
-                ProcessLoop([forEachStatement.Expression], [], forEachStatement.Statement, context, semanticModel, driverDisposedStatus, untrackableNames);
+                ProcessLoop([forEachStatement.Expression], [], forEachStatement.Statement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is WhileStatementSyntax whileStatement)
             {
-                ProcessLoop([whileStatement.Condition], [], whileStatement.Statement, context, semanticModel, driverDisposedStatus, untrackableNames);
+                ProcessLoop([whileStatement.Condition], [], whileStatement.Statement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
-                ProcessSwitchStatement(switchStatement, context, semanticModel, driverDisposedStatus, untrackableNames);
+                ProcessSwitchStatement(switchStatement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is TryStatementSyntax tryStatement)
             {
-                ProcessTryStatement(tryStatement, context, semanticModel, driverDisposedStatus, untrackableNames);
+                ProcessTryStatement(tryStatement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is UsingStatementSyntax usingStatement)
             {
-                ProcessUsingStatement(usingStatement, context, semanticModel, driverDisposedStatus, untrackableNames);
+                ProcessUsingStatement(usingStatement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
+            }
+            else if (descendant is ConditionalExpressionSyntax conditional)
+            {
+                ProcessConditionalExpression(conditional, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
+            }
+            else if (descendant is SwitchExpressionSyntax switchExpression)
+            {
+                ProcessSwitchExpression(switchExpression, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
+            }
+            else if (descendant is BinaryExpressionSyntax shortCircuit && AnalyzerSymbolHelpers.IsShortCircuitOperation(shortCircuit))
+            {
+                ProcessShortCircuit(shortCircuit.Left, shortCircuit.Right, null, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
+            }
+            else if (descendant is AssignmentExpressionSyntax coalesceAssignment && AnalyzerSymbolHelpers.IsShortCircuitOperation(coalesceAssignment))
+            {
+                ProcessShortCircuit(coalesceAssignment.Left, coalesceAssignment.Right, coalesceAssignment, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
             }
             else if (descendant is VariableDeclarationSyntax declaration)
             {
@@ -253,7 +273,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
-                CheckInvocation(invocation, context, semanticModel, driverDisposedStatus);
+                CheckInvocation(invocation, context, reportDiagnostics, semanticModel, driverDisposedStatus);
             }
         }
     }
@@ -261,20 +281,21 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
     private static void ProcessIfStatement(
         IfStatementSyntax ifStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
         HashSet<string> untrackableNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
-        ProcessNode(ifStatement.Condition, context, semanticModel, driverDisposedStatus, untrackableNames);
+        ProcessNode(ifStatement.Condition, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
 
         Dictionary<string, bool> thenBranchStatus = new(driverDisposedStatus);
-        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranchStatus, untrackableNames);
+        ProcessNode(ifStatement.Statement, context, reportDiagnostics, semanticModel, thenBranchStatus, untrackableNames);
 
         Dictionary<string, bool> elseBranchStatus = new(driverDisposedStatus);
         if (ifStatement.Else is not null)
         {
-            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranchStatus, untrackableNames);
+            ProcessNode(ifStatement.Else.Statement, context, reportDiagnostics, semanticModel, elseBranchStatus, untrackableNames);
         }
 
         // After the branch a driver counts as disposed only when every path through it disposed the
@@ -287,11 +308,99 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static void ProcessConditionalExpression(
+        ConditionalExpressionSyntax conditional,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverDisposedStatus,
+        HashSet<string> untrackableNames)
+    {
+        // The condition is evaluated before either arm, and exactly one arm is evaluated after it: the shape of an
+        // if statement with an else clause, forked and merged the same way: a driver counts as disposed after it only when both arms dispose it.
+        ProcessNode(conditional.Condition, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
+
+        Dictionary<string, bool> whenTrueStatus = new(driverDisposedStatus);
+        ProcessNode(conditional.WhenTrue, context, reportDiagnostics, semanticModel, whenTrueStatus, untrackableNames);
+
+        Dictionary<string, bool> whenFalseStatus = new(driverDisposedStatus);
+        ProcessNode(conditional.WhenFalse, context, reportDiagnostics, semanticModel, whenFalseStatus, untrackableNames);
+
+        foreach (string driverName in driverDisposedStatus.Keys.ToList())
+        {
+            driverDisposedStatus[driverName] = whenTrueStatus[driverName] && whenFalseStatus[driverName];
+        }
+    }
+
+    private static void ProcessSwitchExpression(
+        SwitchExpressionSyntax switchExpression,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverDisposedStatus,
+        HashSet<string> untrackableNames)
+    {
+        // The governing expression is evaluated before any arm, and the arms are mutually exclusive. Matching no arm
+        // throws rather than continuing after the expression, so the arms are the only paths out; with no arms at
+        // all nothing after the expression is reached, and the state is left alone.
+        ProcessNode(switchExpression.GoverningExpression, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
+
+        List<Dictionary<string, bool>> armStatuses = [];
+        foreach (SwitchExpressionArmSyntax arm in switchExpression.Arms)
+        {
+            Dictionary<string, bool> armStatus = new(driverDisposedStatus);
+            if (arm.WhenClause is not null)
+            {
+                ProcessNode(arm.WhenClause.Condition, context, reportDiagnostics, semanticModel, armStatus, untrackableNames);
+            }
+
+            ProcessNode(arm.Expression, context, reportDiagnostics, semanticModel, armStatus, untrackableNames);
+            armStatuses.Add(armStatus);
+        }
+
+        if (armStatuses.Count > 0)
+        {
+            foreach (string driverName in driverDisposedStatus.Keys.ToList())
+            {
+                driverDisposedStatus[driverName] = armStatuses.All(armStatus => armStatus[driverName]);
+            }
+        }
+    }
+
+    private static void ProcessShortCircuit(
+        ExpressionSyntax left,
+        ExpressionSyntax right,
+        AssignmentExpressionSyntax? coalesceAssignment,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverDisposedStatus,
+        HashSet<string> untrackableNames)
+    {
+        // The left operand is always evaluated, and the right one only when the left does not settle the result
+        // (&&, ||) or is null (??, ??=). The right operand is therefore walked as a path that may not run, as the
+        // branch of an if statement without an else is, and a ??= assigns only on that path.
+        ProcessNode(left, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
+
+        Dictionary<string, bool> rightStatus = new(driverDisposedStatus);
+        ProcessNode(right, context, reportDiagnostics, semanticModel, rightStatus, untrackableNames);
+        if (coalesceAssignment is not null)
+        {
+            CheckAssignment(coalesceAssignment, rightStatus);
+        }
+
+        foreach (string driverName in driverDisposedStatus.Keys.ToList())
+        {
+            driverDisposedStatus[driverName] = driverDisposedStatus[driverName] && rightStatus[driverName];
+        }
+    }
+
     private static void ProcessLoop(
         IEnumerable<SyntaxNode> preamble,
         IEnumerable<SyntaxNode> incrementors,
         StatementSyntax body,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
         HashSet<string> untrackableNames)
@@ -306,14 +415,14 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         // straight through.
         foreach (SyntaxNode node in preamble)
         {
-            ProcessNode(node, context, semanticModel, driverDisposedStatus, untrackableNames);
+            ProcessNode(node, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
         }
 
         Dictionary<string, bool> bodyStatus = new(driverDisposedStatus);
-        ProcessNode(body, context, semanticModel, bodyStatus, untrackableNames);
+        ProcessNode(body, context, reportDiagnostics, semanticModel, bodyStatus, untrackableNames);
         foreach (SyntaxNode incrementor in incrementors)
         {
-            ProcessNode(incrementor, context, semanticModel, bodyStatus, untrackableNames);
+            ProcessNode(incrementor, context, reportDiagnostics, semanticModel, bodyStatus, untrackableNames);
         }
 
         foreach (string driverName in driverDisposedStatus.Keys.ToList())
@@ -336,12 +445,13 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
     private static void ProcessSwitchStatement(
         SwitchStatementSyntax switchStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
         HashSet<string> untrackableNames)
     {
         // The governing expression executes unconditionally, before any section.
-        ProcessNode(switchStatement.Expression, context, semanticModel, driverDisposedStatus, untrackableNames);
+        ProcessNode(switchStatement.Expression, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
 
         List<Dictionary<string, bool>> sectionStatuses = [];
         foreach (SwitchSectionSyntax section in switchStatement.Sections)
@@ -349,7 +459,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             Dictionary<string, bool> sectionStatus = new(driverDisposedStatus);
             foreach (StatementSyntax sectionStatement in section.Statements)
             {
-                ProcessNode(sectionStatement, context, semanticModel, sectionStatus, untrackableNames);
+                ProcessNode(sectionStatement, context, reportDiagnostics, semanticModel, sectionStatus, untrackableNames);
             }
 
             sectionStatuses.Add(sectionStatus);
@@ -368,13 +478,14 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
     private static void ProcessTryStatement(
         TryStatementSyntax tryStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
         HashSet<string> untrackableNames)
     {
         Dictionary<string, bool> entryStatus = new(driverDisposedStatus);
         Dictionary<string, bool> tryStatus = new(driverDisposedStatus);
-        ProcessNode(tryStatement.Block, context, semanticModel, tryStatus, untrackableNames);
+        ProcessNode(tryStatement.Block, context, reportDiagnostics, semanticModel, tryStatus, untrackableNames);
 
         // A catch clause (or a finally block) may begin executing after any prefix of the try block has
         // run, so inside one a driver counts as disposed only when every partial execution of the try
@@ -387,37 +498,49 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             certainlyDisposedStatus[driverName] = entryStatus[driverName] && tryStatus[driverName];
         }
 
-        List<Dictionary<string, bool>> exitStatuses = [tryStatus];
+        // The try block and each catch clause are the ways the statement can complete normally, and after it a
+        // driver counts as disposed only when every one of them leaves it disposed, matching how the if and
+        // switch merges treat mutually exclusive branches.
+        List<Dictionary<string, bool>> completionStatuses = [tryStatus];
         foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
         {
             Dictionary<string, bool> catchStatus = new(certainlyDisposedStatus);
             if (catchClause.Filter is not null)
             {
-                ProcessNode(catchClause.Filter.FilterExpression, context, semanticModel, catchStatus, untrackableNames);
+                ProcessNode(catchClause.Filter.FilterExpression, context, reportDiagnostics, semanticModel, catchStatus, untrackableNames);
             }
 
-            ProcessNode(catchClause.Block, context, semanticModel, catchStatus, untrackableNames);
-            exitStatuses.Add(catchStatus);
+            ProcessNode(catchClause.Block, context, reportDiagnostics, semanticModel, catchStatus, untrackableNames);
+            completionStatuses.Add(catchStatus);
         }
 
-        if (tryStatement.Finally is not null)
-        {
-            Dictionary<string, bool> finallyStatus = new(certainlyDisposedStatus);
-            ProcessNode(tryStatement.Finally.Block, context, semanticModel, finallyStatus, untrackableNames);
-            exitStatuses.Add(finallyStatus);
-        }
-
-        // After the try statement a driver counts as disposed only when every completion path leaves it
-        // disposed, matching how the if and switch merges treat mutually exclusive branches.
         foreach (string driverName in driverDisposedStatus.Keys.ToList())
         {
-            driverDisposedStatus[driverName] = exitStatuses.All(exitStatus => exitStatus[driverName]);
+            driverDisposedStatus[driverName] = completionStatuses.All(completionStatus => completionStatus[driverName]);
+        }
+
+        // A finally block runs on every way out of the statement. The code in it is judged against a state that
+        // allows for all of them: the try block or a catch clause completing, or an exception from any point in
+        // the try. Only normal completion reaches the code after the statement, though, so the block is walked a
+        // second time, from the completion state and without reporting, to find what it leaves there: a DisposeAsync
+        // in a finally certainly leaves the driver disposed for the code that follows.
+        if (tryStatement.Finally is not null)
+        {
+            Dictionary<string, bool> finallyEntryStatus = [];
+            foreach (string driverName in driverDisposedStatus.Keys)
+            {
+                finallyEntryStatus[driverName] = driverDisposedStatus[driverName] && certainlyDisposedStatus[driverName];
+            }
+
+            ProcessNode(tryStatement.Finally.Block, context, reportDiagnostics, semanticModel, finallyEntryStatus, untrackableNames);
+            ProcessNode(tryStatement.Finally.Block, context, reportDiagnostics: false, semanticModel, driverDisposedStatus, untrackableNames);
         }
     }
 
     private static void ProcessUsingStatement(
         UsingStatementSyntax usingStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus,
         HashSet<string> untrackableNames)
@@ -431,7 +554,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             TrackDriverDeclarations(usingStatement.Declaration, semanticModel, driverDisposedStatus, untrackableNames);
         }
 
-        ProcessNode(usingStatement.Statement, context, semanticModel, driverDisposedStatus, untrackableNames);
+        ProcessNode(usingStatement.Statement, context, reportDiagnostics, semanticModel, driverDisposedStatus, untrackableNames);
 
         // `await using (driver) { ... }` over an already-declared driver leaves it disposed for the
         // statements that follow. The variable a using statement declares itself goes out of scope here,
@@ -458,6 +581,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
     private static void CheckInvocation(
         InvocationExpressionSyntax invocation,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverDisposedStatus)
     {
@@ -486,7 +610,7 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (driverDisposedStatus[driverVariableName] && ThrowsAfterDisposal(methodSymbol))
+        if (reportDiagnostics && driverDisposedStatus[driverVariableName] && ThrowsAfterDisposal(methodSymbol))
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodSymbol.Name, driverVariableName));
         }

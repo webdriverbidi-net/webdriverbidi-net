@@ -1028,9 +1028,10 @@ public class BiDiDriver007AnalyzerTests
         BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        // Two descriptors share the ID: the default message and the message used when
-        // RunHandlerAsynchronously is present but the handler body is synchronous.
-        Assert.Equal(2, diagnostics.Length);
+        // Three descriptors share the ID: the default message, the message used when
+        // RunHandlerAsynchronously is present but the handler body is synchronous, and the message used
+        // when the option is present and the operation runs before an async handler's first await.
+        Assert.Equal(3, diagnostics.Length);
         Assert.All(diagnostics, descriptor => Assert.Equal(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, descriptor.Id));
     }
 
@@ -2307,7 +2308,7 @@ public class BiDiDriver007AnalyzerTests
 
     /// <summary>
     /// Tests that an async handler whose RunHandlerAsynchronously option is passed through a variable is
-    /// not falsely reported.
+    /// not falsely reported for blocking work after its first await.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -2331,8 +2332,8 @@ public class BiDiDriver007AnalyzerTests
                         var options = ObservableEventHandlerOptions.RunHandlerAsynchronously;
                         var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
                         {
+                            await Task.Yield();
                             Thread.Sleep(1000);
-                            await Task.CompletedTask;
                         }, options);
                     }
                 }
@@ -2800,6 +2801,391 @@ public class BiDiDriver007AnalyzerTests
         RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new();
         testState.TestState.Sources.Add(("/0/Registration.cs", registrationSource));
         testState.TestState.Sources.Add(("/0/Handlers.cs", handlerSource));
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a blocking call placed before an async handler's first await is reported with the option present, because it still runs on the dispatching thread.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_BlockingBeforeFirstAwait_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            {|#0:Thread.Sleep(1000)|};
+                            await Task.Delay(10);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a blocking operation inside the operand of the first await is reported, because the operand is evaluated before the handler yields.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_BlockingInOperandOfFirstAwait_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Task<int> delay = Task.FromResult(10);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Delay({|#0:delay.Result|});
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Result' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a blocking call that takes the value of the first await as its argument is not reported, because it runs only after the handler has yielded.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_BlockingCallTakingAwaitedValue_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            Thread.Sleep(await Task.FromResult(10));
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an async handler with no await at all is reported in full, because it never yields.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_NoAwait_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            {|#0:Thread.Sleep(1000)|};
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an await inside a nested lambda does not count as the handler's first await, because it does not make the handler yield.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_AwaitOnlyInNestedLambdaBeforeBlocking_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            Func<Task> later = async () => await Task.Yield();
+                            {|#0:Thread.Sleep(1000)|};
+                            await later();
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a blocking call in the body of an await foreach is not reported, because the loop yields once its collection expression has been evaluated.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_BlockingInAwaitForeachBody_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await foreach (int value in Values())
+                            {
+                                Thread.Sleep(value);
+                            }
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+
+                    private static async IAsyncEnumerable<int> Values()
+                    {
+                        await Task.Yield();
+                        yield return 1;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an ordinary foreach does not count as a yield, so a blocking call after it and before the first await is still reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_BlockingAfterSynchronousForeach_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            foreach (int value in new[] { 1 })
+                            {
+                            }
+
+                            {|#0:Thread.Sleep(1000)|};
+                            await Task.Yield();
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the first yield is the await whose operand finishes earliest: an await nested in the operand of another yields first, so a blocking operation evaluated after it is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithOption_BlockingAfterNestedInnerAwait_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Task<int> delay = Task.FromResult(10);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.WhenAll(Task.Delay(await Task.FromResult(1)), Task.Delay(delay.Result));
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an async method group is judged the same way as an async lambda: a blocking call before its first await is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncMethodGroup_WithOption_BlockingBeforeFirstAwait_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(this.HandleAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+
+                    private async Task HandleAsync(WebDriverBiDi.Log.EntryAddedEventArgs args)
+                    {
+                        {|#0:Thread.Sleep(1000)|};
+                        await Task.Yield();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);

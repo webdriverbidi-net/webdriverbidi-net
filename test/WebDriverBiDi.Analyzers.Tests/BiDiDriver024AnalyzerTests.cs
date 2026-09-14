@@ -636,12 +636,11 @@ public class BiDiDriver024AnalyzerTests
     }
 
     [Fact]
-    public async Task StartAsyncAfterTryFinally_NoDiagnostic()
+    public async Task StartAsyncAfterTryFinally_ReportsError()
     {
         // With no catch clause, code after the try statement runs only when the try block
-        // completed, so the driver is in fact started; the merge is deliberately
-        // conservative about completion paths, preferring a missed report over an
-        // Error-severity false positive.
+        // completed, so the driver is certainly started. The finally block runs on that path
+        // too, and it does not stop the driver, so the second start is a duplicate.
         string testCode = """
             using System;
             using WebDriverBiDi;
@@ -662,13 +661,16 @@ public class BiDiDriver024AnalyzerTests
                         {
                         }
 
-                        await driver.StartAsync("ws://localhost:9223");
+                        await {|#0:driver.StartAsync("ws://localhost:9223")|};
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode, expected);
     }
 
     [Fact]
@@ -1252,5 +1254,127 @@ public class BiDiDriver024AnalyzerTests
         }
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task StartAsyncInFinally_AfterStartInTryWithoutCatch_NoDiagnostic()
+    {
+        // The finally may run after an exception thrown by the StartAsync in the try, which leaves the
+        // driver not started, so the StartAsync in the finally is not a certain duplicate.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        finally
+                        {
+                            await driver.StartAsync("ws://localhost:9223");
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncAfterTryWhoseFinallyStops_NoDiagnostic()
+    {
+        // The finally runs however the try ends, so its StopAsync leaves the driver stopped for the
+        // start that follows.
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        try
+                        {
+                            await driver.Session.StatusAsync();
+                        }
+                        finally
+                        {
+                            await driver.StopAsync();
+                        }
+
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncAfterCoalesceThatMayStart_NoDiagnostic()
+    {
+        // The right operand of ?? runs only when the left is null, so the first start may not have run and the second is not a certain duplicate. Walked straight through, it was reported at Error severity.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        Task pending = null;
+                        await (pending ?? driver.StartAsync("ws://localhost:9222"));
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAsyncAfterCoalesceAssignmentThatMayStart_NoDiagnostic()
+    {
+        // The right operand of ??= runs only when the variable is null, so the first start may not have run.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        Task pending = null;
+                        pending ??= driver.StartAsync("ws://localhost:9222");
+                        await pending;
+                        await driver.StartAsync("ws://localhost:9223");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
     }
 }

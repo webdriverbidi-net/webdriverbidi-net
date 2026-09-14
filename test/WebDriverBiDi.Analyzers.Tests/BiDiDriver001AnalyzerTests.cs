@@ -2103,4 +2103,51 @@ public class BiDiDriver001AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a registration after a try/finally whose try block started the driver is reported: code
+    /// after the statement runs only when the try block completed, and the empty finally does not stop it.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterTryFinallyThatStarts_ReportsDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        finally
+                        {
+                        }
+
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|};
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("new CustomModule(driver)");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(testCode, expected);
+    }
 }

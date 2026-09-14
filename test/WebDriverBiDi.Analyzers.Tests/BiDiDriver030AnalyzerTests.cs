@@ -765,4 +765,274 @@ public class BiDiDriver030AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
     }
+
+    [Fact]
+    public async Task StartAfterTryThatStarts_ReportsWarning()
+    {
+        // The try block completing is the only way to reach the second start, and it leaves a session active.
+        // The empty finally does not change that.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            observer.StartCapturingTasks();
+                            await Task.Delay(1);
+                        }
+                        finally
+                        {
+                        }
+
+                        {|#0:observer.StartCapturingTasks()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task StartAfterTryWhoseCatchDoesNotStart_ReportsNothing()
+    {
+        // A catch that completes without a session is another way out of the try, so the second start is not certain to be a duplicate.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            observer.StartCapturingTasks();
+                            await Task.Delay(1);
+                        }
+                        catch (Exception) when (retry)
+                        {
+                        }
+
+                        observer.StartCapturingTasks();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartInCatchWhenStartedBeforeTry_ReportsWarning()
+    {
+        // A session opened before the try, with nothing in the try ending it, is certainly active in the catch.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        try
+                        {
+                            await Task.Delay(1);
+                        }
+                        catch (Exception)
+                        {
+                            {|#0:observer.StartCapturingTasks()|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task StartInCatchAfterStartInTry_ReportsNothing()
+    {
+        // A catch may begin before the start in the try has run, so a start in the catch is not certain to be a duplicate.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            observer.StartCapturingTasks();
+                            await Task.Delay(1);
+                        }
+                        catch (Exception)
+                        {
+                            observer.StartCapturingTasks();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartAfterTryWhoseFinallyStarts_ReportsWarning()
+    {
+        // A finally runs on every way out of the try, so a start there certainly leaves a session active.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            await Task.Delay(1);
+                        }
+                        finally
+                        {
+                            observer.StartCapturingTasks();
+                        }
+
+                        {|#0:observer.StartCapturingTasks()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver030_DuplicateCaptureSessionAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task StartAfterTryWhoseFinallyStops_ReportsNothing()
+    {
+        // A stop in a finally certainly ends the session opened before the try.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool retry)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        try
+                        {
+                            await Task.Delay(1);
+                        }
+                        finally
+                        {
+                            observer.StopCapturingTasks();
+                        }
+
+                        observer.StartCapturingTasks();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task StartInFinallyAfterStartInTry_ReportsNothing()
+    {
+        // The finally may run after an exception thrown before the start in the try, when no session is
+        // active, so a start in the finally is not certain to be a duplicate.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            await Task.Delay(1);
+                            observer.StartCapturingTasks();
+                        }
+                        finally
+                        {
+                            observer.StartCapturingTasks();
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver030_DuplicateCaptureSessionAnalyzer>(testCode);
+    }
 }

@@ -697,4 +697,132 @@ public class BiDiDriver009CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that the moved command takes its own comments with it (the one above it and the one on the same line) and that the comment above StartAsync stays there alone rather than being copied onto the command.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommand_WithCommentsOnBothStatements_CodeFixKeepsEachCommentWithItsStatement()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        // Check the status first.
+                        await {|#0:driver.Session.StatusAsync()|}; // before start
+                        // Connect to the browser.
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        // Connect to the browser.
+                        await driver.StartAsync("ws://localhost:9222");
+                        // Check the status first.
+                        await driver.Session.StatusAsync(); // before start
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error).WithLocation(0).WithArguments("StatusAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a comment above the command is re-indented along with the command when the command moves into the deeper block holding StartAsync.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteCommand_WithCommentMovedIntoDeeperBlock_CodeFixReindentsComment()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        // Check the status first.
+                        await {|#0:driver.Session.StatusAsync()|};
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                        }
+                        finally
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        try
+                        {
+                            await driver.StartAsync("ws://localhost:9222");
+                            // Check the status first.
+                            await driver.Session.StatusAsync();
+                        }
+                        finally
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error).WithLocation(0).WithArguments("StatusAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }
