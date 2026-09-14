@@ -37,7 +37,7 @@
          with WebDriverBiDi.csproj's netstandard2.0 PackageReference group if it changes. -->
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.11" />
     <PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.11" />
-    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" Version="10.0.12" />
   </ItemGroup>
 
 </Project>
