@@ -50,4 +50,84 @@ public class EvaluateResultTests
         string json = @"[ ""invalid script result"" ]";
         Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize<EvaluateResult>(json));
     }
+
+    [Fact]
+    public void TestCanCastToProperSubclassType()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
+        EvaluateResult? info = JsonSerializer.Deserialize<EvaluateResult>(json);
+        Assert.NotNull(info);
+        Assert.IsType<EvaluateResultSuccess>(info);
+        Assert.NotNull(info.As<EvaluateResultSuccess>());
+    }
+
+    [Fact]
+    public void TestCannotCastToImproperSubclassType()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
+        EvaluateResult? info = JsonSerializer.Deserialize<EvaluateResult>(json);
+        Assert.NotNull(info);
+        Assert.IsType<EvaluateResultSuccess>(info);
+        Assert.Contains("cannot be cast", Assert.ThrowsAny<WebDriverBiDiException>(() => info.As<EvaluateResultException>()).Message);
+    }
+
+    [Fact]
+    public void TestTryCastToSubclassTypeReturnsTrue()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
+        EvaluateResult? info = JsonSerializer.Deserialize<EvaluateResult>(json);
+        Assert.NotNull(info);
+        Assert.IsType<EvaluateResultSuccess>(info);
+        bool result = info.TryAs(out EvaluateResultSuccess? outEvaluateResult);
+        Assert.True(result);
+        Assert.NotNull(outEvaluateResult);
+    }
+
+    [Fact]
+    public void TestTryCastToImproperSubclassTypeReturnsFalse()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
+        EvaluateResult? info = JsonSerializer.Deserialize<EvaluateResult>(json);
+        Assert.NotNull(info);
+        Assert.IsType<EvaluateResultSuccess>(info);
+        bool result = info.TryAs(out EvaluateResultException? outEvaluateResult);
+        Assert.False(result);
+        Assert.Null(outEvaluateResult);
+    }
 }
