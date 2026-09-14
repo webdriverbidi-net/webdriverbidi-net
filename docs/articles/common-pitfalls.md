@@ -243,7 +243,7 @@ This also applies to exceptions from handlers using `ObservableEventHandlerOptio
 
 | Mode | Behavior | Best For |
 |------|----------|----------|
-| **Ignore** (default) | Errors discarded silently | Production (with try-catch in handlers) |
+| **Ignore** (default) | Errors neither collected nor thrown; still reported through the diagnostic events (see [Ignore Mode](advanced/error-handling.md#ignore-mode-default)) | Production (with try-catch in handlers) |
 | **Collect** | Errors stored in list; thrown by `StopAsync()` only (discarded by `DisposeAsync()`) | Development, diagnostics |
 | **Terminate** | Throws on next command | Development, fast failure |
 

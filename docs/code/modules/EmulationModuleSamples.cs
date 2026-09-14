@@ -220,6 +220,36 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
+    /// Simulate a geolocation position error.
+    /// </summary>
+    public static async Task SimulatePositionError(BiDiDriver driver, string contextId)
+    {
+        #region SimulatePositionError
+        SetGeolocationOverrideErrorCommandParameters parameters = new SetGeolocationOverrideErrorCommandParameters();
+        parameters.Contexts.Add(contextId);
+
+        await driver.Emulation.SetGeolocationOverrideAsync(parameters);
+
+        // The page's location request now fails with POSITION_UNAVAILABLE.
+        EvaluateResult result = await driver.Script.EvaluateAsync(
+            new EvaluateCommandParameters(
+                @"new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        () => resolve('position received'),
+                        (error) => resolve('error code ' + error.code)
+                    );
+                })",
+                new ContextTarget(contextId),
+                true));
+
+        if (result is EvaluateResultSuccess success)
+        {
+            Console.WriteLine(success.Result.As<StringRemoteValue>().Value); // "error code 2"
+        }
+        #endregion
+    }
+
+    /// <summary>
     /// Set timezone.
     /// </summary>
     public static async Task SetTimezone(BiDiDriver driver, string contextId)

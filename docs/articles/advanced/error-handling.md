@@ -37,7 +37,7 @@ Exception
 | `WebDriverBiDiProtocolException` | The browser sends an error response that matches no pending command | Never from a command call; routed through `UnexpectedErrorBehavior` (logged, collected, or thrown from the next command) |
 | `WebDriverBiDiTimeoutException` | No response arrives within the command timeout; a connection does not open within its `StartupTimeout`; a send does not obtain exclusive access to the connection within its `DataTimeout`; or an operation does not obtain exclusive access to the connection within `Transport.ConnectionLockTimeout` (see [Transport Connection Lock Timeout](connection-management.md#transport-connection-lock-timeout)) | From the command call, or from `StartAsync` or `StopAsync` |
 | `WebDriverBiDiConnectionException` | Sending while not connected; starting an already-started driver; the connection drops while a command is in flight; the connection cannot be opened; or the connection is lost while the session is being established (see [Losing the connection while connecting](connection-management.md#losing-the-connection-while-connecting)) | From the command call, or from `StartAsync` |
-| `WebDriverBiDiSerializationException` | Command parameters cannot be serialized, or a response cannot be deserialized | From the command call. Malformed messages that belong to no command are routed through `ProtocolErrorBehavior` instead |
+| `WebDriverBiDiSerializationException` | Command parameters cannot be serialized, or a response cannot be deserialized | From the command call. A malformed error response or event that belongs to no command is routed through `ProtocolErrorBehavior` instead, and a message that is not valid JSON through `UnknownMessageBehavior` |
 | `WebDriverBiDiException` (directly) | A command is canceled or returns no result or a result of the wrong type; a duplicate command ID; a `RemoteValue.As<T>()` cast or a `LocalValue` conversion fails; event arguments of an unexpected type | From the call that performed the cast, conversion, or command |
 
 `WebDriverBiDiErrorResponseException` is the abstract base of the two types that carry a structured error from the browser. It exposes `ErrorDetails` (the raw `ErrorResult`), `ErrorCode` (the `ErrorCode` enum value, or `ErrorCode.UnsetErrorCode` for an unrecognized error string), `ProtocolErrorType`, `ProtocolErrorMessage`, and `RemoteStackTrace`. Prefer `ErrorCode` over inspecting `Message` when deciding how to react.
@@ -62,12 +62,13 @@ Use `ErrorCode` on `WebDriverBiDiCommandException` to distinguish the error resp
 
 ## Transport Error Behavior Configuration
 
-WebDriverBiDi.NET allows you to configure how transport-layer errors are handled using the `TransportErrorBehavior` enum. This controls errors that occur in event handlers and protocol-level errors (like invalid JSON or incorrect payloads).
+WebDriverBiDi.NET allows you to configure how transport-layer errors are handled using the `TransportErrorBehavior` enum. This controls errors that no command call can report: exceptions in event handlers, and messages from the browser that the transport cannot process or does not recognize.
 
 **Important:** Command errors always throw exceptions immediately, regardless of this setting. This behavior only affects:
-- Exceptions thrown by event handlers
-- Protocol errors (invalid JSON, malformed messages)
-- Unexpected error responses without matching commands
+- Exceptions thrown by event handlers (`EventHandlerExceptionBehavior`)
+- Protocol errors: an error response or registered event whose payload cannot be deserialized, or an unexpected failure while processing a message (`ProtocolErrorBehavior`)
+- Unknown messages: a message that is not valid JSON, or not a command response, error response or registered event (`UnknownMessageBehavior`)
+- Unexpected error responses without matching commands (`UnexpectedErrorBehavior`)
 
 **Late responses are not errors.** When a command times out, is canceled by its `CancellationToken`, or is
 canceled directly through `Transport.CancelCommand`, the browser does not know that you stopped waiting and
@@ -97,7 +98,7 @@ event's payload, which is how you tell a slow-but-successful command apart from 
 ```csharp
 public enum TransportErrorBehavior
 {
-    Ignore,     // Silently ignore transport errors (default)
+    Ignore,     // Neither collect nor throw; still reported through diagnostics (default)
     Collect,    // Store errors for later inspection
     Terminate   // Throw exception on next command
 }
@@ -107,7 +108,7 @@ public enum TransportErrorBehavior
 
 Event handlers run on separate threads from your main application code. This means exceptions in event handlers don't directly propagate to the calling code. The transport error behavior determines what happens when event handler exceptions occur:
 
-- **Ignore (default)**: Exception is discarded and logged
+- **Ignore (default)**: Exception is neither collected nor thrown; it is raised on `OnEventHandlerErrorOccurred`
 - **Collect**: Exception is stored in a list for later inspection
 - **Terminate**: Exception is stored and thrown when you send the next command
 
@@ -122,7 +123,7 @@ WebDriverBiDi.NET defaults all error behaviors to `Ignore` for several important
 **1. Protocol Stability During Evolution**
 - The WebDriver BiDi protocol is actively evolving with new features being added regularly
 - Browsers may send events or messages that aren't yet fully specified
-- Unknown message types (valid JSON that doesn't match any known structure) are common during protocol transitions
+- Unknown messages (ones that match no structure the library recognizes) are common during protocol transitions
 - `Ignore` mode allows automation to continue working even when protocols diverge slightly between library and browser versions
 
 **2. Event Handler Resilience**
@@ -148,7 +149,17 @@ WebDriverBiDi.NET defaults all error behaviors to `Ignore` for several important
 
 ### Ignore Mode (Default)
 
-Ignore mode silently discards all transport errors. This is the default behavior for all error types:
+Ignore mode neither collects nor throws transport errors. This is the default behavior for all error types. An
+ignored error is not silent, though: each kind is still reported through the driver's diagnostic channels, so you
+can watch for it without changing the behavior:
+
+| Error | Still reported through |
+|---|---|
+| Event handler exception | `OnEventHandlerErrorOccurred`, and the `EventHandlerError` EventSource event |
+| Protocol error | `OnLogMessage` at `Error` and, for a payload that cannot be deserialized, the `ProtocolError` EventSource event. No observable event is raised for it |
+| Unknown message | `OnUnknownMessageReceived`, and the `UnknownMessageReceived` EventSource event; a message that is not valid JSON is also written to `OnLogMessage` at `Error` |
+| Unexpected error | `OnUnexpectedErrorReceived` |
+
 
 [!code-csharp[Ignore Mode](../../code/error-handling/ErrorHandlingSamples.cs#IgnoreMode)]
 
@@ -179,7 +190,7 @@ This includes exceptions from handlers being run asynchronously unless you have 
 
 **Collected errors are thrown only by `StopAsync()`.** `DisposeAsync()` calls `StopAsync()` internally, but it catches
 the resulting `AggregateException`, logs it at `Warn` level through `OnLogMessage`, and does not rethrow. If you rely on
-`await using` (or a bare `DisposeAsync()`) without calling `StopAsync()` first, every collected error is silently discarded.
+`await using` (or a bare `DisposeAsync()`) without calling `StopAsync()` first, every collected error is discarded after that single log message.
 Always call `await driver.StopAsync()` inside a `try` block and observe the `AggregateException` there, as the sample above
 does; the [BIDI012](analyzers.md#available-analyzers) analyzer reports a warning when a `Collect` behavior is configured
 in a method that disposes the driver without stopping it first.
@@ -234,7 +245,7 @@ Combine all approaches for comprehensive error management. See the [Collect Mode
 
 ### Best Practices
 
-1. **Use Terminate mode during development**: Surfaces handler bugs and protocol issues immediately instead of silently swallowing them
+1. **Use Terminate mode during development**: Surfaces handler bugs and protocol issues as exceptions instead of leaving them to diagnostic events nothing may be watching
 2. **Handle errors inside event handlers**: Use try-catch within handlers when possible
 3. **Use Collect mode for diagnostics**: Helpful for troubleshooting event handler issues
 4. **Monitor connection events**: Use OnConnectionError for real-time error visibility

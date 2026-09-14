@@ -96,8 +96,8 @@ with these events, or to tell two connections apart in a process that runs more 
 
 | Event | ID | Level | Description | Payload |
 |-------|---:|-------|-------------|---------|
-| `UnknownMessageReceived` | 13 | Warning | Unknown message from remote end | `messageType`, `messageLength` |
-| `ProtocolError` | 14 | Error | Protocol parsing/processing error | `errorMessage`, `messageSnippet` |
+| `UnknownMessageReceived` | 13 | Warning | Message that is not valid JSON, or not a command response, error response or registered event | `messageType`, `messageLength` |
+| `ProtocolError` | 14 | Error | Error response or registered event whose payload could not be deserialized, or a fault in the message processing loop | `errorMessage`, `messageSnippet` |
 
 ### Transport & Statistics
 
@@ -138,7 +138,7 @@ For `ILogger` integration, use the **WebDriverBiDi.Logging** NuGet package:
 dotnet add package WebDriverBiDi.Logging
 ```
 
-This package bridges WebDriverBiDi EventSource events to the standard .NET logging infrastructure, enabling integration with Application Insights, Serilog, and other logging providers. The `AddWebDriverBiDi()` extension method is available on `ILoggingBuilder` (in the `Microsoft.Extensions.Logging` namespace) once the package is referenced.
+This package bridges WebDriverBiDi EventSource events (not the driver's `OnLogMessage` messages; see [What the Bridge Does Not Forward](webdriverbidi-logging.md#what-the-bridge-does-not-forward)) to the standard .NET logging infrastructure, enabling integration with Application Insights, Serilog, and other logging providers. The `AddWebDriverBiDi()` extension method is available on `ILoggingBuilder` (in the `Microsoft.Extensions.Logging` namespace) once the package is referenced.
 
 #### Basic Console Application
 

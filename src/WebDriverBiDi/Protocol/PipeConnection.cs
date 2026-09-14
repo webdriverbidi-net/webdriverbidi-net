@@ -103,11 +103,21 @@ public class PipeConnection : Connection
     /// <summary>
     /// Gets the handle used for sending data to the external process.
     /// </summary>
+    /// <remarks>
+    /// Returns an empty string once the connection has started: the first start disposes this process's local
+    /// copy of the client handle, which the external process has inherited by then. Read the handle before
+    /// starting the connection.
+    /// </remarks>
     public string ReadPipeHandle => this.AreConnectionPipesDisposed ? string.Empty : this.pipeToProcess.GetClientHandleAsString();
 
     /// <summary>
     /// Gets the handle used for receiving data from the external process.
     /// </summary>
+    /// <remarks>
+    /// Returns an empty string once the connection has started: the first start disposes this process's local
+    /// copy of the client handle, which the external process has inherited by then. Read the handle before
+    /// starting the connection.
+    /// </remarks>
     public string WritePipeHandle => this.AreConnectionPipesDisposed ? string.Empty : this.pipeFromProcess.GetClientHandleAsString();
 
     /// <summary>

@@ -17,6 +17,7 @@ public static class SerilogObservabilitySamples
         #region SerilogStructuredLogging
         // Configure Serilog with structured logging
         Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug() // the bridge logs EventLevel.Verbose events at LogLevel.Debug
             .WriteTo.Console(outputTemplate:
                 "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}")
             .Enrich.FromLogContext()
@@ -31,7 +32,11 @@ public static class SerilogObservabilitySamples
             builder.AddWebDriverBiDi(EventLevel.Verbose); // Capture all events including verbose
         });
 
-        var serviceProvider = services.BuildServiceProvider();
+        await using var serviceProvider = services.BuildServiceProvider();
+
+        // The bridge starts listening when the logging pipeline is built, which happens the first time
+        // ILoggerFactory (or an ILogger) is resolved. A generic or web host does this at startup.
+        _ = serviceProvider.GetRequiredService<ILoggerFactory>();
 
         // Structured properties will be captured by Serilog
         await using var driver = new BiDiDriver();

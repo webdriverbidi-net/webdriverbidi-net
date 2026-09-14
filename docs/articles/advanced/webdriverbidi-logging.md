@@ -11,6 +11,18 @@ library's `EventSource` (named `"WebDriverBiDi"`) to the standard .NET logging i
 For the full catalogue of available events, payload properties, and usage of the underlying
 `EventSource` directly (without this package), see [Observability and Diagnostics](observability.md).
 
+### What the Bridge Does Not Forward
+
+The bridge forwards `WebDriverBiDiEventSource` events only. The driver's
+[`OnLogMessage`](../events-observables.md#onlogmessage) event is a separate channel. It carries the
+library's own log messages: connection and transport lifecycle at `Info`, a message per command at
+`Debug`, and every message exchanged with the remote end at `Trace`. Those messages are filtered by
+`BiDiDriver.TransportConfiguration.LogLevel` (see [Log Level](connection-management.md#log-level)), not
+by the `EventLevel` passed to `AddWebDriverBiDi`, and nothing in this package sends them to an `ILogger`.
+To route them there as well, observe the event yourself:
+
+[!code-csharp[Forward Log Messages to ILogger](../../code/advanced/ObservabilitySamples.cs#ForwardLogMessagesToILogger)]
+
 ## Installation
 
 ```bash
@@ -23,7 +35,8 @@ Register the bridge with `AddWebDriverBiDi()` on `ILoggingBuilder`:
 
 [!code-csharp[Logging Quick Start](../../code/advanced/ObservabilitySamples.cs#LoggingQuickStart)]
 
-The default overload captures events at `EventLevel.Informational` and above.
+The default overload captures events at `EventLevel.Informational` and above. Resolving `ILoggerFactory`
+is what starts the bridge; see [How the Bridge Works](#how-the-bridge-works).
 
 ## Controlling the Minimum Log Level
 
@@ -97,6 +110,11 @@ See [Observability and Diagnostics — Available Events](observability.md#availa
 complete list of events and their payloads.
 
 ## How the Bridge Works
+
+The listener subscribes to the event source when the logging pipeline is built. A generic or web host
+builds it at startup. A `ServiceProvider` you build yourself builds it the first time `ILoggerFactory`,
+or an `ILogger`, is resolved from it. Until then no event is forwarded, so a provider that is built and
+never resolved from logs nothing. Disposing the provider unsubscribes the listener.
 
 `WebDriverBiDiEventSourceLogger` extends `System.Diagnostics.Tracing.EventListener`. When
 registered via `AddWebDriverBiDi()`:
