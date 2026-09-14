@@ -579,7 +579,7 @@ public static class RemoteValuesSamples
                 target,
                 true));
 
-        ((EvaluateResultSuccess)getResult).Result.TryAs(out NodeRemoteValue? element);
+        getResult.As<EvaluateResultSuccess>().Result.TryAs(out NodeRemoteValue? element);
 
         // Get properties from element
         CallFunctionCommandParameters propsParams = new CallFunctionCommandParameters(
@@ -595,7 +595,7 @@ public static class RemoteValuesSamples
         propsParams.Arguments.Add(element.ToSharedReference());
 
         EvaluateResult propsResult = await driver.Script.CallFunctionAsync(propsParams);
-        RemoteValueDictionary props = ((EvaluateResultSuccess)propsResult).Result
+        RemoteValueDictionary props = propsResult.As<EvaluateResultSuccess>().Result
             .As<KeyValuePairCollectionRemoteValue>().Value;
         #endregion
     }

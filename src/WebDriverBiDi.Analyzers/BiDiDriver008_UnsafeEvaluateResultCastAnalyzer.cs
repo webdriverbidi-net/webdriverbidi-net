@@ -25,11 +25,11 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
 
     private const string Category = "Usage";
 
-    private static readonly LocalizableString Title = "Use pattern matching for EvaluateResult type checking";
+    private static readonly LocalizableString Title = "Use pattern matching or TryAs for EvaluateResult type checking";
 
-    private static readonly LocalizableString MessageFormat = "Unsafe cast to '{0}' detected. Use pattern matching (e.g., 'if (result is {0} success)') to safely check the result type.";
+    private static readonly LocalizableString MessageFormat = "Unsafe cast to '{0}' detected. Use pattern matching (e.g., 'if (result is {0} success)') or TryAs (e.g., 'if (result.TryAs(out {0}? success))') to safely check the result type.";
 
-    private static readonly LocalizableString Description = "EvaluateResult can be either EvaluateResultSuccess or EvaluateResultException. Direct casting without type checking can cause InvalidCastException. Use pattern matching to safely handle both cases.";
+    private static readonly LocalizableString Description = "EvaluateResult can be either EvaluateResultSuccess or EvaluateResultException. Direct casting without type checking can cause InvalidCastException. Use pattern matching or TryAs<T>() to safely handle both cases, or As<T>() when the result type is known, which throws a WebDriverBiDiException if it is not.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,

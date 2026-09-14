@@ -521,7 +521,7 @@ public static class FormSubmissionSamples
                 target,
                 true));
 
-        string currentUrl = ((EvaluateResultSuccess)urlResult).Result.As<StringRemoteValue>().Value;
+        string currentUrl = urlResult.As<EvaluateResultSuccess>().Result.As<StringRemoteValue>().Value;
         if (currentUrl.Contains("/success"))
         {
             Console.WriteLine("Form submitted successfully!");
