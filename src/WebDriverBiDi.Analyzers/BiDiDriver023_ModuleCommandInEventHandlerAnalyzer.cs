@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -26,6 +27,8 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
 
     private const string Category = "Reliability";
 
+    private const string HelpLinkUri = "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi023";
+
     private static readonly LocalizableString Title = "Module command called inside event handler";
 
     private static readonly LocalizableString MessageFormat = "Module command '{0}' is called inside an event handler. Module commands are not safe to call directly inside event handlers because the driver's command pipeline may already be executing on the same thread context. Use ObservableEventHandlerOptions.RunHandlerAsynchronously to run the handler on a separate thread.";
@@ -40,7 +43,7 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: Description,
-        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi023");
+        helpLinkUri: HelpLinkUri);
 
     private static readonly LocalizableString SynchronousBodyMessageFormat = "Module command '{0}' is called inside an event handler. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' does not offload the synchronous body of a Task-returning handler; make the handler 'async' so the command is issued from a continuation rather than on the dispatching thread.";
 
@@ -55,10 +58,25 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: Description,
-        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi023");
+        helpLinkUri: HelpLinkUri);
+
+    private static readonly LocalizableString BeforeFirstAwaitMessageFormat = "Module command '{0}' is issued before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') so the command is issued from a continuation.";
+
+    // Same ID, category, and severity as Rule; used when the RunHandlerAsynchronously option is present and
+    // the handler is async, for a module command issued before the handler's first await and so not from a
+    // continuation. The code fix inserts an await of Task.Yield() at the top of the handler.
+    private static readonly DiagnosticDescriptor BeforeFirstAwaitRule = new(
+        DiagnosticId,
+        Title,
+        BeforeFirstAwaitMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description,
+        helpLinkUri: HelpLinkUri);
 
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule, BeforeFirstAwaitRule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -94,12 +112,13 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
             return;
         }
 
-        // When RunHandlerAsynchronously is present AND the handler actually runs off the
-        // dispatching thread (an Action<T> handler, an async lambda, or an async method group),
-        // module commands are safe to call. A non-async Task-returning handler still issues the
-        // command inline, so it is reported with a message that says the option cannot help.
+        // With RunHandlerAsynchronously, a module command is safe where it is issued off the dispatching
+        // thread. The library queues an Action<T> handler to the thread pool whole, so nothing in it is
+        // reported. A non-async Task-returning handler issues every command inline, so each is reported with a
+        // message saying the option cannot help; an async handler (an async lambda or an async method group)
+        // is reported for the commands it issues before its first await.
         bool optionPresent = AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
-        if (optionPresent && AnalyzerSymbolHelpers.IsHandlerAsynchronous(context, invocation, methodSymbol))
+        if (optionPresent && AnalyzerSymbolHelpers.IsBoundToActionOverload(methodSymbol))
         {
             return;
         }
@@ -109,6 +128,8 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         {
             return;
         }
+
+        bool asyncHandler = AnalyzerSymbolHelpers.IsAsyncHandler(context, handlerArgument.Expression);
 
         SyntaxNode? handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression);
         if (handlerBody == null)
@@ -122,12 +143,23 @@ public class BiDiDriver023_ModuleCommandInEventHandlerAnalyzer : DiagnosticAnaly
         SemanticModel semanticModel = AnalyzerSymbolHelpers.GetSemanticModelFor(context, handlerBody);
         bool reportAtHandlerArgument = !ReferenceEquals(semanticModel, context.SemanticModel);
 
-        DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
+        // An async handler issues a command on the dispatching thread only until its first await. Without the
+        // option every command in the handler is reported, but the ones before that await are still marked,
+        // because the code fix has to await first to move them.
+        Func<SyntaxNode, bool> runsBeforeFirstYield = asyncHandler ? AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody) : static _ => true;
+        DiagnosticDescriptor rule = !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
         IEnumerable<(InvocationExpressionSyntax Node, string MethodName)> moduleCommands = FindModuleCommandInvocations(semanticModel, handlerBody);
         foreach ((InvocationExpressionSyntax node, string methodName) in moduleCommands)
         {
+            bool beforeFirstYield = runsBeforeFirstYield(node);
+            if (optionPresent && !beforeFirstYield)
+            {
+                continue;
+            }
+
             Location location = reportAtHandlerArgument ? handlerArgument.GetLocation() : node.GetLocation();
-            Diagnostic diagnostic = Diagnostic.Create(rule, location, methodName);
+            ImmutableDictionary<string, string?>? properties = asyncHandler && beforeFirstYield ? AnalyzerSymbolHelpers.RunsBeforeFirstAwaitProperties : null;
+            Diagnostic diagnostic = Diagnostic.Create(rule, location, properties, methodName);
             context.ReportDiagnostic(diagnostic);
         }
     }

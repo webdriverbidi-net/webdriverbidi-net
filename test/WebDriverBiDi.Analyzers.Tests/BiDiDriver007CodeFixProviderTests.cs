@@ -858,4 +858,264 @@ public class BiDiDriver007CodeFixProviderTests
 
         Assert.Empty(actions);
     }
+
+    /// <summary>
+    /// Tests that for an async lambda with RunHandlerAsynchronously whose blocking call precedes its first await, the code fix inserts an await of Task.Yield() as the first statement.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambdaWithOption_BlockingBeforeFirstAwait_CodeFixAwaitsYieldFirst()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            {|#0:Thread.Sleep(1000)|};
+                            await Task.Delay(10);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Yield();
+                            Thread.Sleep(1000);
+                            await Task.Delay(10);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Sleep()' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that for an async lambda without the option whose blocking call precedes its first await, the code fix adds the option and inserts an await of Task.Yield() first, since the option alone would not move the call.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambdaWithoutOption_BlockingBeforeFirstAwait_CodeFixAwaitsYieldFirstAndAddsOption()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            {|#0:Thread.Sleep(1000)|};
+                            await Task.Delay(10);
+                        });
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Yield();
+                            Thread.Sleep(1000);
+                            await Task.Delay(10);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that for an async lambda without the option whose blocking call follows its first await, the code fix only adds the option, which is enough to move the call off the dispatching thread.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambdaWithoutOption_BlockingAfterFirstAwait_CodeFixAddsOptionOnly()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Delay(10);
+                            {|#0:Thread.Sleep(1000)|};
+                        });
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Delay(10);
+                            Thread.Sleep(1000);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that for an expression-bodied async lambda with the option, the code fix converts the body to a block that awaits Task.Yield() and then evaluates the original expression, without awaiting it a second time.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncExpressionLambdaWithOption_BlockingInAwaitOperand_CodeFixConvertsToBlockAwaitingYieldFirst()
+    {
+        string testCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Task<int> delay = Task.FromResult(10);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args => await Task.Delay({|#0:delay.Result|}), ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Task<int> delay = Task.FromResult(10);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await Task.Yield();
+                            await Task.Delay(delay.Result);
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Blocking operation 'Result' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.");
+
+        RealAssemblyCodeFixTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

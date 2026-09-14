@@ -62,6 +62,8 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
         string receiverName = ((IdentifierNameSyntax)memberAccess.Expression).Identifier.Text;
 
         // Build: observer.StartCapturingTasks();
+        // The new statement's leading trivia is left elastic, so the formatter indents it. Copying the wait
+        // statement's leading trivia would also copy any comment above the wait, leaving it duplicated.
         ExpressionStatementSyntax startCapturingStatement =
             SyntaxFactory.ExpressionStatement(
                 SyntaxFactory.InvocationExpression(
@@ -69,8 +71,7 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
                         SyntaxKind.SimpleMemberAccessExpression,
                         SyntaxFactory.IdentifierName(receiverName),
                         SyntaxFactory.IdentifierName("StartCapturingTasks"))))
-            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed)
-            .WithLeadingTrivia(targetStatement.GetLeadingTrivia());
+            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
 
         SyntaxNode newRoot = CodeFixHelpers.InsertStatementBefore(root, targetStatement, startCapturingStatement);
         return document.WithSyntaxRoot(newRoot);

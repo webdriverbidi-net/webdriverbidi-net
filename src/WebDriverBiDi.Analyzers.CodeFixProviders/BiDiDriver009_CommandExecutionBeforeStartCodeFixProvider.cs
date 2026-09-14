@@ -103,12 +103,15 @@ public class BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider : CodeFixP
         BlockSyntax block = (BlockSyntax)updatedStartAsyncStatement.Parent!;
         int startAsyncIndex = block.Statements.IndexOf(updatedStartAsyncStatement);
 
-        // Indent the moved command to match the StartAsync statement it now follows, which matters
-        // when StartAsync is nested more deeply than the command's original position (for example
-        // inside a try block).
+        // The moved command keeps its own comments. Its leading trivia is re-indented to match the
+        // StartAsync statement it now follows, which matters when StartAsync is nested more deeply than
+        // the command's original position (for example inside a try block); copying StartAsync's
+        // leading trivia instead would duplicate any comment above StartAsync. A comment on the same
+        // line as the command moves with it as well.
+        string indentation = CodeFixHelpers.GetIndentation(updatedStartAsyncStatement);
         StatementSyntax commandStatementCopy = trackedCommandStatement
-            .WithLeadingTrivia(updatedStartAsyncStatement.GetLeadingTrivia())
-            .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed);
+            .WithLeadingTrivia(trackedCommandStatement.GetLeadingTrivia().Select(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia) ? SyntaxFactory.Whitespace(indentation) : trivia))
+            .WithTrailingTrivia(CodeFixHelpers.GetTrailingTriviaForMove(trackedCommandStatement));
         SyntaxNode newMethod;
 
         if (startAsyncIndex < block.Statements.Count - 1)

@@ -202,4 +202,65 @@ public class BiDiDriver020CodeFixProviderTests
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 
+    /// <summary>
+    /// Tests that the inserted StartCapturingTasks call does not copy the comment above the wait, which stays with the wait.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WaitWithCommentAbove_InsertsStartCapturingWithoutDuplicatingComment()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        // Wait for the page to load.
+                        Task[] tasks = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        // Wait for the page to load.
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId, DiagnosticSeverity.Error).WithLocation(0).WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        RealAssemblyCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

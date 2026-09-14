@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -26,6 +27,8 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
 
     private const string Category = "Performance";
 
+    private const string HelpLinkUri = "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi007";
+
     private static readonly LocalizableString Title = "Avoid blocking operations in event handlers";
 
     private static readonly LocalizableString MessageFormat = "Blocking operation '{0}' detected in event handler. Consider using 'ObservableEventHandlerOptions.RunHandlerAsynchronously' or making the handler fully asynchronous.";
@@ -42,7 +45,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: Description,
-        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi007");
+        helpLinkUri: HelpLinkUri);
 
     // Same ID, category, and severity as Rule (release tracking is unchanged); used when the
     // RunHandlerAsynchronously option is present but the handler is a non-async Task-returning
@@ -55,10 +58,25 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: Description,
-        helpLinkUri: "https://webdriverbidi-net.github.io/webdriverbidi-net/articles/advanced/analyzers.html#bidi007");
+        helpLinkUri: HelpLinkUri);
+
+    private static readonly LocalizableString BeforeFirstAwaitMessageFormat = "Blocking operation '{0}' runs before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') or move the work into Task.Run.";
+
+    // Same ID, category, and severity as Rule; used when the RunHandlerAsynchronously option is present and
+    // the handler is async, for a blocking operation that runs before the handler's first await and so is
+    // not offloaded. The code fix inserts an await of Task.Yield() at the top of the handler.
+    private static readonly DiagnosticDescriptor BeforeFirstAwaitRule = new(
+        DiagnosticId,
+        Title,
+        BeforeFirstAwaitMessageFormat,
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: Description,
+        helpLinkUri: HelpLinkUri);
 
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, SynchronousBodyRule, BeforeFirstAwaitRule);
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -94,12 +112,13 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        // The option only helps when the handler actually runs off the dispatching thread:
-        // an Action<T> handler (queued to the thread pool by the library), an async lambda, or
-        // an async method group. A non-async Task-returning handler still executes its body
-        // inline, so blocking calls in it are reported with a message that says so.
+        // The option moves off the dispatching thread only what runs after the handler yields. The library
+        // queues an Action<T> handler to the thread pool whole, so nothing in it is reported. A non-async
+        // Task-returning handler never yields, so everything in it is reported, with a message saying the
+        // option cannot help; an async handler (an async lambda or an async method group) is reported for
+        // what runs before its first await.
         bool optionPresent = AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation);
-        if (optionPresent && AnalyzerSymbolHelpers.IsHandlerAsynchronous(context, invocation, methodSymbol))
+        if (optionPresent && AnalyzerSymbolHelpers.IsBoundToActionOverload(methodSymbol))
         {
             return;
         }
@@ -109,6 +128,8 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         {
             return;
         }
+
+        bool asyncHandler = AnalyzerSymbolHelpers.IsAsyncHandler(context, handlerArgument.Expression);
 
         SyntaxNode? handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression);
         if (handlerBody == null)
@@ -129,12 +150,23 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         SemanticModel semanticModel = AnalyzerSymbolHelpers.GetSemanticModelFor(context, handlerBody);
         bool reportAtHandlerArgument = !ReferenceEquals(semanticModel, context.SemanticModel);
 
-        DiagnosticDescriptor rule = optionPresent ? SynchronousBodyRule : Rule;
+        // An async handler runs on the dispatching thread only until its first await. Without the option the
+        // whole handler is part of the dispatch and every blocking operation in it is reported, but the ones
+        // before that await are still marked, because the code fix has to await first to move them.
+        Func<SyntaxNode, bool> runsBeforeFirstYield = asyncHandler ? AnalyzerSymbolHelpers.GetRunsBeforeFirstYield(handlerBody) : static _ => true;
+        DiagnosticDescriptor rule = !optionPresent ? Rule : asyncHandler ? BeforeFirstAwaitRule : SynchronousBodyRule;
         IEnumerable<(SyntaxNode Node, string Name)> blockingOperations = FindBlockingOperations(semanticModel, handlerBody, includeSynchronizationPrimitives);
         foreach ((SyntaxNode node, string operationName) in blockingOperations)
         {
+            bool beforeFirstYield = runsBeforeFirstYield(node);
+            if (optionPresent && !beforeFirstYield)
+            {
+                continue;
+            }
+
             Location location = reportAtHandlerArgument ? handlerArgument.GetLocation() : node.GetLocation();
-            Diagnostic diagnostic = Diagnostic.Create(rule, location, operationName);
+            ImmutableDictionary<string, string?>? properties = asyncHandler && beforeFirstYield ? AnalyzerSymbolHelpers.RunsBeforeFirstAwaitProperties : null;
+            Diagnostic diagnostic = Diagnostic.Create(rule, location, properties, operationName);
             context.ReportDiagnostic(diagnostic);
         }
     }

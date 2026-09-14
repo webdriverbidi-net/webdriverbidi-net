@@ -78,7 +78,9 @@ public class BiDiDriver023CodeFixProviderTests
         """;
 
     /// <summary>
-    /// Tests that the code fix adds RunHandlerAsynchronously when it is not yet present.
+    /// Tests that when RunHandlerAsynchronously is not yet present and the async handler issues the command
+    /// before its first await, the code fix adds the option and inserts an await of Task.Yield() first,
+    /// because the option alone would leave the command on the dispatching thread.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -117,6 +119,7 @@ public class BiDiDriver023CodeFixProviderTests
                     {
                         var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
                         {
+                            await Task.Yield();
                             await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
                         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
                     }
@@ -141,7 +144,8 @@ public class BiDiDriver023CodeFixProviderTests
     }
 
     /// <summary>
-    /// Tests that the code fix replaces an existing options argument with RunHandlerAsynchronously.
+    /// Tests that the code fix replaces an existing options argument with RunHandlerAsynchronously, and
+    /// inserts an await of Task.Yield() first because the command is issued before the handler's first await.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -180,6 +184,7 @@ public class BiDiDriver023CodeFixProviderTests
                     {
                         var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
                         {
+                            await Task.Yield();
                             await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
                         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
                     }
@@ -334,5 +339,72 @@ public class BiDiDriver023CodeFixProviderTests
             .GetCodeActionsAsync<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider>(source);
 
         Assert.Empty(actions);
+    }
+
+    /// <summary>
+    /// Tests that for an expression-bodied async lambda with RunHandlerAsynchronously that awaits a module
+    /// command directly, the code fix converts the body to a block that awaits Task.Yield() first and keeps
+    /// the command's await as written.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncExpressionLambda_WithRunHandlerAsynchronously_CodeFixAwaitsYieldFirst()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(
+                            async args => await {|#0:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|},
+                            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(
+                            async args =>
+                            {
+                                await Task.Yield();
+                                await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
+                            },
+                            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Module command 'NavigateAsync' is issued before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') so the command is issued from a continuation.");
+
+        RealAssemblyCodeFixTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer, BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
     }
 }

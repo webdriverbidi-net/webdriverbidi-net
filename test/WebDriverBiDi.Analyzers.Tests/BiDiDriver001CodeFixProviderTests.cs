@@ -801,4 +801,73 @@ public class BiDiDriver001CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a comment on the same line as the moved registration moves with it instead of being dropped.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_WithTrailingComment_CodeFixKeepsCommentOnMovedStatement()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        {|#0:driver.RegisterModule(new CustomModule(driver))|}; // adds the custom commands
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        driver.RegisterModule(new CustomModule(driver)); // adds the custom commands
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Error).WithLocation(0).WithArguments("new CustomModule(driver)");
+
+        RealAssemblyCodeFixTest<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer, BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

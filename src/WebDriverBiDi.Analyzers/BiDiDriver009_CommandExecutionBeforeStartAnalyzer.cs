@@ -76,7 +76,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         {
             // ProcessNode registers driver declarations and checks driver method calls,
             // wherever in the statement's subtree they appear.
-            ProcessNode(statement, context, semanticModel, driverStartedStatus, escapedNames);
+            ProcessNode(statement, context, reportDiagnostics: true, semanticModel, driverStartedStatus, escapedNames);
         }
     }
 
@@ -319,6 +319,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     private static void ProcessNode(
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
         HashSet<string> escapedNames)
@@ -328,27 +329,61 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         // (lambdas, anonymous methods, local functions): their code runs when the delegate is
         // invoked, not at the textual position where it is declared — for example when an event
         // handler fires after the connection is started — so it must not be judged against the
-        // driver's started state at this point in the method. It also stops at if, switch, and try
-        // statements — including one that is itself the root, which the barrier yields without
-        // descending into — and processes them recursively below with a forked copy of the
-        // state for each mutually exclusive branch.
+        // driver's started state at this point in the method. It also stops at if, switch, try, for,
+        // foreach and while statements — including one that is itself the root, which the barrier
+        // yields without descending into — and processes them recursively below with a forked copy
+        // of the state for each path through the statement.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
+            !AnalyzerSymbolHelpers.IsShortCircuitOperation(child) &&
+            child is not ConditionalExpressionSyntax &&
+            child is not SwitchExpressionSyntax &&
             child is not IfStatementSyntax &&
             child is not SwitchStatementSyntax &&
-            child is not TryStatementSyntax))
+            child is not TryStatementSyntax &&
+            child is not ForStatementSyntax &&
+            child is not CommonForEachStatementSyntax &&
+            child is not WhileStatementSyntax))
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
-                ProcessIfStatement(ifStatement, context, semanticModel, driverStartedStatus, escapedNames);
+                ProcessIfStatement(ifStatement, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
-                ProcessSwitchStatement(switchStatement, context, semanticModel, driverStartedStatus, escapedNames);
+                ProcessSwitchStatement(switchStatement, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is TryStatementSyntax tryStatement)
             {
-                ProcessTryStatement(tryStatement, context, semanticModel, driverStartedStatus, escapedNames);
+                ProcessTryStatement(tryStatement, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is ForStatementSyntax forStatement)
+            {
+                ProcessLoop(GetForLoopPreamble(forStatement), forStatement.Incrementors, forStatement.Statement, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is CommonForEachStatementSyntax forEachStatement)
+            {
+                ProcessLoop([forEachStatement.Expression], [], forEachStatement.Statement, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is WhileStatementSyntax whileStatement)
+            {
+                ProcessLoop([whileStatement.Condition], [], whileStatement.Statement, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is ConditionalExpressionSyntax conditional)
+            {
+                ProcessConditionalExpression(conditional, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is SwitchExpressionSyntax switchExpression)
+            {
+                ProcessSwitchExpression(switchExpression, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is BinaryExpressionSyntax shortCircuit && AnalyzerSymbolHelpers.IsShortCircuitOperation(shortCircuit))
+            {
+                ProcessShortCircuit(shortCircuit.Left, shortCircuit.Right, null, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+            }
+            else if (descendant is AssignmentExpressionSyntax coalesceAssignment && AnalyzerSymbolHelpers.IsShortCircuitOperation(coalesceAssignment))
+            {
+                ProcessShortCircuit(coalesceAssignment.Left, coalesceAssignment.Right, coalesceAssignment, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
             }
             else if (descendant is VariableDeclarationSyntax declaration)
             {
@@ -365,7 +400,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
-                CheckInvocation(invocation, context, semanticModel, driverStartedStatus);
+                CheckInvocation(invocation, context, reportDiagnostics, semanticModel, driverStartedStatus);
             }
         }
     }
@@ -373,24 +408,25 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     private static void ProcessIfStatement(
         IfStatementSyntax ifStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
         HashSet<string> escapedNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
-        ProcessNode(ifStatement.Condition, context, semanticModel, driverStartedStatus, escapedNames);
+        ProcessNode(ifStatement.Condition, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
 
         // The branches are mutually exclusive, so each arm is walked against its own copy of
         // the state at the branch point: a StopAsync in one arm must not poison a command in
         // the other. An else-if chain arrives here as an else clause whose statement is itself
         // an if statement, which ProcessNode routes back into this method.
         Dictionary<string, bool> thenBranchStatus = new(driverStartedStatus);
-        ProcessNode(ifStatement.Statement, context, semanticModel, thenBranchStatus, escapedNames);
+        ProcessNode(ifStatement.Statement, context, reportDiagnostics, semanticModel, thenBranchStatus, escapedNames);
 
         Dictionary<string, bool> elseBranchStatus = new(driverStartedStatus);
         if (ifStatement.Else is not null)
         {
-            ProcessNode(ifStatement.Else.Statement, context, semanticModel, elseBranchStatus, escapedNames);
+            ProcessNode(ifStatement.Else.Statement, context, reportDiagnostics, semanticModel, elseBranchStatus, escapedNames);
         }
 
         // After the branch, a driver counts as not started only when every path through the
@@ -407,13 +443,14 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     private static void ProcessTryStatement(
         TryStatementSyntax tryStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
         HashSet<string> escapedNames)
     {
         Dictionary<string, bool> entryStatus = new(driverStartedStatus);
         Dictionary<string, bool> tryStatus = new(driverStartedStatus);
-        ProcessNode(tryStatement.Block, context, semanticModel, tryStatus, escapedNames);
+        ProcessNode(tryStatement.Block, context, reportDiagnostics, semanticModel, tryStatus, escapedNames);
 
         // A catch clause (or a finally block) may begin executing after any prefix of the try block
         // has run, so inside one a driver counts as started when *any* partial execution of the try
@@ -439,45 +476,190 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             }
         }
 
-        List<Dictionary<string, bool>> exitStatuses = [tryStatus];
+        // The try block and each catch clause are the ways the statement can complete normally. After it, a
+        // driver counts as started when any of them leaves it started, matching how the if and switch merges
+        // treat mutually exclusive branches: this rule reports only a driver that is not started on every
+        // path, so a stop confined to one catch clause must not poison code that follows the statement.
+        List<Dictionary<string, bool>> completionStatuses = [tryStatus];
         foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
         {
             Dictionary<string, bool> catchStatus = new(mightBeStartedStatus);
             if (catchClause.Filter is not null)
             {
-                ProcessNode(catchClause.Filter.FilterExpression, context, semanticModel, catchStatus, escapedNames);
+                ProcessNode(catchClause.Filter.FilterExpression, context, reportDiagnostics, semanticModel, catchStatus, escapedNames);
             }
 
-            ProcessNode(catchClause.Block, context, semanticModel, catchStatus, escapedNames);
-            exitStatuses.Add(catchStatus);
+            ProcessNode(catchClause.Block, context, reportDiagnostics, semanticModel, catchStatus, escapedNames);
+            completionStatuses.Add(catchStatus);
         }
 
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, completionStatuses))
+        {
+            driverStartedStatus[driverName] = completionStatuses.Any(completionStatus => completionStatus[driverName]);
+        }
+
+        // A finally block runs on every way out of the statement. The code in it is judged against a state that
+        // allows for all of them: the try block or a catch clause completing, or an exception from any point in
+        // the try. Only normal completion reaches the code after the statement, though, so the block is walked a
+        // second time, from the completion state and without reporting, to find what it leaves there: a StopAsync
+        // in a finally certainly leaves the driver stopped for the code that follows. Every driver still tracked
+        // after the merge above was tracked through the try block, so it has a partial-execution state.
         if (tryStatement.Finally is not null)
         {
-            Dictionary<string, bool> finallyStatus = new(mightBeStartedStatus);
-            ProcessNode(tryStatement.Finally.Block, context, semanticModel, finallyStatus, escapedNames);
-            exitStatuses.Add(finallyStatus);
+            Dictionary<string, bool> finallyEntryStatus = [];
+            foreach (string driverName in driverStartedStatus.Keys)
+            {
+                finallyEntryStatus[driverName] = driverStartedStatus[driverName] || mightBeStartedStatus[driverName];
+            }
+
+            ProcessNode(tryStatement.Finally.Block, context, reportDiagnostics, semanticModel, finallyEntryStatus, escapedNames);
+            ProcessNode(tryStatement.Finally.Block, context, reportDiagnostics: false, semanticModel, driverStartedStatus, escapedNames);
+        }
+    }
+
+    private static void ProcessConditionalExpression(
+        ConditionalExpressionSyntax conditional,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
+    {
+        // The condition is evaluated before either arm, and exactly one arm is evaluated after it: the shape of an
+        // if statement with an else clause, forked and merged the same way: a driver counts as started after it when either arm may have started it.
+        ProcessNode(conditional.Condition, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+
+        Dictionary<string, bool> whenTrueStatus = new(driverStartedStatus);
+        ProcessNode(conditional.WhenTrue, context, reportDiagnostics, semanticModel, whenTrueStatus, escapedNames);
+
+        Dictionary<string, bool> whenFalseStatus = new(driverStartedStatus);
+        ProcessNode(conditional.WhenFalse, context, reportDiagnostics, semanticModel, whenFalseStatus, escapedNames);
+
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, [whenTrueStatus, whenFalseStatus]))
+        {
+            driverStartedStatus[driverName] = whenTrueStatus[driverName] || whenFalseStatus[driverName];
+        }
+    }
+
+    private static void ProcessSwitchExpression(
+        SwitchExpressionSyntax switchExpression,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
+    {
+        // The governing expression is evaluated before any arm, and the arms are mutually exclusive. Matching no arm
+        // throws rather than continuing after the expression, so the arms are the only paths out; with no arms at
+        // all nothing after the expression is reached, and the state is left alone.
+        ProcessNode(switchExpression.GoverningExpression, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+
+        List<Dictionary<string, bool>> armStatuses = [];
+        foreach (SwitchExpressionArmSyntax arm in switchExpression.Arms)
+        {
+            Dictionary<string, bool> armStatus = new(driverStartedStatus);
+            if (arm.WhenClause is not null)
+            {
+                ProcessNode(arm.WhenClause.Condition, context, reportDiagnostics, semanticModel, armStatus, escapedNames);
+            }
+
+            ProcessNode(arm.Expression, context, reportDiagnostics, semanticModel, armStatus, escapedNames);
+            armStatuses.Add(armStatus);
         }
 
-        // After the try statement, a driver counts as started when any completion path leaves it
-        // started, matching how the if and switch merges treat mutually exclusive branches: this
-        // rule reports only a driver that is not started on every path, so a stop confined to one
-        // catch clause must not poison code that follows the statement.
-        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, exitStatuses))
+        if (armStatuses.Count > 0)
         {
-            driverStartedStatus[driverName] = exitStatuses.Any(exitStatus => exitStatus[driverName]);
+            foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, armStatuses))
+            {
+                driverStartedStatus[driverName] = armStatuses.Any(armStatus => armStatus[driverName]);
+            }
         }
+    }
+
+    private static void ProcessShortCircuit(
+        ExpressionSyntax left,
+        ExpressionSyntax right,
+        AssignmentExpressionSyntax? coalesceAssignment,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
+    {
+        // The left operand is always evaluated, and the right one only when the left does not settle the result
+        // (&&, ||) or is null (??, ??=). The right operand is therefore walked as a path that may not run, as the
+        // branch of an if statement without an else is, and a ??= assigns only on that path.
+        ProcessNode(left, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+
+        Dictionary<string, bool> rightStatus = new(driverStartedStatus);
+        ProcessNode(right, context, reportDiagnostics, semanticModel, rightStatus, escapedNames);
+        if (coalesceAssignment is not null)
+        {
+            TrackDriverAssignment(coalesceAssignment, rightStatus);
+        }
+
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, [rightStatus]))
+        {
+            driverStartedStatus[driverName] = driverStartedStatus[driverName] || rightStatus[driverName];
+        }
+    }
+
+    private static void ProcessLoop(
+        IEnumerable<SyntaxNode> preamble,
+        IEnumerable<SyntaxNode> incrementors,
+        StatementSyntax body,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        SemanticModel semanticModel,
+        Dictionary<string, bool> driverStartedStatus,
+        HashSet<string> escapedNames)
+    {
+        // A for loop's declaration or initializers, a foreach loop's collection expression, and the loop
+        // condition all run before the first test of the condition, so they are walked against the state as
+        // it stands. The body may never run, so it (and a for loop's incrementors, which run only after it) is
+        // walked as one path and the state at loop entry kept as the other, exactly as an if statement without
+        // an else is: a StopAsync inside the loop does not certainly stop the driver for the code after it,
+        // and since this rule reports only a driver that is not started on every path, a StartAsync inside
+        // the loop still counts. A do…while loop runs its body at least once and is walked straight through.
+        foreach (SyntaxNode node in preamble)
+        {
+            ProcessNode(node, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
+        }
+
+        Dictionary<string, bool> bodyStatus = new(driverStartedStatus);
+        ProcessNode(body, context, reportDiagnostics, semanticModel, bodyStatus, escapedNames);
+        foreach (SyntaxNode incrementor in incrementors)
+        {
+            ProcessNode(incrementor, context, reportDiagnostics, semanticModel, bodyStatus, escapedNames);
+        }
+
+        foreach (string driverName in DropDriversUntrackedOnAnyPath(driverStartedStatus, [bodyStatus]))
+        {
+            driverStartedStatus[driverName] = driverStartedStatus[driverName] || bodyStatus[driverName];
+        }
+    }
+
+    /// <summary>
+    /// Gets the parts of a for statement that run before its body is first entered: its declaration or
+    /// initializers and its condition, which is to say every child except the body and the incrementors.
+    /// </summary>
+    /// <param name="forStatement">The for statement.</param>
+    /// <returns>The nodes that run unconditionally.</returns>
+    private static IEnumerable<SyntaxNode> GetForLoopPreamble(ForStatementSyntax forStatement)
+    {
+        return forStatement.ChildNodes().Where(child => child != forStatement.Statement && !forStatement.Incrementors.Contains(child));
     }
 
     private static void ProcessSwitchStatement(
         SwitchStatementSyntax switchStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus,
         HashSet<string> escapedNames)
     {
         // The governing expression executes unconditionally, before any section.
-        ProcessNode(switchStatement.Expression, context, semanticModel, driverStartedStatus, escapedNames);
+        ProcessNode(switchStatement.Expression, context, reportDiagnostics, semanticModel, driverStartedStatus, escapedNames);
 
         // Sections are mutually exclusive in the same way if/else branches are.
         List<Dictionary<string, bool>> sectionStatuses = [];
@@ -486,7 +668,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             Dictionary<string, bool> sectionStatus = new(driverStartedStatus);
             foreach (StatementSyntax sectionStatement in section.Statements)
             {
-                ProcessNode(sectionStatement, context, semanticModel, sectionStatus, escapedNames);
+                ProcessNode(sectionStatement, context, reportDiagnostics, semanticModel, sectionStatus, escapedNames);
             }
 
             sectionStatuses.Add(sectionStatus);
@@ -506,6 +688,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
     private static void CheckInvocation(
         InvocationExpressionSyntax invocation,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         SemanticModel semanticModel,
         Dictionary<string, bool> driverStartedStatus)
     {
@@ -547,7 +730,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         }
 
         // If the driver hasn't been started yet, check if this is a command that requires a connection
-        if (!driverStartedStatus[driverVariableName] && IsCommandMethod(methodSymbol))
+        if (reportDiagnostics && !driverStartedStatus[driverVariableName] && IsCommandMethod(methodSymbol))
         {
             Diagnostic diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), methodName);
             context.ReportDiagnostic(diagnostic);

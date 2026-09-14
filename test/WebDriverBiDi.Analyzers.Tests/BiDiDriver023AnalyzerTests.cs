@@ -98,13 +98,15 @@ public class BiDiDriver023AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that when RunHandlerAsynchronously is set on an async handler no diagnostic is reported.
+    /// Tests that when RunHandlerAsynchronously is set on an async handler, a module command issued after the
+    /// handler's first await is not reported, because it is issued from a continuation.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EventHandler_WithRunHandlerAsynchronously_NoDiagnostic()
     {
         string test = """
+            using System.Threading.Tasks;
             using WebDriverBiDi;
             using WebDriverBiDi.BrowsingContext;
 
@@ -116,6 +118,7 @@ public class BiDiDriver023AnalyzerTests
                     {
                         var observer = driver.Log.OnEntryAdded.AddObserver(async args =>
                         {
+                            await Task.Yield();
                             await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"));
                         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
                     }
@@ -910,9 +913,10 @@ public class BiDiDriver023AnalyzerTests
         BiDiDriver023_ModuleCommandInEventHandlerAnalyzer analyzer = new();
         System.Collections.Immutable.ImmutableArray<DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
 
-        // Two descriptors share the ID: the default message and the message used when
-        // RunHandlerAsynchronously is present but the handler body is synchronous.
-        Assert.Equal(2, diagnostics.Length);
+        // Three descriptors share the ID: the default message, the message used when
+        // RunHandlerAsynchronously is present but the handler body is synchronous, and the message used
+        // when the option is present and the operation runs before an async handler's first await.
+        Assert.Equal(3, diagnostics.Length);
         Assert.All(diagnostics, descriptor => Assert.Equal(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId, descriptor.Id));
     }
 
@@ -1597,6 +1601,136 @@ public class BiDiDriver023AnalyzerTests
         testState.TestState.Sources.Add(("/0/Registration.cs", registrationSource));
         testState.TestState.Sources.Add(("/0/Handlers.cs", handlerSource));
         testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a module command that is itself the first thing an async handler awaits is reported with the option present, because the command is issued before the handler yields.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncLambda_WithRunHandlerAsynchronously_CommandAwaitedFirst_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private BiDiDriver driver = new BiDiDriver();
+
+                    public void TestMethod()
+                    {
+                        var observer = this.driver.Log.OnEntryAdded.AddObserver(async args =>
+                        {
+                            await {|#0:this.driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|};
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Module command 'NavigateAsync' is issued before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') so the command is issued from a continuation.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an async method group issuing a module command before its first await is reported with the option present.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_AsyncMethodGroup_WithRunHandlerAsynchronously_CommandBeforeFirstAwait_ReportsBeforeFirstAwaitWarning()
+    {
+        string test = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private BiDiDriver driver = new BiDiDriver();
+
+                    public void TestMethod()
+                    {
+                        var observer = this.driver.Log.OnEntryAdded.AddObserver(this.HandleAsync, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+
+                    private async Task HandleAsync(EntryAddedEventArgs args)
+                    {
+                        Task navigation = {|#0:this.driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com"))|};
+                        await Task.Yield();
+                        await navigation;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithMessage("Module command 'NavigateAsync' is issued before the handler's first 'await', on the thread dispatching the event. 'ObservableEventHandlerOptions.RunHandlerAsynchronously' offloads only what follows that 'await'; await first (for example 'await Task.Yield()') so the command is issued from a continuation.");
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that a handler bound to the Action&lt;T&gt; overload with RunHandlerAsynchronously is not reported,
+    /// because the library queues the whole action to the thread pool, so the command is not issued on the
+    /// dispatching thread.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task EventHandler_ActionLambda_WithRunHandlerAsynchronously_NoDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args =>
+                        {
+                            driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("ctx", "https://example.com")).Wait();
+                        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver023_ModuleCommandInEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }

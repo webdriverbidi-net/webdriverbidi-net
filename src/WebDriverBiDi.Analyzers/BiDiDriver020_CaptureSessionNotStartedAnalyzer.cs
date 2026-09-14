@@ -77,7 +77,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         {
             // ProcessNode registers observer declarations and checks observer method calls,
             // wherever in the statement's subtree they appear.
-            ProcessNode(statement, context, capturingState, untrackableNames);
+            ProcessNode(statement, context, reportDiagnostics: true, capturingState, untrackableNames);
         }
     }
 
@@ -112,6 +112,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     private static void ProcessNode(
         SyntaxNode node,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
         HashSet<string> untrackableNames)
     {
@@ -119,22 +120,42 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         // tracked capturing state. The walk does not descend into the bodies of nested
         // functions (lambdas, anonymous methods, local functions): their code runs when the
         // delegate is invoked, not at its textual position, so a call there must not be
-        // judged against the capturing state at that position. It also stops at if and
-        // switch statements — including one that is itself the root, which the barrier
-        // yields without descending into — and processes them recursively below with a
-        // forked copy of the state for each mutually exclusive branch.
+        // judged against the capturing state at that position. It also stops at if, switch,
+        // try, for, foreach and while statements — including one that is itself the root, which
+        // the barrier yields without descending into — and processes them recursively below
+        // with a forked copy of the state for each path through the statement.
         foreach (SyntaxNode descendant in node.DescendantNodesAndSelf(descendIntoChildren: child =>
             AnalyzerSymbolHelpers.DoesNotBeginNestedFunction(child) &&
             child is not IfStatementSyntax &&
-            child is not SwitchStatementSyntax))
+            child is not SwitchStatementSyntax &&
+            child is not TryStatementSyntax &&
+            child is not ForStatementSyntax &&
+            child is not CommonForEachStatementSyntax &&
+            child is not WhileStatementSyntax))
         {
             if (descendant is IfStatementSyntax ifStatement)
             {
-                ProcessIfStatement(ifStatement, context, capturingState, untrackableNames);
+                ProcessIfStatement(ifStatement, context, reportDiagnostics, capturingState, untrackableNames);
             }
             else if (descendant is SwitchStatementSyntax switchStatement)
             {
-                ProcessSwitchStatement(switchStatement, context, capturingState, untrackableNames);
+                ProcessSwitchStatement(switchStatement, context, reportDiagnostics, capturingState, untrackableNames);
+            }
+            else if (descendant is TryStatementSyntax tryStatement)
+            {
+                ProcessTryStatement(tryStatement, context, reportDiagnostics, capturingState, untrackableNames);
+            }
+            else if (descendant is ForStatementSyntax forStatement)
+            {
+                ProcessLoop(GetForLoopPreamble(forStatement), forStatement.Incrementors, forStatement.Statement, context, reportDiagnostics, capturingState, untrackableNames);
+            }
+            else if (descendant is CommonForEachStatementSyntax forEachStatement)
+            {
+                ProcessLoop([forEachStatement.Expression], [], forEachStatement.Statement, context, reportDiagnostics, capturingState, untrackableNames);
+            }
+            else if (descendant is WhileStatementSyntax whileStatement)
+            {
+                ProcessLoop([whileStatement.Condition], [], whileStatement.Statement, context, reportDiagnostics, capturingState, untrackableNames);
             }
             else if (descendant is VariableDeclarationSyntax declaration)
             {
@@ -147,7 +168,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             }
             else if (descendant is InvocationExpressionSyntax invocation)
             {
-                CheckInvocation(invocation, context, capturingState);
+                CheckInvocation(invocation, context, reportDiagnostics, capturingState);
             }
         }
     }
@@ -155,23 +176,24 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     private static void ProcessIfStatement(
         IfStatementSyntax ifStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
         HashSet<string> untrackableNames)
     {
         // Invocations in the condition execute unconditionally, before either branch.
-        ProcessNode(ifStatement.Condition, context, capturingState, untrackableNames);
+        ProcessNode(ifStatement.Condition, context, reportDiagnostics, capturingState, untrackableNames);
 
         // The branches are mutually exclusive, so each arm is walked against its own copy of
         // the state at the branch point: a StopCapturingTasks in one arm must not poison a
         // wait in the other. An else-if chain arrives here as an else clause whose statement
         // is itself an if statement, which ProcessNode routes back into this method.
         Dictionary<string, bool> thenBranchState = new(capturingState);
-        ProcessNode(ifStatement.Statement, context, thenBranchState, untrackableNames);
+        ProcessNode(ifStatement.Statement, context, reportDiagnostics, thenBranchState, untrackableNames);
 
         Dictionary<string, bool> elseBranchState = new(capturingState);
         if (ifStatement.Else is not null)
         {
-            ProcessNode(ifStatement.Else.Statement, context, elseBranchState, untrackableNames);
+            ProcessNode(ifStatement.Else.Statement, context, reportDiagnostics, elseBranchState, untrackableNames);
         }
 
         // After the branch, an observer counts as not capturing only when every path through
@@ -188,11 +210,12 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
     private static void ProcessSwitchStatement(
         SwitchStatementSyntax switchStatement,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         Dictionary<string, bool> capturingState,
         HashSet<string> untrackableNames)
     {
         // The governing expression executes unconditionally, before any section.
-        ProcessNode(switchStatement.Expression, context, capturingState, untrackableNames);
+        ProcessNode(switchStatement.Expression, context, reportDiagnostics, capturingState, untrackableNames);
 
         // Sections are mutually exclusive in the same way if/else branches are.
         List<Dictionary<string, bool>> sectionStates = [];
@@ -201,7 +224,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             Dictionary<string, bool> sectionState = new(capturingState);
             foreach (StatementSyntax sectionStatement in section.Statements)
             {
-                ProcessNode(sectionStatement, context, sectionState, untrackableNames);
+                ProcessNode(sectionStatement, context, reportDiagnostics, sectionState, untrackableNames);
             }
 
             sectionStates.Add(sectionState);
@@ -218,9 +241,115 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static void ProcessTryStatement(
+        TryStatementSyntax tryStatement,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
+    {
+        Dictionary<string, bool> tryState = new(capturingState);
+        ProcessNode(tryStatement.Block, context, reportDiagnostics, tryState, untrackableNames);
+
+        // A catch clause may begin after any prefix of the try block has run, so inside one an observer
+        // counts as capturing when any partial execution of the try could leave it capturing: the
+        // disjunction of the state at try entry and the state after the whole try block. A
+        // StartCapturingTasks in the try may already have run, and a StopCapturingTasks in it may not have
+        // run yet. This is the polarity of BIDI009's walk, for the same reason: this rule reports a wait
+        // only when no path can have opened a session.
+        Dictionary<string, bool> partialTryState = [];
+        foreach (string observerName in capturingState.Keys)
+        {
+            partialTryState[observerName] = capturingState[observerName] || tryState[observerName];
+        }
+
+        // The try block and each catch clause are the ways the statement can complete normally, and after it
+        // an observer counts as capturing when any of them leaves it capturing: a StopCapturingTasks in a
+        // catch that rethrows must not condemn the wait after the statement.
+        List<Dictionary<string, bool>> completionStates = [tryState];
+        foreach (CatchClauseSyntax catchClause in tryStatement.Catches)
+        {
+            Dictionary<string, bool> catchState = new(partialTryState);
+            if (catchClause.Filter is not null)
+            {
+                ProcessNode(catchClause.Filter.FilterExpression, context, reportDiagnostics, catchState, untrackableNames);
+            }
+
+            ProcessNode(catchClause.Block, context, reportDiagnostics, catchState, untrackableNames);
+            completionStates.Add(catchState);
+        }
+
+        foreach (string observerName in capturingState.Keys.ToList())
+        {
+            capturingState[observerName] = completionStates.Any(completionState => completionState[observerName]);
+        }
+
+        // A finally block runs on every way out of the statement. The code in it is judged against a state that
+        // allows for all of them: the try block or a catch clause completing, or an exception from any point in
+        // the try. Only normal completion reaches the code after the statement, though, so the block is walked a
+        // second time, from the completion state and without reporting, to find what it leaves there: a
+        // StopCapturingTasks in a finally certainly ends the session for the code that follows.
+        if (tryStatement.Finally is not null)
+        {
+            Dictionary<string, bool> finallyEntryState = [];
+            foreach (string observerName in capturingState.Keys)
+            {
+                finallyEntryState[observerName] = capturingState[observerName] || partialTryState[observerName];
+            }
+
+            ProcessNode(tryStatement.Finally.Block, context, reportDiagnostics, finallyEntryState, untrackableNames);
+            ProcessNode(tryStatement.Finally.Block, context, reportDiagnostics: false, capturingState, untrackableNames);
+        }
+    }
+
+    private static void ProcessLoop(
+        IEnumerable<SyntaxNode> preamble,
+        IEnumerable<SyntaxNode> incrementors,
+        StatementSyntax body,
+        SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
+        Dictionary<string, bool> capturingState,
+        HashSet<string> untrackableNames)
+    {
+        // A for loop's declaration or initializers, a foreach loop's collection expression, and the loop
+        // condition all run before the first test of the condition, so they are walked against the state as it
+        // stands. The body may never run, so it (and a for loop's incrementors, which run only after it) is
+        // walked as one path and the state at loop entry kept as the other, exactly as an if statement without
+        // an else is: a StopCapturingTasks inside the loop does not certainly end a session for the code after
+        // it. A do…while loop runs its body at least once and is walked straight through.
+        foreach (SyntaxNode node in preamble)
+        {
+            ProcessNode(node, context, reportDiagnostics, capturingState, untrackableNames);
+        }
+
+        Dictionary<string, bool> bodyState = new(capturingState);
+        ProcessNode(body, context, reportDiagnostics, bodyState, untrackableNames);
+        foreach (SyntaxNode incrementor in incrementors)
+        {
+            ProcessNode(incrementor, context, reportDiagnostics, bodyState, untrackableNames);
+        }
+
+        foreach (string observerName in capturingState.Keys.ToList())
+        {
+            capturingState[observerName] = capturingState[observerName] || bodyState[observerName];
+        }
+    }
+
+    /// <summary>
+    /// Gets the parts of a for statement that run before its body is first entered: its declaration or
+    /// initializers and its condition, which is to say every child except the body and the incrementors.
+    /// </summary>
+    /// <param name="forStatement">The for statement.</param>
+    /// <returns>The nodes that run unconditionally.</returns>
+    private static IEnumerable<SyntaxNode> GetForLoopPreamble(ForStatementSyntax forStatement)
+    {
+        return forStatement.ChildNodes().Where(child => child != forStatement.Statement && !forStatement.Incrementors.Contains(child));
+    }
+
     private static void CheckInvocation(
         InvocationExpressionSyntax invocation,
         SyntaxNodeAnalysisContext context,
+        bool reportDiagnostics,
         Dictionary<string, bool> capturingState)
     {
         if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
@@ -252,7 +381,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
 
             case "WaitForCapturedTasksAsync":
             case "WaitForCapturedTasksCompleteAsync":
-                if (!capturingState[receiverName])
+                if (reportDiagnostics && !capturingState[receiverName])
                 {
                     context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodName, receiverName));
                 }

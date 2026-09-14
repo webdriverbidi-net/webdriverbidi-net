@@ -26,6 +26,11 @@ internal static class CodeFixHelpers
     private const string OptionsTypeName = "ObservableEventHandlerOptions";
     private const string RunHandlerAsynchronouslyName = "RunHandlerAsynchronously";
 
+    // The diagnostic property BIDI007 and BIDI023 set for an operation that runs before an async handler's
+    // first await (AnalyzerSymbolHelpers.RunsBeforeFirstAwaitPropertyName, which is internal to the analyzer
+    // assembly).
+    private const string RunsBeforeFirstAwaitPropertyName = "RunsBeforeFirstAwait";
+
     /// <summary>
     /// Gets the C# language version the document is compiled with.
     /// </summary>
@@ -58,8 +63,12 @@ internal static class CodeFixHelpers
     /// dispatching thread; it does not offload the code that runs before the handler returns.
     /// The fix therefore depends on the handler:
     /// <list type="bullet">
-    /// <item><description>A handler bound to the <c>Action&lt;T&gt;</c> overload or an
-    /// <c>async</c> lambda only needs the option added.</description></item>
+    /// <item><description>A handler bound to the <c>Action&lt;T&gt;</c> overload only needs the option
+    /// added.</description></item>
+    /// <item><description>An <c>async</c> lambda whose reported operation runs after its first
+    /// <c>await</c> only needs the option added. One whose reported operation runs before it has
+    /// <c>await Task.Yield()</c> inserted as its first statement, so that the operation runs on the thread
+    /// pool, and the option is added if it is missing.</description></item>
     /// <item><description>A non-<c>async</c> <c>Task</c>-returning lambda is converted to an
     /// <c>async</c> lambda that first awaits <c>Task.Yield()</c>, so everything after it runs on
     /// the thread pool, and the option is added if it is missing.</description></item>
@@ -85,6 +94,10 @@ internal static class CodeFixHelpers
         IMethodSymbol addObserverMethod = (IMethodSymbol)semanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol!;
         bool boundToAction = addObserverMethod.Parameters[0].Type.Name == "Action";
         bool convertToAsync = !boundToAction && !lambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword);
+
+        // An async lambda runs on the dispatching thread until its first await, so an operation the analyzer
+        // marked as running before that await is moved off it only by awaiting first.
+        bool awaitYieldFirst = !boundToAction && !convertToAsync && diagnostic.Properties.ContainsKey(RunsBeforeFirstAwaitPropertyName);
         bool optionPresent = invocation.ArgumentList.Arguments.Any(argument =>
         {
             // Resolve the option semantically rather than by source text, which fails when the option
@@ -100,12 +113,14 @@ internal static class CodeFixHelpers
         });
         string title = convertToAsync
             ? (optionPresent ? "Make handler async" : "Make handler async and add RunHandlerAsynchronously option")
-            : "Add RunHandlerAsynchronously option";
+            : awaitYieldFirst
+                ? (optionPresent ? "Await Task.Yield() first" : "Await Task.Yield() first and add RunHandlerAsynchronously option")
+                : "Add RunHandlerAsynchronously option";
 
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,
-                createChangedDocument: cancellationToken => ApplyHandlerFixAsync(context.Document, invocation, convertToAsync, cancellationToken),
+                createChangedDocument: cancellationToken => ApplyHandlerFixAsync(context.Document, invocation, convertToAsync, awaitYieldFirst, cancellationToken),
                 equivalenceKey: title),
             diagnostic);
     }
@@ -114,6 +129,7 @@ internal static class CodeFixHelpers
         Document document,
         InvocationExpressionSyntax invocation,
         bool convertToAsync,
+        bool awaitYieldFirst,
         CancellationToken cancellationToken)
     {
         SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
@@ -135,7 +151,7 @@ internal static class CodeFixHelpers
             ? invocation.ArgumentList.WithArguments(invocation.ArgumentList.Arguments.Replace(existingOptionsArgument, optionsArgument.WithTriviaFrom(existingOptionsArgument)))
             : invocation.ArgumentList.AddArguments(optionsArgument);
 
-        if (convertToAsync)
+        if (convertToAsync || awaitYieldFirst)
         {
             // Every compilable file has at least one line break (the usings, if nothing else); reuse
             // the file's own line ending so the fix never mixes styles. It is taken from the document
@@ -148,7 +164,10 @@ internal static class CodeFixHelpers
             string lambdaLineIndentation = GetLineIndentation(invocation.ArgumentList.Arguments[0].Expression);
             ArgumentSyntax handlerArgument = newArgumentList.Arguments[0];
             AnonymousFunctionExpressionSyntax lambda = (AnonymousFunctionExpressionSyntax)handlerArgument.Expression;
-            newArgumentList = newArgumentList.ReplaceNode(lambda, ConvertToAsyncLambda(lambda, endOfLine, lambdaLineIndentation));
+            AnonymousFunctionExpressionSyntax rewrittenLambda = convertToAsync
+                ? ConvertToAsyncLambda(lambda, endOfLine, lambdaLineIndentation)
+                : InsertYieldIntoAsyncLambda(lambda, endOfLine, lambdaLineIndentation);
+            newArgumentList = newArgumentList.ReplaceNode(lambda, rewrittenLambda);
         }
 
         InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);
@@ -216,6 +235,32 @@ internal static class CodeFixHelpers
             .WithBody(originalBlock.WithStatements(SyntaxFactory.List(statements)));
     }
 
+    private static AnonymousFunctionExpressionSyntax InsertYieldIntoAsyncLambda(AnonymousFunctionExpressionSyntax lambda, SyntaxTrivia endOfLine, string lambdaLineIndentation)
+    {
+        if (lambda.ExpressionBody is ExpressionSyntax expressionBody)
+        {
+            // 'async args => expr' becomes a block laid out as ConvertToAsyncLambda lays one out, which awaits
+            // Task.Yield() and then evaluates the expression as a statement. The lambda is already async, so the
+            // expression is kept as written rather than awaited again.
+            BlockSyntax expressionBlock = CreateBlock(
+                [CreateYieldStatement(), SyntaxFactory.ExpressionStatement(expressionBody.WithoutTrivia())],
+                lambdaLineIndentation,
+                lambdaLineIndentation + "    ",
+                endOfLine);
+
+            LambdaExpressionSyntax expressionLambda = (LambdaExpressionSyntax)lambda;
+            return expressionLambda
+                .WithArrowToken(expressionLambda.ArrowToken.WithTrailingTrivia(endOfLine))
+                .WithBody(expressionBlock.WithLeadingTrivia(SyntaxFactory.Whitespace(lambdaLineIndentation)));
+        }
+
+        BlockSyntax block = lambda.Block!;
+        StatementSyntax yieldStatement = CreateYieldStatement()
+            .WithLeadingTrivia(SyntaxFactory.Whitespace(GetIndentation(block.Statements[0])))
+            .WithTrailingTrivia(endOfLine);
+        return lambda.WithBody(block.WithStatements(block.Statements.Insert(0, yieldStatement)));
+    }
+
     private static BlockSyntax CreateBlock(
         IEnumerable<StatementSyntax> statements,
         string braceIndentation,
@@ -235,10 +280,26 @@ internal static class CodeFixHelpers
         return lineText.Substring(0, lineText.Length - lineText.TrimStart().Length);
     }
 
-    private static string GetIndentation(SyntaxNode node)
+    /// <summary>
+    /// Gets the indentation of a node: the whitespace immediately preceding it on its line.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    /// <returns>The indentation, or an empty string when the node has none.</returns>
+    internal static string GetIndentation(SyntaxNode node)
     {
         // The whitespace immediately preceding the node on its line; empty when the node has none.
         return node.GetLeadingTrivia().LastOrDefault(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
+    }
+
+    /// <summary>
+    /// Gets the trailing trivia for a statement being moved: its own trailing trivia, such as a comment on the
+    /// same line, with the line break that ended it at its old position replaced by an elastic one.
+    /// </summary>
+    /// <param name="statement">The statement being moved.</param>
+    /// <returns>The trailing trivia for the moved copy.</returns>
+    internal static IEnumerable<SyntaxTrivia> GetTrailingTriviaForMove(StatementSyntax statement)
+    {
+        return statement.GetTrailingTrivia().Where(trivia => !trivia.IsKind(SyntaxKind.EndOfLineTrivia)).Append(SyntaxFactory.ElasticLineFeed);
     }
 
     /// <summary>
@@ -496,7 +557,8 @@ internal static class CodeFixHelpers
         MethodDeclarationSyntax methodWithoutMoved = trackedMethod.RemoveNodes(trackedStatementsToMove, SyntaxRemoveOptions.KeepNoTrivia)!;
         StatementSyntax currentStartAsyncStatement = methodWithoutMoved.GetCurrentNode(startAsyncStatement)!;
 
-        IEnumerable<StatementSyntax> movedCopies = trackedStatementsToMove.Select(statement => statement.WithTrailingTrivia(SyntaxFactory.ElasticLineFeed));
+        // Each moved statement keeps its own trivia: the comments above it and any comment on the same line.
+        IEnumerable<StatementSyntax> movedCopies = trackedStatementsToMove.Select(statement => statement.WithTrailingTrivia(GetTrailingTriviaForMove(statement)));
         MethodDeclarationSyntax newMethod = methodWithoutMoved.InsertNodesBefore(currentStartAsyncStatement, movedCopies);
 
         return document.WithSyntaxRoot(root.ReplaceNode(method, newMethod));

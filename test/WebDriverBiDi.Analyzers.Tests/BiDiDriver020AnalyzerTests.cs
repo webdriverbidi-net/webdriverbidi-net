@@ -1081,4 +1081,411 @@ public class BiDiDriver020AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task WaitAfterTryWhoseRethrowingCatchStops_NoDiagnostic()
+    {
+        // A stop in a catch that rethrows is on a path that never reaches the wait, so the wait is not reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        try
+                        {
+                            await Task.Delay(1);
+                        }
+                        catch (Exception) when (abort)
+                        {
+                            observer.StopCapturingTasks();
+                            throw;
+                        }
+
+                        await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterTryWhoseFinallyStops_ReportsError()
+    {
+        // A finally block runs on every way out of the try, so a stop there certainly ends the session before the wait.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        try
+                        {
+                            await Task.Delay(1);
+                        }
+                        finally
+                        {
+                            observer.StopCapturingTasks();
+                        }
+
+                        await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5))|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task WaitInCatchAfterStartInTry_NoDiagnostic()
+    {
+        // A catch may begin after the start in the try has run, so a wait in the catch is not reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            observer.StartCapturingTasks();
+                            await Task.Delay(1);
+                        }
+                        catch (Exception)
+                        {
+                            await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitInCatchWithoutStart_ReportsError()
+    {
+        // No path through the try opens a session, so a wait in the catch certainly has none.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            await Task.Delay(1);
+                        }
+                        catch (Exception)
+                        {
+                            await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5))|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task WaitInFinallyAfterStopInTry_NoDiagnostic()
+    {
+        // A finally may run after an exception thrown before the stop in the try, when the session is still open, so a wait there is not reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        try
+                        {
+                            await Task.Delay(1);
+                            observer.StopCapturingTasks();
+                        }
+                        finally
+                        {
+                            await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitInFinallyWithoutStart_ReportsError()
+    {
+        // No path into the finally has a session, so a wait there is reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        try
+                        {
+                            await Task.Delay(1);
+                        }
+                        finally
+                        {
+                            await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5))|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task WaitAfterForeachLoopThatStops_NoDiagnostic()
+    {
+        // The loop body may never run, so a stop inside it does not certainly end the session.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        foreach (string url in urls)
+                        {
+                            observer.StopCapturingTasks();
+                        }
+
+                        await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterForLoopThatStops_NoDiagnostic()
+    {
+        // A for loop body, like a foreach body, may never run.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(int count)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        for (int i = 0; i < count; i++)
+                        {
+                            observer.StopCapturingTasks();
+                        }
+
+                        await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitAfterWhileLoopThatStops_NoDiagnostic()
+    {
+        // A while loop body, like a foreach body, may never run.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        while (abort)
+                        {
+                            observer.StopCapturingTasks();
+                        }
+
+                        await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode);
+    }
+
+    [Fact]
+    public async Task WaitInsideLoopBodyWithoutStart_ReportsError()
+    {
+        // Inside the body, the state is the state at loop entry, so a wait with no session opened before it is reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(string[] urls)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        foreach (string url in urls)
+                        {
+                            await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5))|};
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
+
+    [Fact]
+    public async Task WaitAfterDoWhileLoopThatStops_ReportsError()
+    {
+        // A do...while body runs at least once, so a stop inside it certainly ends the session.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(bool abort)
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturingTasks();
+                        do
+                        {
+                            observer.StopCapturingTasks();
+                        }
+                        while (abort);
+
+                        await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5))|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
+    }
 }
