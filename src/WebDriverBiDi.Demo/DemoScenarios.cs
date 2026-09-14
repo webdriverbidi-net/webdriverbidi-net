@@ -401,6 +401,7 @@ public static class DemoScenarios
         // yields an exception that the object can't be found, because the preload script didn't
         // create it on the new page after navigation.
         Console.WriteLine("Executing function after removing preload script");
+        callFunctionParams.Arguments.Clear();
         callFunctionParams.Arguments.Add(node.ToSharedReference());
         scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultException removedScriptExceptionResult)
@@ -515,7 +516,7 @@ public static class DemoScenarios
         // Tasks as the synchronization mechanism, so that we can wait for all of them to
         // complete before continuing.
         Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
-        Task.WaitAll(capturedTasks);
+        await Task.WhenAll(capturedTasks);
         Console.WriteLine($"Event handlers complete");
 
         // Demonstrate the ability to remove the event handler, and that the event handler
@@ -590,7 +591,7 @@ public static class DemoScenarios
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3));
-        Task.WaitAll(capturedTasks);
+        await Task.WhenAll(capturedTasks);
 
         Console.WriteLine($"Navigation command completed");
     }
@@ -981,7 +982,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete,
         });
-        Task.WaitAll([firstNavigationTask, secondNavigationTask]);
+        await Task.WhenAll([firstNavigationTask, secondNavigationTask]);
 
         // Unsubscribe from one of the user contexts, and validate the other event observer
         // still processes the event from the other user context
@@ -997,7 +998,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete,
         });
-        Task.WaitAll([thirdNavigationTask, fourthNavigationTask]);
+        await Task.WhenAll([thirdNavigationTask, fourthNavigationTask]);
     }
 
     public static async Task ManipulateShadowRootsAsync(BiDiDriver driver, string baseUrl)

@@ -1,4 +1,4 @@
-# Acqhiescence
+# Acquiescence
 This directory contains the JavaScript code for the Acquiescence element state library
 which allows an automation library to query for an element's state, find available
 click points for interaction, wait for an element to be ready for interaction, and so

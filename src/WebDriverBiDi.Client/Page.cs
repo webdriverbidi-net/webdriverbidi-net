@@ -131,9 +131,9 @@ public class Page
     public async Task<T?> ExecuteJavaScriptFunctionAsync<T>(string functionDefinition, params object?[] arguments)
     {
         Type requestedType = typeof(T);
-        if (ValidScriptReturnTypes.Contains(requestedType))
+        if (!ValidScriptReturnTypes.Contains(requestedType))
         {
-            throw new WebDriverBiDiException($"requested return type was ${requestedType}, but must be one of the following types: ${string.Join(",", ValidScriptArgumentTypes)}");
+            throw new WebDriverBiDiException($"requested return type was {requestedType}, but must be one of the following types: {string.Join(",", ValidScriptReturnTypes)}");
         }
 
         List<LocalValue> args = [];
@@ -272,7 +272,7 @@ public class Page
             RemoteJavaScriptObjectProxy remoteObjectProxyValue => new RemoteObjectReference(remoteObjectProxyValue.RemoteObjectId),
             List<object?> listValue => LocalValue.Array(this.ConvertListToLocalValue(listValue)),
             Dictionary<string, object?> dictionaryValue => LocalValue.Object(this.ConvertDictionaryToLocalValue(dictionaryValue)),
-            _ => throw new WebDriverBiDiException($"argument was of type ${value.GetType()}, but must be null or one of the following types: ${string.Join(",", ValidScriptArgumentTypes)}"),
+            _ => throw new WebDriverBiDiException($"argument was of type {value.GetType()}, but must be null or one of the following types: {string.Join(",", ValidScriptArgumentTypes)}"),
         };
 
         return local;

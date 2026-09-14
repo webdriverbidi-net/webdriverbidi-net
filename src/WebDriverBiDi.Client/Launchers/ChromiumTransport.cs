@@ -66,8 +66,26 @@ public class ChromiumTransport : Transport
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public override async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
     {
-        await base.ConnectAsync(websocketUri).ConfigureAwait(false);
-        await this.InitializeBiDiAsync().ConfigureAwait(false);
+        await base.ConnectAsync(websocketUri, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await this.InitializeBiDiAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Honor Transport.ConnectAsync's contract: a failed connect leaves the transport disconnected.
+            try
+            {
+                await this.DisconnectAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // DisconnectAsync can throw collected errors or shutdown failures; the original failure is the one to report.
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            throw;
+        }
     }
 
     /// <summary>
@@ -122,11 +140,12 @@ public class ChromiumTransport : Transport
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    private async Task InitializeBiDiAsync(bool hideMapperTab = true)
+    private async Task InitializeBiDiAsync(bool hideMapperTab = true, CancellationToken cancellationToken = default)
     {
         // Every command below races against this one token, so InitializationTimeout bounds the
         // bootstrap as a whole rather than each command within it.
-        using CancellationTokenSource initializationTokenSource = new(this.InitializationTimeout);
+        using CancellationTokenSource initializationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        initializationTokenSource.CancelAfter(this.InitializationTimeout);
 
         // Create a hidden tab in the browser to host the BiDi-to-CDP mapper code.
         DevToolsProtocolCommand command = new(this.GetNextCommandId(), "Target.createTarget");

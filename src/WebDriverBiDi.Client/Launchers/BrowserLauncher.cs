@@ -164,6 +164,19 @@ public abstract class BrowserLauncher : IAsyncDisposable
     public abstract Task QuitBrowserAsync();
 
     /// <summary>
+    /// Asynchronously forces the browser to terminate, for use when <see cref="QuitBrowserAsync"/> has failed.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// The default implementation does nothing, which is correct for launchers that do not own a local
+    /// browser process, such as a launcher connected to a remote grid.
+    /// </remarks>
+    public virtual Task KillBrowserAsync()
+    {
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
     /// Asynchronously stops the browser launcher.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
