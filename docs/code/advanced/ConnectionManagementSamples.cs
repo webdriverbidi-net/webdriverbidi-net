@@ -52,7 +52,7 @@ public static class ConnectionManagementSamples
 
         // Create driver with launcher's preconfigured transport
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
-        await driver.StartAsync(launcher.WebSocketUrl);
+        await driver.StartAsync(launcher.ConnectionString);
 
         try
         {

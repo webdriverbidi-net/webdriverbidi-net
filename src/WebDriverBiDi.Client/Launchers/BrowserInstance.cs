@@ -18,20 +18,20 @@ public class BrowserInstance : IAsyncDisposable
     /// Initializes a new instance of the <see cref="BrowserInstance"/> class.
     /// </summary>
     /// <param name="launcher">The launcher that created this instance.</param>
-    /// <param name="webSocketUrl">The WebSocket URL for connecting to the browser.</param>
+    /// <param name="connectionString">The connection string for connecting to the browser.</param>
     /// <param name="processId">The process ID of the browser, or 0 if not applicable.</param>
-    internal BrowserInstance(BrowserLauncher launcher, string webSocketUrl, int processId)
+    internal BrowserInstance(BrowserLauncher launcher, string connectionString, int processId)
     {
         this.launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
-        this.WebSocketUrl = webSocketUrl ?? throw new ArgumentNullException(nameof(webSocketUrl));
+        this.ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         this.ProcessId = processId;
     }
 
     /// <summary>
-    /// Gets the WebSocket URL for connecting to the browser via WebDriver BiDi.
-    /// Use this URL with <see cref="BiDiDriver.StartAsync"/> to establish a connection.
+    /// Gets the connection string for connecting to the browser via WebDriver BiDi.
+    /// Use this property with <see cref="BiDiDriver.StartAsync"/> to establish a connection.
     /// </summary>
-    public string WebSocketUrl { get; }
+    public string ConnectionString { get; }
 
     /// <summary>
     /// Gets the process ID of the browser process, or 0 if the browser is remote or the process ID is not available.

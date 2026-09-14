@@ -206,7 +206,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         }
 
         int processId = this.GetProcessId();
-        return new BrowserInstance(this, this.WebSocketUrl, processId);
+        return new BrowserInstance(this, this.ConnectionString, processId);
     }
 
     /// <summary>
@@ -403,10 +403,10 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 
             if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionKind == ConnectionKind.Pipes && this.connection is PipeConnection)
             {
-                this.WebSocketUrl = $"pipe://chrome:{this.browserProcess.Id}";
+                this.ConnectionString = $"pipe://chrome:{this.browserProcess.Id}";
             }
 
-            if (!string.IsNullOrEmpty(this.WebSocketUrl))
+            if (!string.IsNullOrEmpty(this.ConnectionString))
             {
                 isInitialized = true;
                 break;

@@ -227,6 +227,7 @@ public class NetworkTrafficMonitor
         Task<GetDataCommandResult>? requestBodyTask = null;
         if (NetworkRequest.MethodMayHaveBody(e.Request.Method))
         {
+            await Task.Yield();
             GetDataCommandParameters getBodyParameters = new(requestId, DataType.Request)
             {
                 CollectorId = this.bodyCollectorId,
@@ -295,6 +296,7 @@ public class NetworkTrafficMonitor
 
         // With no matching credentials the request is still continued, with the browser's default behavior for the
         // challenge, rather than being left blocked.
+        await Task.Yield();
         ContinueWithAuthCommandParameters authParams = new(e.Request.RequestId);
         AuthChallengeCredentials? credentials = this.authCredentials.FirstOrDefault(candidate => candidate.Matches(e.Response.AuthChallenges));
         if (credentials is not null)

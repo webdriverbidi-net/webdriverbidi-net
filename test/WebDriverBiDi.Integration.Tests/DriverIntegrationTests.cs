@@ -213,7 +213,7 @@ public class DriverIntegrationTests
     private async Task<BiDiDriver> StartBiDiDriverSession(BrowserLauncher launcher)
     {
         BiDiDriver driver = new(TimeSpan.FromSeconds(10), launcher.CreateTransport());
-        await driver.StartAsync(launcher.WebSocketUrl);
+        await driver.StartAsync(launcher.ConnectionString);
 
         if (!launcher.IsBiDiSessionInitialized)
         {

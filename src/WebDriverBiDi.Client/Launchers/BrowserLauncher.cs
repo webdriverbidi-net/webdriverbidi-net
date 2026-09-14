@@ -59,9 +59,11 @@ public abstract class BrowserLauncher : IAsyncDisposable
     public TimeSpan InitializationTimeout { get; set; } = TimeSpan.FromSeconds(20);
 
     /// <summary>
-    /// Gets or sets the WebSocket URL for communicating with the browser via the WebDriver BiDi protocol.
+    /// Gets or sets the connection string for communicating with the browser via the WebDriver BiDi protocol.
+    /// For a WebSocket connection, this is the URL to the WebSocket; for other connection types, see the
+    /// documentation for the connection type.
     /// </summary>
-    public string WebSocketUrl { get; protected set; } = string.Empty;
+    public string ConnectionString { get; protected set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the port on which the launcher should listen.
@@ -130,24 +132,32 @@ public abstract class BrowserLauncher : IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
-    /// This is the recommended method for launching browsers with the new API.
-    /// </summary>
-    /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
-    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
-    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
-    public virtual async Task<BrowserInstance> LaunchAsync()
-    {
-        this.ThrowIfDisposed();
-        await this.StartAsync().ConfigureAwait(false);
-        return await this.LaunchBrowserAsync().ConfigureAwait(false);
-    }
-
-    /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
+    /// <remarks>
+    /// <para>
+    /// For a browser that is launched by a WebDriver Classic driver executable (chromedriver,
+    /// geckodriver, safaridriver, etc.), this method will start that executable. It will also
+    /// wait for the remote end provided by that executable to be available for commands via
+    /// the WebDriver Classic Status command.
+    /// </para>
+    /// <para>
+    /// For browsers that support direct WebDriver BiDi connections, this method does nothing.
+    /// </para>
+    /// </remarks>
     public abstract Task StartAsync();
+
+    /// <summary>
+    /// Asynchronously stops the browser launcher.
+    /// </summary>
+    /// <returns>A Task representing the result of the asynchronous operation.</returns>
+    /// <remarks>
+    /// For a browser that is launched by a driver executable (chromedriver, geckodriver,
+    /// safaridriver, etc), this method will terminate that executable. For browsers that
+    /// support direct WebDriver BiDi connections, this method does nothing.
+    /// </remarks>
+    public abstract Task StopAsync();
 
     /// <summary>
     /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
@@ -177,12 +187,6 @@ public abstract class BrowserLauncher : IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously stops the browser launcher.
-    /// </summary>
-    /// <returns>A Task representing the result of the asynchronous operation.</returns>
-    public abstract Task StopAsync();
-
-    /// <summary>
     /// Creates a <see cref="Transport"/> object that can be used to communicate with the browser.
     /// </summary>
     /// <returns>The <see cref="Transport"/> to be used in instantiating the driver.</returns>
@@ -191,6 +195,20 @@ public abstract class BrowserLauncher : IAsyncDisposable
     {
         this.ThrowIfDisposed();
         return new Transport(this.CreateConnection());
+    }
+
+    /// <summary>
+    /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
+    /// This is the recommended method for launching browsers with the new API.
+    /// </summary>
+    /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
+    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
+    public virtual async Task<BrowserInstance> LaunchAsync()
+    {
+        this.ThrowIfDisposed();
+        await this.StartAsync().ConfigureAwait(false);
+        return await this.LaunchBrowserAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -312,7 +330,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
             Match regexMatch = websocketUrlMatcher.Match(e.Data);
             if (regexMatch.Success)
             {
-                this.WebSocketUrl = regexMatch.Groups[1].Value;
+                this.ConnectionString = regexMatch.Groups[1].Value;
             }
         }
     }
