@@ -27,7 +27,8 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     private readonly ObservableEventInvocable<BrowserLauncherProcessStartedEventArgs> invocableBrowserLauncherProcessStartedObservableEvent = new(LauncherProcessStartedEventName);
 
     private readonly string launcherExecutableName;
-    private bool isLoggingLauncherProcessOutput;
+
+    private int isLoggingLauncherProcessOutputFlag = 0;
     private Process? launcherProcess;
 
     /// <summary>
@@ -116,6 +117,12 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// it gracefully before forcing a termination.
     /// </summary>
     protected override bool HasShutdownApi => true;
+
+    private bool IsLoggingLauncherProcessOutput
+    {
+        get => Interlocked.CompareExchange(ref this.isLoggingLauncherProcessOutputFlag, 0, 0) == 1;
+        set => Interlocked.Exchange(ref this.isLoggingLauncherProcessOutputFlag, value ? 1 : 0);
+    }
 
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
@@ -259,6 +266,18 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
     }
 
+    /// <summary>
+    /// Asynchronously forces the browser to terminate, for use when <see cref="BrowserLauncher.QuitBrowserAsync"/> has failed.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public override Task KillBrowserAsync()
+    {
+        // The browser is a child of the driver executable, not of this process, so the closest available
+        // kill is stopping the driver. StopAsync asks the driver to shut down, which also closes its
+        // browsers, and kills the driver only if that request fails.
+        return this.StopAsync();
+    }
+
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
         await this.invocableBrowserLauncherProcessStartingObservableEvent.InvokeNotifyObserversAsync(eventArgs).ConfigureAwait(false);
@@ -273,7 +292,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     {
         if (this.CaptureBrowserLauncherOutput)
         {
-            this.isLoggingLauncherProcessOutput = true;
+            this.IsLoggingLauncherProcessOutput = true;
             _ = Task.Run(() => this.ReadStandardOutputAsync());
             _ = Task.Run(() => this.ReadStandardErrorAsync());
         }
@@ -281,22 +300,34 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private void StopLoggingProcessOutput()
     {
-        this.isLoggingLauncherProcessOutput = false;
+        this.IsLoggingLauncherProcessOutput = false;
     }
 
     private async Task ReadStandardOutputAsync()
     {
-        while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
+        while (this.launcherProcess is not null && this.IsLoggingLauncherProcessOutput)
         {
-            await this.LogAsync(this.launcherProcess.StandardOutput.ReadLine() ?? string.Empty, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
+            string line = await this.launcherProcess.StandardOutput.ReadLineAsync().ConfigureAwait(false);
+            if (line is null)
+            {
+                break;
+            }
+
+            await this.LogAsync(line, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
         }
     }
 
     private async Task ReadStandardErrorAsync()
     {
-        while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
+        while (this.launcherProcess is not null && this.IsLoggingLauncherProcessOutput)
         {
-            await this.LogAsync(this.launcherProcess.StandardError.ReadLine() ?? string.Empty, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
+            string line = await this.launcherProcess.StandardError.ReadLineAsync().ConfigureAwait(false);
+            if (line is null)
+            {
+                break;
+            }
+
+            await this.LogAsync(line, WebDriverBiDiLogLevel.Debug, this.launcherExecutableName).ConfigureAwait(false);
         }
     }
 }

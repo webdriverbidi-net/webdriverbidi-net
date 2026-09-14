@@ -1,12 +1,12 @@
 #!/usr/bin/env pwsh
 # Downloads the latest published chromium-bidi package from the npm registry and refreshes the
-# vendored mapper tab source in third_party/chromium-bidi-mapper.
+# vendored mapper tab source and its license in third_party/chromium-bidi-mapper.
 #
 # Usage:
 #   update-chromium-bidi.ps1 [-Help]
 #
 # Exit codes:
-#   0 — the vendored mapperTab.js was updated
+#   0 — the vendored mapperTab.js and LICENSE were updated
 #   1 — the download, extraction, or copy failed
 #   2 — a required tool is missing
 
@@ -38,7 +38,9 @@ if (-not (Get-Command 'tar' -ErrorAction SilentlyContinue)) {
 }
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
-$destination = Join-Path $repoRoot 'third_party/chromium-bidi-mapper/mapperTab.js'
+$destinationDir = Join-Path $repoRoot 'third_party/chromium-bidi-mapper'
+$destination = Join-Path $destinationDir 'mapperTab.js'
+$licenseDestination = Join-Path $destinationDir 'LICENSE'
 
 # Extract into a temporary directory that is removed however this script exits, rather than into a
 # fixed .chromium-bidi directory in the working directory that a failure would leave behind.
@@ -75,8 +77,21 @@ try {
         exit 1
     }
 
+    # The mapper is redistributed inside this project's assembly, so its license must travel with it.
+    # Both files are checked before either is copied, so a changed package layout never leaves the
+    # vendored script updated without the license that covers it.
+    $licenseFile = Join-Path $workDir 'package/LICENSE'
+    if (-not (Test-Path -LiteralPath $licenseFile -PathType Leaf)) {
+        Write-Host 'ERROR: LICENSE was not found in the package at the expected path:' -ForegroundColor Red
+        Write-Host '       package/LICENSE' -ForegroundColor Red
+        Write-Host '       The package layout may have changed; this script needs updating.' -ForegroundColor Red
+        exit 1
+    }
+
     Copy-Item -LiteralPath $sourceFile -Destination $destination -Force
     Write-Host "Updated $destination"
+    Copy-Item -LiteralPath $licenseFile -Destination $licenseDestination -Force
+    Write-Host "Updated $licenseDestination"
 }
 catch {
     # $ErrorActionPreference = 'Stop' turns a failed web request or copy into a terminating error;

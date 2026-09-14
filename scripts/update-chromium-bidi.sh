@@ -1,12 +1,12 @@
 #!/bin/bash
 # Downloads the latest published chromium-bidi package from the npm registry and refreshes the
-# vendored mapper tab source in third_party/chromium-bidi-mapper.
+# vendored mapper tab source and its license in third_party/chromium-bidi-mapper.
 #
 # Usage:
 #   update-chromium-bidi.sh [-h|--help]
 #
 # Exit codes:
-#   0 — the vendored mapperTab.js was updated
+#   0 — the vendored mapperTab.js and LICENSE were updated
 #   1 — the download, extraction, or copy failed
 #   2 — a required tool is missing
 
@@ -34,7 +34,9 @@ for tool in curl jq tar; do
 done
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
-destination="$repo_root/third_party/chromium-bidi-mapper/mapperTab.js"
+destination_dir="$repo_root/third_party/chromium-bidi-mapper"
+destination="$destination_dir/mapperTab.js"
+license_destination="$destination_dir/LICENSE"
 
 # Extract into a temporary directory that is removed however this script exits, rather than into a
 # fixed .chromium-bidi directory in the working directory that a failure would leave behind.
@@ -59,5 +61,18 @@ if [ ! -f "$source_file" ]; then
   exit 1
 fi
 
+# The mapper is redistributed inside this project's assembly, so its license must travel with it.
+# Both files are checked before either is copied, so a changed package layout never leaves the
+# vendored script updated without the license that covers it.
+license_file="$work_dir/package/LICENSE"
+if [ ! -f "$license_file" ]; then
+  echo "ERROR: LICENSE was not found in the package at the expected path:" >&2
+  echo "       package/LICENSE" >&2
+  echo "       The package layout may have changed; this script needs updating." >&2
+  exit 1
+fi
+
 cp "$source_file" "$destination"
 echo "Updated $destination"
+cp "$license_file" "$license_destination"
+echo "Updated $license_destination"

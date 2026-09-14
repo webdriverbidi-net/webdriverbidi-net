@@ -222,17 +222,30 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             this.connection = null;
         }
 
-        if (this.browserProcess is not null)
-        {
-            if (!this.browserProcess.HasExited)
-            {
-                this.browserProcess.Kill();
-                this.browserProcess.WaitForExit();
-            }
+        this.TerminateBrowserProcess();
+    }
 
-            this.browserProcess = null;
-            this.RemoveUserDataDirectory();
+    /// <summary>
+    /// Asynchronously forces the browser to terminate, for use when <see cref="QuitBrowserAsync"/> has failed.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public override async Task KillBrowserAsync()
+    {
+        // Terminate first: stopping the pipe connection is the step most likely to be what failed.
+        this.TerminateBrowserProcess();
+        if (this.connection is PipeConnection pipeConnection)
+        {
+            try
+            {
+                await pipeConnection.StopAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // The process is gone; a failure releasing the pipe must not mask that the kill succeeded.
+            }
         }
+
+        this.connection = null;
     }
 
     /// <summary>
@@ -414,6 +427,21 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         string directoryName = Path.Combine(tempPath, $"webdriverbidi-net-chrome-data-{Guid.NewGuid()}");
         DirectoryInfo info = Directory.CreateDirectory(directoryName);
         this.userDataDirectory = info.FullName;
+    }
+
+    private void TerminateBrowserProcess()
+    {
+        if (this.browserProcess is not null)
+        {
+            if (!this.browserProcess.HasExited)
+            {
+                this.browserProcess.Kill();
+                this.browserProcess.WaitForExit();
+            }
+
+            this.browserProcess = null;
+            this.RemoveUserDataDirectory();
+        }
     }
 
     private void RemoveUserDataDirectory()

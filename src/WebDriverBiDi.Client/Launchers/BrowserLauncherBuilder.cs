@@ -212,6 +212,9 @@ public class BrowserLauncherBuilder
     /// <param name="value">The capability value.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     /// <exception cref="ArgumentException">Thrown when name is null or empty.</exception>
+    /// <remarks>
+    /// The <c>browserName</c> and <c>webSocketUrl</c> capabilities are set by the launcher and cannot be overridden.
+    /// </remarks>
     public BrowserLauncherBuilder WithCapability(string name, object value)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -231,6 +234,9 @@ public class BrowserLauncherBuilder
     /// <param name="configure">Action to configure the capabilities dictionary.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when configure is null.</exception>
+    /// <remarks>
+    /// The <c>browserName</c> and <c>webSocketUrl</c> capabilities are set by the launcher and cannot be overridden.
+    /// </remarks>
     public BrowserLauncherBuilder WithCapabilities(Action<Dictionary<string, object>> configure)
     {
         if (configure is null)
@@ -419,7 +425,15 @@ public class BrowserLauncherBuilder
     {
         if (this.launchStrategy == LaunchStrategy.UsingRemoteGrid)
         {
-            return this.CreateRemoteLauncher("chrome");
+            // Safari enables BiDi only when this capability accompanies webSocketUrl. It is a default rather
+            // than a launcher-owned capability, so a caller can still replace it once Safari no longer needs it.
+            WebDriverClassicBrowserLauncher remoteLauncher = this.CreateRemoteLauncher("safari");
+            if (!remoteLauncher.AdditionalCapabilities.ContainsKey(SafariLauncher.ExperimentalWebSocketUrlCapabilityName))
+            {
+                remoteLauncher.AdditionalCapabilities[SafariLauncher.ExperimentalWebSocketUrlCapabilityName] = true;
+            }
+
+            return remoteLauncher;
         }
 
         SafariChannel safariChannel = this.channel switch
@@ -529,15 +543,25 @@ public class BrowserLauncherBuilder
         return firefoxLauncher;
     }
 
-    private BrowserLauncher CreateRemoteLauncher(string browserName)
+    private WebDriverClassicBrowserLauncher CreateRemoteLauncher(string browserName)
     {
         // remoteGridHostName is guaranteed non-null by ValidateConfiguration() called in Build()
         string hostName = this.remoteGridHostName ?? throw new InvalidOperationException("Remote grid hostname should have been validated.");
         RemoteBrowserLocatorSettings settings = new(browserName, hostName, this.remoteGridUseSsl);
 
-        WebDriverClassicBrowserLauncher launcher = new(settings, this.port);
+        WebDriverClassicBrowserLauncher launcher = new(settings, this.port)
+        {
+            HostName = hostName,
+            UseSsl = this.remoteGridUseSsl,
+        };
 
-        // TODO: Apply capabilities to remote launcher
+        if (this.capabilities is not null)
+        {
+            // Copied, so capabilities added to this builder after Build() do not reach an already-built
+            // launcher. The copy is shallow: a nested value such as an options dictionary is still shared.
+            launcher.AdditionalCapabilities = new Dictionary<string, object>(this.capabilities);
+        }
+
         return launcher;
     }
 }

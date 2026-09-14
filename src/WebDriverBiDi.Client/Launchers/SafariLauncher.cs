@@ -11,6 +11,11 @@ namespace WebDriverBiDi.Client.Launchers;
 /// </summary>
 public class SafariLauncher : ClassicDriverExecutableBrowserLauncher
 {
+    /// <summary>
+    /// The name of the capability Safari requires, in addition to <c>webSocketUrl</c>, to enable WebDriver BiDi.
+    /// </summary>
+    internal const string ExperimentalWebSocketUrlCapabilityName = "safari:experimentalWebSocketUrl";
+
     private readonly bool isTechnologyPreview;
 
     /// <summary>
@@ -58,7 +63,7 @@ public class SafariLauncher : ClassicDriverExecutableBrowserLauncher
         {
             ["browserName"] = "safari",
             ["webSocketUrl"] = true,
-            ["safari:experimentalWebSocketUrl"] = true,
+            [ExperimentalWebSocketUrlCapabilityName] = true,
         };
 
         if (this.isTechnologyPreview)

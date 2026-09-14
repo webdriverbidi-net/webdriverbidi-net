@@ -45,11 +45,10 @@ public class BrowserInstance : IAsyncDisposable
     public bool IsRunning => !this.disposed && this.launcher.IsRunning;
 
     /// <summary>
-    /// Asynchronously closes the browser gracefully. If the browser cannot be closed gracefully
-    /// within a reasonable timeout, it will be forcefully terminated.
+    /// Asynchronously closes the browser.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="CannotQuitBrowserException">Thrown when the browser cannot be closed.</exception>
+    /// <exception cref="CannotQuitBrowserException">Thrown when the browser cannot be closed; use <see cref="KillAsync"/> to force termination.</exception>
     public async Task CloseAsync()
     {
         if (this.disposed)
@@ -61,10 +60,12 @@ public class BrowserInstance : IAsyncDisposable
     }
 
     /// <summary>
-    /// Forcefully terminates the browser process immediately.
-    /// This should only be used when graceful shutdown via <see cref="CloseAsync"/> fails.
+    /// Forcefully terminates the browser. This should only be used when <see cref="CloseAsync"/> fails.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// A browser on a remote grid cannot be terminated from this machine, so for such a browser this method has no effect.
+    /// </remarks>
     public async Task KillAsync()
     {
         if (this.disposed)
@@ -72,11 +73,11 @@ public class BrowserInstance : IAsyncDisposable
             return;
         }
 
-        await this.launcher.StopAsync().ConfigureAwait(false);
+        await this.launcher.KillBrowserAsync().ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Asynchronously disposes the browser instance. This will attempt to close the browser gracefully,
+    /// Asynchronously disposes the browser instance. This will attempt to close the browser,
     /// and if that fails, will forcefully terminate it.
     /// </summary>
     /// <returns>A task representing the asynchronous dispose operation.</returns>
@@ -89,14 +90,21 @@ public class BrowserInstance : IAsyncDisposable
 
         this.disposed = true;
 
+        // The launcher is called directly, because CloseAsync and KillAsync return early once disposed is set.
         try
         {
-            await this.CloseAsync().ConfigureAwait(false);
+            await this.launcher.QuitBrowserAsync().ConfigureAwait(false);
         }
-        catch
+        catch (Exception)
         {
-            // If graceful close fails, force kill
-            await this.KillAsync().ConfigureAwait(false);
+            try
+            {
+                await this.launcher.KillBrowserAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Disposal must not throw; this matches BrowserLauncher.DisposeAsyncCore.
+            }
         }
 
         GC.SuppressFinalize(this);

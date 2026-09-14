@@ -22,7 +22,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
 {
     private readonly HttpClient httpClient = new();
 
-    private readonly bool useSsl = false;
+    private bool useSsl = false;
     private string launcherHostName = "localhost";
     private string sessionId = string.Empty;
 
@@ -60,9 +60,21 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     public string HostName { get => this.launcherHostName; set => this.launcherHostName = value; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the launcher should communicate over SSL.
+    /// </summary>
+    public bool UseSsl { get => this.useSsl; set => this.useSsl = value; }
+
+    /// <summary>
     /// Gets a value indicating whether the browser can be closed using WebDriver BiDi's browser.close command.
     /// </summary>
     public override bool IsBrowserCloseAllowed => this.BrowserLocator.BrowserName != "firefox";
+
+    /// <summary>
+    /// Gets or sets additional capabilities to include in the new session request, such as
+    /// <c>browserVersion</c> or vendor-specific options for a remote grid. When a key also appears
+    /// in the result of <see cref="CreateBrowserLaunchCapabilities"/>, that value takes precedence.
+    /// </summary>
+    internal Dictionary<string, object> AdditionalCapabilities { get; set; } = [];
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
@@ -94,7 +106,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <summary>
     /// Gets the Uri of the service.
     /// </summary>
-    protected string ServiceUrl => $"{(this.useSsl ? "https" : "http")}://{this.launcherHostName}:{this.Port}";
+    protected string ServiceUrl => $"{(this.useSsl ? "https" : "http")}://{this.launcherHostName}{(this.Port == 0 ? string.Empty : $":{this.Port}")}";
 
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
@@ -143,14 +155,23 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     public override async Task<BrowserInstance> LaunchBrowserAsync()
     {
         this.ThrowIfDisposed();
-        string url = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
+        await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
+
+        // The launcher's own capabilities are applied last, so an added capability can never replace
+        // browserName or turn off webSocketUrl, without which no BiDi session is created.
+        Dictionary<string, object> sessionCapabilities = new(this.AdditionalCapabilities);
+        foreach (KeyValuePair<string, object> capability in this.CreateBrowserLaunchCapabilities())
+        {
+            sessionCapabilities[capability.Key] = capability.Value;
+        }
+
         Dictionary<string, object> classicCapabilities = new()
         {
             ["capabilities"] = new Dictionary<string, object>()
             {
                 ["firstMatch"] = new List<object>()
                 {
-                    this.CreateBrowserLaunchCapabilities(),
+                    sessionCapabilities,
                 },
             },
         };
@@ -216,6 +237,9 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             {
                 throw new CannotQuitBrowserException($"Unable to quit browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
             }
+
+            // IsRunning is derived from the session ID, and a later quit must not delete a session that is gone.
+            this.sessionId = string.Empty;
         }
     }
 
@@ -243,6 +267,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             ["browserName"] = this.BrowserLocator.BrowserName.ToLowerInvariant(),
             ["webSocketUrl"] = true,
         };
+
         return capabilities;
     }
 

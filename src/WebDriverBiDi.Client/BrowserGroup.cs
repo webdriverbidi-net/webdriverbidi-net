@@ -147,6 +147,7 @@ public class BrowserGroup : IAsyncDisposable
             // Suppress exceptions from driver stop during disposal.
         }
 
+        await this.driver.DisposeAsync().ConfigureAwait(false);
         await this.launcher.DisposeAsync().ConfigureAwait(false);
         GC.SuppressFinalize(this);
     }

@@ -199,6 +199,16 @@ public class FirefoxLauncher : BrowserLauncher
     }
 
     /// <summary>
+    /// Asynchronously forces the browser to terminate, for use when <see cref="QuitBrowserAsync"/> has failed.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public override Task KillBrowserAsync()
+    {
+        // Quitting a Firefox browser launched by this class already terminates its process.
+        return this.QuitBrowserAsync();
+    }
+
+    /// <summary>
     /// Asynchronously stops the browser launcher.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
