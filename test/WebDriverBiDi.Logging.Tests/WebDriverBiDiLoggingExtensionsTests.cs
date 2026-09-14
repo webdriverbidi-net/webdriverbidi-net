@@ -143,9 +143,55 @@ public class WebDriverBiDiLoggingExtensionsTests
             WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(1, "session.status", 5000);
         }
 
-        // The Warning event was forwarded and the Verbose one was not. 
+        // The Warning event was forwarded and the Verbose one was not.
         Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "CommandTimeout");
         Assert.DoesNotContain(fakeLogger.Entries, e => e.EventId.Name == "CommandSending");
+    }
+
+    [Theory]
+    [InlineData(EventLevel.Verbose, EventLevel.Error, true)]
+    [InlineData(EventLevel.Error, EventLevel.Verbose, false)]
+    public void AddWebDriverBiDi_CalledTwice_FirstCallLevelIsInEffect(EventLevel firstLevel, EventLevel secondLevel, bool verboseEventForwarded)
+    {
+        // The listener is registered with TryAddSingleton, so the documented rule is that the first call wins
+        // and a later one, whatever level it passes, is ignored. Running both orders shows it is the first call's
+        // level that applies, rather than the more permissive or the more restrictive of the two.
+        ServiceCollection services = new();
+        TestLogger fakeLogger = new();
+        services.AddSingleton<ILogger<WebDriverBiDiEventSourceLogger>>(fakeLogger);
+        services.AddLogging(b =>
+        {
+            b.AddWebDriverBiDi(firstLevel);
+            b.AddWebDriverBiDi(secondLevel);
+        });
+        using (ServiceProvider provider = services.BuildServiceProvider())
+        {
+            _ = provider.GetRequiredService<ILoggerFactory>().CreateLogger("first-call-wins-test");
+
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(1, "session.status");
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionError("conn-1", "Socket closed");
+        }
+
+        // The Error event passes either level, which shows the listener was active in both orders.
+        Assert.Contains(fakeLogger.Entries, e => e.EventId.Name == "ConnectionError");
+        Assert.Equal(verboseEventForwarded, fakeLogger.Entries.Any(e => e.EventId.Name == "CommandSending"));
+    }
+
+    [Fact]
+    public void AddWebDriverBiDi_CalledTwice_RegistersListenerAndActivatorOnce()
+    {
+        ServiceCollection services = new();
+        services.AddLogging(b =>
+        {
+            b.AddWebDriverBiDi();
+            b.AddWebDriverBiDi(EventLevel.Verbose);
+        });
+
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(WebDriverBiDiEventSourceLogger));
+
+        // The activator is internal to the logging assembly, which does not expose its internals to this test
+        // project, so its registration is identified by the implementation type's name.
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(ILoggerProvider) && descriptor.ImplementationType?.Name == "WebDriverBiDiLoggerActivator");
     }
 
     /// <summary>
