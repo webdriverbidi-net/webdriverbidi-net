@@ -3,7 +3,6 @@ using WebDriverBiDi.Browser;
 using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Demo;
 using WebDriverBiDi.DemoWebSite;
-using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
 
 // DemoWebSiteServer implements IAsyncDisposable, so it will automatically clean
@@ -48,15 +47,19 @@ BrowserLauncherBuilder launcherBuilder = BrowserLauncher.Configure(testBrowserTy
 // launched browser processes calling DisposeAsync(), which, in turn, calls
 // QuitBrowserAsync() and StopAsync() to ensure proper cleanup of resources.
 await using BrowserLauncher launcher = launcherBuilder.Build();
-launcher.OnLogMessage.AddObserver(OnLogMessage);
+await using EventObserver<LogMessageEventArgs> launcherLogger = launcher.OnLogMessage.AddObserver(OnLogMessage);
 
+// The BrowserLauncher.LaunchAsync() convenience method calls the following two methods.
+// They are shown here for completeness.
 await launcher.StartAsync();
 await launcher.LaunchBrowserAsync();
 
-// BiDiDriver also implements IAsyncDisposable, so it will clean up the session
+// Note that BiDiDriver also implements IAsyncDisposable, so it will clean up the session
 // and transport when disposed, calling DisposeAsync(), which also calls StopAsync().
-await using BiDiDriver driver = InitializeDriver(launcher.CreateTransport());
-await driver.StartAsync(launcher.WebSocketUrl);
+await using BiDiDriver driver = new(TimeSpan.FromSeconds(10), launcher.CreateTransport());
+await using EventObserver<LogMessageEventArgs> driverLogger = driver.OnLogMessage.AddObserver(OnLogMessage);
+
+await driver.StartAsync(launcher.ConnectionString, CancellationToken.None);
 
 if (!launcher.IsBiDiSessionInitialized)
 {
@@ -99,23 +102,6 @@ if (launcher.IsBrowserCloseAllowed)
 // here to demonstrate that you can call it directly if needed to stop the driver
 // before the variable goes out of scope.
 await driver.StopAsync();
-
-BiDiDriver InitializeDriver(Transport transport)
-{
-    BiDiDriver driver = new(TimeSpan.FromSeconds(10), transport);
-    driver.OnLogMessage.AddObserver(OnLogMessage);
-    driver.BrowsingContext.OnNavigationStarted.AddObserver((e) =>
-    {
-        Console.WriteLine($"Navigation to {e.Url} started");
-    });
-
-    driver.BrowsingContext.OnLoad.AddObserver((e) =>
-    {
-        Console.WriteLine($"Load of {e.Url} complete!");
-    });
-
-    return driver;
-}
 
 void OnLogMessage(LogMessageEventArgs e)
 {

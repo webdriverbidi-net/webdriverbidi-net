@@ -9,6 +9,7 @@ using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Inputs;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Provides a Playwright-inspired API for locating and interacting with web elements in the WebDriver BiDi protocol.
@@ -180,6 +181,7 @@ public class ElementLocator
         TimeSpan effectiveTimeout = this.GetTimeout(timeout);
         using CancellationTokenSource cts = new(effectiveTimeout);
         EventObserver<NavigationEventArgs>? observer = null;
+        string? subscription = null;
 
         try
         {
@@ -203,14 +205,20 @@ public class ElementLocator
             {
                 case ClickNavigationBehavior.WaitForNavigationStart:
                     observer = this.driver.BrowsingContext.OnNavigationStarted.AddObserver(NavigationHandler);
+                    SubscribeCommandResult startResult = await this.driver.Session.SubscribeAsync(new SubscribeCommandParameters(this.driver.BrowsingContext.OnNavigationStarted.EventName)).ConfigureAwait(false);
+                    subscription = startResult.SubscriptionId;
                     break;
 
                 case ClickNavigationBehavior.WaitForDomContentLoadedEvent:
                     observer = this.driver.BrowsingContext.OnDomContentLoaded.AddObserver(NavigationHandler);
+                    SubscribeCommandResult contentLoadedResult = await this.driver.Session.SubscribeAsync(new SubscribeCommandParameters(this.driver.BrowsingContext.OnDomContentLoaded.EventName)).ConfigureAwait(false);
+                    subscription = contentLoadedResult.SubscriptionId;
                     break;
 
                 case ClickNavigationBehavior.WaitForLoadEvent:
                     observer = this.driver.BrowsingContext.OnLoad.AddObserver(NavigationHandler);
+                    SubscribeCommandResult loadResult = await this.driver.Session.SubscribeAsync(new SubscribeCommandParameters(this.driver.BrowsingContext.OnLoad.EventName)).ConfigureAwait(false);
+                    subscription = loadResult.SubscriptionId;
                     break;
             }
 
@@ -241,6 +249,11 @@ public class ElementLocator
             if (observer != null)
             {
                 await observer.DisposeAsync().ConfigureAwait(false);
+            }
+
+            if (subscription is not null)
+            {
+                await this.driver.Session.UnsubscribeAsync(subscription).ConfigureAwait(false);
             }
         }
     }
@@ -993,7 +1006,7 @@ public class ElementLocator
             throw new WebDriverBiDiException(((EvaluateResultException)result).ExceptionDetails.Text);
         }
 
-        return (EvaluateResultSuccess)result;
+        return result.As<EvaluateResultSuccess>();
     }
 
     private async Task ValidateCheckableElementAsync(SharedReference element, bool disallowRadio)

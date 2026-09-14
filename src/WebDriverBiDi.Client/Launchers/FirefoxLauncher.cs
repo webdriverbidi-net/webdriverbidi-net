@@ -166,7 +166,7 @@ public class FirefoxLauncher : BrowserLauncher
                 throw new BrowserNotLaunchedException($"Unable to launch Firefox browser. {reason}");
             }
 
-            this.WebSocketUrl = $"ws://localhost:{this.Port}/session";
+            this.ConnectionString = $"ws://localhost:{this.Port}/session";
         }
         finally
         {
@@ -174,7 +174,7 @@ public class FirefoxLauncher : BrowserLauncher
         }
 
         int processId = this.GetProcessId();
-        return new BrowserInstance(this, this.WebSocketUrl, processId);
+        return new BrowserInstance(this, this.ConnectionString, processId);
     }
 
     /// <summary>

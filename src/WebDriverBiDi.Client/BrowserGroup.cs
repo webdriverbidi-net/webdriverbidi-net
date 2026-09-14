@@ -91,7 +91,7 @@ public class BrowserGroup : IAsyncDisposable
     public async Task<Browser> CreateBrowserAsync()
     {
         WebDriverBiDi.Browser.CreateUserContextCommandResult result = await this.driver.Browser.CreateUserContextAsync(new WebDriverBiDi.Browser.CreateUserContextCommandParameters()).ConfigureAwait(false);
-        Browser browser = new(this.driver, result.UserContextId, this, this.locatorSettings);
+        Browser browser = await Browser.Create(this.driver, result.UserContextId, this, this.locatorSettings).ConfigureAwait(false);
         CreateCommandParameters createParameters = new(CreateType.Tab)
         {
             UserContextId = result.UserContextId,
@@ -162,7 +162,7 @@ public class BrowserGroup : IAsyncDisposable
         this.browsers.Remove(browser);
     }
 
-    private static async Task<BrowserGroup> LaunchAsync(BrowserLauncher launcher, ElementLocatorSettings? locatorSettings)
+    private static async Task<BrowserGroup> LaunchAsync(BrowserLauncher launcher, ElementLocatorSettings? locatorSettings, CancellationToken cancellationToken = default)
     {
         ElementLocatorSettings settings = locatorSettings ?? new ElementLocatorSettings();
         BiDiDriver driver = new();
@@ -171,7 +171,7 @@ public class BrowserGroup : IAsyncDisposable
         {
             await launcher.StartAsync().ConfigureAwait(false);
             await launcher.LaunchBrowserAsync().ConfigureAwait(false);
-            await driver.StartAsync(launcher.WebSocketUrl).ConfigureAwait(false);
+            await driver.StartAsync(launcher.ConnectionString, cancellationToken).ConfigureAwait(false);
 
             if (!launcher.IsBiDiSessionInitialized)
             {
@@ -208,7 +208,7 @@ public class BrowserGroup : IAsyncDisposable
 
             foreach (BrowsingContextInfo context in tree.ContextTree)
             {
-                Browser defaultBrowser = new(driver, context.UserContextId, repository, settings);
+                Browser defaultBrowser = await Browser.Create(driver, context.UserContextId, repository, settings).ConfigureAwait(false);
                 defaultBrowser.AddPage(new Page(driver, context.BrowsingContextId, repository.inspector));
                 repository.browsers.Add(defaultBrowser);
             }

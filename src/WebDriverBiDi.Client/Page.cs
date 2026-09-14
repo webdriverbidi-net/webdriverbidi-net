@@ -89,14 +89,15 @@ public class Page
     /// <param name="url">The URL to navigate to.</param>
     /// <param name="wait">The readiness state to wait for after navigation. Defaults to <see cref="ReadinessState.Complete"/>.</param>
     /// <param name="timeout">Optional timeout override. If null, uses the driver's default command timeout.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> used to cancel the navigation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation, containing the URL navigated to after any redirects.</returns>
-    public async Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null)
+    public async Task<string> NavigateAsync(string url, ReadinessState wait = ReadinessState.Complete, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
         NavigateCommandParameters parameters = new(this.browsingContextId, url)
         {
             Wait = wait,
         };
-        NavigateCommandResult result = await this.driver.BrowsingContext.NavigateAsync(parameters, timeout).ConfigureAwait(false);
+        NavigateCommandResult result = await this.driver.BrowsingContext.NavigateAsync(parameters, timeout, cancellationToken).ConfigureAwait(false);
         return result.Url;
     }
 

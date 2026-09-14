@@ -115,7 +115,7 @@ public static class ScriptModuleExtensions
         EvaluateResult result = await module.CallFunctionAsync(parameters, timeoutOverride, cancellationToken).ConfigureAwait(false);
         return result is EvaluateResultException exceptionResult
             ? throw new WebDriverBiDiException(exceptionResult.ExceptionDetails.Text)
-            : ((EvaluateResultSuccess)result).Result;
+            : result.As<EvaluateResultSuccess>().Result;
     }
 
     private static T? ConvertRemoteValue<T>(RemoteValue value)

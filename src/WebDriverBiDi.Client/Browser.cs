@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Client;
 
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Elements;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Provides a high-level abstraction over a WebDriver BiDi user context, tracking the top-level
@@ -18,9 +19,10 @@ public class Browser : IAsyncDisposable
     private readonly BrowserGroup repository;
     private readonly ElementLocatorSettings locatorSettings;
     private readonly List<Page> pages = [];
-    private readonly EventObserver<BrowsingContextEventArgs> contextCreatedObserver;
-    private readonly EventObserver<BrowsingContextEventArgs> contextDestroyedObserver;
     private readonly ElementStateInspector inspector;
+    private EventObserver<BrowsingContextEventArgs>? contextCreatedObserver;
+    private EventObserver<BrowsingContextEventArgs>? contextDestroyedObserver;
+    private string? eventSubscriptionId;
     private bool disposed = false;
 
     /// <summary>
@@ -30,15 +32,13 @@ public class Browser : IAsyncDisposable
     /// <param name="userContextId">The ID of the user context this browser represents.</param>
     /// <param name="repository">The <see cref="BrowserGroup"/> that owns this browser.</param>
     /// <param name="locatorSettings">The <see cref="ElementLocatorSettings"/> to apply to element locators.</param>
-    internal Browser(BiDiDriver driver, string userContextId, BrowserGroup repository, ElementLocatorSettings locatorSettings)
+    private Browser(BiDiDriver driver, string userContextId, BrowserGroup repository, ElementLocatorSettings locatorSettings)
     {
         this.driver = driver;
         this.Id = userContextId;
         this.repository = repository;
         this.locatorSettings = locatorSettings;
 
-        this.contextCreatedObserver = this.driver.BrowsingContext.OnContextCreated.AddObserver(this.OnContextCreated);
-        this.contextDestroyedObserver = this.driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyed);
         this.inspector = repository.ElementStateInspector;
     }
 
@@ -54,6 +54,21 @@ public class Browser : IAsyncDisposable
     public IReadOnlyList<Page> Pages => this.pages.AsReadOnly();
 
     /// <summary>
+    /// Creates a new <see cref="Browser"/>, including observing the appropriate events.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance used for executing commands.</param>
+    /// <param name="userContextId">The ID of the user context this browser represents.</param>
+    /// <param name="repository">The <see cref="BrowserGroup"/> that owns this browser.</param>
+    /// <param name="locatorSettings">The <see cref="ElementLocatorSettings"/> to apply to element locators.</param>
+    /// <returns>The fully configured browser.</returns>
+    public static async Task<Browser> Create(BiDiDriver driver, string userContextId, BrowserGroup repository, ElementLocatorSettings locatorSettings)
+    {
+        Browser browser = new(driver, userContextId, repository, locatorSettings);
+        await browser.EnableObservationAsync().ConfigureAwait(false);
+        return browser;
+    }
+
+    /// <summary>
     /// Asynchronously releases all resources associated with this user context, including removing
     /// it from the owning <see cref="BrowserGroup"/>.
     /// </summary>
@@ -67,14 +82,11 @@ public class Browser : IAsyncDisposable
 
         this.disposed = true;
 
-        this.contextCreatedObserver.Dispose();
-        this.contextDestroyedObserver.Dispose();
+        await this.DisableObservationAsync().ConfigureAwait(false);
 
         try
         {
-            await this.driver.Browser.RemoveUserContextAsync(
-                new WebDriverBiDi.Browser.RemoveUserContextCommandParameters(this.Id))
-                .ConfigureAwait(false);
+            await this.driver.Browser.RemoveUserContextAsync(new WebDriverBiDi.Browser.RemoveUserContextCommandParameters(this.Id)).ConfigureAwait(false);
         }
         catch
         {
@@ -93,6 +105,34 @@ public class Browser : IAsyncDisposable
     internal void AddPage(Page page)
     {
         this.pages.Add(page);
+    }
+
+    /// <summary>
+    /// Enables observation of events for this <see cref="Browser"/>.
+    /// </summary>
+    /// <returns>A task containing information about the asynchronous event.</returns>
+    private async Task EnableObservationAsync()
+    {
+        this.contextCreatedObserver = this.driver.BrowsingContext.OnContextCreated.AddObserver(this.OnContextCreated);
+        this.contextDestroyedObserver = this.driver.BrowsingContext.OnContextDestroyed.AddObserver(this.OnContextDestroyed);
+        List<string> events =
+        [
+            this.driver.BrowsingContext.OnContextCreated.EventName,
+            this.driver.BrowsingContext.OnContextDestroyed.EventName,
+        ];
+        SubscribeCommandParameters subscribeCommandParameters = new(events, userContexts: [this.Id]);
+        SubscribeCommandResult result = await this.driver.Session.SubscribeAsync(subscribeCommandParameters).ConfigureAwait(false);
+        this.eventSubscriptionId = result.SubscriptionId;
+    }
+
+    private async Task DisableObservationAsync()
+    {
+        this.contextCreatedObserver?.Dispose();
+        this.contextDestroyedObserver?.Dispose();
+        if (this.eventSubscriptionId is not null)
+        {
+            await this.driver.Session.UnsubscribeAsync(this.eventSubscriptionId).ConfigureAwait(false);
+        }
     }
 
     private void OnContextCreated(BrowsingContextEventArgs args)

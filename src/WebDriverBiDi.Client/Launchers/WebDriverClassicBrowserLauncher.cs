@@ -201,7 +201,7 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
                 {
                     if (capabilities.TryGetProperty("webSocketUrl", out JsonElement returnedWebSocketUrl))
                     {
-                        this.WebSocketUrl = returnedWebSocketUrl.GetString() ?? string.Empty;
+                        this.ConnectionString = returnedWebSocketUrl.GetString() ?? string.Empty;
                     }
                 }
             }
@@ -212,13 +212,13 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
             throw new BrowserNotLaunchedException($"Unable to launch browser. Could not detect session ID in WebDriver classic new session response (response JSON: {responseJson})");
         }
 
-        if (string.IsNullOrEmpty(this.WebSocketUrl))
+        if (string.IsNullOrEmpty(this.ConnectionString))
         {
             throw new BrowserNotLaunchedException($"Unable to connect to WebSocket. Launched browse may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
         }
 
         int processId = this.GetProcessId();
-        return new BrowserInstance(this, this.WebSocketUrl, processId);
+        return new BrowserInstance(this, this.ConnectionString, processId);
     }
 
     /// <summary>

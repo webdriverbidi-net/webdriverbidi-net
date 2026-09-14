@@ -27,6 +27,12 @@ public static class DemoScenarios
         StatusCommandResult status = await driver.Session.StatusAsync(new StatusCommandParameters());
         Console.WriteLine($"Is ready? {status.IsReady}");
 
+        await using EventObserver<NavigationEventArgs> navigationStartedObserver = CreateNavigationObserver(
+            driver.BrowsingContext.OnNavigationStarted,
+            "Navigation to {0} started");
+        await using EventObserver<NavigationEventArgs> loadObserver = CreateNavigationObserver(
+            driver.BrowsingContext.OnLoad,
+            "Load of {0} complete!");
         List<string> eventsToSubscribe =
         [
             driver.BrowsingContext.OnNavigationStarted.EventName,
@@ -43,7 +49,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
@@ -89,7 +95,13 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task WaitForDelayLoadAsync(BiDiDriver driver, string baseUrl)
     {
-        EventObserver<MessageEventArgs> observer = driver.Script.OnMessage.AddObserver((e) =>
+        await using EventObserver<NavigationEventArgs> navigationStartedObserver = CreateNavigationObserver(
+            driver.BrowsingContext.OnNavigationStarted,
+            "Navigation to {0} started");
+        await using EventObserver<NavigationEventArgs> loadObserver = CreateNavigationObserver(
+            driver.BrowsingContext.OnLoad,
+            "Load of {0} complete!");
+        await using EventObserver<MessageEventArgs> observer = driver.Script.OnMessage.AddObserver((e) =>
         {
             if (e.ChannelId == "delayLoadChannel")
             {
@@ -131,10 +143,10 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10), CancellationToken.None);
         Console.WriteLine($"Event triggered from preload script: {capturedTasks.Length == 1}");
 
         string functionDefinition = @"() => {
@@ -176,7 +188,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         GetCookiesCommandResult cookieResult = await driver.Storage.GetCookiesAsync(new GetCookiesCommandParameters());
@@ -229,7 +241,7 @@ public static class DemoScenarios
             {
                 Wait = ReadinessState.Complete
             };
-            NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+            NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         }
     }
 
@@ -256,7 +268,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
     }
 
@@ -276,7 +288,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = "(first, second) => first + second";
@@ -343,7 +355,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator(".text")));
@@ -387,7 +399,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("h1")));
@@ -426,7 +438,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
 
         string firstFunctionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
         CallFunctionCommandParameters callFunctionParams = new(firstFunctionDefinition, new ContextTarget(contextId), true);
@@ -501,7 +513,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Navigation command completed");
 
         // Navigating to simpleContent.html generates 5 requests, one for the HTML page itself,
@@ -515,7 +527,7 @@ public static class DemoScenarios
         // that the event handlers will run in parallel. In this case, we've chosen to use
         // Tasks as the synchronization mechanism, so that we can wait for all of them to
         // complete before continuing.
-        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10), CancellationToken.None);
         await Task.WhenAll(capturedTasks);
         Console.WriteLine($"Event handlers complete");
 
@@ -528,7 +540,7 @@ public static class DemoScenarios
 
         navigateParams.Url = $"{baseUrl}/inputForm.html";
         Console.WriteLine($"Navigating again to {navigateParams.Url} show no event handlers fired");
-        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
     }
 
     /// <summary>
@@ -565,20 +577,19 @@ public static class DemoScenarios
         // external data structure because we do not need any information from the
         // return of the command spawned in the handler; we only need to know that
         // the handler was executed.
-        EventObserver<BeforeRequestSentEventArgs> observer = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+        await using EventObserver<BeforeRequestSentEventArgs> observer = driver.Network.OnBeforeRequestSent.AddObserver(async (e) =>
         {
             if (e.IsBlocked)
             {
+                await Task.Yield();
                 ProvideResponseCommandParameters provideResponse = new(e.Request.RequestId)
                 {
                     StatusCode = 200,
                     ReasonPhrase = "OK",
                     Body = BytesValue.FromString($"<html><body><h1>Request to {e.Request.Url} has been hijacked!</h1></body></html>")
                 };
-                return driver.Network.ProvideResponseAsync(provideResponse);
+                await driver.Network.ProvideResponseAsync(provideResponse);
             }
-
-            return Task.CompletedTask;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         // OnBeforeRequestSent will only be raised once, since we are hijacking the
@@ -589,8 +600,8 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
-        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3));
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3), CancellationToken.None);
         await Task.WhenAll(capturedTasks);
 
         Console.WriteLine($"Navigation command completed");
@@ -629,11 +640,12 @@ public static class DemoScenarios
         // command execution, and await its completion later.
         string responseStartLine = string.Empty;
         List<ReadOnlyHeader> responseHeaders = [];
-        EventObserver<ResponseCompletedEventArgs> observer = driver.Network.OnResponseCompleted.AddObserver((e) =>
+        await using EventObserver<ResponseCompletedEventArgs> observer = driver.Network.OnResponseCompleted.AddObserver(async (e) =>
         {
             // Limit processing to the retrieval just of the HTML file.
             if (e.Response.Url.Contains("simpleContent.html"))
             {
+                await Task.Yield();
                 responseStartLine = $"{e.Response.Protocol} {e.Response.Status} {e.Response.StatusText}";
                 responseHeaders.AddRange(e.Response.Headers);
 
@@ -643,10 +655,8 @@ public static class DemoScenarios
                     CollectorId = collectorId,
                     DisownCollectedData = true,
                 };
-                return driver.Network.GetDataAsync(getDataParameters);
+                await driver.Network.GetDataAsync(getDataParameters);
             }
-
-            return Task.CompletedTask;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         observer.StartCapturingTasks();
@@ -654,11 +664,11 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
 
         // Navigating to simpleContent.html generates 5 responses, one for the HTML page itself,
         // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
-        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(3));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(3), CancellationToken.None);
         if (capturedTasks.Length != 5)
         {
             Console.WriteLine("Error: Checkpoint not fulfilled");
@@ -722,7 +732,7 @@ public static class DemoScenarios
         SubscribeCommandResult subscribeResult = await driver.Session.SubscribeAsync(subscribe);
         string navigationSubscriptionId = subscribeResult.SubscriptionId;
 
-        EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver((e) => { });
+        await using EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
@@ -739,7 +749,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
@@ -766,7 +776,7 @@ public static class DemoScenarios
 
                 navigationObserver.StartCapturingTasks();
                 await driver.Input.PerformActionsAsync(actionsParams);
-                Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3));
+                Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3), CancellationToken.None);
                 if (capturedTasks.Length != 1)
                 {
                     Console.WriteLine("Navigation completion not detected within three seconds");
@@ -800,7 +810,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
         List<NetworkRequest> navigationRequests = await monitor.GetCapturedTrafficAsync();
         Console.WriteLine($"Captured {navigationRequests.Count} requests");
@@ -850,7 +860,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         LocateNodesCommandResult locateButtonResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("#toggle-button")));
@@ -916,7 +926,7 @@ public static class DemoScenarios
     public static async Task HandleEventsInMultipleUserContextsAsync(BiDiDriver driver, string baseUrl)
     {
         Dictionary<string, string> userContextMap = [];
-        EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver((e) => userContextMap[e.BrowsingContextId] = e.UserContextId);
+        await using EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver((e) => userContextMap[e.BrowsingContextId] = e.UserContextId);
         SubscribeCommandResult contextCreatedSubscribeResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.BrowsingContext.OnContextCreated.EventName]));
         string contextCreatedSubscriptionId = contextCreatedSubscribeResult.SubscriptionId;
 
@@ -944,7 +954,7 @@ public static class DemoScenarios
         string secondBrowsingContextId = createSecondBrowsingContextResult.BrowsingContextId;
 
         // Simulate first test event subscription
-        EventObserver<BeforeRequestSentEventArgs> firstNetworkObserver = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+        await using EventObserver<BeforeRequestSentEventArgs> firstNetworkObserver = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
             // Using the first browsing context ID, get the user context it belongs to.
             // Limit the console writing to only the HTML page, so as not to clutter things up.
@@ -959,7 +969,7 @@ public static class DemoScenarios
         string firstNetworkSubscriptionId = firstNetworkSubscriptionResult.SubscriptionId;
 
         // Simulate second test event subscription
-        EventObserver<BeforeRequestSentEventArgs> secondNetworkObserver = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+        await using EventObserver<BeforeRequestSentEventArgs> secondNetworkObserver = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
             // Using the second browsing context ID, get the user context it belongs to.
             // Limit the console writing to only the HTML page, so as not to clutter things up.
@@ -974,14 +984,18 @@ public static class DemoScenarios
         string secondNetworkSubscriptionId = secondNetworkSubscriptionResult.SubscriptionId;
 
         // Perform the navigation operations asynchronously, to simulate parallel test runs.
-        Task firstNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/simpleContent.html")
-        {
-            Wait = ReadinessState.Complete,
-        });
-        Task secondNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/inputForm.html")
-        {
-            Wait = ReadinessState.Complete,
-        });
+        Task firstNavigationTask = driver.BrowsingContext.NavigateAsync(
+            new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/simpleContent.html")
+            {
+                Wait = ReadinessState.Complete,
+            },
+            cancellationToken: CancellationToken.None);
+        Task secondNavigationTask = driver.BrowsingContext.NavigateAsync(
+            new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/inputForm.html")
+            {
+                Wait = ReadinessState.Complete,
+            },
+            cancellationToken: CancellationToken.None);
         await Task.WhenAll([firstNavigationTask, secondNavigationTask]);
 
         // Unsubscribe from one of the user contexts, and validate the other event observer
@@ -990,14 +1004,18 @@ public static class DemoScenarios
         await driver.Session.UnsubscribeAsync(unsubscribeSecondObserverParameters);
 
         // Perform the navigation operations asynchronously, to simulate parallel test runs.
-        Task thirdNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/inputForm.html")
-        {
-            Wait = ReadinessState.Complete,
-        });
-        Task fourthNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/simpleContent.html")
-        {
-            Wait = ReadinessState.Complete,
-        });
+        Task thirdNavigationTask = driver.BrowsingContext.NavigateAsync(
+            new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/inputForm.html")
+            {
+                Wait = ReadinessState.Complete,
+            },
+            cancellationToken: CancellationToken.None);
+        Task fourthNavigationTask = driver.BrowsingContext.NavigateAsync(
+            new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/simpleContent.html")
+            {
+                Wait = ReadinessState.Complete,
+            },
+            cancellationToken: CancellationToken.None);
         await Task.WhenAll([thirdNavigationTask, fourthNavigationTask]);
     }
 
@@ -1011,7 +1029,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         Locator locator = new AccessibilityLocator()
@@ -1079,7 +1097,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: CancellationToken.None);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(addedBrowsingContextId, new CssLocator(".text")));
@@ -1109,5 +1127,10 @@ public static class DemoScenarios
             StringRemoteValue scriptResultValue = scriptSuccessResult.Result.As<StringRemoteValue>();
             Console.WriteLine($"Return value of function is {scriptResultValue.Value}");
         }
+    }
+
+    private static EventObserver<NavigationEventArgs> CreateNavigationObserver(ObservableEvent<NavigationEventArgs> observableEvent, string messageTemplate)
+    {
+        return observableEvent.AddObserver(e => Console.WriteLine(messageTemplate, e.Url));
     }
 }

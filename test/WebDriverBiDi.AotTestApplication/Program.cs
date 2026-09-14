@@ -71,7 +71,7 @@ try
     // Registering our own context is the documented AOT pattern; without it, the command
     // below fails with "JsonTypeInfo metadata for type ... was not provided".
     await driver.RegisterTypeInfoResolverAsync(AotTestJsonContext.Default);
-    await driver.StartAsync(launcher.WebSocketUrl);
+    await driver.StartAsync(launcher.ConnectionString);
     Console.WriteLine("BiDi connection established.");
 
     await driver.Session.NewSessionAsync(new NewCommandParameters());
