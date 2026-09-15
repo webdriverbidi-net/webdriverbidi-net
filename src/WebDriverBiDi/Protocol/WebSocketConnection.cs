@@ -222,7 +222,7 @@ public class WebSocketConnection : Connection
                 }
 
                 TimeSpan retryDelay = remainingRetryTime < ConnectionRetryInterval ? remainingRetryTime : ConnectionRetryInterval;
-                await this.DelayBeforeRetryAsync(retryDelay, cancellationToken).ConfigureAwait(false);
+                await TimeoutUtilities.DelayAsync(this.TimeProvider, retryDelay, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -291,7 +291,7 @@ public class WebSocketConnection : Connection
                 // Task running this method, so we will forego use of a semaphore to serialize such
                 // access. If there is a use case where this could happen, we will resolve it at that
                 // time.
-                WebSocketReceiveResult receiveResult = await this.ReceiveWebSocketDataAsync(socketFrameBuffer, connectionCancellationToken).ConfigureAwait(false);
+                WebSocketReceiveResult receiveResult = await this.ReadWebSocketDataAsync(socketFrameBuffer, connectionCancellationToken).ConfigureAwait(false);
 
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!connectionCancellationToken.IsCancellationRequested)
@@ -381,41 +381,6 @@ public class WebSocketConnection : Connection
     }
 
     /// <summary>
-    /// Pauses between connection attempts.
-    /// </summary>
-    /// <param name="delay">The length of the pause, already clamped to the remaining startup budget.</param>
-    /// <param name="cancellationToken">A cancellation token used to cancel the pause.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    /// <remarks>
-    /// Exposed as a seam so that a test can observe whether a pause was attempted, and how long it would
-    /// have been, without waiting for one. Whether the pause is skipped when the startup budget is already
-    /// spent is a decision this class makes; asserting it through elapsed wall-clock time would make the
-    /// test's result depend on how loaded the machine is.
-    /// </remarks>
-    protected virtual Task DelayBeforeRetryAsync(TimeSpan delay, CancellationToken cancellationToken)
-    {
-        return TimeoutUtilities.DelayAsync(this.TimeProvider, delay, cancellationToken);
-    }
-
-    /// <summary>
-    /// Asynchronously connects the underlying WebSocket of this connection to the remote end.
-    /// </summary>
-    /// <param name="websocketUri">The URI of the WebSocket server to connect to.</param>
-    /// <param name="cancellationToken">
-    /// A cancellation token that is canceled when the caller cancels, when the connection is stopped, or when
-    /// the remaining <see cref="Connection.StartupTimeout"/> budget for this attempt elapses.
-    /// </param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <remarks>
-    /// This method is <see langword="protected virtual"/> to allow test doubles to substitute the
-    /// connect operation, for example to simulate a remote end that never completes the handshake.
-    /// </remarks>
-    protected virtual async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
-    {
-        await this.client.ConnectAsync(websocketUri, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
     /// Asynchronously sends data to the underlying WebSocket of this connection.
     /// </summary>
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the WebSocket.</param>
@@ -489,6 +454,24 @@ public class WebSocketConnection : Connection
     }
 
     /// <summary>
+    /// Asynchronously connects the underlying WebSocket of this connection to the remote end.
+    /// </summary>
+    /// <param name="websocketUri">The URI of the WebSocket server to connect to.</param>
+    /// <param name="cancellationToken">
+    /// A cancellation token that is canceled when the caller cancels, when the connection is stopped, or when
+    /// the remaining <see cref="Connection.StartupTimeout"/> budget for this attempt elapses.
+    /// </param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// This method is <see langword="protected virtual"/> to allow test doubles to substitute the
+    /// connect operation, for example to simulate a remote end that never completes the handshake.
+    /// </remarks>
+    protected virtual async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
+    {
+        await this.client.ConnectAsync(websocketUri, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Asynchronously writes data to the underlying WebSocket of this connection.
     /// </summary>
     /// <param name="messageBuffer">The data to write to the WebSocket.</param>
@@ -509,7 +492,7 @@ public class WebSocketConnection : Connection
     /// <param name="buffer">The buffer to receive the data into.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>A task representing the asynchronous operation, with a result containing the receive result.</returns>
-    protected virtual async Task<WebSocketReceiveResult> ReceiveWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+    protected virtual async Task<WebSocketReceiveResult> ReadWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
     {
         return await this.client.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
     }

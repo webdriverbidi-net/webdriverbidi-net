@@ -1,8 +1,6 @@
 namespace WebDriverBiDi;
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -1090,7 +1088,6 @@ public class BiDiDriverTests
         {
             responderTasks.Add(Task.Run(async () =>
             {
-                long start = Stopwatch.GetTimestamp();
                 if (e.SentCommandName is not null && e.SentCommandName.Contains("delay"))
                 {
                     delayCommandInFlightTaskCompletionSource.TrySetResult();
@@ -1101,14 +1098,12 @@ public class BiDiDriverTests
                     await delayCommandInFlightTaskCompletionSource.Task;
                 }
 
-                TimeSpan elapsed = Stopwatch.GetElapsedTime(start);
                 string eventJson = $$"""
                                    {
                                      "type": "success",
                                      "id": {{e.SentCommandId}},
                                      "result": {
-                                       "value": "command result value for {{e.SentCommandName}}",
-                                       "elapsed": {{elapsed.TotalMilliseconds.ToString(CultureInfo.InvariantCulture)}}
+                                       "value": "command result value for {{e.SentCommandName}}"
                                      }
                                    }
                                    """;
@@ -1117,8 +1112,9 @@ public class BiDiDriverTests
             return Task.CompletedTask;
         });
 
+        // The gates decide the order of the responses, so the commands need no timeout of their own.
         Transport transport = new(connection);
-        await using BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await using BiDiDriver driver = new(Timeout.InfiniteTimeSpan, transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
 
         string delayCommandName = "module.delayCommand";
@@ -1133,7 +1129,7 @@ public class BiDiDriverTests
             driver.ExecuteCommandAsync(command, cancellationToken: TestContext.Current.CancellationToken),
         ];
 
-        Task<TestCommandResult> firstFinished = await Task.WhenAny(parallelTasks).WaitAsync(TestContext.Current.CancellationToken);
+        Task<TestCommandResult> firstFinished = await Task.WhenAny(parallelTasks).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         int indexOfFirstFinishedTask = Array.IndexOf(parallelTasks, firstFinished);
         delayResponseGateTaskCompletionSource.TrySetResult();
         TestCommandResult[] results = await Task.WhenAll(parallelTasks).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
