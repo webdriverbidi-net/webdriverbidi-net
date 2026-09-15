@@ -40,6 +40,12 @@ public class ProxyConfiguration
     /// <summary>
     /// Gets the dictionary of additional properties deserialized with this message.
     /// </summary>
+    /// <remarks>
+    /// An entry may not reuse the name of a property this type already serializes; doing so would write that name
+    /// twice in the same JSON object, and a JSON object with a duplicate name has no defined meaning. Sending a
+    /// command that contains such an entry throws <see cref="WebDriverBiDiSerializationException"/> rather than
+    /// emitting the ambiguous payload. Set the typed property instead.
+    /// </remarks>
     [JsonExtensionData]
     [JsonInclude]
     public Dictionary<string, object?> AdditionalData { get; internal set; } = [];

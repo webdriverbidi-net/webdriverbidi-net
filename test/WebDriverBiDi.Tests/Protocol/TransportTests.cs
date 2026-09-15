@@ -5189,6 +5189,89 @@ public class TransportTests
             async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task TestSendCommandRejectsParametersExtensionDataNamedForASerializedProperty()
+    {
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        TestCommandParameters parameters = new("module.command");
+        parameters.AdditionalData["parameterName"] = "shadowingValue";
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(parameters, TestContext.Current.CancellationToken));
+        Assert.StartsWith("Could not serialize command 'module.command' (command ID: 1): The AdditionalData entry 'parameterName'", exception.Message);
+        Assert.IsType<WebDriverBiDiSerializationException>(exception.InnerException);
+        Assert.Equal(0, transport.PendingCommandCount);
+        Assert.Null(connection.DataSent);
+    }
+
+    [Fact]
+    public async Task TestSendCommandRejectsNestedExtensionDataNamedForASerializedProperty()
+    {
+        // The rule the parameters root follows holds for every object inside the parameters that carries its own
+        // extension data, so a nested entry is rejected before anything is sent.
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        Storage.PartialCookie cookie = new("cookieName", Network.BytesValue.FromString("cookieValue"), "example.com");
+        cookie.AdditionalData["domain"] = "other.example.com";
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(new Storage.SetCookieCommandParameters(cookie), TestContext.Current.CancellationToken));
+        Assert.StartsWith("Could not serialize command 'storage.setCookie' (command ID: 1): The AdditionalData entry 'domain'", exception.Message);
+        Assert.Contains(typeof(Storage.PartialCookie).FullName!, exception.Message);
+        Assert.IsType<WebDriverBiDiSerializationException>(exception.InnerException);
+        Assert.Equal(0, transport.PendingCommandCount);
+        Assert.Null(connection.DataSent);
+    }
+
+    [Fact]
+    public async Task TestSendCommandRejectsNestedExtensionDataOfATypeFromARegisteredResolver()
+    {
+        // Registration rebuilds the serializer state; the rebuilt options must still carry the guard.
+        TestWebSocketConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), TestContext.Current.CancellationToken);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+        JsonConverters.GuardedConsumerCommandParameters parameters = new();
+        parameters.Nested.AdditionalData["label"] = "shadowingValue";
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(parameters, TestContext.Current.CancellationToken));
+        Assert.StartsWith("Could not serialize command 'custom.guardedCommand' (command ID: 1): The AdditionalData entry 'label'", exception.Message);
+        Assert.Null(connection.DataSent);
+    }
+
+    [Fact]
+    public async Task TestSendCommandRejectsEnvelopeExtensionPropertyNamedForAnEnvelopeProperty()
+    {
+        TestWebSocketConnection connection = new();
+        await using EnvelopeShadowingTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
+
+        WebDriverBiDiSerializationException exception = await Assert.ThrowsAsync<WebDriverBiDiSerializationException>(
+            async () => await transport.SendCommandAsync(new TestCommandParameters("module.command"), TestContext.Current.CancellationToken));
+        Assert.StartsWith("Could not serialize command 'module.command' (command ID: 1): The AdditionalCommandProperties entry 'method'", exception.Message);
+        Assert.Equal(0, transport.PendingCommandCount);
+        Assert.Null(connection.DataSent);
+    }
+
+    private sealed class EnvelopeShadowingTransport : Transport
+    {
+        public EnvelopeShadowingTransport(Connection connection)
+            : base(connection)
+        {
+        }
+
+        protected override Command CreateCommand(CommandParameters commandData)
+        {
+            Command command = base.CreateCommand(commandData);
+            command.AdditionalCommandProperties["method"] = "shadowingValue";
+            return command;
+        }
+    }
+
     private sealed class FailingSerializationTransport : Transport
     {
         private readonly Exception exception;
