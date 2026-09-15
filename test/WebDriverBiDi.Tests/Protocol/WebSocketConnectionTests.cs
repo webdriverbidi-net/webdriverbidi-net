@@ -1027,7 +1027,18 @@ public class WebSocketConnectionTests : IAsyncDisposable
             return Task.CompletedTask;
         });
 
-        IReadOnlyList<string> serverLog = server.Log;
+        // This test has failed intermittently in CI with nothing but a timeout to go on, which cannot
+        // distinguish a Close frame the server never sent (for instance, to a connection other than the
+        // one the client is using) from one the client never read or whose receive faulted. The server
+        // log records each connection and the byte count of each send, and the connection reports any
+        // fault as an error, so both are read back in the failure message.
+        Exception? connectionError = null;
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            connectionError = e.Exception;
+            return Task.CompletedTask;
+        });
+
         await connection.StartAsync($"ws://127.0.0.1:{server.Port}", TestContext.Current.CancellationToken);
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
 
@@ -1035,7 +1046,23 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // raises that event from inside its try block and logs "Ending processing loop" afterwards in
         // its finally, so waiting on the event would let StopAsync log ahead of that entry.
         await server.DisconnectAsync(registeredConnectionId);
-        await receiveLoopEnded.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        try
+        {
+            await receiveLoopEnded.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            string log;
+            lock (logLock)
+            {
+                log = connectionLog.Count == 0 ? "(none)" : string.Join(" | ", connectionLog);
+            }
+
+            IReadOnlyList<string> serverLog = server.Log;
+            string serverLogText = serverLog.Count == 0 ? "(none)" : string.Join(" | ", serverLog);
+            Assert.Fail($"The server disconnected connection {registeredConnectionId} but the receive loop never ended. Connection error: {connectionError?.GetType().Name ?? "(none)"}: {connectionError?.Message ?? string.Empty}. Connection log: {log}. Server log: {serverLogText}");
+        }
+
         await connection.StopAsync(TestContext.Current.CancellationToken);
 
         string[] logSnapshot;
