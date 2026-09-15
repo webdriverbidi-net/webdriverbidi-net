@@ -5,9 +5,13 @@ using PinchHitter;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Inputs;
 using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
+using WebDriverBiDi.Log;
+using WebDriverBiDi.Network;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
+using WebDriverBiDi.Storage;
 
 public class DriverIntegrationTests
 {
@@ -202,6 +206,192 @@ public class DriverIntegrationTests
         // Attempt to gracefully close the browser. If the test fails, the
         // browser process will be cleaned up when the launcher is disposed.
         await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
+    public async Task TestCanReceiveLogEntries(TestBrowser browser)
+    {
+        BrowserTestHelper.EnsureBrowserAvailable(browser);
+
+        await using BrowserLauncher launcher = await this.CreateBrowserLauncher(browser);
+        await using Server server = await this.CreateTestServer();
+        await using BiDiDriver driver = await this.StartBiDiDriverSession(launcher);
+
+        string browsingContextId = await this.GetBrowsingContext(driver);
+        await this.NavigateAsync(driver, browsingContextId, $"http://localhost:{server.Port}/index.html");
+
+        EntryAddedEventArgs? capturedEntry = null;
+        await using EventObserver<EntryAddedEventArgs> logObserver = driver.Log.OnEntryAdded.AddObserver(e => capturedEntry = e);
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName), cancellationToken: TestContext.Current.CancellationToken);
+
+        logObserver.StartCapturingTasks();
+        EvaluateCommandParameters consoleParams = new("console.log('integration log entry')", new ContextTarget(browsingContextId), true);
+        await driver.Script.EvaluateAsync(consoleParams, cancellationToken: TestContext.Current.CancellationToken);
+
+        Task[] capturedTasks = await logObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await Assert.Single(capturedTasks);
+        Assert.NotNull(capturedEntry);
+        Assert.Equal("console", capturedEntry.Type);
+        Assert.Equal("log", capturedEntry.Method);
+        Assert.Equal(LogLevel.Info, capturedEntry.Level);
+        Assert.Equal("integration log entry", capturedEntry.Text);
+
+        // Attempt to gracefully close the browser. If the test fails, the
+        // browser process will be cleaned up when the launcher is disposed.
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
+    public async Task TestCanInterceptAndContinueRequest(TestBrowser browser)
+    {
+        BrowserTestHelper.EnsureBrowserAvailable(browser);
+
+        await using BrowserLauncher launcher = await this.CreateBrowserLauncher(browser);
+        await using Server server = await this.CreateTestServer();
+        await using BiDiDriver driver = await this.StartBiDiDriverSession(launcher);
+
+        string browsingContextId = await this.GetBrowsingContext(driver);
+        await this.NavigateAsync(driver, browsingContextId, $"http://localhost:{server.Port}/index.html");
+
+        // The handler only records the blocked request. Continuing it is a command, and a command sent from a
+        // synchronous handler would wait on the very dispatch that is running the handler.
+        string detailsUrl = $"http://localhost:{server.Port}/details.html";
+        TaskCompletionSource<BeforeRequestSentEventArgs> blockedRequest = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using EventObserver<BeforeRequestSentEventArgs> requestObserver = driver.Network.OnBeforeRequestSent.AddObserver(e =>
+        {
+            if (e.IsBlocked && e.Request.Url == detailsUrl)
+            {
+                blockedRequest.TrySetResult(e);
+            }
+        });
+        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName), cancellationToken: TestContext.Current.CancellationToken);
+
+        AddInterceptCommandParameters interceptParams = new(InterceptPhase.BeforeRequestSent);
+        interceptParams.Contexts.Add(browsingContextId);
+        interceptParams.UrlPatterns.Add(new UrlPatternString(detailsUrl));
+        AddInterceptCommandResult intercept = await driver.Network.AddInterceptAsync(interceptParams, cancellationToken: TestContext.Current.CancellationToken);
+
+        // The navigation cannot finish while its request is held by the intercept, so its completing after the
+        // continue is what proves the continue reached the browser.
+        NavigateCommandParameters navigateParams = new(browsingContextId, detailsUrl)
+        {
+            Wait = ReadinessState.Complete
+        };
+        Task<NavigateCommandResult> navigation = driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
+
+        BeforeRequestSentEventArgs blocked = await blockedRequest.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(navigation.IsCompleted);
+        Assert.NotNull(blocked.Intercepts);
+        Assert.Contains(intercept.InterceptId, blocked.Intercepts);
+
+        await driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(blocked.Request.RequestId), cancellationToken: TestContext.Current.CancellationToken);
+        NavigateCommandResult navigationResult = await navigation.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.Equal(detailsUrl, navigationResult.Url);
+
+        // Attempt to gracefully close the browser. If the test fails, the
+        // browser process will be cleaned up when the launcher is disposed.
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
+    public async Task TestCanSetAndGetCookies(TestBrowser browser)
+    {
+        BrowserTestHelper.EnsureBrowserAvailable(browser);
+
+        await using BrowserLauncher launcher = await this.CreateBrowserLauncher(browser);
+        await using Server server = await this.CreateTestServer();
+        await using BiDiDriver driver = await this.StartBiDiDriverSession(launcher);
+
+        string browsingContextId = await this.GetBrowsingContext(driver);
+        await this.NavigateAsync(driver, browsingContextId, $"http://localhost:{server.Port}/index.html");
+
+        PartialCookie cookie = new("integrationCookie", BytesValue.FromString("cookieValue"), "localhost")
+        {
+            Path = "/",
+        };
+        SetCookieCommandParameters setCookieParams = new(cookie)
+        {
+            Partition = new BrowsingContextPartitionDescriptor(browsingContextId),
+        };
+        await driver.Storage.SetCookieAsync(setCookieParams, cancellationToken: TestContext.Current.CancellationToken);
+
+        GetCookiesCommandParameters getCookiesParams = new()
+        {
+            Filter = new CookieFilter { Name = "integrationCookie" },
+            Partition = new BrowsingContextPartitionDescriptor(browsingContextId),
+        };
+        GetCookiesCommandResult cookies = await driver.Storage.GetCookiesAsync(getCookiesParams, cancellationToken: TestContext.Current.CancellationToken);
+        WebDriverBiDi.Network.Cookie storedCookie = Assert.Single(cookies.Cookies);
+        Assert.Equal("integrationCookie", storedCookie.Name);
+        Assert.Equal("cookieValue", storedCookie.Value.Value);
+
+        // The page sees the cookie too, so it was set in the partition the page uses rather than merely recorded.
+        EvaluateCommandParameters readCookieParams = new("document.cookie", new ContextTarget(browsingContextId), true);
+        EvaluateResultSuccess readCookieResult = Assert.IsType<EvaluateResultSuccess>(await driver.Script.EvaluateAsync(readCookieParams, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Contains("integrationCookie=cookieValue", readCookieResult.Result.As<StringRemoteValue>().Value);
+
+        // Attempt to gracefully close the browser. If the test fails, the
+        // browser process will be cleaned up when the launcher is disposed.
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData(TestBrowser.Firefox)]
+    [InlineData(TestBrowser.Chrome)]
+    public async Task TestCanOverrideAndResetUserAgent(TestBrowser browser)
+    {
+        BrowserTestHelper.EnsureBrowserAvailable(browser);
+
+        await using BrowserLauncher launcher = await this.CreateBrowserLauncher(browser);
+        await using Server server = await this.CreateTestServer();
+        await using BiDiDriver driver = await this.StartBiDiDriverSession(launcher);
+
+        string browsingContextId = await this.GetBrowsingContext(driver);
+        string pageUrl = $"http://localhost:{server.Port}/index.html";
+        const string OverrideUserAgent = "WebDriverBiDi.NET integration test user agent";
+
+        SetUserAgentOverrideCommandParameters overrideParams = new()
+        {
+            UserAgent = OverrideUserAgent,
+        };
+        overrideParams.Contexts.Add(browsingContextId);
+        await driver.Emulation.SetUserAgentOverrideAsync(overrideParams, cancellationToken: TestContext.Current.CancellationToken);
+
+        await this.NavigateAsync(driver, browsingContextId, pageUrl);
+        Assert.Equal(OverrideUserAgent, await this.GetUserAgentAsync(driver, browsingContextId));
+
+        SetUserAgentOverrideCommandParameters resetParams = SetUserAgentOverrideCommandParameters.ResetUserAgentOverride;
+        resetParams.Contexts.Add(browsingContextId);
+        await driver.Emulation.SetUserAgentOverrideAsync(resetParams, cancellationToken: TestContext.Current.CancellationToken);
+
+        await this.NavigateAsync(driver, browsingContextId, pageUrl);
+        Assert.NotEqual(OverrideUserAgent, await this.GetUserAgentAsync(driver, browsingContextId));
+
+        // Attempt to gracefully close the browser. If the test fails, the
+        // browser process will be cleaned up when the launcher is disposed.
+        await driver.Browser.CloseAsync(cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    private async Task NavigateAsync(BiDiDriver driver, string browsingContextId, string url)
+    {
+        NavigateCommandParameters navigateParams = new(browsingContextId, url)
+        {
+            Wait = ReadinessState.Complete
+        };
+        await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
+    }
+
+    private async Task<string?> GetUserAgentAsync(BiDiDriver driver, string browsingContextId)
+    {
+        EvaluateCommandParameters userAgentParams = new("navigator.userAgent", new ContextTarget(browsingContextId), true);
+        EvaluateResult result = await driver.Script.EvaluateAsync(userAgentParams, cancellationToken: TestContext.Current.CancellationToken);
+        return Assert.IsType<EvaluateResultSuccess>(result).Result.As<StringRemoteValue>().Value;
     }
 
     private async Task<string> GetBrowsingContext(BiDiDriver driver)
