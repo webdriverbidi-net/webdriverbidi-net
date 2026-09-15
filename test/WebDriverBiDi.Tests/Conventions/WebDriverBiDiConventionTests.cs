@@ -538,15 +538,8 @@ public class WebDriverBiDiConventionTests
         // instead. The backing storage stays internal, so only public members are examined.
         HashSet<Type> mutableDefinitions = [typeof(List<>), typeof(Dictionary<,>), typeof(HashSet<>)];
         List<string> offenders = [];
-        int receivedTypeCount = 0;
-        foreach (Type type in typeof(CommandResult).Assembly.GetTypes())
+        foreach (Type type in GetReceivedTypes())
         {
-            if (!IsReceivedType(type))
-            {
-                continue;
-            }
-
-            receivedTypeCount++;
             foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 Type propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
@@ -557,8 +550,6 @@ public class WebDriverBiDiConventionTests
             }
         }
 
-        // A floor, for the same reason as the sweeps above. There are 112 today.
-        Assert.True(receivedTypeCount >= 105, $"The received-type sweep found only {receivedTypeCount} types; the walk is broken.");
         Assert.True(offenders.Count == 0, $"A received type must expose collections as read-only projections, not as List<>, Dictionary<,> or HashSet<>. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
     }
 
@@ -641,13 +632,8 @@ public class WebDriverBiDiConventionTests
         // Collect all types received from the remote end, and validate
         // no properties have public setters.
         List<string> offenders = [];
-        foreach (Type type in typeof(CommandParameters).Assembly.GetTypes())
+        foreach (Type type in GetReceivedTypes())
         {
-            if (!IsReceivedType(type))
-            {
-                continue;
-            }
-
             foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
                 MethodInfo? setter = property.SetMethod;
@@ -672,12 +658,109 @@ public class WebDriverBiDiConventionTests
         Assert.True(offenders.Count == 0, $"Types received from the remote end must not expose a public setter; use an internal or init accessor so the deserializer can populate the property without letting a caller mutate the object afterwards. Offenders: {string.Join(", ", offenders)}");
     }
 
+    [Fact]
+    public void TestReceivedTypeSweepReachesNestedTypesAndExcludesSentTypes()
+    {
+        // The received-type rules hold for every type the remote end sends, not only for the command results and
+        // event arguments at the root of a payload. A mistake in the walk would silently exempt the nested types,
+        // and the rules would still pass, so assert that it reaches a representative of each shape: a type nested
+        // in a command result, one nested in an event payload, one reached only through a read-only projection of
+        // an internal backing list, and a type reached through a nested object. A type that is also sent is
+        // populated by the caller before it is sent, so it follows the sent-type rules instead and must be left out.
+        HashSet<Type> receivedTypes = GetReceivedTypes();
+        Type[] expected =
+        [
+            typeof(Network.Cookie),
+            typeof(Network.RequestData),
+            typeof(BrowsingContext.BrowsingContextInfo),
+            typeof(Script.NodeProperties),
+            typeof(Script.StackTrace),
+        ];
+        foreach (Type type in expected)
+        {
+            Assert.Contains(type, receivedTypes);
+        }
+
+        Type[] sentAndReceived =
+        [
+            typeof(Network.Header),
+            typeof(Network.BytesValue),
+            typeof(Session.UserPromptHandler),
+            typeof(Session.ProxyConfiguration),
+        ];
+        foreach (Type type in sentAndReceived)
+        {
+            Assert.DoesNotContain(type, receivedTypes);
+        }
+
+        // A floor rather than an inventory, so adding a type does not break it. It fails if the walk stops
+        // reaching nested types, which would otherwise let both received-type rules pass by sweeping only the roots.
+        // There are 186 today, against 112 command results and event arguments at the roots.
+        Assert.True(receivedTypes.Count >= 175, $"The received-type sweep found only {receivedTypes.Count} types; the walk is broken.");
+    }
+
     /// <summary>
-    /// Determines whether a type is one the remote end sends to the consumer.
+    /// Gets every type the remote end sends to the consumer that the received-type rules govern.
+    /// </summary>
+    /// <returns>The received types.</returns>
+    /// <remarks>
+    /// The walk starts at the command results and event arguments and follows every property the serializer can
+    /// populate, public or not, since a nested received type is usually reached through an internal backing member
+    /// behind a read-only public projection. It follows the element types of collections, the assembly's subclasses
+    /// of any type reached, since a member typed as a discriminated-union base carries a derived payload, and each
+    /// type's library base type, since the rules examine the members a type declares. A type the walk also reaches
+    /// from the command parameters is both sent and received; the caller populates it before it is sent, so it
+    /// follows the sent-type rules and is left out here.
+    /// </remarks>
+    private static HashSet<Type> GetReceivedTypes()
+    {
+        Assembly assembly = typeof(CommandResult).Assembly;
+        Type[] assemblyTypes = assembly.GetTypes();
+        HashSet<Type> sentTypes = [.. GetSentTypes()];
+        Queue<Type> pending = new(assemblyTypes.Where(IsReceivedRootType));
+        HashSet<Type> visited = [];
+        HashSet<Type> receivedTypes = [];
+        while (pending.Count > 0)
+        {
+            Type type = pending.Dequeue();
+            if (!visited.Add(type))
+            {
+                continue;
+            }
+
+            if (!sentTypes.Contains(type))
+            {
+                receivedTypes.Add(type);
+            }
+
+            foreach (Type derived in assemblyTypes.Where(candidate => candidate != type && type.IsAssignableFrom(candidate)))
+            {
+                pending.Enqueue(derived);
+            }
+
+            if (type.BaseType is Type baseType && baseType.Assembly == assembly)
+            {
+                pending.Enqueue(baseType);
+            }
+
+            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                foreach (Type reached in GetReachableTypes(property.PropertyType, assembly))
+                {
+                    pending.Enqueue(reached);
+                }
+            }
+        }
+
+        return receivedTypes;
+    }
+
+    /// <summary>
+    /// Determines whether a type is at the root of a payload the remote end sends to the consumer.
     /// </summary>
     /// <param name="type">The type to inspect.</param>
-    /// <returns><see langword="true"/> if the type is a command result or event arguments type that is subject to the immutability rule.</returns>
-    private static bool IsReceivedType(Type type)
+    /// <returns><see langword="true"/> if the type is a command result or event arguments type.</returns>
+    private static bool IsReceivedRootType(Type type)
     {
         if (!typeof(CommandResult).IsAssignableFrom(type) && !typeof(WebDriverBiDiEventArgs).IsAssignableFrom(type))
         {
