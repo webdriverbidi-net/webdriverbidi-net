@@ -40,10 +40,10 @@ using WebDriverBiDi.WebExtension;
 /// </para>
 /// <para>
 /// <strong>Interface Design:</strong>
-/// This class implements four focused interfaces (<see cref="IBiDiModuleHost"/>,
+/// This class implements five focused interfaces (<see cref="IBiDiModuleHost"/>,
 /// <see cref="IBiDiDriverConfiguration"/>, <see cref="IBiDiDriverLifecycleManager"/>,
-/// <see cref="IBiDiDriverEvents"/>) for advanced framework, testing, and extensibility
-/// scenarios. Most application code should use <see cref="BiDiDriver"/> directly and
+/// <see cref="IBiDiDriverEvents"/>, <see cref="IEventObserverErrorReporter"/>) for advanced framework,
+/// testing, and extensibility scenarios. Most application code should use <see cref="BiDiDriver"/> directly and
 /// ignore these interfaces. See the Core Concepts documentation for guidance on when
 /// each interface applies.
 /// </para>
@@ -52,6 +52,7 @@ using WebDriverBiDi.WebExtension;
 /// <seealso cref="IBiDiDriverConfiguration"/>
 /// <seealso cref="IBiDiDriverEvents"/>
 /// <seealso cref="IBiDiDriverLifecycleManager"/>
+/// <seealso cref="IEventObserverErrorReporter"/>
 public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDriverConfiguration, IBiDiDriverEvents, IEventObserverErrorReporter
 {
     /// <summary>

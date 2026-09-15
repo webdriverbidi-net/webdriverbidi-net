@@ -151,7 +151,7 @@ Read-only lists need no initialization. For nullable lists, initialize before ad
 
 **The Problem:**
 
-Developers are sometimes surprised that the default command timeout is **60 seconds**.
+Developers are sometimes surprised that the default command timeout is **60 seconds**. That is `BiDiDriver.DefaultCommandWaitTimeout`, which a driver uses when it is constructed without a timeout.
 
 [!code-csharp[Default Timeout](../code/common-pitfalls/CommonPitfallsSamples.cs#DefaultTimeout)]
 

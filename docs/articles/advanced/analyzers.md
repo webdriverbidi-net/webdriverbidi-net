@@ -252,8 +252,8 @@ ImageFormat format = new ImageFormat { Quality = 1.5 };
 // Not flagged: within range.
 ImageFormat format = new ImageFormat { Quality = 0.9 };
 
-// Not flagged: MaxDomDepth's range is [0, ∞) with a reset sentinel of -1.
-SerializationOptions options = new SerializationOptions { MaxDomDepth = -1 };
+// Not flagged: MaxDomDepth's range is [0, ∞), and SerializationOptions.InfiniteMaxDomDepth (-1) is its sentinel for no depth limit.
+SerializationOptions options = new SerializationOptions { MaxDomDepth = SerializationOptions.InfiniteMaxDomDepth };
 ```
 
 This is a `Warning` by design so it never blocks a build; downgrade or suppress it (see [Configuration and Suppression](#configuration-and-suppression)) if you intend to send an out-of-range constant.
@@ -286,7 +286,7 @@ driver = new BiDiDriver();
 await driver.StartAsync(url);
 ```
 
-The disposal state is tracked per local variable through `if`/`else`, `switch` and `try`/`catch`/`finally`, and a use is reported only when the driver is disposed on every path that reaches it — so a dispose in one branch, or one in a `try` whose `catch` uses the driver, is not reported. A dispose in a `finally` block counts for the code after the `try`, because the block runs however the `try` ends. A driver disposed or reassigned inside a lambda or local function is not tracked at all, since a nested function runs when its delegate is invoked rather than where it is written.
+The disposal state is tracked per local variable through `if`/`else`, `switch`, `try`/`catch`/`finally`, the conditional (`?:`) and `switch` expressions, the `&&`, `||`, `??` and `??=` operators (whose right operand may not be evaluated), and `for`/`foreach`/`while` loops (whose body may run zero times), and a use is reported only when the driver is disposed on every path that reaches it — so a dispose in one branch, or one in a `try` whose `catch` uses the driver, is not reported. A dispose in a `finally` block counts for the code after the `try`, because the block runs however the `try` ends. A driver disposed or reassigned inside a lambda or local function is not tracked at all, since a nested function runs when its delegate is invoked rather than where it is written.
 
 ### BIDI030
 

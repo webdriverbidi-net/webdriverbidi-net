@@ -83,6 +83,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing a network interception ID.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<AddInterceptCommandResult> AddInterceptAsync(AddInterceptCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -96,6 +98,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing a data collector ID.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<AddDataCollectorCommandResult> AddDataCollectorAsync(AddDataCollectorCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -108,6 +112,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<ContinueRequestCommandResult> ContinueRequestAsync(ContinueRequestCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -121,6 +127,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<ContinueResponseCommandResult> ContinueResponseAsync(ContinueResponseCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -133,6 +141,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<ContinueWithAuthCommandResult> ContinueWithAuthAsync(ContinueWithAuthCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -145,6 +155,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<DisownDataCommandResult> DisownDataAsync(DisownDataCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -157,6 +169,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<FailRequestCommandResult> FailRequestAsync(FailRequestCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -169,6 +183,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing the collected network data.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<GetDataCommandResult> GetDataAsync(GetDataCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -181,6 +197,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<ProvideResponseCommandResult> ProvideResponseAsync(ProvideResponseCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -193,6 +211,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<RemoveDataCollectorCommandResult> RemoveDataCollectorAsync(RemoveDataCollectorCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -205,6 +225,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<RemoveInterceptCommandResult> RemoveInterceptAsync(RemoveInterceptCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -217,6 +239,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<SetCacheBehaviorCommandResult> SetCacheBehaviorAsync(SetCacheBehaviorCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
@@ -229,6 +253,8 @@ public sealed class NetworkModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<SetExtraHeadersCommandResult> SetExtraHeadersAsync(SetExtraHeadersCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);

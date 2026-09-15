@@ -220,7 +220,7 @@ Pass your custom transport to `BiDiDriver` via the constructor overload that acc
 | `SerializeCommand` | `protected virtual`. Turn a `Command` into the UTF-8 bytes put on the wire. Override to log or post-process the exact payload |
 | `ProcessMessageAsync` | `protected virtual`. Handle one inbound message after it is read from the queue. Override to observe or delay individual messages |
 | `ReadIncomingMessagesAsync` | `protected virtual`. The loop that drains the incoming message queue. Override only to replace the dispatch strategy wholesale |
-| `CaptureUnhandledError` | `protected virtual`. The single point every non-command failure passes through before `TransportErrorBehavior` is applied. Override to observe failures without changing the behavior |
+| `CaptureUnhandledError` | `protected virtual`. The single point every non-command failure passes through, identified by its `UnhandledErrorKind`, before `TransportErrorBehavior` is applied. Override to observe failures without changing the behavior |
 | `AcquireConnectionLockAsync` / `ReleaseConnectionLock` | `protected virtual`. Take and release the exclusive access that connecting, disconnecting, sending and registering a resolver each hold. Override to instrument contention |
 | `PendingCommands` | `protected` settable. The pending-command collection. Assign one built with a different `MaxTrackedCanceledCommands` before the first connect to change how many canceled commands are remembered; a reconnect preserves that capacity |
 | `TimeProvider` | `protected` settable. The clock the transport's `ShutdownTimeout` waits and its commands' timeouts are measured on. Substitute one to drive those waits with virtual time in a test |

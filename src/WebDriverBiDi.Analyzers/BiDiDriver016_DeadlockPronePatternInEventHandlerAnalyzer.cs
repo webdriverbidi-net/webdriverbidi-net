@@ -30,7 +30,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
 
     private static readonly LocalizableString MessageFormat = "Deadlock-prone pattern '{0}' detected in event handler. This can cause deadlocks in async contexts. Consider using async alternatives or ObservableEventHandlerOptions.RunHandlerAsynchronously.";
 
-    private static readonly LocalizableString Description = "Synchronization primitives like lock statements, Monitor.Enter, Semaphore.Wait(), WaitHandle.WaitOne(), or SynchronizationContext.Send() in async event handlers can cause deadlocks. Use async alternatives (SemaphoreSlim.WaitAsync, async/await patterns) or configure the handler to run asynchronously with RunHandlerAsynchronously option.";
+    private static readonly LocalizableString Description = "Synchronization primitives like lock statements, Monitor.Enter, SemaphoreSlim.Wait(), WaitHandle.WaitOne(), or SynchronizationContext.Send() in async event handlers can cause deadlocks. Use async alternatives (SemaphoreSlim.WaitAsync, async/await patterns) or configure the handler to run asynchronously with RunHandlerAsynchronously option.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,

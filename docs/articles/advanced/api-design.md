@@ -124,8 +124,8 @@ event — built-in or custom, under reflection or native AOT — with no attribu
 of the `result`/`params` object that the type does not define is extension data. (A member marked
 `[JsonIgnore]` does not define a wire property, so a same-named property still counts as extension data.)
 Chromium, for example, echoes a subscription's `goog:channel` on the envelope. Nested objects that the
-protocol marks `Extensible` capture their own: `Cookie`, `CapabilitiesResult` (as `AdditionalCapabilities`), the
-storage partition types, and `SharedReferenceInfo` (the `element` of `input.fileDialogOpened`, whose
+protocol marks `Extensible` capture their own: `Cookie`, `CapabilitiesResult` (as `AdditionalCapabilities`) and the
+`ProxyConfigurationResult` it carries as `Proxy`, the storage partition types, and `SharedReferenceInfo` (the `element` of `input.fileDialogOpened`, whose
 `ToSharedReference()` carries the properties back to the remote end). `RequestData` and `ResponseData` capture
 theirs too, although the specification does not mark them `Extensible`, because Chromium places members there in
 practice: `goog:postData`, `goog:hasPostData`, `goog:resourceType`, `goog:resourceInitiator` and
@@ -152,7 +152,7 @@ Task<T> CommandAsync(
     CancellationToken cancellationToken = default)
 ```
 
-- **`timeoutOverride`**: When `null`, the driver uses `BiDiDriver.DefaultCommandTimeout` (60 seconds by default). Pass a value to override for long-running or quick-fail scenarios.
+- **`timeoutOverride`**: When `null`, the driver uses `BiDiDriver.DefaultCommandTimeout`, the timeout the driver was constructed with, which is `BiDiDriver.DefaultCommandWaitTimeout` (60 seconds) when none was given. Pass a value to override for long-running or quick-fail scenarios.
 - **`cancellationToken`**: Propagates cancellation. Use for cooperative cancellation (e.g., user cancel, test timeout).
 
 [!code-csharp[Timeout and Cancellation Examples](../../code/api-design/TimeoutAndCancellationSamples.cs#TimeoutandCancellationExamples)]

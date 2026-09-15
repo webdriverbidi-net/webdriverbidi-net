@@ -37,6 +37,8 @@ public sealed class DigitalCredentialsModule : Module
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<SetVirtualWalletBehaviorCommandResult> SetVirtualWalletBehaviorAsync(SetVirtualWalletBehaviorCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
