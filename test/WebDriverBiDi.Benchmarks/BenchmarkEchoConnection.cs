@@ -29,7 +29,7 @@ public sealed class BenchmarkEchoConnection : Connection
     private volatile bool isActive;
 
     /// <inheritdoc/>
-    public override bool IsActive => this.isActive;
+    protected override bool IsConnectionOpen => this.isActive;
 
     /// <inheritdoc/>
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
@@ -60,6 +60,11 @@ public sealed class BenchmarkEchoConnection : Connection
     /// overhead measured less than the library actually does on a send.
     /// </para>
     /// <para>
+    /// The response is delivered through <see cref="Connection.NotifyDataReceivedObserverAsync(IMemoryOwner{byte}, int)"/>,
+    /// as a real receive loop delivers a message, so the receive side of the base class is measured as well: the
+    /// argument checks, the observer check, and the trace-guarded logging of the received message.
+    /// </para>
+    /// <para>
     /// Everything here runs synchronously on the sender's stack, inside the send semaphore. That is
     /// safe because the transport's data-received observer only writes the message to its unbounded
     /// channel and returns; the reader task that completes the command runs separately, so it cannot
@@ -75,7 +80,7 @@ public sealed class BenchmarkEchoConnection : Connection
         byte[] response = BuildSuccessResponse(commandId);
         IMemoryOwner<byte> owner = MemoryPool<byte>.Shared.Rent(response.Length);
         response.CopyTo(owner.Memory);
-        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(owner, response.Length)).ConfigureAwait(false);
+        await this.NotifyDataReceivedObserverAsync(owner, response.Length).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>

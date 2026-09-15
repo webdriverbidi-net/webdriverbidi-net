@@ -16,7 +16,7 @@ using WebDriverBiDi.Internal;
 /// <remarks>
 /// <para>
 /// <see cref="WebSocketConnection"/> is the standard and recommended transport mechanism for WebDriver BiDi.
-/// It uses the <see cref="System.Net.WebSockets.ClientWebSocket"/> class to communicate with the browser
+/// It uses the <see cref="ClientWebSocket"/> class to communicate with the browser
 /// over the WebSocket protocol (ws:// or wss:// schemes).
 /// </para>
 /// <para>
@@ -73,14 +73,19 @@ public class WebSocketConnection : Connection
     }
 
     /// <summary>
-    /// Gets a value indicating whether this connection is active.
-    /// </summary>
-    public override bool IsActive => this.client.State != WebSocketState.None && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted;
-
-    /// <summary>
     /// Gets a value indicating the type of data transport used by this connection, in this case, a WebSocket connection.
     /// </summary>
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
+
+    /// <summary>
+    /// Gets a value indicating whether the underlying WebSocket is open.
+    /// </summary>
+    /// <remarks>
+    /// A socket that has begun its close handshake still counts as open, because it can still receive the remote
+    /// end's answer. Once the receive loop has reported that it ended, <see cref="Connection.IsActive"/> is
+    /// <see langword="false"/> whatever state the socket is left in.
+    /// </remarks>
+    protected override bool IsConnectionOpen => this.client.State != WebSocketState.None && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted;
 
     /// <summary>
     /// Gets or sets a value indicating whether the close now in progress was initiated by this end.
@@ -92,16 +97,8 @@ public class WebSocketConnection : Connection
     /// </remarks>
     private bool IsLocalCloseInitiated
     {
-        get
-        {
-            return Interlocked.CompareExchange(ref this.isLocalCloseInitiatedFlag, 0, 0) == 1;
-        }
-
-        set
-        {
-            int flagValue = value ? 1 : 0;
-            Interlocked.Exchange(ref this.isLocalCloseInitiatedFlag, flagValue);
-        }
+        get => Interlocked.CompareExchange(ref this.isLocalCloseInitiatedFlag, 0, 0) == 1;
+        set => Interlocked.Exchange(ref this.isLocalCloseInitiatedFlag, value ? 1 : 0);
     }
 
     /// <summary>
@@ -341,7 +338,7 @@ public class WebSocketConnection : Connection
             // as one.
             if (!connectionCancellationToken.IsCancellationRequested && !this.IsLocalCloseInitiated)
             {
-                await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
+                await this.NotifyRemoteDisconnectedObserversAsync().ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -350,8 +347,7 @@ public class WebSocketConnection : Connection
         }
         catch (WebSocketException e)
         {
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            await this.NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {e.Message}", e).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -360,8 +356,13 @@ public class WebSocketConnection : Connection
             // is a separate case than the simple case of no further data being received. For
             // pending commands, this would look like a command that never returns a response
             // rather than the loop ending due to the observer exception.
-            await this.LogAsync($"Unexpected error processing received data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            //
+            // Nothing failed on the wire, so the socket is still open. Reporting the error marks the
+            // connection inactive, but nothing will ever read from this socket again, so abort it
+            // rather than leave it open until the connection is stopped: the remote end learns at once
+            // that this end has gone, instead of sending into a socket that no one reads.
+            this.client.Abort();
+            await this.NotifyConnectionErrorObserversAsync($"Unexpected error processing received data: {e.Message}", e).ConfigureAwait(false);
         }
         finally
         {

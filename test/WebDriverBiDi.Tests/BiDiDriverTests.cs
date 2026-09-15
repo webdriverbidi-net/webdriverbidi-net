@@ -656,7 +656,7 @@ public class BiDiDriverTests
         // was populated and carries the UTC kind its documentation promises.
         Assert.Equal(DateTimeKind.Utc, logs[0].Timestamp.Kind);
         Assert.NotEqual(default, logs[0].Timestamp);
-        Assert.Equal("TestWebSocketConnection", logs[0].ComponentName);
+        Assert.Equal(Connection.LoggerComponentName, logs[0].ComponentName);
     }
 
     [Fact]
@@ -680,6 +680,85 @@ public class BiDiDriverTests
 
         await server.StopAsync();
         dataReceivedObserver.Unobserve();
+    }
+
+    [Fact]
+    public async Task TestDriverRestartAfterReceiveLoopFaultOpensNewSession()
+    {
+        // A synchronous observer of the connection's own log event that throws propagates into the
+        // connection's receive loop and ends it while the socket is still open. The transport tears the
+        // session down when the connection reports the error. The documented recovery, StopAsync followed
+        // by StartAsync, must then open a new session whose responses are read. Were the connection still
+        // reporting itself active, StartAsync would adopt the old socket, which nothing reads any more,
+        // and every command sent on the new session would time out.
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+        TaskCompletionSource<string> firstClientConnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<string> secondClientConnectedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int clientConnectionCount = 0;
+        await using Server server = new();
+        server.OnClientConnected.AddObserver(e =>
+        {
+            TaskCompletionSource<string> connected = Interlocked.Increment(ref clientConnectionCount) == 1
+                ? firstClientConnectedTaskCompletionSource
+                : secondClientConnectedTaskCompletionSource;
+            connected.TrySetResult(e.ConnectionId);
+        });
+        server.OnDataReceived.AddObserver(async e =>
+        {
+            // The WebSocket handshake request arrives through this event as well; only command payloads,
+            // which are JSON objects, are answered.
+            if (string.IsNullOrEmpty(e.Data) || !e.Data.StartsWith("{", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            using JsonDocument command = JsonDocument.Parse(e.Data);
+            long commandId = command.RootElement.GetProperty("id").GetInt64();
+            await server.SendWebSocketDataAsync(e.ConnectionId, $$$"""{"type":"success","id":{{{commandId}}},"result":{"ready":true,"message":"ok"}}""");
+        });
+        await server.StartAsync();
+
+        WebSocketConnection connection = new()
+        {
+            // The traffic message for a received payload is what the failing observer below reacts to.
+            LogLevel = WebDriverBiDiLogLevel.Trace,
+        };
+        int remainingFailures = 1;
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            if (e.Message.StartsWith("RECV", StringComparison.Ordinal) && Interlocked.Exchange(ref remainingFailures, 0) == 1)
+            {
+                throw new InvalidOperationException("log observer failure");
+            }
+        });
+
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), transport);
+
+        // Added after the transport is constructed, so the transport's own error observer, which tears the
+        // session down, has run to completion before this one is notified.
+        TaskCompletionSource connectionErrorTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            connectionErrorTaskCompletionSource.TrySetResult();
+        });
+
+        string connectionString = $"ws://127.0.0.1:{server.Port}";
+        await driver.StartAsync(connectionString, testCancellationToken);
+        string firstConnectionId = await firstClientConnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), testCancellationToken);
+
+        await server.SendWebSocketDataAsync(firstConnectionId, """{"type":"event","method":"unregistered.event","params":{}}""");
+        await connectionErrorTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), testCancellationToken);
+        Assert.False(driver.IsStarted);
+        Assert.False(connection.IsActive);
+
+        await driver.StopAsync(testCancellationToken);
+        await driver.StartAsync(connectionString, testCancellationToken);
+        string secondConnectionId = await secondClientConnectedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), testCancellationToken);
+        Assert.NotEqual(firstConnectionId, secondConnectionId);
+
+        StatusCommandResult status = await driver.Session.StatusAsync(cancellationToken: testCancellationToken);
+        Assert.True(status.IsReady);
     }
 
     [Fact]

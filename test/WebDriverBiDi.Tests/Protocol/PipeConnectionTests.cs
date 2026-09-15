@@ -775,7 +775,7 @@ public class PipeConnectionTests
 
         // Installed after the connection is started, because Connection.StartAsync refuses to start a
         // connection that already reports itself as active.
-        connection.IsActiveOverride = () =>
+        connection.IsConnectionOpenOverride = () =>
         {
             int count = Interlocked.Increment(ref isActiveCallCount);
             return count <= 1;
@@ -792,7 +792,7 @@ public class PipeConnectionTests
     {
         await using TestPipeConnection connection = new(new TestPipeServer())
         {
-            IsActiveOverride = () => true,
+            IsConnectionOpenOverride = () => true,
         };
         using CancellationTokenSource cts = new();
         cts.Cancel();
@@ -808,7 +808,7 @@ public class PipeConnectionTests
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
 
 #pragma warning disable xUnit1051 // intentionally omits token to exercise the CancellationToken.None branch
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello world"));
@@ -901,7 +901,7 @@ public class PipeConnectionTests
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Contains("An error occurred while sending data", exception.Message);
@@ -922,7 +922,7 @@ public class PipeConnectionTests
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
         await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data"), TestContext.Current.CancellationToken));
         Assert.Contains("An error occurred while sending data", exception.Message);

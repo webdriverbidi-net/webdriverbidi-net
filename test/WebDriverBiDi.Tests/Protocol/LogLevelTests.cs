@@ -57,7 +57,7 @@ public class LogLevelTests
             return Task.CompletedTask;
         });
 
-        await connection.RaiseFilteredLogMessageAsync("message", level);
+        await connection.RaiseLogMessageEventAsync("message", level);
         Assert.Equal(expectRaised, received.Count == 1);
     }
 
@@ -73,8 +73,8 @@ public class LogLevelTests
             return Task.CompletedTask;
         });
 
-        await connection.RaiseFilteredLogMessageAsync("trace", WebDriverBiDiLogLevel.Trace);
-        await connection.RaiseFilteredLogMessageAsync("debug", WebDriverBiDiLogLevel.Debug);
+        await connection.RaiseLogMessageEventAsync("trace", WebDriverBiDiLogLevel.Trace);
+        await connection.RaiseLogMessageEventAsync("debug", WebDriverBiDiLogLevel.Debug);
         Assert.Equal(2, received.Count);
     }
 
@@ -94,7 +94,7 @@ public class LogLevelTests
         {
             // Off is included: it is suppressed as a message level in its own right, so the sweep no
             // longer has to step around it.
-            await connection.RaiseFilteredLogMessageAsync("message", level);
+            await connection.RaiseLogMessageEventAsync("message", level);
         }
 
         Assert.Empty(received);
@@ -296,7 +296,7 @@ public class LogLevelTests
     /// <returns>The connection.</returns>
     private static TestWebSocketConnection CreateSendableConnection(List<LogMessageEventArgs> received)
     {
-        TestWebSocketConnection connection = new() { BypassStart = false, IsActiveOverride = () => true };
+        TestWebSocketConnection connection = new() { BypassStart = false, IsConnectionOpenOverride = () => true };
         connection.OnLogMessage.AddObserver(e =>
         {
             received.Add(e);
@@ -367,11 +367,11 @@ public class LogLevelTests
             return Task.CompletedTask;
         });
 
-        await connection.RaiseFilteredLogMessageAsync("message", WebDriverBiDiLogLevel.Off);
+        await connection.RaiseLogMessageEventAsync("message", WebDriverBiDiLogLevel.Off);
         Assert.Empty(received);
 
         // The observer is wired correctly; it is the level that was rejected.
-        await connection.RaiseFilteredLogMessageAsync("message", WebDriverBiDiLogLevel.Trace);
+        await connection.RaiseLogMessageEventAsync("message", WebDriverBiDiLogLevel.Trace);
         Assert.Single(received);
     }
 

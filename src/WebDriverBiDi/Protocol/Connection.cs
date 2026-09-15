@@ -42,7 +42,22 @@ using WebDriverBiDi.Internal;
 /// <item><term><see cref="SendConnectionDataAsync"/></term><description>Writes one message to the transport</description></item>
 /// <item><term><see cref="ReceiveDataAsync"/></term><description>The receive loop, started once the connection is established</description></item>
 /// <item><term><see cref="DisposeAsyncCore"/></term><description>Releases the resources the derived class owns</description></item>
+/// <item><term><see cref="IsConnectionOpen"/></term><description>Reports whether the transport-specific connection is open</description></item>
 /// </list>
+/// </para>
+/// <para>
+/// <see cref="IsActive"/> is implemented by this class as well. A connection is active only while it is open and its
+/// receive loop has not reported that it ended. A receive loop reports its end by calling
+/// <see cref="NotifyRemoteDisconnectedObserversAsync"/> or <see cref="NotifyConnectionErrorObserversAsync"/>.
+/// </para>
+/// <para>
+/// A derived class raises this class's events only through the methods that keep each event consistent with the
+/// state of the connection: <see cref="NotifyDataReceivedObserverAsync(MessageBuffer)"/>, or its overload taking
+/// pooled memory directly, for <see cref="OnDataReceived"/>; <see cref="LogAsync(string, WebDriverBiDiLogLevel)"/>
+/// for <see cref="OnLogMessage"/>; and the two notification methods above for <see cref="OnRemoteDisconnected"/>
+/// and <see cref="OnConnectionError"/>. The events are not exposed for raising in any other way, so no
+/// implementation can deliver a message without transferring its memory, log a message that
+/// <see cref="LogLevel"/> excludes, or report the end of its receive loop and leave the connection active.
 /// </para>
 /// <para>
 /// Thread safety: Connection implementations use internal synchronization to ensure thread-safe operation.
@@ -77,12 +92,28 @@ public abstract class Connection : IAsyncDisposable
 
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
+    // Each event is raised only through the method that keeps what it reports consistent with the connection's own
+    // state: NotifyDataReceivedObserverAsync transfers ownership of the message's pooled memory, and returns it
+    // when nothing takes it; LogAsync applies LogLevel; and NotifyConnectionErrorObserversAsync and
+    // NotifyRemoteDisconnectedObserversAsync record that the receive loop ended before notifying anyone. Exposing
+    // the events themselves to derived classes would let an implementation skip that work, which is how a
+    // connection whose receive loop had ended once went on reporting itself active.
+    private readonly ObservableEventInvocable<ConnectionDataReceivedEventArgs> dataReceivedObservableEvent = new(DataReceivedEventName, 1);
+    private readonly ObservableEventInvocable<ConnectionErrorEventArgs> connectionErrorObservableEvent = new(ConnectionErrorEventName);
+    private readonly ObservableEventInvocable<ConnectionDisconnectedEventArgs> remoteDisconnectedObservableEvent = new(RemoteDisconnectedEventName);
+    private readonly ObservableEventInvocable<LogMessageEventArgs> logMessageObservableEvent = new(LogMessageEventName);
+
     private TimeSpan startupTimeout = DefaultTimeout;
     private TimeSpan shutdownTimeout = DefaultTimeout;
     private TimeSpan dataTimeout = DefaultTimeout;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag;
+
+    // Set when the receive loop reports that it ended, and cleared immediately before the next session's loop
+    // is started.
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
+    private int receiveLoopEndedFlag;
 
     // Deliberately not exposed to derived classes. Reading the Token property of a disposed
     // CancellationTokenSource throws ObjectDisposedException, and the receive loop and any
@@ -108,9 +139,25 @@ public abstract class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Gets a value indicating whether this connection is active.
+    /// Gets a value indicating whether this connection is active: open, and still read by its receive loop.
     /// </summary>
-    public abstract bool IsActive { get; }
+    /// <remarks>
+    /// <para>
+    /// A connection is active when <see cref="IsConnectionOpen"/> reports that the transport-specific connection
+    /// is open and its receive loop has not reported that it ended, by calling
+    /// <see cref="NotifyRemoteDisconnectedObserversAsync"/> or <see cref="NotifyConnectionErrorObserversAsync"/>.
+    /// The receive loop is the only reader a connection has, so a connection whose loop has ended cannot receive
+    /// the response to anything sent on it, even while the connection itself is still open. Such a connection
+    /// reports itself inactive from the moment its loop reports the end, before any observer is notified, until
+    /// the next <see cref="StartAsync"/> starts a new loop.
+    /// </para>
+    /// <para>
+    /// This matters most to <see cref="Transport.ConnectAsync"/>, which adopts an active connection rather than
+    /// starting it again. A connection that went on reporting itself active after its loop ended would be adopted
+    /// by a reconnect, and no command sent on the new session would ever be answered.
+    /// </para>
+    /// </remarks>
+    public bool IsActive => this.IsConnectionOpen && !this.IsReceiveLoopEnded;
 
     /// <summary>
     /// Gets a value indicating the kind of data transport used by this connection.
@@ -257,22 +304,22 @@ public abstract class Connection : IAsyncDisposable
     /// <see cref="EventObserver{ConnectionDataReceivedEventArgs}"/> can be observing this
     /// event at a time. Attempting to connect a second observer will throw an exception.
     /// </remarks>
-    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived => this.InvocableConnectionDataReceivedObservableEvent;
+    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived => this.dataReceivedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a communication error occurs on this connection.
     /// </summary>
-    public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError => this.InvocableConnectionErrorObservableEvent;
+    public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError => this.connectionErrorObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when the remote end gracefully closes this connection.
     /// </summary>
-    public ObservableEvent<ConnectionDisconnectedEventArgs> OnRemoteDisconnected => this.InvocableRemoteDisconnectedObservableEvent;
+    public ObservableEvent<ConnectionDisconnectedEventArgs> OnRemoteDisconnected => this.remoteDisconnectedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.InvocableLogMessageObservableEvent;
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.logMessageObservableEvent;
 
     /// <summary>
     /// Gets a value indicating whether this connection has been disposed.
@@ -280,24 +327,21 @@ public abstract class Connection : IAsyncDisposable
     protected bool IsDisposed => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
 
     /// <summary>
-    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnDataReceived event.
+    /// Gets a value indicating whether the transport-specific connection is open.
     /// </summary>
-    protected ObservableEventInvocable<ConnectionDataReceivedEventArgs> InvocableConnectionDataReceivedObservableEvent { get; } = new(DataReceivedEventName, 1);
-
-    /// <summary>
-    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnConnectionError event.
-    /// </summary>
-    protected ObservableEventInvocable<ConnectionErrorEventArgs> InvocableConnectionErrorObservableEvent { get; } = new(ConnectionErrorEventName);
-
-    /// <summary>
-    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnRemoteDisconnected event.
-    /// </summary>
-    protected ObservableEventInvocable<ConnectionDisconnectedEventArgs> InvocableRemoteDisconnectedObservableEvent { get; } = new(RemoteDisconnectedEventName);
-
-    /// <summary>
-    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnLogMessage event.
-    /// </summary>
-    protected ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new(LogMessageEventName);
+    /// <remarks>
+    /// <para>
+    /// This is the transport-specific part of <see cref="IsActive"/>, which also requires that the receive loop
+    /// has not reported that it ended. An implementation reports only whether the underlying channel is open, and
+    /// need not account for the receive loop at all.
+    /// </para>
+    /// <para>
+    /// <see cref="DisposeAsync"/> stops a connection for which this reports <see langword="true"/>, even when the
+    /// connection is inactive because its receive loop has ended, so that an open channel is always shut down
+    /// before its resources are released.
+    /// </para>
+    /// </remarks>
+    protected abstract bool IsConnectionOpen { get; }
 
     /// <summary>
     /// Gets or sets the <see cref="TimeProvider"/> whose clock measures this connection's timeouts:
@@ -330,6 +374,12 @@ public abstract class Connection : IAsyncDisposable
     /// disposed, so they must use this property rather than the source directly.
     /// </remarks>
     protected CancellationToken ConnectionCancellationToken { get; private set; }
+
+    private bool IsReceiveLoopEnded
+    {
+        get => Interlocked.CompareExchange(ref this.receiveLoopEndedFlag, 0, 0) == 1;
+        set => Interlocked.Exchange(ref this.receiveLoopEndedFlag, value ? 1 : 0);
+    }
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -414,6 +464,9 @@ public abstract class Connection : IAsyncDisposable
             throw;
         }
 
+        // A loop that reported its end belongs to a previous session, and that loop is known to have finished,
+        // so nothing can report an end after this point except the loop about to start.
+        this.IsReceiveLoopEnded = false;
         this.StartDataReceiveTask();
         await this.LogAsync($"{this.ConnectionKind} connection opened").ConfigureAwait(false);
     }
@@ -478,12 +531,11 @@ public abstract class Connection : IAsyncDisposable
     {
         if (!this.IsActive)
         {
-            // IsActive is false both for a connection that has never been started and for one that has
-            // been closed, whether by StopAsync or by the remote end, and this guard cannot tell the two
-            // apart: neither the socket state nor the pipe's active flag records which it was. The
-            // message therefore names both, rather than telling a caller who did start the connection
-            // that they forgot to.
-            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is not active; it has not been started, or it has already been closed. Call the Start method to open it before sending data.");
+            // IsActive is false for a connection that has never been started, for one that has been closed,
+            // whether by StopAsync or by the remote end, and for one whose receive loop has ended, and this
+            // guard does not tell those apart. The message therefore names all of them, rather than telling a
+            // caller who did start the connection that they forgot to.
+            throw new WebDriverBiDiConnectionException($"The {this.ConnectionKind} connection is not active; it has not been started, it has already been closed, or its receive loop has ended. Call the Start method to open it before sending data.");
         }
 
         // Notify log-message observers before acquiring the send semaphore to avoid
@@ -539,7 +591,8 @@ public abstract class Connection : IAsyncDisposable
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     /// <remarks>
-    /// An active connection is stopped before its resources are released, so that the remote end sees
+    /// A connection that is still open is stopped before its resources are released, even when its receive loop
+    /// has already ended, so that the remote end sees
     /// the shutdown the transport defines rather than the connection simply disappearing. A failure to
     /// stop is logged and does not prevent disposal, because disposal must release the connection's
     /// resources whatever state it is in. A derived class releases its own resources by implementing
@@ -554,7 +607,10 @@ public abstract class Connection : IAsyncDisposable
             {
                 try
                 {
-                    if (this.IsActive)
+                    // Keyed on the channel rather than on IsActive: a connection whose receive loop has ended is
+                    // inactive, but its channel is still open until it is stopped, and releasing its resources
+                    // without stopping it would skip the shutdown the transport defines.
+                    if (this.IsConnectionOpen)
                     {
                         await this.StopAsync().ConfigureAwait(false);
                     }
@@ -618,10 +674,10 @@ public abstract class Connection : IAsyncDisposable
     /// </remarks>
     internal void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
     {
-        this.InvocableConnectionDataReceivedObservableEvent.InvokeSetObserverErrorReporter(reporter);
-        this.InvocableConnectionErrorObservableEvent.InvokeSetObserverErrorReporter(reporter);
-        this.InvocableRemoteDisconnectedObservableEvent.InvokeSetObserverErrorReporter(reporter);
-        this.InvocableLogMessageObservableEvent.InvokeSetObserverErrorReporter(reporter);
+        this.dataReceivedObservableEvent.InvokeSetObserverErrorReporter(reporter);
+        this.connectionErrorObservableEvent.InvokeSetObserverErrorReporter(reporter);
+        this.remoteDisconnectedObservableEvent.InvokeSetObserverErrorReporter(reporter);
+        this.logMessageObservableEvent.InvokeSetObserverErrorReporter(reporter);
     }
 
     /// <summary>
@@ -640,13 +696,19 @@ public abstract class Connection : IAsyncDisposable
     /// beginning, so an implementation may use it to bound its own work.
     /// </para>
     /// <para>
+    /// Not being active does not mean being closed. A connection whose receive loop reported that it ended is
+    /// inactive, but stays open until it is stopped, so this method can be called while
+    /// <see cref="IsConnectionOpen"/> still reports <see langword="true"/>. An implementation replaces or reuses
+    /// whatever it holds, as it would when starting after a stop.
+    /// </para>
+    /// <para>
     /// It takes no connection string, because by the time it runs the string has already been
     /// interpreted: an implementation that needed a parsed form of it has that form, and one that wants
     /// the string itself reads <see cref="ConnectionString"/>.
     /// </para>
     /// <para>
     /// An implementation returns only once the connection is established, which is to say once
-    /// <see cref="IsActive"/> would report <see langword="true"/>; <see cref="StartAsync"/> starts the
+    /// <see cref="IsConnectionOpen"/> would report <see langword="true"/>; <see cref="StartAsync"/> starts the
     /// receive loop immediately afterwards. It reports a failure to connect by throwing, which clears
     /// <see cref="ConnectionString"/>, leaves the connection stopped, and lets the caller of
     /// <see cref="StartAsync"/> see why.
@@ -754,6 +816,7 @@ public abstract class Connection : IAsyncDisposable
     /// </summary>
     /// <param name="messageBuffer">The <see cref="MessageBuffer"/> holding the accumulated message.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="messageBuffer"/> is <see langword="null"/>.</exception>
     /// <remarks>
     /// <para>
     /// This method does nothing when <paramref name="messageBuffer"/> holds no data, so a receive loop may
@@ -782,13 +845,69 @@ public abstract class Connection : IAsyncDisposable
     /// </remarks>
     protected async Task NotifyDataReceivedObserverAsync(MessageBuffer messageBuffer)
     {
+        if (messageBuffer is null)
+        {
+            throw new ArgumentNullException(nameof(messageBuffer), "The message buffer must not be null");
+        }
+
         if (!messageBuffer.HasData)
         {
             return;
         }
 
         IMemoryOwner<byte> messageOwner = messageBuffer.TakeOwnership(out int messageLength);
-        if (this.InvocableConnectionDataReceivedObservableEvent.CurrentObserverCount == 0)
+        await this.NotifyDataReceivedObserverAsync(messageOwner, messageLength).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Notifies the single allowed observer of the <see cref="OnDataReceived"/> event that a message has been
+    /// received, transferring ownership of the pooled memory that holds the message to that observer.
+    /// </summary>
+    /// <param name="messageOwner">
+    /// The owner of the memory holding the message, at its start. Ownership passes to this method with the call.
+    /// </param>
+    /// <param name="messageLength">The length, in bytes, of the message within the memory of <paramref name="messageOwner"/>.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="messageOwner"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="messageLength"/> is negative or exceeds the length of the memory of
+    /// <paramref name="messageOwner"/>. The memory is returned to its pool before the exception is thrown.
+    /// </exception>
+    /// <remarks>
+    /// <para>
+    /// Use this overload when the receive loop already holds a complete message in pooled memory, so that it can
+    /// hand the message over without first copying it into a <see cref="MessageBuffer"/>. The
+    /// <see cref="NotifyDataReceivedObserverAsync(MessageBuffer)"/> overload delivers through this one.
+    /// </para>
+    /// <para>
+    /// Ownership of <paramref name="messageOwner"/> passes to this method whatever the outcome, so a caller neither
+    /// disposes the memory nor reads from it after the call. When an observer is attached, ownership passes on to it
+    /// by way of <see cref="ConnectionDataReceivedEventArgs.BufferOwner"/>, and that observer returns the memory to
+    /// the pool. When no observer is attached, or when the call fails before the observer is notified, this method
+    /// returns the memory itself.
+    /// </para>
+    /// <para>
+    /// The message is logged at the <see cref="WebDriverBiDiLogLevel.Trace"/> level before the observer is notified.
+    /// It is not logged when no observer is attached, because the logging describes traffic that was delivered.
+    /// </para>
+    /// </remarks>
+    protected async Task NotifyDataReceivedObserverAsync(IMemoryOwner<byte> messageOwner, int messageLength)
+    {
+        if (messageOwner is null)
+        {
+            throw new ArgumentNullException(nameof(messageOwner), "The owner of the message memory must not be null");
+        }
+
+        int memoryLength = messageOwner.Memory.Length;
+        if (messageLength < 0 || messageLength > memoryLength)
+        {
+            // Ownership passed to this method with the call, so the memory is returned here even though the call is
+            // rejected: the caller has no further claim on it, and nothing else will return it.
+            messageOwner.Dispose();
+            throw new ArgumentOutOfRangeException(nameof(messageLength), $"The message length must be between zero and the length of the memory holding the message ({memoryLength} bytes); received {messageLength}");
+        }
+
+        if (this.dataReceivedObservableEvent.CurrentObserverCount == 0)
         {
             messageOwner.Dispose();
             return;
@@ -810,7 +929,58 @@ public abstract class Connection : IAsyncDisposable
             throw;
         }
 
-        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
+        await this.dataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageOwner, messageLength)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Reports that the receive loop has ended because of an error, logging the error and notifying the observers
+    /// of <see cref="OnConnectionError"/>.
+    /// </summary>
+    /// <param name="logMessage">The message to log at the <see cref="WebDriverBiDiLogLevel.Error"/> level.</param>
+    /// <param name="exception">The exception that ended the receive loop.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <para>
+    /// Call this from the receive loop, as its last act, when a failure ends the loop. It is the only way to raise
+    /// <see cref="OnConnectionError"/>. The connection reports itself inactive (see <see cref="IsActive"/>) before
+    /// the message is logged and before any observer is notified, so an observer reacting to the error, such as a
+    /// <see cref="Transport"/> tearing its session down, already sees a connection that must be started again
+    /// rather than adopted.
+    /// </para>
+    /// <para>
+    /// The observers are notified even when logging the message fails because an observer of
+    /// <see cref="OnLogMessage"/> throws. That failure still propagates to the caller once the observers have been
+    /// notified, as the failure of a log observer does anywhere else, unless an observer of
+    /// <see cref="OnConnectionError"/> also throws, in which case its failure is the one that propagates.
+    /// </para>
+    /// </remarks>
+    protected async Task NotifyConnectionErrorObserversAsync(string logMessage, Exception exception)
+    {
+        this.IsReceiveLoopEnded = true;
+        try
+        {
+            await this.LogAsync(logMessage, WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+        }
+        finally
+        {
+            await this.connectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(exception)).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Reports that the receive loop has ended because the remote end closed the connection, notifying the
+    /// observers of <see cref="OnRemoteDisconnected"/>.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// Call this from the receive loop, as its last act, when the remote end closes the connection. It is the only
+    /// way to raise <see cref="OnRemoteDisconnected"/>. The connection reports itself inactive before any observer
+    /// is notified, for the reason given on <see cref="NotifyConnectionErrorObserversAsync"/>.
+    /// </remarks>
+    protected async Task NotifyRemoteDisconnectedObserversAsync()
+    {
+        this.IsReceiveLoopEnded = true;
+        await this.remoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -841,7 +1011,7 @@ public abstract class Connection : IAsyncDisposable
             return;
         }
 
-        await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.logMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     /// <summary>

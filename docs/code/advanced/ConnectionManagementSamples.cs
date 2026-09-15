@@ -671,7 +671,7 @@ public class ExamplePipeLauncher
 #region CustomConnectionImplementation
 public class CustomConnection : Connection
 {
-    public override bool IsActive => /* your logic */ true;
+    protected override bool IsConnectionOpen => /* your logic */ true;
 
     public override ConnectionKind ConnectionKind => ConnectionKind.WebSocket;
 
@@ -725,14 +725,28 @@ public class CustomConnection : Connection
         // Your receive logic: read from your transport until a complete message has arrived,
         // accumulating each piece into a MessageBuffer as it comes.
         using MessageBuffer messageBuffer = new();
+        try
+        {
+            // Then hand the completed message on. This takes ownership of the buffer's pooled memory,
+            // logs the message as "RECV <<<", and notifies the single observer of OnDataReceived,
+            // which disposes that memory once it has processed the message: do not read or release it
+            // afterwards. The call does nothing when the buffer holds no data, so it is safe to make
+            // wherever a message may have completed, and when no observer is attached it discards the
+            // message and returns the memory to the pool itself.
+            await NotifyDataReceivedObserverAsync(messageBuffer);
 
-        // Then hand the completed message on. This takes ownership of the buffer's pooled memory,
-        // logs the message as "RECV <<<", and notifies the single observer of OnDataReceived,
-        // which disposes that memory once it has processed the message: do not read or release it
-        // afterwards. The call does nothing when the buffer holds no data, so it is safe to make
-        // wherever a message may have completed, and when no observer is attached it discards the
-        // message and returns the memory to the pool itself.
-        await NotifyDataReceivedObserverAsync(messageBuffer);
+            // When your transport reports that the remote end has closed the connection, end the loop by
+            // saying so. Reporting the end is what makes IsActive false while your channel may still be
+            // open, so a Transport starts this connection again on its next connect rather than adopting
+            // a connection that nothing reads.
+            await NotifyRemoteDisconnectedObserversAsync();
+        }
+        catch (IOException ex)
+        {
+            // When a read fails, end the loop by reporting the error, which logs the message and raises
+            // OnConnectionError. These two calls are the only way to raise those two events.
+            await NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {ex.Message}", ex);
+        }
     }
 
     protected override async ValueTask DisposeAsyncCore()

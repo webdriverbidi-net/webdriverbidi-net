@@ -775,6 +775,60 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestReceiveLoopEndedByObserverExceptionLeavesConnectionInactiveAndRestartable()
+    {
+        // The observer's exception ends the receive loop while the socket itself is still open: nothing
+        // failed on the wire. A connection that went on reporting itself active afterwards would be
+        // adopted, rather than reopened, by Transport.ConnectAsync, and the new session would send on a
+        // socket that nothing reads. The connection must report itself inactive by the time the failure
+        // is observable, and a restart must open a new session that delivers data.
+        int remainingFailures = 1;
+        Task OnDataReceivedAsync(ConnectionDataReceivedEventArgs e)
+        {
+            if (Interlocked.Exchange(ref remainingFailures, 0) == 1)
+            {
+                throw new InvalidOperationException("observer failure");
+            }
+
+            return this.OnConnectionDataReceivedAsync(e);
+        }
+
+        await using Server server = this.CreateServer();
+        await server.StartAsync();
+
+        bool? isActiveWhenErrorRaised = null;
+        TaskCompletionSource errorRaisedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using WebSocketConnection connection = new();
+        connection.OnDataReceived.AddObserver(OnDataReceivedAsync);
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            isActiveWhenErrorRaised = connection.IsActive;
+            errorRaisedTaskCompletionSource.TrySetResult();
+            return Task.CompletedTask;
+        });
+
+        string connectionString = $"ws://127.0.0.1:{server.Port}";
+        await connection.StartAsync(connectionString, TestContext.Current.CancellationToken);
+        string firstConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await server.SendWebSocketDataAsync(firstConnectionId, "Hello back");
+        await errorRaisedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The value captured inside the error observer is what pins the ordering: the connection is
+        // inactive before anyone is told about the failure, not merely by the time StopAsync runs.
+        Assert.False(isActiveWhenErrorRaised);
+        Assert.False(connection.IsActive);
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+        await connection.StartAsync(connectionString, TestContext.Current.CancellationToken);
+        string secondConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        Assert.NotEqual(firstConnectionId, secondConnectionId);
+
+        await server.SendWebSocketDataAsync(secondConnectionId, "Hello again");
+        Assert.Equal("Hello again"u8.ToArray(), this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3)));
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task TestConnectionStopWhileReceiveBlocked()
     {
         await using Server server = this.CreateServer();
@@ -1477,9 +1531,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
     [Fact]
     public async Task TestCannotSendDataOnAConnectionThatHasBeenClosed()
     {
-        // The send guard fires on IsActive alone, which is false both for a connection that was never
-        // started and for one that has been closed. It cannot distinguish them, so its message must
-        // describe both rather than telling a caller who did start the connection that they forgot to.
+        // The send guard fires on IsActive alone, which is false for a connection that was never started,
+        // for one that has been closed, and for one whose receive loop has ended. It does not distinguish
+        // them, so its message must describe all of them rather than telling a caller who did start the
+        // connection that they forgot to.
         await using Server server = this.CreateServer();
         await server.StartAsync();
 
@@ -1490,7 +1545,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("This send should fail"u8.ToArray(), TestContext.Current.CancellationToken));
         Assert.Contains("is not active", exception.Message);
-        Assert.Contains("has not been started, or it has already been closed", exception.Message);
+        Assert.Contains("has not been started, it has already been closed, or its receive loop has ended", exception.Message);
     }
 
     [Fact]
@@ -2128,7 +2183,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         // Installed after the connection is started, because Connection.StartAsync refuses to start a
         // connection that already reports itself as active.
-        connection.IsActiveOverride = () =>
+        connection.IsConnectionOpenOverride = () =>
         {
             int count = Interlocked.Increment(ref isActiveCallCount);
             return count <= 1;
@@ -2148,7 +2203,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         };
         await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
 
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await connection.SendDataAsync("data"u8.ToArray(), TestContext.Current.CancellationToken));
         Assert.Contains("Simulated WebSocket failure", exception.Message);
@@ -2392,7 +2447,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using TestWebSocketConnection connection = new()
         {
             BypassStart = false,
-            IsActiveOverride = () => true,
+            IsConnectionOpenOverride = () => true,
         };
         using CancellationTokenSource cts = new();
         cts.Cancel();
@@ -2406,7 +2461,7 @@ public class WebSocketConnectionTests : IAsyncDisposable
         await using TestWebSocketConnection connection = new();
         await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
         connection.BypassStart = false;
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
 
         byte[] payload = """{"id":1,"method":"session.new","params":{}}"""u8.ToArray();
 #pragma warning disable xUnit1051 // intentionally omits token to exercise the CancellationToken.None branch
