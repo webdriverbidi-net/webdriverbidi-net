@@ -392,16 +392,28 @@ the transport-specific parts, as `protected` overrides:
 | `SendConnectionDataAsync` | Writes one message to the transport. |
 | `ReceiveDataAsync` | The receive loop, started for you once the connection is established. |
 | `DisposeAsyncCore` | Releases the resources the custom connection owns. |
+| `IsConnectionOpen` | Reports whether the transport-specific connection is open. `IsActive` combines it with the state of the receive loop, as described below. |
 
 A custom connection also inherits members it does not have to supply, but will generally use:
 
 | Member | Purpose |
 | --- | --- |
-| `NotifyDataReceivedObserverAsync` | `protected`. Call from the receive loop to deliver a completed message, transferring ownership of its pooled memory. Does nothing when the accumulator is empty, so it is safe to call at every point a message may have completed. |
+| `NotifyDataReceivedObserverAsync` | `protected`. Call from the receive loop to deliver a completed message, transferring ownership of its pooled memory. Does nothing when the accumulator is empty, so it is safe to call at every point a message may have completed. An overload takes an `IMemoryOwner<byte>` and a length instead, for a connection that already holds the complete message in pooled memory; it rejects a length outside that memory. Either way it is the only way to raise `OnDataReceived`. |
+| `LogAsync` | `protected`. Raises `OnLogMessage` at the given level, or at `Info` when no level is given, discarding a message that `LogLevel` excludes. It is the only way to raise that event. |
+| `NotifyConnectionErrorObserversAsync` | `protected`. Call from the receive loop, as its last act, when a failure ends it. Logs the message at `Error` and raises `OnConnectionError`, and is the only way to raise that event. The observers are notified even if logging the message fails. |
+| `NotifyRemoteDisconnectedObserversAsync` | `protected`. Call from the receive loop, as its last act, when the remote end closes the connection. Raises `OnRemoteDisconnected`, and is the only way to raise that event. |
 | `ConnectionCancellationToken` | `protected`, read-only. The token cancelled when the connection stops. Use it rather than the cancellation source, which is disposed while the receive loop may still be running. |
 | `DataReceiveTask` | `protected`, read-only. The task the receive loop runs on, for a shutdown that needs to observe it. |
 | `IsLogLevelEnabled` | `public`. Test before composing any log message that is not free to build; the `SEND` and `RECV` traffic messages decode the whole payload, so they are guarded by it. |
 | `TimeProvider` | `protected`, settable. The clock `StartupTimeout`, `ShutdownTimeout` and `DataTimeout` are measured on. Substitute one to drive them with virtual time in a test. |
+
+`IsActive` is implemented by `Connection` itself. A connection is active while `IsConnectionOpen` reports it
+open and its receive loop has not reported that it ended. Both notification methods mark the connection
+inactive before they notify anyone, and it stays inactive until the next `StartAsync` starts a new loop,
+even though the underlying channel may still be open. That ordering is what lets a `Transport` recover from
+the loss: its next connect starts the connection again instead of adopting it, because a connection that
+nothing reads can never answer a command. `DisposeAsync` still stops a connection whose channel is open,
+whatever the state of its loop.
 
 The public `MessageBuffer` class is the pooled accumulator for a message that arrives in more than one
 read. `Append` adds a piece, `TakeOwnership` hands the completed block to the consumer and leaves the

@@ -58,7 +58,7 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public Func<ArraySegment<byte>, CancellationToken, int, Task<WebSocketReceiveResult>>? ReceiveHandler { get; set; }
 
-    public Func<bool>? IsActiveOverride { get; set; }
+    public Func<bool>? IsConnectionOpenOverride { get; set; }
 
     public Func<ReadOnlyMemory<byte>, Task>? SendWebSocketDataOverride { get; set; }
 
@@ -79,13 +79,13 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public bool Disposed => this.IsDisposed;
 
-    public override bool IsActive
+    protected override bool IsConnectionOpen
     {
         get
         {
-            if (this.IsActiveOverride is not null)
+            if (this.IsConnectionOpenOverride is not null)
             {
-                return this.IsActiveOverride();
+                return this.IsConnectionOpenOverride();
             }
 
             if (this.ThrowOnStop)
@@ -93,7 +93,7 @@ public class TestWebSocketConnection : WebSocketConnection
                 return true;
             }
 
-            return base.IsActive;
+            return base.IsConnectionOpen;
         }
     }
 
@@ -111,36 +111,41 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public async Task RaiseDataReceivedEventAsync(IMemoryOwner<byte> owner, int length)
     {
-        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(owner, length));
-    }
-
-    public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)
-    {
-        await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, "TestWebSocketConnection"));
+        await this.NotifyDataReceivedObserverAsync(owner, length);
     }
 
     /// <summary>
-    /// Raises a log message through the connection's own <c>LogAsync</c>, so that the message is subject
-    /// to <see cref="Connection.LogLevel"/> exactly as a message the connection itself emits.
-    /// <see cref="RaiseLogMessageEventAsync"/> notifies the observable directly and deliberately bypasses
-    /// that filtering.
+    /// Raises a log message through the connection's own <c>LogAsync</c>, so that the message is subject to
+    /// <see cref="Connection.LogLevel"/>, and carries the connection's component name, exactly as a message the
+    /// connection itself emits does.
     /// </summary>
     /// <param name="message">The log message to raise.</param>
     /// <param name="level">The level at which to raise it.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task RaiseFilteredLogMessageAsync(string message, WebDriverBiDiLogLevel level)
+    public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)
     {
         await this.LogAsync(message, level);
     }
 
+    /// <summary>
+    /// Reports a connection error as the receive loop does, through the base class, so the connection is marked
+    /// inactive before the error is logged and observers are notified.
+    /// </summary>
+    /// <param name="exception">The exception to report.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task RaiseConnectionErrorEventAsync(Exception exception)
     {
-        await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(exception));
+        await this.NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {exception.Message}", exception);
     }
 
+    /// <summary>
+    /// Reports a remote disconnect as the receive loop does, through the base class, so the connection is marked
+    /// inactive before observers are notified.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task RaiseRemoteDisconnectedEventAsync()
     {
-        await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs());
+        await this.NotifyRemoteDisconnectedObserversAsync();
     }
 
     /// <summary>

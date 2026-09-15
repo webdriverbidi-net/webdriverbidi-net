@@ -563,11 +563,18 @@ public class TransportTests
         Assert.Equal("response value", convertedResult.Value);
         await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        Assert.Equal(2, logs.Count);
+        // The connection delivers the response the way a real receive loop does, so at Trace it logs the received
+        // message before the transport reads it. The transport's own command messages bracket that entry.
+        Assert.Equal(3, logs.Count);
         Assert.Contains("Sending command data for command", logs[0].Message);
         Assert.Equal(WebDriverBiDiLogLevel.Debug, logs[0].Level);
-        Assert.Contains("Received result for command", logs[1].Message);
-        Assert.Equal(WebDriverBiDiLogLevel.Debug, logs[1].Level);
+        Assert.Equal(Transport.LoggerComponentName, logs[0].ComponentName);
+        Assert.StartsWith("RECV <<< ", logs[1].Message, StringComparison.Ordinal);
+        Assert.Equal(WebDriverBiDiLogLevel.Trace, logs[1].Level);
+        Assert.Equal(Connection.LoggerComponentName, logs[1].ComponentName);
+        Assert.Contains("Received result for command", logs[2].Message);
+        Assert.Equal(WebDriverBiDiLogLevel.Debug, logs[2].Level);
+        Assert.Equal(Transport.LoggerComponentName, logs[2].ComponentName);
     }
 
     [Fact]
@@ -1226,7 +1233,7 @@ public class TransportTests
         // bypassed start records the connection string without opening a socket; the override is what
         // makes the connection report itself open to the transport afterwards.
         await connection.StartAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
 
         await using Transport transport = new(connection);
         await transport.ConnectAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
@@ -1248,7 +1255,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         await connection.StartAsync("ws://localhost:1234", TestContext.Current.CancellationToken);
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
 
         await using Transport transport = new(connection);
 
@@ -1260,6 +1267,43 @@ public class TransportTests
         // The failed attempt rolls back, so the transport is idle and the open connection is untouched.
         Assert.Equal(TransportState.Disconnected, transport.State);
         Assert.Equal("ws://localhost:1234", connection.ConnectionString);
+    }
+
+    /// <summary>
+    /// A custom connection whose receive loop ends by reporting an error stays open until it is stopped, but
+    /// nothing reads from it any more. Before a connection's activity accounted for its receive loop, the next
+    /// connect adopted such a connection as already open, and no command on the new session was ever answered.
+    /// The connect must start the connection again instead.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task TestConnectAfterConnectionErrorStartsAnOpenCustomConnectionInsteadOfAdoptingIt()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+        TestReportingConnection connection = new();
+        await using Transport transport = new(connection);
+        await transport.ConnectAsync("custom://remote", testCancellationToken);
+
+        // Added after the transport's own observer, which the transport's constructor added, so it is
+        // notified once the transport has finished tearing the session down.
+        TaskCompletionSource connectionErrorHandled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.OnConnectionError.AddObserver(e =>
+        {
+            connectionErrorHandled.TrySetResult();
+        });
+
+        connection.EndReceiveLoopWithConnectionError(new IOException("Simulated read failure"));
+        await connectionErrorHandled.Task.WaitAsync(TimeSpan.FromSeconds(5), testCancellationToken);
+        Assert.Equal(TransportState.Disconnected, transport.State);
+        Assert.True(connection.IsOpen);
+        Assert.False(connection.IsActive);
+
+        await transport.DisconnectAsync(testCancellationToken);
+        await transport.ConnectAsync("custom://remote", testCancellationToken);
+
+        Assert.Equal(TransportState.Connected, transport.State);
+        Assert.Equal(2, connection.StartConnectionCallCount);
+        Assert.True(connection.IsActive);
     }
 
     [Fact]
@@ -1410,7 +1454,7 @@ public class TransportTests
         // Route the send through the real Connection.SendDataAsync so that it logs the traffic message,
         // while keeping the connection off an actual socket.
         connection.BypassStart = false;
-        connection.IsActiveOverride = () => true;
+        connection.IsConnectionOpenOverride = () => true;
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
 
         Exception? nestedSendException = null;
@@ -5382,7 +5426,7 @@ public class TransportTests
             throwingHandler,
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Warn);
         await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.NotNull(reportedError);
@@ -5418,7 +5462,7 @@ public class TransportTests
             errorReported.TrySetResult();
         });
 
-        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Warn);
         await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.NotNull(reportedError);
@@ -5442,7 +5486,7 @@ public class TransportTests
         Action<LogMessageEventArgs> throwingHandler = e => throw new WebDriverBiDiException("collected connection observer failure");
         connection.OnLogMessage.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Warn);
         Assert.True(await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Collect));
 
         AggregateException exception = await Assert.ThrowsAnyAsync<AggregateException>(
@@ -5466,7 +5510,7 @@ public class TransportTests
         Action<LogMessageEventArgs> throwingHandler = e => throw new WebDriverBiDiException("ignored connection observer failure");
         connection.OnLogMessage.AddObserver(throwingHandler, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Debug);
+        await connection.RaiseLogMessageEventAsync("connection log message", WebDriverBiDiLogLevel.Warn);
 
         // The event still fires for observability; only the unhandled-error collection is skipped.
         await errorReported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);

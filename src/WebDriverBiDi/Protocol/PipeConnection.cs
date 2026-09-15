@@ -82,20 +82,6 @@ public class PipeConnection : Connection
     }
 
     /// <summary>
-    /// Gets a value indicating whether this connection is active.
-    /// </summary>
-    /// <remarks>
-    /// The returned value is a point-in-time snapshot. Because the pipe server process is owned
-    /// by an external caller through<see cref="IPipeServerProcessProvider"/>, the process may
-    /// exit or be disposed between this check and any subsequent I/O call. If the owning process
-    /// has already been disposed, this property returns <see langword="false"/> rather than
-    /// propagating the resulting <see cref="InvalidOperationException"/>. Transient races where
-    /// the process exits after <see cref="IsActive"/> returns <see langword="true"/> are surfaced
-    /// by <see cref="Connection.SendDataAsync"/> as <see cref="WebDriverBiDiConnectionException"/>.
-    /// </remarks>
-    public override bool IsActive => this.IsConnectionActive && IsProcessRunning(this.processProvider.PipeServerProcess);
-
-    /// <summary>
     /// Gets a value indicating the type of data transport used by this connection, in this case, pipes.
     /// </summary>
     public override ConnectionKind ConnectionKind => ConnectionKind.Pipes;
@@ -119,6 +105,20 @@ public class PipeConnection : Connection
     /// starting the connection.
     /// </remarks>
     public string WritePipeHandle => this.AreConnectionPipesDisposed ? string.Empty : this.pipeFromProcess.GetClientHandleAsString();
+
+    /// <summary>
+    /// Gets a value indicating whether the pipes to the external process are open.
+    /// </summary>
+    /// <remarks>
+    /// The returned value is a point-in-time snapshot. Because the pipe server process is owned
+    /// by an external caller through <see cref="IPipeServerProcessProvider"/>, the process may
+    /// exit or be disposed between this check and any subsequent I/O call. If the owning process
+    /// has already been disposed, this property returns <see langword="false"/> rather than
+    /// propagating the resulting <see cref="InvalidOperationException"/>. Transient races where
+    /// the process exits after <see cref="Connection.IsActive"/> returns <see langword="true"/> are surfaced
+    /// by <see cref="Connection.SendDataAsync"/> as <see cref="WebDriverBiDiConnectionException"/>.
+    /// </remarks>
+    protected override bool IsConnectionOpen => this.IsConnectionActive && IsProcessRunning(this.processProvider.PipeServerProcess);
 
     /// <summary>
     /// Gets or sets a value indicating whether the local copies of pipe handles have been disposed.
@@ -353,7 +353,7 @@ public class PipeConnection : Connection
                 if (bytesRead == 0)
                 {
                     // Pipe closed. The remote end can reach end-of-file while its process is
-                    // still running, so the process check in IsActive cannot be relied upon
+                    // still running, so the process check in IsConnectionOpen cannot be relied upon
                     // to report the connection as inactive. Clear the flag here, before any
                     // observers are notified, so that a disconnection handler (and a
                     // subsequent Transport.ConnectAsync, which skips Connection.StartAsync
@@ -390,7 +390,7 @@ public class PipeConnection : Connection
             // If the loop exited without cancellation, the remote end closed the connection gracefully.
             if (!connectionCancellationToken.IsCancellationRequested)
             {
-                await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
+                await this.NotifyRemoteDisconnectedObserversAsync().ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -406,14 +406,12 @@ public class PipeConnection : Connection
             // Clear the flag before notifying observers, for the same reason as the end-of-file
             // path above.
             this.IsConnectionActive = false;
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            await this.NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {e.Message}", e).ConfigureAwait(false);
         }
         catch (ObjectDisposedException e)
         {
             this.IsConnectionActive = false;
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            await this.NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {e.Message}", e).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -423,8 +421,7 @@ public class PipeConnection : Connection
             // pending commands, this would look like a command that never returns a response
             // rather than the loop ending due to the observer exception.
             this.IsConnectionActive = false;
-            await this.LogAsync($"Unexpected error processing received data: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            await this.NotifyConnectionErrorObserversAsync($"Unexpected error processing received data: {e.Message}", e).ConfigureAwait(false);
         }
     }
 

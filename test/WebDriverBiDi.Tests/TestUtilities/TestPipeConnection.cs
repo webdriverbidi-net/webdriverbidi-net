@@ -31,7 +31,7 @@ public class TestPipeConnection : PipeConnection
 
     public TaskCompletionSource? SendBarrier { get; set; }
 
-    public Func<bool>? IsActiveOverride { get; set; }
+    public Func<bool>? IsConnectionOpenOverride { get; set; }
 
     /// <summary>
     /// When set, <see cref="ReadPipeDataAsync"/> awaits this source instead of delegating
@@ -79,7 +79,7 @@ public class TestPipeConnection : PipeConnection
 
     public async Task RaiseRemoteDisconnectedEventAsync()
     {
-        await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs());
+        await this.NotifyRemoteDisconnectedObserversAsync();
     }
 
     public bool PipesDisposed
@@ -88,13 +88,13 @@ public class TestPipeConnection : PipeConnection
         set => this.AreConnectionPipesDisposed = value;
     }
 
-    public override bool IsActive
+    protected override bool IsConnectionOpen
     {
         get
         {
-            if (this.IsActiveOverride is not null)
+            if (this.IsConnectionOpenOverride is not null)
             {
-                return this.IsActiveOverride();
+                return this.IsConnectionOpenOverride();
             }
 
             if (this.ThrowOnStop)
@@ -102,7 +102,7 @@ public class TestPipeConnection : PipeConnection
                 return true;
             }
 
-            return base.IsActive;
+            return base.IsConnectionOpen;
         }
     }
 

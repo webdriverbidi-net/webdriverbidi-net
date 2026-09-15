@@ -41,7 +41,7 @@ public class TestReceiveLoopWebSocketConnection : WebSocketConnection
         ConnectionError,
     }
 
-    public override bool IsActive => Interlocked.CompareExchange(ref this.isActiveFlag, 0, 0) == 1;
+    protected override bool IsConnectionOpen => Interlocked.CompareExchange(ref this.isActiveFlag, 0, 0) == 1;
 
     public int StopCallCount => Interlocked.CompareExchange(ref this.stopCallCount, 0, 0);
 
@@ -112,11 +112,12 @@ public class TestReceiveLoopWebSocketConnection : WebSocketConnection
         Interlocked.Exchange(ref this.isActiveFlag, 0);
         if (exitTask.Result == ReceiveLoopExit.RemoteClose)
         {
-            await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
+            await this.NotifyRemoteDisconnectedObserversAsync().ConfigureAwait(false);
         }
         else
         {
-            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(new IOException("Simulated read failure"))).ConfigureAwait(false);
+            IOException readFailure = new("Simulated read failure");
+            await this.NotifyConnectionErrorObserversAsync($"Unexpected error during receive of data: {readFailure.Message}", readFailure).ConfigureAwait(false);
         }
     }
 }
