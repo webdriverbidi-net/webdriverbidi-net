@@ -28,6 +28,15 @@ public interface IBiDiModuleHost
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandParameters"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="commandTimeout"/> is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.</exception>
+    /// <exception cref="WebDriverBiDiCommandException">Thrown when the remote end returns an error response for the command.</exception>
+    /// <exception cref="WebDriverBiDiSerializationException">Thrown when the command parameters cannot be serialized, or the response cannot be deserialized.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the command does not complete within the timeout.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the driver is not connected to a remote end, or the connection is lost before the command completes.</exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when the command is canceled, or its response carries no result or a result of the wrong type.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the driver has been disposed.</exception>
     Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         where T : CommandResult;
 
@@ -39,6 +48,15 @@ public interface IBiDiModuleHost
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandParameters"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="commandTimeout"/> is negative (other than <see cref="Timeout.InfiniteTimeSpan"/>) or exceeds the maximum supported timer duration.</exception>
+    /// <exception cref="WebDriverBiDiCommandException">Thrown when the remote end returns an error response for the command.</exception>
+    /// <exception cref="WebDriverBiDiSerializationException">Thrown when the command parameters cannot be serialized, or the response cannot be deserialized.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the command does not complete within the timeout.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the driver is not connected to a remote end, or the connection is lost before the command completes.</exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when the command is canceled, or its response carries no result or a result of the wrong type.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the driver has been disposed.</exception>
     Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         where T : CommandResult;
 

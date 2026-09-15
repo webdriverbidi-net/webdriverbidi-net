@@ -312,7 +312,7 @@ For normal application code, use the concrete `BiDiDriver` class directly.
 
 That is the intended experience for almost every consumer of this library. Most users should never need to reference any interface type directly.
 
-For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also implements four focused interfaces:
+For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also implements five focused interfaces, and exposes two more through its properties:
 
 | Interface | Purpose | Typical advanced use |
 |----------|---------|----------------------|
@@ -320,6 +320,7 @@ For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also 
 | `IBiDiDriverLifecycleManager` | Driver lifecycle | Framework code that owns the driver's lifetime without executing commands itself: starting, stopping and disposing the driver, or checking `IsStarted` |
 | `IBiDiDriverConfiguration` | Pre-start extensibility hooks | Registering custom modules and additional JSON type resolvers before `StartAsync()` |
 | `IBiDiDriverEvents` | Driver observability | Subscribing to top-level driver events |
+| `IEventObserverErrorReporter` | Observer failure reporting | Implemented by a custom `IBiDiModuleHost` to receive the failures of asynchronous observers of its modules' events; `BiDiDriver` already implements it |
 | `ITransportConfiguration` | Tunable transport settings | Adjusting the log level, the transport error behaviors, and the shutdown and connection-lock timeouts, via `BiDiDriver.TransportConfiguration` |
 | `ITransportDiagnostics` | Observable transport state | Polling lifecycle state, incoming queue depth and pending command count, via `BiDiDriver.TransportDiagnostics` |
 
@@ -330,6 +331,7 @@ The hierarchy is intentionally split by capability rather than by end-user workf
 - `IBiDiDriverLifecycleManager` covers starting, stopping and disposing the driver.
 - `IBiDiDriverConfiguration` covers advanced pre-start customization.
 - `IBiDiDriverEvents` covers top-level driver events.
+- `IEventObserverErrorReporter` receives the failures of observers that run asynchronously. Unlike the others, it is meant to be implemented, by a custom `IBiDiModuleHost`; `BiDiDriver` implements it already, so application code never needs it.
 - `ITransportConfiguration` and `ITransportDiagnostics` are the transport's settings and its observable state. They are reached from `BiDiDriver.TransportConfiguration` and `BiDiDriver.TransportDiagnostics`, so a driver built with `new BiDiDriver()` can be tuned and observed without constructing a `Transport` by hand. They deliberately exclude the transport's lifecycle and messaging operations, which belong to the driver that owns it.
 
 If you are building a higher-level library on top of WebDriverBiDi.NET, choose the narrowest interface that matches the capability you need. If you are writing application code, ignore the interfaces and use `BiDiDriver`.

@@ -10,10 +10,15 @@ using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Enumeration of error codes that may be returned by the remote end of the WebDriver BiDi protocol in
-/// error responses to commands or in unsolicited error events. Each value corresponds to a specific error
-/// type defined in the WebDriver BiDi protocol specification, and is associated with a specific string
+/// error responses to commands or in unsolicited error events. Each value is associated with the string
 /// value used in the JSON error responses.
 /// </summary>
+/// <remarks>
+/// Most values are the error codes the WebDriver BiDi protocol specification defines. The rest are WebDriver
+/// classic error codes, which the WebDriver BiDi specification does not define but which remote ends built on
+/// a classic WebDriver implementation have been observed to return; each of those says so in its own
+/// documentation. An error code string that matches no value is reported as <see cref="UnsetErrorCode"/>.
+/// </remarks>
 [JsonConverter(typeof(EnumValueJsonConverter<ErrorCode>))]
 [StringEnumUnmatchedValue<ErrorCode>(UnsetErrorCode)]
 public enum ErrorCode
@@ -26,6 +31,10 @@ public enum ErrorCode
     /// <summary>
     /// A command failed because the referenced shadow root is no longer attached to the DOM.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("detached shadow root")]
     DetachedShadowRoot,
 
@@ -33,12 +42,20 @@ public enum ErrorCode
     /// The Element Click command could not be completed because the element receiving the
     /// events is obscuring the element that was requested clicked.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("element click intercepted")]
     ElementClickIntercepted,
 
     /// <summary>
     /// A command could not be completed because the element is not pointer- or keyboard interactable.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("element not interactable")]
     ElementNotInteractable,
 
@@ -46,6 +63,10 @@ public enum ErrorCode
     /// Navigation caused the user agent to hit a certificate warning, which is usually the
     /// result of an expired or invalid TLS certificate.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("insecure certificate")]
     InsecureCertificate,
 
@@ -58,6 +79,10 @@ public enum ErrorCode
     /// <summary>
     /// An illegal attempt was made to set a cookie under a different domain than the current page.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("invalid cookie domain")]
     InvalidCookieDomain,
 
@@ -65,6 +90,10 @@ public enum ErrorCode
     /// A command could not be completed because the element is in an invalid state, e.g. attempting
     /// to clear an element that isn't both editable and resettable.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("invalid element state")]
     InvalidElementState,
 
@@ -89,6 +118,10 @@ public enum ErrorCode
     /// <summary>
     /// An error occurred while executing JavaScript supplied by the user.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("javascript error")]
     JavascriptError,
 
@@ -115,6 +148,10 @@ public enum ErrorCode
     /// No cookie matching the given path name was found amongst the associated
     /// cookies of session's current browsing context's active document.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("no such cookie")]
     NoSuchCookie,
 
@@ -187,6 +224,10 @@ public enum ErrorCode
     /// <summary>
     /// The element does not have a shadow root.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("no such shadow root")]
     NoSuchShadowRoot,
 
@@ -211,12 +252,20 @@ public enum ErrorCode
     /// <summary>
     /// A command to switch to a window could not be satisfied because the window could not be found.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("no such window")]
     NoSuchWindow,
 
     /// <summary>
     /// A script did not complete before its timeout expired.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("script timeout error")]
     ScriptTimeoutError,
 
@@ -229,12 +278,20 @@ public enum ErrorCode
     /// <summary>
     /// A command failed because the referenced element is no longer attached to the DOM.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("stale element reference")]
     StaleElementReference,
 
     /// <summary>
     /// An operation did not complete before its timeout expired.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("timeout")]
     Timeout,
 
@@ -278,6 +335,10 @@ public enum ErrorCode
     /// <summary>
     /// A modal dialog was open, blocking this operation.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("unexpected alert open")]
     UnexpectedAlertOpen,
 
@@ -296,6 +357,10 @@ public enum ErrorCode
     /// <summary>
     /// The requested command matched a known URL but did not match any method for that URL.
     /// </summary>
+    /// <remarks>
+    /// A WebDriver classic error code, not defined by the WebDriver BiDi specification. It is included because
+    /// remote ends built on a classic WebDriver implementation have been observed to return it.
+    /// </remarks>
     [StringEnumValue("unknown method")]
     UnknownMethod,
 

@@ -104,7 +104,7 @@ Press any key to exit...
 
 [!code-csharp[Driver Initialization](../code/examples/FirstApplicationSamples.cs#DriverInitialization)]
 
-Creates a driver with a 30-second command timeout and connects to the browser. This overrides the library's default timeout of 60 seconds; adjust the value to suit your environment.
+Creates a driver with a 30-second command timeout and connects to the browser. This overrides the library's default timeout, `BiDiDriver.DefaultCommandWaitTimeout` (60 seconds); adjust the value to suit your environment.
 
 > **Tip:** By default, event handler exceptions and problems with messages from the browser never throw.
 > They are reported only through the driver's diagnostic events, which nothing may be watching. During

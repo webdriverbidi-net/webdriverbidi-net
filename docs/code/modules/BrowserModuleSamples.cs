@@ -181,6 +181,16 @@ public static class BrowserModuleSamples
     }
 
     /// <summary>
+    /// Reset download behavior.
+    /// </summary>
+    public static async Task ResetDownloadBehavior(BiDiDriver driver)
+    {
+        #region ResetDownloadBehavior
+        await driver.Browser.SetDownloadBehaviorAsync(SetDownloadBehaviorCommandParameters.ResetDownloadBehavior);
+        #endregion
+    }
+
+    /// <summary>
     /// Close browser.
     /// </summary>
     public static async Task CloseBrowser(BiDiDriver driver)

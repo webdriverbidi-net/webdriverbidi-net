@@ -3,6 +3,7 @@ namespace WebDriverBiDi.Conventions;
 using System.Collections;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 // In this namespace the file-level using of System.Reflection would otherwise make the bare name
 // 'Module' bind to System.Reflection.Module rather than to the library's protocol module base class.
@@ -374,6 +375,68 @@ public class WebDriverBiDiConventionTests
         // sweeping nothing at all. There are 82 today.
         Assert.True(commandCount >= 80, $"The command sweep found only {commandCount} module commands; the walk is broken.");
         Assert.True(offenders.Count == 0, $"Every module command must end with 'TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default'. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    [Fact]
+    public void TestEveryModuleCommandDocumentsTheExceptionsACommandCanThrow()
+    {
+        // IntelliSense and the API reference show a command's exceptions only when its own XML documentation lists
+        // them. The list is written once, in ModuleCommandExceptions.xml, and each command includes it; a command
+        // added without the include compiles and ships with no exception contract, and nothing else notices. The
+        // compiler expands the include into the documentation file, so that file is what is checked.
+        string documentationPath = Path.ChangeExtension(typeof(BiDiDriver).Assembly.Location, ".xml");
+        Assert.True(File.Exists(documentationPath), $"The library's XML documentation file was not found at {documentationPath}.");
+        Dictionary<string, XElement> membersByName = [];
+        foreach (XElement member in XDocument.Load(documentationPath).Descendants("member"))
+        {
+            membersByName[(string)member.Attribute("name")!] = member;
+        }
+
+        string[] commandExceptions =
+        [
+            "T:System.ArgumentOutOfRangeException",
+            "T:WebDriverBiDi.WebDriverBiDiCommandException",
+            "T:WebDriverBiDi.WebDriverBiDiSerializationException",
+            "T:WebDriverBiDi.WebDriverBiDiTimeoutException",
+            "T:WebDriverBiDi.WebDriverBiDiConnectionException",
+            "T:WebDriverBiDi.WebDriverBiDiException",
+            "T:System.OperationCanceledException",
+            "T:System.ObjectDisposedException",
+        ];
+        const string ArgumentNullException = "T:System.ArgumentNullException";
+
+        List<string> offenders = [];
+        int commandCount = 0;
+        foreach ((Module module, MethodInfo method, ParameterInfo commandParameters) in GetModuleCommandMethods())
+        {
+            commandCount++;
+            string name = $"{module.GetType().Name}.{method.Name}";
+            string memberPrefix = $"M:{method.DeclaringType!.FullName}.{method.Name}(";
+            XElement? member = membersByName.Where(pair => pair.Key.StartsWith(memberPrefix, StringComparison.Ordinal)).Select(pair => pair.Value).FirstOrDefault();
+            if (member is null)
+            {
+                offenders.Add($"{name} has no XML documentation");
+                continue;
+            }
+
+            HashSet<string> documented = [.. member.Elements("exception").Select(exception => (string)exception.Attribute("cref")!)];
+            foreach (string missing in commandExceptions.Where(exception => !documented.Contains(exception)))
+            {
+                offenders.Add($"{name} does not document {missing}");
+            }
+
+            // A command whose parameters are optional substitutes default parameters for null, so it never throws
+            // ArgumentNullException; one whose parameters are required does.
+            if (commandParameters.IsOptional == documented.Contains(ArgumentNullException))
+            {
+                offenders.Add(commandParameters.IsOptional
+                    ? $"{name} takes optional parameters but documents {ArgumentNullException}"
+                    : $"{name} takes required parameters but does not document {ArgumentNullException}");
+            }
+        }
+
+        Assert.True(commandCount >= 80, $"The command sweep found only {commandCount} module commands; the walk is broken.");
+        Assert.True(offenders.Count == 0, $"Every module command must include the exceptions in ModuleCommandExceptions.xml. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
     }
 
     [Fact]

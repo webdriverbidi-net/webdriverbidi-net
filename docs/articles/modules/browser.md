@@ -67,6 +67,12 @@ Control how the browser handles downloads.
 
 [!code-csharp[Deny Downloads](../../code/modules/BrowserModuleSamples.cs#DenyDownloads)]
 
+### Reset Download Behavior
+
+To remove a download behavior override and restore the browser's default handling, pass `SetDownloadBehaviorCommandParameters.ResetDownloadBehavior`. It returns a new instance on each access, so you can add entries to its `UserContexts` to reset the behavior for those user contexts only:
+
+[!code-csharp[Reset Download Behavior](../../code/modules/BrowserModuleSamples.cs#ResetDownloadBehavior)]
+
 ## Closing Browser
 
 ### Close Browser
