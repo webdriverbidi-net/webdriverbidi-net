@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -31,12 +30,6 @@ public class AccessibilityLocator : Locator
     public override string Type => this.type;
 
     /// <summary>
-    /// Gets a read-only version of a dictionary containing the accessibility attributes to use in locating nodes.
-    /// </summary>
-    [JsonPropertyName("value")]
-    public override object Value => new ReadOnlyDictionary<string, string>(this.accessibilityAttributes);
-
-    /// <summary>
     /// Gets or sets the accessible name to use to locate nodes.
     /// </summary>
     [JsonIgnore]
@@ -47,6 +40,13 @@ public class AccessibilityLocator : Locator
     /// </summary>
     [JsonIgnore]
     public string? Role { get => this.GetAccessiblePropertyValue("role"); set => this.SetAccessiblePropertyValue("role", value); }
+
+    /// <summary>
+    /// Gets the accessibility attributes to use in locating nodes, for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    internal Dictionary<string, string> SerializableValue => this.accessibilityAttributes;
 
     private string? GetAccessiblePropertyValue(string propertyName)
     {

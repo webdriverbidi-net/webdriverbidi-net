@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 public class CssLocator : Locator
 {
     private readonly string type = "css";
-    private readonly string value;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CssLocator"/> class.
@@ -22,7 +21,7 @@ public class CssLocator : Locator
     public CssLocator(string value)
         : base()
     {
-        this.value = value;
+        this.Value = value;
     }
 
     /// <summary>
@@ -35,5 +34,5 @@ public class CssLocator : Locator
     /// Gets the CSS selector to use in locating nodes.
     /// </summary>
     [JsonPropertyName("value")]
-    public override object Value => this.value;
+    public string Value { get; }
 }

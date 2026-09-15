@@ -236,6 +236,43 @@ try
     await driver.Input.PerformActionsAsync(actionsParams);
     Console.WriteLine("performActions with a pointer move accepted.");
 
+    // The accessibility and context locators send their values as dictionaries, the one locator shape that is
+    // not a string. Each is expected to find exactly one node, so a malformed value cannot pass unnoticed.
+    LocateNodesCommandResult headingResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new AccessibilityLocator { Role = "heading" }));
+    Console.WriteLine($"Accessibility locator found {headingResult.Nodes.Count} node(s)");
+    if (headingResult.Nodes.Count != 1 || headingResult.Nodes[0].Value?.LocalName != "h1")
+    {
+        throw new InvalidOperationException($"Expected the accessibility locator to find the page's single h1 heading, but found {headingResult.Nodes.Count} node(s)");
+    }
+
+    EvaluateCommandParameters addFrameParams = new(
+        "new Promise((resolve) => { const frame = document.createElement('iframe'); frame.onload = () => resolve(); frame.srcdoc = '<p>Framed content</p>'; document.body.appendChild(frame); })",
+        new ContextTarget(contextId),
+        true);
+    await driver.Script.EvaluateAsync(addFrameParams);
+    GetTreeCommandResult frameTree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters { RootBrowsingContextId = contextId });
+    IList<BrowsingContextInfo>? frames = frameTree.ContextTree[0].Children;
+    if (frames is null || frames.Count != 1)
+    {
+        throw new InvalidOperationException($"Expected one child browsing context after adding an iframe, but found {frames?.Count ?? 0}");
+    }
+
+    LocateNodesCommandResult frameResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new ContextLocator(frames[0].BrowsingContextId)));
+    Console.WriteLine($"Context locator found {frameResult.Nodes.Count} node(s)");
+    if (frameResult.Nodes.Count != 1 || frameResult.Nodes[0].Value?.LocalName != "iframe")
+    {
+        throw new InvalidOperationException($"Expected the context locator to find the iframe hosting the child context, but found {frameResult.Nodes.Count} node(s)");
+    }
+
+    // An element origin is the one origin that is an object rather than a string. A wheel scroll reaches
+    // WheelScrollAction.SerializableOrigin, which, like the pointer move above, is object-typed.
+    PerformActionsCommandParameters scrollParams = new(contextId);
+    WheelSourceActions wheelActions = new("aot-wheel");
+    wheelActions.Actions.Add(new WheelScrollAction { DeltaY = 10, Origin = Origin.Element(headingResult.Nodes[0].ToSharedReference()) });
+    scrollParams.Actions.Add(wheelActions);
+    await driver.Input.PerformActionsAsync(scrollParams);
+    Console.WriteLine("performActions with a wheel scroll from an element origin accepted.");
+
     // A script exception deserializes into EvaluateResultException with its details.
     EvaluateCommandParameters throwParams = new("(() => { throw new Error('boom'); })()", new ContextTarget(contextId), true);
     EvaluateResult throwResult = await driver.Script.EvaluateAsync(throwParams);
@@ -281,7 +318,7 @@ try
         }
     }
 
-    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, callFunction, a custom command through a registered resolver, decimal/array/map values, the polymorphic argument kinds, input.performActions, a log entry level, a script exception and an error response.");
+    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, callFunction, a custom command through a registered resolver, decimal/array/map values, the polymorphic argument kinds, input.performActions with viewport and element origins, the accessibility and context locators, a log entry level, a script exception and an error response.");
     return 0;
 }
 catch (Exception ex)

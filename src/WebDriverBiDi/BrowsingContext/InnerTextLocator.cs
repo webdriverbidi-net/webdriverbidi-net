@@ -14,7 +14,6 @@ using System.Text.Json.Serialization;
 public class InnerTextLocator : Locator
 {
     private readonly string type = "innerText";
-    private readonly string value;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InnerTextLocator"/> class.
@@ -23,7 +22,7 @@ public class InnerTextLocator : Locator
     public InnerTextLocator(string value)
         : base()
     {
-        this.value = value;
+        this.Value = value;
     }
 
     /// <summary>
@@ -36,7 +35,7 @@ public class InnerTextLocator : Locator
     /// Gets the text to use in locating nodes.
     /// </summary>
     [JsonPropertyName("value")]
-    public override object Value => this.value;
+    public string Value { get; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the locator should ignore case when matching.
