@@ -1929,4 +1929,115 @@ public class BiDiDriver008AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a cast in a switch expression arm selected by the discriminator value or by a type pattern on the operand, or guarded by the arm's <c>when</c> clause, is not reported, and that a section label's <c>when</c> clause guards the section's statements.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_GuardedBySwitchExpressionArmOrWhenClause_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        object byDiscriminator = result.ResultType switch
+                        {
+                            EvaluateResultType.Success => ((EvaluateResultSuccess)result).Result,
+                            EvaluateResultType.Exception => ((EvaluateResultException)result).ExceptionDetails,
+                            _ => null,
+                        };
+
+                        object byType = result switch
+                        {
+                            EvaluateResultSuccess => ((EvaluateResultSuccess)result).Result,
+                            EvaluateResultException { } => ((EvaluateResultException)result).ExceptionDetails,
+                            EvaluateResult other when other.RealmId.Length > 0 && result is EvaluateResultSuccess => ((EvaluateResultSuccess)result).Result,
+                            _ => null,
+                        };
+
+                        object byWhenClause = result switch
+                        {
+                            _ when result.ResultType == EvaluateResultType.Success => ((EvaluateResultSuccess)result).Result,
+                            _ => null,
+                        };
+
+                        switch (result.ResultType)
+                        {
+                            case EvaluateResultType resultType when result is EvaluateResultException:
+                                EvaluateResultException guardedByWhenClause = (EvaluateResultException)result;
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a cast is still reported in a switch expression arm that selects the other type or nothing, under a <c>when</c> clause that does not establish the type, and inside the very <c>when</c> clause that would establish it, for arms and for section labels alike.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Cast_InSwitchExpressionArmOrWhenClauseThatDoesNotEstablishItsType_ReportsDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi.Script;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EvaluateResult result)
+                    {
+                        object wrongArm = result.ResultType switch
+                        {
+                            EvaluateResultType.Exception => {|#0:(EvaluateResultSuccess)result|},
+                            _ => {|#1:(EvaluateResultSuccess)result|},
+                        };
+
+                        object unrelatedWhenClause = result switch
+                        {
+                            _ when result.RealmId.Length > 0 => {|#2:(EvaluateResultSuccess)result|},
+                            _ => null,
+                        };
+
+                        object castInsideWhenClause = result switch
+                        {
+                            _ when ({|#3:(EvaluateResultSuccess)result|}).Result != null && result.ResultType == EvaluateResultType.Success => 1,
+                            _ => null,
+                        };
+
+                        switch (result.ResultType)
+                        {
+                            case EvaluateResultType resultType when ({|#4:(EvaluateResultSuccess)result|}).Result != null && result is EvaluateResultSuccess:
+                                break;
+                            case EvaluateResultType otherType:
+                                EvaluateResultSuccess unguarded = {|#5:(EvaluateResultSuccess)result|};
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult[] expected = new DiagnosticResult[6];
+        for (int i = 0; i < expected.Length; i++)
+        {
+            expected[i] = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .WithLocation(i)
+                .WithArguments("EvaluateResultSuccess");
+        }
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer>(testCode, expected);
+    }
 }

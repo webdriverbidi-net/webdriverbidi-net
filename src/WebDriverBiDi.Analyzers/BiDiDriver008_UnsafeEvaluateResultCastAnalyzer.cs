@@ -210,8 +210,10 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
     /// <c>result is EvaluateResultSuccess</c>. The test guards the cast when the cast sits in the
     /// then-branch of an <c>if</c> on it, in the true arm of a conditional expression on it, on the
     /// right of an <c>&amp;&amp;</c> whose left operand is it, in a <c>switch</c> section every label
-    /// of which selects it, or after an <c>if</c> on its negation whose body leaves the enclosing
-    /// block (a return, throw, break or continue guard). Only a syntactically identical operand counts:
+    /// of which selects it, in a <c>switch</c> expression arm that selects it, or after an <c>if</c> on
+    /// its negation whose body leaves the enclosing block (a return, throw, break or continue guard). A
+    /// label or arm selects it by its pattern, or by a <c>when</c> clause on it, which guards the
+    /// section's statements or the arm's expression but not the clause itself. Only a syntactically identical operand counts:
     /// the test and the cast must name the same expression.
     /// </remarks>
     private static bool IsGuardedByTypeTest(SyntaxNodeAnalysisContext context, CastExpressionSyntax castExpression)
@@ -242,7 +244,12 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
-            if (current is SwitchSectionSyntax section && test.IsEstablishedBySwitchSection(section))
+            if (current is SwitchSectionSyntax section && test.IsEstablishedBySwitchSection(section, child))
+            {
+                return true;
+            }
+
+            if (current is SwitchExpressionArmSyntax arm && test.IsEstablishedBySwitchExpressionArm(arm, child))
             {
                 return true;
             }
@@ -338,25 +345,47 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
 
         /// <summary>
         /// Determines whether every label of a switch section selects the operand's type, either by
-        /// switching on the discriminator (<c>case EvaluateResultType.Success:</c>) or by a type
-        /// pattern on the operand itself (<c>case EvaluateResultSuccess:</c>).
+        /// switching on the discriminator (<c>case EvaluateResultType.Success:</c>), by a type
+        /// pattern on the operand itself (<c>case EvaluateResultSuccess:</c>), or, for the section's
+        /// statements, by the label's <c>when</c> clause.
         /// </summary>
         /// <param name="section">The switch section.</param>
-        /// <returns><see langword="true"/> if the section runs only for the operand's type; otherwise <see langword="false"/>.</returns>
-        public bool IsEstablishedBySwitchSection(SwitchSectionSyntax section)
+        /// <param name="child">The child of the section that contains the cast: a label or a statement.</param>
+        /// <returns><see langword="true"/> if the cast runs only for the operand's type; otherwise <see langword="false"/>.</returns>
+        public bool IsEstablishedBySwitchSection(SwitchSectionSyntax section, SyntaxNode child)
         {
             // A section always belongs to a switch statement and always carries at least one label.
             // `case EvaluateResultSuccess:` parses as a case label whose value is a name, not as a
-            // pattern label; it is a type test when that name resolves to the target type.
+            // pattern label; it is a type test when that name resolves to the target type. A when
+            // clause runs only after its label's pattern has matched, and the statements only after
+            // the clause holds, so the clause guards the statements but not a cast inside itself.
             ExpressionSyntax governing = ((SwitchStatementSyntax)section.Parent!).Expression;
+            bool isInStatements = child is StatementSyntax;
             return section.Labels.All(label => label switch
             {
                 CaseSwitchLabelSyntax caseLabel => this.IsDiscriminatorComparison(governing, caseLabel.Value)
                     || (this.IsOperand(governing) && this.IsTargetType(caseLabel.Value)),
-                CasePatternSwitchLabelSyntax patternLabel => (patternLabel.Pattern is ConstantPatternSyntax constant && this.IsDiscriminatorComparison(governing, constant.Expression))
-                    || (this.IsOperand(governing) && this.IsTargetTypePattern(patternLabel.Pattern)),
+                CasePatternSwitchLabelSyntax patternLabel => this.IsSelectedByPattern(governing, patternLabel.Pattern)
+                    || (isInStatements && patternLabel.WhenClause is not null && this.IsEstablishedBy(patternLabel.WhenClause.Condition)),
                 _ => false,
             });
+        }
+
+        /// <summary>
+        /// Determines whether a switch expression arm is selected only for the operand's type: by its
+        /// pattern, as a switch section label is, or, for the arm's expression, by its <c>when</c> clause.
+        /// </summary>
+        /// <param name="arm">The switch expression arm.</param>
+        /// <param name="child">The child of the arm that contains the cast: its when clause or its expression.</param>
+        /// <returns><see langword="true"/> if the cast runs only for the operand's type; otherwise <see langword="false"/>.</returns>
+        public bool IsEstablishedBySwitchExpressionArm(SwitchExpressionArmSyntax arm, SyntaxNode child)
+        {
+            // An arm always belongs to a switch expression. As in a section, the when clause runs only
+            // after the pattern has matched and the expression only after the clause holds, so the
+            // clause guards the expression but not a cast inside itself.
+            ExpressionSyntax governing = ((SwitchExpressionSyntax)arm.Parent!).GoverningExpression;
+            return this.IsSelectedByPattern(governing, arm.Pattern)
+                || (child == arm.Expression && arm.WhenClause is not null && this.IsEstablishedBy(arm.WhenClause.Condition));
         }
 
         /// <summary>
@@ -399,6 +428,15 @@ public class BiDiDriver008_UnsafeEvaluateResultCastAnalyzer : DiagnosticAnalyzer
         private bool IsOperand(ExpressionSyntax expression)
         {
             return SyntaxFactory.AreEquivalent(Unparenthesize(expression), this.operand);
+        }
+
+        private bool IsSelectedByPattern(ExpressionSyntax governing, PatternSyntax pattern)
+        {
+            // The discriminator matched against the member for the target type
+            // (`EvaluateResultType.Success`), or the operand matched against the target type
+            // (`EvaluateResultSuccess`, `EvaluateResultSuccess success`, `EvaluateResultSuccess { }`).
+            return (pattern is ConstantPatternSyntax constant && this.IsDiscriminatorComparison(governing, constant.Expression))
+                || (this.IsOperand(governing) && this.IsTargetTypePattern(pattern));
         }
 
         private bool IsTargetType(ExpressionSyntax type)

@@ -2791,4 +2791,46 @@ public class BiDiDriver009AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver009_CommandExecutionBeforeStartAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task Command_BeforeStartAsync_InTopLevelProgramDeclaringAModule_ReportsError()
+    {
+        // The hand-off scan covers only the program's own statements. The module declared in the same file passes
+        // its constructor parameter, also named driver, to its base class; that is not the program's local driver
+        // escaping, so the command before the start is still reported.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using TestApp;
+
+            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+            driver.RegisterModule(new CustomModule(driver));
+            await {|#0:driver.Session.StatusAsync()|};
+
+            namespace TestApp
+            {
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        RealAssemblyAnalyzerTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+            TestState = { OutputKind = OutputKind.ConsoleApplication },
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

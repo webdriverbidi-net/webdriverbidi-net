@@ -2150,4 +2150,47 @@ public class BiDiDriver001AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(testCode, expected);
     }
+
+    /// <summary>
+    /// Tests that a registration after the driver has been handed to a helper is not reported: the helper
+    /// may have stopped the driver, which this rule cannot see, and an Error on correct code is worse than a
+    /// missed report.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterModule_AfterDriverPassedToHelperThatStopsIt_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        await StopHelperAsync(driver);
+                        driver.RegisterModule(new CustomModule(driver));
+                    }
+
+                    private static async Task StopHelperAsync(BiDiDriver driver)
+                    {
+                        await driver.StopAsync();
+                    }
+                }
+
+                public class CustomModule : Module
+                {
+                    public CustomModule(IBiDiModuleHost driver) : base(driver) { }
+                    public override string ModuleName => "custom";
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver001_ModuleRegistrationAfterStartAnalyzer>(test);
+    }
 }

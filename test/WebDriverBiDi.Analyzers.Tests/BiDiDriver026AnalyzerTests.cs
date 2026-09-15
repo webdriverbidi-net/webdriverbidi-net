@@ -309,4 +309,75 @@ public class BiDiDriver026AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver026_ExecuteCommandResultTypeMismatchAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task MismatchedTypeArgumentWithNamedAndReorderedArguments_ReportsError()
+    {
+        // The parameters argument is found by its type, not its position, so a named argument written after
+        // another one is still checked.
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public record WrongResult : CommandResult
+                {
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver, CancellationToken cancellationToken)
+                    {
+                        await driver.ExecuteCommandAsync<{|#0:WrongResult|}>(cancellationToken: cancellationToken, commandParameters: new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver026_ExecuteCommandResultTypeMismatchAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("WrongResult", "StatusCommandResult");
+
+        RealAssemblyAnalyzerTest<BiDiDriver026_ExecuteCommandResultTypeMismatchAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task MatchingTypeArgumentWithNamedArguments_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(BiDiDriver driver, CancellationToken cancellationToken)
+                    {
+                        await driver.ExecuteCommandAsync<StatusCommandResult>(cancellationToken: cancellationToken, commandParameters: new StatusCommandParameters());
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver026_ExecuteCommandResultTypeMismatchAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -1272,10 +1272,11 @@ public class BiDiDriver017AnalyzerTests
     [Fact]
     public async Task NullableIListAdd_WithoutInitialization_ReportsWarning()
     {
-        // Kept synthetic: no public WebDriverBiDi type exposes a nullable IList<T>? property, so the
-        // metadata-backed shape this branch needs cannot be reproduced against the real assembly.
-        // The interface-typed nullable list path is also covered against ordinary user code in
-        // AddToNullableIListProperty_ReportsDiagnostic.
+        // Kept synthetic: the library's nullable IList<T>? properties (BrowsingContextInfo.Children and
+        // the other read-only list views on received types) are all get-only, and this rule does not
+        // report a property the calling code cannot assign, so the settable interface-typed shape this
+        // branch needs exists only in user code. The same path is also covered against ordinary user
+        // code in AddToNullableIListProperty_ReportsDiagnostic.
         string test = """
             #nullable enable
             using System.Collections.Generic;
@@ -1452,5 +1453,84 @@ public class BiDiDriver017AnalyzerTests
         testState.ExpectedDiagnostics.Add(expected);
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that adding to a get-only nullable list property is not reported. The read-only list views on received
+    /// types, such as BrowsingContextInfo.Children, have no setter, so the suggested ??= could not assign them.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddToGetOnlyNullableListPropertyOfReceivedType_NoDiagnostic()
+    {
+        string test = """
+            #nullable enable
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BrowsingContextInfo info, BrowsingContextInfo child)
+                    {
+                        info.Children.Add(child);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver017_NullableListAddAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that only a nullable list property with a setter the calling code can use is reported: an init-only
+    /// setter or an inaccessible one cannot take the suggested ??= assignment.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task AddToNullableListPropertyWithInitOnlyOrInaccessibleSetter_ReportsOnlyAssignableProperty()
+    {
+        string test = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace WebDriverBiDi
+            {
+                public class ListOwner
+                {
+                    public List<string>? InitOnlyItems { get; init; }
+
+                    public List<string>? PrivatelySetItems { get; private set; }
+
+                    public List<string>? PubliclySetItems { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(ListOwner owner)
+                    {
+                        owner.InitOnlyItems.Add("init");
+                        owner.PrivatelySetItems.Add("private");
+                        {|#0:owner.PubliclySetItems|}.Add("public");
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver017_NullableListAddAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("string", "PubliclySetItems");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver017_NullableListAddAnalyzer>(test, expected);
     }
 }

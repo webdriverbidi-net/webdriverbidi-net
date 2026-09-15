@@ -120,6 +120,16 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // The suggested fix assigns the property (Items ??= new List<T>()), so only a property the calling
+        // code can assign is reported. A get-only property, such as the read-only list views on received
+        // types (BrowsingContextInfo.Children), and one whose setter is init-only or not accessible here,
+        // cannot take that assignment, and suggesting it would offer a fix that does not compile.
+        if (propertySymbol.SetMethod is not { IsInitOnly: false } setter
+            || !semanticModel.IsAccessible(memberAccess.Expression.SpanStart, setter))
+        {
+            return;
+        }
+
         // Require the property's containing type to be a WebDriverBiDi type so an unrelated user
         // type with a nullable list property is not flagged with this BiDi-branded warning.
         if (!AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(propertySymbol.ContainingType))

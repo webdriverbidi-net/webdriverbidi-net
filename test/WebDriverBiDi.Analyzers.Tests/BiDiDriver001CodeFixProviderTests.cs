@@ -692,13 +692,15 @@ public class BiDiDriver001CodeFixProviderTests
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         CustomModule module;
                         await driver.StartAsync("ws://localhost:9222");
-                        Create(driver, out module);
+                        Create(out module);
                         {|#0:driver.RegisterModule(module)|};
                     }
 
-                    private static void Create(BiDiDriver driver, out CustomModule module)
+                    // The helper does not take the driver: a driver handed to a helper after the start may have
+                    // been stopped by it, so the registration would not be reported at all.
+                    private static void Create(out CustomModule module)
                     {
-                        module = new CustomModule(driver);
+                        module = new CustomModule(new BiDiDriver(TimeSpan.FromSeconds(30)));
                     }
                 }
 

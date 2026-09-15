@@ -38,6 +38,16 @@ using Microsoft.CodeAnalysis.Diagnostics;
 /// the statement. The conditional and <c>switch</c> expressions are forked like the statements, and the
 /// right operand of <c>&amp;&amp;</c>, <c>||</c>, <c>??</c> and <c>??=</c> is walked as a path that may not run.
 /// </para>
+/// <para>
+/// A driver whose started state the body cannot know is never tracked, and so never reported on: one the body
+/// hands to other code that could start or stop it (passed as an argument, returned, stored, aliased, placed in a
+/// collection, or used as the receiver of an extension method), and one a nested function starts, stops, or
+/// rebinds. Passing the driver to a module's constructor is not such a hand-off, because a module holds the driver
+/// to issue commands and cannot start or stop it. The names are collected up front, because the other code may run
+/// before or after a call textually, and all four rules report at Error severity, for which a wrong report on
+/// correct code is worse than a missed one. BIDI009 shares this classification through
+/// <see cref="FindDriversWithUnknownStartedState"/>.
+/// </para>
 /// </remarks>
 internal sealed class DriverStartStateWalker
 {
@@ -46,6 +56,10 @@ internal sealed class DriverStartStateWalker
     private readonly SyntaxNodeAnalysisContext context;
     private readonly Func<ITypeSymbol?, bool> isDriverType;
     private readonly DriverInvocationHandler handler;
+
+    // Drivers this body hands to other code, or that a nested function starts, stops, or rebinds. Their started
+    // state cannot be known from the body alone, so they are never tracked.
+    private readonly HashSet<string> untrackableDriverNames;
 
     // Whether invocations are handed to the handler. Cleared while a finally block is walked a second time
     // to find the state it leaves for the code after its try statement, a walk whose invocations have already
@@ -57,6 +71,7 @@ internal sealed class DriverStartStateWalker
         this.context = context;
         this.isDriverType = isDriverType;
         this.handler = handler;
+        this.untrackableDriverNames = FindDriversWithUnknownStartedState(context.Node, context.SemanticModel);
     }
 
     /// <summary>
@@ -110,6 +125,144 @@ internal sealed class DriverStartStateWalker
         }
 
         return (current as IdentifierNameSyntax)?.Identifier.ValueText;
+    }
+
+    /// <summary>
+    /// Collects the names of local variables that this member hands to something else, or that a nested
+    /// function could start, stop, or rebind, so that their started state is never tracked.
+    /// </summary>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns>The set of names whose started state cannot be known from this member alone.</returns>
+    internal static HashSet<string> FindDriversWithUnknownStartedState(SyntaxNode body, SemanticModel semanticModel)
+    {
+        HashSet<string> escapedNames = [];
+
+        // Only the body's own code is scanned. A top-level program's compilation unit also holds the types the
+        // program declares, and a same-named parameter handed on there (a module constructor's base(driver),
+        // say) is not the program's local driver escaping.
+        foreach (IdentifierNameSyntax identifier in AnalyzerSymbolHelpers.GetBodyDescendantNodes(body).OfType<IdentifierNameSyntax>())
+        {
+            // The nested-function classification is asked first so that each predicate answers only for
+            // the shape it owns: the driver on the right of an assignment is an escape wherever it is
+            // written, and this order lets that case reach the escape check rather than being absorbed
+            // by the rebind test.
+            if (IsStartedStoppedOrReboundInsideNestedFunction(identifier, body) || IsEscapingPosition(identifier, semanticModel))
+            {
+                escapedNames.Add(identifier.Identifier.ValueText);
+            }
+        }
+
+        return escapedNames;
+    }
+
+    /// <summary>
+    /// Determines whether a mention of a variable hands it to something else, so that other code could
+    /// start it.
+    /// </summary>
+    /// <param name="identifier">The mention of the variable.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns><see langword="true"/> if the variable escapes at this position; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// This mirrors the escape classification in BIDI006. A mention that merely uses the driver
+    /// (<c>driver.Session.StatusAsync()</c>, a null test, a using statement) has a parent that is not in
+    /// the list below and is correctly not treated as an escape.
+    /// </remarks>
+    private static bool IsEscapingPosition(IdentifierNameSyntax identifier, SemanticModel semanticModel)
+    {
+        // As in BIDI006, the mention may be wrapped (parenthesized, cast to an interface, null-forgiven,
+        // or one arm of a conditional) before it reaches the construct that hands the driver out.
+        SyntaxNode mention = AnalyzerSymbolHelpers.PeelExpressionWrappers(identifier);
+        return mention.Parent switch
+        {
+            // Returned to the caller: return driver; or yield return driver;
+            ReturnStatementSyntax or YieldStatementSyntax => true,
+
+            // Assigned to another target, for example a field: this.driver = driver;
+            AssignmentExpressionSyntax assignment => assignment.Right == mention,
+
+            // Passed to a method or constructor that may start it: await StartHelperAsync(driver);
+            ArgumentSyntax argument => !IsModuleConstructionArgument(argument, semanticModel),
+
+            // Placed in a collection expression, an initializer, or used to initialize another
+            // variable that may itself be started.
+            ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
+
+            // The receiver of an extension method: `await driver.StartWithRetryAsync(url);`. The
+            // driver is the method's first argument, the walk cannot see whether the method starts
+            // it, and the argument case above already treats that as an escape; the only difference
+            // here is the spelling. A call on the driver's own members is not affected, because it
+            // binds to an instance method rather than an extension method.
+            MemberAccessExpressionSyntax memberAccess when memberAccess.Expression == mention
+                && memberAccess.Parent is InvocationExpressionSyntax extensionInvocation
+                && semanticModel.GetSymbolInfo(extensionInvocation).Symbol is IMethodSymbol { IsExtensionMethod: true } => true,
+
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Determines whether an argument hands the driver to the constructor of a module.
+    /// </summary>
+    /// <param name="argument">The argument mentioning the driver.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns><see langword="true"/> if the argument constructs a module; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The documented way to add a custom module is <c>driver.RegisterModule(new CustomModule(driver))</c>:
+    /// the driver is passed to the module's constructor, which hands it to the <c>Module</c> base class
+    /// so the module can issue commands through it later. A module holds the driver; it does not start
+    /// it. Treating that argument as an escape would switch this rule off for every method that
+    /// registers a custom module, which is precisely the set-up code the rule exists to check.
+    /// </remarks>
+    private static bool IsModuleConstructionArgument(ArgumentSyntax argument, SemanticModel semanticModel)
+    {
+        return argument.Parent is ArgumentListSyntax { Parent: BaseObjectCreationExpressionSyntax creation }
+            && semanticModel.GetTypeInfo(creation).Type is INamedTypeSymbol createdType
+            && AnalyzerSymbolHelpers.IsModuleSubclass(createdType);
+    }
+
+    /// <summary>
+    /// Determines whether a mention of a variable inside a nested function starts it, stops it, or
+    /// rebinds it to a different driver.
+    /// </summary>
+    /// <param name="identifier">The mention of the variable.</param>
+    /// <param name="body">The member body being analyzed.</param>
+    /// <returns><see langword="true"/> if a nested function can change the variable's started state; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// A nested function runs when its delegate is invoked, not where it is declared, so a
+    /// <c>StartAsync</c>, a <c>StopAsync</c>, or an assignment inside one can change the driver's state
+    /// at a point this rule's textual walk cannot place. An assignment counts because the variable then
+    /// names a driver that came from somewhere else and may already be started, which is the same
+    /// reason <see cref="TrackDriverAssignment"/> stops tracking such a rebind on a straight-line path.
+    /// Only those mentions make the state unknown: a nested function that merely issues commands on the
+    /// driver leaves the state alone, and treating every capture as an escape would stop the rule
+    /// reporting a genuine error elsewhere in the same method.
+    /// </remarks>
+    private static bool IsStartedStoppedOrReboundInsideNestedFunction(IdentifierNameSyntax identifier, SyntaxNode body)
+    {
+        bool changesStartedState = identifier.Parent switch
+        {
+            // Rebound to another driver: driver = await pool.RentStartedAsync();
+            AssignmentExpressionSyntax assignment => assignment.Left == identifier,
+
+            // Started or stopped: driver.StartAsync() or driver.StopAsync().
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Expression == identifier
+                && memberAccess.Parent is InvocationExpressionSyntax
+                && memberAccess.Name.Identifier.ValueText is "StartAsync" or "StopAsync",
+
+            _ => false,
+        };
+
+        if (!changesStartedState)
+        {
+            return false;
+        }
+
+        // The identifier came from the body's descendants, so the body is always an ancestor and always
+        // stops the walk.
+        return identifier.Ancestors()
+            .TakeWhile(ancestor => ancestor != body)
+            .Any(ancestor => ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax);
     }
 
     private void ProcessNode(SyntaxNode node, Dictionary<string, bool> driverStartedStatus)
@@ -195,7 +348,7 @@ internal sealed class DriverStartStateWalker
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
-            if (variable.Initializer is null)
+            if (variable.Initializer is null || this.untrackableDriverNames.Contains(variable.Identifier.ValueText))
             {
                 continue;
             }
