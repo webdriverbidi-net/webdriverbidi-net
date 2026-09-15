@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.0" />
-    <PackageReference Include="PinchHitter" Version="0.0.19" />
+    <PackageReference Include="PinchHitter" Version="0.0.20" />
   </ItemGroup>
 
   <!-- These tests build and run a separate consumer application out of process; they do not
