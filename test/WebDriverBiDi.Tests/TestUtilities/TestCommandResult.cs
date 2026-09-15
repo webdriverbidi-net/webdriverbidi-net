@@ -12,9 +12,6 @@ public record TestCommandResult : CommandResult
     [JsonPropertyName("value")]
     public string? Value { get; set; }
 
-    [JsonPropertyName("elapsed")]
-    public double? ElapsedMilliseconds { get; set; }
-
     public void SetIsErrorValue(bool isError)
     {
         this.isError = isError;

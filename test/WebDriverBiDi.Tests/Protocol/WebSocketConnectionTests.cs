@@ -196,9 +196,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
         Assert.Contains($"{0.1} seconds", exception.Message);
         Assert.Equal(1, attemptCount);
 
-        // Assert the decision, not its duration: no pause was attempted at all. Measuring elapsed time
+        // Assert the decision, not its duration: no pause was attempted at all. The attempt's deadline is
+        // the only timer the connection armed; a pause would have armed a second. Measuring elapsed time
         // instead would only ever be evidence about the machine the test ran on.
-        Assert.Empty(connection.AttemptedRetryDelays);
+        Assert.Equal(1, timeProvider.TimerCount);
         Assert.False(connection.IsActive);
     }
 
@@ -1246,21 +1247,30 @@ public class WebSocketConnectionTests : IAsyncDisposable
             portFinder.Stop();
         }
 
-        // This attempt deliberately runs on the real clock. Injecting a TimeProvider requires
-        // TestWebSocketConnection, which overrides DelayBeforeRetryAsync so a test can observe the
-        // attempted pause without waiting for it — and that override is the only thing standing
-        // between this test and the real retry-delay path, which nothing else exercises. The 200 ms
-        // budget is an upper bound on a loopback connection that is refused at once, so the cost is
-        // small and buys coverage of code that would otherwise be untested.
-        WebSocketConnection connection = new()
+        // The failed attempt runs on a virtual clock. Time is advanced only once the connection has armed
+        // its pause before retrying, which it does only after the refused connect has failed, so the attempt
+        // always takes the retry path instead of racing its own deadline, and no real time is spent waiting.
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
             StartupTimeout = TimeSpan.FromMilliseconds(200),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
+            BypassStart = false,
+            BypassStop = false,
+            BypassCloseClientWebSocket = false,
+            BypassDataSend = false,
         };
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
-        _ = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(
-            async () => await connection.StartAsync($"ws://127.0.0.1:{deadPort}", TestContext.Current.CancellationToken));
+        Task failedStart = connection.StartAsync($"ws://127.0.0.1:{deadPort}", TestContext.Current.CancellationToken);
+
+        // The first timer is the attempt's deadline and the second is the pause before the next attempt.
+        await timeProvider.WaitForTimerCreatedAsync(1).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(failedStart.IsCompleted);
+        timeProvider.Advance(connection.StartupTimeout);
+
+        _ = await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await failedStart);
+        Assert.Equal(2, timeProvider.TimerCount);
 
         // The caller cleans up after the failed attempt before retrying.
         await connection.StopAsync(TestContext.Current.CancellationToken);
@@ -1279,7 +1289,10 @@ public class WebSocketConnectionTests : IAsyncDisposable
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "Acknowledged after failed attempt");
         byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
-        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The clock is not advanced again, so the close completes on the server's reply rather than on the
+        // shutdown timeout; the bound only turns a missing reply into a failure instead of a hang.
+        await connection.StopAsync(TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal("Acknowledged after failed attempt"u8.ToArray(), receivedData);
     }
 
@@ -1385,8 +1398,18 @@ public class WebSocketConnectionTests : IAsyncDisposable
         // it used. The connection owns each socket it is given: a replaced socket is disposed at once,
         // and the socket it holds last is disposed with the connection. (A ClientWebSocket disposed
         // before it ever connected reports Closed; one that has not been disposed reports None.)
-        TimeSpan startupTimeout = TimeSpan.FromMilliseconds(100);
-        TimeSpan attemptDuration = TimeSpan.FromMilliseconds(40);
+        //
+        // The pause before each retry runs on the virtual clock and is charged against the startup budget,
+        // so the budget has to outlast the pauses for three attempts to fit. Each attempt is refused at once
+        // and takes no virtual time, and the test elapses each pause once the connection has armed it. The
+        // attempts' deadlines and the pauses alternate, so the pauses are the second, fourth and sixth
+        // timers. Attempts begin at 0, 500 and 1000 ms; the third attempt's pause is clamped to the 100 ms
+        // left, after which no budget remains for a fourth.
+        TimeSpan startupTimeout = TimeSpan.FromMilliseconds(1100);
+
+        // The connection's interval between attempts. Advancing by it elapses every pause, including one
+        // clamped to a shorter remaining budget.
+        TimeSpan retryInterval = TimeSpan.FromMilliseconds(500);
         int attemptCount = 0;
         TestTimeProvider timeProvider = new();
         TestWebSocketConnection connection = new(timeProvider)
@@ -1396,18 +1419,21 @@ public class WebSocketConnectionTests : IAsyncDisposable
             ConnectWebSocketOverride = (uri, token) =>
             {
                 Interlocked.Increment(ref attemptCount);
-
-                // Each attempt spends 40 ms of the 100 ms budget on the virtual clock and is then refused,
-                // so attempts begin at 0, 40 and 80 ms, and the third leaves no budget for a fourth.
-                timeProvider.Advance(attemptDuration);
                 return Task.FromException(new WebSocketException("Simulated refused connection"));
             },
         };
 
-        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(
-            async () => await connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken));
+        Task startTask = connection.StartAsync("ws://127.0.0.1:1", TestContext.Current.CancellationToken);
+        for (int timersBeforePause = 1; timersBeforePause <= 5; timersBeforePause += 2)
+        {
+            await timeProvider.WaitForTimerCreatedAsync(timersBeforePause).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            timeProvider.Advance(retryInterval);
+        }
+
+        await Assert.ThrowsAnyAsync<WebDriverBiDiTimeoutException>(async () => await startTask);
 
         Assert.Equal(3, attemptCount);
+        Assert.Equal(6, timeProvider.TimerCount);
         List<ClientWebSocket> sockets = connection.CreatedClientWebSockets;
         Assert.Equal(4, sockets.Count);
         Assert.All(sockets.Take(3), socket => Assert.Equal(WebSocketState.Closed, socket.State));
@@ -2213,29 +2239,27 @@ public class WebSocketConnectionTests : IAsyncDisposable
     [Fact]
     public async Task TestStartAsyncThrowsWhenCancellationTokenIsCanceledDuringConnectionRetry()
     {
-        // The first attempt is refused, so the connection enters its retry pause; the pause is
-        // held open by the override and signals that it has been reached, so the token is
-        // canceled while a retry is provably in progress rather than after a timed delay.
-        TaskCompletionSource retryPauseReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        // The first attempt is refused, so the connection enters its retry pause. The pause runs on a
+        // virtual clock that is never advanced, so it stays open, and the token is canceled once the
+        // pause's timer exists: while a retry is provably in progress rather than after a timed delay.
         using CancellationTokenSource cts = new();
-        TestWebSocketConnection connection = new()
+        TestTimeProvider timeProvider = new();
+        TestWebSocketConnection connection = new(timeProvider)
         {
             BypassStart = false,
             StartupTimeout = TimeSpan.FromSeconds(5),
             ConnectWebSocketOverride = (uri, token) => Task.FromException(new WebSocketException("Simulated refused connection")),
-            DelayBeforeRetryOverride = (delay, token) =>
-            {
-                retryPauseReached.TrySetResult();
-                return Task.Delay(Timeout.InfiniteTimeSpan, token);
-            },
         };
 
         Task startTask = connection.StartAsync("ws://127.0.0.1:1", cts.Token);
-        await retryPauseReached.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // The first timer is the attempt's deadline and the second is the pause.
+        await timeProvider.WaitForTimerCreatedAsync(1).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.False(startTask.IsCompleted);
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await startTask);
-        Assert.Single(connection.AttemptedRetryDelays);
+        Assert.Equal(2, timeProvider.TimerCount);
     }
 
     [Fact]

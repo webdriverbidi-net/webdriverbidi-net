@@ -70,13 +70,6 @@ public class TestWebSocketConnection : WebSocketConnection
     /// </summary>
     public Func<Uri, CancellationToken, Task>? ConnectWebSocketOverride { get; set; }
 
-    /// <summary>
-    /// Gets or sets the pause taken before a connection retry. When <see langword="null"/>, the pause is
-    /// recorded in <see cref="AttemptedRetryDelays"/> and returns immediately; otherwise it is recorded and
-    /// the override's task is awaited, so a test can hold the connection inside a retry pause deterministically.
-    /// </summary>
-    public Func<TimeSpan, CancellationToken, Task>? DelayBeforeRetryOverride { get; set; }
-
     public bool Disposed => this.IsDisposed;
 
     protected override bool IsConnectionOpen
@@ -231,22 +224,6 @@ public class TestWebSocketConnection : WebSocketConnection
         return base.SendDataAsync(data, cancellationToken);
     }
 
-    /// <summary>
-    /// Gets the retry pauses the connection attempted, in order. A pause is recorded and returns
-    /// immediately, so a test can assert on the decision without waiting for it.
-    /// </summary>
-    public List<TimeSpan> AttemptedRetryDelays { get; } = [];
-
-    protected override Task DelayBeforeRetryAsync(TimeSpan delay, CancellationToken cancellationToken)
-    {
-        lock (this.AttemptedRetryDelays)
-        {
-            this.AttemptedRetryDelays.Add(delay);
-        }
-
-        return this.DelayBeforeRetryOverride?.Invoke(delay, cancellationToken) ?? Task.CompletedTask;
-    }
-
     protected override async Task ConnectWebSocketAsync(Uri websocketUri, CancellationToken cancellationToken)
     {
         if (this.ConnectWebSocketOverride is not null)
@@ -293,7 +270,7 @@ public class TestWebSocketConnection : WebSocketConnection
         await base.WriteWebSocketDataAsync(data, cancellationToken).ConfigureAwait(false);
     }
 
-    protected override async Task<WebSocketReceiveResult> ReceiveWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+    protected override async Task<WebSocketReceiveResult> ReadWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
     {
         int currentCall = Interlocked.Increment(ref this.receiveCallCount);
         if (this.ReceiveHandler is not null)
@@ -301,7 +278,7 @@ public class TestWebSocketConnection : WebSocketConnection
             return await this.ReceiveHandler(buffer, cancellationToken, currentCall);
         }
 
-        return await base.ReceiveWebSocketDataAsync(buffer, cancellationToken);
+        return await base.ReadWebSocketDataAsync(buffer, cancellationToken);
     }
 
     protected override async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)

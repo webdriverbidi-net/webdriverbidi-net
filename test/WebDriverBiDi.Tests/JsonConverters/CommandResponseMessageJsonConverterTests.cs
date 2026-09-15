@@ -20,7 +20,7 @@ public class CommandResponseMessageJsonConverterTests
     [Fact]
     public void TestReadsEnvelopeAndResult()
     {
-        string json = """{"type":"success","id":42,"result":{"value":"hello","elapsed":1.5},"goog:extra":{"nested":true}}""";
+        string json = """{"type":"success","id":42,"result":{"value":"hello"},"goog:extra":{"nested":true}}""";
         CommandResponseMessage<TestCommandResult>? response = JsonSerializer.Deserialize(json, ResponseTypeInfo);
 
         Assert.NotNull(response);
@@ -28,7 +28,6 @@ public class CommandResponseMessageJsonConverterTests
         Assert.Equal(42, response.Id);
         TestCommandResult result = Assert.IsType<TestCommandResult>(response.Result);
         Assert.Equal("hello", result.Value);
-        Assert.Equal(1.5, result.ElapsedMilliseconds);
         Assert.True(response.AdditionalData.ContainsKey("goog:extra"));
     }
 
