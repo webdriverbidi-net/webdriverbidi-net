@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Integration.Tests;
 
+using System.Diagnostics;
 using System.Net;
 using PinchHitter;
 using WebDriverBiDi.BrowsingContext;
@@ -9,12 +10,16 @@ using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
+using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Storage;
 
 public class DriverIntegrationTests
 {
+    private readonly List<string> driverLog = [];
+    private BrowserLauncher? browserLauncher;
+
     [Theory]
     [InlineData(TestBrowser.Firefox)]
     [InlineData(TestBrowser.Chrome)]
@@ -396,13 +401,57 @@ public class DriverIntegrationTests
 
     private async Task<string> GetBrowsingContext(BiDiDriver driver)
     {
-        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync();
+        GetTreeCommandResult tree;
+        try
+        {
+            tree = await driver.BrowsingContext.GetTreeAsync();
+        }
+        catch (WebDriverBiDiTimeoutException ex)
+        {
+            // This command has timed out intermittently in CI with nothing but the timeout to go on, which
+            // cannot distinguish a browser that crashed or hung from a response that arrived late or was
+            // lost. A follow-up command shows whether the browser still answers, and the driver log shows
+            // whether the command was sent and whether any response to it arrived, and when.
+            string statusProbe;
+            try
+            {
+                await driver.Session.StatusAsync(timeoutOverride: TimeSpan.FromSeconds(5));
+                statusProbe = "responded";
+            }
+            catch (Exception probeException)
+            {
+                statusProbe = $"{probeException.GetType().Name}: {probeException.Message}";
+            }
+
+            string log;
+            lock (this.driverLog)
+            {
+                log = this.driverLog.Count == 0 ? "(none)" : string.Join(" | ", this.driverLog);
+            }
+
+            Assert.Fail($"{ex.Message}. Browser process running: {this.browserLauncher?.IsRunning}. Subsequent session.status: {statusProbe}. Driver log: {log}");
+            throw;
+        }
+
         return tree.ContextTree[0].BrowsingContextId;
     }
 
     private async Task<BiDiDriver> StartBiDiDriverSession(BrowserLauncher launcher)
     {
-        BiDiDriver driver = new(TimeSpan.FromSeconds(10), launcher.CreateTransport());
+        this.browserLauncher = launcher;
+        Transport transport = launcher.CreateTransport();
+        transport.LogLevel = WebDriverBiDiLogLevel.Debug;
+        Stopwatch sessionStopwatch = Stopwatch.StartNew();
+        BiDiDriver driver = new(TimeSpan.FromSeconds(10), transport);
+        driver.OnLogMessage.AddObserver(e =>
+        {
+            lock (this.driverLog)
+            {
+                this.driverLog.Add($"+{sessionStopwatch.ElapsedMilliseconds}ms [{e.Level}] {e.Message}");
+            }
+
+            return Task.CompletedTask;
+        });
         await driver.StartAsync(launcher.ConnectionString);
 
         if (!launcher.IsBiDiSessionInitialized)
