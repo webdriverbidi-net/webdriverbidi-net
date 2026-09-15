@@ -1233,4 +1233,46 @@ public class BiDiDriver003AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that a type info resolver registration after the driver has been handed to a helper is not
+    /// reported: the helper may have stopped the driver, which this rule cannot see.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RegisterTypeInfoResolverAsync_AfterDriverPassedToHelperThatStopsIt_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        await driver.StartAsync("ws://localhost:9222");
+                        await StopHelperAsync(driver);
+                        await driver.RegisterTypeInfoResolverAsync(resolver);
+                    }
+
+                    private static async Task StopHelperAsync(BiDiDriver driver)
+                    {
+                        await driver.StopAsync();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

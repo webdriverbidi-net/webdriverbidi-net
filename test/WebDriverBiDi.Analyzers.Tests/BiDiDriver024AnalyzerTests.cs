@@ -1377,4 +1377,87 @@ public class BiDiDriver024AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver024_DuplicateStartAsyncAnalyzer>(testCode);
     }
+
+    [Fact]
+    public async Task SecondStartAsync_AfterDriverPassedToHelperThatStopsIt_NoDiagnostic()
+    {
+        // The helper may have stopped the driver, which this rule cannot see, so the second start may be the
+        // documented stop-then-start recovery rather than a duplicate.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await driver.StartAsync("ws://localhost:9222");
+                        await StopHelperAsync(driver);
+                        await driver.StartAsync("ws://localhost:9222");
+                    }
+
+                    private static async Task StopHelperAsync(BiDiDriver driver)
+                    {
+                        await driver.StopAsync();
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task SecondStartAsync_OnDriverNotHandedOff_ReportsErrorWhileHandedOffDriverIsNot()
+    {
+        // Only the name that is handed off stops being tracked; another driver in the same method is still judged.
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver handedOff = new();
+                        await handedOff.StartAsync("ws://localhost:9222");
+                        await StopHelperAsync(handedOff);
+                        await handedOff.StartAsync("ws://localhost:9222");
+
+                        BiDiDriver kept = new();
+                        await kept.StartAsync("ws://localhost:9223");
+                        await {|#0:kept.StartAsync("ws://localhost:9223")|};
+                    }
+
+                    private static async Task StopHelperAsync(BiDiDriver driver)
+                    {
+                        await driver.StopAsync();
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

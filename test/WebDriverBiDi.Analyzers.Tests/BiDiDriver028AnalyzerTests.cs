@@ -723,4 +723,35 @@ public class BiDiDriver028AnalyzerTests
 
         await test.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task ConstructorArgument_OutOfRange_NotCheckedWhilePropertyAssignmentIs()
+    {
+        // The rule checks property assignments only. GeolocationCoordinates takes its ranged latitude and
+        // longitude as constructor arguments, which are out of scope; the same value assigned to the property is
+        // reported.
+        string testCode = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        GeolocationCoordinates fromConstructor = new GeolocationCoordinates(90.5, 180.5);
+                        GeolocationCoordinates fromInitializer = new GeolocationCoordinates(0.0, 0.0) { Latitude = {|#0:90.5|} };
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver028_SpecRangeValueOutOfRangeAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("90.5", "Latitude", "[-90, 90]");
+
+        await VerifyDiagnosticsAsync(testCode, expected);
+    }
 }
