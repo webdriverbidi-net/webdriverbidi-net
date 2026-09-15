@@ -1064,6 +1064,16 @@ public class ElementLocator
 
     private string GetLocatorDescription()
     {
-        return $"{this.locator.Type}={this.locator.Value}";
+        string locatorValue = this.locator switch
+        {
+            CssLocator cssLocator => cssLocator.Value,
+            XPathLocator xpathLocator => xpathLocator.Value,
+            InnerTextLocator innerTextLocator => innerTextLocator.Value,
+            AccessibilityLocator accessibilityLocator => $"name: {accessibilityLocator.Name}, role: {accessibilityLocator.Role}",
+            ContextLocator contextLocator => contextLocator.BrowsingContextId,
+            _ => string.Empty,
+        };
+
+        return $"{this.locator.Type}={locatorValue}";
     }
 }

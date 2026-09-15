@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -34,14 +33,15 @@ public class ContextLocator : Locator
     public override string Type => this.type;
 
     /// <summary>
-    /// Gets a read-only version of a dictionary containing the context attributes to use in locating nodes.
-    /// </summary>
-    [JsonPropertyName("value")]
-    public override object Value => new ReadOnlyDictionary<string, string>(this.contextAttributes);
-
-    /// <summary>
     /// Gets the browsing context for which to get the context node.
     /// </summary>
     [JsonIgnore]
     public string BrowsingContextId => this.contextAttributes["context"];
+
+    /// <summary>
+    /// Gets the context attributes to use in locating nodes, for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    internal Dictionary<string, string> SerializableValue => this.contextAttributes;
 }

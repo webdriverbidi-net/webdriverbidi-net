@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 public class XPathLocator : Locator
 {
     private readonly string type = "xpath";
-    private readonly string value;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="XPathLocator"/> class.
@@ -22,7 +21,7 @@ public class XPathLocator : Locator
     public XPathLocator(string value)
         : base()
     {
-        this.value = value;
+        this.Value = value;
     }
 
     /// <summary>
@@ -32,8 +31,8 @@ public class XPathLocator : Locator
     public override string Type => this.type;
 
     /// <summary>
-    /// Gets the XPath to use to locate nodes for serialization purposes.
+    /// Gets the XPath to use to locate nodes.
     /// </summary>
     [JsonPropertyName("value")]
-    public override object Value => this.value;
+    public string Value { get; }
 }
