@@ -104,6 +104,8 @@ For example, adding `parameters.AdditionalData["customOption"] = "customValue"` 
 
 If you need extra properties at the envelope level (a sibling of `id`, `method`, and `params`), override `Transport.CreateCommand` in a custom transport and populate `Command.AdditionalCommandProperties` on the `Command` it returns. See [Custom Modules — Custom Transport](custom-modules.md#custom-transport) for how to supply a custom `Transport` to `BiDiDriver`.
 
+An extension entry may not reuse a property name its object already writes. That holds for the envelope, where `id`, `method` and `params` are reserved, for the parameters root, and for every nested object with its own dictionary, such as `PartialCookie.AdditionalData` or `CapabilityRequest.AdditionalCapabilities`. It also holds for your own types sent through a registered resolver. Sending such a command throws `WebDriverBiDiSerializationException` naming the command and the entry, instead of emitting a JSON object with a duplicate property name. Set the typed property instead.
+
 [!code-csharp[Protocol Extensions via AdditionalData](../../code/api-design/AdditionalDataSamples.cs#ProtocolExtensionsviaAdditionalData)]
 
 ### Reading vendor extension data

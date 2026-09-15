@@ -114,7 +114,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private JsonTypeInfo<ErrorResponseMessage> errorResponseJsonTypeInfo;
     private JsonSerializerOptions options = new()
     {
-        TypeInfoResolver = CreateTypeInfoResolver(),
+        TypeInfoResolver = ExtensionDataNameGuard.AddTo(CreateTypeInfoResolver()),
         RespectNullableAnnotations = true,
     };
 
@@ -750,7 +750,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
-    /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON.</exception>
+    /// <exception cref="WebDriverBiDiSerializationException">Thrown if the command parameters cannot be serialized to JSON, including when an extension-data entry on the command or on any object inside its parameters uses a property name that object already serializes.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
     /// <exception cref="ArgumentNullException">Thrown when the command parameters are null.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
@@ -796,13 +796,15 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         {
             commandJson = this.SerializeCommand(command);
         }
-        catch (Exception ex) when (ex is JsonException or NotSupportedException)
+        catch (Exception ex) when (ex is JsonException or NotSupportedException or WebDriverBiDiSerializationException)
         {
             // A JsonException is raised for values JSON cannot represent (for example, a NaN
             // double); a NotSupportedException is raised when a value's type has no serialization
-            // metadata (for example, an unregistered AdditionalData value type under AOT). Surface
-            // both through the library's own serialization exception type, as is done for
-            // failures to deserialize a response.
+            // metadata (for example, an unregistered AdditionalData value type under AOT); and a
+            // WebDriverBiDiSerializationException is raised when an extension-data entry, on the
+            // envelope or on any object inside the parameters, would duplicate a property name that
+            // object already writes. Surface all of them through the library's own serialization
+            // exception type, naming the command, as is done for failures to deserialize a response.
             throw new WebDriverBiDiSerializationException($"Could not serialize command '{command.CommandName}' (command ID: {command.CommandId}): {ex.Message}", ex);
         }
 
@@ -1646,14 +1648,15 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// fresh, mutable copy that combines the existing resolvers with <paramref name="resolver"/>, then
     /// re-derives the cached command and error type infos and clears the per-connection response and
     /// event type info caches so that every subsequent lookup binds to the new options rather than the
-    /// old. This runs only while the transport is disconnected and under the connection lock, so no
+    /// old. The added resolver is guarded against extension data that shadows a serialized property name,
+    /// as the library's own resolver is. This runs only while the transport is disconnected and under the connection lock, so no
     /// message processing observes the swap.
     /// </remarks>
     private void RebuildSerializerStateWithResolver(IJsonTypeInfoResolver resolver)
     {
         this.options = new JsonSerializerOptions(this.options)
         {
-            TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, resolver),
+            TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, ExtensionDataNameGuard.AddTo(resolver)),
         };
         this.commandJsonTypeInfo = (JsonTypeInfo<Command>)this.options.GetTypeInfo(typeof(Command));
         this.errorResponseJsonTypeInfo = (JsonTypeInfo<ErrorResponseMessage>)this.options.GetTypeInfo(typeof(ErrorResponseMessage));
