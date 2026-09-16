@@ -156,6 +156,15 @@ public enum ErrorCode
     NoSuchCookie,
 
     /// <summary>
+    /// No Bluetooth device matching the given device ID was found.
+    /// </summary>
+    /// <remarks>
+    /// This error code comes from the Web Bluetooth specification.
+    /// </remarks>
+    [StringEnumValue("no such device")]
+    NoSuchDevice,
+
+    /// <summary>
     /// The target element for the command was not found.
     /// </summary>
     [StringEnumValue("no such element")]
@@ -202,6 +211,15 @@ public enum ErrorCode
     /// </summary>
     [StringEnumValue("no such node")]
     NoSuchNode,
+
+    /// <summary>
+    /// No prompt for a Bluetooth device matching the given prompt ID was found.
+    /// </summary>
+    /// <remarks>
+    /// This error code comes from the Web Bluetooth specification.
+    /// </remarks>
+    [StringEnumValue("no such prompt")]
+    NoSuchPrompt,
 
     /// <summary>
     /// The request ID for the network request used in the command was not found.
