@@ -61,7 +61,7 @@ public class ManualProxyConfiguration : ProxyConfiguration
     [JsonPropertyName("socksVersion")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [SpecRange(0.0, 255.0)]
-    public int? SocksVersion { get; set; }
+    public ulong? SocksVersion { get; set; }
 
     /// <summary>
     /// Gets a list of addresses to be bypassed by the proxy.

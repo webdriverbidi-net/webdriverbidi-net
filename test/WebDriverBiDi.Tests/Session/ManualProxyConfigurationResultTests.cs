@@ -38,7 +38,7 @@ public class ManualProxyConfigurationResultTests
         Assert.Equal("http.proxy", proxyConfig.HttpProxy);
         Assert.Equal("ssl.proxy", proxyConfig.SslProxy);
         Assert.Equal("socks.proxy", proxyConfig.SocksProxy);
-        Assert.Equal(5, proxyConfig.SocksVersion);
+        Assert.Equal(5UL, proxyConfig.SocksVersion);
         Assert.NotNull(proxyConfig.NoProxyAddresses);
         Assert.Single(proxyConfig.NoProxyAddresses);
         Assert.Empty(proxyConfig.AdditionalData);
@@ -77,7 +77,7 @@ public class ManualProxyConfigurationResultTests
         Assert.Equal("http.proxy", proxyConfig.HttpProxy);
         Assert.Equal("ssl.proxy", proxyConfig.SslProxy);
         Assert.Equal("socks.proxy", proxyConfig.SocksProxy);
-        Assert.Equal(5, proxyConfig.SocksVersion);
+        Assert.Equal(5UL, proxyConfig.SocksVersion);
         // Omitting noProxy and sending an empty array mean the same thing to the remote end, so a
         // payload without the member reports an empty list rather than null.
         Assert.Empty(proxyConfig.NoProxyAddresses);
