@@ -446,6 +446,47 @@ public class WebSocketConnectionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TestIsActiveIsFalseWhileConnectionIsBeingEstablished()
+    {
+        // A ClientWebSocket reports itself Connecting from the moment its connect begins until the remote end
+        // answers the upgrade request. A connection in that state cannot yet carry a session, so it must not
+        // report itself active. The processor holds the upgrade request unanswered, so once the server has
+        // received it the connect is known to be in flight, and the connection can be observed in that state
+        // for as long as the test needs without depending on timing.
+        HeldHttpRequestProcessor processor = new();
+        await using Server server = new(0, processor);
+        await server.StartAsync();
+
+        // The startup budget is deliberately far longer than the test: the attempt must end because the test
+        // cancels it, not because the budget ran out.
+        await using WebSocketConnection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromMinutes(5),
+        };
+        using CancellationTokenSource startCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        Task startTask = connection.StartAsync($"ws://127.0.0.1:{server.Port}", startCancellationTokenSource.Token);
+
+        bool isActiveWhileConnecting;
+        try
+        {
+            await processor.RequestReceived.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
+            isActiveWhileConnecting = connection.IsActive;
+        }
+        finally
+        {
+            // Cancel the connect before answering the held request, so the attempt ends by cancellation
+            // whichever of the two the client observes first; then release the request so the server can
+            // shut down.
+            startCancellationTokenSource.Cancel();
+            processor.Release();
+        }
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await startTask);
+        Assert.False(isActiveWhileConnecting);
+        Assert.False(connection.IsActive);
+    }
+
+    [Fact]
     public async Task TestUrlProperty()
     {
         await using Server server = this.CreateServer();
