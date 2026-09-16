@@ -32,6 +32,7 @@ public class StartScreencastCommandParametersTests
     {
         StartScreencastCommandParameters properties = new("myBrowsingContext")
         {
+            DestinationFolder = "/home/user/screencasts",
             MimeType = "video/mpeg4",
             Audio = true,
             Video = new MediaTrackConstraints()
@@ -43,13 +44,19 @@ public class StartScreencastCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Equal(4, serialized.Count);
+        Assert.Equal(5, serialized.Count);
 
         Assert.True(serialized.ContainsKey("context"));
         JToken? context = serialized["context"];
         Assert.NotNull(context);
         Assert.Equal(JTokenType.String, context.Type);
         Assert.Equal("myBrowsingContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("destinationFolder"));
+        JToken? destinationFolder = serialized["destinationFolder"];
+        Assert.NotNull(destinationFolder);
+        Assert.Equal(JTokenType.String, destinationFolder.Type);
+        Assert.Equal("/home/user/screencasts", destinationFolder.Value<string>());
 
         Assert.True(serialized.ContainsKey("mimeType"));
         JToken? mimeType = serialized["mimeType"];
@@ -77,6 +84,7 @@ public class StartScreencastCommandParametersTests
     {
         StartScreencastCommandParameters properties = new("myBrowsingContext")
         {
+            DestinationFolder = "/home/user/screencasts",
             MimeType = "video/mpeg4",
             Audio = false,
             Video = new MediaTrackConstraints()
@@ -88,13 +96,19 @@ public class StartScreencastCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Equal(4, serialized.Count);
+        Assert.Equal(5, serialized.Count);
 
         Assert.True(serialized.ContainsKey("context"));
         JToken? context = serialized["context"];
         Assert.NotNull(context);
         Assert.Equal(JTokenType.String, context.Type);
         Assert.Equal("myBrowsingContext", context.Value<string>());
+
+        Assert.True(serialized.ContainsKey("destinationFolder"));
+        JToken? destinationFolder = serialized["destinationFolder"];
+        Assert.NotNull(destinationFolder);
+        Assert.Equal(JTokenType.String, destinationFolder.Type);
+        Assert.Equal("/home/user/screencasts", destinationFolder.Value<string>());
 
         Assert.True(serialized.ContainsKey("mimeType"));
         JToken? mimeType = serialized["mimeType"];

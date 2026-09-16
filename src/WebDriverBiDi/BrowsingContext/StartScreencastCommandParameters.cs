@@ -34,6 +34,13 @@ public class StartScreencastCommandParameters : CommandParameters<StartScreencas
     public string BrowsingContextId { get; set; }
 
     /// <summary>
+    /// Gets or sets the destination directory to which the screencast file will be saved.
+    /// </summary>
+    [JsonPropertyName("destinationFolder")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DestinationFolder { get; set; }
+
+    /// <summary>
     /// Gets or sets the MIME type of the screencast file.
     /// </summary>
     [JsonPropertyName("mimeType")]
