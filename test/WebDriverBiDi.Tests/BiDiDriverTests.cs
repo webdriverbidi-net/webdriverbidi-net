@@ -1890,10 +1890,14 @@ public class BiDiDriverTests
     public async Task TestMidCommandRemoteDisconnectFaultsExecuteCommandWithConnectionException()
     {
         // Verify that a remote disconnect while a command is pending causes
-        // BiDiDriver.ExecuteCommandAsync to fault with WebDriverBiDiConnectionException
-        // promptly, rather than hanging until the command timeout expires. This is the
-        // driver-level passthrough of the transport behavior covered by
-        // TransportTests.TestRemoteDisconnectFailsPendingCommands.
+        // BiDiDriver.ExecuteCommandAsync to fault with WebDriverBiDiConnectionException,
+        // rather than waiting for the command timeout. This is the driver-level passthrough
+        // of the transport behavior covered by TransportTests.TestRemoteDisconnectFailsPendingCommands.
+        //
+        // The transport's clock, which the command's timeout is measured on, is virtual and never
+        // advanced, so the command cannot end by timing out. It can end only because the disconnect
+        // failed it; a broken disconnect path would leave it pending, and the safety bound below
+        // would fail the test with a TimeoutException instead of the expected connection exception.
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestWebSocketConnection connection = new();
         connection.OnDataSendComplete.AddObserver(e =>
@@ -1902,11 +1906,8 @@ public class BiDiDriverTests
             return Task.CompletedTask;
         });
 
-        Transport transport = new(connection);
-        // Large default timeout: if the disconnect path were broken and the
-        // command sat in the pending collection, the test would hang until this
-        // elapsed. The assertion timeout below is much shorter, so a broken
-        // path fails fast rather than timing out the whole suite.
+        TestTimeProvider timeProvider = new();
+        TestTransport transport = new(connection, timeProvider);
         await using BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync("ws://localhost:5555", TestContext.Current.CancellationToken);
 
@@ -1917,12 +1918,8 @@ public class BiDiDriverTests
 
         await connection.RaiseRemoteDisconnectedEventAsync();
 
-        WebDriverBiDiConnectionException? caught = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () =>
-        {
-            Task completed = await Task.WhenAny(executeTask, Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
-            Assert.Same(executeTask, completed);
-            await executeTask;
-        });
+        WebDriverBiDiConnectionException caught = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(
+            () => executeTask.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken));
         Assert.Contains("Remote end closed the connection", caught.Message);
     }
 

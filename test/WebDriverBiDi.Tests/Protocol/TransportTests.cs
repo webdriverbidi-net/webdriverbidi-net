@@ -5296,22 +5296,19 @@ public class TransportTests
         // handler that sends a command inside that window must fail immediately with a connection
         // exception; if it instead blocked on the lock, the handler (and so the processing task,
         // and so the disconnect) could not finish until the shutdown wait timed out.
+        //
+        // The transport's clock is virtual and never advanced, so neither the shutdown wait nor the
+        // connection lock wait can ever time out. The disconnect can therefore complete only because
+        // the handler's send failed at once; a send that blocked on the lock would leave it waiting,
+        // and the deadlock detector below would fail the test. Nothing depends on how long it takes.
         TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource disconnectReachedConnectionTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         Exception? handlerException = null;
-        List<LogMessageEventArgs> logs = [];
 
         StopSignalingWebSocketConnection connection = new(disconnectReachedConnectionTaskCompletionSource);
-        await using Transport transport = new(connection)
-        {
-            ShutdownTimeout = TimeSpan.FromSeconds(5),
-        };
+        TestTimeProvider timeProvider = new();
+        await using TestTransport transport = new(connection, timeProvider);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnLogMessage.AddObserver(e =>
-        {
-            logs.Add(e);
-            return Task.CompletedTask;
-        });
         transport.OnEventReceived.AddObserver(async e =>
         {
             handlerStartedTaskCompletionSource.TrySetResult();
@@ -5342,13 +5339,23 @@ public class TransportTests
         await connection.RaiseDataReceivedEventAsync(json);
         await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // The disconnect must complete well inside ShutdownTimeout: the handler's send fails at once,
-        // so the processing task finishes as soon as the handler returns.
-        await transport.DisconnectAsync(TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        try
+        {
+            // The handler's send fails at once, so the processing task finishes as soon as the handler
+            // returns, and the disconnect with it.
+            await transport.DisconnectAsync(TestContext.Current.CancellationToken).WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            // Should the send ever block again, the deadlock detector fails the test, but disposing the
+            // transport would then wait on the same never-advanced shutdown timeout and hang the run.
+            // Elapsing every timeout lets a deadlocked disconnect unwind so the failure is reported; after
+            // a disconnect that completed, there is nothing left for the advance to affect.
+            timeProvider.Advance(TimeSpan.FromHours(1));
+        }
 
         WebDriverBiDiConnectionException connectionException = Assert.IsType<WebDriverBiDiConnectionException>(handlerException);
         Assert.Contains("Transport must be connected", connectionException.Message);
-        Assert.DoesNotContain(logs, log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown"));
     }
 
     private sealed class StopSignalingWebSocketConnection : TestWebSocketConnection

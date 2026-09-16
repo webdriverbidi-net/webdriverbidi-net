@@ -505,13 +505,38 @@ public class WebSocketConnection : Connection
     }
 
     /// <summary>
+    /// Asynchronously sends this end's Close frame to the remote WebSocket, beginning the close handshake.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// A cancellation token that is canceled when the caller of <see cref="Connection.StopAsync"/> cancels, or when
+    /// <see cref="Connection.ShutdownTimeout"/> elapses.
+    /// </param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// <para>
+    /// <see cref="StopConnectionAsync(CancellationToken)"/> calls this method to send the frame when the socket is
+    /// open, then waits, bounded by <see cref="Connection.ShutdownTimeout"/>, for the receive loop to observe the
+    /// remote end's answer. By the time this method returns, the frame has been written and the socket has recorded
+    /// that it was sent. This is the only step of the close that a derived connection can replace.
+    /// </para>
+    /// <para>
+    /// This method is <see langword="protected virtual"/> to allow test doubles to observe the point at which the
+    /// frame has been sent, for example to act only once the handshake wait is certain to have begun.
+    /// </para>
+    /// </remarks>
+    protected virtual async Task SendWebSocketCloseFrameAsync(CancellationToken cancellationToken)
+    {
+        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Asynchronously sends a close handshake to the remote WebSocket and waits, bounded by
     /// <see cref="Connection.ShutdownTimeout"/>, for the receive loop to observe the server's
     /// close response.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
+    private async Task CloseClientWebSocketAsync(CancellationToken cancellationToken)
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
         using CancellationTokenSource timeoutTokenSource = TimeoutUtilities.CreateCancellationTokenSource(this.TimeProvider, this.ShutdownTimeout);
@@ -519,7 +544,7 @@ public class WebSocketConnection : Connection
         try
         {
             // After this, the socket state will change to CloseSent
-            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", linkedTokenSource.Token).ConfigureAwait(false);
+            await this.SendWebSocketCloseFrameAsync(linkedTokenSource.Token).ConfigureAwait(false);
 
             // Wait for the receive loop to process the server's close response, which will transition the
             // socket to the Closed state. If the server does not respond within the shutdown timeout,
