@@ -15,7 +15,7 @@ using WebDriverBiDi.JsonConverters;
 public enum ReadinessState
 {
     /// <summary>
-    /// Return immediately without checking for readiness state.
+    /// Return once the navigation is committed.
     /// </summary>
     None,
 

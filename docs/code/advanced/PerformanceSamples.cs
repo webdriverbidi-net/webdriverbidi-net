@@ -131,7 +131,7 @@ public class PerformanceSamples
         // For fastest possible navigation
         NavigateCommandParameters parameters3 = new NavigateCommandParameters(contextId, url)
         {
-            Wait = ReadinessState.None  // Return immediately
+            Wait = ReadinessState.None  // Return once the navigation is committed
         };
         #endregion
     }

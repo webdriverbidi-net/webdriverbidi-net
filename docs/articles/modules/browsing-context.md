@@ -59,7 +59,7 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 [!code-csharp[Wait for Page Load](../../code/modules/BrowsingContextModuleSamples.cs#WaitforPageLoad)]
 
 Readiness states:
-- `ReadinessState.None`: Return immediately after navigation starts
+- `ReadinessState.None`: Return once the navigation is committed, without waiting for the document to load
 - `ReadinessState.Interactive`: Wait for DOM ready
 - `ReadinessState.Complete`: Wait for full page load (including images, CSS)
 
