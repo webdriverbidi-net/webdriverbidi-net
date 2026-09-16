@@ -15,6 +15,7 @@ The Emulation module allows you to:
 - Override screen settings (dimensions)
 - Override JavaScript enabled state
 - Override scrollbar type (classic/overlay)
+- Override text layout mode (mobile text autosizing)
 - Override touch capability (max touch points)
 - Override viewport meta tag handling
 
@@ -30,7 +31,7 @@ of commands treat that differently:
 
 | Behavior when unscoped | Commands |
 |---|---|
-| Applies globally, becoming the default for new contexts | `setUserAgentOverride`, `setForcedColorsModeThemeOverride`, `setGeolocationOverride`, `setMediaFeaturesOverride`, `setNetworkConditions`, `setScrollbarTypeOverride`, `setTouchOverride`, `setViewportMetaOverride` |
+| Applies globally, becoming the default for new contexts | `setUserAgentOverride`, `setForcedColorsModeThemeOverride`, `setGeolocationOverride`, `setMediaFeaturesOverride`, `setNetworkConditions`, `setScrollbarTypeOverride`, `setTextLayoutModeOverride`, `setTouchOverride`, `setViewportMetaOverride` |
 | **Rejected with `invalid argument`** | `setLocaleOverride`, `setTimezoneOverride`, `setScreenSettingsOverride`, `setScreenOrientationOverride`, `setScriptingEnabled` |
 
 For the second group the specification requires a scope, so add at least one browsing context or user
@@ -177,6 +178,20 @@ The Emulation module provides `SetScrollbarTypeOverrideAsync` to emulate differe
 ### Clear Scrollbar Type Override
 
 [!code-csharp[Clear Scrollbar Type Override](../../code/modules/EmulationModuleSamples.cs#ClearScrollbarTypeOverride)]
+
+## Text Layout Mode Override
+
+The Emulation module provides `SetTextLayoutModeOverrideAsync` to emulate the text layout mode a mobile browser uses. The specification defines a single mode, `TextLayoutMode.Mobile`, which turns on text autosizing (also called font inflation): the browser enlarges blocks of text so they stay readable in a narrow viewport without the user zooming in. Pages usually control this behavior through the `text-size-adjust` CSS property, so the override is useful for testing how that property and your text sizing behave on mobile devices.
+
+A browser that does not support text layout mode emulation rejects a `Mobile` override with an `unsupported operation` error, which surfaces as a `WebDriverBiDiCommandException` whose `ErrorCode` is `ErrorCode.UnsupportedOperation`. Clearing the override never raises that error, and returns the page to the browser's default text layout mode.
+
+### Set Mobile Text Layout Mode
+
+[!code-csharp[Set Mobile Text Layout Mode](../../code/modules/EmulationModuleSamples.cs#SetMobileTextLayoutMode)]
+
+### Clear Text Layout Mode Override
+
+[!code-csharp[Clear Text Layout Mode Override](../../code/modules/EmulationModuleSamples.cs#ClearTextLayoutModeOverride)]
 
 ## Touch Override
 
