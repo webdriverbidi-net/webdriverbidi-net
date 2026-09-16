@@ -81,11 +81,18 @@ public class WebSocketConnection : Connection
     /// Gets a value indicating whether the underlying WebSocket is open.
     /// </summary>
     /// <remarks>
-    /// A socket that has begun its close handshake still counts as open, because it can still receive the remote
-    /// end's answer. Once the receive loop has reported that it ended, <see cref="Connection.IsActive"/> is
-    /// <see langword="false"/> whatever state the socket is left in.
+    /// A socket that is still connecting does not count as open, so <see cref="Connection.IsActive"/>
+    /// stays <see langword="false"/> until the connection is established. A socket that has begun
+    /// its close handshake still counts as open, because it can still receive the remote end's
+    /// answer. Once the receive loop has reported that it ended, <see cref="Connection.IsActive"/>
+    /// is <see langword="false"/>, whatever state the socket is left in.
     /// </remarks>
-    protected override bool IsConnectionOpen => this.client.State != WebSocketState.None && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted;
+    protected override bool IsConnectionOpen => this.IsClientInOpenState;
+
+    /// <summary>
+    /// Gets a value indicating whether the <see cref="ClientWebSocket"/> is in an open state.
+    /// </summary>
+    private bool IsClientInOpenState => this.client.State == WebSocketState.Open || this.client.State == WebSocketState.CloseSent || this.client.State == WebSocketState.CloseReceived;
 
     /// <summary>
     /// Gets or sets a value indicating whether the close now in progress was initiated by this end.
