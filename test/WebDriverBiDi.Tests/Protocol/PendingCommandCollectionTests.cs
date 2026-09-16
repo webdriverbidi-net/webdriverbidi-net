@@ -275,6 +275,29 @@ public class PendingCommandCollectionTests
     }
 
     [Fact]
+    public async Task TestCanceledCommandTrackingEvictsConsumedIdWithoutForgettingTrackedCommand()
+    {
+        // A consumed ID stays in the eviction order until it reaches the front. Evicting it removes nothing, and
+        // must not be made up for by forgetting a command that is still tracked.
+        using PendingCommandCollection collection = new(2);
+        Command first = new(1, new TestCommandParameters("module.command"));
+        Command second = new(2, new TestCommandParameters("module.command"));
+        Command third = new(3, new TestCommandParameters("module.command"));
+        await collection.AddPendingCommandAsync(first, TestContext.Current.CancellationToken);
+        await collection.AddPendingCommandAsync(second, TestContext.Current.CancellationToken);
+        await collection.AddPendingCommandAsync(third, TestContext.Current.CancellationToken);
+
+        collection.CancelPendingCommand(first, CommandCancellationReason.Canceled);
+        collection.CancelPendingCommand(second, CommandCancellationReason.Canceled);
+        Assert.True(collection.TryRemoveCanceledCommand(1, out _));
+        collection.CancelPendingCommand(third, CommandCancellationReason.Canceled);
+
+        Assert.Equal(2, collection.TrackedCanceledCommandCount);
+        Assert.True(collection.TryRemoveCanceledCommand(2, out _));
+        Assert.True(collection.TryRemoveCanceledCommand(3, out _));
+    }
+
+    [Fact]
     public async Task TestZeroCapacityDisablesCanceledCommandTracking()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
