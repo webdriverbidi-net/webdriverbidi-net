@@ -29,11 +29,16 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public bool BypassStart { get; set; } = true;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether stopping skips the WebSocket-specific stop step, which for an
+    /// open socket is the close handshake. <see cref="Connection.StopAsync"/> still cancels the connection and
+    /// waits, bounded by <see cref="Connection.ShutdownTimeout"/>, for the receive loop. A test whose receive
+    /// loop is driven by <see cref="ReceiveHandler"/> rather than by the socket leaves this set: nothing would
+    /// show the loop the remote end's answer, so the handshake would wait out the full timeout.
+    /// </summary>
     public bool BypassStop { get; set; } = true;
 
     public bool BypassDataSend { get; set; } = true;
-
-    public bool BypassCloseClientWebSocket { get; set; } = true;
 
     public bool ThrowOnStop { get; set; }
 
@@ -282,34 +287,19 @@ public class TestWebSocketConnection : WebSocketConnection
     }
 
     /// <summary>
-    /// Gets or sets a delegate that replaces the close handshake the connection performs when it is stopped.
-    /// <see cref="WebSocketConnection"/> calls the handshake only after it has recorded that this end is
-    /// closing, and before the connection is canceled, so a test can use the delegate to drive the socket
-    /// and the receive loop through the close in a fixed order. The delegate receives the socket the current
-    /// session connected on. It takes precedence over <see cref="BypassCloseClientWebSocket"/>.
+    /// Gets or sets a signal completed once the connection has sent its Close frame during a stop, after the
+    /// real send has returned, and while the handshake is about to wait for the receive loop. A test uses it
+    /// to act at that point: the handshake arms its <see cref="Connection.ShutdownTimeout"/> before it sends
+    /// the frame, so a test that elapses that timeout on a virtual clock waits for this signal first, since
+    /// elapsing it earlier would cancel the send itself; and a test can inspect the socket, or hand the
+    /// receive loop a result, knowing the frame has already gone out.
     /// </summary>
-    public Func<ClientWebSocket, Task>? CloseClientWebSocketHandler { get; set; }
+    public TaskCompletionSource? CloseFrameSentSignal { get; set; }
 
-    protected override async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
+    protected override async Task SendWebSocketCloseFrameAsync(CancellationToken cancellationToken)
     {
-        if (this.CloseClientWebSocketHandler is not null)
-        {
-            ClientWebSocket currentSocket;
-            lock (this.CreatedClientWebSockets)
-            {
-                currentSocket = this.CreatedClientWebSockets[^1];
-            }
-
-            await this.CloseClientWebSocketHandler(currentSocket).ConfigureAwait(false);
-            return;
-        }
-
-        if (this.BypassCloseClientWebSocket)
-        {
-            return;
-        }
-
-        await base.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
+        await base.SendWebSocketCloseFrameAsync(cancellationToken).ConfigureAwait(false);
+        this.CloseFrameSentSignal?.TrySetResult();
     }
 
     /// <summary>

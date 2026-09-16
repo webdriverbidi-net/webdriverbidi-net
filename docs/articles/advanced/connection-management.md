@@ -424,7 +424,9 @@ connections own one for the life of their receive loop.
 `CreateClientWebSocket` supplies the socket each connection attempt uses, and is where its options are
 configured (see [Configuring the Underlying WebSocket](#configuring-the-underlying-websocket)), while
 `ConnectWebSocketAsync`, `WriteWebSocketDataAsync`, `ReadWebSocketDataAsync` and
-`CloseClientWebSocketAsync` each perform a single operation on the wire. On the second, `WritePipeDataAsync`,
+`SendWebSocketCloseFrameAsync` each perform a single operation on the wire. The last sends the Close frame that
+begins the close handshake; the connection then waits, bounded by `ShutdownTimeout`, for the receive loop to
+observe the remote end's answer, and that wait is not itself replaceable. On the second, `WritePipeDataAsync`,
 `WriteToPipeAsync` and `ReadPipeDataAsync` do the same. A derived connection can therefore configure or
 substitute a single step rather than reimplement the loop around it.
 
