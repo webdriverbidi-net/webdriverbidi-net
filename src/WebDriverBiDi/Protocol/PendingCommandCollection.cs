@@ -21,15 +21,21 @@ using System.Diagnostics.CodeAnalysis;
 /// that response and discard it, rather than treating it as an unknown message or an unexpected error.
 /// </para>
 /// <para>
-/// At most <see cref="MaxTrackedCanceledCommands"/> canceled commands are remembered; when the limit is
-/// exceeded, the oldest entries are forgotten first. A response for a forgotten command is treated as
-/// an unknown message, exactly as a response for a command that was never sent.
+/// Canceled commands are remembered within a window of the most recent
+/// <see cref="MaxTrackedCanceledCommands"/> cancellations, so at most that many are remembered at once.
+/// The window counts cancellations, not the commands still remembered: a command whose late response has
+/// been recognized by <see cref="TryRemoveCanceledCommand"/> is no longer remembered, but its cancellation
+/// keeps its place in the window. When a new cancellation pushes the oldest place out of the window, the
+/// command canceled there is forgotten, even if fewer commands than the limit are still remembered. A
+/// response for a forgotten command is treated as an unknown message, exactly as a response for a command
+/// that was never sent.
 /// </para>
 /// </remarks>
 public class PendingCommandCollection : IDisposable
 {
     /// <summary>
-    /// The default maximum number of canceled commands remembered for late-response recognition.
+    /// The default number of most recent cancellations within which canceled commands are remembered for
+    /// late-response recognition.
     /// </summary>
     public const uint DefaultMaxTrackedCanceledCommands = 1024;
 
@@ -46,7 +52,7 @@ public class PendingCommandCollection : IDisposable
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PendingCommandCollection"/> class that remembers
-    /// up to <see cref="DefaultMaxTrackedCanceledCommands"/> canceled commands.
+    /// canceled commands within the most recent <see cref="DefaultMaxTrackedCanceledCommands"/> cancellations.
     /// </summary>
     public PendingCommandCollection()
         : this(DefaultMaxTrackedCanceledCommands)
@@ -57,7 +63,8 @@ public class PendingCommandCollection : IDisposable
     /// Initializes a new instance of the <see cref="PendingCommandCollection"/> class.
     /// </summary>
     /// <param name="maxTrackedCanceledCommands">
-    /// The maximum number of canceled commands to remember for late-response recognition. A value of
+    /// The number of most recent cancellations within which canceled commands are remembered for
+    /// late-response recognition, which is also the most that can be remembered at once. A value of
     /// zero disables tracking, in which case a response for a canceled command is treated as an
     /// unknown message.
     /// </param>
@@ -82,13 +89,19 @@ public class PendingCommandCollection : IDisposable
     public int PendingCommandCount => this.pendingCommands.Count;
 
     /// <summary>
-    /// Gets the maximum number of canceled commands remembered for late-response recognition.
+    /// Gets the number of most recent cancellations within which canceled commands are remembered for
+    /// late-response recognition, which is also the most that can be remembered at once.
     /// </summary>
     public uint MaxTrackedCanceledCommands => this.maxTrackedCanceledCommands;
 
     /// <summary>
     /// Gets the number of canceled commands currently remembered for late-response recognition.
     /// </summary>
+    /// <remarks>
+    /// A command whose late response has been recognized no longer counts here, but its cancellation still
+    /// occupies a place in the window of recent cancellations, so older commands can be forgotten while this
+    /// count is below <see cref="MaxTrackedCanceledCommands"/>.
+    /// </remarks>
     public int TrackedCanceledCommandCount
     {
         get
@@ -301,9 +314,10 @@ public class PendingCommandCollection : IDisposable
             this.canceledCommands[command.CommandId] = new CanceledCommandInfo(command, reason);
             this.canceledCommandOrder.Enqueue(command.CommandId);
 
-            // Forget the oldest entries once the limit is exceeded. The order queue may
-            // still hold IDs that TryRemoveCanceledCommand has already consumed; removing
-            // those from the dictionary again is a harmless no-op.
+            // The order queue is the window of recent cancellations. An ID consumed by
+            // TryRemoveCanceledCommand deliberately keeps its place in it, as the class remarks
+            // document, so the queue alone decides what is forgotten; removing an already
+            // consumed ID from the dictionary is a harmless no-op.
             while (this.canceledCommandOrder.Count > this.maxTrackedCanceledCommands)
             {
                 long evictedCommandId = this.canceledCommandOrder.Dequeue();
