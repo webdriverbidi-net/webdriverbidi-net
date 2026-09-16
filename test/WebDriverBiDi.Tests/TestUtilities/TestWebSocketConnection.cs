@@ -281,8 +281,29 @@ public class TestWebSocketConnection : WebSocketConnection
         return await base.ReadWebSocketDataAsync(buffer, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets or sets a delegate that replaces the close handshake the connection performs when it is stopped.
+    /// <see cref="WebSocketConnection"/> calls the handshake only after it has recorded that this end is
+    /// closing, and before the connection is canceled, so a test can use the delegate to drive the socket
+    /// and the receive loop through the close in a fixed order. The delegate receives the socket the current
+    /// session connected on. It takes precedence over <see cref="BypassCloseClientWebSocket"/>.
+    /// </summary>
+    public Func<ClientWebSocket, Task>? CloseClientWebSocketHandler { get; set; }
+
     protected override async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
     {
+        if (this.CloseClientWebSocketHandler is not null)
+        {
+            ClientWebSocket currentSocket;
+            lock (this.CreatedClientWebSockets)
+            {
+                currentSocket = this.CreatedClientWebSockets[^1];
+            }
+
+            await this.CloseClientWebSocketHandler(currentSocket).ConfigureAwait(false);
+            return;
+        }
+
         if (this.BypassCloseClientWebSocket)
         {
             return;
