@@ -37,7 +37,7 @@ public record ManualProxyConfigurationResult : ProxyConfigurationResult
     /// <summary>
     /// Gets the version of the SOCKS proxy to be used.
     /// </summary>
-    public int? SocksVersion => this.ProxyConfiguration.SocksVersion;
+    public ulong? SocksVersion => this.ProxyConfiguration.SocksVersion;
 
     /// <summary>
     /// Gets a list of addresses to be bypassed by the proxy.

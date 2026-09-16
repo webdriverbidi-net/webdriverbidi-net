@@ -133,7 +133,7 @@ public class CapabilitiesResultTests
         Assert.Equal("http.proxy", proxyResult.HttpProxy);
         Assert.Equal("ssl.proxy", proxyResult.SslProxy);
         Assert.Equal("socks.proxy", proxyResult.SocksProxy);
-        Assert.Equal(5, proxyResult.SocksVersion);
+        Assert.Equal(5UL, proxyResult.SocksVersion);
         Assert.NotNull(proxyResult.NoProxyAddresses);
         Assert.Single(proxyResult.NoProxyAddresses);
         Assert.Empty(proxyResult.AdditionalData);
