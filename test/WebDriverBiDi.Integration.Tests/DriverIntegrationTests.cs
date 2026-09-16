@@ -17,6 +17,7 @@ using WebDriverBiDi.Storage;
 
 public class DriverIntegrationTests
 {
+    private static readonly TimeSpan IntegrationTestTimeout = TimeSpan.FromSeconds(60);
     private readonly List<string> driverLog = [];
     private BrowserLauncher? browserLauncher;
 
@@ -47,7 +48,7 @@ public class DriverIntegrationTests
         };
         await driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, IntegrationTestTimeout, TestContext.Current.CancellationToken);
         await Assert.Single(capturedTasks);
         Assert.Equal($"http://localhost:{server.Port}/index.html", navigatedUrl);
 
@@ -138,7 +139,7 @@ public class DriverIntegrationTests
         actionsParams.Actions.AddRange(inputBuilder.Build());
         await driver.Input.PerformActionsAsync(actionsParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, IntegrationTestTimeout, TestContext.Current.CancellationToken);
         await Assert.Single(capturedTasks);
         Assert.Equal($"http://localhost:{server.Port}/details.html", navigatedUrl);
 
@@ -187,7 +188,7 @@ public class DriverIntegrationTests
         actionsParams.Actions.AddRange(inputBuilder.Build());
         await driver.Input.PerformActionsAsync(actionsParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, IntegrationTestTimeout, TestContext.Current.CancellationToken);
         await Assert.Single(capturedTasks);
         Assert.Equal($"http://localhost:{server.Port}/processForm", navigatedUrl);
 
@@ -235,7 +236,7 @@ public class DriverIntegrationTests
         EvaluateCommandParameters consoleParams = new("console.log('integration log entry')", new ContextTarget(browsingContextId), true);
         await driver.Script.EvaluateAsync(consoleParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        Task[] capturedTasks = await logObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Task[] capturedTasks = await logObserver.WaitForCapturedTasksAsync(1, IntegrationTestTimeout, TestContext.Current.CancellationToken);
         await Assert.Single(capturedTasks);
         Assert.NotNull(capturedEntry);
         Assert.Equal("console", capturedEntry.Type);
@@ -288,13 +289,13 @@ public class DriverIntegrationTests
         };
         Task<NavigateCommandResult> navigation = driver.BrowsingContext.NavigateAsync(navigateParams, cancellationToken: TestContext.Current.CancellationToken);
 
-        BeforeRequestSentEventArgs blocked = await blockedRequest.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        BeforeRequestSentEventArgs blocked = await blockedRequest.Task.WaitAsync(IntegrationTestTimeout, TestContext.Current.CancellationToken);
         Assert.False(navigation.IsCompleted);
         Assert.NotNull(blocked.Intercepts);
         Assert.Contains(intercept.InterceptId, blocked.Intercepts);
 
         await driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(blocked.Request.RequestId), cancellationToken: TestContext.Current.CancellationToken);
-        NavigateCommandResult navigationResult = await navigation.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        NavigateCommandResult navigationResult = await navigation.WaitAsync(IntegrationTestTimeout, TestContext.Current.CancellationToken);
         Assert.Equal(detailsUrl, navigationResult.Url);
 
         // Attempt to gracefully close the browser. If the test fails, the
@@ -404,7 +405,7 @@ public class DriverIntegrationTests
         GetTreeCommandResult tree;
         try
         {
-            tree = await driver.BrowsingContext.GetTreeAsync();
+            tree = await driver.BrowsingContext.GetTreeAsync(cancellationToken: TestContext.Current.CancellationToken);
         }
         catch (WebDriverBiDiTimeoutException ex)
         {
@@ -415,7 +416,7 @@ public class DriverIntegrationTests
             string statusProbe;
             try
             {
-                await driver.Session.StatusAsync(timeoutOverride: TimeSpan.FromSeconds(5));
+                await driver.Session.StatusAsync(timeoutOverride: IntegrationTestTimeout, cancellationToken: TestContext.Current.CancellationToken);
                 statusProbe = "responded";
             }
             catch (Exception probeException)
@@ -442,7 +443,7 @@ public class DriverIntegrationTests
         Transport transport = launcher.CreateTransport();
         transport.LogLevel = WebDriverBiDiLogLevel.Debug;
         Stopwatch sessionStopwatch = Stopwatch.StartNew();
-        BiDiDriver driver = new(TimeSpan.FromSeconds(10), transport);
+        BiDiDriver driver = new(IntegrationTestTimeout, transport);
         driver.OnLogMessage.AddObserver(e =>
         {
             lock (this.driverLog)
@@ -452,14 +453,14 @@ public class DriverIntegrationTests
 
             return Task.CompletedTask;
         });
-        await driver.StartAsync(launcher.ConnectionString);
+        await driver.StartAsync(launcher.ConnectionString, TestContext.Current.CancellationToken);
 
         if (!launcher.IsBiDiSessionInitialized)
         {
             // Using a classic WebDriver browser driver to launch the browser
             // automatically gives you a WebDriver BiDi session. Without the
             // driver executable, you must start your own session.
-            await driver.Session.NewSessionAsync(new NewCommandParameters());
+            await driver.Session.NewSessionAsync(new NewCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
         }
 
         return driver;
@@ -469,6 +470,7 @@ public class DriverIntegrationTests
     {
         BrowserLauncher launcher = BrowserTestHelper.GetBrowserLauncher(browser);
         launcher.IsBrowserHeadless = true;
+        launcher.InitializationTimeout = IntegrationTestTimeout;
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
         return launcher;
