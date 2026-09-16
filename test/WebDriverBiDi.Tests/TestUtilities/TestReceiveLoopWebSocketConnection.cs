@@ -91,9 +91,20 @@ public class TestReceiveLoopWebSocketConnection : WebSocketConnection
         return Task.CompletedTask;
     }
 
-    public override Task SendDataAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Gets or sets a delegate that stands in for writing a message to the socket, receiving the cancellation token
+    /// the connection passed down to the write. When it is not set, the write completes at once.
+    /// </summary>
+    /// <remarks>
+    /// Only the write itself is replaced. A send still passes through <see cref="Connection.SendDataAsync"/>, so it
+    /// is refused once the connection is inactive, is serialized with other sends, and carries the token that method
+    /// builds from the caller's token and the connection's own.
+    /// </remarks>
+    public Func<CancellationToken, Task>? WriteHandler { get; set; }
+
+    protected override Task WriteWebSocketDataAsync(ReadOnlyMemory<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return this.WriteHandler?.Invoke(cancellationToken) ?? Task.CompletedTask;
     }
 
     protected override async Task ReceiveDataAsync()

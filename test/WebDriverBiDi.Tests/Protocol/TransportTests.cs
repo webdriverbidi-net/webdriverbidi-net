@@ -4107,6 +4107,49 @@ public class TransportTests
     }
 
     /// <summary>
+    /// The caller's token reaches the socket write through the connection's real send path, so a caller who
+    /// gives up on a command cancels the write in progress, and the command is rolled back.
+    /// </summary>
+    [Fact]
+    public async Task TestSendCommandCallerCancellationCancelsWriteInProgress()
+    {
+        CancellationToken testCancellationToken = TestContext.Current.CancellationToken;
+
+        // The write is held open until released, and only then observes its token, so the token can be
+        // inspected while the send is under way, and a failure cannot leave the write blocked.
+        TaskCompletionSource<CancellationToken> writeEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseWrite = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TestReceiveLoopWebSocketConnection connection = new()
+        {
+            WriteHandler = async cancellationToken =>
+            {
+                writeEntered.TrySetResult(cancellationToken);
+                await releaseWrite.Task;
+                cancellationToken.ThrowIfCancellationRequested();
+            },
+        };
+        await using TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost", testCancellationToken);
+
+        using CancellationTokenSource callerTokenSource = new();
+        Task<Command> sendTask = transport.SendCommandAsync(new TestCommandParameters("module.command"), callerTokenSource.Token);
+        CancellationToken writeToken = await writeEntered.Task.WaitAsync(DeadlockDetectionTimeout, testCancellationToken);
+        try
+        {
+            Assert.False(writeToken.IsCancellationRequested);
+            callerTokenSource.Cancel();
+            Assert.True(writeToken.IsCancellationRequested, "Canceling the caller's token did not cancel the write in progress.");
+        }
+        finally
+        {
+            releaseWrite.TrySetResult();
+        }
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sendTask);
+        Assert.Equal(0, transport.TestPendingCommandCount);
+    }
+
+    /// <summary>
     /// A connection loss whose wait for the connection lock is abandoned must leave the session
     /// standing rather than tear it down without the lock, and must not release a lock it never
     /// acquired.
@@ -4150,15 +4193,19 @@ public class TransportTests
             await connectionLossHandled.Task;
         };
 
-        // An over-release surfaces here as a SemaphoreFullException from the send's own release.
-        await transport.SendCommandAsync(new TestCommandParameters("module.command"), testCancellationToken);
+        // The receive loop has ended, so the connection refuses the send, and the transport rolls the command
+        // back. It is the connection that refuses it: a transport torn down during the abandoned wait would
+        // already have refused it for not being connected. An over-release surfaces here instead as a
+        // SemaphoreFullException from the send's own release.
+        WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(() => transport.SendCommandAsync(new TestCommandParameters("module.command"), testCancellationToken));
+        Assert.StartsWith("The WebSocket connection is not active", exception.Message);
 
         Assert.NotNull(warningMessage);
         Assert.Contains("waiting for exclusive access to the connection to handle a connection loss", warningMessage);
 
         // The session was left standing, with the pending command collection still open.
         Assert.Equal(TransportState.Connected, transport.State);
-        Assert.Equal(1, transport.TestPendingCommandCount);
+        Assert.True(transport.TestIsAcceptingCommands, "The pending command collection was closed.");
 
         await transport.DisposeAsync();
     }

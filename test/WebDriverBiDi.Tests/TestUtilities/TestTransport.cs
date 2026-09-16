@@ -26,6 +26,12 @@ public class TestTransport : Transport
     public int TestPendingCommandCount => this.PendingCommands.PendingCommandCount;
 
     /// <summary>
+    /// Gets a value indicating whether the current pending command collection still accepts commands, which is
+    /// what tells a session left standing from one whose collection a teardown has closed.
+    /// </summary>
+    public bool TestIsAcceptingCommands => this.PendingCommands.IsAcceptingCommands;
+
+    /// <summary>
     /// Gets the ID of the current pending command collection, which changes when the collection
     /// is replaced by a reconnect. Used to assert that a reconnect actually replaced the
     /// collection that <see cref="Transport.SendCommandAsync"/> compares against.
