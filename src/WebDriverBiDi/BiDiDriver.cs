@@ -210,7 +210,7 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
 
         this.transport = transport;
         this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceivedAsync);
-        this.transportErrorReceivedObserver = this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
+        this.transportErrorReceivedObserver = this.transport.OnUnexpectedErrorReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
         this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
         this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
         this.transportEventHandlerErrorOccurredObserver = this.transport.OnEventHandlerErrorOccurred.AddObserver(this.OnTransportEventHandlerErrorOccurredAsync);

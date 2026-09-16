@@ -422,7 +422,7 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         await using Transport transport = new(connection);
-        transport.OnErrorEventReceived.AddObserver(e =>
+        transport.OnUnexpectedErrorReceived.AddObserver(e =>
         {
             receivedData = e.ErrorData;
             taskCompletionSource.TrySetResult();
@@ -464,7 +464,7 @@ public class TransportTests
             taskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         });
-        transport.OnErrorEventReceived.AddObserver(e =>
+        transport.OnUnexpectedErrorReceived.AddObserver(e =>
         {
             errorEventReceived = true;
             return Task.CompletedTask;
@@ -3654,7 +3654,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         await using Transport transport = new(connection);
         Assert.Equal(TransportErrorBehavior.Ignore, transport.EventHandlerExceptionBehavior);
-        transport.OnErrorEventReceived.AddObserver(e =>
+        transport.OnUnexpectedErrorReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Error handler exception");
@@ -3689,7 +3689,7 @@ public class TransportTests
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
-        transport.OnErrorEventReceived.AddObserver(e =>
+        transport.OnUnexpectedErrorReceived.AddObserver(e =>
         {
             taskCompletionSource.TrySetResult();
             throw new WebDriverBiDiException("Error handler exception");
@@ -3719,7 +3719,7 @@ public class TransportTests
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
-        transport.OnErrorEventReceived.AddObserver(e =>
+        transport.OnUnexpectedErrorReceived.AddObserver(e =>
             throw new WebDriverBiDiException("Error handler exception"));
         string json = """
                       {
@@ -4502,7 +4502,7 @@ public class TransportTests
         };
         // This test asserts on Debug or Trace messages, which the default minimum level excludes.
         transport.LogLevel = WebDriverBiDiLogLevel.Trace;
-        transport.OnErrorEventReceived.AddObserver(e => errorEventReceived = true);
+        transport.OnUnexpectedErrorReceived.AddObserver(e => errorEventReceived = true);
         transport.OnLogMessage.AddObserver(e =>
         {
             if (e.Message.Contains("Discarding late response") && e.Message.Contains("(Canceled)"))
@@ -4683,13 +4683,13 @@ public class TransportTests
         {
             UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
         };
-        transport.OnErrorEventReceived.AddObserver(e => errorTaskCompletionSource.TrySetResult());
+        transport.OnUnexpectedErrorReceived.AddObserver(e => errorTaskCompletionSource.TrySetResult());
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
         await connection.RaiseDataReceivedEventAsync("""{"type":"error","id":999,"error":"unknown error","message":"no such command"}""");
         await errorTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // The transport notifies OnErrorEventReceived observers before it records the error in
+        // The transport notifies OnUnexpectedErrorReceived observers before it records the error in
         // its unhandled-error collection, so the observer firing is not sufficient to guarantee
         // the Terminate behavior is armed. Wait for the error to actually be captured.
         bool errorCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(5), TransportErrorBehavior.Terminate);

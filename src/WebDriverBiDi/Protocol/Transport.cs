@@ -73,7 +73,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     public const string LoggerComponentName = "Transport";
 
     private const string EventReceivedEventName = "transport.eventReceived";
-    private const string ErrorReceivedEventName = "transport.errorReceived";
+    private const string UnexpectedErrorReceivedEventName = "transport.unexpectedErrorReceived";
     private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
     private const string EventHandlerErrorOccurredEventName = "transport.eventHandlerErrorOccurred";
     private const string LogMessageEventName = "transport.logMessage";
@@ -85,7 +85,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     private const string NormalShutdownReason = "Normal shutdown";
 
     private readonly ObservableEventInvocable<EventReceivedEventArgs> invocableEventReceivedObservableEvent;
-    private readonly ObservableEventInvocable<ErrorReceivedEventArgs> invocableErrorReceivedObservableEvent;
+    private readonly ObservableEventInvocable<ErrorReceivedEventArgs> invocableUnexpectedErrorReceivedObservableEvent;
     private readonly ObservableEventInvocable<UnknownMessageReceivedEventArgs> invocableUnknownMessageReceivedObservableEvent;
     private readonly ObservableEventInvocable<EventHandlerErrorOccurredEventArgs> invocableErrorHandlerErrorOccurredObservableEvent;
     private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent;
@@ -188,7 +188,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         this.errorResponseJsonTypeInfo = (JsonTypeInfo<ErrorResponseMessage>)this.options.GetTypeInfo(typeof(ErrorResponseMessage));
 
         this.invocableEventReceivedObservableEvent = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
-        this.invocableErrorReceivedObservableEvent = this.CreateObservableEvent<ErrorReceivedEventArgs>(ErrorReceivedEventName);
+        this.invocableUnexpectedErrorReceivedObservableEvent = this.CreateObservableEvent<ErrorReceivedEventArgs>(UnexpectedErrorReceivedEventName);
         this.invocableUnknownMessageReceivedObservableEvent = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
         this.invocableErrorHandlerErrorOccurredObservableEvent = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
         this.invocableLogMessageObservableEvent = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
@@ -216,7 +216,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// Gets an observable event that notifies when an error is received from the protocol
     /// that is not the result of a command execution.
     /// </summary>
-    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived => this.invocableErrorReceivedObservableEvent;
+    public ObservableEvent<ErrorReceivedEventArgs> OnUnexpectedErrorReceived => this.invocableUnexpectedErrorReceivedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when an unknown message is received from the protocol.
@@ -275,7 +275,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// unexpected error is encountered, meaning an error response received with no corresponding
     /// command.
     /// Defaults to <see cref="TransportErrorBehavior.Ignore"/>, in which case the error is neither
-    /// collected nor thrown from a later call; it is still raised on <see cref="OnErrorEventReceived"/>.
+    /// collected nor thrown from a later call; it is still raised on <see cref="OnUnexpectedErrorReceived"/>.
     /// An error response for a command that has timed out or been canceled is
     /// not an unexpected error; it is recognized, logged, and discarded (see
     /// <see cref="CancelCommand(Command, CommandCancellationReason)"/>).
@@ -1704,11 +1704,11 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     {
         try
         {
-            await this.invocableErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
+            await this.invocableUnexpectedErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            await this.ReportEventObserverErrorAsync(this.OnErrorEventReceived.EventName, TransportErrorObserverDescription, ex).ConfigureAwait(false);
+            await this.ReportEventObserverErrorAsync(this.OnUnexpectedErrorReceived.EventName, TransportErrorObserverDescription, ex).ConfigureAwait(false);
         }
     }
 
@@ -2156,7 +2156,7 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
 
     private string GetEventHandlerTerminalReason(string observableEventName)
     {
-        if (observableEventName == this.OnErrorEventReceived.EventName)
+        if (observableEventName == this.OnUnexpectedErrorReceived.EventName)
         {
             return "Unhandled exception in user event handler for error event";
         }
