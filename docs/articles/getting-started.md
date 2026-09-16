@@ -193,7 +193,7 @@ A browsing context represents a tab, window, or iframe. You need the context ID 
 [!code-csharp[Navigating](../code/examples/GettingStartedSamples.cs#Navigating)]
 
 The `Wait` property controls when the command returns:
-- `ReadinessState.None`: Returns immediately after navigation starts
+- `ReadinessState.None`: Returns once the navigation is committed, without waiting for the document to load
 - `ReadinessState.Interactive`: Waits for DOM ready
 - `ReadinessState.Complete`: Waits for page load complete (including images, stylesheets)
 
