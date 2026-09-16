@@ -1,5 +1,6 @@
 namespace WebDriverBiDi;
 
+using System.Runtime.CompilerServices;
 using WebDriverBiDi.TestUtilities;
 
 public class ObservableEventExtensionsTests
@@ -154,39 +155,45 @@ public class ObservableEventExtensionsTests
         // TaskScheduler.UnobservedTaskException, surfacing in whatever code happened to be
         // running when the garbage collector ran. A contract-violating OnCompleted must
         // therefore be swallowed rather than allowed to fault the loop.
+        //
+        // The subscription runs in a separate method so that nothing in this test roots the delivery task, and
+        // the collection is asserted before the monitor, because a task that was never collected could not
+        // have raised the event whatever the adapter did.
         using UnobservedTaskExceptionMonitor monitor = new("unobserved completion failure");
 
-        TestEventSource testEventSource = new();
-        IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
+        WeakReference<Task> weakCompletion = await SubscribeAndCompleteWithThrowingObserverAsync();
 
-        TaskCompletionSource completedInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        IDisposable subscription = observable.Subscribe(new DelegateObserver<TestObservableEventArgs>(
-            onCompleted: () =>
-            {
-                completedInvoked.TrySetResult();
-                throw new InvalidOperationException("unobserved completion failure");
-            }));
-
-        // Disposing the subscription ends the delivery loop, which invokes OnCompleted.
-        subscription.Dispose();
-        await completedInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // The signal above is raised from inside OnCompleted, so the delivery loop has not
-        // necessarily finished unwinding yet. Wait for it to reach its final state before
-        // collecting, or the collection races the fault and the assertion below passes for the
-        // wrong reason. The wait is a continuation that never reads the task's Exception, so it
-        // does not itself observe a fault and cannot mask the very thing the test checks.
-        Task completion = Assert.IsType<ObservableEventSubscription<TestObservableEventArgs>>(subscription).CompletionTask;
-        await completion.ContinueWith(static _ => { }, TaskContinuationOptions.ExecuteSynchronously)
-            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Force garbage collection to trigger UnobservedTaskException
-        // for any task whose exception was not observed.
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
+        Assert.True(await UnobservedTaskExceptionMonitor.CollectAsync(weakCompletion), "The delivery task was not collected, so the check below would prove nothing.");
         Assert.False(monitor.Raised, monitor.Exception?.ToString());
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static async Task<WeakReference<Task>> SubscribeAndCompleteWithThrowingObserverAsync()
+        {
+            TestEventSource testEventSource = new();
+            IObservable<TestObservableEventArgs> observable = testEventSource.TestObservableEvent.ToObservable();
+
+            TaskCompletionSource completedInvoked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            IDisposable subscription = observable.Subscribe(new DelegateObserver<TestObservableEventArgs>(
+                onCompleted: () =>
+                {
+                    completedInvoked.TrySetResult();
+                    throw new InvalidOperationException("unobserved completion failure");
+                }));
+
+            // Disposing the subscription ends the delivery loop, which invokes OnCompleted.
+            subscription.Dispose();
+            await completedInvoked.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            // The signal above is raised from inside OnCompleted, so the delivery loop has not
+            // necessarily finished unwinding yet. Wait for it to reach its final state before
+            // returning, or the collection races the fault and the assertion passes for the
+            // wrong reason. The wait is a continuation that never reads the task's Exception, so it
+            // does not itself observe a fault and cannot mask the very thing the test checks.
+            Task completion = Assert.IsType<ObservableEventSubscription<TestObservableEventArgs>>(subscription).CompletionTask;
+            await completion.ContinueWith(static _ => { }, TaskContinuationOptions.ExecuteSynchronously)
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            return new WeakReference<Task>(completion);
+        }
     }
 
     [Fact]

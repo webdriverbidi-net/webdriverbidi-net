@@ -1,6 +1,7 @@
 namespace WebDriverBiDi;
 
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Time.Testing;
 using WebDriverBiDi.TestUtilities;
 
@@ -864,48 +865,65 @@ public class EventObserverTests
     [Fact]
     public async Task TestAsynchronousHandlerExceptionCanBeCaptured()
     {
-        using UnobservedTaskExceptionMonitor monitor = new("async capture failure");
-
-        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             async e =>
             {
                 await Task.Yield();
-                try
-                {
-                    throw new InvalidOperationException("async capture failure");
-                }
-                finally
-                {
-                    taskCompletionSource.TrySetResult();
-                }
+                throw new InvalidOperationException("async capture failure");
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue");
 
-        Task[] tasks = observer.GetCapturedTasks();
-        _ = Assert.Single(tasks);
+        Task capturedTask = Assert.Single(observer.GetCapturedTasks());
+        await WaitUntilFaultedAsync(capturedTask, TestContext.Current.CancellationToken);
 
-        // Wait for the handler to fault before triggering GC.
-        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Force garbage collection to trigger UnobservedTaskException
-        // for any task whose exception was not observed.
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
-        Assert.False(monitor.Raised, monitor.Exception?.ToString());
-        Assert.True(tasks[0].IsFaulted);
-        AggregateException? aggregateException = tasks[0].Exception;
+        AggregateException? aggregateException = capturedTask.Exception;
         Assert.NotNull(aggregateException);
         InvalidOperationException innerException = Assert.IsType<InvalidOperationException>(aggregateException.InnerException);
         Assert.Equal("async capture failure", innerException.Message);
 
         observer.StopCapturingTasks();
+    }
+
+    [Fact]
+    public async Task TestCapturedAsynchronousHandlerFaultDoesNotCauseUnobservedTaskException()
+    {
+        // Capture hands a handler task's fault to the caller, but a caller that never reads it must not leave
+        // the fault for the finalizer to report: the observer observes the fault itself when the task
+        // completes. Reading the task's exception would observe it too, which is why this test is separate
+        // from the one that checks what was captured. The scenario runs in a separate method so that nothing
+        // in this test roots the task, and the collection is asserted before the monitor, because a task that
+        // was never collected could not have raised the event whatever the observer did.
+        using UnobservedTaskExceptionMonitor monitor = new("captured async handler failure");
+
+        WeakReference<Task> weakCapturedTask = await CaptureFaultedHandlerTaskAsync();
+
+        Assert.True(await UnobservedTaskExceptionMonitor.CollectAsync(weakCapturedTask), "The captured handler task was not collected, so the check below would prove nothing.");
+        Assert.False(monitor.Raised, monitor.Exception?.ToString());
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static async Task<WeakReference<Task>> CaptureFaultedHandlerTaskAsync()
+        {
+            TestEventSource testEventSource = new();
+            EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+                async e =>
+                {
+                    await Task.Yield();
+                    throw new InvalidOperationException("captured async handler failure");
+                },
+                ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+            observer.StartCapturingTasks();
+            await testEventSource.RaiseTestEventAsync("myValue");
+
+            Task capturedTask = Assert.Single(observer.GetCapturedTasks());
+            await WaitUntilFaultedAsync(capturedTask, TestContext.Current.CancellationToken);
+            observer.StopCapturingTasks();
+            return new WeakReference<Task>(capturedTask);
+        }
     }
 
     [Fact]
@@ -1000,82 +1018,91 @@ public class EventObserverTests
     [Fact]
     public async Task TestFaultedTaskCapturedAfterWaitForCapturedTasksAsyncDoesNotCauseUnobservedTaskException()
     {
-        // A task that races into the channel buffer after WaitForAsync has collected its
-        // Nth task (but before TryComplete closes the writer) would normally produce an
-        // UnobservedTaskException when it faults, because CaptureTask marked it as
-        // ShouldReportAsyncFault = false. The drain logic must attach a new continuation
-        // that observes the fault so UnobservedTaskException is never raised.
+        // A task that races into the channel buffer after WaitForAsync has collected its Nth task (but before
+        // TryComplete closes the writer) is never returned to any caller, so nothing outside the observer will
+        // ever read its fault. It must still not be left for the finalizer to report. Two continuations observe
+        // it: the one attached when the handler was notified, and the reporting continuation the drain attaches.
+        // Either one alone is enough to keep the fault from going unobserved, so this test fails only when both
+        // are missing; that the drain actually reports the fault is covered by
+        // TestRacedDrainReportsAlreadyFaultedCapturedTask and by
+        // BiDiDriverTests.TestRacedCapturedTaskFaultIsReportedViaEventHandlerError.
+        //
+        // The scenario runs in a separate method so that nothing in this test roots the raced task, and the
+        // collection is asserted before the monitor, because a task that was never collected could not have
+        // raised the event whatever the drain did.
         using UnobservedTaskExceptionMonitor monitor = new("raced task fault");
 
-        TestEventSource testEventSource = new();
+        WeakReference<Task> weakRacedTask = await FaultRacedTaskAfterDrainAsync();
 
-        TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TaskCompletionSource allowFaultTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Assert.True(await UnobservedTaskExceptionMonitor.CollectAsync(weakRacedTask), "The raced handler task was not collected, so the check below would prove nothing.");
+        Assert.False(monitor.Raised, monitor.Exception?.ToString());
 
-        Task? racedTask = null;
-        async Task RacedHandlerAsync(TestObservableEventArgs e)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static async Task<WeakReference<Task>> FaultRacedTaskAfterDrainAsync()
         {
-            if (e.EventValue == "raced")
-            {
-                handlerStartedTaskCompletionSource.TrySetResult();
-                try
-                {
-                    await allowFaultTaskCompletionSource.Task;
-                    throw new InvalidOperationException("raced task fault");
-                }
-                finally
-                {
-                    handlerFaultedTaskCompletionSource.TrySetResult();
-                }
-            }
-        }
+            TestEventSource testEventSource = new();
 
-        // The observer handler is a synchronous wrapper so the test can keep a reference to the raced
-        // handler's task and later poll its faulted state instead of racing a fixed delay.
-        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            e =>
+            TaskCompletionSource handlerStartedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource allowFaultTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource handlerFaultedTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            Task? racedTask = null;
+            async Task RacedHandlerAsync(TestObservableEventArgs e)
             {
-                Task handlerTask = RacedHandlerAsync(e);
                 if (e.EventValue == "raced")
                 {
-                    racedTask = handlerTask;
+                    handlerStartedTaskCompletionSource.TrySetResult();
+                    try
+                    {
+                        await allowFaultTaskCompletionSource.Task;
+                        throw new InvalidOperationException("raced task fault");
+                    }
+                    finally
+                    {
+                        handlerFaultedTaskCompletionSource.TrySetResult();
+                    }
                 }
+            }
 
-                return handlerTask;
-            },
-            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+            // The observer handler is a synchronous wrapper so the scenario can keep a reference to the raced
+            // handler's task and wait for its faulted state instead of racing a fixed delay.
+            EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+                e =>
+                {
+                    Task handlerTask = RacedHandlerAsync(e);
+                    if (e.EventValue == "raced")
+                    {
+                        racedTask = handlerTask;
+                    }
 
-        observer.StartCapturingTasks();
+                    return handlerTask;
+                },
+                ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        // Raise the event that WaitForAsync(1) will collect.
-        await testEventSource.RaiseTestEventAsync("collected");
+            observer.StartCapturingTasks();
 
-        // Raise the raced event — its task will be in-flight when the channel closes.
-        await testEventSource.RaiseTestEventAsync("raced");
-        await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            // Raise the event that WaitForAsync(1) will collect.
+            await testEventSource.RaiseTestEventAsync("collected");
 
-        // WaitForAsync collects 1 task, auto-closes the channel, and drains the raced task.
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        _ = Assert.Single(tasks);
+            // Raise the raced event — its task will be in-flight when the channel closes.
+            await testEventSource.RaiseTestEventAsync("raced");
+            await handlerStartedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // Let the raced handler fault and wait for the finally block to run.
-        allowFaultTaskCompletionSource.TrySetResult();
-        await handlerFaultedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            // WaitForAsync collects 1 task, auto-closes the channel, and drains the raced task.
+            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            _ = Assert.Single(tasks);
 
-        // handlerFaultedTaskCompletionSource fires from the finally block, which runs
-        // before the async state machine calls SetException to transition the task to
-        // Faulted. Wait (bounded) for that transition, which also runs the drain's
-        // ExecuteSynchronously fault continuation, rather than betting a fixed delay is long enough.
-        await WaitUntilFaultedAsync(racedTask!, TestContext.Current.CancellationToken);
+            // Let the raced handler fault and wait for the finally block to run.
+            allowFaultTaskCompletionSource.TrySetResult();
+            await handlerFaultedTaskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        // Force garbage collection to trigger UnobservedTaskException
-        // for any task whose exception was not observed.
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
-        Assert.False(monitor.Raised, monitor.Exception?.ToString());
+            // handlerFaultedTaskCompletionSource fires from the finally block, which runs
+            // before the async state machine calls SetException to transition the task to
+            // Faulted. Wait (bounded) for that transition, which also runs the drain's
+            // ExecuteSynchronously fault continuation, rather than betting a fixed delay is long enough.
+            await WaitUntilFaultedAsync(racedTask!, TestContext.Current.CancellationToken);
+            return new WeakReference<Task>(racedTask!);
+        }
     }
 
     [Fact]
@@ -1363,39 +1390,44 @@ public class EventObserverTests
     [Fact]
     public async Task TestHandlerRunAsynchronouslyWithAsyncExceptionDoesNotCauseUnobservedTaskException()
     {
+        // The scenario runs in a separate method so that nothing in this test roots the handler task, and the
+        // collection is asserted before the monitor, because a task that was never collected could not have
+        // raised the event whatever the observer did.
         using UnobservedTaskExceptionMonitor monitor = new("async fire-and-forget failure");
 
-        TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        TestEventSource testEventSource = new();
-        Task? handlerTask = null;
-        async Task FaultingHandlerAsync(TestObservableEventArgs _)
-        {
-            await Task.Yield();
-            taskCompletionSource.TrySetResult();
-            throw new InvalidOperationException("async fire-and-forget failure");
-        }
+        WeakReference<Task> weakHandlerTask = await FaultFireAndForgetHandlerAsync();
 
-        // The observer handler is a synchronous wrapper so the test can keep a reference to the
-        // handler's task and later poll its faulted state instead of racing a fixed delay.
-        testEventSource.TestObservableEvent.AddObserver(
-            e => handlerTask = FaultingHandlerAsync(e),
-            ObservableEventHandlerOptions.RunHandlerAsynchronously);
-
-        await testEventSource.RaiseTestEventAsync("myValue");
-
-        // Wait for the handler to signal just before throwing, then wait (bounded) for its task to
-        // reach the Faulted state — which also runs the ExecuteSynchronously fault continuation that
-        // observes the exception — rather than betting a fixed delay is long enough, before GC.
-        await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await WaitUntilFaultedAsync(handlerTask!, TestContext.Current.CancellationToken);
-
-        // Force garbage collection to trigger UnobservedTaskException
-        // for any task whose exception was not observed.
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
+        Assert.True(await UnobservedTaskExceptionMonitor.CollectAsync(weakHandlerTask), "The handler task was not collected, so the check below would prove nothing.");
         Assert.False(monitor.Raised, monitor.Exception?.ToString());
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static async Task<WeakReference<Task>> FaultFireAndForgetHandlerAsync()
+        {
+            TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TestEventSource testEventSource = new();
+            Task? handlerTask = null;
+            async Task FaultingHandlerAsync(TestObservableEventArgs _)
+            {
+                await Task.Yield();
+                taskCompletionSource.TrySetResult();
+                throw new InvalidOperationException("async fire-and-forget failure");
+            }
+
+            // The observer handler is a synchronous wrapper so the scenario can keep a reference to the
+            // handler's task and wait for its faulted state instead of racing a fixed delay.
+            testEventSource.TestObservableEvent.AddObserver(
+                e => handlerTask = FaultingHandlerAsync(e),
+                ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+            await testEventSource.RaiseTestEventAsync("myValue");
+
+            // Wait for the handler to signal just before throwing, then wait (bounded) for its task to
+            // reach the Faulted state — which also runs the ExecuteSynchronously fault continuation that
+            // observes the exception — rather than betting a fixed delay is long enough.
+            await taskCompletionSource.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await WaitUntilFaultedAsync(handlerTask!, TestContext.Current.CancellationToken);
+            return new WeakReference<Task>(handlerTask!);
+        }
     }
 
     [Fact]
