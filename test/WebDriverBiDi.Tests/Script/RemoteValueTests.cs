@@ -1644,6 +1644,7 @@ public class RemoteValueTests
         NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)remoteValue;
         RemoteObjectReference reference = nodeRemoteValue.ToRemoteObjectReference();
         Assert.Equal("myHandle", reference.Handle);
+        Assert.Equal("mySharedId", reference.SharedId);
     }
 
     [Fact]
@@ -1674,6 +1675,7 @@ public class RemoteValueTests
                       {
                         "type": "node",
                         "sharedId": "mySharedId",
+                        "handle": "myHandle",
                         "value": {
                           "nodeType": 1,
                           "nodeValue": "",
@@ -1685,7 +1687,8 @@ public class RemoteValueTests
         Assert.NotNull(remoteValue);
         Assert.IsType<NodeRemoteValue>(remoteValue);
         SharedReference reference = ((NodeRemoteValue)remoteValue).ToSharedReference();
-        Assert.IsType<SharedReference>(reference);
+        Assert.Equal("mySharedId", reference.SharedId);
+        Assert.Equal("myHandle", reference.Handle);
     }
 
     [Fact]
