@@ -72,14 +72,16 @@ WebDriverBiDi.NET allows you to configure how transport-layer errors are handled
 
 **Late responses are not errors.** When a command times out, is canceled by its `CancellationToken`, or is
 canceled directly through `Transport.CancelCommand`, the browser does not know that you stopped waiting and
-may still answer. The transport remembers recently canceled commands (up to
-1,024 of them per connection by default, and a derived transport may size the collection it assigns to
+may still answer. The transport remembers the commands among its most recent cancellations (the last
+1,024 per connection by default, and a derived transport may size the collection it assigns to
 `Transport.PendingCommands` differently) and, when such a response or error response arrives, discards it after
 logging a `Debug`-level message through `OnLogMessage` and emitting the `CanceledCommandResponseDiscarded`
 EventSource event. It is **not** counted under `UnknownMessageBehavior` or `UnexpectedErrorBehavior`, so
 a slow navigation that times out and then completes does not terminate the session in `Terminate` mode.
-Only a response whose command ID was never issued (or was canceled so long ago that it has been forgotten)
-is treated as an unknown message or unexpected error.
+Only a response whose command ID was never issued, or whose command has been forgotten because a full window of
+further commands was canceled after it, is treated as an unknown message or unexpected error. The window
+counts cancellations, so a command can be forgotten even when the late responses for the commands canceled
+after it have already arrived.
 
 Each remembered entry is a `CanceledCommandInfo`, carrying the command's `CommandId` and `CommandName`, the
 `ResponseType` the answer would have been deserialized to, the `TimeSinceCancellation`, and a `Reason` of type

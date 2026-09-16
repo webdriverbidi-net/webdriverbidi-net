@@ -298,6 +298,30 @@ public class PendingCommandCollectionTests
     }
 
     [Fact]
+    public async Task TestCanceledCommandTrackingForgetsByCancellationOrderEvenBelowCapacity()
+    {
+        // The capacity is a window over recent cancellations. A consumed ID keeps its place in that window, so the
+        // oldest command is forgotten when a new cancellation pushes it out, even though only two commands, within
+        // a capacity of two, would otherwise be remembered.
+        using PendingCommandCollection collection = new(2);
+        Command first = new(1, new TestCommandParameters("module.command"));
+        Command second = new(2, new TestCommandParameters("module.command"));
+        Command third = new(3, new TestCommandParameters("module.command"));
+        await collection.AddPendingCommandAsync(first, TestContext.Current.CancellationToken);
+        await collection.AddPendingCommandAsync(second, TestContext.Current.CancellationToken);
+        await collection.AddPendingCommandAsync(third, TestContext.Current.CancellationToken);
+
+        collection.CancelPendingCommand(first, CommandCancellationReason.Canceled);
+        collection.CancelPendingCommand(second, CommandCancellationReason.Canceled);
+        Assert.True(collection.TryRemoveCanceledCommand(2, out _));
+        collection.CancelPendingCommand(third, CommandCancellationReason.Canceled);
+
+        Assert.Equal(1, collection.TrackedCanceledCommandCount);
+        Assert.False(collection.TryRemoveCanceledCommand(1, out _));
+        Assert.True(collection.TryRemoveCanceledCommand(3, out _));
+    }
+
+    [Fact]
     public async Task TestZeroCapacityDisablesCanceledCommandTracking()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));
