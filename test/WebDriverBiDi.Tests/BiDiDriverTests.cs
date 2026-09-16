@@ -1805,6 +1805,15 @@ public class BiDiDriverTests
     }
 
     [Fact]
+    public async Task TestCreatingWithTransportOnlyUsesDefaultCommandTimeout()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await using BiDiDriver driver = new(transport);
+        Assert.Equal(BiDiDriver.DefaultCommandWaitTimeout, driver.DefaultCommandTimeout);
+    }
+
+    [Fact]
     public async Task TestCreatingWithNullTransportThrows()
     {
         Assert.ThrowsAny<ArgumentNullException>(() => _ = new BiDiDriver(TimeSpan.FromSeconds(1), null!));

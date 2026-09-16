@@ -117,6 +117,36 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class with the specified
+    /// <see cref="Transport"/>.
+    /// </summary>
+    /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="transport"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the <see cref="Transport.State"/> property of the supplied <paramref name="transport"/> is other than
+    /// <see cref="TransportState.Disconnected"/>.
+    /// </exception>
+    /// <remarks>
+    /// <para>
+    /// Using this constructor will use the value of <see cref="DefaultCommandWaitTimeout"/> as the
+    /// timeout for commands with this driver.
+    /// </para>
+    /// <para>
+    /// <strong>Ownership:</strong> a driver takes ownership of the transport passed to it.
+    /// <see cref="DisposeAsync"/> disposes the transport, which in turn disposes its
+    /// <see cref="Connection"/>. A transport shared between drivers is therefore torn down for
+    /// every one of them as soon as the first is disposed, so a shared transport must outlive all
+    /// of its drivers, or the drivers must not be disposed. Additionally, a transport must be
+    /// disconnected when passed to the driver, as the driver must register modules and events
+    /// with the transport, and cannot do so once a connection has been started.
+    /// </para>
+    /// </remarks>
+    public BiDiDriver(Transport transport)
+        : this(DefaultCommandWaitTimeout, transport)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BiDiDriver" /> class with the specified
     /// default command wait timeout and <see cref="Transport" />.
     /// </summary>
     /// <param name="defaultCommandWaitTimeout">
@@ -389,7 +419,8 @@ public class BiDiDriver : IBiDiDriverLifecycleManager, IBiDiModuleHost, IBiDiDri
     /// The settings live on the transport, and this property is how a driver created with
     /// <see cref="BiDiDriver()"/> or <see cref="BiDiDriver(TimeSpan)"/> reaches them: those constructors
     /// create the transport themselves, so there is no other reference to it. A driver constructed with
-    /// <see cref="BiDiDriver(TimeSpan, Transport)"/> may equally use the transport it was handed.
+    /// <see cref="BiDiDriver(TimeSpan, Transport)"/> or <see cref="BiDiDriver(Transport)"/> may equally
+    /// use the transport it was handed.
     /// </para>
     /// <para>
     /// Setting a value here is the same as setting it on the transport; there is no driver-level copy.
