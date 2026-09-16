@@ -400,6 +400,43 @@ public class CommandTests
     }
 
     [Fact]
+    public async Task TestWaitForCompletionReturnsTrueWhenCommandCompletesAsCallerCancels()
+    {
+        // The caller's cancellation ends the wait, and the command completes before that outcome is examined. In
+        // normal operation the thread pool decides that order, so the wait is replaced to fix it.
+        using CancellationTokenSource callerTokenSource = new();
+        TestCommand command = new(1, new TestCommandParameters("module.command"))
+        {
+            OutcomeWaitHandler = (waitingCommand, cancellationToken) =>
+            {
+                callerTokenSource.Cancel();
+                waitingCommand.SetResult(new TestCommandResult());
+                return Task.FromCanceled(cancellationToken);
+            },
+        };
+
+        Assert.True(await command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), callerTokenSource.Token));
+        Assert.True(command.TryGetResult(out _));
+    }
+
+    [Fact]
+    public async Task TestWaitForCompletionReturnsTrueWhenCommandCompletesAsTimeoutElapses()
+    {
+        // The timeout ends the wait, and the command completes before that outcome is examined.
+        TestCommand command = new(1, new TestCommandParameters("module.command"))
+        {
+            OutcomeWaitHandler = (waitingCommand, cancellationToken) =>
+            {
+                waitingCommand.SetResult(new TestCommandResult());
+                return Task.FromException(new TimeoutException());
+            },
+        };
+
+        Assert.True(await command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken));
+        Assert.True(command.TryGetResult(out _));
+    }
+
+    [Fact]
     public async Task TestWaitForCompletionReturnsTrueWhenCommandFaultsDuringWait()
     {
         // A fault is a completion. The wait reports that the command finished, and the fault itself is read

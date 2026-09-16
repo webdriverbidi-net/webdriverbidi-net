@@ -179,7 +179,7 @@ public class Command
         // delay task and a WhenAny task beside it, on every command.
         try
         {
-            await TimeoutUtilities.WaitAsync(commandTask, this.timeProvider, timeout, cancellationToken).ConfigureAwait(false);
+            await this.WaitForOutcomeAsync(timeout, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception) when (commandTask.IsCompleted)
         {
@@ -270,5 +270,36 @@ public class Command
     internal void StopTiming()
     {
         Interlocked.Exchange(ref this.stopTimestamp, ElapsedTimeUtilities.GetTimestamp());
+    }
+
+    /// <summary>
+    /// Asynchronously waits for this command's outcome, for the timeout to elapse, or for the token to be canceled,
+    /// whichever happens first.
+    /// </summary>
+    /// <param name="timeout">
+    /// The timeout, measured by this command's <see cref="TimeProvider"/>, or <see cref="Timeout.InfiniteTimeSpan"/> to wait
+    /// until the command completes or the token is canceled.
+    /// </param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the wait should be canceled.</param>
+    /// <returns>
+    /// A task that completes as the command does if the command finishes first, rethrowing a fault or cancellation of
+    /// the command itself; faults with a <see cref="TimeoutException"/> if the timeout elapses first; or is canceled if
+    /// the token is canceled first.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// <see cref="WaitForCompletionAsync"/> calls this method only for a command that has not yet completed, and
+    /// interprets how the returned task ends. A task that ends in any way at all, once the command has completed, is
+    /// reported as completion: the command may complete in the moment between the timeout elapsing, or the token being
+    /// canceled, and that outcome being examined, and the completed command is the outcome the caller can act on.
+    /// </para>
+    /// <para>
+    /// This method is <see langword="protected virtual"/> to allow test doubles to fix the order in which the command
+    /// completes and the wait ends, which in normal operation is decided by the thread pool.
+    /// </para>
+    /// </remarks>
+    protected virtual Task WaitForOutcomeAsync(TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        return TimeoutUtilities.WaitAsync(this.taskCompletionSource.Task, this.timeProvider, timeout, cancellationToken);
     }
 }
