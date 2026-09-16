@@ -565,6 +565,39 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
+    /// Set mobile text layout mode.
+    /// </summary>
+    public static async Task SetMobileTextLayoutMode(BiDiDriver driver, string contextId)
+    {
+        #region SetMobileTextLayoutMode
+        SetTextLayoutModeOverrideCommandParameters parameters =
+            new SetTextLayoutModeOverrideCommandParameters()
+            {
+                TextLayoutMode = TextLayoutMode.Mobile,
+                Contexts = { contextId }
+            };
+
+        await driver.Emulation.SetTextLayoutModeOverrideAsync(parameters);
+        Console.WriteLine("Text layout mode set to mobile");
+        #endregion
+    }
+
+    /// <summary>
+    /// Clear text layout mode override.
+    /// </summary>
+    public static async Task ClearTextLayoutModeOverride(BiDiDriver driver, string contextId)
+    {
+        #region ClearTextLayoutModeOverride
+        SetTextLayoutModeOverrideCommandParameters parameters =
+            SetTextLayoutModeOverrideCommandParameters.ResetTextLayoutModeOverride;
+        parameters.Contexts.Add(contextId);
+
+        await driver.Emulation.SetTextLayoutModeOverrideAsync(parameters);
+        Console.WriteLine("Text layout mode override cleared");
+        #endregion
+    }
+
+    /// <summary>
     /// Enable touch emulation with multiple touch points.
     /// </summary>
     public static async Task EnableTouchEmulation(BiDiDriver driver, string contextId)

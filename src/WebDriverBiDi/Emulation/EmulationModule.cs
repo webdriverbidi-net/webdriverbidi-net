@@ -157,6 +157,20 @@ public sealed class EmulationModule : Module
     }
 
     /// <summary>
+    /// Sets the emulated override for the text layout mode for the specified contexts or user contexts.
+    /// </summary>
+    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
+    /// <returns>An empty command result.</returns>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/required-parameters/*"/>
+    /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
+    public Task<SetTextLayoutModeOverrideCommandResult> SetTextLayoutModeOverrideAsync(SetTextLayoutModeOverrideCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
+    {
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
+    }
+
+    /// <summary>
     /// Sets the emulated override for the time zone for the specified contexts or user contexts.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>

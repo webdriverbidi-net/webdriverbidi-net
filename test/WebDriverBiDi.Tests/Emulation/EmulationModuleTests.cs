@@ -233,6 +233,31 @@ public class EmulationModuleTests
     }
 
     [Fact]
+    public async Task TestSetTextLayoutModeOverrideCommand()
+    {
+        TestWebSocketConnection connection = new();
+        connection.OnDataSendComplete.AddObserver(async e =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        });
+
+        await using BiDiDriver driver = new(TimeSpan.FromSeconds(5), new(connection));
+        await driver.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        EmulationModule module = driver.Emulation;
+
+        SetTextLayoutModeOverrideCommandResult result = await module.SetTextLayoutModeOverrideAsync(new SetTextLayoutModeOverrideCommandParameters(), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(result);
+    }
+
+    [Fact]
     public async Task TestSetTimeZoneOverrideCommand()
     {
         TestWebSocketConnection connection = new();
