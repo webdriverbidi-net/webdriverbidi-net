@@ -190,11 +190,11 @@ public class UnhandledErrorCollection
     /// and if so, returns a snapshot of the matching exceptions.
     /// </summary>
     /// <param name="errorBehavior">The error behavior for which to determine if errors exist.</param>
-    /// <param name="exceptions">When this method returns <see langword="true"/>, contains a snapshot of the exceptions; otherwise, an empty list.</param>
+    /// <param name="exceptions">When this method returns <see langword="true"/>, contains a snapshot of the exceptions; otherwise, an empty, read-only list.</param>
     /// <returns><see langword="true"/> if the collection contains errors for the specified behavior; otherwise, <see langword="false"/>.</returns>
     public bool TryGetExceptions(TransportErrorBehavior errorBehavior, out IList<Exception> exceptions)
     {
-        exceptions = [];
+        exceptions = Array.Empty<Exception>();
         if (errorBehavior == TransportErrorBehavior.Ignore)
         {
             return false;
@@ -202,17 +202,23 @@ public class UnhandledErrorCollection
 
         lock (this.collectionLock)
         {
-            List<Exception> result = [];
+            List<Exception>? result = null;
             foreach (UnhandledError error in this.unhandledErrors)
             {
                 if (this.errorBehaviors[error.ErrorType] == errorBehavior)
                 {
+                    result ??= [];
                     result.Add(error.Exception);
                 }
             }
 
+            if (result is null)
+            {
+                return false;
+            }
+
             exceptions = result;
-            return result.Count > 0;
+            return true;
         }
     }
 }
