@@ -22,6 +22,29 @@ public class StorageKeyPartitionDescriptorTests
     }
 
     [Fact]
+    public void TestCanSerializeWithAdditionalData()
+    {
+        StorageKeyPartitionDescriptor properties = new();
+        properties.AdditionalData["additionalName"] = "additionalValue";
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("type"));
+        JToken? type = serialized["type"];
+        Assert.NotNull(type);
+        Assert.Equal(JTokenType.String, type.Type);
+        Assert.Equal("storageKey", type.Value<string>());
+
+        Assert.True(serialized.ContainsKey("additionalName"));
+        JToken? additionalName = serialized["additionalName"];
+        Assert.NotNull(additionalName);
+        Assert.Equal(JTokenType.String, additionalName.Type);
+        Assert.Equal("additionalValue", additionalName.Value<string>());
+    }
+
+    [Fact]
     public void TestCanSerializeWithUserContext()
     {
         StorageKeyPartitionDescriptor properties = new()

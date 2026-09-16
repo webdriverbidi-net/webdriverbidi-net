@@ -233,6 +233,32 @@ public class CookieFilterTests
     }
 
     [Fact]
+    public void TestCanSerializeCookieFilterWithAdditionalData()
+    {
+        CookieFilter properties = new()
+        {
+            Name = "myCookieName"
+        };
+        properties.AdditionalData["additionalName"] = "additionalValue";
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+
+        Assert.Equal(2, serialized.Count);
+
+        Assert.True(serialized.ContainsKey("name"));
+        JToken? name = serialized["name"];
+        Assert.NotNull(name);
+        Assert.Equal(JTokenType.String, name.Type);
+        Assert.Equal("myCookieName", name.Value<string>());
+
+        Assert.True(serialized.ContainsKey("additionalName"));
+        JToken? additionalName = serialized["additionalName"];
+        Assert.NotNull(additionalName);
+        Assert.Equal(JTokenType.String, additionalName.Type);
+        Assert.Equal("additionalValue", additionalName.Value<string>());
+    }
+
+    [Fact]
     public void TestSettingCookieFilterExpirationDate()
     {
         DateTime now = DateTime.UtcNow.AddDays(1);
