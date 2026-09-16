@@ -20,6 +20,8 @@ namespace WebDriverBiDi.TestUtilities;
 /// </remarks>
 public sealed class UnobservedTaskExceptionMonitor : IDisposable
 {
+    private const int MaxCollectionAttempts = 10;
+
     private readonly string markerMessage;
     private readonly object matchLockObject = new();
     private readonly List<Exception> matchedExceptions = new();
@@ -66,6 +68,50 @@ public sealed class UnobservedTaskExceptionMonitor : IDisposable
                 return this.matchedExceptions.Count > 0 ? this.matchedExceptions[0] : null;
             }
         }
+    }
+
+    /// <summary>
+    /// Asynchronously forces full, blocking garbage collections, running pending finalizers after each one,
+    /// until the given task has been collected or the attempts are exhausted.
+    /// </summary>
+    /// <param name="task">A weak reference to the task whose fault the test is checking.</param>
+    /// <returns>
+    /// <see langword="true"/> if the task was collected, and its finalization has therefore run; otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// <see cref="TaskScheduler.UnobservedTaskException"/> is raised only when a faulted task that nothing
+    /// references any longer is finalized. While anything still references the task the event cannot be
+    /// raised, whether or not the fault was observed, so a check of <see cref="Raised"/> proves nothing unless
+    /// the task was actually collected. Assert this method's result before asserting on <see cref="Raised"/>,
+    /// and create the task in a separate, non-inlined method, so that no local of the test itself roots it.
+    /// </para>
+    /// <para>
+    /// A task completes on whatever thread ran its last continuation, and that thread can still be unwinding
+    /// out of the task's own frames when the test resumes on another thread. Each attempt therefore begins by
+    /// yielding, so such a thread can finish, and the method gives up after a fixed number of attempts rather
+    /// than waiting on a clock.
+    /// </para>
+    /// </remarks>
+    public static async Task<bool> CollectAsync(WeakReference<Task> task)
+    {
+        for (int attempt = 0; attempt < MaxCollectionAttempts; attempt++)
+        {
+            await Task.Yield();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            // The target is discarded rather than stored, because a stored target would be hoisted into this
+            // method's state machine and keep the task alive into the next attempt.
+            if (!task.TryGetTarget(out _))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
