@@ -455,6 +455,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(RemoteObjectReference))]
 [JsonSerializable(typeof(RemoteReference))]
 [JsonSerializable(typeof(RemoteValue))]
+[JsonSerializable(typeof(RemoteValueType))]
 [JsonSerializable(typeof(RemovePreloadScriptCommandParameters))]
 [JsonSerializable(typeof(ResultOwnership))]
 [JsonSerializable(typeof(SerializationOptions))]
