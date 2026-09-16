@@ -2665,6 +2665,81 @@ public class WebSocketConnectionTests : IAsyncDisposable
         Assert.Equal(connection.ObservedConnectionCancellationToken, connection.LastSendCancellationToken);
     }
 
+    [Fact]
+    public async Task TestSendDataWithCallerTokenIsCanceledWhenCallerCancels()
+    {
+        // A caller's token is linked with the connection's own before it is passed down, so a caller who gives up
+        // cancels the write in progress. The write is held open, and ignores its token, so that the token can be
+        // inspected while the send is still under way.
+        TaskCompletionSource writeEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseWrite = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using TestWebSocketConnection connection = new()
+        {
+            SendWebSocketDataOverride = async data =>
+            {
+                writeEntered.TrySetResult();
+                await releaseWrite.Task;
+            },
+        };
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        connection.BypassStart = false;
+        connection.IsConnectionOpenOverride = () => true;
+
+        using CancellationTokenSource callerTokenSource = new();
+        Task sendTask = connection.SendDataAsync("test"u8.ToArray(), callerTokenSource.Token);
+        await writeEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        CancellationToken writeToken = connection.LastSendCancellationToken;
+        try
+        {
+            Assert.False(writeToken.IsCancellationRequested);
+            callerTokenSource.Cancel();
+            Assert.True(writeToken.IsCancellationRequested, "Canceling the caller's token did not cancel the send in progress.");
+            Assert.False(connection.ObservedConnectionCancellationToken.IsCancellationRequested);
+        }
+        finally
+        {
+            releaseWrite.TrySetResult();
+            await sendTask;
+        }
+    }
+
+    [Fact]
+    public async Task TestSendDataWithCallerTokenIsCanceledWhenConnectionIsStopped()
+    {
+        // The link runs the other way too: stopping the connection cancels a send in progress even though its
+        // caller supplied a token of its own, which is never canceled here.
+        TaskCompletionSource writeEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseWrite = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using TestWebSocketConnection connection = new()
+        {
+            SendWebSocketDataOverride = async data =>
+            {
+                writeEntered.TrySetResult();
+                await releaseWrite.Task;
+            },
+        };
+        await connection.StartAsync("ws://localhost", TestContext.Current.CancellationToken);
+        connection.BypassStart = false;
+        connection.IsConnectionOpenOverride = () => true;
+
+        using CancellationTokenSource callerTokenSource = new();
+        Task sendTask = connection.SendDataAsync("test"u8.ToArray(), callerTokenSource.Token);
+        await writeEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        CancellationToken writeToken = connection.LastSendCancellationToken;
+        try
+        {
+            Assert.False(writeToken.IsCancellationRequested);
+            await connection.StopAsync(TestContext.Current.CancellationToken);
+            Assert.True(writeToken.IsCancellationRequested, "Stopping the connection did not cancel the send in progress.");
+            Assert.False(callerTokenSource.IsCancellationRequested);
+        }
+        finally
+        {
+            releaseWrite.TrySetResult();
+            await sendTask;
+        }
+    }
+
     private Server CreateServer()
     {
         Server server = new();
