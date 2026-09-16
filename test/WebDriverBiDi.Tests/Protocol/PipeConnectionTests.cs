@@ -454,8 +454,10 @@ public class PipeConnectionTests
         // StopAsync abandons a receive loop that does not respond to cancellation (see its
         // remarks). Restarting while that loop is still blocked must be refused: a second
         // loop reading the same pipe would interleave reads arbitrarily and corrupt message
-        // framing. Once the abandoned loop finally exits — discarding its stale read result
-        // rather than dispatching it — a new session can start.
+        // framing. Once the abandoned loop finally exits, a new session can start. (That a read
+        // completing with data after cancellation is discarded rather than dispatched is covered by
+        // TestReceiveLoopDiscardsDataReadAfterTheConnectionIsCanceled; the read released below
+        // returns end-of-file, which dispatches nothing either way.)
         TaskCompletionSource<int> receiveBlockSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource receiveBlockEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -497,8 +499,7 @@ public class PipeConnectionTests
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAsync<WebDriverBiDiConnectionException>(() => refusedStartTask);
         Assert.Contains("receive loop from a previous session", exception.Message);
 
-        // Release the blocked read. The loop observes its canceled token and exits without
-        // dispatching the read result.
+        // Release the blocked read with end-of-file. The loop observes its canceled token and exits.
         receiveBlockSignal.SetResult(0);
         await receiveLoopEndedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Empty(receivedData);
@@ -514,6 +515,78 @@ public class PipeConnectionTests
         await timeProvider.AdvanceUntilCompletedAsync(finalStopTask, connection.ShutdownTimeout + TimeSpan.FromMilliseconds(1), TestContext.Current.CancellationToken);
         await finalStopTask;
         testPipeServer.Stop();
+    }
+
+    [Fact]
+    public async Task TestReceiveLoopDiscardsDataReadAfterTheConnectionIsCanceled()
+    {
+        // A pipe read does not reliably observe cancellation, so a read can complete with data after the
+        // connection has been stopped. That data belongs to no session, and dispatching it would hand stale bytes
+        // to the observers of a connection that is already stopped. The read below completes only once the
+        // connection's own token has been canceled, and it completes with a whole message rather than with
+        // end-of-file, so the loop takes its data path and only its cancellation check stands between the
+        // message and the observers. An end-of-file read would not test that check at all, because the loop ends
+        // on end-of-file without dispatching anything either way.
+        List<string> receivedData = [];
+        int remoteDisconnectedCount = 0;
+        TaskCompletionSource readEnteredSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<int> readReturnedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource receiveLoopEndedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        List<LogMessageEventArgs> logs = [];
+        using TestPipeServer testPipeServer = new();
+        TestPipeConnection connection = new(testPipeServer);
+        connection.ReadHandler = async (buffer, offset, count, callNumber) =>
+        {
+            // Released by the connection's own cancellation, so the data is delivered after the stop has canceled
+            // the session, exactly as a read that ignored the token would deliver it.
+            TaskCompletionSource readReleased = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            using CancellationTokenRegistration registration = connection.ObservedConnectionCancellationToken.Register(() => readReleased.TrySetResult());
+            readEnteredSignal.TrySetResult();
+            await readReleased.Task;
+
+            byte[] staleMessage = Encoding.UTF8.GetBytes("stale message\0");
+            Array.Copy(staleMessage, 0, buffer, offset, staleMessage.Length);
+            readReturnedSignal.TrySetResult(staleMessage.Length);
+            return staleMessage.Length;
+        };
+        connection.OnDataReceived.AddObserver(e => receivedData.Add(Encoding.UTF8.GetString(e.Data.ToArray())));
+        connection.OnRemoteDisconnected.AddObserver(e =>
+        {
+            Interlocked.Increment(ref remoteDisconnectedCount);
+        });
+        connection.OnLogMessage.AddObserver(e =>
+        {
+            logs.Add(e);
+            if (e.Message.StartsWith("Ending pipe receive loop", StringComparison.Ordinal))
+            {
+                receiveLoopEndedSignal.TrySetResult();
+            }
+
+            return Task.CompletedTask;
+        });
+
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local", TestContext.Current.CancellationToken);
+
+        // The receive loop starts on its own task. Stopping before it reaches its first read would end the loop at
+        // its while-condition, the read would never run, and the test would pass without exercising the check.
+        await readEnteredSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        await connection.StopAsync(TestContext.Current.CancellationToken);
+
+        // The stop waits for the loop, and the loop ends as soon as the released read returns, so by now the read
+        // has delivered its message and the loop has decided what to do with it.
+        Assert.True(readReturnedSignal.Task.IsCompleted, "The blocked read did not return, so the loop never saw its data.");
+        Assert.True(receiveLoopEndedSignal.Task.IsCompleted, "The receive loop did not end before the stop returned.");
+        Assert.DoesNotContain(logs, log => log.Message.StartsWith("Timed out waiting", StringComparison.Ordinal));
+
+        Assert.Empty(receivedData);
+
+        // A stop that the loop observed is not a remote disconnection.
+        Assert.Equal(0, remoteDisconnectedCount);
+
+        testPipeServer.Stop();
+        await connection.DisposeAsync();
     }
 
     [Fact]
