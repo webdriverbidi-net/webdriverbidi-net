@@ -990,10 +990,11 @@ public class EventObserverTests
     [Fact]
     public async Task TestWaitForAsyncAutoCloseWithStopCapturingAfterCountReached()
     {
-        // Covers the ReferenceEquals-false branch inside WaitForAsync's auto-close block:
-        // StopCapturing is called from outside immediately after the Nth task is collected,
-        // so it may close the channel before WaitForAsync acquires captureLock to do so.
-        // The result must be the same regardless of which side wins the race.
+        // StopCapturingTasks is called after WaitForCapturedTasksAsync has already collected its count and
+        // auto-closed the capture session. Both tasks are buffered before the wait begins, so the wait
+        // completes synchronously, before StopCapturingTasks runs; there is no race, and the auto-close's
+        // check that the channel is still the one it started with is true here. Stopping a session the wait
+        // has already closed must be harmless.
         TestEventSource testEventSource = new();
         static Task DistinctTaskHandler(TestObservableEventArgs _) => Task.FromResult(Guid.NewGuid());
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(DistinctTaskHandler);
@@ -1007,6 +1008,8 @@ public class EventObserverTests
         // WaitForAsync(2) will collect both tasks and then try to auto-close.
         // StopCapturing() races with that auto-close from the calling thread.
         Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        Assert.True(waitTask.IsCompleted, "The wait should have completed synchronously from the buffered tasks.");
+        Assert.False(observer.IsCapturing);
         observer.StopCapturingTasks();
 
         Task[] tasks = await waitTask;

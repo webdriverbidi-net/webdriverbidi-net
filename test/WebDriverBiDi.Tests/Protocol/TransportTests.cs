@@ -232,6 +232,11 @@ public class TransportTests
             TestContext.Current.CancellationToken);
         bool commandCompleted = await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.True(commandCompleted);
+
+        // Awaited here, where the wait above has already proved the producer delivered, so that a
+        // fault inside it is reported as itself rather than as whichever assertion below fails first.
+        await responseTask;
+
         Assert.IsType<WebDriverBiDiSerializationException>(command.ThrownException);
         Assert.Contains("Error response for command 1 contained incorrect JSON for protocol error", command.ThrownException.Message);
     }
@@ -263,10 +268,6 @@ public class TransportTests
             },
             TestContext.Current.CancellationToken);
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        // Awaited here, where the wait above has already proved the producer delivered, so that a
-        // fault inside it is reported as itself rather than as whichever assertion below fails first.
-        await responseTask;
 
         // Awaited here, where the wait above has already proved the producer delivered, so that a
         // fault inside it is reported as itself rather than as whichever assertion below fails first.
@@ -1730,7 +1731,7 @@ public class TransportTests
 
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
 
-        // First disconnect - this will set IsConnected = false
+        // First disconnect - this sets State to Disconnected
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
         // Verify the first disconnect executed fully
@@ -1836,7 +1837,6 @@ public class TransportTests
     [Fact]
     public async Task TestExceptionInTransportEventReceivedCanCollect()
     {
-        string receivedName = string.Empty;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
@@ -1871,7 +1871,6 @@ public class TransportTests
     [Fact]
     public async Task TestExceptionInTransportEventReceivedCanCollectMultiple()
     {
-        string receivedName = string.Empty;
         TaskCompletionSource firstEventTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource secondEventTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int callCount = 0;
@@ -2290,7 +2289,6 @@ public class TransportTests
     [Fact]
     public async Task TestExceptionInTransportEventReceivedCanTerminate()
     {
-        // string receivedName = string.Empty;
         TaskCompletionSource taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         TestWebSocketConnection connection = new();
@@ -2415,7 +2413,6 @@ public class TransportTests
     [Fact]
     public async Task TestCapturedExceptionsCanBeReset()
     {
-        string receivedName = string.Empty;
         TestWebSocketConnection connection = new();
         await using Transport transport = new(connection)
         {
@@ -3215,7 +3212,7 @@ public class TransportTests
 
         // Start ConnectAsync first; wait until it has entered the lock callback before
         // starting RegisterTypeInfoResolverAsync. This guarantees ConnectAsync acquires
-        // the semaphore first and sets IsConnected before RegisterTypeInfoResolverAsync
+        // the semaphore first and sets State before RegisterTypeInfoResolverAsync
         // reads it, making the test deterministic regardless of thread scheduling.
         Task connectTask = transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await firstCallerReadyTask;
@@ -3325,7 +3322,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         await using Transport transport = new(connection);
 
-        // Never call ConnectAsync - IsConnected remains false
+        // Never call ConnectAsync - State remains Disconnected
         await connection.RaiseConnectionErrorEventAsync(new Exception("Connection lost"));
 
         // Should not throw; early return path taken. Verify transport rejects commands.
@@ -3341,7 +3338,7 @@ public class TransportTests
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
         await transport.DisconnectAsync(TestContext.Current.CancellationToken);
 
-        // IsConnected is now false; raise error (e.g., receive loop dying during shutdown)
+        // State is now Disconnected; raise error (e.g., receive loop dying during shutdown)
         await connection.RaiseConnectionErrorEventAsync(new Exception("Connection lost"));
 
         // Should not throw; early return path taken. Verify still disconnected.
@@ -3350,13 +3347,14 @@ public class TransportTests
     }
 
     [Fact]
-    public async Task TestConnectionErrorWhenDisconnectRacesHitsInnerReturnBranch()
+    public async Task TestConnectionErrorWhenDisconnectRacesHitsDisconnectOwnershipBranch()
     {
         // Covers the disconnect-ownership signal branch of HandleConnectionDisconnectionAsync:
         // OnConnectionErrorAsync passes the fast-path, then observes DisconnectAsync's ownership
         // signal completing before it acquires the lock, and returns without tearing down (handing
-        // the lock back through its completion continuation). The inner "if (!this.IsConnected)
-        // return" branch is covered separately by TestConcurrentConnectionLossEventsHitInnerReturnBranch.
+        // the lock back through its completion continuation). The inner "if (this.State !=
+        // TransportState.Connected) return" branch is covered separately by
+        // TestConcurrentConnectionLossEventsHitInnerReturnBranch.
         TestWebSocketConnection connection = new();
         await using TestTransport transport = new(connection);
         await transport.ConnectAsync("ws://localhost", TestContext.Current.CancellationToken);
@@ -3368,6 +3366,13 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new("module.command");
         Assert.Contains("Transport must be connected", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken))).Message);
+
+        // The handler's outstanding wait was granted once the disconnect released the lock, and the handler hands it
+        // straight back. The command above fails on the transport's state before it would take the lock, so it cannot
+        // show that. An operation that always takes the lock, with no bound on the wait, completes only if the lock
+        // was handed back; the outer bound only turns a lock that never comes back into a failure rather than a hang.
+        transport.ConnectionLockTimeout = Timeout.InfiniteTimeSpan;
+        await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), TestContext.Current.CancellationToken).WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -3510,13 +3515,13 @@ public class TransportTests
     }
 
     [Fact]
-    public async Task TestRemoteDisconnectWhenDisconnectRacesHitsInnerReturnBranch()
+    public async Task TestRemoteDisconnectWhenDisconnectRacesHitsDisconnectOwnershipBranch()
     {
         // Covers the disconnect-ownership signal branch of HandleConnectionDisconnectionAsync: the
-        // remote-disconnect handler passes the fast-path (IsConnected == true), then observes
+        // remote-disconnect handler passes the fast-path (State == Connected), then observes
         // DisconnectAsync's ownership signal completing before it acquires the lock, and returns
         // without tearing down (handing the lock back through its completion continuation). The
-        // inner "if (!this.IsConnected) return" branch is covered separately by
+        // inner "if (this.State != TransportState.Connected) return" branch is covered separately by
         // TestConcurrentConnectionLossEventsHitInnerReturnBranch.
         TestWebSocketConnection connection = new();
         await using TestTransport transport = new(connection);
@@ -3529,6 +3534,13 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new("module.command");
         Assert.Contains("Transport must be connected", (await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(async () => await transport.SendCommandAsync(commandParameters, TestContext.Current.CancellationToken))).Message);
+
+        // The handler's outstanding wait was granted once the disconnect released the lock, and the handler hands it
+        // straight back. The command above fails on the transport's state before it would take the lock, so it cannot
+        // show that. An operation that always takes the lock, with no bound on the wait, completes only if the lock
+        // was handed back; the outer bound only turns a lock that never comes back into a failure rather than a hang.
+        transport.ConnectionLockTimeout = Timeout.InfiniteTimeSpan;
+        await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), TestContext.Current.CancellationToken).WaitAsync(DeadlockDetectionTimeout, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -4350,15 +4362,15 @@ public class TransportTests
     }
 
     /// <summary>
-    /// Covers the inner <c>if (!this.IsConnected) return</c> re-check in
+    /// Covers the inner <c>if (this.State != TransportState.Connected) return</c> re-check in
     /// <c>HandleConnectionDisconnectionAsync</c> (the path where a connection-loss handler acquires
     /// the connection lock and finds the transport already disconnected).
     /// </summary>
     /// <remarks>
     /// A <see cref="Transport.DisconnectAsync(CancellationToken)"/> racing a loss handler is resolved
     /// through the disconnect-ownership signal, so it no longer reaches this inner re-check (that path
-    /// is covered by <c>TestRemoteDisconnectWhenDisconnectRacesHitsInnerReturnBranch</c> and
-    /// <c>TestConnectionErrorWhenDisconnectRacesHitsInnerReturnBranch</c> elsewhere in this class). The
+    /// is covered by <c>TestRemoteDisconnectWhenDisconnectRacesHitsDisconnectOwnershipBranch</c> and
+    /// <c>TestConnectionErrorWhenDisconnectRacesHitsDisconnectOwnershipBranch</c> elsewhere in this class). The
     /// re-check is now reached only when two connection-loss events race each other: neither raises the
     /// ownership signal, so the second handler waits for the lock, and by the time it acquires it the
     /// first handler has already set the transport disconnected. The two acquisitions are choreographed
@@ -4376,7 +4388,7 @@ public class TransportTests
 
         // Choreograph the two connection-lock acquisitions: the first loss handler enters the lock,
         // and the second is held at its fast-path-passed / pre-lock point until the first has
-        // acquired the lock, guaranteeing both saw IsConnected == true before either tore down.
+        // acquired the lock, guaranteeing both saw State == Connected before either tore down.
         Task firstHandlerEnteredLockAcquisition = transport.EnableConnectLockConcurrencyTesting();
 
         // First loss event: acquires the lock and performs the teardown.
@@ -4384,7 +4396,7 @@ public class TransportTests
         await firstHandlerEnteredLockAcquisition;
 
         // Second loss event: passes the fast-path while the first still holds the lock, then waits
-        // for the lock and, on acquiring it, hits the inner re-check with IsConnected already false.
+        // for the lock and, on acquiring it, hits the inner re-check with State already Disconnected.
         Task secondLossHandler = connection.RaiseRemoteDisconnectedEventAsync();
 
         await Task.WhenAll(firstLossHandler, secondLossHandler);
@@ -4407,7 +4419,7 @@ public class TransportTests
         await transport.ConnectAsync("ws://localhost", testCancellationToken);
 
         // Signalled by the connection-loss handler when it enters its connection-lock acquisition,
-        // i.e., once it has passed its fast-path check (IsConnected is still true at that point,
+        // i.e., once it has passed its fast-path check (State is still Connected at that point,
         // because DisconnectAsync is parked in the after-acquire callback below and has not yet
         // marked the transport disconnected). This is the moment that makes the deadlock inevitable
         // on an unfixed implementation, and the moment DisconnectAsync must be released to proceed.
@@ -4455,13 +4467,19 @@ public class TransportTests
         Assert.Equal(1, connection.StopCallCount);
         Assert.True(connection.ReceiveLoopCompleted, "The connection's receive loop should have completed once the disconnect finished.");
 
-        // The transport is disconnected AND the connection lock was handed back: a follow-up command
-        // fails fast with a connection exception instead of blocking on a lock that was never released.
-        // (IsConnected is internal to the library, so this is the observable proxy for both facts.)
+        // The transport is disconnected, so a follow-up command fails fast with a connection exception.
+        Assert.Equal(TransportState.Disconnected, transport.State);
         TestCommandParameters commandParameters = new("module.command");
         WebDriverBiDiConnectionException exception = await Assert.ThrowsAnyAsync<WebDriverBiDiConnectionException>(
             async () => await transport.SendCommandAsync(commandParameters, testCancellationToken));
         Assert.Contains("Transport must be connected", exception.Message);
+
+        // The handler's lock wait was granted once the disconnect released the lock, and the handler must hand it
+        // straight back. The command above fails on the transport's state before it would take the lock, so it cannot
+        // show that. An operation that always takes the lock, with no bound on the wait, completes only if the lock
+        // was handed back; the outer bound only turns a lock that never comes back into a failure rather than a hang.
+        transport.ConnectionLockTimeout = Timeout.InfiniteTimeSpan;
+        await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver(), testCancellationToken).WaitAsync(DeadlockDetectionTimeout, testCancellationToken);
 
         await transport.DisposeAsync();
     }
