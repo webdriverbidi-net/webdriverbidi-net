@@ -26,6 +26,14 @@ using Module = WebDriverBiDi.Module;
 /// name agrees both with the event's own <see cref="ObservableEvent{T}.EventName"/> and with the
 /// module it belongs to.
 /// </para>
+/// <para>
+/// The serialization rule for enumerations: every enum in the library is a protocol enumeration, and declares
+/// <see cref="JsonConverters.EnumValueJsonConverter{T}"/> for itself, unless it is one of the library's own
+/// configuration or diagnostic enums, which never reach the wire. With that rule enforced, every member is
+/// converted by the converter's own code, which its tests cover in full, so no test is written per enum value.
+/// The wire name of each member is data the converter reads, and a test per value would only restate it; that
+/// name is checked by reviewing it against the specification.
+/// </para>
 /// </remarks>
 public class WebDriverBiDiConventionTests
 {
@@ -72,6 +80,26 @@ public class WebDriverBiDiConventionTests
         "SessionModule.StatusAsync",
         "StorageModule.DeleteCookiesAsync",
         "StorageModule.GetCookiesAsync",
+    ];
+
+    /// <summary>
+    /// The enums that are never serialized, and so declare no JSON converter. They configure or describe the
+    /// library itself rather than anything in the protocol. A new enum belongs here only when no command
+    /// parameters, command result, event or other protocol type exposes it.
+    /// </summary>
+    private static readonly HashSet<string> NonProtocolEnums =
+    [
+        "WebDriverBiDi.EventObserverPriority",
+        "WebDriverBiDi.JsonConverters.DiscriminatorPropertyMatchingBehavior",
+        "WebDriverBiDi.JsonConverters.DiscriminatorPropertyMissingValueBehavior",
+        "WebDriverBiDi.ObservableEventHandlerOptions",
+        "WebDriverBiDi.Protocol.CommandCancellationReason",
+        "WebDriverBiDi.Protocol.ConnectionKind",
+        "WebDriverBiDi.Protocol.IncomingMessageKind",
+        "WebDriverBiDi.Protocol.TransportErrorBehavior",
+        "WebDriverBiDi.Protocol.TransportState",
+        "WebDriverBiDi.Protocol.UnhandledErrorKind",
+        "WebDriverBiDi.WebDriverBiDiLogLevel",
     ];
 
     private static readonly NullabilityInfoContext NullabilityContext = new();
@@ -619,6 +647,64 @@ public class WebDriverBiDiConventionTests
         }
 
         Assert.True(offenders.Count == 0, $"[JsonInclude] is a no-op on a public member with public accessors and must be removed; keep it only on a non-public member or one with a non-public accessor. Offenders: {string.Join(", ", offenders)}");
+    }
+
+    [Fact]
+    public void TestProtocolEnumsDeclareTheirEnumValueJsonConverter()
+    {
+        // The converter must be declared on the enum type itself, and for that same enum, so that every property,
+        // collection element and dictionary value of the type is converted the same way without each use having to
+        // ask for it. Enums outside the library's own namespaces, such as a polyfilled framework attribute enum on
+        // older targets, are not the library's to govern.
+        List<string> offenders = [];
+        foreach (Type type in GetLibraryEnums())
+        {
+            if (NonProtocolEnums.Contains(type.FullName!))
+            {
+                continue;
+            }
+
+            Type expectedConverter = typeof(JsonConverters.EnumValueJsonConverter<>).MakeGenericType(type);
+            JsonConverterAttribute? attribute = type.GetCustomAttribute<JsonConverterAttribute>();
+            if (attribute is null)
+            {
+                offenders.Add($"{type.FullName} declares no [JsonConverter]");
+            }
+            else if (attribute.ConverterType != expectedConverter)
+            {
+                offenders.Add($"{type.FullName} declares [JsonConverter(typeof({attribute.ConverterType?.Name}))]; expected EnumValueJsonConverter<{type.Name}>");
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"Every protocol enum must declare [JsonConverter(typeof(EnumValueJsonConverter<TEnum>))] for itself; an enum that is never serialized belongs in NonProtocolEnums. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    [Fact]
+    public void TestNonProtocolEnumsExistAndDeclareNoJsonConverter()
+    {
+        // Keeps the exemption list honest: an entry that no longer names an enum, or that names one which has since
+        // gained a converter, and so is serialized after all, must be removed rather than left to exempt nothing.
+        Dictionary<string, Type> libraryEnums = GetLibraryEnums().ToDictionary(type => type.FullName!);
+        List<string> offenders = [];
+        foreach (string name in NonProtocolEnums.OrderBy(name => name, StringComparer.Ordinal))
+        {
+            if (!libraryEnums.TryGetValue(name, out Type? type))
+            {
+                offenders.Add($"{name} is not an enum in the library");
+            }
+            else if (type.GetCustomAttribute<JsonConverterAttribute>() is not null)
+            {
+                offenders.Add($"{name} declares a [JsonConverter], so it is serialized and is not a non-protocol enum");
+            }
+        }
+
+        Assert.True(offenders.Count == 0, $"Every NonProtocolEnums entry must name a library enum that declares no JSON converter. Offenders:{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
+    }
+
+    private static IEnumerable<Type> GetLibraryEnums()
+    {
+        return typeof(CommandParameters).Assembly.GetTypes()
+            .Where(type => type.IsEnum && type.Namespace is not null && (type.Namespace == "WebDriverBiDi" || type.Namespace.StartsWith("WebDriverBiDi.", StringComparison.Ordinal)));
     }
 
     private static string Key(PropertyInfo property)

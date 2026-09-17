@@ -45,7 +45,6 @@ public abstract record RemoteValue
     /// </summary>
     [JsonPropertyName("type")]
     [JsonInclude]
-    [JsonConverter(typeof(EnumValueJsonConverter<RemoteValueType>))]
     public virtual RemoteValueType Type { get; internal set; }
 
     /// <summary>
