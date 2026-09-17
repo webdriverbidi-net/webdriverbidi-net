@@ -56,28 +56,26 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
     {
-        // Find all local variable declarations that store an event subscription handle.
-        Dictionary<string, (LocalDeclarationStatementSyntax Declaration, string HandleTypeName)> observerVariables = [];
+        // Find all local variable declarations that store an event subscription handle. Each local is keyed by its
+        // declarator rather than its name: two sibling scopes may each declare a local of the same name, and each is a
+        // separate handle that must be judged on its own.
+        Dictionary<VariableDeclaratorSyntax, string> observerVariables = [];
 
-        IEnumerable<LocalDeclarationStatementSyntax> localDeclarations = AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node)
-            .OfType<LocalDeclarationStatementSyntax>();
-
-        foreach (LocalDeclarationStatementSyntax localDeclaration in localDeclarations)
+        foreach (VariableDeclaratorSyntax variable in AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node).OfType<VariableDeclaratorSyntax>())
         {
-            foreach (VariableDeclaratorSyntax variable in localDeclaration.Declaration.Variables)
+            // A declarator always belongs to a variable declaration; only one made by a local declaration statement is a
+            // handle this rule tracks, as opposed to the resource of a using, for or fixed statement.
+            if (variable.Parent!.Parent is LocalDeclarationStatementSyntax
+                && variable.Initializer?.Value is InvocationExpressionSyntax invocation
+                && AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, invocation) is { } handle)
             {
-                if (variable.Initializer?.Value is InvocationExpressionSyntax invocation
-                    && AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, invocation) is { } handle)
-                {
-                    observerVariables[variable.Identifier.ValueText] = (localDeclaration, handle.HandleTypeName);
-                }
+                observerVariables[variable] = handle.HandleTypeName;
             }
         }
 
         // A handle assigned after its declaration leaks exactly as one assigned in it, so the
-        // declaration is tracked from the assignment too. The declaration statement is still what the
-        // fix and the report anchor to, so the assignment is matched back to the local that declared
-        // the name.
+        // declaration is tracked from the assignment too. The declaration is still what the fix and the
+        // report anchor to, so the assignment is matched back to the local it assigns.
         IEnumerable<AssignmentExpressionSyntax> assignments = AnalyzerSymbolHelpers.GetBodyDescendantNodes(context.Node)
             .OfType<AssignmentExpressionSyntax>()
             .Where(assignment => assignment.IsKind(SyntaxKind.SimpleAssignmentExpression));
@@ -89,29 +87,27 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
             // writes to carries no using keyword for IsInUsingStatement to find.
             if (assignment.Left is not IdentifierNameSyntax assignedName
                 || assignment.Parent is UsingStatementSyntax
-                || observerVariables.ContainsKey(assignedName.Identifier.ValueText)
                 || assignment.Right is not InvocationExpressionSyntax assignedInvocation
-                || AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, assignedInvocation) is not { } assignedHandle)
+                || AnalyzerSymbolHelpers.GetEventSubscriptionHandle(context.SemanticModel, assignedInvocation) is not { } assignedHandle
+                || context.SemanticModel.GetSymbolInfo(assignedName).Symbol is not ILocalSymbol assignedLocal
+                || assignedLocal.DeclaringSyntaxReferences[0].GetSyntax() is not VariableDeclaratorSyntax { Parent.Parent: LocalDeclarationStatementSyntax } assignedDeclarator)
             {
                 continue;
             }
 
-            if (FindDeclarationOfLocal(localDeclarations, assignedName.Identifier.ValueText) is { } declarationOfAssigned)
+            if (!observerVariables.ContainsKey(assignedDeclarator))
             {
-                observerVariables[assignedName.Identifier.ValueText] = (declarationOfAssigned, assignedHandle.HandleTypeName);
+                observerVariables[assignedDeclarator] = assignedHandle.HandleTypeName;
             }
         }
 
-        if (observerVariables.Count == 0)
-        {
-            return;
-        }
-
         // Check if the handles are disposed
-        foreach (KeyValuePair<string, (LocalDeclarationStatementSyntax Declaration, string HandleTypeName)> kvp in observerVariables)
+        foreach (KeyValuePair<VariableDeclaratorSyntax, string> observerVariable in observerVariables)
         {
-            string variableName = kvp.Key;
-            LocalDeclarationStatementSyntax declaration = kvp.Value.Declaration;
+            VariableDeclaratorSyntax variable = observerVariable.Key;
+
+            // The declarator was admitted above only as part of a local declaration statement.
+            LocalDeclarationStatementSyntax declaration = (LocalDeclarationStatementSyntax)variable.Parent!.Parent!;
 
             // Check if it's in a using statement
             if (IsInUsingStatement(declaration))
@@ -119,41 +115,19 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // Skip when the observer is disposed, released by id, returned, or stored elsewhere.
-            if (IsObserverHandled(context.Node, variableName))
+            // Skip when the observer is disposed, released by id, returned, or stored elsewhere. Only the local's own
+            // scope is searched, which is everywhere this local can be mentioned.
+            string variableName = variable.Identifier.ValueText;
+            if (IsObserverHandled(AnalyzerSymbolHelpers.GetLocalScopeDescendantNodes(variable), variableName))
             {
                 continue;
             }
 
             // Report diagnostic on just the variable identifier
-            VariableDeclaratorSyntax variable = declaration.Declaration.Variables.First(v => v.Identifier.ValueText == variableName);
             Location location = variable.Identifier.GetLocation();
-            Diagnostic diagnostic = Diagnostic.Create(Rule, location, kvp.Value.HandleTypeName, variableName);
+            Diagnostic diagnostic = Diagnostic.Create(Rule, location, observerVariable.Value, variableName);
             context.ReportDiagnostic(diagnostic);
         }
-    }
-
-    /// <summary>
-    /// Finds the declaration that introduces a local name, so that a handle assigned after its
-    /// declaration is reported and fixed at the declaration.
-    /// </summary>
-    /// <param name="localDeclarations">The local declarations in the body.</param>
-    /// <param name="name">The name of the local.</param>
-    /// <returns>The declaration, or <see langword="null"/> when the name is not declared in this body.</returns>
-    private static LocalDeclarationStatementSyntax? FindDeclarationOfLocal(IEnumerable<LocalDeclarationStatementSyntax> localDeclarations, string name)
-    {
-        foreach (LocalDeclarationStatementSyntax localDeclaration in localDeclarations)
-        {
-            foreach (VariableDeclaratorSyntax variable in localDeclaration.Declaration.Variables)
-            {
-                if (variable.Identifier.ValueText == name)
-                {
-                    return localDeclaration;
-                }
-            }
-        }
-
-        return null;
     }
 
     private static bool IsInUsingStatement(LocalDeclarationStatementSyntax declaration)
@@ -167,24 +141,24 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsObserverHandled(SyntaxNode node, string variableName)
+    private static bool IsObserverHandled(IEnumerable<SyntaxNode> scopeNodes, string variableName)
     {
         // The observer is not leaked when it is disposed directly, disposed by a classic
         // using (observer) { ... } statement, released through
         // ObservableEvent.RemoveObserver(observer.Id), returned to the caller, or stored elsewhere
         // (for example assigned to a field) so another owner disposes it later.
-        return HasDisposalCall(node, variableName)
-            || IsDisposedByUsingStatement(node, variableName)
-            || IsReleasedViaRemoveObserver(node, variableName)
-            || IsReturnedOrStored(node, variableName);
+        return HasDisposalCall(scopeNodes, variableName)
+            || IsDisposedByUsingStatement(scopeNodes, variableName)
+            || IsReleasedViaRemoveObserver(scopeNodes, variableName)
+            || IsReturnedOrStored(scopeNodes, variableName);
     }
 
-    private static bool HasDisposalCall(SyntaxNode node, string variableName)
+    private static bool HasDisposalCall(IEnumerable<SyntaxNode> scopeNodes, string variableName)
     {
         // Look for disposal invocations on the variable, spelled either observer.Dispose() or
         // observer?.Dispose(). The conditional form binds its member through a
         // MemberBindingExpression whose receiver is the enclosing ConditionalAccessExpression.
-        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
+        foreach (InvocationExpressionSyntax invocation in scopeNodes.OfType<InvocationExpressionSyntax>())
         {
             (ExpressionSyntax? receiver, SimpleNameSyntax? methodName) = invocation.Expression switch
             {
@@ -205,21 +179,21 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsDisposedByUsingStatement(SyntaxNode node, string variableName)
+    private static bool IsDisposedByUsingStatement(IEnumerable<SyntaxNode> scopeNodes, string variableName)
     {
         // using (observer) { ... } and await using (observer) { ... } dispose the observer when the
         // statement completes; the observer is the statement's expression, not a declaration.
-        return AnalyzerSymbolHelpers.GetBodyDescendantNodes(node)
+        return scopeNodes
             .OfType<UsingStatementSyntax>()
             .Any(usingStatement => usingStatement.Expression is IdentifierNameSyntax identifier
                 && identifier.Identifier.ValueText == variableName);
     }
 
-    private static bool IsReleasedViaRemoveObserver(SyntaxNode node, string variableName)
+    private static bool IsReleasedViaRemoveObserver(IEnumerable<SyntaxNode> scopeNodes, string variableName)
     {
         // Look for a RemoveObserver call whose argument is the observer's Id (for example
         // driver.Log.OnEntryAdded.RemoveObserver(observer.Id)).
-        foreach (InvocationExpressionSyntax invocation in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<InvocationExpressionSyntax>())
+        foreach (InvocationExpressionSyntax invocation in scopeNodes.OfType<InvocationExpressionSyntax>())
         {
             if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
                 memberAccess.Name.Identifier.ValueText != "RemoveObserver")
@@ -242,7 +216,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsReturnedOrStored(SyntaxNode node, string variableName)
+    private static bool IsReturnedOrStored(IEnumerable<SyntaxNode> scopeNodes, string variableName)
     {
         // The observer escapes this method — so its disposal is no longer this method's business —
         // whenever the variable appears in a position that hands it to something else. One walk over
@@ -250,7 +224,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         // a mention that merely *uses* the observer (observer.Dispose(), a null test, a using
         // statement) has a parent that is not in the list below and is correctly not treated as an
         // escape.
-        foreach (IdentifierNameSyntax identifier in AnalyzerSymbolHelpers.GetBodyDescendantNodes(node).OfType<IdentifierNameSyntax>())
+        foreach (IdentifierNameSyntax identifier in scopeNodes.OfType<IdentifierNameSyntax>())
         {
             if (identifier.Identifier.ValueText != variableName)
             {

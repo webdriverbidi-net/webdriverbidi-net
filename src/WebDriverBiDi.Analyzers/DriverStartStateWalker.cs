@@ -41,11 +41,12 @@ using Microsoft.CodeAnalysis.Diagnostics;
 /// <para>
 /// A driver whose started state the body cannot know is never tracked, and so never reported on: one the body
 /// hands to other code that could start or stop it (passed as an argument, returned, stored, aliased, placed in a
-/// collection, or used as the receiver of an extension method), and one a nested function starts, stops, or
-/// rebinds. Passing the driver to a module's constructor is not such a hand-off, because a module holds the driver
-/// to issue commands and cannot start or stop it. The names are collected up front, because the other code may run
-/// before or after a call textually, and all four rules report at Error severity, for which a wrong report on
-/// correct code is worse than a missed one. BIDI009 shares this classification through
+/// collection, or used as the receiver of an extension method or of a method a derived driver type declares or
+/// overrides), and one a nested function starts, stops, or rebinds. Passing the driver to a module's constructor is
+/// not such a hand-off, because a module holds the driver to issue commands and cannot start or stop it. The names are
+/// collected for the whole body before any call is judged, because the other code may run before or after a call
+/// textually, and all four rules report at Error severity, for which a wrong report on correct code is worse than a
+/// missed one. BIDI009 shares this classification through
 /// <see cref="FindDriversWithUnknownStartedState"/>.
 /// </para>
 /// </remarks>
@@ -58,8 +59,10 @@ internal sealed class DriverStartStateWalker
     private readonly DriverInvocationHandler handler;
 
     // Drivers this body hands to other code, or that a nested function starts, stops, or rebinds. Their started
-    // state cannot be known from the body alone, so they are never tracked.
-    private readonly HashSet<string> untrackableDriverNames;
+    // state cannot be known from the body alone, so they are never tracked. Finding them walks every identifier in the
+    // body and binds the invocations among them, so it is done only once the body is found to declare a driver at all,
+    // which most bodies in a compilation do not.
+    private HashSet<string>? untrackableDriverNames;
 
     // Whether invocations are handed to the handler. Cleared while a finally block is walked a second time
     // to find the state it leaves for the code after its try statement, a walk whose invocations have already
@@ -71,7 +74,6 @@ internal sealed class DriverStartStateWalker
         this.context = context;
         this.isDriverType = isDriverType;
         this.handler = handler;
-        this.untrackableDriverNames = FindDriversWithUnknownStartedState(context.Node, context.SemanticModel);
     }
 
     /// <summary>
@@ -108,23 +110,6 @@ internal sealed class DriverStartStateWalker
         {
             walker.ProcessNode(statement, driverStartedStatus);
         }
-    }
-
-    /// <summary>
-    /// Gets the identifier at the root of a member access chain: <c>driver</c> for
-    /// <c>driver.Session.StartAsync</c>.
-    /// </summary>
-    /// <param name="expression">The receiver expression of a member access.</param>
-    /// <returns>The root identifier's name, or <see langword="null"/> when the chain does not root in a simple identifier.</returns>
-    internal static string? GetRootIdentifierName(ExpressionSyntax expression)
-    {
-        ExpressionSyntax current = expression;
-        while (current is MemberAccessExpressionSyntax memberAccess)
-        {
-            current = memberAccess.Expression;
-        }
-
-        return (current as IdentifierNameSyntax)?.Identifier.ValueText;
     }
 
     /// <summary>
@@ -188,17 +173,66 @@ internal sealed class DriverStartStateWalker
             // variable that may itself be started.
             ExpressionElementSyntax or InitializerExpressionSyntax or EqualsValueClauseSyntax => true,
 
-            // The receiver of an extension method: `await driver.StartWithRetryAsync(url);`. The
-            // driver is the method's first argument, the walk cannot see whether the method starts
-            // it, and the argument case above already treats that as an escape; the only difference
-            // here is the spelling. A call on the driver's own members is not affected, because it
-            // binds to an instance method rather than an extension method.
+            // The receiver of a method the library does not define: `await driver.StartWithRetryAsync(url);`.
             MemberAccessExpressionSyntax memberAccess when memberAccess.Expression == mention
-                && memberAccess.Parent is InvocationExpressionSyntax extensionInvocation
-                && semanticModel.GetSymbolInfo(extensionInvocation).Symbol is IMethodSymbol { IsExtensionMethod: true } => true,
+                && memberAccess.Parent is InvocationExpressionSyntax invocation => InvokesMethodUnknownToLibrary(invocation, semanticModel),
+
+            // The same method called through a null-conditional receiver:
+            // `await (driver?.StartWithRetryAsync(url) ?? Task.CompletedTask);`.
+            ConditionalAccessExpressionSyntax conditionalAccess when conditionalAccess.Expression == mention
+                && AnalyzerSymbolHelpers.GetReceiverMemberBinding(conditionalAccess)?.Parent is InvocationExpressionSyntax conditionalInvocation => InvokesMethodUnknownToLibrary(conditionalInvocation, semanticModel),
 
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Determines whether an invocation on the driver calls a method whose effect on the driver's started state
+    /// the walk cannot know, because the library does not define it.
+    /// </summary>
+    /// <param name="invocation">The invocation whose receiver is the driver.</param>
+    /// <param name="semanticModel">The semantic model for the member.</param>
+    /// <returns><see langword="true"/> if the invoked method may start or stop the driver unseen; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <para>
+    /// Two kinds of method qualify. An extension method receives the driver as its first argument, and the
+    /// argument case already treats that as an escape; the only difference is the spelling. A method a derived
+    /// driver declares itself (<c>class ConnectingDriver : BiDiDriver { public Task ConnectAsync(string url) =&gt;
+    /// this.StartAsync(url); }</c>) can call the library's lifecycle methods from inside, where the walk cannot see.
+    /// </para>
+    /// <para>
+    /// A method that overrides a library method (an override of <c>StartAsync</c>, say) is still the library's
+    /// operation, so the walk goes on recognizing it by name. A method the driver inherits from
+    /// <see cref="object"/> cannot touch the driver's state and is not an escape either.
+    /// </para>
+    /// </remarks>
+    private static bool InvokesMethodUnknownToLibrary(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+    {
+        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        {
+            return false;
+        }
+
+        return method.IsExtensionMethod
+            || (AnalyzerSymbolHelpers.IsCommandExecutorType(method.ContainingType) && !IsDeclaredOrOverriddenFromLibrary(method));
+    }
+
+    /// <summary>
+    /// Determines whether a method is declared by the library, or overrides a method the library declares.
+    /// </summary>
+    /// <param name="method">The method to inspect.</param>
+    /// <returns><see langword="true"/> if the method or a method it overrides is the library's; otherwise <see langword="false"/>.</returns>
+    private static bool IsDeclaredOrOverriddenFromLibrary(IMethodSymbol method)
+    {
+        for (IMethodSymbol? current = method; current is not null; current = current.OverriddenMethod)
+        {
+            if (AnalyzerSymbolHelpers.IsInWebDriverBiDiNamespace(current.ContainingType))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -240,15 +274,22 @@ internal sealed class DriverStartStateWalker
     /// </remarks>
     private static bool IsStartedStoppedOrReboundInsideNestedFunction(IdentifierNameSyntax identifier, SyntaxNode body)
     {
-        bool changesStartedState = identifier.Parent switch
+        // The receiver of a start or a stop may be wrapped (driver!.StartAsync()), as the walk itself allows.
+        SyntaxNode mention = AnalyzerSymbolHelpers.PeelExpressionWrappers(identifier);
+        bool changesStartedState = mention.Parent switch
         {
             // Rebound to another driver: driver = await pool.RentStartedAsync();
-            AssignmentExpressionSyntax assignment => assignment.Left == identifier,
+            AssignmentExpressionSyntax assignment => assignment.Left == mention,
 
             // Started or stopped: driver.StartAsync() or driver.StopAsync().
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Expression == identifier
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Expression == mention
                 && memberAccess.Parent is InvocationExpressionSyntax
-                && memberAccess.Name.Identifier.ValueText is "StartAsync" or "StopAsync",
+                && IsStartOrStop(memberAccess.Name),
+
+            // Started or stopped through a null-conditional receiver: driver?.StartAsync().
+            ConditionalAccessExpressionSyntax conditionalAccess => conditionalAccess.Expression == mention
+                && AnalyzerSymbolHelpers.GetReceiverMemberBinding(conditionalAccess) is { Parent: InvocationExpressionSyntax } binding
+                && IsStartOrStop(binding.Name),
 
             _ => false,
         };
@@ -263,6 +304,11 @@ internal sealed class DriverStartStateWalker
         return identifier.Ancestors()
             .TakeWhile(ancestor => ancestor != body)
             .Any(ancestor => ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax);
+    }
+
+    private static bool IsStartOrStop(SimpleNameSyntax name)
+    {
+        return name.Identifier.ValueText is "StartAsync" or "StopAsync";
     }
 
     private void ProcessNode(SyntaxNode node, Dictionary<string, bool> driverStartedStatus)
@@ -348,13 +394,19 @@ internal sealed class DriverStartStateWalker
     {
         foreach (VariableDeclaratorSyntax variable in declaration.Variables)
         {
-            if (variable.Initializer is null || this.untrackableDriverNames.Contains(variable.Identifier.ValueText))
+            if (variable.Initializer is null)
             {
                 continue;
             }
 
             ITypeSymbol? initializerType = this.context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-            if (this.isDriverType(initializerType))
+            if (!this.isDriverType(initializerType))
+            {
+                continue;
+            }
+
+            this.untrackableDriverNames ??= FindDriversWithUnknownStartedState(this.context.Node, this.context.SemanticModel);
+            if (!this.untrackableDriverNames.Contains(variable.Identifier.ValueText))
             {
                 driverStartedStatus[variable.Identifier.ValueText] = false;
             }
@@ -674,19 +726,23 @@ internal sealed class DriverStartStateWalker
     {
         // Nothing to do until a driver variable is being tracked; skip the semantic bind for every
         // invocation seen before the first driver is declared.
-        if (driverStartedStatus.Count == 0 || invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+        if (driverStartedStatus.Count == 0)
         {
             return;
         }
 
         // Only a call whose receiver chain roots in a tracked driver variable matters; the receiver's
         // type was checked when the variable was declared. Resolving the name first keeps the
-        // expensive semantic bind to calls that can affect a tracked driver.
-        string? driverVariableName = GetRootIdentifierName(memberAccess.Expression);
-        if (driverVariableName is null || !driverStartedStatus.TryGetValue(driverVariableName, out bool started))
+        // expensive semantic bind to calls that can affect a tracked driver. The chain is read through
+        // the wrappers a receiver may carry, so driver!.StartAsync() and driver?.StartAsync() are calls
+        // on the driver exactly as driver.StartAsync() is.
+        IdentifierNameSyntax? driverIdentifier = AnalyzerSymbolHelpers.GetMemberChainRoot(invocation.Expression, out int memberDepth);
+        if (driverIdentifier is null || !driverStartedStatus.TryGetValue(driverIdentifier.Identifier.ValueText, out bool started))
         {
             return;
         }
+
+        string driverVariableName = driverIdentifier.Identifier.ValueText;
 
         if (this.context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
         {
@@ -696,8 +752,7 @@ internal sealed class DriverStartStateWalker
         // Whether the call is on the driver itself rather than on something reached through it. The
         // receiver chain only has to *root* in a tracked driver for the call to arrive here, so
         // driver.Session.SubscribeAsync() and driver.Tracing.StartAsync() both do.
-        bool isDirectDriverCall = memberAccess.Expression is IdentifierNameSyntax receiverIdentifier
-            && receiverIdentifier.Identifier.ValueText == driverVariableName;
+        bool isDirectDriverCall = memberDepth == 1;
 
         if (this.reportInvocations)
         {

@@ -214,7 +214,10 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 continue;
             }
 
-            if (IsBlockingMethod(methodSymbol, includeSynchronizationPrimitives))
+            // A wait given an explicit zero timeout returns at once, whether or not it acquired anything, so it does
+            // not block the thread it runs on. A sleep of zero still gives up the thread, and remains reported.
+            if (IsBlockingMethod(methodSymbol, includeSynchronizationPrimitives)
+                && (methodSymbol.Name == "Sleep" || !AnalyzerSymbolHelpers.HasZeroTimeoutArgument(semanticModel, invocation, methodSymbol)))
             {
                 blockingOps.Add((invocation, methodSymbol.Name + "()"));
                 continue;

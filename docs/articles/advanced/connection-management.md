@@ -183,7 +183,8 @@ is disabled, so an observer alone will not show any traffic:
 > observer** — the `Transport`, which claims it when constructed. A second observer would read
 > a buffer the first one may already have released. The event enforces this: adding a second
 > observer throws, and constructing a `Transport` over a connection that already has one throws
-> `ArgumentException`.
+> `ArgumentException`. The [BIDI032](analyzers.md#bidi032) analyzer reports an observer added to a
+> connection that the same method wraps in a `Transport`.
 
 > [!NOTE]
 > A received message is logged only when something is observing `OnDataReceived` to consume it.
@@ -242,7 +243,9 @@ WebSocket connections are the standard transport mechanism.
 
 ### URL Requirements
 
-Valid WebSocket URLs use `ws://` or `wss://` schemes:
+Valid WebSocket URLs use `ws://` or `wss://` schemes. Any other connection string is rejected with
+`ArgumentException` when `StartAsync` is called, and the [BIDI036](analyzers.md#bidi036) analyzer reports a
+constant one passed to a driver that uses the default transport:
 
 [!code-csharp[WebSocket URL Requirements](../../code/advanced/ConnectionManagementSamples.cs#WebSocketURLRequirements)]
 

@@ -1458,4 +1458,109 @@ public class BiDiDriver029AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, CreateExpected(0, "StatusAsync"));
     }
+
+    /// <summary>
+    /// Tests that disposal and later use are both recognized through wrapped receivers: the null-forgiving
+    /// operator and a null-conditional access name the same driver as a bare receiver does.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task UseAfterDisposeThroughWrappedReceivers_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        await driver!.DisposeAsync();
+                        await (driver?{|#0:.Session.StatusAsync()|} ?? Task.FromResult<StatusCommandResult>(null!));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver029_DriverUseAfterDisposalAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync", "driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that disposing a driver through a cast to <see cref="System.IAsyncDisposable"/> counts as disposal.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandAfterDisposalThroughIAsyncDisposableCast_ReportsError()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await ((IAsyncDisposable)driver).DisposeAsync();
+                        await {|#0:driver.Session.StatusAsync()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver029_DriverUseAfterDisposalAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync", "driver");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode, expected);
+    }
+
+    /// <summary>
+    /// Tests that a method named DisposeAsync reached through one of the driver's modules is not taken for
+    /// the driver's own disposal.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsyncOnObjectOtherThanDriver_NotTreatedAsDisposal_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public static class ModuleExtensions
+                {
+                    public static ValueTask DisposeAsync(this WebDriverBiDi.Session.SessionModule module) => default;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new BiDiDriver();
+                        await driver.Session.DisposeAsync();
+                        await driver.Session.StatusAsync();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver029_DriverUseAfterDisposalAnalyzer>(testCode);
+    }
 }

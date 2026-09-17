@@ -382,17 +382,61 @@ internal static class CodeFixHelpers
     /// Gets the identifier at the root of a member access chain: <c>driver</c> for
     /// <c>driver.Session.StartAsync</c>, matching the receiver walk the lifecycle analyzers use.
     /// </summary>
-    /// <param name="expression">The receiver expression of a member access.</param>
+    /// <param name="expression">A member access chain, or the receiver of one.</param>
     /// <returns>The root identifier's name, or <see langword="null"/> when the chain does not root in a simple identifier (a field reached through <c>this</c>, or a call).</returns>
+    /// <remarks>
+    /// As in the analyzers' own receiver walk (which is internal to the analyzer assembly), the chain is read through
+    /// the wrappers a receiver may carry, so <c>driver!.StartAsync</c>, <c>(driver).StartAsync</c>,
+    /// <c>((IBiDiDriverLifecycleManager)driver).StartAsync</c> and <c>driver?.StartAsync</c> all root in
+    /// <c>driver</c>. A member binding takes its receiver from the nearest enclosing conditional access whose
+    /// non-null branch contains it.
+    /// </remarks>
     internal static string? GetRootIdentifierName(ExpressionSyntax expression)
     {
         ExpressionSyntax current = expression;
-        while (current is MemberAccessExpressionSyntax memberAccess)
+        while (true)
         {
-            current = memberAccess.Expression;
+            switch (current)
+            {
+                case MemberAccessExpressionSyntax memberAccess:
+                    current = memberAccess.Expression;
+                    break;
+                case MemberBindingExpressionSyntax memberBinding:
+                    current = memberBinding.Ancestors()
+                        .OfType<ConditionalAccessExpressionSyntax>()
+                        .First(conditionalAccess => conditionalAccess.WhenNotNull.Span.Contains(memberBinding.Span))
+                        .Expression;
+                    break;
+                case ParenthesizedExpressionSyntax parenthesized:
+                    current = parenthesized.Expression;
+                    break;
+                case CastExpressionSyntax cast:
+                    current = cast.Expression;
+                    break;
+                case PostfixUnaryExpressionSyntax postfix:
+                    current = postfix.Operand;
+                    break;
+                default:
+                    return (current as IdentifierNameSyntax)?.Identifier.ValueText;
+            }
         }
+    }
 
-        return (current as IdentifierNameSyntax)?.Identifier.ValueText;
+    /// <summary>
+    /// Determines whether an invocation calls <c>StartAsync</c> on the named driver, through whatever wrappers its
+    /// receiver carries: <c>driver.StartAsync(url)</c>, <c>driver!.StartAsync(url)</c> or <c>driver?.StartAsync(url)</c>.
+    /// </summary>
+    /// <param name="invocation">The invocation.</param>
+    /// <param name="driverVariableName">The name of the driver variable.</param>
+    /// <returns><see langword="true"/> if the invocation starts the named driver; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// The invoked name is the last token of the invocation's expression, for a member access and a member binding
+    /// alike.
+    /// </remarks>
+    internal static bool IsStartAsyncOn(InvocationExpressionSyntax invocation, string? driverVariableName)
+    {
+        return invocation.Expression.GetLastToken().ValueText == "StartAsync"
+            && GetRootIdentifierName(invocation.Expression) == driverVariableName;
     }
 
     /// <summary>
@@ -441,9 +485,7 @@ internal static class CodeFixHelpers
         string driverVariableName = GetRootIdentifierName(registrationInvocation.Expression)!;
         StatementSyntax startAsyncStatement = method.Body.Statements.First(statement => statement.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Any(invocation => invocation.Expression is MemberAccessExpressionSyntax memberAccess
-                && memberAccess.Name.Identifier.ValueText == "StartAsync"
-                && GetRootIdentifierName(memberAccess.Expression) == driverVariableName));
+            .Any(invocation => IsStartAsyncOn(invocation, driverVariableName)));
 
         StatementSyntax registrationStatement = registrationInvocation.FirstAncestorOrSelf<StatementSyntax>()!;
         List<StatementSyntax>? statementsToMove = CollectStatementsToMove(registrationStatement, startAsyncStatement);

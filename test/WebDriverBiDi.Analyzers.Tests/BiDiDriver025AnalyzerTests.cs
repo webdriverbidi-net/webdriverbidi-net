@@ -377,4 +377,144 @@ public class BiDiDriver025AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    [Fact]
+    public async Task AsyncVoidPartialMethodGroup_ReportsWarning()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public partial class TestClass
+                {
+                    partial void HandleEntry(EntryAddedEventArgs args);
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver({|#0:HandleEntry|});
+                    }
+                }
+
+                public partial class TestClass
+                {
+                    async partial void HandleEntry(EntryAddedEventArgs args)
+                    {
+                        await Task.CompletedTask;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver025_AsyncVoidEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("HandleEntry");
+
+        RealAssemblyAnalyzerTest<BiDiDriver025_AsyncVoidEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AsyncVoidLambdaHeldInDelegateLocal_ReportsWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Action<EntryAddedEventArgs> handler = async args => await Task.CompletedTask;
+                        var observer = driver.Log.OnEntryAdded.AddObserver({|#0:handler|});
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver025_AsyncVoidEventHandlerAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("handler");
+
+        RealAssemblyAnalyzerTest<BiDiDriver025_AsyncVoidEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task AsyncTaskLambdaHeldInDelegateLocal_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Func<EntryAddedEventArgs, Task> handler = async args => await Task.CompletedTask;
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver025_AsyncVoidEventHandlerAnalyzer>(testCode);
+    }
+
+    /// <summary>
+    /// Tests that a synchronous handler held in a delegate-typed local is not reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SynchronousActionLocalPassedToAddObserver_NoDiagnostic()
+    {
+        string testCode = """
+            using System;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Action<EntryAddedEventArgs> handler = e => Console.WriteLine(e.Text);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(handler);
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver025_AsyncVoidEventHandlerAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

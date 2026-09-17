@@ -15,19 +15,23 @@ your own package only if you ask it to.
 
 ## What it checks
 
-Twenty-eight rules, in four groups:
+Thirty-three rules, in four groups:
 
 - **Lifecycle (Error).** Registering modules, events or type-info resolvers after `StartAsync()`; executing a
   command before `StartAsync()` or after `StopAsync()`; using a driver after `DisposeAsync()`; calling
   `StartAsync()` twice; a fire-and-forget module command; reading captured tasks that were never captured; a
-  mismatched `ExecuteCommandAsync<T>` result type; registering a custom event under a built-in event name.
+  mismatched `ExecuteCommandAsync<T>` result type; registering a custom event under a built-in event name;
+  asking `ToEventArgs<T>()` for a type other than the event's own; an extension-data entry named for a property
+  its object already sends.
 - **Event handling (Warning).** Adding an observer for an event that was never subscribed; leaking an
   `EventObserver`; blocking calls and deadlock-prone synchronization inside a handler; issuing a module
   command from a handler that runs on the dispatching thread; an `async void` handler; opening a capture
-  session that is never read; starting a capture session while one is already active.
+  session that is never read; starting a capture session while one is already active; observing
+  `Connection.OnDataReceived` on a connection that a `Transport` owns.
 - **Correctness (Warning).** Unsafe casts of `EvaluateResult`; adding to a nullable list without
   initializing it; mutating `AdditionalData`, which is not AOT-safe; a value outside the range the
-  specification defines for a property.
+  specification defines for a property; registering a library envelope type in a serializer context; a
+  connection string that is not a WebSocket URL for a driver with the default transport.
 - **Style and cost (Info/Warning).** Omitting a `CancellationToken`; using a parameterless constructor where
   a `Reset*` property exists; a string literal where `ObservableEvent.EventName` would do; disposing a driver
   without stopping it first; discarding the observer that `AddObserver` returns.

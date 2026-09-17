@@ -67,7 +67,18 @@ public class BiDiDriver031_DiscardedObserverResultAnalyzer : DiagnosticAnalyzer
         // The result is discarded exactly when the call is the whole of an expression statement. An
         // explicit discard (`_ = ...AddObserver(h);`) is deliberate and is left alone, as is any use
         // that keeps the handle: a declaration, an assignment, an argument, a return.
-        if (invocation.Parent is not ExpressionStatementSyntax)
+        //
+        // A call made through a null-conditional receiver (driver?.Log.OnEntryAdded.AddObserver(h)) is the
+        // non-null branch of a conditional access, and the value the statement drops is that of the
+        // conditional access as a whole, which is the handle or null. A call that is instead the receiver
+        // of a conditional access (AddObserver(h)?.Dispose()) has its handle used, and is not climbed from.
+        SyntaxNode discardedValue = invocation;
+        while (discardedValue.Parent is ConditionalAccessExpressionSyntax conditionalAccess && conditionalAccess.WhenNotNull == discardedValue)
+        {
+            discardedValue = conditionalAccess;
+        }
+
+        if (discardedValue.Parent is not ExpressionStatementSyntax)
         {
             return;
         }

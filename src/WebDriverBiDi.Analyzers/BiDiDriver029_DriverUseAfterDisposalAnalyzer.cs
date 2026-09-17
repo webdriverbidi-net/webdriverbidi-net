@@ -598,13 +598,16 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        string? driverVariableName = GetDriverVariableName(invocation, context.Node, semanticModel);
+        string? driverVariableName = GetDriverVariableName(invocation, context.Node, semanticModel, out bool isDirectDriverCall);
         if (driverVariableName is null || !driverDisposedStatus.ContainsKey(driverVariableName))
         {
             return;
         }
 
-        if (methodSymbol.Name == "DisposeAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
+        // Disposal is recognized by its receiver being the driver itself, not by the type declaring DisposeAsync: a
+        // call through a cast, `((IAsyncDisposable)driver).DisposeAsync()`, binds to IAsyncDisposable's member but
+        // disposes the same driver.
+        if (methodSymbol.Name == "DisposeAsync" && isDirectDriverCall)
         {
             driverDisposedStatus[driverVariableName] = true;
             return;
@@ -616,33 +619,29 @@ public class BiDiDriver029_DriverUseAfterDisposalAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static string? GetDriverVariableName(InvocationExpressionSyntax invocation, SyntaxNode body, SemanticModel semanticModel)
+    private static string? GetDriverVariableName(InvocationExpressionSyntax invocation, SyntaxNode body, SemanticModel semanticModel, out bool isDirectDriverCall)
     {
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return null;
-        }
+        isDirectDriverCall = false;
 
         // Direct call on the driver (driver.ExecuteCommandAsync(...)), or a call on one of its modules
         // (driver.BrowsingContext.NavigateAsync(...)), which reaches the driver's disposal guard through
-        // ExecuteCommandAsync.
-        IdentifierNameSyntax? receiver = memberAccess.Expression switch
-        {
-            IdentifierNameSyntax identifier => identifier,
-            MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax nestedIdentifier } => nestedIdentifier,
-            _ => null,
-        };
-
-        if (receiver is null)
+        // ExecuteCommandAsync; either may be made through a wrapped receiver (driver!.DisposeAsync(),
+        // driver?.BrowsingContext.NavigateAsync(...)).
+        IdentifierNameSyntax? receiver = AnalyzerSymbolHelpers.GetMemberChainRoot(invocation.Expression, out int memberDepth);
+        if (receiver is null || memberDepth > 2)
         {
             return null;
         }
 
         // A receiver that is not the driver itself may be a local holding one of its modules:
         // context.GetTreeAsync(), where the local was bound to driver.BrowsingContext.
-        return AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(receiver).Type)
-            ? receiver.Identifier.ValueText
-            : AnalyzerSymbolHelpers.GetDriverOfModuleAlias(receiver, body, semanticModel);
+        if (!AnalyzerSymbolHelpers.IsCommandExecutorType(semanticModel.GetTypeInfo(receiver).Type))
+        {
+            return AnalyzerSymbolHelpers.GetDriverOfModuleAlias(receiver, body, semanticModel);
+        }
+
+        isDirectDriverCall = memberDepth == 1;
+        return receiver.Identifier.ValueText;
     }
 
     /// <summary>

@@ -1460,4 +1460,44 @@ public class BiDiDriver024AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that StartAsync calls made through wrapped receivers are starts of the driver itself, so a second
+    /// one is a duplicate.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DuplicateStartAsyncThroughWrappedReceivers_ReportsError()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        await driver!.StartAsync("ws://localhost:9222");
+                        await (driver?{|#0:.StartAsync("ws://localhost:9222")|} ?? Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver024_DuplicateStartAsyncAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        RealAssemblyAnalyzerTest<BiDiDriver024_DuplicateStartAsyncAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

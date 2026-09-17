@@ -825,4 +825,126 @@ public class BiDiDriver009CodeFixProviderTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that the fix finds the driver and its StartAsync through wrapped receivers, and moves the command
+    /// after that StartAsync.
+    /// </summary>
+    /// <param name="command">The command, through a wrapped receiver.</param>
+    /// <param name="start">The statement starting the driver, through a wrapped receiver.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Theory]
+    [InlineData("driver!.Session.StatusAsync()", "await driver!.StartAsync(\"ws://localhost:9222\");")]
+    [InlineData("(driver).Session.StatusAsync()", "await (driver).StartAsync(\"ws://localhost:9222\");")]
+    [InlineData("((BiDiDriver)driver).Session.StatusAsync()", "await ((IBiDiDriverLifecycleManager)driver).StartAsync(\"ws://localhost:9222\");")]
+    public async Task CommandThroughWrappedReceiver_CodeFixMovesAfterWrappedStartAsync(string command, string start)
+    {
+        string testCode = $$"""
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        await {|#0:{{command}}|};
+                        {{start}}
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = $$"""
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        {{start}}
+                        await {{command}};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that the fix finds the driver and its StartAsync through null-conditional receivers.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CommandThroughNullConditionalReceiver_CodeFixMovesAfterNullConditionalStartAsync()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        await (driver?{|#0:.Session.StatusAsync()|} ?? Task.FromResult<StatusCommandResult>(null!));
+                        await (driver?.StartAsync("ws://localhost:9222") ?? Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.Session;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver? driver = new();
+                        await (driver?.StartAsync("ws://localhost:9222") ?? Task.CompletedTask);
+                        await (driver?.Session.StatusAsync() ?? Task.FromResult<StatusCommandResult>(null!));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver009_CommandExecutionBeforeStartAnalyzer.DiagnosticId, DiagnosticSeverity.Error)
+            .WithLocation(0)
+            .WithArguments("StatusAsync");
+
+        RealAssemblyCodeFixTest<BiDiDriver009_CommandExecutionBeforeStartAnalyzer, BiDiDriver009_CommandExecutionBeforeStartCodeFixProvider> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

@@ -1863,4 +1863,220 @@ public class BiDiDriver006AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that two observers declared with the same name in sibling scopes are judged separately, so a
+    /// disposal in one scope does not hide a leak in the other.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObserversWithSameNameInSiblingScopes_OneLeaked_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, bool flag)
+                    {
+                        if (flag)
+                        {
+                            EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                            observer.Dispose();
+                        }
+                        else
+                        {
+                            EventObserver<EntryAddedEventArgs> {|#0:observer|} = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer assigned after its declaration, in one of two sibling scopes that reuse the
+    /// name, is matched to its own declaration.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObserversAssignedAfterDeclarationInSiblingScopes_OneLeaked_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, bool flag)
+                    {
+                        if (flag)
+                        {
+                            EventObserver<EntryAddedEventArgs> {|#0:observer|};
+                            observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        }
+                        else
+                        {
+                            EventObserver<EntryAddedEventArgs> observer;
+                            observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                            observer.Dispose();
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer declared in a switch section, whose scope is the whole switch block, is found
+    /// disposed within that block.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObserverDeclaredInSwitchSection_DisposedInSameSection_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver, int which)
+                    {
+                        switch (which)
+                        {
+                            case 1:
+                                EventObserver<EntryAddedEventArgs> observer = driver.Log.OnEntryAdded.AddObserver(e => { });
+                                observer.Dispose();
+                                break;
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer assigned to a local that no local declaration statement declares -- one declared by
+    /// a <c>for</c> initializer or as an <c>out</c> variable -- is not tracked from the assignment.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObserverAssignedToLocalNotDeclaredByStatement_NoDiagnostic()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    private static bool TryGetObserver(out EventObserver<EntryAddedEventArgs> observer)
+                    {
+                        observer = null;
+                        return false;
+                    }
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        for (EventObserver<EntryAddedEventArgs> loopObserver = null; loopObserver == null;)
+                        {
+                            loopObserver = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        }
+
+                        if (!TryGetObserver(out EventObserver<EntryAddedEventArgs> outObserver))
+                        {
+                            outObserver = driver.Log.OnEntryAdded.AddObserver(e => { });
+                        }
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an observer declared by a top-level statement and never disposed is reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ObserverInTopLevelProgram_NotDisposed_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.Log;
+
+            BiDiDriver driver = new BiDiDriver();
+            EventObserver<EntryAddedEventArgs> {|#0:observer|} = driver.Log.OnEntryAdded.AddObserver(e => { });
+
+            namespace TestApp
+            {
+                public class Helper
+                {
+                    public void Release(EventObserver<EntryAddedEventArgs> observer)
+                    {
+                        observer.Dispose();
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EventObserver", "observer");
+
+        RealAssemblyAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer> testState = new()
+        {
+            TestCode = testCode,
+            TestState = { OutputKind = OutputKind.ConsoleApplication },
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

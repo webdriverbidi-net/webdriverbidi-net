@@ -187,6 +187,39 @@ public class AnalyzerConventionTests
             await driver.Session.SubscribeAsync(new SubscribeCommandParameters("log.entryAdded"));
             await driver.DisposeAsync();
             """),
+        ("malformed SpecRange attribute applications", """
+            using WebDriverBiDi;
+
+            class Target
+            {
+                [SpecRange]
+                public double NoArguments { get; set; }
+
+                [SpecRange("low", "high")]
+                public double WrongArgumentTypes { get; set; }
+
+                [SpecRange(System.Math.Min(0, 1), 1)]
+                public double NonConstantMinimum { get; set; }
+
+                [SpecRange(0, System.Math.Max(0, 1))]
+                public double NonConstantMaximum { get; set; }
+
+                [SpecRange(0, 1, MinimumExclusive = 1, MaximumExclusive = 1, HasSentinel = 1, SentinelValue = "reset")]
+                public double WrongNamedArgumentTypes { get; set; }
+            }
+
+            class C
+            {
+                void M(Target target)
+                {
+                    target.NoArguments = 5;
+                    target.WrongArgumentTypes = 5;
+                    target.NonConstantMinimum = 5;
+                    target.NonConstantMaximum = 5;
+                    target.WrongNamedArgumentTypes = 5;
+                }
+            }
+            """),
         ("nullable list add without an initializer", """
             #nullable enable
             using WebDriverBiDi.Network;

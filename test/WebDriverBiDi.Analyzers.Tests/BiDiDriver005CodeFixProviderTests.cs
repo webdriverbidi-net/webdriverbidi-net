@@ -256,8 +256,10 @@ public class BiDiDriver005CodeFixProviderTests
 
                 public class TestClass
                 {
-                    public void TestMethod(BiDiDriver driver)
+                    public void TestMethod()
                     {
+                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
                         // AddObserver fires BIDI005 but there is no SubscribeAsync to modify.
                         {|#0:driver.Log.OnEntryAdded.AddObserver(async (e) => { })|};
                     }
