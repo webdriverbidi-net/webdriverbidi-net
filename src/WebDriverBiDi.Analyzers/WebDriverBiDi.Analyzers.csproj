@@ -28,8 +28,11 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
 
-    <!-- Suppress NU5128: analyzer packages use analyzers/ folder, not lib/ref -->
-    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <!-- NU5128 only: an analyzer package ships under analyzers/, not lib/ref, so the dependency
+         group it reports as unmatched is expected. NoPackageAnalysis would silence this warning by
+         turning off every other package check (missing license, README, icon, dependency problems)
+         along with it. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
 
     <!-- Disable symbol package: with IncludeBuildOutput=false, NuGet cannot populate
          the .snupkg (no mechanism to place symbols outside lib/ref), causing NU5017 -->
