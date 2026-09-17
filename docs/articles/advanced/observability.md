@@ -213,8 +213,9 @@ dotnet-trace ps
 # Collect WebDriverBiDi events
 dotnet-trace collect --process-id <pid> --providers WebDriverBiDi
 
-# Collect with specific event level (5=Verbose, 4=Info, 3=Warning, 2=Error)
-dotnet-trace collect --process-id <pid> --providers WebDriverBiDi:4
+# Collect at a specific event level (5=Verbose, 4=Info, 3=Warning, 2=Error). The provider format is
+# name[:keywords[:level]], so the level comes after a keyword mask; every mask matches these events.
+dotnet-trace collect --process-id <pid> --providers WebDriverBiDi:0xFFFFFFFFFFFFFFFF:4
 
 # Convert to other formats
 dotnet-trace convert trace.nettrace --format speedscope

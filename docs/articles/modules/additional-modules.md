@@ -49,7 +49,7 @@ The [WebExtension module](webextension.md) allows you to manage browser extensio
 
 ## Speculation Module
 
-The [Speculation module](speculation.md) provides **monitoring** of prefetch status updates. It subscribes to the `speculation.prefetchStatusUpdated` event defined in the [Prefetch spec's Automated testing section](https://wicg.github.io/nav-speculation/prefetch.html#automated-testing). WebDriver BiDi does not define commands to add or remove speculation rules—those are configured by the page via the Speculation Rules API.
+The [Speculation module](speculation.md) provides **monitoring** of prefetch status updates. It exposes the `speculation.prefetchStatusUpdated` event defined in the [Prefetch spec's Automated testing section](https://wicg.github.io/nav-speculation/prefetch.html#automated-testing). WebDriver BiDi does not define commands to add or remove speculation rules—those are configured by the page via the Speculation Rules API.
 
 ### Quick Example
 

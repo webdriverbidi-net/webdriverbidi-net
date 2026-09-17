@@ -6,7 +6,7 @@ The Bluetooth module provides control over the Web Bluetooth API for testing Blu
 
 The Bluetooth module allows you to:
 
-- Simulate the Bluetooth adapter state (present, powered on/off, absent)
+- Simulate the Bluetooth adapter state (absent, powered off, powered on)
 - Simulate Bluetooth peripherals and advertisements
 - Simulate GATT services, characteristics, and descriptors
 - Simulate GATT connection and disconnection responses

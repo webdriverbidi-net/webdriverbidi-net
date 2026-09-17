@@ -87,22 +87,33 @@ public class PipeConnection : Connection
     public override ConnectionKind ConnectionKind => ConnectionKind.Pipes;
 
     /// <summary>
-    /// Gets the handle used for sending data to the external process.
+    /// Gets the handle the external process reads from, through which this connection sends it data.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// The names of the two handles take the external process's point of view, as the arguments of a browser's
+    /// pipe-based remote debugging option do (Chromium's <c>--remote-debugging-io-pipes=&lt;read&gt;,&lt;write&gt;</c>).
+    /// </para>
+    /// <para>
     /// Returns an empty string once the connection has started: the first start disposes this process's local
     /// copy of the client handle, which the external process has inherited by then. Read the handle before
     /// starting the connection.
+    /// </para>
     /// </remarks>
     public string ReadPipeHandle => this.AreConnectionPipesDisposed ? string.Empty : this.pipeToProcess.GetClientHandleAsString();
 
     /// <summary>
-    /// Gets the handle used for receiving data from the external process.
+    /// Gets the handle the external process writes to, through which this connection receives its data.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// The names of the two handles take the external process's point of view; see <see cref="ReadPipeHandle"/>.
+    /// </para>
+    /// <para>
     /// Returns an empty string once the connection has started: the first start disposes this process's local
     /// copy of the client handle, which the external process has inherited by then. Read the handle before
     /// starting the connection.
+    /// </para>
     /// </remarks>
     public string WritePipeHandle => this.AreConnectionPipesDisposed ? string.Empty : this.pipeFromProcess.GetClientHandleAsString();
 

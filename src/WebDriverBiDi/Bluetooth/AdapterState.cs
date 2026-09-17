@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Values used for the state of new Bluetooth adapters.
+/// Values used for the state of a simulated Bluetooth adapter, whether it is being created or already exists.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<AdapterState>))]
 public enum AdapterState

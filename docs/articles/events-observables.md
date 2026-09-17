@@ -209,7 +209,9 @@ messages at or above `BiDiDriver.TransportConfiguration.LogLevel` are raised; it
 per command) and `Trace` (every message exchanged with the remote end) must be opted into. The enum's
 `Off` member is never the level of a raised message: it exists to be assigned to `LogLevel`, where
 it suppresses everything.
-`ComponentName` identifies the part of the library that emitted the message. `Timestamp` is set to
+`ComponentName` identifies the part of the library that emitted the message: `"BiDiDriver"`, `"Transport"` or
+`"Connection"`, the `LoggerComponentName` constant of the emitting type. The browser launchers in
+`WebDriverBiDi.Client` use `"Browser Launcher"`, `"Browser Locator"` and `"Driver Locator"`. `Timestamp` is set to
 `DateTime.UtcNow` at the time the message was created.
 
 > **Note:** For browser console log messages, use `driver.Log.OnEntryAdded` (a module-level event that
@@ -299,7 +301,7 @@ A few things to be aware of when using `Events`:
 | **Access event data later** | Only if you capture it yourself | Yes — `GetCollectedEventData()` |
 | **Per-step isolation** | Manual (clear a list yourself) | Built-in (each drain is independent) |
 | **Built-in filtering** | Manual (if-check inside handler) | Yes — predicate passed to `AddDataCollector` |
-| **Thread safety** | Handler options control execution | Internally locked; always safe |
+| **Thread safety** | Handler options control execution | Channel-based; always safe |
 | **Cleanup** | `Unobserve()` / `using` / `DisposeAsync()` | `using` / `await using` / `DisposeAsync()` |
 
 ## IObservable&lt;T&gt; Support

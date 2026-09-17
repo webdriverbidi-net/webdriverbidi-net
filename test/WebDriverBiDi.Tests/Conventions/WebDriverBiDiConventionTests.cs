@@ -61,6 +61,8 @@ public class WebDriverBiDiConventionTests
         "WebDriverBiDi.Network.ProvideResponseCommandParameters.Cookies",
         "WebDriverBiDi.UserAgentClientHints.ClientHintsMetadata.Brands",
         "WebDriverBiDi.UserAgentClientHints.ClientHintsMetadata.FullVersionList",
+        // Admitted for parity with Brands and FullVersionList rather than on the steps: the UA Client Hints
+        // emulation does not yet define a form-factors item, and the property's remarks say so.
         "WebDriverBiDi.UserAgentClientHints.ClientHintsMetadata.FormFactors",
     ];
 

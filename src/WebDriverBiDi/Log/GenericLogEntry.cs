@@ -8,7 +8,8 @@ namespace WebDriverBiDi.Log;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Represents a log entry in the browser.
+/// Represents a log entry in the browser whose <see cref="LogEntry.Type"/> is neither <c>console</c> nor
+/// <c>javascript</c>, and which carries only the fields common to all log entries.
 /// </summary>
 public class GenericLogEntry : LogEntry
 {

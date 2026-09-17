@@ -22,7 +22,7 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 ## Setting the Virtual Wallet Behavior
 
-The module exposes a single command, `SetVirtualWalletBehaviorAsync`, which configures how the browser's virtual wallet responds to a [`navigator.credentials.get()`](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get) call that uses the Digital Credentials API.
+The module exposes a single command, `SetVirtualWalletBehaviorAsync`, which configures how the browser's virtual wallet responds to a [`navigator.credentials.get()`](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get) or [`navigator.credentials.create()`](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create) call that uses the Digital Credentials API.
 
 ### Declining a Credential Request
 

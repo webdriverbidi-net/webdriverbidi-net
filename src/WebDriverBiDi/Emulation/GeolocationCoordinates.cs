@@ -87,7 +87,7 @@ public class GeolocationCoordinates
     /// </summary>
     /// <remarks>
     /// Valid values for this property are greater than or equal to 0.0. The specification also requires
-    /// that this property be set only when <see cref="Altitude"/> is: an altitude accuracy without an
+    /// that this property be set only when <see cref="Altitude"/> is also set: an altitude accuracy without an
     /// altitude is rejected as <c>invalid argument</c>. This property does not validate either
     /// constraint; the value is sent as-is, and a conforming remote end rejects it when the command is
     /// executed.

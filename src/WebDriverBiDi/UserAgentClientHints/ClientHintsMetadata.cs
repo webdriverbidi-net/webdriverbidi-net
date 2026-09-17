@@ -93,11 +93,11 @@ public class ClientHintsMetadata
     /// Gets or sets the list of form factors for overriding client hints.
     /// </summary>
     /// <remarks>
-    /// This list is deliberately nullable and settable, because the emulation branches on whether
-    /// the member is present rather than on what it contains: an absent member leaves the form
-    /// factors the browser reports for itself in place, while a member present as an empty list
-    /// overrides them with no form factors at all. Leave this property <see langword="null"/> to
-    /// keep the browser's own value; set it to an empty list to override it with none.
+    /// This list is nullable and settable for parity with <see cref="Brands"/> and
+    /// <see cref="FullVersionList"/>, which the protocol defines alike. Unlike those two, form factors
+    /// are not yet part of the emulated client hints the specification defines, so the specification
+    /// gives this member no effect, whether it is absent or present. Leave this property
+    /// <see langword="null"/> to omit it; set it to a list, which may be empty, to send it.
     /// </remarks>
     [JsonPropertyName("formFactors")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

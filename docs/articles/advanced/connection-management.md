@@ -409,6 +409,7 @@ A custom connection also inherits members it does not have to supply, but will g
 | `DataReceiveTask` | `protected`, read-only. The task the receive loop runs on, for a shutdown that needs to observe it. |
 | `IsLogLevelEnabled` | `public`. Test before composing any log message that is not free to build; the `SEND` and `RECV` traffic messages decode the whole payload, so they are guarded by it. |
 | `TimeProvider` | `protected`, settable. The clock `StartupTimeout`, `ShutdownTimeout` and `DataTimeout` are measured on. Substitute one to drive them with virtual time in a test. |
+| `DataSendSemaphore` | `protected`, read-only. Serializes sends: `SendDataAsync` holds it around `SendConnectionDataAsync`. A connection that writes to its transport from anywhere else must take it too, or the two writes can interleave. |
 
 `IsActive` is implemented by `Connection` itself. A connection is active while `IsConnectionOpen` reports it
 open and its receive loop has not reported that it ended. Both notification methods mark the connection

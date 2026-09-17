@@ -230,10 +230,18 @@ public static class NetworkModuleSamples
         AddInterceptCommandParameters parameters =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
 
-        // Intercept all .jpg images
+        // A pattern has no wildcards. Each part it sets is compared for equality with
+        // the same part of the request URL, and a part it leaves unset matches anything.
         parameters.UrlPatterns.AddRange(
         [
-            new UrlPatternString("*.jpg"),
+            // Every request to one host, over any protocol, port, path or query
+            new UrlPatternPattern { HostName = "images.example.com" },
+
+            // Every request to one path, on any host
+            new UrlPatternPattern { PathName = "/api/data" },
+
+            // A string pattern is a complete URL; it matches that URL only
+            new UrlPatternString("https://example.com/app/config.json"),
         ]);
 
         await driver.Network.AddInterceptAsync(parameters);
@@ -476,7 +484,7 @@ public static class NetworkModuleSamples
     /// <summary>
     /// Set global extra headers.
     /// </summary>
-    public static async Task SetGlobalExtraHeaders(BiDiDriver driver, string contextId)
+    public static async Task SetGlobalExtraHeaders(BiDiDriver driver)
     {
         #region SetGlobalExtraHeaders
         SetExtraHeadersCommandParameters parameters = new SetExtraHeadersCommandParameters
@@ -486,7 +494,6 @@ public static class NetworkModuleSamples
                 new Header("Authorization", "Bearer mytoken"),
                 new Header("X-API-Key", "my-api-key"),
             },
-            Contexts = { contextId },
         };
 
         await driver.Network.SetExtraHeadersAsync(parameters);

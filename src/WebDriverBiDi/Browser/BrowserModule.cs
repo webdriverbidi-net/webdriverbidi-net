@@ -61,7 +61,7 @@ public sealed class BrowserModule : Module
     /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>A read-only list of the client windows open in this browser.</returns>
+    /// <returns>The result of the command, whose <see cref="GetClientWindowsCommandResult.ClientWindows"/> property is a read-only list of the client windows open in this browser.</returns>
     /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<GetClientWindowsCommandResult> GetClientWindowsAsync(GetClientWindowsCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
@@ -74,7 +74,7 @@ public sealed class BrowserModule : Module
     /// <param name="commandParameters">The parameters for the command. If omitted, or if <see langword="null"/>, the command is sent with default parameters.</param>
     /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
-    /// <returns>A read-only list of the user contexts open in this browser.</returns>
+    /// <returns>The result of the command, whose <see cref="GetUserContextsCommandResult.UserContexts"/> property is a read-only list of the user contexts open in this browser.</returns>
     /// <include file="../ModuleCommandExceptions.xml" path="exceptions/command/*"/>
     public Task<GetUserContextsCommandResult> GetUserContextsAsync(GetUserContextsCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {

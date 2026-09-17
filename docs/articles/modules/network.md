@@ -81,6 +81,8 @@ Network interception allows you to block, modify, or replace network requests.
 
 ### Intercept Specific URLs
 
+URL patterns are not wildcard or glob expressions. A `UrlPatternPattern` compares each part it sets (protocol, host name, port, path, query) for equality with the same part of the request URL, and a part it leaves unset matches anything. A `UrlPatternString` is a complete URL and matches only that URL. In either form the characters `(`, `)`, `*`, `{` and `}` are reserved: the remote end rejects a pattern containing one with an invalid argument error unless it is escaped with a backslash (`\`). To intercept a kind of resource, such as images, intercept without a pattern and check the request's `Destination` in the handler.
+
 [!code-csharp[Intercept Specific URLs](../../code/modules/NetworkModuleSamples.cs#InterceptSpecificURLs)]
 
 ### Block Requests

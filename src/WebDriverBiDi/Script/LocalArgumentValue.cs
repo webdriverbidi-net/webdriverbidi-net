@@ -11,9 +11,11 @@ using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a <see cref="LocalValue"/> for use as an argument in script execution, in particular,
-/// one that contains a local .NET value to be serialized to JSON according to the WebDriver BiDi
-/// protocol. According to the protocol, not every value sent from the client has a value. This
-/// class is used to represent those that do have a value.
+/// one built from local .NET data to be serialized to JSON according to the WebDriver BiDi protocol.
+/// Every such value has a type, but not every one has a value: <see cref="LocalValue.Undefined"/> and
+/// <see cref="LocalValue.Null"/> are represented by this class and carry no value. References to objects
+/// that already exist on the remote end, and channels, are represented by <see cref="RemoteReference"/>
+/// and <see cref="ChannelValue"/>.
 /// </summary>
 public record LocalArgumentValue : LocalValue
 {

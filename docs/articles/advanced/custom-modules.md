@@ -79,6 +79,18 @@ You can also expose observable events from your custom module:
 
 [!code-csharp[Custom Events Module](../../code/advanced/CustomModulesSamples.cs#CustomEventsModule)]
 
+`RegisterObservableEvent(invocable)` registers the event with the driver and, each time the remote end sends it,
+raises the `ObservableEventInvocable<T>` with the deserialized data as the event args. When the type you deserialize
+is not the event args type you expose, use the overload
+`RegisterObservableEvent<T, TEventArgs>(invocable, Func<T, TEventArgs> eventArgsConverter)`: it builds the event args
+through the AOT-safe `ToEventArgs` factory overload described below. Both overloads also connect the invocable to the
+driver's reporting of asynchronous observer failures, described below.
+
+The invocable is also how a module raises an event it produces itself rather than one the remote end sends:
+`InvokeNotifyObserversAsync(args)` notifies its observers, and `InvokeSetObserverErrorReporter(reporter)` sets the
+callback that receives the failures of asynchronous observers, which the registration overloads set for you. Expose
+the invocable to callers as its base type, `ObservableEvent<T>`, so that only your module can raise it.
+
 > **Why `IBiDiModuleHost`, not `IBiDiDriverConfiguration`?**
 > The `Module` base class constructor requires `IBiDiModuleHost` because event registration
 > goes through that interface. When your module calls `this.RegisterObservableEvent<T>(...)` in its
@@ -116,7 +128,9 @@ You can also expose observable events from your custom module:
 | `AdditionalEventProperties` | Extension properties the remote end put on the **event envelope**, alongside `method` and `params` |
 
 Both dictionaries are `ReceivedDataDictionary` and are empty rather than null when the remote end sent
-nothing extra, so a vendor-prefixed field can be read without a null check.
+nothing extra, so a vendor-prefixed field can be read without a null check. They are read-only;
+`ToWritableCopy()` returns a `Dictionary<string, object?>` copy you can change, or whose entries you can add to a
+command's `AdditionalData` to send them on.
 
 `EventInfo<T>.ToEventArgs` packages all three into the event args you hand to your `ObservableEvent<T>`,
 copying both dictionaries onto the result so the extension data survives the hop. The overload taking a
@@ -224,12 +238,53 @@ Pass your custom transport to `BiDiDriver` via the constructor overload that acc
 | `AcquireConnectionLockAsync` / `ReleaseConnectionLock` | `protected virtual`. Take and release the exclusive access that connecting, disconnecting, sending and registering a resolver each hold. Override to instrument contention |
 | `PendingCommands` | `protected` settable. The pending-command collection. Assign one built with a different `MaxTrackedCanceledCommands` before the first connect to change the size of the window of recent cancellations within which canceled commands are remembered; a reconnect preserves that capacity |
 | `TimeProvider` | `protected` settable. The clock the transport's `ShutdownTimeout` waits and its commands' timeouts are measured on. Substitute one to drive those waits with virtual time in a test |
+| `UnhandledErrors` | `protected`, read-only. The `UnhandledErrorCollection` the transport records failures in under its `TransportErrorBehavior` settings; see [Pending commands and unhandled errors](#pending-commands-and-unhandled-errors) |
+| `LastCommandId` / `GetNextCommandId` | `protected`. The ID of the most recently created command, and the method that issues the next one. An override of `CreateCommand` that builds its own `Command` should take its ID from `GetNextCommandId`, or call the base implementation, so that IDs stay unique |
+
+### Working with the `Command` you were handed
+
+`SendCommandAsync` returns the `Command` as soon as it is sent. `BiDiDriver.ExecuteCommandAsync` is built from the
+members below, and code that drives a transport directly uses the same ones:
+
+| Member | Purpose |
+|---|---|
+| `WaitForCompletionAsync(timeout, cancellationToken)` | Returns `true` once the command has completed in any way (with a result, a fault or a cancellation) within the timeout, and `false` if the timeout elapses first. Throws `OperationCanceledException` if the token is canceled while the command is still pending. A timed-out command is still pending: cancel it with `Transport.CancelCommand` if you stop waiting |
+| `TryGetResult(out CommandResult? result)` | Gets the result of a command that completed with one. An error response from the remote end is a result too: an `ErrorResult`, whose `IsError` is `true` |
+| `ThrownException` | The exception a command faulted with inside the library, such as a response that could not be deserialized or a lost connection; `null` otherwise. It is not how the remote end's errors arrive |
+| `IsCanceled` | Whether the command was canceled, by `Transport.CancelCommand` or by `DisconnectAsync` clearing the pending commands. A command still pending when the connection is lost faults instead, with a connection exception in `ThrownException` |
+| `ElapsedMilliseconds` | The time since the transport sent the command, frozen when it completed |
+| `SetResult`, `SetException`, `Cancel` | Complete the command. The transport calls them; a test double can too. Each does nothing once the command has completed, and `Cancel` returns whether it took effect |
+
+`ExecuteCommandAsync` turns an `ErrorResult` into a `WebDriverBiDiCommandException`. To raise the same exception
+from a custom command, or to complete a command in a test double with an error the remote end might send, build the
+result with `ErrorResult.FromErrorInformation(errorType, errorMessage, stackTrace)`.
+
+### Pending commands and unhandled errors
+
+`PendingCommands` is a `PendingCommandCollection`. `AddPendingCommandAsync` adds a sent command and throws once the
+collection is closed or when the ID is already present. `RemovePendingCommand` takes out a command whose response
+arrived. `CancelPendingCommand` cancels one and remembers it, so that `TryRemoveCanceledCommand` can recognize its
+late response. `CloseAsync` stops the collection accepting commands. `Clear` and `FailAllPendingCommands` both throw
+`InvalidOperationException` unless `CloseAsync` has run first. `Clear` cancels the commands still pending and
+remembers each one with `CommandCancellationReason.ConnectionClosed`, while `FailAllPendingCommands` faults each
+with its own exception from the factory you pass. `TrackedCanceledCommandCount` reports how many canceled commands
+are remembered; how long they are remembered is set by `MaxTrackedCanceledCommands`, which defaults to
+`PendingCommandCollection.DefaultMaxTrackedCanceledCommands` (1,024), as the class remarks describe.
+
+`UnhandledErrors` is an `UnhandledErrorCollection`. It holds the four `TransportErrorBehavior` settings that the
+transport's properties of the same names forward to. `AddUnhandledError(kind, exception)` records an
+`UnhandledError`, with its `ErrorType` and `Exception`, unless the behavior for that kind is `Ignore`.
+`HasUnhandledErrors(behavior)` and `TryGetExceptions(behavior, out exceptions)` ask about the errors recorded under
+one behavior, `Exceptions` returns a snapshot of all of them, and `ClearUnhandledErrors` empties the collection. The
+transport records its own failures through `CaptureUnhandledError`, which is the place to observe them.
 
 ### Filtering or rewriting inbound messages
 
-`CreateIncomingMessage` hands you the raw bytes, but the useful hook is the third constructor parameter
-of `IncomingMessage`: a transformer that receives the parsed `JsonDocument` and returns the document to
-use instead, or `null` to discard the message entirely. A discarded message is marked
+`CreateIncomingMessage` hands you the raw bytes, which the `IncomingMessage` exposes as `MessageData` (with
+`MessageLength`) or, decoded as UTF-8, as `MessageText`. The useful hook, though, is the `documentTransformer`
+parameter of the `IncomingMessage` constructor: a transformer that receives the parsed `JsonDocument` and returns the
+document to use instead, or `null` to discard the message entirely. `Parse()` runs it and sets `MessageKind`, which is
+`IncomingMessageKind.Uninitialized` until then. A discarded message is marked
 `IncomingMessageKind.Filtered` and is dropped silently — it is *not* reported as an unknown message.
 
 [!code-csharp[Filtering Transport](../../code/advanced/CustomModulesSamples.cs#FilteringTransport)]

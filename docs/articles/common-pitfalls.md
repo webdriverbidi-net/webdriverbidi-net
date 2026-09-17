@@ -127,7 +127,7 @@ subscribing:
 Sent types — the `CommandParameters` classes and the objects nested inside them — expose optional lists in two shapes, and the way you add items differs:
 
 - **Read-only, always initialized** — `List<string> Contexts { get; }`, `UserContexts`, `StartNodes`, `Arguments`, `UrlPatterns`, `PageRanges`, and every other optional list. Add items with a collection initializer or `.Add()`. An empty list means "not specified": the property is omitted from the payload, and an empty array is never sent (for lists the protocol requires to be non-empty, the browser would reject it; for the rest, omission and `[]` mean the same thing).
-- **Nullable and settable** — `Headers` and `Cookies` on `ContinueRequestCommandParameters`, `ContinueResponseCommandParameters` and `ProvideResponseCommandParameters`, plus `Brands`, `FullVersionList` and `FormFactors` on `ClientHintsMetadata`. Here the protocol gives a present-but-empty array its own meaning — `[]` replaces the headers or cookies with none, or overrides the browser's own client hint with an empty value, while omission keeps the originals — so `null` omits the property and an empty list sends `[]`.
+- **Nullable and settable** — `Headers` and `Cookies` on `ContinueRequestCommandParameters`, `ContinueResponseCommandParameters` and `ProvideResponseCommandParameters`, plus `Brands` and `FullVersionList` on `ClientHintsMetadata`, with `FormFactors` shaped like them for parity although the specification's emulation does not yet use it. Here the protocol gives a present-but-empty array its own meaning — `[]` replaces the headers or cookies with none, or overrides the browser's own client hint with an empty value, while omission keeps the originals — so `null` omits the property and an empty list sends `[]`.
 
 [!code-csharp[Nullable Collection Example](../code/common-pitfalls/CommonPitfallsSamples.cs#NullableCollectionExample)]
 
@@ -141,7 +141,7 @@ Read-only lists need no initialization. For nullable lists, initialize before ad
 
 [!code-csharp[Handle Nullable Collections](../code/common-pitfalls/CommonPitfallsSamples.cs#HandleNullableCollections)]
 
-**Key Takeaway:** Optional lists are read-only and omitted while empty. The six network `Headers`/`Cookies` lists and the three `ClientHintsMetadata` lists are the exceptions, nullable so that "omit" (`null`) and "send `[]`" (empty list) stay distinguishable where the protocol tells them apart.
+**Key Takeaway:** Optional lists are read-only and omitted while empty. The six network `Headers`/`Cookies` lists and the three `ClientHintsMetadata` lists (`FormFactors` for parity with the other two) are the exceptions, nullable so that "omit" (`null`) and "send `[]`" (empty list) stay distinguishable where the protocol tells them apart.
 
 ---
 

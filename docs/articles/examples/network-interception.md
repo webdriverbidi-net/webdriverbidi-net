@@ -33,6 +33,8 @@ This example shows:
 
 ## Example 6: Slow Down Specific Resources
 
+URL patterns match whole URL parts for equality and accept no wildcards, so they cannot select requests by file type. This example intercepts every request, delays those whose `Destination` is `image`, and continues all of them. See [Intercept Specific URLs](../modules/network.md#intercept-specific-urls) for the pattern rules.
+
 [!code-csharp[Slow Down Specific Resources](../../code/examples/NetworkInterceptionSamples.cs#SlowDownSpecificResources)]
 
 ## Example 7: Redirect Requests
@@ -49,7 +51,7 @@ This example shows:
 2. **Handle all intercepted requests**: Always call Continue, Fail, or ProvideResponse
 3. **Clean up intercepts**: Remove intercepts when done with `RemoveInterceptAsync`
 4. **Manage data collectors**: Remove collectors to free memory
-5. **Use URL patterns**: Limit interception scope for better performance
+5. **Use URL patterns**: Limit interception scope for better performance; patterns match URL parts exactly and accept no wildcards
 6. **Test error cases**: Handle network failures gracefully
 
 ## Common Issues

@@ -153,9 +153,11 @@ Captures a screenshot and saves it to disk.
 
 ## Common Issues and Solutions
 
-### "Connection refused"
+### "Could not connect to remote WebSocket server"
 
-**Problem**: The browser isn't running or the WebSocket URL is wrong.
+**Problem**: Nothing is listening at the WebSocket URL, or the URL is wrong. `StartAsync` retries the connection every
+500 milliseconds until the startup timeout (10 seconds by default) runs out, then throws
+`WebDriverBiDiTimeoutException`.
 
 **Solution**: 
 - Ensure chromedriver is running (`chromedriver --port=9515`) and the session was created (Step 4)
@@ -163,18 +165,19 @@ Captures a screenshot and saves it to disk.
 - Check that no firewall is blocking port 9515
 - Make sure the URL is the `webSocketUrl` from the session response, not Chrome's `/devtools/browser/…` CDP URL
 
-### "Timeout waiting for command"
+### "Timed out executing command"
 
-**Problem**: The command took longer than the timeout period.
+**Problem**: The command took longer than the timeout period, so it failed with `WebDriverBiDiTimeoutException`.
 
 **Solution**:
 - Increase the timeout: `new BiDiDriver(TimeSpan.FromSeconds(60))`
 - Check your network connection
 - Ensure the target website is accessible
 
-### "Context not found"
+### "no such frame"
 
-**Problem**: The browsing context ID is invalid or the tab was closed.
+**Problem**: The command failed with a `WebDriverBiDiCommandException` whose `ErrorCode` is `NoSuchFrame`: the
+browsing context ID is invalid or the tab was closed.
 
 **Solution**:
 - Always get fresh context IDs before using them

@@ -662,7 +662,6 @@ public class PerformanceSamples
         // ❌ Slow: Intercept everything
         AddInterceptCommandParameters slowIntercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        slowIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
         await driver.Network.AddInterceptAsync(slowIntercept);
 
         // ✅ Fast: Intercept only what you need
@@ -682,26 +681,31 @@ public class PerformanceSamples
     public static async Task BlockUnnecessaryResources(BiDiDriver driver)
     {
         #region BlockUnnecessaryResources
-        // Speed up page loads by blocking images, CSS, fonts
+        // Speed up page loads by blocking images, CSS, fonts. URL patterns cannot match a
+        // kind of resource or a file extension, so this intercepts every request and
+        // chooses by the request's destination; every other request is let through.
+        HashSet<string> blockedDestinations = ["image", "style", "font"];
         AddInterceptCommandParameters intercept =
             new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent);
-        intercept.UrlPatterns.AddRange(
-        [
-            new UrlPatternString("*.jpg"),
-            new UrlPatternString("*.png"),
-            new UrlPatternString("*.gif"),
-            new UrlPatternString("*.css"),
-            new UrlPatternString("*.woff*")
-        ]);
 
         await driver.Network.AddInterceptAsync(intercept);
 
         driver.Network.OnBeforeRequestSent.AddObserver(async (e) =>
         {
-            if (e.IsBlocked)
+            if (!e.IsBlocked)
+            {
+                return;
+            }
+
+            if (blockedDestinations.Contains(e.Request.Destination))
             {
                 await driver.Network.FailRequestAsync(
                     new FailRequestCommandParameters(e.Request.RequestId));
+            }
+            else
+            {
+                await driver.Network.ContinueRequestAsync(
+                    new ContinueRequestCommandParameters(e.Request.RequestId));
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
