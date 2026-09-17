@@ -44,15 +44,9 @@ public class SerializationOptions
     /// <summary>
     /// Gets or sets the maximum depth when serializing script objects from script execution.
     /// </summary>
-    /// <remarks>
-    /// Valid values for this property are greater than or equal to zero. This property does not
-    /// validate its value; a value outside this range is sent as-is, and a conforming remote end
-    /// rejects it when the command is executed.
-    /// </remarks>
     [JsonPropertyName("maxObjectDepth")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [SpecRange(0.0, double.PositiveInfinity)]
-    public long? MaxObjectDepth { get; set; }
+    public ulong? MaxObjectDepth { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating which shadow trees to serialize when serializing nodes from script execution.
