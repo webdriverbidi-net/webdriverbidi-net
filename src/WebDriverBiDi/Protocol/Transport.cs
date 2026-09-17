@@ -738,9 +738,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
     /// errors. They are thrown at most once per session, by whichever disconnect claims them.
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default)
+    public virtual Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
-        await this.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
+        return this.DisconnectAsync(true, cancellationToken);
     }
 
     /// <summary>
@@ -1724,9 +1724,9 @@ public class Transport : IAsyncDisposable, ITransportConfiguration, ITransportDi
         }
     }
 
-    private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
+    private Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.NotifyLogMessageObserversAsync(e).ConfigureAwait(false);
+        return this.NotifyLogMessageObserversAsync(e);
     }
 
     private Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
