@@ -1277,4 +1277,111 @@ public class BiDiDriver014AnalyzerTests
 
         await testState.RunAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// Tests that populating the get-only <c>AdditionalData</c> dictionary through its indexer
+    /// suppresses the diagnostic, as the equivalent <c>Add</c> call does. The reference states that
+    /// assigning a property or calling a method on the object counts as configuring it, and an
+    /// indexer assignment was previously ignored because its left side is an element access.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_WithAdditionalDataSetThroughIndexer_NoDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var parameters = new SetTimeZoneOverrideCommandParameters();
+                        parameters.AdditionalData["vendor:key"] = 1;
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an indexer assignment on a list-valued property is likewise treated as configuration,
+    /// so the element access handling is not special to the extension dictionary.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_WithListPropertySetThroughIndexer_NoDiagnostic()
+    {
+        string test = """
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var parameters = new SetTimeZoneOverrideCommandParameters();
+                        parameters.Contexts[0] = "context1";
+                    }
+                }
+            }
+            """;
+
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Tests that an indexer assignment on an untracked variable does not suppress the diagnostic for a
+    /// tracked one, so the element access handling is scoped to the object it configures.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ParameterlessConstructor_WithIndexerAssignmentOnOtherVariable_ReportsDiagnostic()
+    {
+        string test = """
+            using System.Collections.Generic;
+            using WebDriverBiDi.Emulation;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var other = new Dictionary<string, int>();
+                        var parameters = {|#0:new SetTimeZoneOverrideCommandParameters()|};
+                        other["key"] = 1;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
+
+        RealAssemblyAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer> testState = new()
+        {
+            TestCode = test,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync(TestContext.Current.CancellationToken);
+    }
 }

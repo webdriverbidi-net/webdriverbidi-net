@@ -283,6 +283,15 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         // Property assignment: variable.Property = value
         if (expressionStmt.Expression is AssignmentExpressionSyntax assignment)
         {
+            // Indexer assignment through a member: variable.Collection["key"] = value. This configures
+            // the object exactly as variable.Collection.Add("key", value) does, and is the usual way to
+            // populate a get-only extension dictionary such as AdditionalData.
+            if (assignment.Left is ElementAccessExpressionSyntax elementAccess)
+            {
+                MarkConfigured(GetVariableName(elementAccess.Expression), trackedVariables);
+                return;
+            }
+
             if (assignment.Left is not MemberAccessExpressionSyntax memberAccess)
             {
                 return;
@@ -313,11 +322,15 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         if (expressionStmt.Expression is InvocationExpressionSyntax invocation &&
             invocation.Expression is MemberAccessExpressionSyntax invocationTarget)
         {
-            string? variableName = GetVariableName(invocationTarget.Expression);
-            if (variableName != null && trackedVariables.ContainsKey(variableName))
-            {
-                trackedVariables[variableName].HasPropertyAssignment = true;
-            }
+            MarkConfigured(GetVariableName(invocationTarget.Expression), trackedVariables);
+        }
+    }
+
+    private static void MarkConfigured(string? variableName, Dictionary<string, VariableState> trackedVariables)
+    {
+        if (variableName != null && trackedVariables.ContainsKey(variableName))
+        {
+            trackedVariables[variableName].HasPropertyAssignment = true;
         }
     }
 
