@@ -5,9 +5,13 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
+
 /// <summary>
 /// Enumeration of the types of remote values that can be returned from the browser.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<RemoteValueType>))]
 public enum RemoteValueType
 {
     /// <summary>
